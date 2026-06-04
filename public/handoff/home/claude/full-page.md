@@ -822,7 +822,7 @@ img {
 .cbf-hero {
   position: relative;
   height: 640px;
-  background: #1d3c5d url(assets/hero.png) center 40% / cover no-repeat;
+  background: #1d3c5d url(assets/hero.webp) center 40% / cover no-repeat;
   display: flex;
   align-items: flex-end;
 }
