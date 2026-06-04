@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CB Fish — Search header (CBF-8117)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="search-header.css" />
+</head>
+<body>
+
+  <!-- ===================== ADMIN TRAY (dark) — now hosts search ===================== -->
+  <nav class="cbf-admin-bar">
+    <div class="cbf-admin-bar__inner">
+      <!-- left: system admin items (auth-gated in prod) -->
+      <div class="cbf-admin-bar__group cbf-admin-bar__group--start">
+        <button class="cbf-admin-link"><i data-lucide="database"></i> Data management <i data-lucide="chevron-down" class="cbf-chevron"></i></button>
+        <button class="cbf-admin-link"><i data-lucide="activity"></i> System status <i data-lucide="chevron-down" class="cbf-chevron"></i></button>
+        <button class="cbf-admin-link"><i data-lucide="settings"></i> System configuration <i data-lucide="chevron-down" class="cbf-chevron"></i></button>
+      </div>
+
+      <!-- center: SEARCH now lives in the tray (the CBF-8117 move) -->
+      <div class="cbf-admin-bar__search">
+        <button class="cbf-omni-trigger" data-open-palette type="button">
+          <i data-lucide="search"></i>
+          <span class="cbf-omni-trigger__placeholder">Search projects, contracts, people&hellip;</span>
+          <kbd class="cbf-omni-trigger__kbd">/</kbd>
+        </button>
+      </div>
+
+      <!-- right: help -->
+      <div class="cbf-admin-bar__group cbf-admin-bar__group--end">
+        <button class="cbf-admin-link"><i data-lucide="circle-help"></i> Help <i data-lucide="chevron-down" class="cbf-chevron"></i></button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===================== HEADER (blue) — main nav, freed of search ===================== -->
+  <header class="cbf-header">
+    <div class="cbf-header__inner">
+      <a class="cbf-logo" href="#">
+        <img class="cbf-logo__mark-img" src="assets/logo-mark.svg" alt="" />
+        <img class="cbf-logo__type-img" src="assets/logo-type.svg" alt="Columbia Basin Fish & Wildlife Program" />
+      </a>
+
+      <nav class="cbf-header__nav">
+        <button class="cbf-header__nav-link"><i data-lucide="trees"></i> Mitigation work <i data-lucide="chevron-down" class="cbf-chevron"></i></button>
+        <button class="cbf-header__nav-link"><i data-lucide="trending-up"></i> Reporting <i data-lucide="chevron-down" class="cbf-chevron"></i></button>
+        <button class="cbf-header__nav-link"><i data-lucide="credit-card"></i> Funding <i data-lucide="chevron-down" class="cbf-chevron"></i></button>
+      </nav>
+
+      <!-- the reclaimed real estate: Recent + Dashboard + user (why search moved up) -->
+      <div class="cbf-header__user">
+        <button class="cbf-header__nav-link"><i data-lucide="history"></i> Recent <i data-lucide="chevron-down" class="cbf-chevron"></i></button>
+        <a class="cbf-header__nav-link" href="#"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+        <button class="cbf-header__nav-link cbf-header__nav-link--user"><i data-lucide="circle-user"></i> Angela Zhao <i data-lucide="chevron-down" class="cbf-chevron"></i></button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== PAGE STUB (so the chrome has a body) ===================== -->
+  <main class="page-stub">
+    <div class="container">
+      <p class="page-stub__crumb">Home</p>
+      <h1 class="page-stub__title">Columbia Basin Fish &amp; Wildlife Program</h1>
+      <p class="page-stub__lede">Prototype page stub. The search bar has moved up into the dark system tray, freeing the main nav for the Recent menu, Dashboard, and the signed-in user. Press <kbd>/</kbd> or click the tray search to open.</p>
+    </div>
+  </main>
+
+  <!-- ===================== COMMAND PALETTE ===================== -->
+  <div class="cbf-omni" data-palette hidden>
+    <div class="cbf-omni__scrim" data-close-palette></div>
+    <div class="cbf-omni__panel" role="dialog" aria-modal="true" aria-label="Search">
+      <div class="cbf-omni__searchrow">
+        <i data-lucide="search" class="cbf-omni__searchicon"></i>
+        <input type="text" class="cbf-omni__input" data-palette-input placeholder="Search projects, contracts, people, publications&hellip;" autocomplete="off" />
+        <button class="cbf-omni__clear" data-clear-palette type="button" aria-label="Clear"><i data-lucide="x"></i></button>
+      </div>
+
+      <div class="cbf-omni__scopes" data-scopes></div>
+
+      <div class="cbf-omni__results" data-palette-results></div>
+
+      <div class="cbf-omni__footer">
+        <button class="cbf-omni__viewall" data-viewall type="button">View all results <kbd>Ctrl</kbd><kbd>&crarr;</kbd></button>
+        <div class="cbf-omni__hints">
+          <span><kbd>&uarr;</kbd><kbd>&darr;</kbd> Navigate</span>
+          <span><kbd>&crarr;</kbd> Select</span>
+          <span><kbd>Tab</kbd> Scope</span>
+          <span><kbd>Esc</kbd> Close</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.544.0/dist/umd/lucide.min.js"></script>
+  <script src="search-header.js"></script>
+</body>
+</html>
