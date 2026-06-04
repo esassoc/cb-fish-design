@@ -1,0 +1,17 @@
+{
+  "name": "@cbfish/design",
+  "version": "0.0.1",
+  "description": "CB Fish (Columbia Basin Fish & Wildlife Program) — an Astro brand spoke of the ESA Ecology hub (../ecology).",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@esa/ecology": "file:../ecology/packages/ecology",
+    "@esa/tokens": "file:../ecology/packages/tokens",
+    "astro": "^5.0.0"
+  }
+}

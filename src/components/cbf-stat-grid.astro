@@ -1,0 +1,64 @@
+---
+// cbf-stat-grid — 2×2 brand-tinted stat tiles. Accepts stats as a prop;
+// defaults match the specimen. Tint = --color-primary-subtle / -border
+// (re-pointed to CB Fish blue in theme-cb-fish.css).
+interface Stat {
+  num: string;
+  label: string;
+}
+interface Props {
+  stats?: Stat[];
+}
+const {
+  stats = [
+    { num: '37', label: 'Funds' },
+    { num: '317', label: 'Projects' },
+    { num: '766', label: 'Contracts' },
+    { num: '68,793', label: 'Work sites' },
+  ],
+} = Astro.props;
+---
+<div class="cbf-stat-grid">
+  {
+    stats.map((s) => (
+      <div class="cbf-stat-tile">
+        <span class="cbf-stat-tile__num">{s.num}</span>
+        <span class="cbf-stat-tile__label">{s.label}</span>
+      </div>
+    ))
+  }
+</div>
+
+<style>
+  /* Prod (cbfish.org): box-links-container is repeat(auto-fit, minmax(220px,1fr))
+     with aspect-ratio:1/1 square tiles — responsive, not fixed 240px. Within the
+     2fr stats column this resolves to a 2×2. */
+  .cbf-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-400);
+  }
+  .cbf-stat-tile {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-200);
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primary-subtle);
+    border: 2px solid var(--color-primary-border);
+  }
+  .cbf-stat-tile__num {
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-semibold);
+    font-size: 60px;
+    line-height: 60px;
+    color: var(--color-text-primary);
+  }
+  /* Prod .subject-name: 18px IBM Plex Sans, normal case — NOT uppercase/spaced. */
+  .cbf-stat-tile__label {
+    font-size: 18px;
+    font-weight: var(--font-weight-semibold);
+    text-align: center;
+  }
+</style>

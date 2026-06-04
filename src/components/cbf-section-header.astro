@@ -1,0 +1,83 @@
+---
+// cbf-section-header — centered display-face title + a control pill
+// (Previous · Enlarge · Next) with divider rules.
+//
+// Reuse note: the pill buttons are hand-rolled rather than esa-button.
+// esa-button's ghost appearance renders gray (--color-text-primary) text at a
+// fixed 40px height with 16px inline padding — this design wants compact,
+// brand-blue, semibold link-style buttons with 12px icons, which fights the
+// hub button's size/color model. Recorded as a hub finding (need a "link"/
+// "text" button variant, or a smaller ghost that inherits brand color).
+import EsaIcon from '@esa/ecology/esa-icon.astro';
+
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+<div class="cbf-section-header">
+  <h2 class="cbf-section-header__title">{title}</h2>
+  <div class="cbf-control-pill">
+    <button class="cbf-control-pill__btn">
+      <EsaIcon name="chevron-left" size="xs" />
+      Previous
+    </button>
+    <span class="cbf-control-pill__divider"></span>
+    <button class="cbf-control-pill__btn">
+      <svg class="cbf-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-6-6m6 6v-4.8m0 4.8h-4.8"/><path d="M3 16.2V21m0 0h4.8M3 21l6-6"/><path d="M21 7.8V3m0 0h-4.8M21 3l-6 6"/><path d="M3 7.8V3m0 0h4.8M3 3l6 6"/></svg>
+      Enlarge
+    </button>
+    <span class="cbf-control-pill__divider"></span>
+    <button class="cbf-control-pill__btn">
+      Next
+      <EsaIcon name="chevron-right" size="xs" />
+    </button>
+  </div>
+</div>
+
+<style>
+  .cbf-svg { width: 12px; height: 12px; display: block; flex: none; }
+
+  .cbf-section-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-600); /* prod .projects-glance pads 32px below the title */
+  }
+  .cbf-section-header__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-semibold);
+    font-size: 40px;
+    line-height: 40px;
+  }
+
+  .cbf-control-pill {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-500);
+    padding: var(--spacing-300) var(--spacing-500);
+    background: var(--color-primary-subtle);
+    border: 1px solid var(--color-primary-border);
+    border-radius: var(--radius-100);
+  }
+  .cbf-control-pill__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-200);
+    font-size: 16px;
+    font-weight: var(--font-weight-bold); /* prod .charts-navigator: 700 */
+    font-family: var(--font-sans);
+    color: var(--color-primary);
+    background: none;
+    border: 0;
+    cursor: pointer;
+  }
+  .cbf-control-pill__btn :global(.esa-icon) { width: 12px; height: 12px; }
+  .cbf-control-pill__btn :global(.esa-icon svg) { width: 12px; height: 12px; }
+  .cbf-control-pill__divider {
+    width: 1px;
+    height: 16px;
+    background: var(--color-border);
+  }
+</style>

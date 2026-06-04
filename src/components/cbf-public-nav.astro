@@ -1,0 +1,63 @@
+---
+// cbf-public-nav — CB Fish's two-tier public chrome, assembled from ecology
+// bricks. No structural CSS, no brand values: the look comes from the theme
+// re-pointing --color-primary (header) and --color-surface-inverse (admin bar).
+//
+//   esa-app-bar       colored bar shell + start/main/end slots + tone
+//   esa-icon-link     [icon] label [chevron] links (inherit currentColor)
+//   esa-nav-dropdown  disclosure: icon-link trigger + floating panel
+//   esa-link-column   heading + rule + link list (the dropdown body)
+//   esa-icon-button   the search action
+//   cbf-logo          the brand lockup (spoke-local asset)
+//
+// Dropdown menu contents mirror cbfish.org prod. The three admin items and the
+// user menu are auth-gated in prod (no public content), so they stay as plain
+// triggers.
+import EsaAppBar from '@esa/ecology/esa-app-bar.astro';
+import EsaIconLink from '@esa/ecology/esa-icon-link.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaNavDropdown from '@esa/ecology/esa-nav-dropdown.astro';
+import EsaLinkColumn from '@esa/ecology/esa-link-column.astro';
+import CbfLogo from './cbf-logo.astro';
+
+const help = [
+  { label: 'Help Center' }, { label: 'Data dictionary' }, { label: 'EF&W Program documents' },
+  { label: 'Request support' }, { label: 'Send feedback' },
+];
+const mitigation = [
+  { label: 'Projects' }, { label: 'Contracts' }, { label: 'Portfolios' }, { label: 'Work elements' },
+  { label: 'Estuary program' }, { label: 'Tributary habitat' }, { label: 'Land acquisitions' },
+];
+const reporting = [
+  { label: 'Report Center' }, { label: 'Maps' }, { label: 'Publications' },
+];
+const funding = [
+  { label: 'Funds' }, { label: 'Fund budgets summary' }, { label: 'Long-term funding agreements' },
+  { label: 'Start-of-year (SOY) budgets' }, { label: 'Working budgets' }, { label: 'Budget change requests' },
+  { label: 'Expenditures' }, { label: 'Accruals' },
+];
+---
+<EsaAppBar tone="brand-strong" as="nav" class="cbf-app-bar--admin">
+  <EsaIconLink size="sm" icon="database" trailing="chevron-down">Data management</EsaIconLink>
+  <EsaIconLink size="sm" icon="activity" trailing="chevron-down">System status</EsaIconLink>
+  <EsaIconLink size="sm" icon="settings" trailing="chevron-down">System configuration</EsaIconLink>
+  <EsaNavDropdown slot="end" size="sm" align="end" icon="circle-question-mark" label="Help">
+    <EsaLinkColumn heading="Help" links={help} />
+  </EsaNavDropdown>
+</EsaAppBar>
+
+<EsaAppBar tone="brand" as="header" class="cbf-app-bar--header">
+  <CbfLogo slot="start" />
+  <EsaNavDropdown icon="trees" label="Mitigation work">
+    <EsaLinkColumn heading="Mitigation work" links={mitigation} />
+  </EsaNavDropdown>
+  <EsaNavDropdown icon="trending-up" label="Reporting">
+    <EsaLinkColumn heading="Reporting" links={reporting} />
+  </EsaNavDropdown>
+  <EsaNavDropdown icon="credit-card" label="Funding">
+    <EsaLinkColumn heading="Funding" links={funding} />
+  </EsaNavDropdown>
+  <EsaIconButton slot="end" icon="search" label="Search" />
+  <EsaIconLink slot="end" href="#" icon="layout-dashboard">Dashboard</EsaIconLink>
+  <EsaIconLink slot="end" icon="circle-user" trailing="chevron-down">Angela Zhao</EsaIconLink>
+</EsaAppBar>

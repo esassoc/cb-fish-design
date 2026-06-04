@@ -1,0 +1,75 @@
+---
+// cbf-site-footer — marketing footer assembled from bricks: cbf-logo +
+// esa-link-column × 5 + the BPA lockup. Brand color comes from the ecology
+// --color-primary token (tone="brand"). The only spoke CSS left is the
+// set-level 3-column grid + meta row — genuine layout, not per-column repetition.
+import CbfLogo from './cbf-logo.astro';
+import EsaLinkColumn from '@esa/ecology/esa-link-column.astro';
+
+interface FooterCol {
+  head: string;
+  links: { label: string }[];
+}
+const toLinks = (labels: string[]) => labels.map((label) => ({ label }));
+const cols: FooterCol[] = [
+  { head: 'Mitigation work', links: toLinks(['Contracts', 'Projects', 'Portfolios', 'Work orders', 'Work elements', 'Metrics', 'Measures', 'Limiting factors']) },
+  { head: 'Reporting', links: toLinks(['Report Center', 'Programs', 'Annual Progress Report Measures', 'Measure Targets', 'CRS Commitments', 'Maps', 'High-Level Indicators', 'States', 'Reviews', 'Assessments']) },
+  { head: 'Funding', links: toLinks(['Funds', 'Working Budgets', 'Accords', 'Start of Year Budgets', 'Proposals', 'Budget Change Requests']) },
+  { head: 'Help', links: toLinks(['Request support', 'Help Center', 'Data dictionary', 'Release notes']) },
+  { head: 'Account', links: toLinks(['Dashboard', 'Edit settings']) },
+];
+---
+<footer class="cbf-footer">
+  <div class="cbf-footer__inner">
+    <div class="cbf-footer__nav">
+      <CbfLogo />
+      <div class="cbf-footer__cols">
+        {cols.map((col) => <EsaLinkColumn heading={col.head} links={col.links} />)}
+      </div>
+      <div class="cbf-bpa-logo">
+        <img class="cbf-bpa-logo__img" src="/bpa-logo.png" alt="Bonneville Power Administration" />
+      </div>
+    </div>
+
+    <div class="cbf-footer__meta">
+      <a href="https://www.cbfish.org/Help.mvc/PrivacyPolicy" target="_blank" rel="noopener">Website usage policy</a>
+      <span>Version 3.145.10371.0&nbsp;&nbsp;&nbsp;Compiled 05/30/2024 17:16:44</span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  /* tone="brand" equivalent — brand color from the ecology token */
+  .cbf-footer {
+    background: var(--color-primary);
+    color: var(--color-text-inverse, #fff);
+  }
+  .cbf-footer__inner { display: flex; flex-direction: column; }
+
+  /* prod .footer-nav-columns — grid [logo | links | bpa], 40px gap, pad 48 32 0 */
+  .cbf-footer__nav {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: var(--spacing-650);
+    align-items: start;
+    padding: var(--spacing-700) var(--spacing-600) 0;
+  }
+  /* prod .links-column — auto-fit 180px-min responsive columns */
+  .cbf-footer__cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11.25rem, 1fr));
+    gap: var(--spacing-650);
+  }
+  .cbf-bpa-logo { flex: none; align-self: start; max-width: 254px; }
+  .cbf-bpa-logo__img { width: 100%; height: auto; }
+
+  /* prod .footer-meta — padding 0 32px, bottom 48px, right-aligned */
+  .cbf-footer__meta {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-400);
+    padding: 0 var(--spacing-600) var(--spacing-700);
+    font-size: 12px;
+  }
+  .cbf-footer__meta a { text-decoration: underline; }
+</style>

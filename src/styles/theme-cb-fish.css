@@ -1,0 +1,78 @@
+/*
+ * CB Fish theme — a spoke of the Ecology hub (../ecology).
+ *
+ * Follows the hub's theming contract (see ../ecology/apps/site/src/styles/themes.css):
+ * a [data-theme] block overrides the SEMANTIC layer only. tokens.css (from
+ * @esa/tokens) defines the primitives + default teal semantics on :root; this
+ * re-skins to CB Fish's navy-blue + IBM Plex brand without touching primitives.
+ *
+ * Because the hub chains --color-text-link / --focus-ring-color / --color-border-focus
+ * off --color-primary, overriding --color-primary alone re-points links & focus rings.
+ *
+ * TOKEN TIERS (see ecology README "Spoke-specific tokens"):
+ *   - ecology tokens (--color-*, --spacing-*, --font-*): the durable hub vocabulary.
+ *     This file REASSIGNS them to CB Fish values; esa-* components read only these.
+ *   - --cbf-* tokens: the spoke tier. Live ONLY in this file. The --cbf-blue-* ramp is
+ *     "re-point material" — raw values that feed the ecology tokens above; components
+ *     never read --cbf-* directly. A spoke token never appears in a hub component.
+ *   - A value that's really a gap in an ecology scale gets PROMOTED to the hub instead
+ *     (the old --cbf-chrome-gap 40px became --spacing-650).
+ */
+
+[data-theme="cb-fish"] {
+  /* ===== PRIMARY — navy blue replaces ecology teal ===== */
+  --color-primary:         #1e5386;
+  --color-primary-hover:   #1a4570;
+  --color-primary-active:  #163758;
+  --color-secondary:       #2770b2;
+  --color-secondary-hover: #1e5386;
+
+  /* Blue-tinted sunken surface — stat tiles, control pill */
+  --color-surface-sunken:  #f3f7fc;
+
+  /* Brand-tinted surface/border pair (hub tokens default to teal under any theme
+     because they chain off teal primitives, not --color-primary — re-point to blue).
+     Consumed by the stat tiles + control pill (the specimen's "brand-subtle"). */
+  --color-primary-subtle:  var(--cbf-blue-50);
+  --color-primary-border:  var(--cbf-blue-200);
+
+  /* Darkest chrome surface — the navy admin bar. Re-points the hub's
+     --color-surface-inverse (default gray-900) to CB Fish's deepest blue.
+     Consumed by esa-app-bar tone="brand-strong". (The blue header bar just uses
+     tone="brand" → --color-primary, already navy above.) */
+  --color-surface-inverse:       var(--cbf-blue-950);
+  --color-surface-inverse-hover: #0d1b2c;
+
+  /* Re-point SEMANTIC tokens to CB Fish's exact grays (primitives never move).
+     Specimen pinned #dcdcdc dividers / #7c7c7c muted text. */
+  --color-border:      #dcdcdc;
+  --color-text-muted:  #7c7c7c;
+
+  /* ===== TYPE — IBM Plex replaces DM Sans ===== */
+  --font-sans: 'IBM Plex Sans', sans-serif;
+  /* IBM Plex ships discrete weights; remap the hub's DM Sans scale (350/450/550/650).
+     Values verified against cbfish.org prod CSS, which uses 400/500/600/700. */
+  --font-weight-regular:  400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  /* ===== CB Fish-specific additions (no ecology equivalent) ===== */
+
+  /* Condensed display face — logotype, big stat numbers, section titles */
+  --font-display: 'IBM Plex Sans Condensed', 'IBM Plex Sans', sans-serif;
+
+  /* Brand navy ramp (the hub's --color-blue-* is a muted blue; CB Fish is deeper).
+     Raw material only — re-points ecology tokens above; components never read these. */
+  --cbf-blue-50:  #f3f7fc;
+  --cbf-blue-200: #c6dcf1;
+  --cbf-blue-600: #2770b2;
+  --cbf-blue-700: #1e5386;
+  --cbf-blue-950: #13273e;
+
+}
+
+/* esa-app-bar gap, tuned per bar via the hub's --app-bar-gap component token.
+   Both values are ecology tokens — the 40px step was promoted to --spacing-650. */
+.cbf-app-bar--admin  { --app-bar-gap: var(--spacing-650); }   /* 40px */
+.cbf-app-bar--header { --app-bar-gap: var(--spacing-800); }   /* 64px */

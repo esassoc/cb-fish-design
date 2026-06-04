@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CB Fish — Home (specimen)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="home.css" />
+</head>
+<body>
+
+  <!-- ===================== NAV (admin bar + header) ===================== -->
+  <nav class="cbf-admin-bar">
+    <div class="cbf-admin-bar__inner">
+      <div class="cbf-admin-bar__group">
+        <button class="cbf-admin-link">
+          <i data-lucide="database"></i>
+          Data management
+          <i data-lucide="chevron-down" class="cbf-chevron"></i>
+        </button>
+        <button class="cbf-admin-link">
+          <i data-lucide="activity"></i>
+          System status
+          <i data-lucide="chevron-down" class="cbf-chevron"></i>
+        </button>
+        <button class="cbf-admin-link">
+          <i data-lucide="settings"></i>
+          System configuration
+          <i data-lucide="chevron-down" class="cbf-chevron"></i>
+        </button>
+      </div>
+      <div class="cbf-admin-bar__group">
+        <button class="cbf-admin-link">
+          <i data-lucide="circle-help"></i>
+          Help
+          <i data-lucide="chevron-down" class="cbf-chevron"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="cbf-header">
+    <div class="cbf-header__inner">
+      <a class="cbf-logo" href="#">
+        <img class="cbf-logo__mark-img" src="assets/logo-mark.svg" alt="" />
+        <img class="cbf-logo__type-img" src="assets/logo-type.svg" alt="Columbia Basin Fish & Wildlife Program" />
+      </a>
+
+      <nav class="cbf-header__nav">
+        <button class="cbf-header__nav-link">
+          <i data-lucide="trees"></i>
+          Mitigation work
+          <i data-lucide="chevron-down" class="cbf-chevron"></i>
+        </button>
+        <button class="cbf-header__nav-link">
+          <i data-lucide="trending-up"></i>
+          Reporting
+          <i data-lucide="chevron-down" class="cbf-chevron"></i>
+        </button>
+        <button class="cbf-header__nav-link">
+          <i data-lucide="credit-card"></i>
+          Funding
+          <i data-lucide="chevron-down" class="cbf-chevron"></i>
+        </button>
+      </nav>
+
+      <div class="cbf-search">
+        <div class="cbf-search__scope">
+          <i data-lucide="file-text"></i>
+          Contract
+          <i data-lucide="chevron-down" class="cbf-chevron" style="margin-left:auto"></i>
+        </div>
+        <div class="cbf-search__input">
+          <i data-lucide="search"></i>
+          Search by contract # or title
+        </div>
+      </div>
+
+      <div class="cbf-header__user">
+        <a class="cbf-header__nav-link" href="#">
+          <i data-lucide="layout-dashboard"></i>
+          Dashboard
+        </a>
+        <button class="cbf-header__nav-link">
+          <i data-lucide="circle-user"></i>
+          Angela Zhao
+          <i data-lucide="chevron-down" class="cbf-chevron"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================== HERO ===================== -->
+  <section class="cbf-hero">
+    <img class="cbf-hero__type-img" src="assets/logo-type.svg" alt="Columbia Basin Fish & Wildlife Program" />
+  </section>
+
+  <!-- ===================== ABOUT (stats + welcome) ===================== -->
+  <div class="container">
+    <section class="cbf-about" style="margin-inline:auto">
+      <div class="cbf-stat-grid">
+        <div class="cbf-stat-tile"><span class="cbf-stat-tile__num">37</span><span class="cbf-stat-tile__label">Funds</span></div>
+        <div class="cbf-stat-tile"><span class="cbf-stat-tile__num">317</span><span class="cbf-stat-tile__label">Projects</span></div>
+        <div class="cbf-stat-tile"><span class="cbf-stat-tile__num">766</span><span class="cbf-stat-tile__label">Contracts</span></div>
+        <div class="cbf-stat-tile"><span class="cbf-stat-tile__num">68,793</span><span class="cbf-stat-tile__label">Work sites</span></div>
+      </div>
+      <div class="cbf-about__copy">
+        <h2 class="cbf-about__title">Welcome to the Columbia Basin Fish &amp; Wildlife Program</h2>
+        <p class="cbf-about__body">This interactive site provides the public with an unprecedented view into Bonneville Power Administration's implementation of the Columbia Basin Fish &amp; Wildlife Program, which spans across a four-state region and is the largest environmental program of its kind in the world. Developed by the Northwest Power and Conservation Council pursuant to the Northwest Electric Power Planning and Conservation Act of 1980, the Program measures for the purpose of protecting, mitigating, and enhancing fish and wildlife, including related spawning grounds and habitat, on the Columbia River and its tributaries.</p>
+        <p class="cbf-about__body">Scope of this site includes project proposals from fiscal year 2007 forward, and budget adjustments from 2004 forward. If you have questions or comments, we always welcome your feedback.</p>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== PROJECTS AT A GLANCE ===================== -->
+  <div class="container">
+    <section class="cbf-glance">
+      <div class="cbf-section-header">
+        <h2 class="cbf-section-header__title">Projects at a Glance</h2>
+        <div class="cbf-control-pill">
+          <button>
+            <i data-lucide="chevron-left"></i>
+            Previous
+          </button>
+          <span class="cbf-control-pill__divider"></span>
+          <button>
+            <i data-lucide="expand"></i>
+            Enlarge
+          </button>
+          <span class="cbf-control-pill__divider"></span>
+          <button>
+            Next
+            <i data-lucide="chevron-right"></i>
+          </button>
+        </div>
+      </div>
+      <div class="cbf-glance__chart"><img src="assets/chart.png" alt="Projects at a glance — budget by fiscal year" /></div>
+      <div class="cbf-glance__meta">
+        <span>Pivoted Raw Data with Charts:&nbsp;</span><a href="#">Download Raw</a>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== FOOTER ===================== -->
+  <footer class="cbf-footer">
+    <div class="cbf-footer__inner">
+      <div class="cbf-footer__nav">
+        <a class="cbf-logo" href="#">
+          <img class="cbf-logo__mark-img" src="assets/logo-mark.svg" alt="" />
+          <img class="cbf-logo__type-img" src="assets/logo-type.svg" alt="Columbia Basin Fish & Wildlife Program" />
+        </a>
+
+        <div class="cbf-footer__cols">
+          <div class="cbf-footer__col">
+            <div class="cbf-footer__col-head">Mitigation work</div>
+            <ul><li>Contracts</li><li>Projects</li><li>Portfolios</li><li>Work orders</li><li>Work elements</li><li>Metrics</li><li>Measures</li><li>Limiting factors</li></ul>
+          </div>
+          <div class="cbf-footer__col">
+            <div class="cbf-footer__col-head">Reporting</div>
+            <ul><li>Report Center</li><li>Programs</li><li>Annual Progress Report Measures</li><li>Measure Targets</li><li>CRS Commitments</li><li>Maps</li><li>High-Level Indicators</li><li>States</li><li>Reviews</li><li>Assessments</li></ul>
+          </div>
+          <div class="cbf-footer__col">
+            <div class="cbf-footer__col-head">Funding</div>
+            <ul><li>Funds</li><li>Working Budgets</li><li>Accords</li><li>Start of Year Budgets</li><li>Proposals</li><li>Budget Change Requests</li></ul>
+          </div>
+          <div class="cbf-footer__col">
+            <div class="cbf-footer__col-head">Help</div>
+            <ul><li>Request support</li><li>Help Center</li><li>Data dictionary</li><li>Release notes</li></ul>
+          </div>
+          <div class="cbf-footer__col">
+            <div class="cbf-footer__col-head">Account</div>
+            <ul><li>Dashboard</li><li>Edit settings</li></ul>
+          </div>
+        </div>
+
+        <div class="cbf-bpa-logo">
+          <img class="cbf-bpa-logo__img" src="assets/bpa-logo.png" alt="Bonneville Power Administration" />
+        </div>
+      </div>
+
+      <div class="cbf-footer__meta">
+        <a href="https://www.cbfish.org/Help.mvc/PrivacyPolicy" target="_blank" rel="noopener">Website usage policy</a>
+        <span>Version 3.145.10371.0&nbsp;&nbsp;&nbsp;Compiled 05/30/2024 17:16:44</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Icons: standardized on Lucide (same set as ecology's lucide-angular) -->
+  <script src="https://unpkg.com/lucide@0.544.0/dist/umd/lucide.min.js"></script>
+  <script>lucide.createIcons();</script>
+</body>
+</html>
