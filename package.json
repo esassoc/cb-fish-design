@@ -7,11 +7,15 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "handoff": "handoff http://localhost:4321/ --name home --out public/handoff"
   },
   "dependencies": {
     "@esa/ecology": "file:../ecology/packages/ecology",
     "@esa/tokens": "file:../ecology/packages/tokens",
     "astro": "^5.0.0"
+  },
+  "devDependencies": {
+    "@esa/handoff": "file:../ecology/packages/handoff"
   }
 }
