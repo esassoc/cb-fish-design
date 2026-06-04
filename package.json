@@ -8,6 +8,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "deploy": "astro build && gh-pages -d dist --dotfiles",
     "handoff": "handoff http://localhost:4321/ --name home --out public/handoff"
   },
   "dependencies": {
@@ -16,6 +17,7 @@
     "astro": "^5.0.0"
   },
   "devDependencies": {
-    "@esa/handoff": "file:../ecology/packages/handoff"
+    "@esa/handoff": "file:../ecology/packages/handoff",
+    "gh-pages": "^6.3.0"
   }
 }
