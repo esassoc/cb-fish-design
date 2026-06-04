@@ -1,12 +1,12 @@
 ---
-// cbf-projects-glance — the Home "Projects at a Glance" section: centered
-// section header + control pill (cbf-section-header) + chart + download meta row.
-import CbfContainer from './cbf-container.astro';
-import CbfSectionHeader from './cbf-section-header.astro';
+// cbf-projects-glance — the Home "Projects at a Glance" section: its centered
+// header + control pill (cbf-projects-glance-header) + chart + download meta row.
+import CbfContainer from '../shared/cbf-container.astro';
+import CbfProjectsGlanceHeader from './cbf-projects-glance-header.astro';
 ---
 <CbfContainer>
   <section class="cbf-glance">
-    <CbfSectionHeader title="Projects at a Glance" />
+    <CbfProjectsGlanceHeader title="Projects at a Glance" />
     <div class="cbf-glance__chart">
       <img src="/chart.png" alt="Projects at a glance — budget by fiscal year" />
     </div>

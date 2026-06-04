@@ -1,6 +1,7 @@
 ---
-// cbf-section-header — centered display-face title + a control pill
-// (Previous · Enlarge · Next) with divider rules.
+// cbf-projects-glance-header — the "Projects at a Glance" section header:
+// centered display-face title + the chart control pill (Previous · Enlarge ·
+// Next). Specific to that Home section (named accordingly).
 //
 // Reuse note: the pill buttons are hand-rolled rather than esa-button.
 // esa-button's ghost appearance renders gray (--color-text-primary) text at a
@@ -15,8 +16,8 @@ interface Props {
 }
 const { title } = Astro.props;
 ---
-<div class="cbf-section-header">
-  <h2 class="cbf-section-header__title">{title}</h2>
+<div class="cbf-pg-header">
+  <h2 class="cbf-pg-header__title">{title}</h2>
   <div class="cbf-control-pill">
     <button class="cbf-control-pill__btn">
       <EsaIcon name="chevron-left" size="xs" />
@@ -38,13 +39,13 @@ const { title } = Astro.props;
 <style>
   .cbf-svg { width: 12px; height: 12px; display: block; flex: none; }
 
-  .cbf-section-header {
+  .cbf-pg-header {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: var(--spacing-600); /* prod .projects-glance pads 32px below the title */
   }
-  .cbf-section-header__title {
+  .cbf-pg-header__title {
     margin: 0;
     font-family: var(--font-display);
     font-weight: var(--font-weight-semibold);
