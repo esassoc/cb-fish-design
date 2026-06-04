@@ -1,0 +1,39 @@
+---
+// cbf-projects-glance — the Home "Projects at a Glance" section: centered
+// section header + control pill (cbf-section-header) + chart + download meta row.
+import CbfContainer from './cbf-container.astro';
+import CbfSectionHeader from './cbf-section-header.astro';
+---
+<CbfContainer>
+  <section class="cbf-glance">
+    <CbfSectionHeader title="Projects at a Glance" />
+    <div class="cbf-glance__chart">
+      <img src="/chart.png" alt="Projects at a glance — budget by fiscal year" />
+    </div>
+    <div class="cbf-glance__meta">
+      <span>Pivoted Raw Data with Charts:&nbsp;</span><a href="#">Download Raw</a>
+    </div>
+  </section>
+</CbfContainer>
+
+<style>
+  .cbf-glance {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-500);
+    padding-block: var(--spacing-600);
+  }
+  .cbf-glance__chart { width: 100%; }
+  .cbf-glance__chart img { width: 100%; height: auto; }
+  .cbf-glance__meta {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    padding-block: var(--spacing-200);
+    border-top: 1px solid var(--color-border);
+    font-size: 14px;
+  }
+  .cbf-glance__meta span { color: var(--color-text-muted); }
+  .cbf-glance__meta a { color: var(--color-primary); text-decoration: underline; }
+</style>

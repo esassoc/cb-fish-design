@@ -1,0 +1,43 @@
+---
+// cbf-about — the Home "Welcome" section: 2×2 stat grid + welcome copy, in a
+// 2fr/3fr grid (prod .site-description-boxes). Owns its layout + content.
+import CbfContainer from './cbf-container.astro';
+import CbfStatGrid from './cbf-stat-grid.astro';
+---
+<CbfContainer maxWidth="1300px">
+  <section class="cbf-about">
+    <CbfStatGrid />
+    <div class="cbf-about__copy">
+      <h2 class="cbf-about__title">Welcome to the Columbia Basin Fish &amp; Wildlife Program</h2>
+      <p class="cbf-about__body">This interactive site provides the public with an unprecedented view into Bonneville Power Administration's implementation of the Columbia Basin Fish &amp; Wildlife Program, which spans across a four-state region and is the largest environmental program of its kind in the world. Developed by the Northwest Power and Conservation Council pursuant to the Northwest Electric Power Planning and Conservation Act of 1980, the Program measures for the purpose of protecting, mitigating, and enhancing fish and wildlife, including related spawning grounds and habitat, on the Columbia River and its tributaries.</p>
+      <p class="cbf-about__body">Scope of this site includes project proposals from fiscal year 2007 forward, and budget adjustments from 2004 forward. If you have questions or comments, we always welcome your feedback.</p>
+    </div>
+  </section>
+</CbfContainer>
+
+<style>
+  /* prod .site-description-boxes: grid 2fr 3fr (stats : copy), 64px block padding */
+  .cbf-about {
+    display: grid;
+    grid-template-columns: 2fr 3fr;
+    gap: var(--spacing-600);
+    align-items: start;
+    padding-block: var(--spacing-800);
+  }
+  @media (max-width: 900px) {
+    .cbf-about { grid-template-columns: 1fr; }
+  }
+  .cbf-about__copy { display: flex; flex-direction: column; gap: var(--spacing-400); }
+  .cbf-about__title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: var(--font-weight-medium);
+    line-height: 40px;
+  }
+  .cbf-about__body {
+    margin: 0;
+    font-size: 24px;
+    font-weight: var(--font-weight-regular);
+    line-height: 32px;
+  }
+</style>

@@ -1,99 +1,17 @@
 ---
-// CB Fish — Home. Composes the cbf-* sections inside BaseLayout, which wires
-// the hub token chain + cb-fish theme.
+// CB Fish — Home. A pure manifest: the ordered list of sections. All layout,
+// styling, and content live in the section components; brand lives in the theme.
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CbfPublicNav from '../components/cbf-public-nav.astro';
 import CbfHero from '../components/cbf-hero.astro';
-import CbfStatGrid from '../components/cbf-stat-grid.astro';
-import CbfSectionHeader from '../components/cbf-section-header.astro';
+import CbfAbout from '../components/cbf-about.astro';
+import CbfProjectsGlance from '../components/cbf-projects-glance.astro';
 import CbfSiteFooter from '../components/cbf-site-footer.astro';
 ---
 <BaseLayout title="Columbia Basin Fish & Wildlife Program">
   <CbfPublicNav />
   <CbfHero />
-
-  <!-- About: stat grid + welcome copy -->
-  <div class="cbf-container">
-    <section class="cbf-about">
-      <CbfStatGrid />
-      <div class="cbf-about__copy">
-        <h2 class="cbf-about__title">Welcome to the Columbia Basin Fish &amp; Wildlife Program</h2>
-        <p class="cbf-about__body">This interactive site provides the public with an unprecedented view into Bonneville Power Administration's implementation of the Columbia Basin Fish &amp; Wildlife Program, which spans across a four-state region and is the largest environmental program of its kind in the world. Developed by the Northwest Power and Conservation Council pursuant to the Northwest Electric Power Planning and Conservation Act of 1980, the Program measures for the purpose of protecting, mitigating, and enhancing fish and wildlife, including related spawning grounds and habitat, on the Columbia River and its tributaries.</p>
-        <p class="cbf-about__body">Scope of this site includes project proposals from fiscal year 2007 forward, and budget adjustments from 2004 forward. If you have questions or comments, we always welcome your feedback.</p>
-      </div>
-    </section>
-  </div>
-
-  <!-- Projects at a Glance -->
-  <div class="cbf-container">
-    <section class="cbf-glance">
-      <CbfSectionHeader title="Projects at a Glance" />
-      <div class="cbf-glance__chart">
-        <img src="/chart.png" alt="Projects at a glance — budget by fiscal year" />
-      </div>
-      <div class="cbf-glance__meta">
-        <span>Pivoted Raw Data with Charts:&nbsp;</span><a href="#">Download Raw</a>
-      </div>
-    </section>
-  </div>
-
+  <CbfAbout />
+  <CbfProjectsGlance />
   <CbfSiteFooter />
 </BaseLayout>
-
-<style>
-  .cbf-container {
-    width: 100%;
-    max-width: 1556px;
-    margin-inline: auto;
-    padding-inline: var(--spacing-600);
-  }
-
-  /* About — prod .site-description-boxes: grid 2fr 3fr (stats : copy),
-     max-width 1300, padding 64px block, gap 32. */
-  .cbf-about {
-    display: grid;
-    grid-template-columns: 2fr 3fr;
-    gap: var(--spacing-600);
-    align-items: start;
-    padding-block: var(--spacing-800);
-    max-width: 1300px;
-    margin-inline: auto;
-  }
-  @media (max-width: 900px) {
-    .cbf-about { grid-template-columns: 1fr; }
-  }
-  .cbf-about__copy { display: flex; flex-direction: column; gap: var(--spacing-400); }
-  .cbf-about__title {
-    margin: 0;
-    font-size: 28px;
-    font-weight: var(--font-weight-medium);
-    line-height: 40px;
-  }
-  .cbf-about__body {
-    margin: 0;
-    font-size: 24px;
-    font-weight: var(--font-weight-regular);
-    line-height: 32px;
-  }
-
-  /* Projects at a Glance */
-  .cbf-glance {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-500);
-    padding-block: var(--spacing-600);
-  }
-  .cbf-glance__chart { width: 100%; }
-  .cbf-glance__chart img { width: 100%; height: auto; }
-  .cbf-glance__meta {
-    width: 100%;
-    display: flex;
-    justify-content: flex-end;
-    padding-block: var(--spacing-200);
-    border-top: 1px solid var(--color-border);
-    font-size: 14px;
-  }
-  .cbf-glance__meta span { color: var(--color-text-muted); }
-  .cbf-glance__meta a { color: var(--color-primary); text-decoration: underline; }
-</style>

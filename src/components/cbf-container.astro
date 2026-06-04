@@ -1,0 +1,21 @@
+---
+// cbf-container — spoke-local layout wrapper: centered, max-width, side gutter.
+// (A centered max-width container is brand-agnostic enough to be a hub primitive
+// later — kept spoke-local for now per the token/layout-tier decision.)
+interface Props {
+  maxWidth?: string;
+}
+const { maxWidth = '1556px' } = Astro.props;
+---
+<div class="cbf-container" style={`--cbf-container-max:${maxWidth}`}>
+  <slot />
+</div>
+
+<style>
+  .cbf-container {
+    width: 100%;
+    max-width: var(--cbf-container-max, 1556px);
+    margin-inline: auto;
+    padding-inline: var(--spacing-600);
+  }
+</style>
