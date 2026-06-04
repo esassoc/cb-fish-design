@@ -1,0 +1,57 @@
+---
+// cbf-omni-trigger — the minimal search affordance that lives in the dark system
+// tray (CBF-8117). Click or "/" opens the command palette (cbf-omni-search). The
+// `data-omni-open` hook is wired by the palette's client script.
+import CbfIcon from './cbf-icon.astro';
+
+interface Props {
+  placeholder?: string;
+}
+const { placeholder = 'Search projects, contracts, people…' } = Astro.props;
+---
+<button class="cbf-omni-trigger" type="button" data-omni-open aria-label="Search">
+  <CbfIcon name="search" size={16} />
+  <span class="cbf-omni-trigger__ph">{placeholder}</span>
+  <kbd class="cbf-omni-trigger__kbd">/</kbd>
+</button>
+
+<style>
+  /* Chrome-on-dark: translucent white over the navy tray, not theme tokens. */
+  .cbf-omni-trigger {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300);
+    width: 520px;
+    max-width: 100%;
+    padding: 7px var(--spacing-300) 7px var(--spacing-400);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.75);
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .cbf-omni-trigger:hover {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+  .cbf-omni-trigger__ph {
+    flex: 1;
+    text-align: left;
+    font-size: 15px;
+  }
+  .cbf-omni-trigger__kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 6px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: var(--font-weight-medium);
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+  }
+</style>

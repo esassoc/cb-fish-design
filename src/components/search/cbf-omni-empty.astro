@@ -1,0 +1,48 @@
+---
+// cbf-omni-empty — the static half of the palette's default (no-query) view: a
+// brand line-art illustration + a one-line search note. The Recent list above it
+// is injected by the client script into the sibling [data-omni-recent] slot.
+import CbfKbd from './cbf-kbd.astro';
+---
+<div class="cbf-omni__hero">
+  <img class="cbf-omni__art" src="/dam-illustration.jpg" alt="" />
+  <p class="cbf-omni__hero-title">Search the Program</p>
+  <p class="cbf-omni__hero-note">
+    Find projects, contracts, people, publications, and funds across the Columbia
+    Basin. Start typing, or press <CbfKbd>Tab</CbfKbd> to choose a scope.
+  </p>
+</div>
+
+<style>
+  .cbf-omni__hero {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-300);
+    text-align: center;
+    padding: var(--spacing-500) var(--spacing-600) var(--spacing-700);
+  }
+  .cbf-omni__art {
+    width: 200px;
+    height: auto;
+    opacity: 0.92;
+    /* drops the JPEG's white box onto the white panel without a hard edge */
+    mix-blend-mode: multiply;
+  }
+  .cbf-omni__hero-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-primary);
+  }
+  .cbf-omni__hero-note {
+    margin: 0;
+    max-width: 420px;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--color-text-muted);
+  }
+</style>

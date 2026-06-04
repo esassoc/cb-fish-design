@@ -1,0 +1,270 @@
+---
+// /search — full results page (CBF-8117), built to the app's standard page chrome
+// (CBFish Modernization "Report Center v2", Figma 2614:11113): a bordered content
+// card with a gold breadcrumb strip, a 40px condensed page title, an info notice,
+// and a 300px facet sidebar + results content. Result rows + Impersonate reuse the
+// palette's .cbf-search-surface styles (loaded via the nav's cbf-omni-search).
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import CbfContainer from '../components/shared/cbf-container.astro';
+import CbfIcon from '../components/search/cbf-icon.astro';
+import EsaBreadcrumbs from '@esa/ecology/esa-breadcrumbs.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+const crumbs = [
+  { label: 'Home', href: '/', icon: homeIcon },
+  { label: 'Search' },
+];
+---
+<BaseLayout title="Search — Columbia Basin Fish & Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-app-page" data-search-page>
+    <CbfContainer maxWidth="1920px">
+      <div class="cbf-app-card">
+        <div class="cbf-app-card__crumb">
+          <EsaBreadcrumbs items={crumbs} />
+        </div>
+
+        <div class="cbf-app-card__body">
+          <aside class="cbf-app-sidebar cbf-search-surface">
+            <p class="cbf-app-sidebar__head">Filter by type</p>
+            <div class="cbf-app-sidebar__facets" data-search-facets></div>
+          </aside>
+
+          <section class="cbf-app-content">
+            <h1 class="cbf-page-title" data-search-title>Search</h1>
+
+            <div class="cbf-search-note">
+              <EsaAlertBox variant="info">
+                Results are limited to records you have permission to view.
+              </EsaAlertBox>
+            </div>
+
+            <label class="cbf-search-field">
+              <CbfIcon name="search" size={20} />
+              <input
+                type="text"
+                data-search-input
+                placeholder="Search projects, contracts, people, publications…"
+                autocomplete="off"
+              />
+            </label>
+
+            <div class="cbf-search-surface">
+              <div class="cbf-search-results" data-search-results></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </CbfContainer>
+  </main>
+
+  <script>
+    import { initSearchPage } from '../components/search/search-page.client';
+    initSearchPage();
+  </script>
+</BaseLayout>
+
+<style>
+  .cbf-app-page {
+    padding-block: var(--spacing-600) var(--spacing-800);
+  }
+
+  /* bordered content card with a gold breadcrumb strip on top */
+  .cbf-app-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 80vh;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    overflow: hidden;
+    background: var(--color-surface);
+    box-shadow: 0 1px 3px rgba(19, 39, 62, 0.08);
+  }
+  .cbf-app-card__crumb {
+    background: var(--cbf-gold-50); /* the app's breadcrumb strip */
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--spacing-400) var(--spacing-600);
+  }
+  .cbf-app-card__crumb :global(.esa-breadcrumbs) {
+    --breadcrumbs-link-color: var(--color-gray-800, #464646);
+    --breadcrumbs-link-hover: var(--color-primary);
+  }
+  .cbf-app-card__body {
+    flex: 1;
+    display: flex;
+    align-items: stretch;
+  }
+
+  /* sidebar — scope facets (the app's "Links Sidebar" pattern) */
+  .cbf-app-sidebar {
+    width: 300px;
+    flex: none;
+    border-right: 1px solid var(--color-border);
+    padding: var(--spacing-500);
+  }
+  .cbf-app-sidebar__head {
+    margin: 0 0 var(--spacing-200);
+    font-size: 16px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--cbf-gold-900); /* the app's sidebar sub-header color */
+  }
+  .cbf-app-sidebar__facets {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  /* content */
+  .cbf-app-content {
+    flex: 1;
+    min-width: 0;
+    padding: var(--spacing-600);
+  }
+  .cbf-page-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-300);
+    margin: 0 0 var(--spacing-400);
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-medium);
+    font-size: 40px;
+    line-height: 40px;
+    letter-spacing: -1px;
+    color: var(--cbf-blue-950);
+  }
+  /* count badge beside the title (JS-set) */
+  .cbf-page-title :global(.cbf-title-count) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 30px;
+    padding: 0 var(--spacing-200);
+    border-radius: var(--radius-100);
+    background: var(--color-gray-50);
+    border: 1px solid var(--color-border); /* CB Fish gray-200 (#dcdcdc) */
+    color: var(--color-text-muted);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0;
+  }
+  .cbf-search-note {
+    margin-bottom: var(--spacing-400);
+  }
+  /* brand the info notice (hub defaults to a generic blue) */
+  .cbf-search-note :global(.esa-alert-box) {
+    --color-info-subtle: var(--color-primary-subtle);
+    --color-info-border: var(--color-primary-border);
+    --color-info: var(--color-secondary);
+    --color-text-secondary: var(--color-text-primary);
+    font-size: 16px;
+  }
+  .cbf-search-field {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300);
+    padding: var(--spacing-300) var(--spacing-400);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    background: var(--color-surface);
+  }
+  .cbf-search-field:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-subtle);
+  }
+  .cbf-search-field :global(.cbf-icon) {
+    color: var(--color-text-muted);
+  }
+  .cbf-search-field input {
+    flex: 1;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 18px;
+    color: var(--color-text-primary);
+  }
+  .cbf-search-field input::placeholder {
+    color: var(--cbf-text-placeholder);
+  }
+  /* each result section is its own card; gap between them */
+  .cbf-search-results {
+    margin-top: var(--spacing-400);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-400);
+  }
+</style>
+
+<style is:global>
+  /* page result sections as cards — gray header, larger title, bright-blue icon.
+     Scoped under .cbf-search-results so the compact palette keeps its dense headers. */
+  .cbf-search-surface .cbf-search-results .cbf-result-group {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    overflow: hidden;
+    background: var(--color-surface);
+  }
+  .cbf-search-surface .cbf-search-results .cbf-result-group__head {
+    background: var(--cbf-surface-section-head); /* neutral gray header */
+    border-top: 0;
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--spacing-300) var(--spacing-400);
+  }
+  .cbf-search-surface .cbf-search-results .cbf-result-group__title {
+    font-family: var(--font-display); /* IBM Plex Sans Condensed */
+    font-size: 20px;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--color-text-primary);
+  }
+  .cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon {
+    color: var(--color-secondary); /* bright blue */
+  }
+  .cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  .cbf-search-surface .cbf-search-results .cbf-result-group__count {
+    font-size: 16px;
+  }
+
+  /* sidebar facet items (JS-built → global, contained under .cbf-search-surface) */
+  .cbf-search-surface .cbf-facet {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px var(--spacing-300);
+    border-radius: var(--radius-100);
+    color: var(--color-primary);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: var(--font-weight-regular);
+    text-align: left;
+  }
+  .cbf-search-surface .cbf-facet:hover {
+    background: var(--color-primary-subtle);
+  }
+  .cbf-search-surface .cbf-facet.is-active {
+    background: var(--color-primary-subtle);
+    font-weight: var(--font-weight-semibold);
+  }
+  .cbf-search-surface .cbf-facet .cbf-icon {
+    color: var(--color-secondary);
+  }
+  .cbf-search-surface .cbf-facet__label {
+    flex: 1;
+  }
+  .cbf-search-surface .cbf-facet__count {
+    color: var(--color-text-muted);
+    font-size: 14px;
+  }
+</style>

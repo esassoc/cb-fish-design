@@ -1,0 +1,36 @@
+---
+// cbf-omni-footer — the palette's keyboard-hint bar. (The "show all results" CTA
+// is a prominent bar above this, owned by cbf-omni-search.)
+import CbfKbd from './cbf-kbd.astro';
+---
+<div class="cbf-omni__footer">
+  <div class="cbf-omni__hints">
+    <span><CbfKbd>↑</CbfKbd><CbfKbd>↓</CbfKbd> Navigate</span>
+    <span><CbfKbd>↵</CbfKbd> Select</span>
+    <span><CbfKbd>Tab</CbfKbd> Scope</span>
+    <span><CbfKbd>Esc</CbfKbd> Close</span>
+  </div>
+</div>
+
+<style>
+  .cbf-omni__footer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    padding: var(--spacing-200) var(--spacing-500);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface-sunken);
+  }
+  .cbf-omni__hints {
+    display: flex;
+    gap: var(--spacing-400);
+  }
+  .cbf-omni__hints span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+</style>

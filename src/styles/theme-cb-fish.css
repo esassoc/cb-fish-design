@@ -70,6 +70,15 @@
   --cbf-blue-700: #1e5386;
   --cbf-blue-950: #13273e;
 
+  /* App-page chrome (CBFish Modernization page pattern — Report Center, Search).
+     Spoke surfaces with no hub semantic equivalent yet; consumed directly by the
+     cbf-* app-page components. Promote to the hub if they stabilize across spokes. */
+  --cbf-gold-50:              #f8f8f4;  /* breadcrumb strip surface (Figma Gold/50) */
+  --cbf-gold-900:             #534c3b;  /* sidebar section heading (Figma Gold/900) */
+  --cbf-surface-section-head: #f5f5f5;  /* result section header bar */
+  --cbf-amber-attention:      #f6c244;  /* impersonation state badge/text */
+  --cbf-text-placeholder:     #9aa3ad;  /* input placeholder text */
+
 }
 
 /* esa-app-bar gap, tuned per bar via the hub's --app-bar-gap component token.

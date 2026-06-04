@@ -1,0 +1,23 @@
+---
+// cbf-icon — render a spoke glyph (see ./icons.ts). Used where the hub's esa-icon
+// set doesn't carry the glyph (history, folder, book, wallet, venetian-mask, …).
+import { svg, type IconName } from './icons';
+
+interface Props {
+  name: IconName;
+  size?: number;
+  class?: string;
+}
+const { name, size = 16, class: className } = Astro.props;
+---
+<span class:list={['cbf-icon', className]} set:html={svg(name, size)} />
+
+<style>
+  .cbf-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    color: inherit;
+  }
+</style>

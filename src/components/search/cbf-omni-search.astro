@@ -1,0 +1,323 @@
+---
+// cbf-omni-search — the command palette dialog (CBF-8117). A fixed overlay opened
+// by the tray trigger ("/" or click). Static shell here; the dynamic parts (scope
+// pills, grouped results, Recent list, Impersonate action) are built by the client
+// script from omni-data. Mount once near the page chrome (cbf-public-nav does).
+//
+// CSS split: the SHELL is component-scoped <style>. The JS-built subtree can't
+// carry Astro's scope hash, so its rules live in a <style is:global> block, every
+// selector prefixed with .cbf-omni to stay contained.
+import CbfIcon from './cbf-icon.astro';
+import CbfOmniEmpty from './cbf-omni-empty.astro';
+import CbfOmniFooter from './cbf-omni-footer.astro';
+---
+<div class="cbf-omni" data-omni hidden>
+  <div class="cbf-omni__scrim" data-omni-close></div>
+  <div class="cbf-omni__panel cbf-search-surface" role="dialog" aria-modal="true" aria-label="Search">
+    <div class="cbf-omni__searchrow">
+      <CbfIcon name="search" size={20} class="cbf-omni__searchicon" />
+      <input
+        class="cbf-omni__input"
+        data-omni-input
+        type="text"
+        placeholder="Search projects, contracts, people, publications…"
+        autocomplete="off"
+      />
+      <button class="cbf-omni__clear" data-omni-clear type="button" aria-label="Clear">
+        <CbfIcon name="x" size={15} />
+      </button>
+    </div>
+
+    <div class="cbf-omni__scopes" data-omni-scopes></div>
+
+    <div class="cbf-omni__body">
+      <!-- default view: Recent (injected) + illustration/note -->
+      <div class="cbf-omni__empty" data-omni-empty>
+        <div data-omni-recent></div>
+        <CbfOmniEmpty />
+      </div>
+      <!-- query view: grouped results (injected) -->
+      <div class="cbf-omni__results" data-omni-results hidden></div>
+    </div>
+
+    <button class="cbf-omni__showall" data-omni-showall type="button" hidden>
+      <span data-omni-showall-label>Show all results</span>
+      <CbfIcon name="chevron-right" size={18} />
+    </button>
+
+    <CbfOmniFooter />
+  </div>
+</div>
+
+<script>
+  import { initOmniSearch } from './omni-search.client';
+  initOmniSearch();
+</script>
+
+<style>
+  /* ---- shell (component-scoped) ---- */
+  .cbf-omni {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+  }
+  .cbf-omni[hidden] {
+    display: none;
+  }
+  .cbf-omni__scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(19, 39, 62, 0.45);
+    backdrop-filter: blur(2px);
+  }
+  .cbf-omni__panel {
+    position: relative;
+    z-index: 1;
+    width: 920px;
+    max-width: 92vw;
+    height: min(820px, 92vh); /* fixed — never resizes as results change */
+    margin: 56px auto 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(19, 39, 62, 0.32);
+  }
+  .cbf-omni__searchrow {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300);
+    flex: none;
+    padding: var(--spacing-300) var(--spacing-500);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-omni__searchicon {
+    color: var(--color-text-muted);
+  }
+  .cbf-omni__input {
+    flex: 1;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 18px;
+    color: var(--color-text-primary);
+  }
+  .cbf-omni__input::placeholder {
+    color: var(--cbf-text-placeholder);
+  }
+  .cbf-omni__clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    flex: none;
+    background: var(--color-surface-sunken);
+    color: var(--color-text-muted);
+  }
+  .cbf-omni__clear:hover {
+    background: var(--color-border);
+  }
+  .cbf-omni__scopes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-200);
+    flex: none;
+    padding: var(--spacing-200) var(--spacing-500);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-omni__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .cbf-omni__empty {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+  .cbf-omni__empty[hidden] {
+    display: none;
+  }
+  .cbf-omni__results {
+    padding: var(--spacing-100) 0;
+  }
+
+  /* prominent CTA at the bottom of the list → full results page */
+  .cbf-omni__showall {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-200);
+    flex: none;
+    width: 100%;
+    padding: var(--spacing-300);
+    background: var(--color-primary);
+    color: var(--color-text-inverse, #fff);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: var(--font-weight-semibold);
+  }
+  .cbf-omni__showall:hover {
+    background: var(--color-primary-hover);
+  }
+  .cbf-omni__showall[hidden] {
+    display: none;
+  }
+</style>
+
+<style is:global>
+  /* ---- JS-built subtree (global, contained under .cbf-search-surface, shared
+         by the palette body and the /search page) ---- */
+  /* injected icon spans don't carry cbf-icon's scoped style — align them here */
+  .cbf-search-surface .cbf-icon { display: inline-flex; align-items: center; }
+
+  .cbf-search-surface .cbf-scope-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px var(--spacing-300);
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-primary);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: var(--font-weight-medium);
+    transition: background 0.1s, border-color 0.1s, color 0.1s;
+  }
+  .cbf-search-surface .cbf-scope-pill:hover {
+    background: var(--color-primary-subtle);
+  }
+  .cbf-search-surface .cbf-scope-pill.is-active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-text-inverse, #fff);
+  }
+  .cbf-search-surface .cbf-scope-pill__count {
+    opacity: 0.65;
+    font-weight: var(--font-weight-regular);
+  }
+
+  .cbf-search-surface .cbf-result-empty {
+    padding: var(--spacing-600) var(--spacing-500);
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 15px;
+  }
+  .cbf-search-surface .cbf-result-group {
+    padding-block: 0;
+  }
+  /* section header reads as a tinted bar with a divider (not floating text) */
+  .cbf-search-surface .cbf-result-group__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-200) var(--spacing-500);
+    background: var(--color-surface-sunken);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+  }
+  /* the first section sits flush under the search/scopes — no doubled top rule */
+  .cbf-search-surface .cbf-result-group:first-child .cbf-result-group__head {
+    border-top: 0;
+  }
+  .cbf-search-surface .cbf-result-group__title {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-text-primary);
+  }
+  .cbf-search-surface .cbf-result-group__title .cbf-icon {
+    color: var(--color-text-muted);
+  }
+  .cbf-search-surface .cbf-result-group__count {
+    font-size: 13px;
+    color: var(--color-text-muted);
+  }
+  .cbf-search-surface .cbf-result {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300);
+    padding: 8px var(--spacing-500);
+    cursor: pointer;
+    border-left: 3px solid transparent;
+  }
+  .cbf-search-surface .cbf-result__lead {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    flex: none;
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
+  }
+  .cbf-search-surface .cbf-result__body {
+    flex: 1;
+    min-width: 0;
+  }
+  .cbf-search-surface .cbf-result__title {
+    font-size: 15px;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+  }
+  .cbf-search-surface .cbf-result__title mark {
+    background: #ffe9b0;
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+  .cbf-search-surface .cbf-result__sub {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin-top: 1px;
+  }
+  .cbf-search-surface .cbf-result__chevron {
+    color: var(--color-secondary);
+    opacity: 0;
+    flex: none;
+  }
+  .cbf-search-surface .cbf-result:hover,
+  .cbf-search-surface .cbf-result.is-active {
+    background: var(--color-primary-subtle);
+    border-left-color: var(--color-secondary);
+  }
+  .cbf-search-surface .cbf-result.is-active .cbf-result__chevron {
+    opacity: 1;
+  }
+
+  /* Impersonate — person-only QA/admin action */
+  .cbf-search-surface .cbf-impersonate {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex: none;
+    padding: 4px var(--spacing-300);
+    border-radius: 999px;
+    border: 1px solid var(--color-primary-border);
+    background: var(--color-surface);
+    color: var(--color-primary);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: var(--font-weight-medium);
+    transition: background 0.1s, border-color 0.1s, color 0.1s;
+  }
+  .cbf-search-surface .cbf-impersonate:hover {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-text-inverse, #fff);
+  }
+  /* one action per person row: impersonate replaces the navigate chevron */
+  .cbf-search-surface .cbf-result:has(.cbf-impersonate) .cbf-result__chevron {
+    display: none;
+  }
+</style>

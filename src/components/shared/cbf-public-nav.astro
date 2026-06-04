@@ -3,22 +3,29 @@
 // bricks. No structural CSS, no brand values: the look comes from the theme
 // re-pointing --color-primary (header) and --color-surface-inverse (admin bar).
 //
+// CBF-8117: search moved OUT of the blue header and UP into the dark admin tray
+// (centered), freeing the header for the Recent menu, Dashboard, and the user —
+// who is also the Impersonation target (a QA/ESA-admin shortcut). The command
+// palette itself is cbf-omni-search, mounted once at the end of this nav.
+//
 //   esa-app-bar       colored bar shell + start/main/end slots + tone
 //   esa-icon-link     [icon] label [chevron] links (inherit currentColor)
 //   esa-nav-dropdown  disclosure: icon-link trigger + floating panel
 //   esa-link-column   heading + rule + link list (the dropdown body)
-//   esa-icon-button   the search action
-//   cbf-logo          the brand lockup (spoke-local asset)
+//   cbf-omni-trigger  the tray search affordance  → opens cbf-omni-search
+//   cbf-logo / cbf-icon  spoke-local lockup + glyphs
 //
-// Dropdown menu contents mirror cbfish.org prod. The three admin items and the
-// user menu are auth-gated in prod (no public content), so they stay as plain
-// triggers.
+// The end cluster (Recent · Dashboard · user) is authored as local cbf-nav-link
+// chrome rather than esa-icon-link: it needs the `history` glyph (absent from the
+// hub icon set) and the user menu's markup is rewritten live during impersonation.
 import EsaAppBar from '@esa/ecology/esa-app-bar.astro';
 import EsaIconLink from '@esa/ecology/esa-icon-link.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
 import EsaNavDropdown from '@esa/ecology/esa-nav-dropdown.astro';
 import EsaLinkColumn from '@esa/ecology/esa-link-column.astro';
 import CbfLogo from './cbf-logo.astro';
+import CbfIcon from '../search/cbf-icon.astro';
+import CbfOmniTrigger from '../search/cbf-omni-trigger.astro';
+import CbfOmniSearch from '../search/cbf-omni-search.astro';
 
 const help = [
   { label: 'Help Center' }, { label: 'Data dictionary' }, { label: 'EF&W Program documents' },
@@ -38,9 +45,12 @@ const funding = [
 ];
 ---
 <EsaAppBar tone="brand-strong" as="nav" class="cbf-app-bar--admin">
-  <EsaIconLink size="sm" icon="database" trailing="chevron-down">Data management</EsaIconLink>
-  <EsaIconLink size="sm" icon="activity" trailing="chevron-down">System status</EsaIconLink>
-  <EsaIconLink size="sm" icon="settings" trailing="chevron-down">System configuration</EsaIconLink>
+  <Fragment slot="start">
+    <EsaIconLink size="sm" icon="database" trailing="chevron-down">Data management</EsaIconLink>
+    <EsaIconLink size="sm" icon="activity" trailing="chevron-down">System status</EsaIconLink>
+    <EsaIconLink size="sm" icon="settings" trailing="chevron-down">System configuration</EsaIconLink>
+  </Fragment>
+  <CbfOmniTrigger />
   <EsaNavDropdown slot="end" size="sm" align="end" icon="circle-question-mark" label="Help">
     <EsaLinkColumn heading="Help" links={help} />
   </EsaNavDropdown>
@@ -57,7 +67,84 @@ const funding = [
   <EsaNavDropdown icon="credit-card" label="Funding">
     <EsaLinkColumn heading="Funding" links={funding} />
   </EsaNavDropdown>
-  <EsaIconButton slot="end" icon="search" label="Search" />
-  <EsaIconLink slot="end" href="#" icon="layout-dashboard">Dashboard</EsaIconLink>
-  <EsaIconLink slot="end" icon="circle-user" trailing="chevron-down">Angela Zhao</EsaIconLink>
+
+  <div class="cbf-nav-actions" slot="end">
+    {/*
+      Hidden for now — duplicative of the search palette's Recent list.
+      NOTE: this header "Recent" is intended for recently VISITED PAGES (not
+      recent searches), so it may return as a distinct feature later.
+      <button class="cbf-nav-link" type="button">
+        <CbfIcon name="history" size={16} /> Recent <CbfIcon name="chevron-down" size={14} />
+      </button>
+    */}
+    <a class="cbf-nav-link" href="#">
+      <CbfIcon name="layout-dashboard" size={16} /> Dashboard
+    </a>
+    <button class="cbf-nav-link cbf-nav-link--user" type="button" data-omni-user>
+      <CbfIcon name="circle-user" size={16} /> Angela Zhao <CbfIcon name="chevron-down" size={14} />
+    </button>
+  </div>
 </EsaAppBar>
+
+<CbfOmniSearch />
+
+<style>
+  /* End cluster — spoke chrome on the brand bar (inherits white via currentColor). */
+  .cbf-nav-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-600);
+  }
+  .cbf-nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: inherit;
+    background: none;
+    border: 0;
+    font-size: 16px;
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+  }
+  .cbf-nav-link:hover {
+    text-decoration: underline;
+  }
+  .cbf-nav-link--user {
+    padding-left: var(--spacing-500);
+    border-left: 1px solid rgba(255, 255, 255, 0.25);
+  }
+  .cbf-nav-link--user.is-impersonating {
+    color: var(--cbf-amber-attention);
+  }
+</style>
+
+<style is:global>
+  /* Admin tray: 3-column grid so the search trigger sits dead-center between the
+     left admin links and Help, regardless of their differing widths. Also tighten
+     the bar's vertical padding (the gap is set in theme-cb-fish.css). */
+  .cbf-app-bar--admin {
+    --app-bar-pad-y: var(--spacing-300);
+  }
+  .cbf-app-bar--admin .esa-app-bar__row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+  }
+  .cbf-app-bar--admin .esa-app-bar__start { justify-self: start; }
+  .cbf-app-bar--admin .esa-app-bar__main { justify-content: center; }
+  .cbf-app-bar--admin .esa-app-bar__end { justify-self: end; }
+
+  /* icons injected during impersonation (userMenu.innerHTML is rewritten by JS) */
+  .cbf-nav-link .cbf-icon { display: inline-flex; align-items: center; }
+  .cbf-imp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px var(--spacing-200);
+    margin-right: 2px;
+    border-radius: 999px;
+    background: var(--cbf-amber-attention);
+    color: var(--color-surface-inverse, #13273e);
+    font-size: 13px;
+    font-weight: var(--font-weight-semibold);
+  }
+</style>
