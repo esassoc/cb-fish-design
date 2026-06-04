@@ -2,16 +2,17 @@
 // cbf-logo — the CB Fish brand lockup (mark + wordmark). Spoke-local because the
 // asset is brand-specific, but it slots into hub chrome (esa-app-bar, footer).
 // `variant="mark"` drops the wordmark for tight spaces.
+import { withBase } from '../../lib/base';
 interface Props {
   variant?: 'full' | 'mark';
   href?: string;
 }
-const { variant = 'full', href = '/' } = Astro.props;
+const { variant = 'full', href = withBase('/') } = Astro.props;
 ---
 <a class="cbf-logo" href={href} title="Columbia Basin Fish & Wildlife Program">
-  <img class="cbf-logo__mark" src="/logo-mark.svg" alt="" />
+  <img class="cbf-logo__mark" src={withBase('/logo-mark.svg')} alt="" />
   {variant === 'full' && (
-    <img class="cbf-logo__type" src="/logo-type.svg" alt="Columbia Basin Fish & Wildlife Program" />
+    <img class="cbf-logo__type" src={withBase('/logo-type.svg')} alt="Columbia Basin Fish & Wildlife Program" />
   )}
 </a>
 

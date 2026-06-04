@@ -5,6 +5,7 @@
 // set-level 3-column grid + meta row — genuine layout, not per-column repetition.
 import CbfLogo from './cbf-logo.astro';
 import EsaLinkColumn from '@esa/ecology/esa-link-column.astro';
+import { withBase } from '../../lib/base';
 
 interface FooterCol {
   head: string;
@@ -27,7 +28,7 @@ const cols: FooterCol[] = [
         {cols.map((col) => <EsaLinkColumn heading={col.head} links={col.links} />)}
       </div>
       <div class="cbf-bpa-logo">
-        <img class="cbf-bpa-logo__img" src="/bpa-logo.png" alt="Bonneville Power Administration" />
+        <img class="cbf-bpa-logo__img" src={withBase('/bpa-logo.png')} alt="Bonneville Power Administration" />
       </div>
     </div>
 

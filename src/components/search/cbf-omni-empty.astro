@@ -3,9 +3,10 @@
 // brand line-art illustration + a one-line search note. The Recent list above it
 // is injected by the client script into the sibling [data-omni-recent] slot.
 import CbfKbd from './cbf-kbd.astro';
+import { withBase } from '../../lib/base';
 ---
 <div class="cbf-omni__hero">
-  <img class="cbf-omni__art" src="/dam-illustration.jpg" alt="" />
+  <img class="cbf-omni__art" src={withBase('/dam-illustration.jpg')} alt="" />
   <p class="cbf-omni__hero-title">Search the Program</p>
   <p class="cbf-omni__hero-note">
     Find projects, contracts, people, publications, and funds across the Columbia

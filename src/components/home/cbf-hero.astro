@@ -4,8 +4,9 @@
 // subtle bottom legibility scrim. Values verified against cbfish.org prod:
 // 640px tall, title 64px/64 condensed (line 1 wt 600, line 2 wt 400),
 // inset margin 0 0 36px 61px.
+import { withBase } from '../../lib/base';
 ---
-<section class="cbf-hero">
+<section class="cbf-hero" style={`--cbf-hero-img: url('${withBase('/hero.webp')}')`}>
   <div class="cbf-hero__title">
     <h1 class="cbf-hero__line cbf-hero__line--strong">Columbia Basin</h1>
     <h1 class="cbf-hero__line">Fish &amp; Wildlife Program</h1>
@@ -16,7 +17,7 @@
   .cbf-hero {
     position: relative;
     height: 640px;
-    background: #1d3c5d url('/hero.webp') center 40% / cover no-repeat;
+    background: #1d3c5d var(--cbf-hero-img) center 40% / cover no-repeat;
     display: flex;
     align-items: flex-end;
   }

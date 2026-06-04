@@ -10,6 +10,7 @@ import {
   initImpersonationRevert,
 } from './omni-render';
 import { SCOPES, type Entity, type ScopeId } from './omni-data';
+import { withBase } from '../../lib/base';
 
 export function initOmniSearch(): void {
   const omni = document.querySelector<HTMLElement>('[data-omni]');
@@ -76,7 +77,7 @@ export function initOmniSearch(): void {
     if (input.value.trim()) params.set('q', input.value.trim());
     if (scope !== 'all') params.set('scope', scope);
     const qs = params.toString();
-    window.location.href = '/search' + (qs ? `?${qs}` : '');
+    window.location.href = withBase('/search') + (qs ? `?${qs}` : '');
   }
 
   function openPalette(): void {

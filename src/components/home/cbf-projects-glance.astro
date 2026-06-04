@@ -3,12 +3,13 @@
 // header + control pill (cbf-projects-glance-header) + chart + download meta row.
 import CbfContainer from '../shared/cbf-container.astro';
 import CbfProjectsGlanceHeader from './cbf-projects-glance-header.astro';
+import { withBase } from '../../lib/base';
 ---
 <CbfContainer>
   <section class="cbf-glance">
     <CbfProjectsGlanceHeader title="Projects at a Glance" />
     <div class="cbf-glance__chart">
-      <img src="/chart.png" alt="Projects at a glance — budget by fiscal year" />
+      <img src={withBase('/chart.png')} alt="Projects at a glance — budget by fiscal year" />
     </div>
     <div class="cbf-glance__meta">
       <span>Pivoted Raw Data with Charts:&nbsp;</span><a href="#">Download Raw</a>
