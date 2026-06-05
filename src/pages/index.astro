@@ -1,10 +1,10 @@
 ---
-// CB Fish — Home. Two equal layers of the repo, side by side: the Design System
-// (the brand foundation — tokens, type, skinned components) and the Prototypes
-// (working screens built on it). Prototypes render straight off the typed registry
-// (src/data/prototypes.ts), so shipping one is a one-row data edit.
+// CB Fish — Home. A mark-forward hub on white: the brand mark large in navy, then
+// the three layers of the repo — the Design System (live), the Pattern Library
+// (coming soon), and the Prototypes (working screens, straight off the typed
+// registry in src/data/prototypes.ts, so shipping one is a one-row data edit).
 import BaseLayout from '../layouts/BaseLayout.astro';
-import CbfLogo from '../components/shared/cbf-logo.astro';
+import CbfMark from '../components/shared/cbf-mark.astro';
 import { withBase } from '../lib/base';
 import { prototypesByNewest, type PrototypeStatus } from '../data/prototypes';
 
@@ -23,79 +23,40 @@ const STATUS_LABEL: Record<PrototypeStatus, string> = {
   'in-progress': 'In progress',
   archived: 'Archived',
 };
-
-// Brand chips shown on the Design System panel — a glance at the skin.
-const brandChips = [
-  { value: '#1e5386', label: 'Navy' },
-  { value: '#13273e', label: 'Deep' },
-  { value: '#a9a379', label: 'Gold' },
-  { value: '#534c3b', label: 'Bark' },
-];
-
-const dsLinks = [
-  { href: '/design-system/foundations/color', label: 'Color' },
-  { href: '/design-system/foundations/typography', label: 'Typography' },
-  { href: '/design-system/foundations/spacing', label: 'Spacing' },
-  { href: '/design-system/components/esa-button', label: 'Components' },
-];
 ---
-<BaseLayout title="CB Fish — Prototype Library">
-  <div class="lib-bar">
-    <div class="lib-bar__inner">
-      <CbfLogo href={withBase('/')} />
-    </div>
-  </div>
-
-  <header class="lib-head">
-    <h1 class="lib-head__title">Columbia Basin Fish &amp; Wildlife</h1>
-    <p class="lib-head__sub">
-      An Astro brand spoke of the ESA Ecology design system. Two layers: the design
-      system that defines the brand, and the prototypes built on it.
-    </p>
-  </header>
-
-  <main class="home-split">
-
-    <!-- Layer 1 — Design System -->
-    <section class="layer layer--ds">
-      <div class="layer__head">
-        <span class="layer__kicker">Foundation</span>
-        <h2 class="layer__title">Design System</h2>
-      </div>
-      <p class="layer__lede">
-        The brand layer — navy + gold palette, IBM Plex type, spacing scale, and the
-        inherited Ecology components re-skinned for CB Fish.
+<BaseLayout title="CB Fish — Design & Prototypes">
+  <main class="home">
+    <header class="hero">
+      <div class="hero__mark"><CbfMark size="128" /></div>
+      <p class="hero__eyebrow">Columbia Basin Fish &amp; Wildlife Program</p>
+      <h1 class="hero__title">Design &amp; Prototypes</h1>
+      <p class="hero__tagline">
+        An Astro brand spoke of the ESA Ecology design system — the brand language,
+        emerging patterns, and working prototypes for the program, in one place.
       </p>
+    </header>
 
-      <div class="ds-chips" aria-hidden="true">
-        {brandChips.map((c) => (
-          <span class="ds-chip">
-            <span class="ds-chip__sw" style={`background: ${c.value};`}></span>
-            {c.label}
-          </span>
-        ))}
-      </div>
+    <section class="layers" aria-label="Layers">
+      <a class="layer" href={withBase('/design-system')}>
+        <span class="layer__status layer__status--live"><span class="dot"></span>Live</span>
+        <h2 class="layer__title">Design System</h2>
+        <p class="layer__body">The brand layer — navy + gold palette, IBM Plex type, and the inherited Ecology components re-skinned for CB Fish.</p>
+        <span class="layer__go">Open the design system<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
+      </a>
 
-      <ul class="ds-links">
-        {dsLinks.map((l) => (
-          <li><a href={withBase(l.href)}>{l.label}</a></li>
-        ))}
-      </ul>
-
-      <a class="layer__cta" href={withBase('/design-system')}>
-        Open the design system
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      <a class="layer layer--soon" href={withBase('/patterns')}>
+        <span class="layer__status layer__status--soon"><span class="dot"></span>Coming soon</span>
+        <h2 class="layer__title">Pattern Library</h2>
+        <p class="layer__body">Composed, multi-component patterns — page shells, report views, search &amp; filter flows — assembled from the system.</p>
+        <span class="layer__go">Preview<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></span>
       </a>
     </section>
 
-    <!-- Layer 2 — Prototypes -->
-    <section class="layer layer--proto">
-      <div class="layer__head">
-        <span class="layer__kicker">Applied</span>
-        <h2 class="layer__title">Prototypes</h2>
+    <section class="protos" aria-label="Prototypes">
+      <div class="protos__head">
+        <h2>Prototypes</h2>
+        <p>Working screens for the program, built on the system.</p>
       </div>
-      <p class="layer__lede">Working screens for the program, built on the system.</p>
-
       <ul class="proto-list">
         {rows.map((p) => (
           <li class="proto-card">
@@ -119,126 +80,124 @@ const dsLinks = [
       </ul>
     </section>
 
+    <footer class="home__foot">
+      <CbfMark size="22" class="home__foot-mark" />
+      <span>Columbia Basin Fish &amp; Wildlife Program — a brand spoke of ESA Ecology.</span>
+    </footer>
   </main>
 
   <style>
-    /* Brand app bar — the white logo is built for dark surfaces, so it gets one. */
-    .lib-bar { background: var(--color-primary, #1e5386); }
-    .lib-bar__inner {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: var(--spacing-400, 16px) var(--spacing-500, 24px);
-    }
+    .home { max-width: 1040px; margin: 0 auto; padding: 0 var(--spacing-500, 24px); background: var(--color-surface, #fff); }
 
-    .lib-head {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: var(--spacing-800, 64px) var(--spacing-500, 24px) var(--spacing-500, 24px);
+    /* ---- Hero — the mark, big and navy on white ---- */
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: var(--spacing-900, 96px) 0 var(--spacing-800, 64px);
     }
-    .lib-head__title {
+    .hero__mark {
+      color: var(--color-primary, #1e5386);
+      line-height: 0;
+      /* soft brand halo behind the mark for depth */
+      background: radial-gradient(circle at center, var(--color-primary-subtle, #f3f7fc) 0%, transparent 68%);
+      padding: var(--spacing-700, 48px);
+      margin: calc(-1 * var(--spacing-500, 24px)) 0 var(--spacing-400, 16px);
+      filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--color-primary, #1e5386) 18%, transparent));
+    }
+    .hero__eyebrow {
       margin: 0;
-      font-family: var(--font-display, var(--font-sans));
-      font-size: clamp(2rem, 1.6rem + 2vw, 2.75rem);
+      font-size: var(--type-size-100, 0.875rem);
       font-weight: var(--font-weight-medium, 500);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--color-secondary, #2770b2);
+    }
+    .hero__title {
+      margin: var(--spacing-200, 8px) 0 0;
+      font-family: var(--font-display, var(--font-sans));
+      font-weight: var(--font-weight-semibold, 600);
+      font-size: clamp(2.75rem, 2rem + 3.5vw, 4.5rem);
+      line-height: 1.02;
       letter-spacing: -0.02em;
       color: var(--color-text-primary, #171717);
     }
-    .lib-head__sub {
-      margin: var(--spacing-200, 8px) 0 0;
-      max-width: 64ch;
+    .hero__tagline {
+      margin: var(--spacing-400, 16px) auto 0;
+      max-width: 56ch;
       font-size: var(--type-size-300, 1.125rem);
-      line-height: 1.55;
+      line-height: 1.6;
       color: var(--color-text-secondary, #525252);
     }
 
-    /* The split — two equal layers. */
-    .home-split {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: var(--spacing-500, 24px) var(--spacing-500, 24px) var(--spacing-900, 96px);
+    /* ---- Layer cards ---- */
+    .layers {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: var(--spacing-500, 24px);
-      align-items: start;
+      gap: var(--spacing-400, 16px);
+      padding-bottom: var(--spacing-800, 64px);
     }
-
     .layer {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      padding: var(--spacing-600, 32px);
       border: 1px solid var(--color-border, #dcdcdc);
       border-radius: var(--radius-400, 12px);
       background: var(--color-surface, #fff);
-      padding: var(--spacing-600, 32px);
+      transition: border-color 0.14s ease, box-shadow 0.14s ease, transform 0.14s ease;
     }
-    .layer--ds {
-      background:
-        linear-gradient(180deg, var(--color-primary-subtle, #f3f7fc), var(--color-surface, #fff) 220px);
+    .layer:hover {
+      border-color: var(--color-primary-border, #c6dcf1);
+      box-shadow: 0 12px 32px color-mix(in srgb, var(--color-primary, #1e5386) 12%, transparent);
+      transform: translateY(-2px);
     }
-
-    .layer__head { display: flex; flex-direction: column; gap: 2px; }
-    .layer__kicker {
-      font-size: var(--type-size-100, 0.875rem);
-      font-weight: var(--font-weight-medium, 500);
-      color: var(--color-text-muted, #7c7c7c);
+    .layer--soon { background: var(--color-surface-sunken, #f3f7fc); }
+    .layer__status {
+      display: inline-flex; align-items: center; gap: var(--spacing-150, 6px);
+      font-size: var(--type-size-100, 0.8125rem); font-weight: var(--font-weight-medium, 500);
     }
+    .layer__status .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .layer__status--live { color: #1a6f3f; }
+    .layer__status--live .dot { background: #1a9b54; }
+    .layer__status--soon { color: var(--color-text-muted, #7c7c7c); }
+    .layer__status--soon .dot { background: var(--color-secondary, #2770b2); }
     .layer__title {
-      margin: 0;
+      margin: var(--spacing-300, 12px) 0 var(--spacing-200, 8px);
       font-family: var(--font-display, var(--font-sans));
       font-size: var(--type-size-600, 2rem);
       font-weight: var(--font-weight-semibold, 600);
       letter-spacing: -0.01em;
       color: var(--color-text-primary, #171717);
     }
-    .layer__lede {
-      margin: var(--spacing-300, 12px) 0 0;
-      font-size: var(--type-size-200, 1rem);
-      line-height: 1.55;
-      color: var(--color-text-secondary, #525252);
-    }
-
-    /* Design System panel bits */
-    .ds-chips { display: flex; flex-wrap: wrap; gap: var(--spacing-300, 12px); margin: var(--spacing-500, 24px) 0 0; }
-    .ds-chip {
-      display: inline-flex; align-items: center; gap: var(--spacing-200, 8px);
-      font-size: var(--type-size-100, 0.875rem); color: var(--color-text-secondary, #525252);
-    }
-    .ds-chip__sw {
-      width: 20px; height: 20px; border-radius: var(--radius-200, 8px);
-      border: 1px solid color-mix(in srgb, var(--color-text-primary, #000) 10%, transparent);
-    }
-
-    .ds-links {
-      list-style: none; margin: var(--spacing-500, 24px) 0 0; padding: 0;
-      display: flex; flex-wrap: wrap; gap: var(--spacing-200, 8px);
-    }
-    .ds-links a {
-      display: inline-block;
-      padding: var(--spacing-150, 6px) var(--spacing-300, 12px);
-      border: 1px solid var(--color-border, #dcdcdc);
-      border-radius: var(--radius-full, 999px);
-      background: var(--color-surface, #fff);
-      font-size: var(--type-size-100, 0.875rem);
-      color: var(--color-text-secondary, #525252);
-    }
-    .ds-links a:hover { border-color: var(--color-primary, #1e5386); color: var(--color-primary, #1e5386); }
-
-    .layer__cta {
-      display: inline-flex; align-items: center; gap: var(--spacing-200, 8px);
-      margin-top: var(--spacing-600, 32px);
-      padding: var(--spacing-300, 12px) var(--spacing-500, 24px);
-      background: var(--color-primary, #1e5386);
-      color: var(--color-primary-contrast, #fff);
-      border-radius: var(--radius-200, 8px);
-      font-size: var(--type-size-200, 1rem);
+    .layer__body { margin: 0; font-size: var(--type-size-200, 1rem); line-height: 1.55; color: var(--color-text-secondary, #525252); }
+    .layer__go {
+      display: inline-flex; align-items: center; gap: var(--spacing-150, 6px);
+      margin-top: var(--spacing-500, 24px);
       font-weight: var(--font-weight-semibold, 600);
+      font-size: var(--type-size-200, 1rem);
+      color: var(--color-text-link, #1e5386);
     }
-    .layer__cta:hover { background: var(--color-primary-hover, #1a4570); }
-    .layer__cta svg { transition: transform 0.14s ease; }
-    .layer__cta:hover svg { transform: translateX(3px); }
+    .layer__go svg { transition: transform 0.14s ease; }
+    .layer:hover .layer__go svg { transform: translateX(3px); }
+    .layer--soon .layer__go { color: var(--color-text-muted, #7c7c7c); }
 
-    /* Prototype cards */
-    .proto-list { list-style: none; margin: var(--spacing-500, 24px) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--spacing-300, 12px); }
+    /* ---- Prototypes ---- */
+    .protos { padding-bottom: var(--spacing-800, 64px); }
+    .protos__head { margin-bottom: var(--spacing-400, 16px); }
+    .protos__head h2 {
+      margin: 0;
+      font-family: var(--font-display, var(--font-sans));
+      font-size: var(--type-size-500, 1.5rem);
+      font-weight: var(--font-weight-semibold, 600);
+      color: var(--color-text-primary, #171717);
+    }
+    .protos__head p { margin: var(--spacing-100, 4px) 0 0; color: var(--color-text-secondary, #525252); }
+    .proto-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-300, 12px); }
     .proto-card {
       position: relative;
-      padding: var(--spacing-400, 16px);
+      padding: var(--spacing-400, 16px) var(--spacing-500, 24px);
       border: 1px solid var(--color-border, #dcdcdc);
       border-radius: var(--radius-300, 8px);
       transition: background-color 0.12s ease, border-color 0.12s ease;
@@ -254,37 +213,37 @@ const dsLinks = [
     }
     .proto-card__arrow { opacity: 0; transition: opacity 0.12s ease; flex: none; }
     .proto-card:hover .proto-card__arrow { opacity: 0.7; }
-    .proto-card__desc {
-      margin: var(--spacing-150, 6px) 0 var(--spacing-300, 12px);
-      font-size: var(--type-size-100, 0.9375rem);
-      line-height: 1.5;
-      color: var(--color-text-secondary, #525252);
-    }
+    .proto-card__desc { margin: var(--spacing-150, 6px) 0 var(--spacing-300, 12px); font-size: var(--type-size-100, 0.9375rem); line-height: 1.5; color: var(--color-text-secondary, #525252); }
     .proto-card__foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-300, 12px); }
-    .proto-card__meta {
-      font-size: var(--type-size-100, 0.875rem);
-      color: var(--color-text-muted, #7c7c7c);
-      font-variant-numeric: tabular-nums;
-    }
+    .proto-card__meta { font-size: var(--type-size-100, 0.875rem); color: var(--color-text-muted, #7c7c7c); font-variant-numeric: tabular-nums; }
 
     .lib-status {
       display: inline-flex; align-items: center; gap: var(--spacing-150, 6px);
       padding: 2px var(--spacing-250, 10px) 2px var(--spacing-200, 8px);
       border-radius: var(--radius-full, 999px);
-      font-size: var(--type-size-100, 0.875rem);
-      font-weight: var(--font-weight-medium, 500);
-      white-space: nowrap;
+      font-size: var(--type-size-100, 0.875rem); font-weight: var(--font-weight-medium, 500); white-space: nowrap;
     }
     .lib-status__dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-    .lib-status[data-status='live']        { background: #e7f4ec; color: #1a6f3f; }
+    .lib-status[data-status='live'] { background: #e7f4ec; color: #1a6f3f; }
     .lib-status[data-status='live'] .lib-status__dot { background: #1a9b54; }
     .lib-status[data-status='in-progress'] { background: #fbf0d6; color: #876300; }
     .lib-status[data-status='in-progress'] .lib-status__dot { background: #e0a400; }
-    .lib-status[data-status='archived']    { background: var(--color-surface-sunken, #f3f4f6); color: var(--color-text-muted, #6b7280); }
+    .lib-status[data-status='archived'] { background: var(--color-surface-sunken, #f3f4f6); color: var(--color-text-muted, #6b7280); }
     .lib-status[data-status='archived'] .lib-status__dot { background: var(--color-text-muted, #9ca3af); }
 
-    @media (max-width: 820px) {
-      .home-split { grid-template-columns: 1fr; }
+    /* ---- Footer ---- */
+    .home__foot {
+      display: flex; align-items: center; gap: var(--spacing-250, 10px);
+      padding: var(--spacing-500, 24px) 0 var(--spacing-800, 64px);
+      border-top: 1px solid var(--color-border, #dcdcdc);
+      color: var(--color-text-muted, #7c7c7c);
+      font-size: var(--type-size-100, 0.875rem);
+    }
+    .home__foot-mark { color: var(--color-primary, #1e5386); flex: none; }
+
+    @media (max-width: 720px) {
+      .layers, .proto-list { grid-template-columns: 1fr; }
+      .hero { padding-top: var(--spacing-800, 64px); }
     }
   </style>
 </BaseLayout>

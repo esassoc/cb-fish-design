@@ -1,0 +1,121 @@
+---
+// CB Fish — Pattern Library (coming soon). A placeholder that sets the direction:
+// composed, multi-component patterns assembled from the design system.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CbfMark from '../../components/shared/cbf-mark.astro';
+import { withBase } from '../../lib/base';
+
+const planned = [
+  { title: 'Application page shell', body: 'The standard chrome — admin bar, header nav, breadcrumb strip, sidebar + content card.' },
+  { title: 'Report &amp; data views', body: 'Filterable report center, result lists, stat tiles, and the empty / loading states.' },
+  { title: 'Search &amp; filter flows', body: 'The command palette, faceted results page, and the filter pill patterns working together.' },
+  { title: 'Form flows', body: 'Multi-step forms, validation, and review — composed from the form primitives.' },
+];
+---
+<BaseLayout title="CB Fish — Pattern Library (coming soon)">
+  <main class="soon">
+    <a class="soon__back" href={withBase('/')}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+      Home
+    </a>
+
+    <header class="soon__hero">
+      <div class="soon__mark"><CbfMark size="96" /></div>
+      <span class="soon__status"><span class="dot"></span>Coming soon</span>
+      <h1 class="soon__title">Pattern Library</h1>
+      <p class="soon__tagline">
+        The design system gives you the bricks. The pattern library will give you the buildings —
+        composed, multi-component patterns assembled from the primitives, documented and ready to lift.
+      </p>
+      <a class="soon__cta" href={withBase('/design-system')}>
+        Explore the design system
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+    </header>
+
+    <section class="soon__planned" aria-label="Planned patterns">
+      <h2 class="soon__planned-head">What's coming</h2>
+      <div class="soon__grid">
+        {planned.map((p) => (
+          <article class="soon__card">
+            <h3 set:html={p.title}></h3>
+            <p set:html={p.body}></p>
+          </article>
+        ))}
+      </div>
+    </section>
+  </main>
+
+  <style>
+    .soon { max-width: 1040px; margin: 0 auto; padding: var(--spacing-600, 32px) var(--spacing-500, 24px) var(--spacing-900, 96px); }
+    .soon__back {
+      display: inline-flex; align-items: center; gap: var(--spacing-150, 6px);
+      font-size: var(--type-size-100, 0.875rem); color: var(--color-text-secondary, #525252);
+    }
+    .soon__back:hover { color: var(--color-primary, #1e5386); }
+
+    .soon__hero {
+      display: flex; flex-direction: column; align-items: center; text-align: center;
+      padding: var(--spacing-800, 64px) 0;
+    }
+    .soon__mark {
+      color: var(--color-primary, #1e5386); line-height: 0;
+      background: radial-gradient(circle at center, var(--color-primary-subtle, #f3f7fc) 0%, transparent 68%);
+      padding: var(--spacing-600, 32px);
+      margin-bottom: var(--spacing-300, 12px);
+      filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--color-primary, #1e5386) 16%, transparent));
+    }
+    .soon__status {
+      display: inline-flex; align-items: center; gap: var(--spacing-150, 6px);
+      font-size: var(--type-size-100, 0.8125rem); font-weight: var(--font-weight-medium, 500);
+      color: var(--color-text-muted, #7c7c7c);
+    }
+    .soon__status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-secondary, #2770b2); }
+    .soon__title {
+      margin: var(--spacing-200, 8px) 0 0;
+      font-family: var(--font-display, var(--font-sans));
+      font-weight: var(--font-weight-semibold, 600);
+      font-size: clamp(2.5rem, 1.9rem + 3vw, 4rem);
+      line-height: 1.04; letter-spacing: -0.02em;
+      color: var(--color-text-primary, #171717);
+    }
+    .soon__tagline {
+      margin: var(--spacing-400, 16px) auto 0; max-width: 58ch;
+      font-size: var(--type-size-300, 1.125rem); line-height: 1.6;
+      color: var(--color-text-secondary, #525252);
+    }
+    .soon__cta {
+      display: inline-flex; align-items: center; gap: var(--spacing-200, 8px);
+      margin-top: var(--spacing-600, 32px);
+      padding: var(--spacing-300, 12px) var(--spacing-500, 24px);
+      background: var(--color-primary, #1e5386); color: var(--color-primary-contrast, #fff);
+      border-radius: var(--radius-200, 8px);
+      font-weight: var(--font-weight-semibold, 600); font-size: var(--type-size-200, 1rem);
+    }
+    .soon__cta:hover { background: var(--color-primary-hover, #1a4570); }
+    .soon__cta svg { transition: transform 0.14s ease; }
+    .soon__cta:hover svg { transform: translateX(3px); }
+
+    .soon__planned { padding-top: var(--spacing-600, 32px); border-top: 1px solid var(--color-border, #dcdcdc); }
+    .soon__planned-head {
+      margin: 0 0 var(--spacing-400, 16px);
+      font-family: var(--font-display, var(--font-sans));
+      font-size: var(--type-size-500, 1.5rem); font-weight: var(--font-weight-semibold, 600);
+      color: var(--color-text-primary, #171717);
+    }
+    .soon__grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-400, 16px); }
+    .soon__card {
+      padding: var(--spacing-500, 24px);
+      border: 1px solid var(--color-border, #dcdcdc); border-radius: var(--radius-300, 8px);
+      background: var(--color-surface-sunken, #f3f7fc);
+    }
+    .soon__card h3 {
+      margin: 0 0 var(--spacing-150, 6px);
+      font-size: var(--type-size-300, 1.0625rem); font-weight: var(--font-weight-semibold, 600);
+      color: var(--color-text-primary, #171717);
+    }
+    .soon__card p { margin: 0; font-size: var(--type-size-100, 0.9375rem); line-height: 1.55; color: var(--color-text-secondary, #525252); }
+
+    @media (max-width: 720px) { .soon__grid { grid-template-columns: 1fr; } }
+  </style>
+</BaseLayout>
