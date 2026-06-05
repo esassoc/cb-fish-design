@@ -12,6 +12,7 @@
     "handoff:all": "node scripts/gen-handoff.mjs"
   },
   "dependencies": {
+    "@esa/docs": "file:../ecology/packages/docs",
     "@esa/ecology": "file:../ecology/packages/ecology",
     "@esa/tokens": "file:../ecology/packages/tokens",
     "astro": "^5.0.0"

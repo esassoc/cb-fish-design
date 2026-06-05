@@ -1,17 +1,12 @@
 // Single source of truth for the design-system sidebar + breadcrumbs.
 // Scoped to the components CB Fish actually uses / themes — a curated subset of
 // the Ecology set, not the full hub catalog. Hrefs are root-relative and
-// base-less; DocsLayout wraps them with withBase() at render.
-
-export interface NavItem {
-  label: string;
-  href: string;
-  status?: 'stable' | 'reference';
-}
-export interface NavGroup {
-  label: string;
-  items: NavItem[];
-}
+// base-less; DocsShell wraps them with withBase() at render.
+//
+// Types come from @esa/docs so the data stays structurally compatible with the
+// shared shell; only the DATA is per-spoke.
+import type { NavItem, NavGroup } from '@esa/docs/nav';
+export type { NavItem, NavGroup };
 
 export const foundations: NavGroup = {
   label: 'Foundations',
