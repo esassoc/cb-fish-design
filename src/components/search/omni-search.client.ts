@@ -4,10 +4,10 @@
 import {
   renderScopePills,
   renderResults,
-  renderRecent,
   filterData,
   impersonateUser,
   initImpersonationRevert,
+  closePersonCard,
 } from './omni-render';
 import { SCOPES, type Entity, type ScopeId } from './omni-data';
 import { withBase } from '../../lib/base';
@@ -20,7 +20,7 @@ export function initOmniSearch(): void {
   const scopesEl = omni.querySelector<HTMLElement>('[data-omni-scopes]')!;
   const resultsEl = omni.querySelector<HTMLElement>('[data-omni-results]')!;
   const emptyEl = omni.querySelector<HTMLElement>('[data-omni-empty]')!;
-  const recentEl = omni.querySelector<HTMLElement>('[data-omni-recent]')!;
+  const clearBtn = omni.querySelector<HTMLButtonElement>('[data-omni-clear]')!;
   const showall = omni.querySelector<HTMLElement>('[data-omni-showall]')!;
   const showallLabel = omni.querySelector<HTMLElement>('[data-omni-showall-label]')!;
   const trigger = document.querySelector<HTMLElement>('[data-omni-open]');
@@ -37,6 +37,8 @@ export function initOmniSearch(): void {
 
   const handlers = {
     onSelect: (item: Entity) => {
+      // Publications fork to their own document-search page (mirrors prod).
+      if (item.type === 'publication') { goToPublications(); return; }
       console.log('[CBF-8117] selected:', item.type, '—', item.title);
       closePalette();
     },
@@ -50,15 +52,24 @@ export function initOmniSearch(): void {
     rows.forEach((row, i) => row.addEventListener('mousemove', () => setActive(i)));
   }
 
+  function selectScope(id: ScopeId): void {
+    // Publications fork to their own document-search page (mirrors prod).
+    if (id === 'publication') { goToPublications(); return; }
+    scope = id;
+    refresh();
+  }
+
   function refresh(): void {
-    renderScopePills(scopesEl, { scope, query: input.value, onSelect: (id) => { scope = id; refresh(); } });
-    // no query → no counts, no results: show the Recent + illustration empty state
+    renderScopePills(scopesEl, { scope, query: input.value, onSelect: selectScope });
+    // empty input → the clear (×) doubles as a close affordance for the palette
     const isDefault = !input.value.trim();
+    clearBtn.setAttribute('aria-label', isDefault ? 'Close' : 'Clear');
     if (isDefault) {
+      // no query → illustration-only empty state (Recent now lives in the nav)
       emptyEl.hidden = false;
       resultsEl.hidden = true;
       showall.hidden = true;
-      rows = renderRecent(recentEl, handlers);
+      rows = [];
     } else {
       emptyEl.hidden = true;
       resultsEl.hidden = false;
@@ -80,6 +91,11 @@ export function initOmniSearch(): void {
     window.location.href = withBase('/search') + (qs ? `?${qs}` : '');
   }
 
+  function goToPublications(): void {
+    const q = input.value.trim();
+    window.location.href = withBase('/publications') + (q ? `?q=${encodeURIComponent(q)}` : '');
+  }
+
   function openPalette(): void {
     omni!.hidden = false;
     input.value = '';
@@ -88,12 +104,19 @@ export function initOmniSearch(): void {
     setTimeout(() => input.focus(), 0);
   }
   function closePalette(): void {
+    closePersonCard();
     omni!.hidden = true;
   }
 
   // ---- wiring ----
   input.addEventListener('input', refresh);
-  omni.querySelector('[data-omni-clear]')!.addEventListener('click', () => { input.value = ''; refresh(); input.focus(); });
+  // clear when there's a query; close the palette when the input is already empty
+  clearBtn.addEventListener('click', () => {
+    if (input.value.trim() === '') { closePalette(); return; }
+    input.value = '';
+    refresh();
+    input.focus();
+  });
   omni.querySelector('[data-omni-close]')!.addEventListener('click', closePalette);
   showall.addEventListener('click', goToResults);
   trigger?.addEventListener('click', openPalette);
@@ -107,8 +130,7 @@ export function initOmniSearch(): void {
     else if (e.key === 'Tab') {
       e.preventDefault();
       const i = SCOPES.findIndex((s) => s.id === scope);
-      scope = SCOPES[(i + (e.shiftKey ? SCOPES.length - 1 : 1)) % SCOPES.length].id;
-      refresh();
+      selectScope(SCOPES[(i + (e.shiftKey ? SCOPES.length - 1 : 1)) % SCOPES.length].id);
     }
   });
 

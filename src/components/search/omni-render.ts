@@ -7,7 +7,6 @@ import {
   SCOPES,
   SCOPE_BY_ID,
   DATA,
-  RECENT,
   GROUP_ORDER,
   type Entity,
   type EntityType,
@@ -45,21 +44,20 @@ function icon(name: IconName, px: number): string {
 export function makeRow(item: Entity, query: string, lead: boolean, h: RowHandlers): HTMLElement {
   const row = document.createElement('div');
   row.className = 'cbf-result';
+  if (item.type === 'person') row.classList.add('cbf-result--person');
   const leadHtml = lead ? `<span class="cbf-result__lead">${icon(SCOPE_BY_ID[item.type].icon, 16)}</span>` : '';
-  const impHtml =
-    item.type === 'person'
-      ? `<button class="cbf-impersonate" type="button" data-impersonate>${icon('hat-glasses', 15)}Impersonate</button>`
-      : '';
   row.innerHTML = `${leadHtml}
     <div class="cbf-result__body">
       <div class="cbf-result__title">${highlight(item.title, query)}</div>
       <div class="cbf-result__sub">${esc(item.sub)}</div>
     </div>
-    ${impHtml}
     <span class="cbf-result__chevron cbf-icon">${svg('chevron-right', 17)}</span>`;
-  row.addEventListener('click', () => h.onSelect(item));
-  const imp = row.querySelector<HTMLElement>('[data-impersonate]');
-  if (imp) imp.addEventListener('click', (e) => { e.stopPropagation(); h.onImpersonate(item); });
+  // People don't navigate — they reveal a contact card anchored to the row.
+  if (item.type === 'person' && item.contact) {
+    row.addEventListener('click', () => openPersonCard(row, item, h));
+  } else {
+    row.addEventListener('click', () => h.onSelect(item));
+  }
   return row;
 }
 
@@ -116,7 +114,11 @@ export function renderScopeFacets(
 /** Grouped results for a query. Returns the flat row list (for keyboard nav). */
 export function renderResults(
   container: HTMLElement,
-  opts: { query: string; scope: ScopeId } & RowHandlers,
+  opts: { query: string; scope: ScopeId } & RowHandlers & {
+    /** When set, the Publications group collapses to a single CTA that forks to
+        the document-search page instead of listing rows (used on /search). */
+    onPublicationsAll?: (count: number) => void;
+  },
 ): HTMLElement[] {
   const q = opts.query.trim();
   const matches = filterData(opts.query, opts.scope);
@@ -132,6 +134,24 @@ export function renderResults(
     if (items.length === 0) return;
     const s = SCOPE_BY_ID[type];
     const g = groupEl(s.icon, s.label, String(items.length));
+    if (type === 'publication' && opts.onPublicationsAll) {
+      // Publications fork to their own search — show one CTA, no listings.
+      const n = items.length;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cbf-result cbf-result--allbtn';
+      btn.innerHTML = `
+        <div class="cbf-result__body">
+          <div class="cbf-result__title">${n} Publication result${n === 1 ? '' : 's'}</div>
+          <div class="cbf-result__sub">Open in Publications Search</div>
+        </div>
+        <span class="cbf-result__chevron cbf-icon">${svg('chevron-right', 18)}</span>`;
+      btn.addEventListener('click', () => opts.onPublicationsAll!(n));
+      out.push(btn);
+      g.appendChild(btn);
+      container.appendChild(g);
+      return;
+    }
     items.forEach((item) => {
       const row = makeRow(item, q, false, opts);
       out.push(row);
@@ -142,18 +162,121 @@ export function renderResults(
   return out;
 }
 
-/** Recently-viewed list for the default (no-query) view. */
-export function renderRecent(container: HTMLElement, h: RowHandlers): HTMLElement[] {
-  container.innerHTML = '';
-  const out: HTMLElement[] = [];
-  const g = groupEl('history', 'Recent', '');
-  RECENT.forEach((item) => {
-    const row = makeRow(item, '', true, h);
-    out.push(row);
-    g.appendChild(row);
+// ---- person contact card (popover, shared so palette + page behave identically) ----
+// Anchored to the clicked row; mirrors prod's "Find Person" modal without stacking a
+// second modal over the palette. One card open at a time; dismiss on outside-click/Esc.
+let openCard: HTMLElement | null = null;
+let cardCleanup: (() => void) | null = null;
+
+export function closePersonCard(): void {
+  if (cardCleanup) cardCleanup();
+  openCard?.remove();
+  openCard = null;
+  cardCleanup = null;
+}
+
+/** vCard data URL so the download is a real .vcf (no backend needed). */
+function vcardHref(p: Entity): string {
+  const c = p.contact!;
+  const [first, ...rest] = p.title.split(' ');
+  const lines = [
+    'BEGIN:VCARD', 'VERSION:3.0',
+    `N:${rest.join(' ')};${first};;;`,
+    `FN:${p.title}`,
+    `ORG:${c.org}`,
+    `EMAIL;TYPE=WORK:${c.email}`,
+  ];
+  if (c.businessPhone) lines.push(`TEL;TYPE=WORK,VOICE:${c.businessPhone}`);
+  if (c.mobilePhone) lines.push(`TEL;TYPE=CELL:${c.mobilePhone}`);
+  if (c.address) lines.push(`ADR;TYPE=WORK:;;${c.address.join(', ')};;;`);
+  lines.push('END:VCARD');
+  return 'data:text/vcard;charset=utf-8,' + encodeURIComponent(lines.join('\r\n'));
+}
+
+function detailRow(iconName: IconName, label: string, valueHtml: string): string {
+  return `<div class="cbf-person-card__row">
+      <dt class="cbf-person-card__label">${icon(iconName, 15)}${esc(label)}</dt>
+      <dd class="cbf-person-card__value">${valueHtml}</dd>
+    </div>`;
+}
+
+/** Position the card beside its anchor, preferring the right side, clamped to the viewport. */
+function positionCard(card: HTMLElement, anchor: HTMLElement): void {
+  const a = anchor.getBoundingClientRect();
+  const cw = card.offsetWidth;
+  const ch = card.offsetHeight;
+  const gap = 8;
+  const margin = 12;
+  let left = a.right + gap;
+  if (left + cw > window.innerWidth - margin) left = a.left - gap - cw; // flip to the left
+  if (left < margin) left = Math.max(margin, window.innerWidth - margin - cw); // last resort
+  let top = a.top;
+  if (top + ch > window.innerHeight - margin) top = window.innerHeight - margin - ch;
+  if (top < margin) top = margin;
+  card.style.left = `${Math.round(left)}px`;
+  card.style.top = `${Math.round(top)}px`;
+}
+
+export function openPersonCard(anchor: HTMLElement, person: Entity, h: RowHandlers): void {
+  closePersonCard();
+  const c = person.contact!;
+  const card = document.createElement('div');
+  card.className = 'cbf-person-card';
+  card.setAttribute('role', 'dialog');
+  card.setAttribute('aria-label', `Contact: ${person.title}`);
+
+  const rows = [
+    detailRow('building-2', 'Organization', esc(c.org)),
+    detailRow('mail', 'Email', `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`),
+    c.businessPhone ? detailRow('phone', 'Business phone', esc(c.businessPhone)) : '',
+    c.mobilePhone ? detailRow('smartphone', 'Mobile phone', esc(c.mobilePhone)) : '',
+    c.address ? detailRow('map-pin', 'Address', c.address.map(esc).join('<br>')) : '',
+  ].join('');
+
+  card.innerHTML = `
+    <div class="cbf-person-card__head">
+      <span class="cbf-person-card__head-title">${icon('circle-user', 16)} Find Person</span>
+      <button class="cbf-person-card__close" type="button" data-card-close aria-label="Close">${svg('x', 15)}</button>
+    </div>
+    <div class="cbf-person-card__body">
+      <p class="cbf-person-card__name">${esc(person.title)}</p>
+      <dl class="cbf-person-card__list">${rows}</dl>
+    </div>
+    <div class="cbf-person-card__foot">
+      <a class="cbf-person-card__vcard" href="${vcardHref(person)}" download="${esc(person.title)}.vcf">${icon('download', 15)} Download vCard</a>
+      <button class="cbf-impersonate" type="button" data-impersonate>${icon('hat-glasses', 15)} Impersonate</button>
+    </div>`;
+
+  document.body.appendChild(card);
+  openCard = card; // tracked so closePersonCard() can remove it (one card at a time)
+  positionCard(card, anchor);
+  anchor.classList.add('is-cardopen');
+
+  card.querySelector('[data-card-close]')!.addEventListener('click', closePersonCard);
+  card.querySelector('[data-impersonate]')!.addEventListener('click', () => {
+    impersonateUser(person);
+    closePersonCard();
   });
-  container.appendChild(g);
-  return out;
+
+  const onDown = (e: MouseEvent) => { if (!card.contains(e.target as Node)) closePersonCard(); };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') { e.stopPropagation(); closePersonCard(); }
+  };
+  const onScroll = () => positionCard(card, anchor);
+  // defer so the originating click doesn't immediately dismiss the card
+  setTimeout(() => document.addEventListener('mousedown', onDown), 0);
+  document.addEventListener('keydown', onKey, true);
+  window.addEventListener('resize', onScroll);
+  // capture-phase: reposition when ANY scroll container (palette body, page) moves
+  document.addEventListener('scroll', onScroll, true);
+
+  cardCleanup = () => {
+    anchor.classList.remove('is-cardopen');
+    document.removeEventListener('mousedown', onDown);
+    document.removeEventListener('keydown', onKey, true);
+    window.removeEventListener('resize', onScroll);
+    document.removeEventListener('scroll', onScroll, true);
+  };
 }
 
 // ---- impersonation (shared so palette + page behave identically) ----

@@ -4,6 +4,7 @@
 // the q / scope URL params and filters live as you type.
 import { renderScopeFacets, renderResults, filterData, esc, impersonateUser, initImpersonationRevert } from './omni-render';
 import { type Entity, type ScopeId } from './omni-data';
+import { withBase } from '../../lib/base';
 
 export function initSearchPage(): void {
   const root = document.querySelector<HTMLElement>('[data-search-page]');
@@ -17,8 +18,17 @@ export function initSearchPage(): void {
   let scope: ScopeId = (params.get('scope') as ScopeId) || 'all';
   input.value = params.get('q') ?? '';
 
+  function goToPublications(): void {
+    const q = input.value.trim();
+    window.location.href = withBase('/publications') + (q ? `?q=${encodeURIComponent(q)}` : '');
+  }
+
   const handlers = {
-    onSelect: (item: Entity) => console.log('[CBF-8117] open:', item.type, '—', item.title),
+    // Publications fork to their own document-search page (mirrors prod).
+    onSelect: (item: Entity) => {
+      if (item.type === 'publication') { goToPublications(); return; }
+      console.log('[CBF-8117] open:', item.type, '—', item.title);
+    },
     onImpersonate: (item: Entity) => impersonateUser(item),
   };
 
@@ -31,15 +41,22 @@ export function initSearchPage(): void {
   }
 
   function update(): void {
-    renderScopeFacets(facetsEl, { scope, query: input.value, onSelect: (id) => { scope = id; syncUrl(); update(); } });
+    renderScopeFacets(facetsEl, {
+      scope,
+      query: input.value,
+      onSelect: (id) => {
+        if (id === 'publication') { goToPublications(); return; }
+        scope = id; syncUrl(); update();
+      },
+    });
     const q = input.value.trim();
     if (!q) {
       titleEl.textContent = 'Search';
       resultsEl.innerHTML =
-        '<p class="cbf-result-empty">Enter a keyword to search projects, contracts, people, publications, and funds.</p>';
+        '<p class="cbf-result-empty">Enter a keyword to search projects, contracts, people, and publications.</p>';
       return;
     }
-    renderResults(resultsEl, { query: input.value, scope, ...handlers });
+    renderResults(resultsEl, { query: input.value, scope, ...handlers, onPublicationsAll: goToPublications });
     const n = filterData(input.value, scope).length;
     titleEl.innerHTML = `Search results for: &ldquo;${esc(q)}&rdquo; <span class="cbf-title-count">${n}</span>`;
   }

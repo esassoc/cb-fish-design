@@ -1,0 +1,297 @@
+---
+// /publications — the document (full-text) search results page (CBF-8117).
+// Publications "fork" out of the unified /search into this prod-style flow
+// ("Publications Search → By Text in Documents"): a tabbed search-mode strip, a
+// Search/Clear field, and [pdf]-badged document hits with green Viewer paths. Built
+// to the same app-page chrome as /search (bordered card + gold breadcrumb strip).
+// Rows + filtering are painted by publications-page.client from a static corpus.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import CbfIcon from '../components/search/cbf-icon.astro';
+import EsaBreadcrumbs from '@esa/ecology/esa-breadcrumbs.astro';
+import { withBase } from '../lib/base';
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+const crumbs = [
+  { label: 'Home', href: withBase('/'), icon: homeIcon },
+  { label: 'Interactive Data and Reports' },
+  { label: 'Publications Search' },
+  { label: 'By Text in Documents' },
+];
+
+// Search modes mirror prod; only "By Text in Documents" is wired in this prototype.
+const tabs = [
+  { label: 'By Title, Description, Type, Author or Publish Date' },
+  { label: 'By Project and Contract' },
+  { label: 'By Document ID' },
+  { label: 'By Text in Documents', active: true },
+];
+---
+<BaseLayout title="Publications Search — Columbia Basin Fish & Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-app-page" data-pubs-page>
+    <EsaContainer maxWidth="1920px">
+      <div class="cbf-app-card">
+        <div class="cbf-app-card__crumb">
+          <EsaBreadcrumbs items={crumbs} />
+        </div>
+
+        <div class="cbf-app-card__body">
+          <h1 class="cbf-page-title">By Text in Documents</h1>
+
+          <nav class="cbf-pubs__tabs" aria-label="Publication search modes">
+            {tabs.map((t) => (
+              <a class:list={["cbf-pubs__tab", t.active && "is-active"]} href="#" aria-current={t.active ? "page" : undefined}>
+                {t.label}
+              </a>
+            ))}
+          </nav>
+
+          <div class="cbf-pubs__searchrow">
+            <label class="cbf-pubs__field">
+              <CbfIcon name="search" size={20} />
+              <input
+                type="text"
+                data-pubs-input
+                placeholder="Search the full text of program documents…"
+                autocomplete="off"
+              />
+            </label>
+            <button class="cbf-pubs__btn cbf-pubs__btn--primary" type="button" data-pubs-search>Search</button>
+            <button class="cbf-pubs__btn" type="button" data-pubs-clear>Clear</button>
+          </div>
+          <p class="cbf-pubs__hint">
+            Use Google syntax for more specific searches. For example:
+            <code>"fall chinook" OR salmon</code>. Minimum search term length is 3 characters.
+          </p>
+
+          <div class="cbf-pubs__results" data-pubs-results></div>
+        </div>
+      </div>
+    </EsaContainer>
+  </main>
+
+  <script>
+    import { initPublicationsPage } from '../components/search/publications-page.client';
+    initPublicationsPage();
+  </script>
+</BaseLayout>
+
+<style>
+  .cbf-app-page {
+    padding-block: var(--spacing-600) var(--spacing-800);
+  }
+
+  /* bordered content card with a gold breadcrumb strip on top (matches /search) */
+  .cbf-app-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 80vh;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    overflow: hidden;
+    background: var(--color-surface);
+    box-shadow: 0 1px 3px rgba(19, 39, 62, 0.08);
+  }
+  .cbf-app-card__crumb {
+    background: var(--color-gold-50);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--spacing-400) var(--spacing-600);
+  }
+  .cbf-app-card__crumb :global(.esa-breadcrumbs) {
+    --breadcrumbs-link-color: var(--color-gray-800, #464646);
+    --breadcrumbs-link-hover: var(--color-primary);
+  }
+  .cbf-app-card__body {
+    flex: 1;
+    padding: var(--spacing-600);
+  }
+  .cbf-page-title {
+    margin: 0 0 var(--spacing-400);
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-medium);
+    font-size: 40px;
+    line-height: 40px;
+    letter-spacing: -1px;
+    color: var(--color-surface-inverse);
+  }
+
+  /* search-mode tabs */
+  .cbf-pubs__tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-200);
+    margin-bottom: var(--spacing-500);
+    padding-bottom: var(--spacing-400);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-pubs__tab {
+    padding: 8px var(--spacing-400);
+    border-radius: var(--radius-100);
+    color: var(--color-primary);
+    font-size: 16px;
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+  }
+  .cbf-pubs__tab:hover {
+    background: var(--color-primary-subtle);
+  }
+  .cbf-pubs__tab.is-active {
+    background: var(--color-secondary);
+    color: var(--color-text-inverse, #fff);
+  }
+
+  /* search field + buttons */
+  .cbf-pubs__searchrow {
+    display: flex;
+    align-items: stretch;
+    gap: var(--spacing-300);
+  }
+  .cbf-pubs__field {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300);
+    padding: var(--spacing-300) var(--spacing-400);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    background: var(--color-surface);
+  }
+  .cbf-pubs__field:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-subtle);
+  }
+  .cbf-pubs__field :global(.cbf-icon) {
+    color: var(--color-text-muted);
+    display: inline-flex;
+  }
+  .cbf-pubs__field input {
+    flex: 1;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 18px;
+    color: var(--color-text-primary);
+  }
+  .cbf-pubs__field input::placeholder {
+    color: var(--cbf-text-placeholder);
+  }
+  .cbf-pubs__btn {
+    padding: 0 var(--spacing-500);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    background: var(--color-surface);
+    color: var(--color-primary);
+    font-size: 16px;
+    font-weight: var(--font-weight-medium);
+  }
+  .cbf-pubs__btn:hover {
+    background: var(--color-primary-subtle);
+  }
+  .cbf-pubs__btn--primary {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-text-inverse, #fff);
+  }
+  .cbf-pubs__btn--primary:hover {
+    background: var(--color-primary-hover);
+  }
+  .cbf-pubs__hint {
+    margin: var(--spacing-300) 0 0;
+    font-size: 14px;
+    color: var(--color-text-muted);
+  }
+  .cbf-pubs__hint code {
+    padding: 1px 5px;
+    border-radius: var(--radius-100);
+    background: var(--color-surface-sunken);
+    font-size: 13px;
+  }
+</style>
+
+<style is:global>
+  /* result list painted by publications-page.client */
+  .cbf-pubs__results { margin-top: var(--spacing-500); }
+  .cbf-pubs__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--spacing-300);
+    padding-bottom: var(--spacing-300);
+    margin-bottom: var(--spacing-400);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-pubs__count {
+    font-size: 16px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-pubs__pages {
+    font-size: 15px;
+    color: var(--color-text-muted);
+  }
+  .cbf-pubs__page {
+    padding: 0 4px;
+    color: var(--color-primary);
+  }
+  .cbf-pubs__page:hover { text-decoration: underline; }
+  .cbf-pubs__page.is-current {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .cbf-pubs__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-500);
+  }
+  .cbf-pubs__doc { max-width: 70ch; }
+  .cbf-pubs__doc-title {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0 0 4px;
+    font-family: var(--font-sans);
+    font-size: 18px;
+    font-weight: var(--font-weight-medium);
+    line-height: 1.3;
+  }
+  .cbf-pubs__doc-title a { color: var(--color-secondary); }
+  .cbf-pubs__doc-title a:hover { text-decoration: underline; }
+  .cbf-pubs__fmt {
+    flex: none;
+    color: var(--color-text-muted);
+    font-size: 14px;
+    font-weight: var(--font-weight-regular);
+  }
+  .cbf-pubs__snippet {
+    margin: 0 0 4px;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--color-text-primary);
+  }
+  .cbf-pubs__snippet mark {
+    background: var(--cbf-search-highlight);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+  }
+  /* prod renders the document path in green — keep that tell */
+  .cbf-pubs__path {
+    font-size: 14px;
+    color: var(--color-green-700);
+    word-break: break-all;
+  }
+  .cbf-pubs__path:hover { text-decoration: underline; }
+
+  .cbf-pubs__empty {
+    padding: var(--spacing-600) 0;
+    font-size: 16px;
+    color: var(--color-text-muted);
+  }
+</style>

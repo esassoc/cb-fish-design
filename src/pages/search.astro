@@ -238,6 +238,27 @@ const crumbs = [
     font-size: 16px;
   }
 
+  /* Publications CTA — single button that forks to the document-search page */
+  .cbf-search-surface .cbf-result--allbtn {
+    width: 100%;
+    text-align: left;
+    padding: var(--spacing-400) var(--spacing-500);
+    border-left: 3px solid transparent;
+  }
+  .cbf-search-surface .cbf-result--allbtn .cbf-result__title {
+    color: var(--color-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+  .cbf-search-surface .cbf-result--allbtn .cbf-result__chevron {
+    color: var(--color-secondary);
+    opacity: 1;
+  }
+  .cbf-search-surface .cbf-result--allbtn:hover,
+  .cbf-search-surface .cbf-result--allbtn.is-active {
+    background: var(--color-primary-subtle);
+    border-left-color: var(--color-secondary);
+  }
+
   /* sidebar facet items (JS-built → global, contained under .cbf-search-surface) */
   .cbf-search-surface .cbf-facet {
     display: flex;

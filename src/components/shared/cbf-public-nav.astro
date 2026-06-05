@@ -69,14 +69,11 @@ const funding = [
   </EsaNavDropdown>
 
   <div class="cbf-nav-actions" slot="end">
-    {/*
-      Hidden for now — duplicative of the search palette's Recent list.
-      NOTE: this header "Recent" is intended for recently VISITED PAGES (not
-      recent searches), so it may return as a distinct feature later.
-      <button class="cbf-nav-link" type="button">
-        <CbfIcon name="history" size={16} /> Recent <CbfIcon name="chevron-down" size={14} />
-      </button>
-    */}
+    {/* Recent = recently VISITED PAGES, distinct from search. Lives here in the
+        header now that the palette's no-query view is illustration-only. */}
+    <button class="cbf-nav-link" type="button">
+      <CbfIcon name="history" size={16} /> Recent <CbfIcon name="chevron-down" size={14} />
+    </button>
     <a class="cbf-nav-link" href="#">
       <CbfIcon name="layout-dashboard" size={16} /> Dashboard
     </a>

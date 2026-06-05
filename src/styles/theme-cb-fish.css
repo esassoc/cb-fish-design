@@ -109,6 +109,7 @@
   --cbf-surface-section-head: #f5f5f5;  /* result section header bar */
   --cbf-amber-attention:      #f6c244;  /* impersonation state badge/text */
   --cbf-text-placeholder:     #9aa3ad;  /* input placeholder text */
+  --cbf-search-highlight:     #ffe9b0;  /* matched-term <mark> background */
 
 }
 
