@@ -9,6 +9,7 @@
 // [data-theme] block and :root have equal specificity, so source order decides.
 import DocsShell from '@esa/docs/DocsShell.astro';
 import '../styles/theme-cb-fish.css';
+import CbfMark from '../components/shared/cbf-mark.astro';
 import { allGroups } from '../data/ds-nav';
 import { withBase } from '../lib/base';
 
@@ -28,6 +29,8 @@ const { title = 'CB Fish — Design System', activeHref = '' } = Astro.props;
   brandTag="Design System"
   brandHref="/design-system"
 >
+  <span slot="brand-mark" style="display: inline-flex; color: var(--color-primary, #1e5386);"><CbfMark size="30" /></span>
+
   <Fragment slot="head">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
