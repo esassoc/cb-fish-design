@@ -1,17 +1,195 @@
 ---
-// CB Fish — Home. A pure manifest: the ordered list of sections. All layout,
-// styling, and content live in the section components; brand lives in the theme.
+// CB Fish — Home. Not a marketing page: the spoke's prototype index. Renders a
+// table straight off the typed registry (src/data/prototypes.ts), so shipping a
+// new prototype is a one-row data edit, never a layout change.
 import BaseLayout from '../layouts/BaseLayout.astro';
-import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
-import CbfHero from '../components/home/cbf-hero.astro';
-import CbfAbout from '../components/home/cbf-about.astro';
-import CbfProjectsGlance from '../components/home/cbf-projects-glance.astro';
-import CbfSiteFooter from '../components/shared/cbf-site-footer.astro';
+import CbfLogo from '../components/shared/cbf-logo.astro';
+import { withBase } from '../lib/base';
+import { prototypesByNewest, type PrototypeStatus } from '../data/prototypes';
+
+const rows = prototypesByNewest();
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+// Format from the ISO parts directly — avoids new Date() timezone drift that can
+// roll a UTC-midnight date back a day in the build environment.
+const fmtDate = (iso: string): string => {
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${MONTHS[m - 1]} ${d}, ${y}`;
+};
+
+const STATUS_LABEL: Record<PrototypeStatus, string> = {
+  live: 'Live',
+  'in-progress': 'In progress',
+  archived: 'Archived',
+};
 ---
-<BaseLayout title="Columbia Basin Fish & Wildlife Program">
-  <CbfPublicNav />
-  <CbfHero />
-  <CbfAbout />
-  <CbfProjectsGlance />
-  <CbfSiteFooter />
+<BaseLayout title="CB Fish — Prototype Library">
+  <div class="lib-bar">
+    <div class="lib-bar__inner">
+      <CbfLogo href={withBase('/')} />
+    </div>
+  </div>
+
+  <header class="lib-head">
+    <h1 class="lib-head__title">Prototype Library</h1>
+    <p class="lib-head__sub">
+      Working prototypes for the Columbia Basin Fish &amp; Wildlife Program — an Astro brand
+      spoke of the ESA Ecology design system.
+    </p>
+  </header>
+
+  <main class="lib-main">
+    <div class="lib-table-wrap">
+      <table class="lib-table">
+        <thead>
+          <tr>
+            <th scope="col">Prototype</th>
+            <th scope="col">Description</th>
+            <th scope="col">Created</th>
+            <th scope="col">Ticket</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((p) => (
+            <tr class="lib-row">
+              <td class="lib-row__name">
+                <a class="lib-row__link" href={withBase(p.route)}>
+                  {p.title}
+                  <svg class="lib-row__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+                </a>
+              </td>
+              <td class="lib-row__desc">{p.description}</td>
+              <td class="lib-row__meta">
+                <time datetime={p.createdAt}>{fmtDate(p.createdAt)}</time>
+              </td>
+              <td class="lib-row__meta">{p.ticket ?? '—'}</td>
+              <td>
+                <span class="lib-status" data-status={p.status}>
+                  <span class="lib-status__dot" aria-hidden="true"></span>
+                  {STATUS_LABEL[p.status]}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <style>
+    /* Brand app bar — the white logo is built for dark surfaces, so it gets one. */
+    .lib-bar { background: var(--color-primary, #1d3c5d); }
+    .lib-bar__inner {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: var(--spacing-400, 16px) var(--spacing-500, 20px);
+    }
+
+    .lib-head {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-150, 6px);
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: var(--spacing-800, 40px) var(--spacing-500, 20px) var(--spacing-600, 28px);
+    }
+    .lib-head__title {
+      margin: 0;
+      font-family: var(--font-display, var(--font-sans));
+      font-size: var(--type-size-600, 2rem);
+      font-weight: var(--font-weight-semibold, 600);
+      letter-spacing: -0.01em;
+      color: var(--color-text-primary, #171717);
+    }
+    .lib-head__sub {
+      margin: 0;
+      max-width: 60ch;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: var(--color-text-secondary, #4b5563);
+    }
+
+    .lib-main { max-width: 1040px; margin: 0 auto; padding: 0 var(--spacing-500, 20px) var(--spacing-1000, 64px); }
+
+    /* Horizontal scroll instead of a broken layout on narrow viewports. */
+    .lib-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--color-border, #e5e7eb);
+      border-radius: var(--radius-300, 10px);
+      background: var(--color-surface, #fff);
+    }
+    .lib-table {
+      width: 100%;
+      min-width: 760px;
+      border-collapse: collapse;
+      font-size: 1rem;
+    }
+    .lib-table th {
+      text-align: left;
+      font-weight: var(--font-weight-medium, 500);
+      font-size: 0.875rem;
+      color: var(--color-text-secondary, #4b5563);
+      padding: var(--spacing-300, 12px) var(--spacing-400, 16px);
+      border-bottom: 1px solid var(--color-border, #e5e7eb);
+      background: var(--color-surface-sunken, #f9fafb);
+      white-space: nowrap;
+    }
+    .lib-table td {
+      padding: var(--spacing-400, 16px);
+      border-bottom: 1px solid var(--color-border-light, #f0f1f3);
+      vertical-align: top;
+    }
+    .lib-row { position: relative; transition: background-color 0.12s ease; }
+    .lib-row:hover { background: var(--color-primary-subtle, #eef4fb); }
+    .lib-row:last-child td { border-bottom: 0; }
+
+    .lib-row__name { white-space: nowrap; }
+    .lib-row__link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-150, 6px);
+      font-weight: var(--font-weight-semibold, 600);
+      font-size: 1.0625rem;
+      color: var(--color-text-link, #1e5386);
+    }
+    /* Stretched link — the whole row is clickable, the title carries the href. */
+    .lib-row__link::after { content: ''; position: absolute; inset: 0; }
+    .lib-row__arrow { opacity: 0; transition: opacity 0.12s ease; flex: none; }
+    .lib-row:hover .lib-row__arrow { opacity: 0.7; }
+
+    .lib-row__desc {
+      max-width: 46ch;
+      line-height: 1.5;
+      color: var(--color-text-secondary, #4b5563);
+    }
+    .lib-row__meta {
+      white-space: nowrap;
+      font-size: 0.875rem;
+      color: var(--color-text-tertiary, #6b7280);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .lib-status {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-150, 6px);
+      padding: 2px var(--spacing-250, 10px) 2px var(--spacing-200, 8px);
+      border-radius: var(--radius-full, 999px);
+      font-size: 0.875rem;
+      font-weight: var(--font-weight-medium, 500);
+      white-space: nowrap;
+    }
+    .lib-status__dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+    .lib-status[data-status='live']        { background: #e7f4ec; color: #1a6f3f; }
+    .lib-status[data-status='live'] .lib-status__dot { background: #1a9b54; }
+    .lib-status[data-status='in-progress'] { background: #fbf0d6; color: #876300; }
+    .lib-status[data-status='in-progress'] .lib-status__dot { background: #e0a400; }
+    .lib-status[data-status='archived']    { background: var(--color-surface-sunken, #f3f4f6); color: var(--color-text-tertiary, #6b7280); }
+    .lib-status[data-status='archived'] .lib-status__dot { background: var(--color-text-tertiary, #9ca3af); }
+
+    @media (max-width: 640px) {
+      .lib-head { flex-direction: column; gap: var(--spacing-400, 16px); padding-top: var(--spacing-700, 32px); }
+    }
+  </style>
 </BaseLayout>
