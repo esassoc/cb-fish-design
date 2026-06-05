@@ -451,8 +451,15 @@ function mount(manifest: Manifest, manifestUrl: string): void {
     if (!current?.claudePath) return '';
     const url = new URL(base + current.claudePath, location.origin).href;
     const lines = [
-      `Re-implement the "${current.label}" UI section on my stack, faithfully, keeping the`,
-      'CSS custom-property names and the design intent. Full spec — use whichever you can reach:',
+      `Here's a new UI section to build — "${current.label}".`,
+      '',
+      'The linked spec has the design guidance (intent, key decisions, gotchas) plus sample',
+      'HTML, CSS, and JS. The finished UI should look and behave exactly like this — match it',
+      "faithfully. The sample code shows how it's built; you don't need to mirror it",
+      'line-for-line — translate it to your own stack and design system, mapping the',
+      "sample's values onto your established tokens.",
+      '',
+      'Spec — use whichever you can reach:',
       `• hosted: ${url}`,
     ];
     if (current.repoPath) lines.push(`• in this repo: ${current.repoPath}`);
