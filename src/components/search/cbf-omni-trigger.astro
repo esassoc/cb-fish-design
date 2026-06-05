@@ -10,7 +10,7 @@ interface Props {
 const { placeholder = 'Search projects, contracts, people…' } = Astro.props;
 ---
 <button class="cbf-omni-trigger" type="button" data-omni-open aria-label="Search">
-  <CbfIcon name="search" size={16} />
+  <CbfIcon name="search" size={14} />
   <span class="cbf-omni-trigger__ph">{placeholder}</span>
   <kbd class="cbf-omni-trigger__kbd">/</kbd>
 </button>
@@ -20,10 +20,10 @@ const { placeholder = 'Search projects, contracts, people…' } = Astro.props;
   .cbf-omni-trigger {
     display: flex;
     align-items: center;
-    gap: var(--spacing-300);
-    width: 520px;
+    gap: var(--spacing-200);
+    width: 380px;
     max-width: 100%;
-    padding: 7px var(--spacing-300) 7px var(--spacing-400);
+    padding: 5px var(--spacing-200) 5px var(--spacing-300);
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.22);
     border-radius: 999px;
@@ -37,17 +37,17 @@ const { placeholder = 'Search projects, contracts, people…' } = Astro.props;
   .cbf-omni-trigger__ph {
     flex: 1;
     text-align: left;
-    font-size: 15px;
+    font-size: 13px;
   }
   .cbf-omni-trigger__kbd {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 19px;
-    height: 19px;
-    padding: 0 6px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 5px;
     font-family: var(--font-sans);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: var(--font-weight-medium);
     color: rgba(255, 255, 255, 0.85);
     background: rgba(255, 255, 255, 0.12);
