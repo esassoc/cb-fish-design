@@ -1,0 +1,12 @@
+---
+// Ships the runtime Handoff inspector on every page. The script self-gates: it
+// fetches /handoff/<route-slug>/manifest.json and stays fully dormant (no UI) when
+// the current route has no bundle — so it's safe to mount globally from BaseLayout.
+//
+// Spoke-local for now; once proven here it gets promoted into @esa/handoff so every
+// Ecology spoke inherits a deployable inspector.
+---
+<script>
+  import { initInspector } from './inspector.client.ts';
+  initInspector();
+</script>

@@ -1,9 +1,13 @@
 import { defineConfig } from 'astro/config';
-import handoff from '@esa/handoff/integration';
 
 // Minimal, mirroring ecology-hub. The spoke ships static HTML/CSS; any
 // interactivity comes from the hub's Lit web components (self-registering).
-// `handoff` adds the Dev Handoff inspector to Astro's dev toolbar (dev only).
+//
+// Handoff inspection ships as a RUNTIME inspector (src/components/handoff/),
+// mounted globally by BaseLayout — it works on the deployed site, not just in
+// `astro dev`, so the hub's dev-toolbar integration is no longer wired here.
+// The `handoff` CLI is still used to generate the per-route bundles it reads
+// (npm run handoff:all).
 //
 // Published to GitHub Pages as a project site at
 // https://esassoc.github.io/cb-fish-design/, so production builds need that
@@ -14,5 +18,4 @@ const base = process.env.NODE_ENV === 'production' ? '/cb-fish-design/' : '/';
 export default defineConfig({
   site: 'https://esassoc.github.io',
   base,
-  integrations: [handoff({ manifest: '/handoff/home/manifest.json' })],
 });

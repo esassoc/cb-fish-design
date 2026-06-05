@@ -4,6 +4,7 @@
 import '@esa/tokens/tokens.css';
 import '@esa/tokens/component-tokens.css';
 import '../styles/theme-cb-fish.css';
+import HandoffInspector from '../components/handoff/HandoffInspector.astro';
 
 interface Props {
   title?: string;
@@ -38,5 +39,6 @@ const { title = 'Columbia Basin Fish & Wildlife Program' } = Astro.props;
   </head>
   <body>
     <slot />
+    <HandoffInspector />
   </body>
 </html>

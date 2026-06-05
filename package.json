@@ -9,7 +9,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "deploy": "astro build && gh-pages -d dist --dotfiles",
-    "handoff": "handoff http://localhost:4321/ --name home --out public/handoff"
+    "handoff:all": "node scripts/gen-handoff.mjs"
   },
   "dependencies": {
     "@esa/ecology": "file:../ecology/packages/ecology",
