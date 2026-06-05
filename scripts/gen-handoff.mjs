@@ -2,24 +2,33 @@
 // Generate a handoff bundle for every prototype route, driven by the registry.
 //
 // One source of truth: src/data/prototypes.ts lists each prototype's slug + route.
-// This script builds the site, serves dist with the production base, then runs the
-// @esa/handoff capture against each route — writing public/handoff/<slug>/ (the
-// per-route manifest the runtime inspector resolves from location.pathname).
+// For each route with a spec (src/data/handoff/<slug>.mjs) we run a CURATED capture
+// — authored sections, design guidance, and behavior refs — producing the smart
+// manifest the runtime inspector reads. Routes without a spec fall back to the
+// hub's whole-page capture (the @esa/handoff CLI).
 //
-//   npm run handoff:all      # regenerate all bundles
+//   npm run handoff:all
 //
-// Capture runs against `preview` (production output), per the handoff README — the
-// dev server injects chrome and unminified CSS that would pollute the bundle.
-import { readFileSync } from 'node:fs';
+// Capture runs against `preview` (production output) per the handoff README.
+import { readFileSync, existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve as presolve, relative as prelative } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
+import { captureCurated } from './lib/capture-curated.mjs';
 
 const PORT = 4321;
 const BASE = '/cb-fish-design/'; // production base — must match astro.config.mjs
 const ORIGIN = `http://localhost:${PORT}`;
+const root = (p) => fileURLToPath(new URL('../' + p, import.meta.url));
 
-// --- routes from the registry (parse, not import — keeps this a dep-free .mjs) ---
-const registry = readFileSync(new URL('../src/data/prototypes.ts', import.meta.url), 'utf8');
+// Reuse the hub's token-tier machinery (deep path import bypasses the exports map).
+const HUB_SRC = new URL('../node_modules/@esa/handoff/src/', import.meta.url);
+const { buildTierIndex, classifyTokens } = await import(new URL('tokens.mjs', HUB_SRC).href);
+const tierIndex = await buildTierIndex(root('node_modules/@esa/tokens'));
+
+// --- routes from the registry (parse, not import — keeps this dep-free) -------
+const registry = readFileSync(root('src/data/prototypes.ts'), 'utf8');
 const slugs = [...registry.matchAll(/slug:\s*'([^']+)'/g)].map((m) => m[1]);
 const routes = [...registry.matchAll(/route:\s*'([^']+)'/g)].map((m) => m[1]);
 const targets = slugs.map((slug, i) => ({ slug, route: routes[i] }));
@@ -32,7 +41,6 @@ const run = (cmd, args, extraEnv = {}) => {
   const r = spawnSync(cmd, args, { stdio: 'inherit', env: { ...process.env, ...extraEnv } });
   if (r.status !== 0) throw new Error(`${cmd} ${args.join(' ')} → exit ${r.status}`);
 };
-
 async function waitForServer(url, tries = 60) {
   for (let i = 0; i < tries; i++) {
     try {
@@ -44,11 +52,96 @@ async function waitForServer(url, tries = 60) {
   }
   throw new Error(`preview never became ready at ${url}`);
 }
+const slugify = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
+// Pull the design guidance keys off a spec section into a compact object.
+function guideOf(spec) {
+  const g = {};
+  for (const k of ['intent', 'decisions', 'gotchas', 'acceptance']) if (spec[k]) g[k] = spec[k];
+  return Object.keys(g).length ? g : undefined;
+}
+
+// Resolve a relative import specifier to a real source file in the repo.
+function resolveImport(fromFile, spec) {
+  const b = presolve(dirname(fromFile), spec);
+  for (const c of [b, `${b}.ts`, `${b}.mjs`, `${b}.js`, presolve(b, 'index.ts')]) if (existsSync(c)) return c;
+  return null;
+}
+
+// A section's behavior as a SELF-CONTAINED bundle: the entry file(s) the spec
+// points at PLUS every spoke module they transitively import (relative imports
+// only — external @esa/astro imports stay as imports, since a re-implementer maps
+// those). Dependency-first order, so types/data are defined before they're used.
+// This is what makes the JS tab translatable: no dangling imports for Claude.
+function jsOf(spec) {
+  if (!spec.js?.length) return undefined;
+  const repo = root('');
+  const seen = new Set();
+  const order = [];
+  const visit = (abs) => {
+    if (!abs || seen.has(abs)) return;
+    seen.add(abs);
+    const src = readFileSync(abs, 'utf8');
+    for (const m of src.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) visit(resolveImport(abs, m[1]));
+    order.push({ abs, src }); // after deps → dependency-first
+  };
+  for (const entry of spec.js) {
+    try {
+      visit(root(entry));
+    } catch {
+      order.push({ abs: root(entry), src: `// (${entry} not found)` });
+    }
+  }
+  return order.map(({ abs, src }) => `// ── ${prelative(repo, abs)} ──\n${src.trim()}`).join('\n\n');
+}
+
+// A self-contained, fetchable spec for "Copy for Claude".
+function specMarkdown(s) {
+  const lines = [`# ${s.label}`, ''];
+  if (s.guide?.intent) lines.push(s.guide.intent, '');
+  const bullets = (title, arr) => {
+    if (!arr?.length) return;
+    lines.push(`## ${title}`, ...arr.map((x) => `- ${x}`), '');
+  };
+  bullets('Key decisions', s.guide?.decisions);
+  bullets('Gotchas', s.guide?.gotchas);
+  bullets('Done when', s.guide?.acceptance);
+  lines.push('## Markup', '```html', s.html, '```', '');
+  if (s.css) lines.push('## Styles', '```css', s.css, '```', '');
+  if (s.tokens?.length)
+    lines.push('## Tokens', ...s.tokens.map((t) => `- \`${t.name}\`: ${t.value} _(${t.tier})_`), '');
+  if (s.js) lines.push('## Behavior', '```ts', s.js, '```', '');
+  return lines.join('\n');
+}
+
+function writeCuratedBundle(slug, url, theme, sections) {
+  const outDir = root(`public/handoff/${slug}`);
+  rmSync(outDir, { recursive: true, force: true });
+  mkdirSync(`${outDir}/claude`, { recursive: true });
+  const manifestSections = sections.map((s) => {
+    const fileSlug = slugify(s.label);
+    writeFileSync(`${outDir}/claude/${fileSlug}.md`, specMarkdown(s));
+    return {
+      label: s.label,
+      tag: s.tag,
+      selector: s.selector,
+      apply: s.apply,
+      html: s.html,
+      css: s.css,
+      js: s.js,
+      guide: s.guide,
+      tokens: s.tokens,
+      claudePath: `claude/${fileSlug}.md`,
+      repoPath: `public/handoff/${slug}/claude/${fileSlug}.md`,
+    };
+  });
+  const manifest = { name: slug, url, theme, generatedFrom: 'spec', sections: manifestSections };
+  writeFileSync(`${outDir}/manifest.json`, JSON.stringify(manifest, null, 2));
+  console.log(`  wrote ${manifestSections.length} curated section(s) → public/handoff/${slug}/`);
+}
+
+// ------------------------------------------------------------------------------
 console.log(`handoff:all — ${targets.length} route(s): ${targets.map((t) => t.slug).join(', ')}`);
-
-// Build, then serve the built output with the production base (NODE_ENV=production
-// so astro.config resolves base to /cb-fish-design/, matching the deployed paths).
 run('npx', ['astro', 'build'], { NODE_ENV: 'production' });
 
 const preview = spawn('npx', ['astro', 'preview', '--port', String(PORT)], {
@@ -60,15 +153,26 @@ try {
   await waitForServer(`${ORIGIN}${BASE}`);
   for (const { slug, route } of targets) {
     const url = `${ORIGIN}${BASE}${route.replace(/^\/+|\/+$/g, '')}/`;
-    console.log(`\nhandoff:all — capturing ${slug}  →  ${url}`);
-    run('node', [
-      'node_modules/@esa/handoff/bin/handoff.mjs',
-      url,
-      '--name',
-      slug,
-      '--out',
-      'public/handoff',
-    ]);
+    const specPath = root(`src/data/handoff/${slug}.mjs`);
+
+    if (existsSync(specPath)) {
+      console.log(`\nhandoff:all — capturing ${slug} (curated)  →  ${url}`);
+      const spec = (await import(specPath)).default;
+      const { theme, sections } = await captureCurated(url, spec.sections, tierIndex, classifyTokens);
+      // Merge authored guidance + behavior onto each captured section by label.
+      const byLabel = new Map(spec.sections.map((s) => [s.label, s]));
+      for (const s of sections) {
+        const spc = byLabel.get(s.label) || {};
+        s.selector = spc.selector; // so the inspector can highlight the live region
+        s.apply = spc.apply; // recipe the inspector replays to drive the live app
+        s.guide = guideOf(spc);
+        s.js = jsOf(spc);
+      }
+      writeCuratedBundle(slug, url, theme, sections);
+    } else {
+      console.log(`\nhandoff:all — capturing ${slug} (whole-page fallback)  →  ${url}`);
+      run('node', ['node_modules/@esa/handoff/bin/handoff.mjs', url, '--name', slug, '--out', 'public/handoff']);
+    }
   }
 } finally {
   preview.kill();

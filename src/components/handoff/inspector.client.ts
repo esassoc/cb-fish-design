@@ -13,9 +13,37 @@
 // the source of truth and this only reads the manifest it produced.
 
 interface Token { name: string; value: string; tier: string }
+interface Guide { intent?: string; decisions?: string[]; gotchas?: string[]; acceptance?: string[] }
+interface ApplyOp {
+  click?: string; fill?: [string, string]; clear?: string; clickText?: [string, string]; key?: string;
+}
 interface Section {
-  index?: number; label: string; tag?: string; html: string; css: string;
-  tokens: Token[]; claudePath?: string; repoPath?: string;
+  index?: number; label: string; tag?: string; selector?: string; apply?: ApplyOp[];
+  html: string; css: string; tokens: Token[]; js?: string; guide?: Guide;
+  claudePath?: string; repoPath?: string;
+}
+
+// Set a field's value the way a user would, so the page's input handlers fire.
+function setInput(sel: string, val: string) {
+  const el = document.querySelector<HTMLInputElement>(sel);
+  if (!el) return;
+  el.value = val;
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+}
+// Replay a state recipe on the LIVE page — the DOM twin of the capture's runApply,
+// so clicking a chip drives the real app into that section's state.
+function runApplyDom(ops?: ApplyOp[]) {
+  for (const op of ops || []) {
+    if (op.click) document.querySelector<HTMLElement>(op.click)?.click();
+    else if (op.fill) setInput(op.fill[0], op.fill[1]);
+    else if (op.clear) setInput(op.clear, '');
+    else if (op.clickText) {
+      const c = document.querySelector(op.clickText[0]);
+      [...(c?.querySelectorAll('button') ?? [])]
+        .find((b) => b.textContent?.trim().includes(op.clickText![1]))
+        ?.click();
+    } else if (op.key) document.dispatchEvent(new KeyboardEvent('keydown', { key: op.key, bubbles: true }));
+  }
 }
 interface Manifest {
   name: string; sections: Section[];
@@ -76,6 +104,28 @@ function renderTokens(tokens: Token[]) {
     .join('');
 }
 
+// Light JS/TS highlight — comments + strings only; enough to read, not a full lexer.
+function hlJs(src: string) {
+  return esc(src)
+    .replace(/(\/\/[^\n]*)/g, '<span class="c">$1</span>')
+    .replace(/(`[^`]*`|"[^"]*"|'[^']*')/g, '<span class="s">$1</span>');
+}
+
+function renderGuide(g?: Guide) {
+  if (!g || !Object.keys(g).length)
+    return '<p class="hint">No design guidance authored for this section.</p>';
+  const list = (title: string, arr?: string[]) =>
+    arr?.length
+      ? `<div class="g"><div class="g__h">${title}</div><ul>${arr.map((x) => `<li>${esc(x)}</li>`).join('')}</ul></div>`
+      : '';
+  return [
+    g.intent ? `<p class="g__intent">${esc(g.intent)}</p>` : '',
+    list('Key decisions', g.decisions),
+    list('Gotchas', g.gotchas),
+    list('Done when', g.acceptance),
+  ].join('');
+}
+
 const STYLE = `
   :host { all: initial; }
   /* The hidden attribute must win over the explicit display on .launch/.panel,
@@ -84,50 +134,69 @@ const STYLE = `
   .host-root { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000;
     font-family: system-ui, sans-serif; }
   .host-root > * { pointer-events: auto; }
-  .launch { position: fixed; bottom: 16px; right: 16px; display: inline-flex; align-items: center; gap: 7px;
-    padding: 9px 13px; border-radius: 999px; background: #0d1117; color: #e6edf3; border: 1px solid #30363d;
-    box-shadow: 0 8px 24px -8px rgba(0,0,0,.5); font-size: 13px; cursor: pointer; }
-  .launch:hover { border-color: #4493f8; }
-  .launch svg { color: #4493f8; flex: none; }
-  .panel { position: fixed; top: 12px; right: 12px; width: min(460px, 94vw);
-    max-height: calc(100vh - 24px); display: flex; flex-direction: column;
-    background: #0d1117; color: #e6edf3; border: 1px solid #30363d; border-radius: 12px;
-    box-shadow: 0 16px 50px -12px rgba(0,0,0,.6); font-size: 12.5px; overflow: hidden; }
-  .head { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid #21262d; }
+  .launch { position: fixed; bottom: 22px; left: 22px; display: inline-flex; align-items: center; gap: 9px;
+    padding: 13px 19px; border-radius: 999px; color: #fff; cursor: pointer; font-size: 15px; font-weight: 600;
+    letter-spacing: .01em; border: 1px solid #3d6fd6;
+    background: linear-gradient(180deg, #1f6feb, #1551c4);
+    box-shadow: 0 10px 28px -8px rgba(31,111,235,.65), inset 0 1px 0 rgba(255,255,255,.18);
+    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease; }
+  .launch:hover { transform: translateY(-2px); filter: brightness(1.07);
+    box-shadow: 0 16px 36px -8px rgba(31,111,235,.75), inset 0 1px 0 rgba(255,255,255,.25); }
+  .launch:active { transform: translateY(0); }
+  .launch svg { flex: none; }
+  /* Full-height glass panel, inset from the edges. */
+  .panel { position: fixed; top: 18px; right: 18px; bottom: 18px; width: min(720px, 94vw);
+    display: flex; flex-direction: column; color: #e9eef4; border-radius: 16px;
+    background: linear-gradient(155deg, rgba(26,31,40,.74), rgba(11,15,21,.86));
+    backdrop-filter: blur(26px) saturate(150%); -webkit-backdrop-filter: blur(26px) saturate(150%);
+    border: 1px solid rgba(255,255,255,.15);
+    box-shadow: 0 28px 70px -18px rgba(0,0,0,.62), inset 0 1px 0 rgba(255,255,255,.10);
+    font-size: 12.5px; overflow: hidden;
+    /* slide in from the right */
+    transform: translateX(calc(100% + 32px)); opacity: 0; visibility: hidden;
+    transition: transform .3s cubic-bezier(.4,0,.2,1), opacity .22s ease, visibility 0s linear .3s; }
+  .panel.is-open { transform: none; opacity: 1; visibility: visible;
+    transition: transform .3s cubic-bezier(.4,0,.2,1), opacity .22s ease; }
+  .head { display: flex; align-items: center; gap: 8px; padding: 13px 16px; border-bottom: 1px solid rgba(255,255,255,.09); }
   .head strong { font-size: 14px; }
-  .head .sub { flex: 1; color: #7d8590; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .picker { padding: 10px 14px; border-bottom: 1px solid #21262d; }
-  .picker__label { color: #7d8590; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase;
-    margin-bottom: 6px; }
-  .tree { position: relative; }
-  .node { position: relative; display: block; width: 100%; text-align: left; padding: 4px 0 4px 26px;
-    border: 0; background: none; color: #adbac7; font: inherit; font-size: 12.5px; cursor: pointer;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tree .node::before { content: ''; position: absolute; left: 8px; top: 0; height: 100%; border-left: 1px solid #30363d; }
-  .tree .node:last-child::before { height: 50%; }
-  .tree .node::after { content: ''; position: absolute; left: 8px; top: 50%; width: 12px; border-top: 1px solid #30363d; }
-  .node:hover { color: #fff; }
-  .node.on { color: #fff; font-weight: 600; }
-  .tree .node.on::after { border-color: #4493f8; }
-  .node--full { margin-top: 8px; padding-top: 9px; border-top: 1px solid #21262d; }
-  .node--full::before { content: '⤓'; position: absolute; left: 7px; top: 9px; color: #7d8590; }
-  .node--full.on::before { color: #4493f8; }
-  .tabs { display: flex; gap: 4px; padding: 8px 12px; border-bottom: 1px solid #21262d; }
-  .tabs button { padding: 5px 12px; border: 0; border-radius: 6px; background: none; color: #7d8590;
+  .head .sub { flex: 1; color: #9aa4b0; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .picker { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.09); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { padding: 5px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04);
+    color: #c2cad4; font: inherit; font-size: 12.5px; cursor: pointer; white-space: nowrap;
+    transition: border-color .12s ease, background .12s ease, color .12s ease; }
+  .chip:hover { color: #fff; border-color: rgba(255,255,255,.3); }
+  .chip.on { background: rgba(31,111,235,.28); border-color: #4493f8; color: #fff; font-weight: 600; }
+  .tabs { display: flex; gap: 4px; padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,.09); }
+  .tabs button { padding: 5px 12px; border: 0; border-radius: 6px; background: none; color: #9aa4b0;
     font: inherit; font-size: 12.5px; cursor: pointer; }
-  .tabs button.on { background: #21262d; color: #fff; }
-  .tabs .actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
-  .tabs .copy { color: #adbac7; border: 1px solid #30363d; }
-  .tabs .copy:hover { border-color: #4493f8; color: #fff; }
-  .tabs .copy.done { color: #7ee787; border-color: #238636; }
-  .claude { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px;
-    border: 1px solid #d97757; border-radius: 6px; background: #d977571a; color: #e9a589;
-    font-size: 12.5px; cursor: pointer; white-space: nowrap; }
-  .claude svg { color: #d97757; flex: none; }
-  .claude:hover { background: #d9775733; color: #f0b89e; }
-  .claude.done { border-color: #238636; color: #7ee787; }
-  .claude.done svg { color: #7ee787; }
-  .body { overflow: auto; padding: 12px 14px; }
+  .tabs button.on { background: rgba(255,255,255,.12); color: #fff; }
+  .body { overflow: auto; padding: 13px 16px; flex: 1; }
+  /* Prominent action footer. */
+  .footer { position: relative; display: flex; justify-content: flex-end; gap: 8px; padding: 11px 16px;
+    border-top: 1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.18); }
+  .footer button { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 8px 14px; border-radius: 8px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .copy { color: #c2cad4; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.05); }
+  .copy:hover { color: #fff; border-color: rgba(255,255,255,.34); }
+  .copy.done { color: #7ee787; border-color: #2ea043; }
+  .claude { color: #fff; border: 1px solid #d97757;
+    background: linear-gradient(180deg, #e0805f, #c25e3c);
+    box-shadow: 0 6px 18px -6px rgba(217,119,87,.6), inset 0 1px 0 rgba(255,255,255,.2); }
+  .claude svg { flex: none; }
+  .claude:hover { filter: brightness(1.06); }
+  .claude.done { background: linear-gradient(180deg, #2ea043, #238636); border-color: #2ea043; }
+  /* Claude payload preview popover (anchored above the footer). */
+  .cpreview { position: absolute; left: 16px; right: 16px; bottom: calc(100% + 8px);
+    background: rgba(13,17,23,.96); border: 1px solid rgba(255,255,255,.16); border-radius: 12px;
+    box-shadow: 0 18px 50px -14px rgba(0,0,0,.7); padding: 12px 14px; max-height: 50vh; overflow: auto; }
+  .cpreview__h { display: flex; align-items: center; margin-bottom: 8px; color: #9aa4b0; font-size: 11px;
+    letter-spacing: .04em; text-transform: uppercase; }
+  .cpreview__copy { margin-left: auto; color: #e9a589; border: 1px solid #d9775766; border-radius: 6px;
+    background: none; font: inherit; font-size: 11.5px; padding: 3px 9px; cursor: pointer; text-transform: none; letter-spacing: 0; }
+  .cpreview__copy:hover { color: #fff; border-color: #d97757; }
+  .cpreview pre { margin: 0; white-space: pre-wrap; word-break: break-word; line-height: 1.55;
+    color: #c2cad4; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
   .hint { margin: 0; color: #7d8590; line-height: 1.6; }
   pre.code { margin: 0; white-space: pre-wrap; word-break: break-word; line-height: 1.55; tab-size: 2; color: #adbac7;
     font-family: ui-monospace, "SF Mono", Menlo, monospace; }
@@ -137,6 +206,12 @@ const STYLE = `
   pre.code .p   { color: #79c0ff; }
   pre.code .t   { color: #ffa657; }
   pre.code .n   { color: #f0883e; }
+  pre.code .c   { color: #6e7781; font-style: italic; }
+  .g { margin-bottom: 14px; }
+  .g__intent { margin: 0 0 14px; color: #e6edf3; line-height: 1.6; font-size: 13px; }
+  .g__h { color: #7d8590; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 6px; }
+  .g ul { margin: 0 0 2px; padding-left: 18px; }
+  .g li { color: #adbac7; line-height: 1.55; margin-bottom: 5px; }
   .tgroup { margin-bottom: 14px; }
   .tgroup__h { text-transform: capitalize; color: #7d8590; font-size: 11px; letter-spacing: .04em; margin-bottom: 6px; }
   .tgroup__h span { color: #4d5560; }
@@ -150,7 +225,6 @@ const STYLE = `
 `;
 
 const HOST_ID = 'handoff-inspector';
-const IGNORE = /^(SCRIPT|STYLE|LINK|ASTRO-DEV-TOOLBAR|ASTRO-ISLAND)$/;
 
 /** Derive the bundle slug from the path, exactly like the handoff CLI's --name. */
 function routeSlug(): string {
@@ -187,8 +261,8 @@ function mount(manifest: Manifest, manifestUrl: string): void {
   // this app's shadow root, so these rules must live in document.head).
   const pageStyle = document.createElement('style');
   pageStyle.textContent = `
-    [data-handoff-pick]:hover { outline: 2px dashed #1f6feb; outline-offset: -2px; cursor: pointer; }
-    [data-handoff-on] { outline: 2px solid #4493f8 !important; outline-offset: -2px; }`;
+    [data-handoff-on] { outline: 2px solid #4493f8 !important; outline-offset: -2px;
+      scroll-margin: 80px; }`;
 
   const base = manifestUrl.replace(/manifest\.json.*$/, '');
 
@@ -198,25 +272,31 @@ function mount(manifest: Manifest, manifestUrl: string): void {
   wrap.className = 'host-root';
   wrap.innerHTML = `
     <button class="launch" title="Inspect this prototype (⌥⇧I)">
-      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 9 3 3-3 3"/><path d="M14 15h3"/><rect width="18" height="16" x="3" y="4" rx="2"/></svg>
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 9 3 3-3 3"/><path d="M14 15h3"/><rect width="18" height="16" x="3" y="4" rx="2"/></svg>
       Inspect
     </button>
-    <div class="panel" hidden>
-      <div class="head"><strong>Dev Handoff</strong><span class="sub"></span><button class="x" title="Close">×</button></div>
+    <div class="panel">
+      <div class="head"><strong>Inspector</strong><span class="sub"></span><button class="x" title="Close (Esc)">×</button></div>
       <div class="picker"></div>
       <div class="tabs">
-        <button data-tab="html" class="on">HTML</button>
+        <button data-tab="guide" class="on">Guide</button>
+        <button data-tab="html">HTML</button>
         <button data-tab="css">CSS</button>
+        <button data-tab="js">JS</button>
         <button data-tab="tokens">Tokens</button>
-        <span class="actions">
-          <button class="copy" title="Copy this tab's raw content">Copy</button>
-          <button class="claude" title="Copy a fetchable spec link for Claude">
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>
-            for Claude
-          </button>
-        </span>
       </div>
       <div class="body"></div>
+      <div class="footer">
+        <div class="cpreview" hidden>
+          <div class="cpreview__h">Prompt handed to Claude<button class="cpreview__copy">Copy prompt</button></div>
+          <pre></pre>
+        </div>
+        <button class="copy" title="Copy the active tab's raw content">Copy</button>
+        <button class="claude" title="Preview the prompt for Claude">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/></svg>
+          for Claude
+        </button>
+      </div>
     </div>`;
   root.append(style, wrap);
 
@@ -228,21 +308,27 @@ function mount(manifest: Manifest, manifestUrl: string): void {
   const tabBtns = [...wrap.querySelectorAll<HTMLButtonElement>('.tabs button[data-tab]')];
   const copyBtn = wrap.querySelector<HTMLButtonElement>('.copy')!;
   const claudeBtn = wrap.querySelector<HTMLButtonElement>('.claude')!;
+  const cpreview = wrap.querySelector<HTMLElement>('.cpreview')!;
+  const cpreviewPre = wrap.querySelector<HTMLElement>('.cpreview pre')!;
+  const cpreviewCopy = wrap.querySelector<HTMLButtonElement>('.cpreview__copy')!;
 
-  // Real page sections, in capture order — excluding our own host + dev chrome.
-  const liveSections = () =>
-    [...document.body.children].filter(
-      (el) => el.id !== HOST_ID && !IGNORE.test(el.tagName)
-    ) as HTMLElement[];
+  // Outline the live region a section maps to (by its authored selector).
+  const clearHighlight = () =>
+    document.querySelectorAll('[data-handoff-on]').forEach((el) => el.removeAttribute('data-handoff-on'));
+  const highlight = (selector?: string) => {
+    clearHighlight();
+    if (selector) document.querySelector(selector)?.setAttribute('data-handoff-on', '');
+  };
 
   let current: (Section & { tag?: string }) | null = null;
-  let tab: 'html' | 'css' | 'tokens' = 'html';
+  let tab: 'html' | 'css' | 'js' | 'tokens' | 'guide' = 'guide';
   let open = false;
 
   function render() {
+    copyBtn.textContent = `Copy ${tab}`; // Copy button names what it'll copy
     if (!current) {
       sub.textContent = `${manifest.name} · ${manifest.sections.length} sections`;
-      body.innerHTML = `<p class="hint">Pick a section above, or click any region of the page.</p>`;
+      body.innerHTML = `<p class="hint">Pick a section above to inspect its markup, styles, behavior, tokens, and design intent.</p>`;
       return;
     }
     sub.textContent =
@@ -252,72 +338,57 @@ function mount(manifest: Manifest, manifestUrl: string): void {
       body.innerHTML = current.css
         ? `<pre class="code">${hlCss(current.css)}</pre>`
         : `<p class="hint">No section-local CSS (inherited utilities only).</p>`;
-    else body.innerHTML = renderTokens(current.tokens);
+    else if (tab === 'js')
+      body.innerHTML = current.js
+        ? `<pre class="code">${hlJs(current.js)}</pre>`
+        : `<p class="hint">No interactivity — this section is static markup.</p>`;
+    else if (tab === 'tokens') body.innerHTML = renderTokens(current.tokens);
+    else body.innerHTML = renderGuide(current.guide);
   }
 
-  const treeNodes = () => [...picker.querySelectorAll<HTMLElement>('.tree .node')];
+  const chipNodes = () => [...picker.querySelectorAll<HTMLElement>('.chips .chip')];
 
-  function select(i: number) {
+  // doApply: drive the LIVE app into this section's state (only on a real click,
+  // and only while open — never on the silent initial selection).
+  function select(i: number, doApply = false) {
     current = manifest.sections[i] || null;
-    treeNodes().forEach((c, j) => c.classList.toggle('on', j === i));
-    picker.querySelector('.node--full')?.classList.remove('on');
-    liveSections().forEach((el, j) => el.toggleAttribute('data-handoff-on', j === i));
+    chipNodes().forEach((c, j) => c.classList.toggle('on', j === i));
+    hideClaudePreview();
+    if (doApply && open && current?.apply) {
+      // Reset: close the palette if it's open — via its own close control, NOT a
+      // global Escape (which the inspector itself listens for and would close us).
+      const omni = document.querySelector('[data-omni]');
+      if (omni && !omni.hasAttribute('hidden'))
+        document.querySelector<HTMLElement>('[data-omni-close]')?.click();
+      runApplyDom(current.apply);
+    }
+    if (open) highlight(current?.selector);
     render();
   }
 
-  function selectFull() {
-    if (!manifest.full) return;
-    current = { tag: 'page', ...manifest.full };
-    treeNodes().forEach((c) => c.classList.remove('on'));
-    picker.querySelector('.node--full')?.classList.add('on');
-    liveSections().forEach((el) => el.removeAttribute('data-handoff-on'));
-    render();
-  }
-
-  function buildTree() {
-    picker.innerHTML = '<div class="picker__label">Sections</div><div class="tree"></div>';
-    const tree = picker.querySelector('.tree')!;
+  function buildChips() {
+    picker.innerHTML = '<div class="chips"></div>';
+    const chips = picker.querySelector('.chips')!;
     manifest.sections.forEach((s, i) => {
       const b = document.createElement('button');
-      b.className = 'node';
-      b.title = s.label;
+      b.className = 'chip';
+      b.title = s.apply ? `${s.label} — click to drive the app into this state` : s.label;
       b.textContent = s.label;
-      b.onclick = () => select(i);
-      tree.appendChild(b);
+      b.onclick = () => select(i, true);
+      chips.appendChild(b);
     });
-    if (manifest.full) {
-      const f = document.createElement('button');
-      f.className = 'node node--full';
-      f.textContent = manifest.full.label || 'Full page';
-      f.onclick = selectFull;
-      picker.appendChild(f);
-    }
   }
-
-  const onPageClick = (e: MouseEvent) => {
-    if (!open) return;
-    const top = liveSections().find((el) => el.contains(e.target as Node));
-    if (!top) return;
-    e.preventDefault();
-    e.stopPropagation();
-    select(liveSections().indexOf(top));
-  };
 
   function setOpen(on: boolean) {
     open = on;
-    panel.hidden = !on;
+    panel.classList.toggle('is-open', on); // class drives the slide-in transition
     launch.hidden = on;
     if (on) {
       document.head.append(pageStyle);
-      liveSections().forEach((el) => el.setAttribute('data-handoff-pick', ''));
-      document.addEventListener('click', onPageClick, true);
+      highlight(current?.selector); // re-outline the current section, if any
     } else {
       pageStyle.remove();
-      liveSections().forEach((el) => {
-        el.removeAttribute('data-handoff-pick');
-        el.removeAttribute('data-handoff-on');
-      });
-      document.removeEventListener('click', onPageClick, true);
+      clearHighlight();
     }
   }
 
@@ -327,7 +398,15 @@ function mount(manifest: Manifest, manifestUrl: string): void {
     if (!current) return '';
     if (tab === 'html') return current.html || '';
     if (tab === 'css') return current.css || '';
-    return (current.tokens || []).map((t) => `${t.name}: ${t.value};`).join('\n');
+    if (tab === 'js') return current.js || '';
+    if (tab === 'tokens') return (current.tokens || []).map((t) => `${t.name}: ${t.value};`).join('\n');
+    const g = current.guide || {};
+    return [
+      g.intent,
+      g.decisions?.length && `Key decisions:\n${g.decisions.map((x) => `- ${x}`).join('\n')}`,
+      g.gotchas?.length && `Gotchas:\n${g.gotchas.map((x) => `- ${x}`).join('\n')}`,
+      g.acceptance?.length && `Done when:\n${g.acceptance.map((x) => `- ${x}`).join('\n')}`,
+    ].filter(Boolean).join('\n\n');
   }
   const flash = (btn: HTMLButtonElement, restore: string, ok = true) => {
     const orig = btn.innerHTML;
@@ -350,22 +429,34 @@ function mount(manifest: Manifest, manifestUrl: string): void {
     }
   };
 
-  // "Copy for Claude": a fetchable link to this section's self-contained spec,
-  // plus a one-line instruction — paste into Claude, which web-fetches it.
-  claudeBtn.onclick = async () => {
-    if (!current?.claudePath) return;
+  // The exact prompt handed to Claude: an instruction + a fetchable link to this
+  // section's self-contained spec (markup + styles + behavior + tokens + guidance).
+  function claudePayload(): string {
+    if (!current?.claudePath) return '';
     const url = new URL(base + current.claudePath, location.origin).href;
     const lines = [
-      'Re-implement this UI section on my stack, faithfully, keeping the CSS custom-property names.',
-      'Spec (markup + styles + tokens) — use whichever you can reach:',
-      `• hosted URL: ${url}`,
+      `Re-implement the "${current.label}" UI section on my stack, faithfully, keeping the`,
+      'CSS custom-property names and the design intent. Full spec — use whichever you can reach:',
+      `• hosted: ${url}`,
     ];
     if (current.repoPath) lines.push(`• in this repo: ${current.repoPath}`);
+    return lines.join('\n');
+  }
+  const hideClaudePreview = () => (cpreview.hidden = true);
+
+  // Claude button PREVIEWS the prompt (toggles a popover) rather than copying blind.
+  claudeBtn.onclick = () => {
+    if (!current?.claudePath) return;
+    if (!cpreview.hidden) return hideClaudePreview();
+    cpreviewPre.textContent = claudePayload();
+    cpreview.hidden = false;
+  };
+  cpreviewCopy.onclick = async () => {
     try {
-      await navigator.clipboard.writeText(lines.join('\n'));
-      flash(claudeBtn, 'Copied link');
+      await navigator.clipboard.writeText(claudePayload());
+      flash(cpreviewCopy, 'Copied ✓');
     } catch {
-      flash(claudeBtn, 'Failed', false);
+      flash(cpreviewCopy, 'Failed', false);
     }
   };
 
@@ -376,20 +467,24 @@ function mount(manifest: Manifest, manifestUrl: string): void {
       (b.onclick = () => {
         tab = b.dataset.tab as typeof tab;
         tabBtns.forEach((x) => x.classList.toggle('on', x === b));
+        hideClaudePreview();
         render();
       })
   );
 
-  // Hotkey: ⌥⇧I toggles the inspector anywhere.
+  // Keys: ⌥⇧I toggles anywhere; Esc closes when open.
   document.addEventListener('keydown', (e) => {
     if (e.altKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) {
       e.preventDefault();
       setOpen(!open);
+    } else if (e.key === 'Escape' && open) {
+      e.preventDefault();
+      setOpen(false);
     }
   });
 
-  buildTree();
-  render();
+  buildChips();
+  select(0); // first chip selected by default (no apply until a real click)
   // ?inspect in the URL opens immediately — shareable inspect links.
   if (new URLSearchParams(location.search).has('inspect')) setOpen(true);
 }
