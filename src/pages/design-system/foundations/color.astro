@@ -14,10 +14,10 @@ const blue = [
   { step: '950', value: '#13273e', token: 'cbf-blue-950' },
 ];
 const gray = [
-  { step: '0', value: '#ffffff' }, { step: '50', value: '#fafafa' }, { step: '100', value: '#efefef' },
-  { step: '200', value: '#dcdcdc' }, { step: '300', value: '#bdbdbd' }, { step: '400', value: '#989898' },
-  { step: '500', value: '#7c7c7c' }, { step: '600', value: '#656565' }, { step: '700', value: '#525252' },
-  { step: '800', value: '#464646' }, { step: '900', value: '#3d3d3d' },
+  { step: '0', value: '#ffffff', token: 'cbf-gray-0' }, { step: '50', value: '#fafafa', token: 'cbf-gray-50' }, { step: '100', value: '#efefef', token: 'cbf-gray-100' },
+  { step: '200', value: '#dcdcdc', token: 'cbf-gray-200' }, { step: '300', value: '#bdbdbd', token: 'cbf-gray-300' }, { step: '400', value: '#989898', token: 'cbf-gray-400' },
+  { step: '500', value: '#7c7c7c', token: 'cbf-gray-500' }, { step: '600', value: '#656565', token: 'cbf-gray-600' }, { step: '700', value: '#525252', token: 'cbf-gray-700' },
+  { step: '800', value: '#464646', token: 'cbf-gray-800' }, { step: '900', value: '#3d3d3d', token: 'cbf-gray-900' },
 ];
 const gold = [
   { step: '50', value: '#f8f8f4', token: 'cbf-gold-50' },
@@ -66,10 +66,12 @@ const roles = [
   <Section id="theming" title="Theming">
     <p>One <code>[data-theme="cb-fish"]</code> block in <code>theme-cb-fish.css</code> overrides the semantic layer; primitives never move. Because the hub chains <code>--color-text-link</code> and the focus-ring tokens off <code>--color-primary</code>, re-pointing primary alone re-skins links and focus states too.</p>
     <p class="note">
-      <strong>Divergence note —</strong> only <code>Gray/200</code> and <code>Gray/500</code> are currently
-      re-pointed (as <code>--color-border</code> and <code>--color-text-muted</code>). The rest of the
-      neutral chain still resolves to Ecology's cooler grays. Completing the re-point would shift
-      text color across every existing prototype, so it's a deliberate, separate decision.
+      <strong>Neutral ramp —</strong> the full neutral chain (<code>--color-text-primary</code>,
+      <code>-secondary</code>, <code>-tertiary</code>, <code>-muted</code>, and the borders) is re-pointed
+      to the <code>--cbf-gray-*</code> ramp, so body text reads CB Fish's warmer grays rather than the
+      hub's cooler neutrals (<code>text-primary</code> is <code>#3d3d3d</code>, not <code>#171717</code>).
+      Surfaces stay white; <code>--color-surface-sunken</code> is intentionally blue-tinted and sits
+      outside this chain.
     </p>
   </Section>
 </DocsLayout>
