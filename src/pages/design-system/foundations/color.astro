@@ -20,9 +20,9 @@ const gray = [
   { step: '800', value: '#464646', token: 'cbf-gray-800' }, { step: '900', value: '#3d3d3d', token: 'cbf-gray-900' },
 ];
 const gold = [
-  { step: '50', value: '#f8f8f4', token: 'cbf-gold-50' },
-  { step: '500', value: '#a9a379', token: 'cbf-gold-500' },
-  { step: '900', value: '#534c3b', token: 'cbf-gold-900' },
+  { step: '50', value: '#f8f8f4', token: 'color-gold-50' },
+  { step: '500', value: '#a9a379', token: 'color-gold-500' },
+  { step: '900', value: '#534c3b', token: 'color-gold-900' },
 ];
 
 // Semantic roles — these ARE wired, so the swatches render live via var().
@@ -41,7 +41,7 @@ const roles = [
   <p class="lede">Navy blue replaces Ecology's teal; muted gold accents the app chrome. Values are verbatim from the CBFish Modernization Figma — primitive ramps feed the semantic roles components actually read.</p>
 
   <Section id="primitives" title="Primitive ramps">
-    <p>Raw values. Blue and gold are wired as <code>--cbf-*</code> tokens (re-point material). The neutral ramp is the brand-authoritative gray — see the note under Theming.</p>
+    <p>Raw values. Blue is a <code>--cbf-blue-*</code> re-point ramp; gold was promoted to the hub (<code>--color-gold-*</code>). The neutral ramp is the brand-authoritative gray — see the note under Theming.</p>
     <ColorScale name="Blue — primary" steps={blue} />
     <ColorScale name="Gold — accent" steps={gold} />
     <ColorScale name="Gray — neutral" steps={gray} />

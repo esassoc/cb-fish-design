@@ -6,7 +6,7 @@
 // palette's .cbf-search-surface styles (loaded via the nav's cbf-omni-search).
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
-import CbfContainer from '../components/shared/cbf-container.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
 import CbfIcon from '../components/search/cbf-icon.astro';
 import EsaBreadcrumbs from '@esa/ecology/esa-breadcrumbs.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
@@ -23,7 +23,7 @@ const crumbs = [
   <CbfPublicNav />
 
   <main class="cbf-app-page" data-search-page>
-    <CbfContainer maxWidth="1920px">
+    <EsaContainer maxWidth="1920px">
       <div class="cbf-app-card">
         <div class="cbf-app-card__crumb">
           <EsaBreadcrumbs items={crumbs} />
@@ -60,7 +60,7 @@ const crumbs = [
           </section>
         </div>
       </div>
-    </CbfContainer>
+    </EsaContainer>
   </main>
 
   <script>
@@ -86,7 +86,7 @@ const crumbs = [
     box-shadow: 0 1px 3px rgba(19, 39, 62, 0.08);
   }
   .cbf-app-card__crumb {
-    background: var(--cbf-gold-50); /* the app's breadcrumb strip */
+    background: var(--color-gold-50); /* the app's breadcrumb strip */
     border-bottom: 1px solid var(--color-border);
     padding: var(--spacing-400) var(--spacing-600);
   }
@@ -111,7 +111,7 @@ const crumbs = [
     margin: 0 0 var(--spacing-200);
     font-size: 16px;
     font-weight: var(--font-weight-semibold);
-    color: var(--cbf-gold-900); /* the app's sidebar sub-header color */
+    color: var(--color-gold-900); /* the app's sidebar sub-header color */
   }
   .cbf-app-sidebar__facets {
     display: flex;

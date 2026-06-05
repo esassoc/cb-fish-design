@@ -2,7 +2,7 @@
 // cbf-omni-empty — the static half of the palette's default (no-query) view: a
 // brand line-art illustration + a one-line search note. The Recent list above it
 // is injected by the client script into the sibling [data-omni-recent] slot.
-import CbfKbd from './cbf-kbd.astro';
+import EsaKbd from '@esa/ecology/esa-kbd.astro';
 import { withBase } from '../../lib/base';
 ---
 <div class="cbf-omni__hero">
@@ -10,7 +10,7 @@ import { withBase } from '../../lib/base';
   <p class="cbf-omni__hero-title">Search the Program</p>
   <p class="cbf-omni__hero-note">
     Find projects, contracts, people, publications, and funds across the Columbia
-    Basin. Start typing, or press <CbfKbd>Tab</CbfKbd> to choose a scope.
+    Basin. Start typing, or press <EsaKbd>Tab</EsaKbd> to choose a scope.
   </p>
 </div>
 
