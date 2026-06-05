@@ -146,7 +146,7 @@ const STYLE = `
   .launch svg { flex: none; }
   /* Full-height glass panel, inset from the edges. */
   .panel { position: fixed; top: 18px; right: 18px; bottom: 18px; width: min(720px, 94vw);
-    display: flex; flex-direction: column; color: #e9eef4; border-radius: 16px;
+    display: flex; flex-direction: column; color: #ffffff; border-radius: 16px;
     background: linear-gradient(155deg, rgba(26,31,40,.74), rgba(11,15,21,.86));
     backdrop-filter: blur(26px) saturate(150%); -webkit-backdrop-filter: blur(26px) saturate(150%);
     border: 1px solid rgba(255,255,255,.15);
@@ -159,16 +159,16 @@ const STYLE = `
     transition: transform .3s cubic-bezier(.4,0,.2,1), opacity .22s ease; }
   .head { display: flex; align-items: center; gap: 8px; padding: 13px 16px; border-bottom: 1px solid rgba(255,255,255,.09); }
   .head strong { font-size: 14px; }
-  .head .sub { flex: 1; color: #9aa4b0; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .head .sub { flex: 1; color: #ccd5e0; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .picker { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.09); }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; }
   .chip { padding: 5px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04);
-    color: #c2cad4; font: inherit; font-size: 12.5px; cursor: pointer; white-space: nowrap;
+    color: #eef2f6; font: inherit; font-size: 12.5px; cursor: pointer; white-space: nowrap;
     transition: border-color .12s ease, background .12s ease, color .12s ease; }
   .chip:hover { color: #fff; border-color: rgba(255,255,255,.3); }
   .chip.on { background: rgba(31,111,235,.28); border-color: #4493f8; color: #fff; font-weight: 600; }
   .tabs { display: flex; gap: 4px; padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,.09); }
-  .tabs button { padding: 5px 12px; border: 0; border-radius: 6px; background: none; color: #9aa4b0;
+  .tabs button { padding: 5px 12px; border: 0; border-radius: 6px; background: none; color: #ccd5e0;
     font: inherit; font-size: 12.5px; cursor: pointer; }
   .tabs button.on { background: rgba(255,255,255,.12); color: #fff; }
   .body { overflow: auto; padding: 13px 16px; flex: 1; }
@@ -177,7 +177,7 @@ const STYLE = `
     border-top: 1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.18); }
   .footer button { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
     padding: 8px 14px; border-radius: 8px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
-  .copy { color: #c2cad4; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.05); }
+  .copy { color: #eef2f6; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.05); }
   .copy:hover { color: #fff; border-color: rgba(255,255,255,.34); }
   .copy.done { color: #7ee787; border-color: #2ea043; }
   .claude { color: #fff; border: 1px solid #d97757;
@@ -190,15 +190,15 @@ const STYLE = `
   .cpreview { position: absolute; left: 16px; right: 16px; bottom: calc(100% + 8px);
     background: rgba(13,17,23,.96); border: 1px solid rgba(255,255,255,.16); border-radius: 12px;
     box-shadow: 0 18px 50px -14px rgba(0,0,0,.7); padding: 12px 14px; max-height: 50vh; overflow: auto; }
-  .cpreview__h { display: flex; align-items: center; margin-bottom: 8px; color: #9aa4b0; font-size: 11px;
+  .cpreview__h { display: flex; align-items: center; margin-bottom: 8px; color: #ccd5e0; font-size: 11px;
     letter-spacing: .04em; text-transform: uppercase; }
   .cpreview__copy { margin-left: auto; color: #e9a589; border: 1px solid #d9775766; border-radius: 6px;
     background: none; font: inherit; font-size: 11.5px; padding: 3px 9px; cursor: pointer; text-transform: none; letter-spacing: 0; }
   .cpreview__copy:hover { color: #fff; border-color: #d97757; }
   .cpreview pre { margin: 0; white-space: pre-wrap; word-break: break-word; line-height: 1.55;
-    color: #c2cad4; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
-  .hint { margin: 0; color: #7d8590; line-height: 1.6; }
-  pre.code { margin: 0; white-space: pre-wrap; word-break: break-word; line-height: 1.55; tab-size: 2; color: #adbac7;
+    color: #eef2f6; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+  .hint { margin: 0; color: #c4cdd8; line-height: 1.6; }
+  pre.code { margin: 0; white-space: pre-wrap; word-break: break-word; line-height: 1.55; tab-size: 2; color: #e3e9ef;
     font-family: ui-monospace, "SF Mono", Menlo, monospace; }
   pre.code .tag { color: #7ee787; }
   pre.code .s   { color: #a5d6ff; }
@@ -206,21 +206,21 @@ const STYLE = `
   pre.code .p   { color: #79c0ff; }
   pre.code .t   { color: #ffa657; }
   pre.code .n   { color: #f0883e; }
-  pre.code .c   { color: #6e7781; font-style: italic; }
+  pre.code .c   { color: #8d97a3; font-style: italic; }
   .g { margin-bottom: 14px; }
-  .g__intent { margin: 0 0 14px; color: #e6edf3; line-height: 1.6; font-size: 13px; }
-  .g__h { color: #7d8590; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 6px; }
+  .g__intent { margin: 0 0 14px; color: #ffffff; line-height: 1.6; font-size: 13px; }
+  .g__h { color: #c4cdd8; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 6px; }
   .g ul { margin: 0 0 2px; padding-left: 18px; }
-  .g li { color: #adbac7; line-height: 1.55; margin-bottom: 5px; }
+  .g li { color: #e3e9ef; line-height: 1.55; margin-bottom: 5px; }
   .tgroup { margin-bottom: 14px; }
-  .tgroup__h { text-transform: capitalize; color: #7d8590; font-size: 11px; letter-spacing: .04em; margin-bottom: 6px; }
-  .tgroup__h span { color: #4d5560; }
+  .tgroup__h { text-transform: capitalize; color: #c4cdd8; font-size: 11px; letter-spacing: .04em; margin-bottom: 6px; }
+  .tgroup__h span { color: #7a8492; }
   .tok { display: flex; flex-direction: column; gap: 2px; padding: 6px 0; border-bottom: 1px solid #161b22; }
   .tok__name { display: flex; align-items: center; gap: 8px; }
   .tok__name i { width: 14px; height: 14px; border-radius: 3px; border: 1px solid #ffffff22; flex: none; }
-  .tok__name code { color: #e6edf3; font-family: ui-monospace, monospace; }
-  .tok__val { color: #7d8590; padding-left: 22px; word-break: break-all; font-family: ui-monospace, monospace; }
-  .x { border: 0; background: none; color: #7d8590; font-size: 20px; line-height: 1; cursor: pointer; }
+  .tok__name code { color: #ffffff; font-family: ui-monospace, monospace; }
+  .tok__val { color: #c4cdd8; padding-left: 22px; word-break: break-all; font-family: ui-monospace, monospace; }
+  .x { border: 0; background: none; color: #c4cdd8; font-size: 20px; line-height: 1; cursor: pointer; }
   .x:hover { color: #fff; }
 `;
 
@@ -323,6 +323,7 @@ function mount(manifest: Manifest, manifestUrl: string): void {
   let current: (Section & { tag?: string }) | null = null;
   let tab: 'html' | 'css' | 'js' | 'tokens' | 'guide' = 'guide';
   let open = false;
+  let applying = false; // true while a recipe drives the page (its clicks aren't "outside")
 
   function render() {
     copyBtn.textContent = `Copy ${tab}`; // Copy button names what it'll copy
@@ -355,12 +356,16 @@ function mount(manifest: Manifest, manifestUrl: string): void {
     chipNodes().forEach((c, j) => c.classList.toggle('on', j === i));
     hideClaudePreview();
     if (doApply && open && current?.apply) {
+      // Recipe clicks land on the PAGE — flag them so the click-outside-to-close
+      // handler doesn't treat the app being driven as a click off the panel.
+      applying = true;
       // Reset: close the palette if it's open — via its own close control, NOT a
       // global Escape (which the inspector itself listens for and would close us).
       const omni = document.querySelector('[data-omni]');
       if (omni && !omni.hasAttribute('hidden'))
         document.querySelector<HTMLElement>('[data-omni-close]')?.click();
       runApplyDom(current.apply);
+      applying = false;
     }
     if (open) highlight(current?.selector);
     render();
@@ -379,6 +384,14 @@ function mount(manifest: Manifest, manifestUrl: string): void {
     });
   }
 
+  // Close when a click lands outside the panel — but not on a recipe-driven page
+  // click, and not on the very click that opened it (composedPath sees into the
+  // shadow DOM, so panel clicks are correctly "inside").
+  const onDocClick = (e: MouseEvent) => {
+    if (!open || applying) return;
+    if (!e.composedPath().includes(panel)) setOpen(false);
+  };
+
   function setOpen(on: boolean) {
     open = on;
     panel.classList.toggle('is-open', on); // class drives the slide-in transition
@@ -386,9 +399,12 @@ function mount(manifest: Manifest, manifestUrl: string): void {
     if (on) {
       document.head.append(pageStyle);
       highlight(current?.selector); // re-outline the current section, if any
+      // Defer arming a tick so the opening click itself doesn't immediately close it.
+      setTimeout(() => document.addEventListener('click', onDocClick, true), 0);
     } else {
       pageStyle.remove();
       clearHighlight();
+      document.removeEventListener('click', onDocClick, true);
     }
   }
 
