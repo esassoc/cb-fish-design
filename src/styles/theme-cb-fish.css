@@ -48,8 +48,15 @@
   --color-border:      #dcdcdc;
   --color-text-muted:  #7c7c7c;
 
+  /* The hub bakes --color-active-overlay as a literal teal rgba on :root, so it
+     can't be re-pointed by overriding --color-primary — set it explicitly to navy. */
+  --color-active-overlay: color-mix(in srgb, var(--color-primary) 8%, transparent);
+
   /* ===== TYPE — IBM Plex replaces DM Sans ===== */
   --font-sans: 'IBM Plex Sans', sans-serif;
+  /* Mono — the hub default is DM Mono; without this, code/kbd render DM Mono even
+     though the docs layout loads IBM Plex Mono. Re-point so the loaded face is used. */
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
   /* IBM Plex ships discrete weights; remap the hub's DM Sans scale (350/450/550/650).
      Values verified against cbfish.org prod CSS, which uses 400/500/600/700. */
   --font-weight-regular:  400;

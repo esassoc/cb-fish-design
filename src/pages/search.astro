@@ -136,7 +136,8 @@ const crumbs = [
     font-size: 40px;
     line-height: 40px;
     letter-spacing: -1px;
-    color: var(--cbf-blue-950);
+    /* Deepest navy — read the semantic (= --cbf-blue-950), not the spoke ramp directly. */
+    color: var(--color-surface-inverse);
   }
   /* count badge beside the title (JS-set) */
   .cbf-page-title :global(.cbf-title-count) {
