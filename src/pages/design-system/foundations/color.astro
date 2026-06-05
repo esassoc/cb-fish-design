@@ -1,0 +1,88 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import Section from '../../../components/docs/Section.astro';
+import ColorScale from '../../../components/docs/ColorScale.astro';
+import { withBase } from '../../../lib/base';
+
+// Primitive ramps — verbatim from the CBFish Modernization Figma variables.
+const blue = [
+  { step: '50', value: '#f3f7fc', token: 'cbf-blue-50' },
+  { step: '200', value: '#c6dcf1', token: 'cbf-blue-200' },
+  { step: '500', value: '#3484c3', token: 'cbf-blue-500' },
+  { step: '600', value: '#2770b2', token: 'cbf-blue-600' },
+  { step: '700', value: '#1e5386', token: 'cbf-blue-700' },
+  { step: '950', value: '#13273e', token: 'cbf-blue-950' },
+];
+const gray = [
+  { step: '0', value: '#ffffff' }, { step: '50', value: '#fafafa' }, { step: '100', value: '#efefef' },
+  { step: '200', value: '#dcdcdc' }, { step: '300', value: '#bdbdbd' }, { step: '400', value: '#989898' },
+  { step: '500', value: '#7c7c7c' }, { step: '600', value: '#656565' }, { step: '700', value: '#525252' },
+  { step: '800', value: '#464646' }, { step: '900', value: '#3d3d3d' },
+];
+const gold = [
+  { step: '50', value: '#f8f8f4', token: 'cbf-gold-50' },
+  { step: '500', value: '#a9a379', token: 'cbf-gold-500' },
+  { step: '900', value: '#534c3b', token: 'cbf-gold-900' },
+];
+
+// Semantic roles — these ARE wired, so the swatches render live via var().
+const roles = [
+  { token: 'color-primary', value: '#1e5386', note: 'Brand navy. Buttons, links, focus rings chain off this.' },
+  { token: 'color-secondary', value: '#2770b2', note: 'Lighter navy for secondary emphasis.' },
+  { token: 'color-surface-inverse', value: '#13273e', note: 'Deepest navy — the admin bar chrome.' },
+  { token: 'color-surface-sunken', value: '#f3f7fc', note: 'Blue-tinted sunken surface — stat tiles, control pills.' },
+  { token: 'color-border', value: '#dcdcdc', note: 'Hairline dividers (Figma Gray/200).' },
+  { token: 'color-text-muted', value: '#7c7c7c', note: 'Secondary / meta text (Figma Gray/500).' },
+];
+---
+<DocsLayout title="Color — CB Fish" activeHref="/design-system/foundations/color">
+  <nav class="crumbs"><a href={withBase('/design-system')}>CB Fish</a> <span>/</span> <span>Foundations</span> <span>/</span> <span>Color</span></nav>
+  <h1>Color</h1>
+  <p class="lede">Navy blue replaces Ecology's teal; muted gold accents the app chrome. Values are verbatim from the CBFish Modernization Figma — primitive ramps feed the semantic roles components actually read.</p>
+
+  <Section id="primitives" title="Primitive ramps">
+    <p>Raw values. Blue and gold are wired as <code>--cbf-*</code> tokens (re-point material). The neutral ramp is the brand-authoritative gray — see the note under Theming.</p>
+    <ColorScale name="Blue — primary" steps={blue} />
+    <ColorScale name="Gold — accent" steps={gold} />
+    <ColorScale name="Gray — neutral" steps={gray} />
+  </Section>
+
+  <Section id="roles" title="Semantic roles">
+    <p>What components reference. The CB Fish theme re-points these off the ramps above — each swatch below renders live from its token, so it reflects exactly what ships.</p>
+    <div class="roles">
+      {roles.map((r) => (
+        <div class="role">
+          <span class="role__sw" style={`background: var(--${r.token});`}></span>
+          <div class="role__body">
+            <code>--{r.token}</code>
+            <span class="role__val">{r.value}</span>
+            <span class="role__note">{r.note}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  </Section>
+
+  <Section id="theming" title="Theming">
+    <p>One <code>[data-theme="cb-fish"]</code> block in <code>theme-cb-fish.css</code> overrides the semantic layer; primitives never move. Because the hub chains <code>--color-text-link</code> and the focus-ring tokens off <code>--color-primary</code>, re-pointing primary alone re-skins links and focus states too.</p>
+    <p class="note">
+      <strong>Divergence note —</strong> only <code>Gray/200</code> and <code>Gray/500</code> are currently
+      re-pointed (as <code>--color-border</code> and <code>--color-text-muted</code>). The rest of the
+      neutral chain still resolves to Ecology's cooler grays. Completing the re-point would shift
+      text color across every existing prototype, so it's a deliberate, separate decision.
+    </p>
+  </Section>
+</DocsLayout>
+
+<style>
+  .roles { display: flex; flex-direction: column; gap: var(--spacing-200, 0.5rem); }
+  .role { display: flex; gap: var(--spacing-400, 1rem); align-items: center; padding: var(--spacing-300, 0.75rem) 0; border-bottom: 1px solid var(--color-border-light, #efefef); }
+  .role:last-child { border-bottom: 0; }
+  .role__sw { width: 40px; height: 40px; border-radius: 8px; flex: none; border: 1px solid color-mix(in srgb, var(--color-text-primary, #000) 10%, transparent); }
+  .role__body { display: grid; gap: 1px; }
+  .role__body code { font-family: var(--font-mono, monospace); font-size: 13px; color: var(--color-text-primary, #171717); }
+  .role__val { font-family: var(--font-mono, monospace); font-size: 12px; color: var(--color-text-muted, #7c7c7c); text-transform: uppercase; }
+  .role__note { font-size: 13.5px; color: var(--color-text-secondary, #525252); }
+
+  .note { padding: var(--spacing-300, 0.75rem) var(--spacing-400, 1rem); background: var(--color-surface-sunken, #f3f7fc); border-radius: 8px; font-size: 14px; line-height: 1.55; }
+</style>

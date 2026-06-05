@@ -1,0 +1,94 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import Section from '../../../components/docs/Section.astro';
+import { withBase } from '../../../lib/base';
+
+// Fixed px from Figma — the design intent. Components consume Ecology's fluid
+// clamp() --type-size-* tokens, which track these at desktop widths.
+const scale = [
+  { name: 'Size 600', px: 32, lh: 56, weight: 700, use: 'Library section title', sample: 'Report Center' },
+  { name: 'Size 500', px: 24, lh: 34, weight: 600, use: 'Subsection heading', sample: 'Featured reports' },
+  { name: 'Size 400', px: 20, lh: 28, weight: 600, use: 'Card title', sample: 'Cost-share funding summary' },
+  { name: 'Size 300', px: 18, lh: 25, weight: 400, use: 'Lead paragraph', sample: 'A curated view of the program’s data.' },
+  { name: 'Size 200', px: 16, lh: 22, weight: 400, use: 'Body — base reading size', sample: 'The Columbia Basin Fish & Wildlife Program reports on funded projects across the basin.' },
+  { name: 'Size 100', px: 14, lh: 20, weight: 400, use: 'Secondary / dense UI', sample: 'Filter by project type, sponsor, or fiscal year.' },
+  { name: 'Size 050', px: 12, lh: 16, weight: 400, use: 'Meta, timestamps, captions', sample: 'Last updated Jun 4, 2026' },
+];
+
+const weights = [
+  { name: 'Regular', value: 400, token: 'font-weight-regular' },
+  { name: 'Medium', value: 500, token: 'font-weight-medium' },
+  { name: 'Semibold', value: 600, token: 'font-weight-semibold' },
+  { name: 'Bold', value: 700, token: 'font-weight-bold' },
+];
+---
+<DocsLayout title="Typography — CB Fish" activeHref="/design-system/foundations/typography">
+  <nav class="crumbs"><a href={withBase('/design-system')}>CB Fish</a> <span>/</span> <span>Foundations</span> <span>/</span> <span>Typography</span></nav>
+  <h1>Typography</h1>
+  <p class="lede">IBM Plex Sans for everything; IBM Plex Sans Condensed for display — page titles, big stat numbers, the logotype. The weight scale (400 / 500 / 600 / 700) is verified against cbfish.org production.</p>
+
+  <Section id="families" title="Type families">
+    <div class="fam">
+      <div class="fam__sample fam__sample--display">Report Center</div>
+      <div class="fam__meta"><code>--font-display</code> · IBM Plex Sans Condensed · Medium 500 · −1 tracking</div>
+    </div>
+    <div class="fam">
+      <div class="fam__sample">The quick brown fox jumps over the lazy dog</div>
+      <div class="fam__meta"><code>--font-sans</code> · IBM Plex Sans · the body face</div>
+    </div>
+  </Section>
+
+  <Section id="scale" title="Type scale">
+    <p>Sizes shown at their Figma px / line-height. Components read the matching fluid <code>--type-size-*</code> token.</p>
+    <div class="scale">
+      {scale.map((t) => (
+        <div class="row">
+          <div class="row__meta">
+            <span class="row__name">{t.name}</span>
+            <span class="row__dims">{t.px} / {t.lh} · {t.weight}</span>
+            <span class="row__use">{t.use}</span>
+          </div>
+          <div class="row__sample" style={`font-size: ${t.px}px; line-height: ${t.lh}px; font-weight: ${t.weight};`}>{t.sample}</div>
+        </div>
+      ))}
+    </div>
+  </Section>
+
+  <Section id="weights" title="Weights">
+    <div class="weights">
+      {weights.map((w) => (
+        <div class="wt">
+          <div class="wt__sample" style={`font-weight: ${w.value};`}>{w.name}</div>
+          <code>--{w.token}</code>
+          <span class="wt__val">{w.value}</span>
+        </div>
+      ))}
+    </div>
+  </Section>
+</DocsLayout>
+
+<style>
+  .fam { padding: var(--spacing-400, 1rem) 0; border-bottom: 1px solid var(--color-border-light, #efefef); }
+  .fam:last-child { border-bottom: 0; }
+  .fam__sample { font-size: 28px; color: var(--color-text-primary, #171717); }
+  .fam__sample--display { font-family: var(--font-display, var(--font-sans)); font-weight: 500; font-size: 40px; letter-spacing: -1px; }
+  .fam__meta { margin-top: var(--spacing-200, 0.5rem); font-size: 13.5px; color: var(--color-text-muted, #7c7c7c); }
+  .fam__meta code { font-family: var(--font-mono, monospace); }
+
+  .scale { display: flex; flex-direction: column; }
+  .row { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: var(--spacing-500, 1.5rem); align-items: baseline; padding: var(--spacing-400, 1rem) 0; border-bottom: 1px solid var(--color-border-light, #efefef); }
+  .row:last-child { border-bottom: 0; }
+  .row__meta { display: flex; flex-direction: column; gap: 1px; }
+  .row__name { font-size: 14px; font-weight: 500; color: var(--color-text-primary, #171717); }
+  .row__dims { font-family: var(--font-mono, monospace); font-size: 12px; color: var(--color-text-muted, #7c7c7c); }
+  .row__use { font-size: 12.5px; color: var(--color-text-muted, #7c7c7c); }
+  .row__sample { color: var(--color-text-primary, #171717); min-width: 0; }
+
+  .weights { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--spacing-400, 1rem); }
+  .wt { display: flex; flex-direction: column; gap: 2px; padding: var(--spacing-400, 1rem); border: 1px solid var(--color-border, #dcdcdc); border-radius: 10px; }
+  .wt__sample { font-size: 22px; color: var(--color-text-primary, #171717); }
+  .wt code { font-family: var(--font-mono, monospace); font-size: 12.5px; color: var(--color-text-secondary, #525252); margin-top: var(--spacing-200, 0.5rem); }
+  .wt__val { font-size: 12px; color: var(--color-text-muted, #7c7c7c); }
+
+  @media (max-width: 560px) { .row { grid-template-columns: 1fr; gap: var(--spacing-200, 0.5rem); } }
+</style>

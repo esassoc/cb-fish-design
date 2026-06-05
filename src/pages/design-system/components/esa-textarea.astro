@@ -1,0 +1,67 @@
+---
+import ComponentDoc from '../../../layouts/ComponentDoc.astro';
+import Section from '../../../components/docs/Section.astro';
+import Preview from '../../../components/docs/Preview.astro';
+import Api from '../../../components/docs/Api.astro';
+
+const props = [
+  { name: 'label', type: 'string', default: "''", description: 'Visible label rendered above the textarea.' },
+  { name: 'value', type: 'string', default: "''", description: 'Current value; mirrored to the form on every input.' },
+  { name: 'placeholder', type: 'string', default: "''", description: 'Placeholder shown when empty.' },
+  { name: 'rows', type: 'number', default: '3', description: 'Initial visible row count.' },
+  { name: 'auto-resize', type: 'boolean', default: 'false', description: 'Grows the textarea to fit content as the user types.' },
+  { name: 'help-text', type: 'string', default: "''", description: 'Helper text shown below the textarea.' },
+  { name: 'error-text', type: 'string', default: "''", description: 'Error message; replaces help text and turns the field red when present.' },
+  { name: 'size', type: "'xs' | 'sm' | 'md' | 'lg'", default: "'md'", description: 'Control size.' },
+  { name: 'disabled', type: 'boolean', default: 'false', description: 'Disables interaction.' },
+];
+
+const events = [
+  { name: 'change', type: 'CustomEvent<{ value: string }>', description: 'Fired on every input. Composed and bubbling; detail.value is the current string.' },
+];
+---
+<ComponentDoc
+  name="Textarea"
+  category="Forms"
+  slug="esa-textarea"
+  type="wc"
+  summary="The inherited Ecology multi-line input, wearing the CB Fish skin. Optional auto-resize, packaged with its label and help/error text; form-associated via <code>ElementInternals</code> with a navy focus ring."
+>
+  <Section id="preview" title="Preview">
+    <Preview code={`<esa-textarea label="Description" placeholder="Describe the project…" help-text="Plain text only."></esa-textarea>`}>
+      <esa-textarea label="Description" placeholder="Describe the project…" help-text="Plain text only."></esa-textarea>
+    </Preview>
+  </Section>
+
+  <Section id="rows" title="Rows + auto-resize">
+    <Preview code={`<esa-textarea label="Fixed 5 rows" rows="5" placeholder="Five rows tall"></esa-textarea>\n<esa-textarea label="Auto-resize" auto-resize max-rows="8" placeholder="Grows as you type, up to 8 rows"></esa-textarea>`}>
+      <esa-textarea label="Fixed 5 rows" rows="5" placeholder="Five rows tall"></esa-textarea>
+      <esa-textarea label="Auto-resize" auto-resize max-rows="8" placeholder="Grows as you type, up to 8 rows"></esa-textarea>
+    </Preview>
+  </Section>
+
+  <Section id="sizes" title="Sizes">
+    <Preview code={`<esa-textarea label="Extra small" size="xs" placeholder="Extra small"></esa-textarea>\n<esa-textarea label="Small" size="sm" placeholder="Small"></esa-textarea>\n<esa-textarea label="Medium" size="md" placeholder="Medium"></esa-textarea>\n<esa-textarea label="Large" size="lg" placeholder="Large"></esa-textarea>`}>
+      <esa-textarea label="Extra small" size="xs" placeholder="Extra small"></esa-textarea>
+      <esa-textarea label="Small" size="sm" placeholder="Small"></esa-textarea>
+      <esa-textarea label="Medium" size="md" placeholder="Medium"></esa-textarea>
+      <esa-textarea label="Large" size="lg" placeholder="Large"></esa-textarea>
+    </Preview>
+  </Section>
+
+  <Section id="states" title="States">
+    <Preview code={`<esa-textarea label="Required" required placeholder="Cannot be empty"></esa-textarea>\n<esa-textarea label="With error" error-text="A description is required." required></esa-textarea>\n<esa-textarea label="Disabled" disabled value="Read only content"></esa-textarea>`}>
+      <esa-textarea label="Required" required placeholder="Cannot be empty"></esa-textarea>
+      <esa-textarea label="With error" error-text="A description is required." required></esa-textarea>
+      <esa-textarea label="Disabled" disabled value="Read only content"></esa-textarea>
+    </Preview>
+  </Section>
+
+  <Section id="api" title="API">
+    <Api props={props} events={events} />
+  </Section>
+</ComponentDoc>
+
+<script>
+  import '@esa/ecology/esa-textarea';
+</script>

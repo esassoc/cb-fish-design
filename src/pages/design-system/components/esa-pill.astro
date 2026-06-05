@@ -1,0 +1,59 @@
+---
+import ComponentDoc from '../../../layouts/ComponentDoc.astro';
+import Section from '../../../components/docs/Section.astro';
+import Preview from '../../../components/docs/Preview.astro';
+import Api from '../../../components/docs/Api.astro';
+import Pill from '@esa/ecology/esa-pill.astro';
+
+const props = [
+  { name: 'label', type: 'string', description: 'Required. Text shown inside the pill.' },
+  { name: 'variant', type: "'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info'", default: "'default'", description: 'Color intent — drives background, text, and border.' },
+  { name: 'size', type: "'xs' | 'sm' | 'md' | 'lg'", default: "'md'", description: 'Pill height and text size.' },
+  { name: 'removable', type: 'boolean', default: 'true', description: 'Shows a remove (×) button that emits a removed event.' },
+];
+---
+<ComponentDoc
+  name="Pill"
+  category="Display"
+  slug="esa-pill"
+  type=".astro"
+  summary="The inherited Ecology pill, wearing the CB Fish skin. A compact, rounded tag with color variants, sizes, and an optional remove control; the primary variant picks up brand navy from <code>--color-primary</code>."
+>
+  <Section id="preview" title="Preview">
+    <Preview code={`<Pill label="Wetlands" variant="success" removable={false} />`}>
+      <Pill label="Wetlands" variant="success" removable={false} />
+    </Preview>
+  </Section>
+
+  <Section id="variants" title="Variants">
+    <Preview code={`<Pill label="Default" variant="default" removable={false} />\n<Pill label="Primary" variant="primary" removable={false} />\n<Pill label="Success" variant="success" removable={false} />\n<Pill label="Warning" variant="warning" removable={false} />\n<Pill label="Danger" variant="danger" removable={false} />\n<Pill label="Info" variant="info" removable={false} />`}>
+      <Pill label="Default" variant="default" removable={false} />
+      <Pill label="Primary" variant="primary" removable={false} />
+      <Pill label="Success" variant="success" removable={false} />
+      <Pill label="Warning" variant="warning" removable={false} />
+      <Pill label="Danger" variant="danger" removable={false} />
+      <Pill label="Info" variant="info" removable={false} />
+    </Preview>
+  </Section>
+
+  <Section id="sizes" title="Sizes">
+    <Preview code={`<Pill label="Extra small" size="xs" removable={false} />\n<Pill label="Small" size="sm" removable={false} />\n<Pill label="Medium" size="md" removable={false} />\n<Pill label="Large" size="lg" removable={false} />`}>
+      <Pill label="Extra small" size="xs" removable={false} />
+      <Pill label="Small" size="sm" removable={false} />
+      <Pill label="Medium" size="md" removable={false} />
+      <Pill label="Large" size="lg" removable={false} />
+    </Preview>
+  </Section>
+
+  <Section id="removable" title="Removable">
+    <p>With <code>removable</code> (the default), a × button emits a <code>removed</code> event and removes the pill from the DOM.</p>
+    <Preview code={`<Pill label="Wetlands" variant="success" />\n<Pill label="Overdue" variant="danger" />`}>
+      <Pill label="Wetlands" variant="success" />
+      <Pill label="Overdue" variant="danger" />
+    </Preview>
+  </Section>
+
+  <Section id="api" title="API">
+    <Api props={props} />
+  </Section>
+</ComponentDoc>

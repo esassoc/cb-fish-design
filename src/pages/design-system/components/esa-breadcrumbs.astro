@@ -1,0 +1,47 @@
+---
+import ComponentDoc from '../../../layouts/ComponentDoc.astro';
+import Section from '../../../components/docs/Section.astro';
+import Preview from '../../../components/docs/Preview.astro';
+import Api from '../../../components/docs/Api.astro';
+import EsaBreadcrumbs from '@esa/ecology/esa-breadcrumbs.astro';
+
+const basic = [
+  { label: 'Home', href: '/' },
+  { label: 'Projects', href: '/projects' },
+  { label: 'Wetland Survey' },
+];
+
+const props = [
+  { name: 'items', type: 'EsaBreadcrumbItem[]', description: 'Trail of crumbs. Each item is { label; href?; icon? }. The last item is rendered as the current page.' },
+  { name: 'size', type: "'xs' | 'sm' | 'md' | 'lg'", default: "'md'", description: 'Type scale of the trail.' },
+];
+---
+<ComponentDoc
+  name="Breadcrumbs"
+  category="Navigation"
+  slug="esa-breadcrumbs"
+  type=".astro"
+  summary="The inherited Ecology breadcrumb trail, wearing the CB Fish skin. Shows the path to the current page; links take their color from the spoke's navy-tinted breadcrumb tokens, and the last item renders as the current page."
+>
+  <Section id="preview" title="Preview">
+    <Preview align="start" code={`<EsaBreadcrumbs items={[\n  { label: 'Home', href: '/' },\n  { label: 'Projects', href: '/projects' },\n  { label: 'Wetland Survey' },\n]} />`}>
+      <EsaBreadcrumbs items={basic} />
+    </Preview>
+  </Section>
+
+  <Section id="sizes" title="Sizes">
+    <Preview align="start" code={`<EsaBreadcrumbs items={items} size="xs" />\n<EsaBreadcrumbs items={items} size="sm" />\n<EsaBreadcrumbs items={items} size="md" />\n<EsaBreadcrumbs items={items} size="lg" />`}>
+      <div style="display: flex; flex-direction: column; gap: var(--spacing-300, 0.75rem);">
+        <EsaBreadcrumbs items={basic} size="xs" />
+        <EsaBreadcrumbs items={basic} size="sm" />
+        <EsaBreadcrumbs items={basic} size="md" />
+        <EsaBreadcrumbs items={basic} size="lg" />
+      </div>
+    </Preview>
+  </Section>
+
+  <Section id="api" title="API">
+    <Api props={props} />
+    <p>Each <code>EsaBreadcrumbItem</code> is <code>{'{ label: string; href?: string; icon?: string }'}</code>. Omit <code>href</code> on the final item; <code>icon</code> is a raw inline SVG string.</p>
+  </Section>
+</ComponentDoc>

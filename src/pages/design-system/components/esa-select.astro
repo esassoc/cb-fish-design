@@ -1,0 +1,74 @@
+---
+import ComponentDoc from '../../../layouts/ComponentDoc.astro';
+import Section from '../../../components/docs/Section.astro';
+import Preview from '../../../components/docs/Preview.astro';
+import Api from '../../../components/docs/Api.astro';
+
+const props = [
+  { name: 'label', type: 'string', default: "''", description: 'Field label above the control.' },
+  { name: 'options', type: '{ label, value, disabled? }[]', default: '[]', description: 'Selectable options. Set as a property (not an attribute).' },
+  { name: 'size', type: "'xs' | 'sm' | 'md' | 'lg'", default: "'md'", description: 'Control size (reflected attribute).' },
+  { name: 'placeholder', type: 'string', default: "'Select...'", description: 'Placeholder shown when nothing is selected.' },
+  { name: 'required', type: 'boolean', default: 'false', description: 'Marks the field required (renders a * after the label).' },
+  { name: 'disabled', type: 'boolean', default: 'false', description: 'Disables interaction (reflected attribute).' },
+  { name: 'multiple', type: 'boolean', default: 'false', description: 'Allow multiple selections.' },
+  { name: 'searchable', type: 'boolean', default: 'true', description: 'Type-to-filter the option list. When false the input is read-only.' },
+];
+
+const events = [
+  { name: 'change', type: 'CustomEvent<{ value: string | string[] }>', description: 'Fired on selection change. Composed and bubbles. Form value is the string (single) or comma-joined values (multiple).' },
+];
+---
+<ComponentDoc
+  name="Select"
+  category="Forms"
+  slug="esa-select"
+  type="wc"
+  summary="The inherited Ecology searchable select, wearing the CB Fish skin. Single/multi-select with type-to-filter and removable chips; the active option and focus state pick up brand navy from <code>--color-primary</code>."
+>
+  <Section id="preview" title="Preview">
+    <Preview code={`<esa-select label="Fruit" placeholder="Choose a fruit" help-text="Type to filter"></esa-select>`}>
+      <esa-select label="Fruit" placeholder="Choose a fruit" help-text="Type to filter"></esa-select>
+    </Preview>
+  </Section>
+
+  <Section id="sizes" title="Sizes">
+    <Preview code={`<esa-select label="Extra small" size="xs"></esa-select>\n<esa-select label="Small" size="sm"></esa-select>\n<esa-select label="Medium" size="md"></esa-select>\n<esa-select label="Large" size="lg"></esa-select>`}>
+      <esa-select label="Extra small" size="xs"></esa-select>
+      <esa-select label="Small" size="sm"></esa-select>
+      <esa-select label="Medium" size="md"></esa-select>
+      <esa-select label="Large" size="lg"></esa-select>
+    </Preview>
+  </Section>
+
+  <Section id="states" title="States">
+    <Preview code={`<esa-select label="Toppings" multiple chip-mode placeholder="Add toppings"></esa-select>\n<esa-select label="Required" required></esa-select>\n<esa-select label="Error" error-text="Please make a selection"></esa-select>\n<esa-select label="Disabled" disabled></esa-select>`}>
+      <esa-select label="Toppings" multiple chip-mode placeholder="Add toppings"></esa-select>
+      <esa-select label="Required" required></esa-select>
+      <esa-select label="Error" error-text="Please make a selection"></esa-select>
+      <esa-select label="Disabled" disabled></esa-select>
+    </Preview>
+  </Section>
+
+  <Section id="api" title="API">
+    <Api props={props} events={events} />
+  </Section>
+</ComponentDoc>
+
+<script>
+  import '@esa/ecology/esa-select';
+  const opts = [
+    { label: 'Apple', value: 'apple' },
+    { label: 'Banana', value: 'banana' },
+    { label: 'Cherry', value: 'cherry' },
+    { label: 'Date', value: 'date', disabled: true },
+    { label: 'Elderberry', value: 'elderberry' },
+    { label: 'Fig', value: 'fig' },
+    { label: 'Grape', value: 'grape' },
+  ];
+  customElements.whenDefined('esa-select').then(() => {
+    document.querySelectorAll('esa-select').forEach((el) => {
+      (el as any).options = opts;
+    });
+  });
+</script>

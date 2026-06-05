@@ -1,7 +1,8 @@
 ---
-// CB Fish — Home. Not a marketing page: the spoke's prototype index. Renders a
-// table straight off the typed registry (src/data/prototypes.ts), so shipping a
-// new prototype is a one-row data edit, never a layout change.
+// CB Fish — Home. Two equal layers of the repo, side by side: the Design System
+// (the brand foundation — tokens, type, skinned components) and the Prototypes
+// (working screens built on it). Prototypes render straight off the typed registry
+// (src/data/prototypes.ts), so shipping one is a one-row data edit.
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CbfLogo from '../components/shared/cbf-logo.astro';
 import { withBase } from '../lib/base';
@@ -22,6 +23,21 @@ const STATUS_LABEL: Record<PrototypeStatus, string> = {
   'in-progress': 'In progress',
   archived: 'Archived',
 };
+
+// Brand chips shown on the Design System panel — a glance at the skin.
+const brandChips = [
+  { value: '#1e5386', label: 'Navy' },
+  { value: '#13273e', label: 'Deep' },
+  { value: '#a9a379', label: 'Gold' },
+  { value: '#534c3b', label: 'Bark' },
+];
+
+const dsLinks = [
+  { href: '/design-system/foundations/color', label: 'Color' },
+  { href: '/design-system/foundations/typography', label: 'Typography' },
+  { href: '/design-system/foundations/spacing', label: 'Spacing' },
+  { href: '/design-system/components/esa-button', label: 'Components' },
+];
 ---
 <BaseLayout title="CB Fish — Prototype Library">
   <div class="lib-bar">
@@ -31,70 +47,139 @@ const STATUS_LABEL: Record<PrototypeStatus, string> = {
   </div>
 
   <header class="lib-head">
-    <h1 class="lib-head__title">Prototype Library</h1>
+    <h1 class="lib-head__title">Columbia Basin Fish &amp; Wildlife</h1>
     <p class="lib-head__sub">
-      Working prototypes for the Columbia Basin Fish &amp; Wildlife Program — an Astro brand
-      spoke of the ESA Ecology design system.
+      An Astro brand spoke of the ESA Ecology design system. Two layers: the design
+      system that defines the brand, and the prototypes built on it.
     </p>
   </header>
 
-  <main class="lib-main">
-    <div class="lib-table-wrap">
-      <table class="lib-table">
-        <thead>
-          <tr>
-            <th scope="col">Prototype</th>
-            <th scope="col">Description</th>
-            <th scope="col">Created</th>
-            <th scope="col">Ticket</th>
-            <th scope="col">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((p) => (
-            <tr class="lib-row">
-              <td class="lib-row__name">
-                <a class="lib-row__link" href={withBase(p.route)}>
-                  {p.title}
-                  <svg class="lib-row__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
-                </a>
-              </td>
-              <td class="lib-row__desc">{p.description}</td>
-              <td class="lib-row__meta">
-                <time datetime={p.createdAt}>{fmtDate(p.createdAt)}</time>
-              </td>
-              <td class="lib-row__meta">{p.ticket ?? '—'}</td>
-              <td>
-                <span class="lib-status" data-status={p.status}>
-                  <span class="lib-status__dot" aria-hidden="true"></span>
-                  {STATUS_LABEL[p.status]}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+  <main class="home-split">
+
+    <!-- Layer 1 — Design System -->
+    <section class="layer layer--ds">
+      <div class="layer__head">
+        <span class="layer__kicker">Foundation</span>
+        <h2 class="layer__title">Design System</h2>
+      </div>
+      <p class="layer__lede">
+        The brand layer — navy + gold palette, IBM Plex type, spacing scale, and the
+        inherited Ecology components re-skinned for CB Fish.
+      </p>
+
+      <div class="ds-chips" aria-hidden="true">
+        {brandChips.map((c) => (
+          <span class="ds-chip">
+            <span class="ds-chip__sw" style={`background: ${c.value};`}></span>
+            {c.label}
+          </span>
+        ))}
+      </div>
+
+      <ul class="ds-links">
+        {dsLinks.map((l) => (
+          <li><a href={withBase(l.href)}>{l.label}</a></li>
+        ))}
+      </ul>
+
+      <a class="layer__cta" href={withBase('/design-system')}>
+        Open the design system
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      </a>
+    </section>
+
+    <!-- Layer 2 — Prototypes -->
+    <section class="layer layer--proto">
+      <div class="layer__head">
+        <span class="layer__kicker">Applied</span>
+        <h2 class="layer__title">Prototypes</h2>
+      </div>
+      <p class="layer__lede">Working screens for the program, built on the system.</p>
+
+      <ul class="proto-list">
+        {rows.map((p) => (
+          <li class="proto-card">
+            <a class="proto-card__link" href={withBase(p.route)}>
+              <span class="proto-card__title">
+                {p.title}
+                <svg class="proto-card__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg>
+              </span>
+            </a>
+            <p class="proto-card__desc">{p.description}</p>
+            <div class="proto-card__foot">
+              <span class="lib-status" data-status={p.status}>
+                <span class="lib-status__dot" aria-hidden="true"></span>
+                {STATUS_LABEL[p.status]}
+              </span>
+              <time class="proto-card__meta" datetime={p.createdAt}>{fmtDate(p.createdAt)}</time>
+              {p.ticket && <span class="proto-card__meta">{p.ticket}</span>}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+
   </main>
 
   <style>
     /* Brand app bar — the white logo is built for dark surfaces, so it gets one. */
-    .lib-bar { background: var(--color-primary, #1d3c5d); }
+    .lib-bar { background: var(--color-primary, #1e5386); }
     .lib-bar__inner {
-      max-width: 1040px;
+      max-width: 1080px;
       margin: 0 auto;
-      padding: var(--spacing-400, 16px) var(--spacing-500, 20px);
+      padding: var(--spacing-400, 16px) var(--spacing-500, 24px);
     }
 
     .lib-head {
-      display: flex;
-      flex-direction: column;
-      gap: var(--spacing-150, 6px);
-      max-width: 1040px;
+      max-width: 1080px;
       margin: 0 auto;
-      padding: var(--spacing-800, 40px) var(--spacing-500, 20px) var(--spacing-600, 28px);
+      padding: var(--spacing-800, 64px) var(--spacing-500, 24px) var(--spacing-500, 24px);
     }
     .lib-head__title {
+      margin: 0;
+      font-family: var(--font-display, var(--font-sans));
+      font-size: clamp(2rem, 1.6rem + 2vw, 2.75rem);
+      font-weight: var(--font-weight-medium, 500);
+      letter-spacing: -0.02em;
+      color: var(--color-text-primary, #171717);
+    }
+    .lib-head__sub {
+      margin: var(--spacing-200, 8px) 0 0;
+      max-width: 64ch;
+      font-size: var(--type-size-300, 1.125rem);
+      line-height: 1.55;
+      color: var(--color-text-secondary, #525252);
+    }
+
+    /* The split — two equal layers. */
+    .home-split {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: var(--spacing-500, 24px) var(--spacing-500, 24px) var(--spacing-900, 96px);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-500, 24px);
+      align-items: start;
+    }
+
+    .layer {
+      border: 1px solid var(--color-border, #dcdcdc);
+      border-radius: var(--radius-400, 12px);
+      background: var(--color-surface, #fff);
+      padding: var(--spacing-600, 32px);
+    }
+    .layer--ds {
+      background:
+        linear-gradient(180deg, var(--color-primary-subtle, #f3f7fc), var(--color-surface, #fff) 220px);
+    }
+
+    .layer__head { display: flex; flex-direction: column; gap: 2px; }
+    .layer__kicker {
+      font-size: var(--type-size-100, 0.875rem);
+      font-weight: var(--font-weight-medium, 500);
+      color: var(--color-text-muted, #7c7c7c);
+    }
+    .layer__title {
       margin: 0;
       font-family: var(--font-display, var(--font-sans));
       font-size: var(--type-size-600, 2rem);
@@ -102,81 +187,91 @@ const STATUS_LABEL: Record<PrototypeStatus, string> = {
       letter-spacing: -0.01em;
       color: var(--color-text-primary, #171717);
     }
-    .lib-head__sub {
-      margin: 0;
-      max-width: 60ch;
-      font-size: 1rem;
-      line-height: 1.5;
-      color: var(--color-text-secondary, #4b5563);
+    .layer__lede {
+      margin: var(--spacing-300, 12px) 0 0;
+      font-size: var(--type-size-200, 1rem);
+      line-height: 1.55;
+      color: var(--color-text-secondary, #525252);
     }
 
-    .lib-main { max-width: 1040px; margin: 0 auto; padding: 0 var(--spacing-500, 20px) var(--spacing-1000, 64px); }
+    /* Design System panel bits */
+    .ds-chips { display: flex; flex-wrap: wrap; gap: var(--spacing-300, 12px); margin: var(--spacing-500, 24px) 0 0; }
+    .ds-chip {
+      display: inline-flex; align-items: center; gap: var(--spacing-200, 8px);
+      font-size: var(--type-size-100, 0.875rem); color: var(--color-text-secondary, #525252);
+    }
+    .ds-chip__sw {
+      width: 20px; height: 20px; border-radius: var(--radius-200, 8px);
+      border: 1px solid color-mix(in srgb, var(--color-text-primary, #000) 10%, transparent);
+    }
 
-    /* Horizontal scroll instead of a broken layout on narrow viewports. */
-    .lib-table-wrap {
-      overflow-x: auto;
-      border: 1px solid var(--color-border, #e5e7eb);
-      border-radius: var(--radius-300, 10px);
+    .ds-links {
+      list-style: none; margin: var(--spacing-500, 24px) 0 0; padding: 0;
+      display: flex; flex-wrap: wrap; gap: var(--spacing-200, 8px);
+    }
+    .ds-links a {
+      display: inline-block;
+      padding: var(--spacing-150, 6px) var(--spacing-300, 12px);
+      border: 1px solid var(--color-border, #dcdcdc);
+      border-radius: var(--radius-full, 999px);
       background: var(--color-surface, #fff);
+      font-size: var(--type-size-100, 0.875rem);
+      color: var(--color-text-secondary, #525252);
     }
-    .lib-table {
-      width: 100%;
-      min-width: 760px;
-      border-collapse: collapse;
-      font-size: 1rem;
-    }
-    .lib-table th {
-      text-align: left;
-      font-weight: var(--font-weight-medium, 500);
-      font-size: 0.875rem;
-      color: var(--color-text-secondary, #4b5563);
-      padding: var(--spacing-300, 12px) var(--spacing-400, 16px);
-      border-bottom: 1px solid var(--color-border, #e5e7eb);
-      background: var(--color-surface-sunken, #f9fafb);
-      white-space: nowrap;
-    }
-    .lib-table td {
-      padding: var(--spacing-400, 16px);
-      border-bottom: 1px solid var(--color-border-light, #f0f1f3);
-      vertical-align: top;
-    }
-    .lib-row { position: relative; transition: background-color 0.12s ease; }
-    .lib-row:hover { background: var(--color-primary-subtle, #eef4fb); }
-    .lib-row:last-child td { border-bottom: 0; }
+    .ds-links a:hover { border-color: var(--color-primary, #1e5386); color: var(--color-primary, #1e5386); }
 
-    .lib-row__name { white-space: nowrap; }
-    .lib-row__link {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--spacing-150, 6px);
+    .layer__cta {
+      display: inline-flex; align-items: center; gap: var(--spacing-200, 8px);
+      margin-top: var(--spacing-600, 32px);
+      padding: var(--spacing-300, 12px) var(--spacing-500, 24px);
+      background: var(--color-primary, #1e5386);
+      color: var(--color-primary-contrast, #fff);
+      border-radius: var(--radius-200, 8px);
+      font-size: var(--type-size-200, 1rem);
       font-weight: var(--font-weight-semibold, 600);
-      font-size: 1.0625rem;
+    }
+    .layer__cta:hover { background: var(--color-primary-hover, #1a4570); }
+    .layer__cta svg { transition: transform 0.14s ease; }
+    .layer__cta:hover svg { transform: translateX(3px); }
+
+    /* Prototype cards */
+    .proto-list { list-style: none; margin: var(--spacing-500, 24px) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--spacing-300, 12px); }
+    .proto-card {
+      position: relative;
+      padding: var(--spacing-400, 16px);
+      border: 1px solid var(--color-border, #dcdcdc);
+      border-radius: var(--radius-300, 8px);
+      transition: background-color 0.12s ease, border-color 0.12s ease;
+    }
+    .proto-card:hover { background: var(--color-primary-subtle, #f3f7fc); border-color: var(--color-primary-border, #c6dcf1); }
+    .proto-card__link { display: block; }
+    .proto-card__link::after { content: ''; position: absolute; inset: 0; }
+    .proto-card__title {
+      display: inline-flex; align-items: center; gap: var(--spacing-150, 6px);
+      font-weight: var(--font-weight-semibold, 600);
+      font-size: var(--type-size-300, 1.0625rem);
       color: var(--color-text-link, #1e5386);
     }
-    /* Stretched link — the whole row is clickable, the title carries the href. */
-    .lib-row__link::after { content: ''; position: absolute; inset: 0; }
-    .lib-row__arrow { opacity: 0; transition: opacity 0.12s ease; flex: none; }
-    .lib-row:hover .lib-row__arrow { opacity: 0.7; }
-
-    .lib-row__desc {
-      max-width: 46ch;
+    .proto-card__arrow { opacity: 0; transition: opacity 0.12s ease; flex: none; }
+    .proto-card:hover .proto-card__arrow { opacity: 0.7; }
+    .proto-card__desc {
+      margin: var(--spacing-150, 6px) 0 var(--spacing-300, 12px);
+      font-size: var(--type-size-100, 0.9375rem);
       line-height: 1.5;
-      color: var(--color-text-secondary, #4b5563);
+      color: var(--color-text-secondary, #525252);
     }
-    .lib-row__meta {
-      white-space: nowrap;
-      font-size: 0.875rem;
-      color: var(--color-text-tertiary, #6b7280);
+    .proto-card__foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-300, 12px); }
+    .proto-card__meta {
+      font-size: var(--type-size-100, 0.875rem);
+      color: var(--color-text-muted, #7c7c7c);
       font-variant-numeric: tabular-nums;
     }
 
     .lib-status {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--spacing-150, 6px);
+      display: inline-flex; align-items: center; gap: var(--spacing-150, 6px);
       padding: 2px var(--spacing-250, 10px) 2px var(--spacing-200, 8px);
       border-radius: var(--radius-full, 999px);
-      font-size: 0.875rem;
+      font-size: var(--type-size-100, 0.875rem);
       font-weight: var(--font-weight-medium, 500);
       white-space: nowrap;
     }
@@ -185,11 +280,11 @@ const STATUS_LABEL: Record<PrototypeStatus, string> = {
     .lib-status[data-status='live'] .lib-status__dot { background: #1a9b54; }
     .lib-status[data-status='in-progress'] { background: #fbf0d6; color: #876300; }
     .lib-status[data-status='in-progress'] .lib-status__dot { background: #e0a400; }
-    .lib-status[data-status='archived']    { background: var(--color-surface-sunken, #f3f4f6); color: var(--color-text-tertiary, #6b7280); }
-    .lib-status[data-status='archived'] .lib-status__dot { background: var(--color-text-tertiary, #9ca3af); }
+    .lib-status[data-status='archived']    { background: var(--color-surface-sunken, #f3f4f6); color: var(--color-text-muted, #6b7280); }
+    .lib-status[data-status='archived'] .lib-status__dot { background: var(--color-text-muted, #9ca3af); }
 
-    @media (max-width: 640px) {
-      .lib-head { flex-direction: column; gap: var(--spacing-400, 16px); padding-top: var(--spacing-700, 32px); }
+    @media (max-width: 820px) {
+      .home-split { grid-template-columns: 1fr; }
     }
   </style>
 </BaseLayout>
