@@ -91,7 +91,7 @@ const crumbs = [
     padding: var(--spacing-400) var(--spacing-600);
   }
   .cbf-app-card__crumb :global(.esa-breadcrumbs) {
-    --breadcrumbs-link-color: var(--color-gray-800, #464646);
+    --breadcrumbs-link-color: var(--color-text-secondary, #464646);
     --breadcrumbs-link-hover: var(--color-primary);
   }
   .cbf-app-card__body {
@@ -243,7 +243,6 @@ const crumbs = [
     width: 100%;
     text-align: left;
     padding: var(--spacing-400) var(--spacing-500);
-    border-left: 3px solid transparent;
   }
   .cbf-search-surface .cbf-result--allbtn .cbf-result__title {
     color: var(--color-secondary);
@@ -256,7 +255,6 @@ const crumbs = [
   .cbf-search-surface .cbf-result--allbtn:hover,
   .cbf-search-surface .cbf-result--allbtn.is-active {
     background: var(--color-primary-subtle);
-    border-left-color: var(--color-secondary);
   }
 
   /* sidebar facet items (JS-built → global, contained under .cbf-search-surface) */

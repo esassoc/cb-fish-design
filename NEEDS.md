@@ -66,3 +66,18 @@ semantic token instead). The `--font-display` slot and the `--color-primary-subt
 
 Sections proven by the Home specimen: public nav · hero · stat grid · about ·
 "Projects at a Glance" section · site footer.
+
+---
+
+## 4. Open hub requests (deferred from the 2026-06-13 token-hygiene pass)
+
+These are gaps where the spoke reaches a primitive or hand-rolls a primitive
+because no hub semantic / lego covers the case. Logged here as hub asks; not yet
+built. (The status-pill `-strong` text colors landed in this pass — that need is
+now closed.)
+
+| # | Request | Why it recurs | Current workaround in spoke |
+|---|---|---|---|
+| 1 | **Semantic document/file-link color role** (or a neutral `--color-accent-2`) | CB Fish needs a green for document paths that is NOT the status-success green; the prod app renders publication paths in green as a recognizable affordance | `pages/publications.astro:287` reaches `--color-green-700` primitive directly |
+| 2 | **`--color-attention*` semantic trio** (base / subtle / border) for non-error elevated/highlight states | Impersonation / "elevated session" UI wants an amber that is distinct from `--color-warning` (form-validation amber); every admin-tooling spoke will want this | `theme-cb-fish.css` defines local `--cbf-amber-attention: #f6c244`, consumed in `cbf-public-nav.astro` (badge + impersonating user text) |
+| 3 | **Borderless search-input lego** (`esa-search-input` / `esa-omnibox-field`) | The icon + borderless `<input>` + brand focus-ring pattern is hand-rolled in 4 places, each re-implementing placeholder color, `box-shadow: 0 0 0 3px var(--color-primary-subtle)` focus, and identical padding | `search.astro`, `publications.astro`, `cbf-omni-search.astro`, `cbf-omni-trigger.astro` each re-author it |

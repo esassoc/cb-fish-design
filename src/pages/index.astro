@@ -159,8 +159,8 @@ const STATUS_LABEL: Record<PrototypeStatus, string> = {
       font-size: var(--type-size-100, 0.8125rem); font-weight: var(--font-weight-medium, 500);
     }
     .layer__status .dot { width: 8px; height: 8px; border-radius: 50%; }
-    .layer__status--live { color: #1a6f3f; }
-    .layer__status--live .dot { background: #1a9b54; }
+    .layer__status--live { color: var(--color-success-strong, #15803d); }
+    .layer__status--live .dot { background: var(--color-success, #22c55e); }
     .layer__status--soon { color: var(--color-text-muted, #7c7c7c); }
     .layer__status--soon .dot { background: var(--color-secondary, #2770b2); }
     .layer__title {
@@ -224,10 +224,10 @@ const STATUS_LABEL: Record<PrototypeStatus, string> = {
       font-size: var(--type-size-100, 0.875rem); font-weight: var(--font-weight-medium, 500); white-space: nowrap;
     }
     .lib-status__dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
-    .lib-status[data-status='live'] { background: #e7f4ec; color: #1a6f3f; }
-    .lib-status[data-status='live'] .lib-status__dot { background: #1a9b54; }
-    .lib-status[data-status='in-progress'] { background: #fbf0d6; color: #876300; }
-    .lib-status[data-status='in-progress'] .lib-status__dot { background: #e0a400; }
+    .lib-status[data-status='live'] { background: var(--color-success-subtle, #f0fdf4); color: var(--color-success-strong, #15803d); }
+    .lib-status[data-status='live'] .lib-status__dot { background: var(--color-success, #22c55e); }
+    .lib-status[data-status='in-progress'] { background: var(--color-warning-subtle, #fffbeb); color: var(--color-warning-strong, #b45309); }
+    .lib-status[data-status='in-progress'] .lib-status__dot { background: var(--color-warning, #f59e0b); }
     .lib-status[data-status='archived'] { background: var(--color-surface-sunken, #f3f4f6); color: var(--color-text-muted, #6b7280); }
     .lib-status[data-status='archived'] .lib-status__dot { background: var(--color-text-muted, #9ca3af); }
 
