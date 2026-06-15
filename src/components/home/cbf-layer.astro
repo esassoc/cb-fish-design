@@ -1,0 +1,138 @@
+---
+// cbf-layer — one promotional "layer" tile on the landing page.
+// The ENTIRE tile is a single navigational <a> link with a hover-lift, a status
+// dot + label, a title, body, and a "go" CTA with an arrow.
+//
+// bcn-lego-checked: esa-card ruled out — it renders a static <div> content surface
+// (header/body/footer slots) with no link semantics and no hover-lift; this section
+// is a whole-tile <a> navigational affordance (clickable surface + translateY lift +
+// CTA arrow nudge), which esa-card cannot express without bending its slot contract.
+// Checked Beacon ui-* (no link-tile primitive). This bespoke cbf-layer is the
+// reusable home for the landing-page promo tile.
+interface Props {
+  href: string;
+  tone: 'live' | 'soon';
+  statusLabel: string;
+  title: string;
+  body: string;
+  cta: string;
+}
+const { href, tone, statusLabel, title, body, cta } = Astro.props;
+---
+<a class:list={['cbf-layer', tone === 'soon' && 'cbf-layer--soon']} href={href}>
+  <span class:list={['cbf-layer__status', `cbf-layer__status--${tone}`]}>
+    <span class="cbf-layer__dot"></span>{statusLabel}
+  </span>
+  <h2 class="cbf-layer__title">{title}</h2>
+  <p class="cbf-layer__body">{body}</p>
+  <span class="cbf-layer__go">
+    {cta}
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M5 12h14"></path>
+      <path d="m12 5 7 7-7 7"></path>
+    </svg>
+  </span>
+</a>
+
+<style>
+  .cbf-layer {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-600);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-400);
+    background: var(--color-surface);
+    text-decoration: none;
+    transition:
+      border-color 0.14s ease,
+      box-shadow 0.14s ease,
+      transform 0.14s ease;
+  }
+
+  .cbf-layer:hover {
+    border-color: var(--color-primary-border);
+    box-shadow: 0 12px 32px color-mix(in srgb, var(--color-primary) 12%, transparent);
+    transform: translateY(-2px);
+  }
+
+  .cbf-layer--soon {
+    background: var(--color-surface-sunken);
+  }
+
+  .cbf-layer__status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-150);
+    font-size: 14px;
+    font-weight: var(--font-weight-medium);
+  }
+
+  .cbf-layer__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .cbf-layer__status--live {
+    color: var(--color-success-strong);
+  }
+  .cbf-layer__status--live .cbf-layer__dot {
+    background: var(--color-success);
+  }
+
+  .cbf-layer__status--soon {
+    color: var(--color-text-muted);
+  }
+  .cbf-layer__status--soon .cbf-layer__dot {
+    background: var(--color-secondary);
+  }
+
+  .cbf-layer__title {
+    margin: var(--spacing-300) 0 var(--spacing-200);
+    font-family: var(--font-display);
+    font-size: var(--type-size-600, 2rem);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: -0.01em;
+    color: var(--color-text-primary);
+  }
+
+  .cbf-layer__body {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--color-text-secondary);
+  }
+
+  .cbf-layer__go {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-150);
+    margin-top: var(--spacing-500);
+    font-weight: var(--font-weight-semibold);
+    font-size: 16px;
+    color: var(--color-text-link);
+  }
+
+  .cbf-layer__go svg {
+    transition: transform 0.14s ease;
+  }
+
+  .cbf-layer:hover .cbf-layer__go svg {
+    transform: translateX(3px);
+  }
+
+  .cbf-layer--soon .cbf-layer__go {
+    color: var(--color-text-muted);
+  }
+</style>

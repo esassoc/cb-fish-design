@@ -1,0 +1,60 @@
+---
+// cbf-page-heading — the CBFish app-page title. The 40px IBM Plex Sans Condensed
+// navy h1 used on /search and /publications (Figma 2614:11113). On /search the
+// client script (search-page.client.ts) rewrites the h1's innerHTML to append a
+// `.cbf-title-count` span, so callers can forward a data-* hook via `...rest`,
+// and the count-badge style ships GLOBAL (the injected span can't carry Astro's
+// scope hash). Not an esa-badge: the count is raw innerHTML from JS, not a component.
+//
+// bcn-lego-checked: not esa-page-header. That lego is a full app-chrome header BLOCK
+// (title + lede + eyebrow + breadcrumbs + actions slots); this is JUST the title, and
+// it must (a) wear the Figma 2614:11113 condensed 40px/-1px treatment that's off the
+// type scale, and (b) forward a data-* hook onto the <h1> itself so search-page.client
+// can rewrite its innerHTML with a live count — esa-page-header renders the title
+// inside its own structure (not hook-able), and the breadcrumb strip is already owned
+// by cbf-app-panel. Checked Beacon (prod page titles). cbf-page-heading is the home.
+interface Props {
+  title: string;
+  [key: string]: unknown;
+}
+const { title, ...rest } = Astro.props;
+---
+<h1 class="cbf-page-heading" {...rest}>{title}</h1>
+
+<style>
+  .cbf-page-heading {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-300, 12px);
+    margin: 0;                                   /* parent stack provides rhythm */
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-medium);
+    font-size: 40px;          /* Figma 2614:11113 — Report Center page title; deliberately off the type scale */
+    line-height: 40px;
+    letter-spacing: -1px;
+    color: var(--color-surface-inverse);         /* deepest brand navy */
+  }
+</style>
+
+<style is:global>
+  /* The count span is injected by search-page.client.ts as raw innerHTML, so it
+     cannot carry Astro's scope hash — this rule must be global. Class name
+     `.cbf-title-count` is load-bearing: the client script emits it verbatim. */
+  .cbf-page-heading .cbf-title-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 30px;
+    padding: 0 var(--spacing-200, 8px);
+    border-radius: var(--radius-100, 4px);
+    background: var(--color-gray-50);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0;
+  }
+</style>

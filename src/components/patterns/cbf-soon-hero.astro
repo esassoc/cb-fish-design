@@ -1,0 +1,86 @@
+---
+// cbf-soon-hero — the "coming soon" hero for the Pattern Library page.
+// Composes the CbfMark brand mark (with a halo) and an esa-button CTA over a
+// bespoke centered hero layout (back link, status line, title, tagline).
+// The CTA is the esa-button lego, not a hand-rolled link.
+import CbfMark from '../shared/cbf-mark.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+
+interface Props {
+  /** Back link target — already base-resolved by the caller. */
+  backHref: string;
+  /** CTA target (design system) — already base-resolved by the caller. */
+  ctaHref: string;
+}
+
+const { backHref, ctaHref } = Astro.props;
+---
+<header class="cbf-soon-hero">
+  <a class="cbf-soon-hero__back" href={backHref}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+    Home
+  </a>
+  <div class="cbf-soon-hero__mark"><CbfMark size="96" /></div>
+  <span class="cbf-soon-hero__status"><span class="cbf-soon-hero__dot"></span>Coming soon</span>
+  <h1 class="cbf-soon-hero__title">Pattern Library</h1>
+  <p class="cbf-soon-hero__tagline">The design system gives you the bricks. The pattern library will give you the buildings — composed, multi-component patterns assembled from the primitives, documented and ready to lift.</p>
+  <div class="cbf-soon-hero__cta"><EsaButton color="primary" appearance="fill" size="lg" href={ctaHref}>Explore the design system</EsaButton></div>
+</header>
+
+<style>
+  .cbf-soon-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: var(--spacing-800) 0;
+  }
+  .cbf-soon-hero__back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-150);
+    align-self: flex-start;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+  }
+  .cbf-soon-hero__back:hover { color: var(--color-primary); }
+  .cbf-soon-hero__mark {
+    color: var(--color-primary);
+    line-height: 0;
+    background: radial-gradient(circle at center, var(--color-primary-subtle) 0%, transparent 68%);
+    padding: var(--spacing-600);
+    margin-bottom: var(--spacing-300);
+    filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--color-primary) 16%, transparent));
+  }
+  .cbf-soon-hero__status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-150);
+    font-size: 14px;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+  }
+  .cbf-soon-hero__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-secondary);
+  }
+  .cbf-soon-hero__title {
+    margin: var(--spacing-200) 0 0;
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-semibold);
+    font-size: clamp(2.5rem, 1.9rem + 3vw, 4rem);
+    line-height: 1.04;
+    letter-spacing: -0.02em;
+    color: var(--color-text-primary);
+  }
+  .cbf-soon-hero__tagline {
+    margin: var(--spacing-400) auto 0;
+    max-width: 58ch;
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+  }
+  .cbf-soon-hero__cta { margin-top: var(--spacing-600); }
+</style>

@@ -7,6 +7,17 @@
 // CSS split: the SHELL is component-scoped <style>. The JS-built subtree can't
 // carry Astro's scope hash, so its rules live in a <style is:global> block, every
 // selector prefixed with .cbf-omni to stay contained.
+//
+// bcn-lego-checked: no esa-* lego models this surface. esa-command-palette is a flat
+// ACTION launcher (EsaCommand[] + action()), and esa-entity-search is a single-list
+// navigate-to omnibox — neither does scoped MULTI-ENTITY search (projects / contracts /
+// people / publications) with grouped entity rows, scope pills, an inline person
+// contact-card popover (vCard + impersonate), a "show all → /search" fork, AND a shared
+// render core (omni-render.ts) that paints the /search results page identically.
+// esa-text-field is a bordered/labelled field, not this borderless omnibox. Checked
+// Beacon (prod global search IS this bespoke surface). cbf-omni-search is the reusable
+// home; the gaps are filed in the lego-gap ledger (esa-entity-search-palette, the
+// borderless omnibox field, the anchored person-preview popover).
 import CbfIcon from './cbf-icon.astro';
 import CbfOmniEmpty from './cbf-omni-empty.astro';
 import CbfOmniFooter from './cbf-omni-footer.astro';

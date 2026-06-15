@@ -106,9 +106,21 @@ const funding = [
   .cbf-nav-link:hover {
     text-decoration: underline;
   }
+  /* a separator before the user menu — a pseudo-element rule, not a border-left
+     (colored left-borders are banned as status/category indicators). */
   .cbf-nav-link--user {
+    position: relative;
     padding-left: var(--spacing-500);
-    border-left: 1px solid rgba(255, 255, 255, 0.25);
+  }
+  .cbf-nav-link--user::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 1.1em;
+    background: rgba(255, 255, 255, 0.25);
   }
   .cbf-nav-link--user.is-impersonating {
     color: var(--cbf-amber-attention);

@@ -1,0 +1,39 @@
+---
+// cbf-soon-planned — the "What's coming" section on the Pattern Library page.
+// A section heading + a responsive grid of static content cards (one per planned
+// pattern: title + body, no link, no hover). Composition only:
+//   - each card is the esa-card lego (variant="filled" → sunken surface, no border)
+//   - the card grid is the .grid layout primitive (auto-fit, --grid-min floor)
+//   - the heading uses the .type-section-title type role
+// The .grid / .type-section-title classes ship from @esa/tokens as separate CSS
+// modules (NOT bundled into tokens.css), so import them here to stay self-contained.
+import '@esa/tokens/layouts.css';
+import '@esa/tokens/type-roles.css';
+import EsaCard from '@esa/ecology/esa-card.astro';
+
+interface Props {
+  planned: { title: string; body: string }[];
+}
+const { planned } = Astro.props;
+---
+<section class="cbf-soon-planned" aria-label="Planned patterns">
+  <h2 class="cbf-soon-planned__head type-section-title">What's coming</h2>
+  <div class="cbf-soon-planned__grid grid">
+    {planned.map((p) => (
+      <EsaCard title={p.title} variant="filled" padding="default">{p.body}</EsaCard>
+    ))}
+  </div>
+</section>
+
+<style>
+  .cbf-soon-planned {
+    padding-top: var(--spacing-600);
+    border-top: 1px solid var(--color-border);
+  }
+  .cbf-soon-planned__head {
+    margin: 0 0 var(--spacing-400);
+  }
+  .cbf-soon-planned__grid {
+    --grid-min: 15rem;
+  }
+</style>

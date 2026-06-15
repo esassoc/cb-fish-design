@@ -3,6 +3,12 @@
 // and sets data-theme="cb-fish" so every inherited esa-* component re-skins.
 import '@esa/tokens/tokens.css';
 import '@esa/tokens/component-tokens.css';
+// Composition layer — layout primitives (.stack/.cluster/.grid/.sidebar/.switcher/…)
+// and type roles (.type-page-title/.type-body/…). Shipped as separate CSS exports
+// (not bundled into tokens.css), so a spoke must load them for pages to read as a
+// manifest of primitives + roles rather than hand-rolled flex/grid + raw type.
+import '@esa/tokens/layouts.css';
+import '@esa/tokens/type-roles.css';
 import '../styles/theme-cb-fish.css';
 // Runtime inspector — promoted from this spoke into the hub package (2026-06).
 import HandoffInspector from '@esa/handoff/HandoffInspector.astro';

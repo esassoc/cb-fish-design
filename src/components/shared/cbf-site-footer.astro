@@ -1,0 +1,27 @@
+---
+// cbf-site-footer — the small site footer: the brand mark beside a line of text.
+// Reusable; default copy provided, overridable via the default slot.
+// Layout is the .cluster primitive (mark + text in a row, vertically centered);
+// the <footer> only owns its own chrome (top rule, muted color, padding, meta size).
+import CbfMark from './cbf-mark.astro';
+---
+
+<footer class="cbf-site-footer cluster">
+  <CbfMark size="22" />
+  <span><slot>Columbia Basin Fish &amp; Wildlife Program — a brand spoke of ESA Ecology.</slot></span>
+</footer>
+
+<style>
+  .cbf-site-footer {
+    /* drive the .cluster gap with the spec's spacing step */
+    --gap: var(--spacing-250);
+    padding: var(--spacing-500) 0 var(--spacing-800);
+    border-top: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: 14px;
+  }
+  .cbf-site-footer :global(svg) {
+    color: var(--color-primary);
+    flex: none;
+  }
+</style>

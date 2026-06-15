@@ -1,0 +1,72 @@
+---
+// cbf-search-results — the /search results region. The client script (renderResults)
+// paints grouped result cards into [data-search-results]. The BASE .cbf-result*
+// vocabulary is defined globally by the palette (cbf-omni-search, mounted on every
+// page via the nav) and shared through omni-render.ts; this component adds ONLY the
+// /search-specific "result group renders as a bordered card" override. Keep the
+// .cbf-result-group* selectors verbatim — the client script emits them.
+---
+<div class="cbf-search-surface">
+  <div class="cbf-search-results" data-search-results></div>
+</div>
+
+<style>
+  .cbf-search-results {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-400);
+  }
+</style>
+
+<style is:global>
+  /* page result sections render as cards — gray header, larger title, bright-blue icon */
+  .cbf-search-surface .cbf-search-results .cbf-result-group {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    overflow: hidden;
+    background: var(--color-surface);
+  }
+  .cbf-search-surface .cbf-search-results .cbf-result-group__head {
+    background: var(--cbf-surface-section-head); /* neutral gray header */
+    border-top: 0;
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--spacing-300) var(--spacing-400);
+  }
+  .cbf-search-surface .cbf-search-results .cbf-result-group__title {
+    font-family: var(--font-display); /* IBM Plex Sans Condensed */
+    font-size: 20px;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--color-text-primary);
+  }
+  .cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon {
+    color: var(--color-secondary); /* bright blue */
+  }
+  .cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  .cbf-search-surface .cbf-search-results .cbf-result-group__count {
+    font-size: 16px;
+  }
+
+  /* Publications CTA — single button that forks to the document-search page */
+  .cbf-search-surface .cbf-result--allbtn {
+    width: 100%;
+    text-align: left;
+    padding: var(--spacing-400) var(--spacing-500);
+  }
+  .cbf-search-surface .cbf-result--allbtn .cbf-result__title {
+    color: var(--color-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+  .cbf-search-surface .cbf-result--allbtn .cbf-result__chevron {
+    color: var(--color-secondary);
+    opacity: 1;
+  }
+  .cbf-search-surface .cbf-result--allbtn:hover,
+  .cbf-search-surface .cbf-result--allbtn.is-active {
+    background: var(--color-primary-subtle);
+  }
+</style>
