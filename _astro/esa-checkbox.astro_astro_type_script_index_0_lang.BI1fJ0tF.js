@@ -1,12 +1,11 @@
-import{w as i,i as o,b as e,a as r}from"./lit-element.BZYJq2Wy.js";const t=i`<polyline points="20 6 9 17 4 12"></polyline>`,c=i`<line x1="5" y1="12" x2="19" y2="12"></line>`;class n extends o{constructor(){super(),this.toggle=()=>{this.disabled||(this.checked=!this.checked,this.syncFormValue(),this.dispatchEvent(new CustomEvent("change",{detail:{checked:this.checked},bubbles:!0,composed:!0})))},this.onKeydown=s=>{(s.key===" "||s.key==="Enter")&&(s.preventDefault(),this.toggle())},this.label="",this.size="md",this.disabled=!1,this.indeterminate=!1,this.checked=!1,this.internals=this.attachInternals()}static{this.formAssociated=!0}static{this.properties={label:{type:String},size:{type:String,reflect:!0},disabled:{type:Boolean,reflect:!0},indeterminate:{type:Boolean,reflect:!0},checked:{type:Boolean,reflect:!0}}}connectedCallback(){super.connectedCallback(),this.syncFormValue()}syncFormValue(){this.internals.setFormValue(this.checked?"on":null),this.internals.ariaChecked=this.indeterminate?"mixed":String(this.checked)}render(){return e`
-      <label class="wrapper" @keydown=${this.onKeydown}>
+import{w as i,i as o,b as e,a as r}from"./lit-element.BZYJq2Wy.js";const t=i`<polyline points="20 6 9 17 4 12"></polyline>`,c=i`<line x1="5" y1="12" x2="19" y2="12"></line>`;class a extends o{constructor(){super(),this.toggle=()=>{this.disabled||(this.checked=!this.checked,this.syncFormValue(),this.dispatchEvent(new CustomEvent("change",{detail:{checked:this.checked},bubbles:!0,composed:!0})))},this.onKeydown=s=>{(s.key===" "||s.key==="Enter")&&(s.preventDefault(),this.toggle())},this.label="",this.size="md",this.disabled=!1,this.indeterminate=!1,this.checked=!1,this.internals=this.attachInternals()}static{this.formAssociated=!0}static{this.properties={label:{type:String},size:{type:String,reflect:!0},disabled:{type:Boolean,reflect:!0},indeterminate:{type:Boolean,reflect:!0},checked:{type:Boolean,reflect:!0}}}connectedCallback(){super.connectedCallback(),this.syncFormValue()}syncFormValue(){this.internals.setFormValue(this.checked?"on":null),this.internals.ariaChecked=this.indeterminate?"mixed":String(this.checked)}render(){return e`
+      <label class="wrapper" @keydown=${this.onKeydown} @click=${this.toggle}>
         <span
           class="box"
           role="checkbox"
           aria-checked=${this.indeterminate?"mixed":String(this.checked)}
           aria-disabled=${String(this.disabled)}
           tabindex=${this.disabled?-1:0}
-          @click=${this.toggle}
         >
           ${this.indeterminate?e`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${c}</svg>`:this.checked?e`<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -71,7 +70,7 @@ import{w as i,i as o,b as e,a as r}from"./lit-element.BZYJq2Wy.js";const t=i`<po
     }
     .box:focus-visible {
       outline: none;
-      border-color: var(--form-border-color-focus, #005862);
+      border-color: var(--form-border-color-focus, #43608a);
       box-shadow: 0 0 0 var(--focus-ring-width, 2px)
         var(--focus-ring-color, rgba(0, 88, 98, 0.25));
     }
@@ -83,8 +82,8 @@ import{w as i,i as o,b as e,a as r}from"./lit-element.BZYJq2Wy.js";const t=i`<po
 
     :host([checked]) .box,
     :host([indeterminate]) .box {
-      background: var(--color-primary, #005862);
-      border-color: var(--color-primary, #005862);
+      background: var(--color-primary, #43608a);
+      border-color: var(--color-primary, #43608a);
     }
 
     .label {
@@ -93,4 +92,4 @@ import{w as i,i as o,b as e,a as r}from"./lit-element.BZYJq2Wy.js";const t=i`<po
       color: var(--color-text-primary, #171717);
       line-height: 1.4;
     }
-  `}}customElements.get("esa-checkbox")||customElements.define("esa-checkbox",n);
+  `}}customElements.get("esa-checkbox")||customElements.define("esa-checkbox",a);

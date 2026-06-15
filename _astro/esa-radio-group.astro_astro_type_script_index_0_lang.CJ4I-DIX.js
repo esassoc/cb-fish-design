@@ -5,6 +5,7 @@ import{i as a,b as t,a as o}from"./lit-element.BZYJq2Wy.js";class l extends a{co
             <label
               class="item ${s?"item--disabled":""}"
               @keydown=${r=>this.onKeydown(r,e)}
+              @click=${()=>this.selectOption(e)}
             >
               <span
                 class="circle ${i?"circle--selected":""}"
@@ -12,7 +13,6 @@ import{i as a,b as t,a as o}from"./lit-element.BZYJq2Wy.js";class l extends a{co
                 aria-checked=${String(i)}
                 aria-disabled=${String(s)}
                 tabindex=${s?-1:0}
-                @click=${()=>this.selectOption(e)}
               >
                 <span class="dot"></span>
               </span>
@@ -90,11 +90,11 @@ import{i as a,b as t,a as o}from"./lit-element.BZYJq2Wy.js";class l extends a{co
         box-shadow var(--transition-fast, 150ms ease);
     }
     .circle--selected {
-      border-color: var(--color-primary, #005862);
+      border-color: var(--color-primary, #43608a);
     }
     .circle:focus-visible {
       outline: none;
-      border-color: var(--form-border-color-focus, #005862);
+      border-color: var(--form-border-color-focus, #43608a);
       box-shadow: 0 0 0 var(--focus-ring-width, 2px)
         var(--focus-ring-color, rgba(0, 88, 98, 0.25));
     }
@@ -107,7 +107,7 @@ import{i as a,b as t,a as o}from"./lit-element.BZYJq2Wy.js";class l extends a{co
       transition: background var(--transition-fast, 150ms ease);
     }
     .circle--selected .dot {
-      background: var(--color-primary, #005862);
+      background: var(--color-primary, #43608a);
     }
 
     .item-label {
