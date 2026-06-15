@@ -1,0 +1,361 @@
+---
+// cbf-invoice-step-details — Step 1: invoice metadata, contract ref, line items, notes.
+// bcn-lego-checked: the read-only vendor strip is a compact identity metadata layout
+// (eyebrow + name + address rows), not a general card container — esa-card doesn't
+// provide this structured read-only row pattern. The line-items table and the overall
+// form section layout have no esa-* equivalent. cbf-invoice-step-details is the
+// reusable home for this pattern.
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+
+interface VendorInfo {
+  company: string;
+  contact: string;
+  address: string;
+  taxId: string;
+}
+interface Props {
+  vendor: VendorInfo;
+}
+const { vendor } = Astro.props;
+
+// Mock contract + project options — in production these come from the API.
+const contracts = [
+  { value: 'CON-2024-0881', label: 'CON-2024-0881 — Tributary Habitat Assessment' },
+  { value: 'CON-2024-0903', label: 'CON-2024-0903 — Salmon Passage Study' },
+  { value: 'CON-2025-0112', label: 'CON-2025-0112 — Water Quality Monitoring' },
+  { value: 'CON-2025-0234', label: 'CON-2025-0234 — Environmental Impact Review' },
+];
+const projects = [
+  { value: 'PRJ-0045', label: 'PRJ-0045 — Lower Columbia River Restoration' },
+  { value: 'PRJ-0062', label: 'PRJ-0062 — Snake River Fish Passage' },
+  { value: 'PRJ-0071', label: 'PRJ-0071 — Wetland Mitigation Banking' },
+];
+---
+<div class="cbf-wizard-step" data-step="1" hidden>
+  <h1 class="cbf-page-title">Invoice Details</h1>
+
+  <!-- Vendor info (read-only — from authenticated session) -->
+  <div class="cbf-form-section cbf-form-section--first">
+    <h2 class="cbf-form-section__title">Vendor Information</h2>
+    <div class="cbf-readonly-grid">
+      <div class="cbf-readonly-row">
+        <span class="cbf-readonly-label">Company</span>
+        <span class="cbf-readonly-value">{vendor.company}</span>
+      </div>
+      <div class="cbf-readonly-row">
+        <span class="cbf-readonly-label">Contact</span>
+        <span class="cbf-readonly-value">{vendor.contact}</span>
+      </div>
+      <div class="cbf-readonly-row">
+        <span class="cbf-readonly-label">Address</span>
+        <span class="cbf-readonly-value">{vendor.address}</span>
+      </div>
+      <div class="cbf-readonly-row">
+        <span class="cbf-readonly-label">Tax ID</span>
+        <span class="cbf-readonly-value">{vendor.taxId}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoice metadata -->
+  <div class="cbf-form-section">
+    <h2 class="cbf-form-section__title">Invoice Metadata</h2>
+    <div class="cbf-form-row--2col">
+      <esa-text-field
+        label="Invoice Number"
+        placeholder="e.g. INV-2026-0042"
+        required
+        data-field="invoice-number"
+      ></esa-text-field>
+      <esa-text-field
+        label="Invoice Date"
+        placeholder="MM/DD/YYYY"
+        required
+        data-field="invoice-date"
+      ></esa-text-field>
+    </div>
+  </div>
+
+  <!-- Contract & project reference -->
+  <div class="cbf-form-section">
+    <h2 class="cbf-form-section__title">Contract &amp; Project</h2>
+    <div class="cbf-form-row--2col">
+      <esa-select label="Contract" required data-field="contract">
+        <option value="">Select a contract…</option>
+        {contracts.map(c => <option value={c.value}>{c.label}</option>)}
+      </esa-select>
+      <esa-select label="Project" required data-field="project">
+        <option value="">Select a project…</option>
+        {projects.map(p => <option value={p.value}>{p.label}</option>)}
+      </esa-select>
+    </div>
+  </div>
+
+  <!-- Line items -->
+  <div class="cbf-form-section">
+    <h2 class="cbf-form-section__title">Line Items</h2>
+    <div class="cbf-line-items">
+      <div class="cbf-line-items__head" aria-hidden="true">
+        <span class="cbf-li-col--desc">Description</span>
+        <span class="cbf-li-col--qty">Qty</span>
+        <span class="cbf-li-col--price">Unit Price</span>
+        <span class="cbf-li-col--total">Total</span>
+        <span class="cbf-li-col--action"></span>
+      </div>
+      <div class="cbf-line-items__body" data-line-items></div>
+      <div class="cbf-line-items__foot">
+        <button type="button" class="cbf-add-row" data-add-line-item>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add line item
+        </button>
+        <div class="cbf-line-items__total">
+          <span>Invoice Total</span>
+          <strong data-invoice-total>$0.00</strong>
+        </div>
+      </div>
+    </div>
+    <div data-step-error="lineitems" hidden>
+      <EsaAlertBox variant="error">Please add at least one line item.</EsaAlertBox>
+    </div>
+  </div>
+
+  <!-- Notes (optional) -->
+  <div class="cbf-form-section">
+    <h2 class="cbf-form-section__title">
+      Notes <span class="cbf-optional">(optional)</span>
+    </h2>
+    <esa-textarea
+      label="Additional notes"
+      placeholder="Any additional context for the payment processor…"
+      rows="3"
+      data-field="notes"
+    ></esa-textarea>
+  </div>
+
+  <div class="cbf-step-actions">
+    <button type="button" class="cbf-btn-ghost" data-wizard-back>Back</button>
+    <span data-wizard-next>
+      <EsaButton color="primary" size="md">Review &amp; Submit</EsaButton>
+    </span>
+  </div>
+</div>
+
+<style>
+  .cbf-page-title {
+    margin: 0 0 var(--spacing-400);
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-medium);
+    font-size: 40px;
+    line-height: 1;
+    letter-spacing: -1px;
+    color: var(--color-surface-inverse);
+  }
+
+  /* ---- Form sections ---- */
+  .cbf-form-section {
+    margin-top: var(--spacing-600);
+    padding-top: var(--spacing-500);
+    border-top: 1px solid var(--color-border);
+  }
+  .cbf-form-section--first {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+  .cbf-form-section__title {
+    margin: 0 0 var(--spacing-400);
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-200);
+  }
+  .cbf-optional {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: var(--font-weight-regular);
+    color: var(--color-text-muted);
+  }
+
+  /* ---- Read-only vendor grid ---- */
+  .cbf-readonly-grid {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    overflow: hidden;
+    background: var(--color-surface-sunken, #f8f9fb);
+  }
+  .cbf-readonly-row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-400);
+    padding: var(--spacing-300) var(--spacing-400);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-readonly-row:last-child { border-bottom: 0; }
+  .cbf-readonly-label {
+    flex: none;
+    width: 80px;
+    font-size: 12px;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+  }
+  .cbf-readonly-value {
+    flex: 1;
+    font-size: 14px;
+    color: var(--color-text-primary);
+  }
+
+  /* ---- 2-column form row ---- */
+  .cbf-form-row--2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-400);
+  }
+
+  /* ---- Line items ---- */
+  .cbf-line-items {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    overflow: hidden;
+  }
+  .cbf-line-items__head {
+    display: grid;
+    grid-template-columns: 1fr 72px 120px 100px 36px;
+    gap: var(--spacing-200);
+    padding: var(--spacing-300) var(--spacing-400);
+    background: var(--color-surface-sunken, #f8f9fb);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 12px;
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+  }
+  .cbf-line-items__body { display: flex; flex-direction: column; }
+  .cbf-line-items__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-300) var(--spacing-400);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface-sunken, #f8f9fb);
+  }
+  .cbf-add-row {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-150);
+    font-size: 14px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-secondary);
+    padding: var(--spacing-150) var(--spacing-200);
+    border-radius: var(--radius-100);
+    transition: background 0.12s ease;
+  }
+  .cbf-add-row:hover { background: var(--color-primary-subtle); }
+  .cbf-line-items__total {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300);
+    font-size: 15px;
+    color: var(--color-text-secondary);
+  }
+  .cbf-line-items__total strong {
+    font-size: 17px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+
+  [data-step-error] { margin-top: var(--spacing-300); }
+
+  /* ---- Step actions ---- */
+  .cbf-step-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300);
+    margin-top: var(--spacing-700);
+    padding-top: var(--spacing-500);
+    border-top: 1px solid var(--color-border);
+  }
+  .cbf-btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    height: 40px;
+    padding: 0 var(--spacing-400);
+    border-radius: var(--radius-100);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+  .cbf-btn-ghost:hover {
+    background: var(--color-surface-sunken, #f8f9fb);
+    border-color: var(--color-primary-border);
+    color: var(--color-text-primary);
+  }
+</style>
+
+<style is:global>
+  /* Line item rows are JS-rendered and can't carry Astro's scope hash. */
+  .cbf-line-item {
+    display: grid;
+    grid-template-columns: 1fr 72px 120px 100px 36px;
+    gap: var(--spacing-200);
+    padding: var(--spacing-250, 10px) var(--spacing-400);
+    border-bottom: 1px solid var(--color-border);
+    align-items: center;
+  }
+  .cbf-line-item:last-child { border-bottom: 0; }
+
+  .cbf-li-input {
+    width: 100%;
+    padding: 6px var(--spacing-250, 10px);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--color-text-primary);
+    background: var(--color-surface);
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+    outline: none;
+  }
+  .cbf-li-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-subtle);
+  }
+  .cbf-li-input::placeholder { color: var(--cbf-text-placeholder, #aaa); }
+  .cbf-li-qty,
+  .cbf-li-price { text-align: right; }
+
+  .cbf-li-total {
+    font-size: 14px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    text-align: right;
+  }
+
+  .cbf-li-remove {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-100);
+    color: var(--color-text-muted);
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  .cbf-li-remove:hover {
+    background: var(--color-surface-sunken, #f8f9fb);
+    color: var(--color-text-primary);
+  }
+</style>

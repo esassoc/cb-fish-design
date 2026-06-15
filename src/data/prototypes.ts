@@ -31,6 +31,15 @@ export const prototypes: Prototype[] = [
     ticket: 'CBF-8117',
     status: 'live',
   },
+  {
+    slug: 'vendor-invoice',
+    title: 'Vendor invoice submission',
+    description:
+      'Three-step wizard for vendor accountants: upload a PDF invoice, enter invoice metadata + contract reference + line items, then review and submit.',
+    route: '/vendor-invoice',
+    createdAt: '2026-06-15',
+    status: 'in-progress',
+  },
 ];
 
 /** Newest first — the order the index table renders. */

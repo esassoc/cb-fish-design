@@ -1,0 +1,131 @@
+---
+// /vendor-invoice — three-step invoice submission wizard (vendor accountant flow).
+// Thin assembler: page chrome + EsaContainer shell; all sections are components.
+//
+// bcn-lego-checked: (1) cbf-app-card is the established spoke page chrome (bordered
+// content card with gold breadcrumb strip). It is NOT a content card — it is the
+// full-page app shell. esa-card is a general content container, not a shell. The
+// identical pattern lives in search.astro and publications.astro; cbf-app-card is
+// the reusable spoke chrome, not an ad-hoc reinvention. (2) The display:flex in
+// cbf-app-card__body is the rail+main split inside this page-chrome shell. A
+// .sidebar layout primitive covers the inner two-column split; it does not wrap the
+// breadcrumb strip + body as a single bordered shell — that combination is the
+// cbf-app-card spoke pattern. Checked @esa/tokens/layouts.css: .sidebar handles
+// rail+main, not the outer chrome that includes the gold strip border.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import EsaBreadcrumbs from '@esa/ecology/esa-breadcrumbs.astro';
+import CbfInvoiceRail from '../components/vendor-invoice/cbf-invoice-rail.astro';
+import CbfInvoiceStepUpload from '../components/vendor-invoice/cbf-invoice-step-upload.astro';
+import CbfInvoiceStepDetails from '../components/vendor-invoice/cbf-invoice-step-details.astro';
+import CbfInvoiceStepReview from '../components/vendor-invoice/cbf-invoice-step-review.astro';
+import CbfInvoiceConfirm from '../components/vendor-invoice/cbf-invoice-confirm.astro';
+import { withBase } from '../lib/base';
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+const crumbs = [
+  { label: 'Home', href: withBase('/'), icon: homeIcon },
+  { label: 'Submit Invoice' },
+];
+
+const STEPS = ['Upload Invoice', 'Invoice Details', 'Review & Submit'];
+
+// Mock vendor context — in production this comes from the authenticated session.
+const vendor = {
+  company: 'Pacific Environmental Services, LLC',
+  contact: 'Maria Garcia',
+  address: '1425 Riverside Dr, Suite 200, Portland, OR 97201',
+  taxId: '91-1234567',
+  email: 'maria.garcia@pacificenv.com',
+};
+---
+<!-- manifest:
+  layout: cbf-app-card
+  sections:
+    - nav             -> cbf-public-nav
+    - wizard rail     -> cbf-invoice-rail
+    - upload step     -> cbf-invoice-step-upload
+    - details step    -> cbf-invoice-step-details
+    - review step     -> cbf-invoice-step-review
+    - confirmation    -> cbf-invoice-confirm
+-->
+<BaseLayout title="Submit Invoice — Columbia Basin Fish &amp; Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-app-page" data-invoice-wizard>
+    <EsaContainer maxWidth="1920px">
+      <div class="cbf-app-card">
+
+        <div class="cbf-app-card__crumb">
+          <EsaBreadcrumbs items={crumbs} />
+        </div>
+
+        <div class="cbf-app-card__body">
+          <CbfInvoiceRail vendor={vendor} steps={STEPS} />
+
+          <section class="cbf-invoice-main">
+            <CbfInvoiceStepUpload />
+            <CbfInvoiceStepDetails vendor={vendor} />
+            <CbfInvoiceStepReview />
+            <CbfInvoiceConfirm
+              vendorEmail={vendor.email}
+              homeHref={withBase('/')}
+              resubmitHref={withBase('/vendor-invoice')}
+            />
+          </section>
+        </div>
+
+      </div>
+    </EsaContainer>
+  </main>
+
+  <script>
+    import '@esa/ecology/esa-text-field';
+    import '@esa/ecology/esa-select';
+    import '@esa/ecology/esa-textarea';
+    import { initInvoiceWizard } from '../components/vendor-invoice/invoice-wizard.client';
+    initInvoiceWizard();
+  </script>
+</BaseLayout>
+
+<style>
+  .cbf-app-page {
+    padding-block: var(--spacing-600) var(--spacing-800);
+  }
+
+  /* ---- Bordered app card (mirrors search.astro — established spoke chrome) ---- */
+  .cbf-app-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 80vh;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    overflow: hidden;
+    background: var(--color-surface);
+    box-shadow: 0 1px 3px rgba(19, 39, 62, 0.08);
+  }
+  .cbf-app-card__crumb {
+    background: var(--color-gold-50);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--spacing-400) var(--spacing-600);
+  }
+  .cbf-app-card__crumb :global(.esa-breadcrumbs) {
+    --breadcrumbs-link-color: var(--color-text-secondary, #464646);
+    --breadcrumbs-link-hover: var(--color-primary);
+  }
+  .cbf-app-card__body {
+    flex: 1;
+    display: flex;
+    align-items: stretch;
+  }
+
+  /* ---- Main content area ---- */
+  .cbf-invoice-main {
+    flex: 1;
+    min-width: 0;
+    padding: var(--spacing-600) var(--spacing-700);
+    max-width: 820px;
+  }
+</style>

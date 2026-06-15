@@ -18,4 +18,12 @@ const base = process.env.NODE_ENV === 'production' ? '/cb-fish-design/' : '/';
 export default defineConfig({
   site: 'https://esassoc.github.io',
   base,
+  vite: {
+    resolve: {
+      dedupe: ['lit'],
+    },
+    optimizeDeps: {
+      include: ['lit'],
+    },
+  },
 });
