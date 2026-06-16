@@ -36,7 +36,7 @@ export const prototypes: Prototype[] = [
     title: 'Vendor invoice submission',
     description:
       'Three-step wizard for vendor accountants: upload a PDF invoice, enter invoice metadata + contract reference + line items, then review and submit.',
-    route: '/vendor-invoice',
+    route: '/vendor-portal',
     createdAt: '2026-06-15',
     status: 'in-progress',
   },

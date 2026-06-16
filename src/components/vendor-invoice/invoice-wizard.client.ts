@@ -153,8 +153,8 @@ export function initInvoiceWizard(): void {
     });
 
     // Action buttons
-    (wizard.querySelector<HTMLButtonElement>('[data-add-line-item]') ?? null as any).disabled = locked;
-    (wizard.querySelector<HTMLButtonElement>('[data-docs-add]') ?? null as any).disabled = locked;
+    wizard.querySelector<HTMLButtonElement>('[data-add-line-item]')?.toggleAttribute('disabled', locked);
+    wizard.querySelector<HTMLButtonElement>('[data-docs-add]')?.toggleAttribute('disabled', locked);
 
     // Dynamically-rendered line item inputs/remove buttons
     wizard.querySelectorAll<HTMLInputElement>('.cbf-li-input').forEach((el) => { el.disabled = locked; });
@@ -310,6 +310,7 @@ export function initInvoiceWizard(): void {
           value="${item.qty}"
           data-li-field="qty"
           data-li-idx="${i}"
+          style="text-align:right"
         />
         <input${dis}
           class="cbf-li-input cbf-li-price"
@@ -320,6 +321,7 @@ export function initInvoiceWizard(): void {
           value="${item.unitPrice || ''}"
           data-li-field="unitPrice"
           data-li-idx="${i}"
+          style="text-align:right"
         />
         <span class="cbf-li-total" data-li-total="${i}">${fmtCurrency(item.qty * item.unitPrice)}</span>
         <button type="button"${dis} class="cbf-li-remove" data-li-remove="${i}" aria-label="Remove line item">

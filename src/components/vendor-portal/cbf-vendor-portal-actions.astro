@@ -1,0 +1,59 @@
+---
+// cbf-vendor-portal-actions — dashboard action cards for the vendor portal.
+// The first card (Submit Invoice) is the primary call to action; the remaining
+// three are secondary tasks. Composed entirely from esa-card + esa-button legos
+// inside a .grid layout primitive.
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+
+interface Props {
+  submitHref: string;
+}
+const { submitHref } = Astro.props;
+---
+<div class="cbf-vendor-portal-actions grid" data-gap="md" style="--grid-min: 260px">
+  <EsaCard
+    title="Submit an Invoice"
+    subtitle="Upload a PDF and complete invoice details"
+    variant="elevated"
+    padding="spacious"
+  >
+    <p>Most submissions take under 5 minutes. You'll be guided step-by-step through uploading your invoice PDF, entering line items, and confirming totals before sending.</p>
+    <div slot="footer">
+      <EsaButton href={submitHref} color="primary" icon="file-plus">Submit Invoice</EsaButton>
+    </div>
+  </EsaCard>
+
+  <EsaCard
+    title="Submission History"
+    subtitle="Review past invoices"
+    variant="outlined"
+  >
+    <p>View all invoices you've submitted, track their current status, and download copies of previously submitted documents.</p>
+    <div slot="footer">
+      <EsaButton appearance="outline" color="secondary">View History</EsaButton>
+    </div>
+  </EsaCard>
+
+  <EsaCard
+    title="Payment Status"
+    subtitle="Track remittance"
+    variant="outlined"
+  >
+    <p>Check when payments have been processed and view remittance details and payment dates for completed invoices.</p>
+    <div slot="footer">
+      <EsaButton appearance="outline" color="secondary">Check Status</EsaButton>
+    </div>
+  </EsaCard>
+
+  <EsaCard
+    title="Account & Profile"
+    subtitle="Manage company information"
+    variant="outlined"
+  >
+    <p>Update your company details, banking information, and tax documentation on file with Columbia Basin Fish & Wildlife Program.</p>
+    <div slot="footer">
+      <EsaButton appearance="outline" color="secondary">Manage Account</EsaButton>
+    </div>
+  </EsaCard>
+</div>

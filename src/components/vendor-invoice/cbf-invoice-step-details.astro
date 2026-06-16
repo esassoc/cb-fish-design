@@ -47,48 +47,8 @@ const projects = [
     Drop an invoice PDF on the right to unlock the form.
   </div>
 
-  <!-- Invoice metadata -->
-  <div class="cbf-form-section cbf-form-section--first">
-    <h2 class="cbf-form-section__title">Invoice Metadata</h2>
-    <div class="cbf-form-row--2col">
-      <esa-text-field
-        label="Invoice Number"
-        placeholder="e.g. INV-2026-0042"
-        required
-        data-field="invoice-number"
-      ></esa-text-field>
-      <bcn-date-picker
-        label="Invoice Date"
-        required
-        data-field="invoice-date"
-      ></bcn-date-picker>
-      <bcn-date-picker
-        label="Issue Date"
-        required
-        data-field="issue-date"
-      ></bcn-date-picker>
-    </div>
-  </div>
-
-  <!-- Performance period -->
-  <div class="cbf-form-section">
-    <h2 class="cbf-form-section__title">Performance Period</h2>
-    <div class="cbf-form-row--2col">
-      <bcn-date-picker
-        label="Start Date"
-        required
-        data-field="perf-start"
-      ></bcn-date-picker>
-      <bcn-date-picker
-        label="End Date"
-        required
-        data-field="perf-end"
-      ></bcn-date-picker>
-    </div>
-  </div>
-
   <!-- Contract & project reference -->
-  <div class="cbf-form-section">
+  <div class="cbf-form-section cbf-form-section--first">
     <h2 class="cbf-form-section__title">Contract &amp; Project</h2>
     <div class="cbf-form-row--2col">
       <esa-combobox
@@ -107,6 +67,39 @@ const projects = [
         data-field="project"
         data-combobox-options={JSON.stringify(projects)}
       ></esa-combobox>
+    </div>
+  </div>
+
+  <!-- Invoice metadata + performance period (merged) -->
+  <div class="cbf-form-section">
+    <h2 class="cbf-form-section__title">Invoice Metadata</h2>
+    <div class="cbf-form-row--2col">
+      <esa-text-field
+        label="Invoice Number"
+        placeholder="e.g. INV-2026-0042"
+        required
+        data-field="invoice-number"
+      ></esa-text-field>
+      <bcn-date-picker
+        label="Invoice Date"
+        required
+        data-field="invoice-date"
+      ></bcn-date-picker>
+      <bcn-date-picker
+        label="Issue Date"
+        required
+        data-field="issue-date"
+      ></bcn-date-picker>
+      <bcn-date-picker
+        label="Performance Period — Start"
+        required
+        data-field="perf-start"
+      ></bcn-date-picker>
+      <bcn-date-picker
+        label="Performance Period — End"
+        required
+        data-field="perf-end"
+      ></bcn-date-picker>
     </div>
   </div>
 
@@ -294,7 +287,7 @@ const projects = [
   }
   .cbf-line-items__head {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 72px 120px 100px 36px;
+    grid-template-columns: minmax(0, 1fr) 56px 96px 88px 32px;
     gap: var(--spacing-200);
     padding: var(--spacing-300) var(--spacing-400);
     background: var(--color-surface-sunken, #f8f9fb);
@@ -326,6 +319,7 @@ const projects = [
     transition: background 0.12s ease;
   }
   .cbf-add-row:hover { background: var(--color-primary-subtle); }
+  .cbf-add-row:disabled { opacity: 0.4; cursor: not-allowed; }
   .cbf-line-items__total {
     display: flex;
     align-items: center;
@@ -369,6 +363,7 @@ const projects = [
     transition: background 0.12s ease;
   }
   .cbf-support-docs__add:hover { background: var(--color-primary-subtle); }
+  .cbf-support-docs__add:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .cbf-docs-input {
     position: absolute;
@@ -460,7 +455,7 @@ const projects = [
   /* Line item rows are JS-rendered and can't carry Astro's scope hash. */
   .cbf-line-item {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 72px 120px 100px 36px;
+    grid-template-columns: minmax(0, 1fr) 56px 96px 88px 32px;
     gap: var(--spacing-200);
     padding: var(--spacing-250) var(--spacing-400);
     border-bottom: 1px solid var(--color-border);
@@ -469,6 +464,7 @@ const projects = [
   .cbf-line-item:last-child { border-bottom: 0; }
 
   .cbf-li-input {
+    box-sizing: border-box;
     width: 100%;
     padding: var(--spacing-150) var(--spacing-250);
     border: 1px solid var(--color-border);
@@ -485,6 +481,11 @@ const projects = [
     box-shadow: 0 0 0 3px var(--color-primary-subtle);
   }
   .cbf-li-input::placeholder { color: var(--color-text-muted); }
+  .cbf-li-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--color-surface-sunken, #f8f9fb);
+  }
   .cbf-li-qty,
   .cbf-li-price { text-align: right; }
 

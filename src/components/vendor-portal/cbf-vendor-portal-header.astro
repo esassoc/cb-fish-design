@@ -1,0 +1,44 @@
+---
+// cbf-vendor-portal-header — vendor portal welcome section.
+// Composes esa-page-header (greeting + primary CTA) + esa-stat row (activity snapshot).
+// bcn-lego-checked: esa-page-header covers the title/eyebrow/actions pattern; esa-stat
+// covers individual metrics; the outer flex column + stats row are layout composition
+// inside this component, not bespoke page markup.
+import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+
+interface Props {
+  firstName: string;
+  company: string;
+  submitHref: string;
+}
+const { firstName, company, submitHref } = Astro.props;
+---
+<div class="cbf-vendor-portal-header">
+  <EsaPageHeader
+    eyebrow={company}
+    title={`Welcome back, ${firstName}`}
+    lede="Submit and track invoices for your Columbia Basin Fish & Wildlife Program contracts."
+  >
+    <EsaButton slot="actions" href={submitHref} color="primary" size="lg" icon="file-plus">
+      Submit Invoice
+    </EsaButton>
+  </EsaPageHeader>
+
+  <div class="cbf-vendor-portal-header__stats cluster" data-gap="xl">
+    <EsaStat value="4" label="Invoices submitted" sub="FY 2026" />
+    <EsaStat value="1" label="Pending review" accent />
+    <EsaStat value="$14,200" label="Total submitted" sub="FY 2026" />
+  </div>
+</div>
+
+<style>
+  .cbf-vendor-portal-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-600);
+    padding-bottom: var(--spacing-600);
+    border-bottom: 1px solid var(--color-border);
+  }
+</style>
