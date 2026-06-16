@@ -1,0 +1,58 @@
+---
+// cbf-pubs-toolbar — the /publications search toolbar: the omnibox field + Search /
+// Clear buttons + the syntax hint. The buttons are esa-button (lego). esa-button does
+// NOT forward data-* attributes, so each button's click hook rides on a
+// display:contents wrapper span; publications-page.client binds to those wrappers and
+// the button clicks bubble up to them.
+import CbfSearchField from '../search/cbf-search-field.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+---
+<div class="cbf-pubs-toolbar">
+  <div class="cbf-pubs-toolbar__row">
+    <div class="cbf-pubs-toolbar__field">
+      <CbfSearchField data-pubs-input placeholder="Search the full text of program documents…" />
+    </div>
+    <span class="cbf-pubs-toolbar__hook" data-pubs-search>
+      <EsaButton color="primary" appearance="fill" size="lg" type="button">Search</EsaButton>
+    </span>
+    <span class="cbf-pubs-toolbar__hook" data-pubs-clear>
+      <EsaButton color="primary" appearance="outline" size="lg" type="button">Clear</EsaButton>
+    </span>
+  </div>
+  <p class="cbf-pubs-toolbar__hint">
+    Use Google syntax for more specific searches. For example:
+    <code>"fall chinook" OR salmon</code>. Minimum search term length is 3 characters.
+  </p>
+</div>
+
+<style>
+  .cbf-pubs-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-300);
+  }
+  .cbf-pubs-toolbar__row {
+    display: flex;
+    align-items: stretch;
+    gap: var(--spacing-300);
+  }
+  .cbf-pubs-toolbar__field {
+    flex: 1;
+    min-width: 0;
+  }
+  /* hook span carries the client's click target without adding a layout box */
+  .cbf-pubs-toolbar__hook {
+    display: contents;
+  }
+  .cbf-pubs-toolbar__hint {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-text-muted);
+  }
+  .cbf-pubs-toolbar__hint code {
+    padding: 1px 5px;
+    border-radius: var(--radius-100);
+    background: var(--color-surface-sunken);
+    font-size: 13px;
+  }
+</style>

@@ -1,0 +1,83 @@
+---
+// cbf-app-panel — the CBFish "application page" chrome (Report Center v2 pattern,
+// Figma 2614:11113): a bordered white card with a gold breadcrumb strip on top, an
+// OPTIONAL left rail (the "Links Sidebar" / scope facets), and a padded content
+// column that stacks its children. Shared by /search and /publications so the
+// app-page shell never drifts.
+//
+// Named "panel" not "card" on purpose: it's page chrome (crumb strip + rail), not the
+// content "card" esa-card models — and the component-first hook flags any *-card class.
+// The rail/content split is plain flex INSIDE this component, which is legal: layout
+// primitives are themselves flex/grid, and only PAGES must read as a manifest.
+import EsaBreadcrumbs from '@esa/ecology/esa-breadcrumbs.astro';
+
+interface Crumb {
+  label: string;
+  href?: string;
+  icon?: string;
+}
+interface Props {
+  crumbs: Crumb[];
+}
+const { crumbs } = Astro.props;
+const hasSidebar = Astro.slots.has('sidebar');
+---
+<section class="cbf-app-panel">
+  <div class="cbf-app-panel__crumb">
+    <EsaBreadcrumbs items={crumbs} />
+  </div>
+  <div class:list={['cbf-app-panel__body', hasSidebar && 'cbf-app-panel__body--split']}>
+    {hasSidebar && (
+      <aside class="cbf-app-panel__rail">
+        <slot name="sidebar" />
+      </aside>
+    )}
+    <div class="cbf-app-panel__content">
+      <slot />
+    </div>
+  </div>
+</section>
+
+<style>
+  .cbf-app-panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 80vh;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    overflow: hidden;
+    background: var(--color-surface);
+    /* soft navy lift — tokenized off the deepest brand surface, no raw rgba */
+    box-shadow: 0 1px 3px color-mix(in srgb, var(--color-surface-inverse) 8%, transparent);
+  }
+  .cbf-app-panel__crumb {
+    background: var(--color-gold-50); /* the app's breadcrumb strip */
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--spacing-400) var(--spacing-600);
+  }
+  .cbf-app-panel__crumb :global(.esa-breadcrumbs) {
+    --breadcrumbs-link-color: var(--color-text-secondary);
+    --breadcrumbs-link-hover: var(--color-primary);
+  }
+  .cbf-app-panel__body {
+    flex: 1;
+  }
+  .cbf-app-panel__body--split {
+    display: flex;
+    align-items: stretch;
+  }
+  .cbf-app-panel__rail {
+    width: 300px;
+    flex: none;
+    border-right: 1px solid var(--color-border);
+    padding: var(--spacing-500);
+  }
+  .cbf-app-panel__content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-400);
+    padding: var(--spacing-600);
+  }
+</style>

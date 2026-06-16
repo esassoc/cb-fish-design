@@ -37,8 +37,10 @@ export function initPublicationsPage(): void {
   if (!root) return;
   const input = root.querySelector<HTMLInputElement>('[data-pubs-input]')!;
   const resultsEl = root.querySelector<HTMLElement>('[data-pubs-results]')!;
-  const searchBtn = root.querySelector<HTMLButtonElement>('[data-pubs-search]')!;
-  const clearBtn = root.querySelector<HTMLButtonElement>('[data-pubs-clear]')!;
+  // The Search/Clear controls are esa-button legos wrapped in display:contents hook
+  // spans (esa-button doesn't forward data-*); button clicks bubble to these spans.
+  const searchBtn = root.querySelector<HTMLElement>('[data-pubs-search]')!;
+  const clearBtn = root.querySelector<HTMLElement>('[data-pubs-clear]')!;
 
   input.value = new URLSearchParams(window.location.search).get('q') ?? '';
 
@@ -78,11 +80,11 @@ export function initPublicationsPage(): void {
     const found = matches(q);
 
     if (q.trim().length > 0 && q.trim().length < 3) {
-      resultsEl.innerHTML = `<p class="cbf-pubs__empty">Minimum search term length is 3 characters.</p>`;
+      resultsEl.innerHTML = `<p class="cbf-pubs__noresults">Minimum search term length is 3 characters.</p>`;
       return;
     }
     if (found.length === 0) {
-      resultsEl.innerHTML = `<p class="cbf-pubs__empty">No documents matched &ldquo;${esc(q.trim())}&rdquo;. Try a different keyword.</p>`;
+      resultsEl.innerHTML = `<p class="cbf-pubs__noresults">No documents matched &ldquo;${esc(q.trim())}&rdquo;. Try a different keyword.</p>`;
       return;
     }
 

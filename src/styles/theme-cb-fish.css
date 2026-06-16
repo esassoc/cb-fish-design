@@ -61,6 +61,13 @@
      can't be re-pointed by overriding --color-primary — set it explicitly to navy. */
   --color-active-overlay: color-mix(in srgb, var(--color-primary) 8%, transparent);
 
+  /* Brand the info tone — the hub's info defaults to a generic blue; CB Fish wants its
+     own navy. Re-pointing the semantic here brands every esa-alert-box variant="info"
+     spoke-wide (replaces the per-page .cbf-search-note override /search used to carry). */
+  --color-info:        var(--color-secondary);
+  --color-info-subtle: var(--color-primary-subtle);
+  --color-info-border: var(--color-primary-border);
+
   /* ===== TYPE — IBM Plex replaces DM Sans ===== */
   --font-sans: 'IBM Plex Sans', sans-serif;
   /* Mono — the hub default is DM Mono; without this, code/kbd render DM Mono even
@@ -110,6 +117,10 @@
   --cbf-amber-attention:      #f6c244;  /* impersonation state badge/text */
   --cbf-text-placeholder:     #9aa3ad;  /* input placeholder text */
   --cbf-search-highlight:     #ffe9b0;  /* matched-term <mark> background */
+  /* Document-path link green — prod's Report Center renders the /Document.mvc path in
+     green; a DELIBERATE non-success green tell (NEEDS.md #1). Consumed by
+     cbf-pubs-results; promote to a hub semantic if it stabilizes across spokes. */
+  --cbf-document-link:        var(--color-green-700);
 
 }
 

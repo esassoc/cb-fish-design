@@ -1,0 +1,157 @@
+---
+// cbf-prototype — one prototype entry on the landing page. A whole-tile <a>
+// link (title + hover-reveal arrow), a description, and a footer carrying a
+// status pill (dot + label, NOT a colored left-border), a date, and an
+// optional ticket id. Rendered once per registered prototype.
+//
+// bcn-lego-checked: esa-card models a STATIC surface (header/body/footer slots
+// on a <div>) and offers no link affordance — it can't cleanly host a single
+// whole-tile <a> with the ::after overlay hover trick this tile needs without
+// fragmenting the link target. Like cbf-layer, this is an interactive
+// whole-tile link, not esa-card's static surface; checked Beacon (no
+// whole-tile-link card pattern). The status pill composes the spoke's
+// established .cbf-status pattern (a dot + tinted label, the sanctioned
+// token-hygiene replacement for left-border status rails).
+interface Props {
+  title: string;
+  description: string;
+  href: string;
+  status: 'live' | 'in-progress' | 'archived';
+  statusLabel: string;
+  dateLabel: string;
+  datetime: string;
+  ticket?: string;
+}
+const {
+  title,
+  description,
+  href,
+  status,
+  statusLabel,
+  dateLabel,
+  datetime,
+  ticket,
+} = Astro.props;
+---
+<article class="cbf-prototype">
+  <a class="cbf-prototype__link" href={href}>
+    <span class="cbf-prototype__title">{title}<svg class="cbf-prototype__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M7 7h10v10"/></svg></span>
+  </a>
+  <p class="cbf-prototype__desc">{description}</p>
+  <div class="cbf-prototype__foot">
+    <span class="cbf-status" data-status={status}><span class="cbf-status__dot" aria-hidden="true"></span>{statusLabel}</span>
+    <time class="cbf-prototype__meta" datetime={datetime}>{dateLabel}</time>
+    {ticket && <span class="cbf-prototype__meta">{ticket}</span>}
+  </div>
+</article>
+
+<style>
+  .cbf-prototype {
+    position: relative;
+    padding: var(--spacing-400, 1rem) var(--spacing-500, 1.5rem);
+    border: 1px solid var(--color-border, #e5e5e5);
+    border-radius: var(--radius-300, 0.5rem);
+    transition: background-color 0.12s ease, border-color 0.12s ease;
+  }
+
+  .cbf-prototype:hover {
+    background: var(--color-primary-subtle, #eef2f8);
+    border-color: var(--color-primary-border, #c7d3e4);
+  }
+
+  .cbf-prototype__link {
+    display: block;
+  }
+
+  /* whole-tile link: the overlay makes the entire article clickable while the
+     footer meta stays selectable above it via z-index */
+  .cbf-prototype__link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+  }
+
+  .cbf-prototype__title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-150, 0.375rem);
+    font-weight: var(--font-weight-semibold, 600);
+    font-size: 18px;
+    color: var(--color-text-link, #43608a);
+  }
+
+  .cbf-prototype__arrow {
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    flex: none;
+  }
+
+  .cbf-prototype:hover .cbf-prototype__arrow {
+    opacity: 0.7;
+  }
+
+  .cbf-prototype__desc {
+    margin: var(--spacing-150, 0.375rem) 0 var(--spacing-300, 0.75rem);
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--color-text-secondary, #525252);
+  }
+
+  .cbf-prototype__foot {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-300, 0.75rem);
+  }
+
+  .cbf-prototype__meta {
+    font-size: 14px;
+    color: var(--color-text-muted, #6b7280);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* cbf-status — a dot + tinted-label pill (the sanctioned replacement for a
+     colored left-border status rail) */
+  .cbf-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-150, 0.375rem);
+    padding: 2px var(--spacing-250, 0.625rem) 2px var(--spacing-200, 0.5rem);
+    border-radius: var(--radius-full, 9999px);
+    font-size: 14px;
+    font-weight: var(--font-weight-medium, 500);
+    white-space: nowrap;
+  }
+
+  .cbf-status__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: none;
+  }
+
+  .cbf-status[data-status='live'] {
+    background: var(--color-success-subtle, #f0fdf4);
+    color: var(--color-success-strong, #15803d);
+  }
+  .cbf-status[data-status='live'] .cbf-status__dot {
+    background: var(--color-success, #22c55e);
+  }
+
+  .cbf-status[data-status='in-progress'] {
+    background: var(--color-warning-subtle, #fffbeb);
+    color: var(--color-warning-strong, #b45309);
+  }
+  .cbf-status[data-status='in-progress'] .cbf-status__dot {
+    background: var(--color-warning, #f59e0b);
+  }
+
+  .cbf-status[data-status='archived'] {
+    background: var(--color-surface-sunken, #f3f4f6);
+    color: var(--color-text-muted, #6b7280);
+  }
+  .cbf-status[data-status='archived'] .cbf-status__dot {
+    background: var(--color-text-muted, #9ca3af);
+  }
+</style>

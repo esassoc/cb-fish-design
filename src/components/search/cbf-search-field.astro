@@ -1,0 +1,61 @@
+---
+// cbf-search-field — the borderless "omnibox" search affordance: a leading search
+// glyph + a chromeless text field, with the field border + brand focus-ring on the row
+// wrapper. Shared by /search and /publications (and pattern-matched by the palette).
+//
+// bcn-lego-checked: esa-text-field is a BORDERED, LABELLED form field — wrong shape
+// for a borderless omnibox where the rule lives on the wrapper and the input is naked.
+// Checked Beacon (no borderless omnibox field). This is the documented hub gap in
+// NEEDS.md #3 ("esa-search-input / esa-omnibox-field"); cbf-search-field is the
+// reusable home until that lego lands, and /request-lego has it filed.
+//
+// Any extra attributes (data-search-input, data-pubs-input, value, name, autocomplete)
+// are spread straight onto the inner field, so the client scripts find their hooks.
+import CbfIcon from './cbf-icon.astro';
+
+interface Props {
+  placeholder?: string;
+  icon?: string;
+  iconSize?: number;
+  [key: string]: unknown;
+}
+const { icon = 'search', iconSize = 20, ...rest } = Astro.props;
+---
+<label class="cbf-search-field">
+  <CbfIcon name={icon} size={iconSize} />
+  <input type="text" autocomplete="off" {...rest} />
+</label>
+
+<style>
+  .cbf-search-field {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300);
+    width: 100%;
+    padding: var(--spacing-300) var(--spacing-400);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    background: var(--color-surface);
+  }
+  .cbf-search-field:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-subtle);
+  }
+  .cbf-search-field :global(.cbf-icon) {
+    color: var(--color-text-muted);
+    display: inline-flex;
+  }
+  .cbf-search-field input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font-family: var(--font-sans);
+    font-size: 18px;
+    color: var(--color-text-primary);
+  }
+  .cbf-search-field input::placeholder {
+    color: var(--cbf-text-placeholder);
+  }
+</style>

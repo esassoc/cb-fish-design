@@ -69,15 +69,19 @@ Sections proven by the Home specimen: public nav · hero · stat grid · about �
 
 ---
 
-## 4. Open hub requests (deferred from the 2026-06-13 token-hygiene pass)
+## 4. Open hub requests
 
 These are gaps where the spoke reaches a primitive or hand-rolls a primitive
-because no hub semantic / lego covers the case. Logged here as hub asks; not yet
-built. (The status-pill `-strong` text colors landed in this pass — that need is
-now closed.)
+because no hub semantic / lego covers the case. Logged here as hub asks. Revisited
+in the **2026-06-15 component-first refactor** (search prototype + landing decomposed
+to the manifest discipline); the workaround column now reflects the centralized homes.
 
 | # | Request | Why it recurs | Current workaround in spoke |
 |---|---|---|---|
-| 1 | **Semantic document/file-link color role** (or a neutral `--color-accent-2`) | CB Fish needs a green for document paths that is NOT the status-success green; the prod app renders publication paths in green as a recognizable affordance | `pages/publications.astro:287` reaches `--color-green-700` primitive directly |
-| 2 | **`--color-attention*` semantic trio** (base / subtle / border) for non-error elevated/highlight states | Impersonation / "elevated session" UI wants an amber that is distinct from `--color-warning` (form-validation amber); every admin-tooling spoke will want this | `theme-cb-fish.css` defines local `--cbf-amber-attention: #f6c244`, consumed in `cbf-public-nav.astro` (badge + impersonating user text) |
-| 3 | **Borderless search-input lego** (`esa-search-input` / `esa-omnibox-field`) | The icon + borderless `<input>` + brand focus-ring pattern is hand-rolled in 4 places, each re-implementing placeholder color, `box-shadow: 0 0 0 3px var(--color-primary-subtle)` focus, and identical padding | `search.astro`, `publications.astro`, `cbf-omni-search.astro`, `cbf-omni-trigger.astro` each re-author it |
+| 1 | **Semantic document/file-link color role** (hub `--color-document-link`) | CB Fish needs a green for document paths that is NOT the status-success green; prod renders publication paths in green as a recognizable affordance | Now a spoke semantic `--cbf-document-link` (`theme-cb-fish.css`), consumed by `cbf-pubs-results`. Promote to a hub `--color-document-link`. |
+| 2 | **`--color-attention*` semantic trio** (base / subtle / border) for non-error elevated/highlight states | Impersonation / "elevated session" UI wants an amber distinct from `--color-warning` (form-validation amber); every admin-tooling spoke will want this | `theme-cb-fish.css` defines local `--cbf-amber-attention: #f6c244`, consumed in `cbf-public-nav.astro` |
+| 3 | **Borderless omnibox lego** (`esa-omnibox-field` / `esa-search-input`) | The icon + borderless `<input>` + brand focus-ring pattern recurs | Now centralized in **`cbf-search-field`** (the reusable home, bcn-lego-checked), used by `search.astro` + `publications.astro`; the palette + tray-trigger keep their own variants. Promote to hub. |
+| 4 | **Scoped multi-entity search palette** (`esa-entity-search-palette`) | `esa-command-palette` is a flat action launcher; `esa-entity-search` is a single-list navigate omnibox — neither does scoped multi-entity results (projects/contracts/people/publications) + a results-page twin | `cbf-omni-search` + the shared `omni-render.ts` core (bcn-lego-checked) |
+| 5 | **Anchored entity-preview popover** (person contact card) | A row-anchored popover with detail rows + vCard download + an action foot; `esa-popover` is a bare positioner, not this content shape | Hand-rolled `openPersonCard` in `omni-render.ts` |
+| 6 | **Whole-tile link-card lego** (`esa-link-tile` / `esa-card variant="link" href`) | A clickable card-as-link with hover-lift + `::after` full-tile overlay recurs across the spoke | `cbf-layer` and `cbf-prototype` each hand-roll the `::after` overlay (both bcn-lego-checked) |
+| 7 | **Composition layer auto-load** | `@esa/tokens/layouts.css` + `type-roles.css` ship as separate exports NOT bundled into `tokens.css` and are not auto-loaded; a spoke must know to import them or pages can't use `.grid`/`.sidebar`/`.type-*` | Spoke imports both in `BaseLayout.astro`. Hub ergonomics ask: bundle into `tokens.css` or document the required imports. |

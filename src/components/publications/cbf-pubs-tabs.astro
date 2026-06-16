@@ -1,0 +1,53 @@
+---
+// cbf-pubs-tabs — the publication search-mode tab strip on /publications.
+// A horizontal row of <a> links between search modes, one active.
+//
+// Why a link strip, not esa-tab-layout: esa-tab-layout is a panel-SWITCHING
+// control (it shows/hides associated tabpanels). These tabs are NAVIGATION links
+// between distinct search modes — different routes, not panels on one page — so a
+// semantic <nav> of <a> links is the correct shape. (Only "By Text in Documents"
+// is wired in this prototype; the rest are href="#".)
+//
+// Presentational: receives its tabs via Props, owns its own markup + CSS.
+interface Props {
+  tabs: { label: string; active?: boolean }[];
+}
+const { tabs } = Astro.props;
+---
+<nav class="cbf-pubs-tabs" aria-label="Publication search modes">
+  {tabs.map((t) => (
+    <a
+      class:list={['cbf-pubs-tabs__tab', t.active && 'is-active']}
+      href="#"
+      aria-current={t.active ? 'page' : undefined}
+    >{t.label}</a>
+  ))}
+</nav>
+
+<style>
+  /* Navigational link strip — <a> links, not styled <button>s, so this is a
+     genuine navigation control rather than a reinvented esa- primitive.
+     margin-bottom is intentionally omitted: the parent content stack owns rhythm. */
+  .cbf-pubs-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-200);
+    padding-bottom: var(--spacing-400);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-pubs-tabs__tab {
+    padding: var(--spacing-200) var(--spacing-400);
+    border-radius: var(--radius-100);
+    color: var(--color-primary);
+    font-size: 16px;
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+  }
+  .cbf-pubs-tabs__tab:hover {
+    background: var(--color-primary-subtle);
+  }
+  .cbf-pubs-tabs__tab.is-active {
+    background: var(--color-secondary);
+    color: var(--color-text-inverse, #fff);
+  }
+</style>

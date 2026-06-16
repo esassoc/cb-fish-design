@@ -1,0 +1,59 @@
+---
+// cbf-search-facets — the /search left-rail scope filter. A "Filter by type" header
+// plus the container the client script (renderScopeFacets) fills with .cbf-facet
+// buttons. The facet items are JS-built, so their styling is global and lives under
+// .cbf-search-surface (the shared search vocabulary). Keep the data-search-facets
+// hook and the .cbf-facet* selectors verbatim — the client script depends on them.
+---
+<div class="cbf-search-facets cbf-search-surface">
+  <p class="cbf-search-facets__head">Filter by type</p>
+  <div class="cbf-search-facets__list" data-search-facets></div>
+</div>
+
+<style>
+  .cbf-search-facets__head {
+    margin: 0 0 var(--spacing-200);
+    font-size: 16px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-gold-900); /* the app's sidebar sub-header color */
+  }
+  .cbf-search-facets__list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+</style>
+
+<style is:global>
+  /* facet items are built by the client script → global, contained under .cbf-search-surface */
+  .cbf-search-surface .cbf-facet {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-250);
+    width: 100%;
+    padding: var(--spacing-200) var(--spacing-300);
+    border-radius: var(--radius-100);
+    color: var(--color-primary);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: var(--font-weight-regular);
+    text-align: left;
+  }
+  .cbf-search-surface .cbf-facet:hover {
+    background: var(--color-primary-subtle);
+  }
+  .cbf-search-surface .cbf-facet.is-active {
+    background: var(--color-primary-subtle);
+    font-weight: var(--font-weight-semibold);
+  }
+  .cbf-search-surface .cbf-facet .cbf-icon {
+    color: var(--color-secondary);
+  }
+  .cbf-search-surface .cbf-facet__label {
+    flex: 1;
+  }
+  .cbf-search-surface .cbf-facet__count {
+    color: var(--color-text-muted);
+    font-size: 14px;
+  }
+</style>
