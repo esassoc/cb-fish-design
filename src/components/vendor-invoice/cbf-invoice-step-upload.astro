@@ -1,13 +1,10 @@
 ---
-// cbf-invoice-step-upload — Step 0 of the vendor invoice wizard: PDF upload.
-// bcn-lego-checked: esa-file-upload exists in ecology/forms but is an Angular
-// component — not registered as a web component in the Astro spoke. No Lit/WC
-// equivalent exists yet. cbf-invoice-step-upload is the reusable home for this
-// dropzone pattern until esa-file-upload ships as a standalone WC.
+// cbf-invoice-step-upload — Standalone PDF upload dropzone (reference component).
+// The live wizard mounts upload UI in cbf-invoice-pdf-panel on step 0 instead.
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 ---
-<div class="cbf-wizard-step" data-step="0">
+<div class="cbf-wizard-step" data-wizard-upload>
   <h1 class="cbf-page-title">Upload Invoice</h1>
   <p class="cbf-step-intro">Attach the PDF invoice you'd like to submit for payment.</p>
 

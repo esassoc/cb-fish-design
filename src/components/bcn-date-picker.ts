@@ -15,8 +15,14 @@ for (let y = 1990; y <= 2060; y++) YEARS.push(y);
 
 function isoToDate(iso: string): Date | null {
   if (!iso) return null;
-  const d = new Date(iso + 'T00:00:00');
-  return isNaN(d.getTime()) ? null : d;
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const y = parseInt(m[1], 10);
+  const mo = parseInt(m[2], 10) - 1;
+  const day = parseInt(m[3], 10);
+  const d = new Date(y, mo, day);
+  if (d.getFullYear() !== y || d.getMonth() !== mo || d.getDate() !== day) return null;
+  return d;
 }
 function dateToIso(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;

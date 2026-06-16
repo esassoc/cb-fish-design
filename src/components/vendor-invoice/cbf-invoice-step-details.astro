@@ -1,5 +1,6 @@
 ---
-// cbf-invoice-step-details — Step 1: invoice metadata, contract ref, line items, notes.
+// cbf-invoice-step-details — Step 0: invoice metadata, contract ref, line items, notes.
+// PDF upload lives in cbf-invoice-pdf-panel on the same step.
 // bcn-lego-checked: the read-only vendor strip is a compact identity metadata layout
 // (eyebrow + name + address rows), not a general card container — esa-card doesn't
 // provide this structured read-only row pattern. The line-items table and the overall
@@ -91,7 +92,7 @@ const projects = [
     <h2 class="cbf-form-section__title">Contract &amp; Project</h2>
     <div class="cbf-form-row--2col">
       <esa-combobox
-        mode="select"
+        mode="autocomplete"
         label="Contract"
         placeholder="Search contracts…"
         required
@@ -99,7 +100,7 @@ const projects = [
         data-combobox-options={JSON.stringify(contracts)}
       ></esa-combobox>
       <esa-combobox
-        mode="select"
+        mode="autocomplete"
         label="Project"
         placeholder="Search projects…"
         required

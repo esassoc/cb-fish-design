@@ -6,7 +6,7 @@ export function initInvoiceWizard(): void {
   const wizard = document.querySelector<HTMLElement>('[data-invoice-wizard]');
   if (!wizard) return;
 
-  const stepEls = Array.from(wizard.querySelectorAll<HTMLElement>('[data-step]'));
+  const stepper = wizard.querySelector<HTMLElement>('[data-stepper]');
   const stepperItems = Array.from(
     wizard.querySelectorAll<HTMLElement>('[data-stepper-step]'),
   );
@@ -15,6 +15,7 @@ export function initInvoiceWizard(): void {
   );
 
   let current = 0;
+  const confirmStep = 2;
 
   const pdfPanel = wizard.querySelector<HTMLElement>('[data-pdf-panel]');
   const pdfFrame = wizard.querySelector<HTMLIFrameElement>('[data-pdf-frame]');
@@ -22,13 +23,20 @@ export function initInvoiceWizard(): void {
   const cardBody = wizard.querySelector<HTMLElement>('.cbf-invoice-workspace');
   const partiesBar = wizard.querySelector<HTMLElement>('[data-parties-bar]');
 
+  function setStepVisibility(step: number, visible: boolean): void {
+    wizard.querySelectorAll<HTMLElement>(`[data-step="${step}"]`).forEach((el) => {
+      if (visible) el.removeAttribute('hidden');
+      else el.setAttribute('hidden', '');
+    });
+  }
+
   // ---- Step navigation ----
 
   function goTo(next: number): void {
-    if (!validate(current)) return;
-    stepEls[current]?.setAttribute('hidden', '');
+    if (next !== confirmStep && !validate(current)) return;
+    setStepVisibility(current, false);
     current = next;
-    stepEls[current]?.removeAttribute('hidden');
+    setStepVisibility(current, true);
     updateStepper();
     if (current === 1) populateReview();
     // Show PDF panel only on step 0 (Invoice Details) when a file is loaded
@@ -37,6 +45,10 @@ export function initInvoiceWizard(): void {
   }
 
   function updateStepper(): void {
+    const onConfirm = current >= stepperItems.length;
+    stepper?.toggleAttribute('hidden', onConfirm);
+    if (onConfirm) return;
+
     stepperItems.forEach((item, i) => {
       item.classList.toggle('is-active', i === current);
       item.classList.toggle('is-done', i < current);
@@ -52,9 +64,9 @@ export function initInvoiceWizard(): void {
     const t = e.target as HTMLElement;
     if (t.closest('[data-wizard-next]')) goTo(current + 1);
     if (t.closest('[data-wizard-back]') && current > 0) {
-      stepEls[current]?.setAttribute('hidden', '');
+      setStepVisibility(current, false);
       current--;
-      stepEls[current]?.removeAttribute('hidden');
+      setStepVisibility(current, true);
       updateStepper();
       syncPdfPanel();
     }
