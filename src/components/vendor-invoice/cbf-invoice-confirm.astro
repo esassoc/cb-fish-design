@@ -7,7 +7,7 @@ interface Props {
 }
 const { vendorEmail, homeHref, resubmitHref } = Astro.props;
 ---
-<div class="cbf-wizard-step cbf-wizard-step--confirm" data-step="3" hidden>
+<div class="cbf-wizard-step cbf-wizard-step--confirm" data-step="2" hidden>
   <div class="cbf-confirm">
     <div class="cbf-confirm__icon" aria-hidden="true">
       <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -37,6 +37,9 @@ const { vendorEmail, homeHref, resubmitHref } = Astro.props;
   .cbf-wizard-step--confirm {
     display: flex;
     align-items: flex-start;
+  }
+  .cbf-wizard-step--confirm[hidden] {
+    display: none;
   }
 
   .cbf-confirm {
@@ -84,6 +87,7 @@ const { vendorEmail, homeHref, resubmitHref } = Astro.props;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-100);
     width: 100%;
+    box-sizing: border-box;
   }
   .cbf-confirm__ref strong { color: var(--color-primary); }
 

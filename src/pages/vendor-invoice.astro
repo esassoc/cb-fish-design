@@ -17,10 +17,10 @@ import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import EsaBreadcrumbs from '@esa/ecology/esa-breadcrumbs.astro';
 import CbfInvoiceRail from '../components/vendor-invoice/cbf-invoice-rail.astro';
-import CbfInvoiceStepUpload from '../components/vendor-invoice/cbf-invoice-step-upload.astro';
 import CbfInvoiceStepDetails from '../components/vendor-invoice/cbf-invoice-step-details.astro';
 import CbfInvoiceStepReview from '../components/vendor-invoice/cbf-invoice-step-review.astro';
 import CbfInvoiceConfirm from '../components/vendor-invoice/cbf-invoice-confirm.astro';
+import CbfInvoicePdfPanel from '../components/vendor-invoice/cbf-invoice-pdf-panel.astro';
 import { withBase } from '../lib/base';
 
 const homeIcon =
@@ -30,15 +30,23 @@ const crumbs = [
   { label: 'Submit Invoice' },
 ];
 
-const STEPS = ['Upload Invoice', 'Invoice Details', 'Review & Submit'];
+const STEPS = ['Invoice Details', 'Review & Submit'];
 
-// Mock vendor context — in production this comes from the authenticated session.
+// Mock supplier context — in production this comes from the authenticated session.
 const vendor = {
   company: 'Pacific Environmental Services, LLC',
   contact: 'Maria Garcia',
   address: '1425 Riverside Dr, Suite 200, Portland, OR 97201',
   taxId: '91-1234567',
   email: 'maria.garcia@pacificenv.com',
+};
+
+// Mock buyer context — in production this comes from the contract/project lookup.
+const buyer = {
+  company: 'Columbia Basin Fish & Wildlife Program',
+  contact: 'James Whitfield',
+  address: '700 NE Multnomah St, Suite 1200, Portland, OR 97232',
+  email: 'j.whitfield@cbfwp.org',
 };
 ---
 <!-- manifest:
@@ -65,16 +73,41 @@ const vendor = {
         <div class="cbf-app-card__body">
           <CbfInvoiceRail vendor={vendor} steps={STEPS} />
 
-          <section class="cbf-invoice-main">
-            <CbfInvoiceStepUpload />
-            <CbfInvoiceStepDetails vendor={vendor} />
-            <CbfInvoiceStepReview />
-            <CbfInvoiceConfirm
-              vendorEmail={vendor.email}
-              homeHref={withBase('/')}
-              resubmitHref={withBase('/vendor-invoice')}
-            />
-          </section>
+          <div class="cbf-invoice-content">
+
+            <!-- Parties bar: full-width above the workspace, only on step 0 -->
+            <div class="cbf-parties-bar" data-parties-bar hidden>
+              <div class="cbf-party-card">
+                <p class="cbf-party-card__eyebrow">Supplier</p>
+                <p class="cbf-party-card__name">{vendor.company}</p>
+                <p class="cbf-party-card__meta">{vendor.contact} &middot; {vendor.email}</p>
+                <p class="cbf-party-card__meta">{vendor.address}</p>
+              </div>
+              <div class="cbf-parties-bar__divider" aria-hidden="true"></div>
+              <div class="cbf-party-card">
+                <p class="cbf-party-card__eyebrow">Buyer</p>
+                <p class="cbf-party-card__name">{buyer.company}</p>
+                <p class="cbf-party-card__meta">{buyer.contact} &middot; {buyer.email}</p>
+                <p class="cbf-party-card__meta">{buyer.address}</p>
+              </div>
+            </div>
+
+            <!-- Form + PDF panel workspace -->
+            <div class="cbf-invoice-workspace">
+              <CbfInvoicePdfPanel />
+
+              <section class="cbf-invoice-main">
+                <CbfInvoiceStepDetails vendor={vendor} />
+                <CbfInvoiceStepReview />
+                <CbfInvoiceConfirm
+                  vendorEmail={vendor.email}
+                  homeHref={withBase('/')}
+                  resubmitHref={withBase('/vendor-invoice')}
+                />
+              </section>
+            </div>
+
+          </div>
         </div>
 
       </div>
@@ -84,6 +117,8 @@ const vendor = {
   <script>
     import '@esa/ecology/esa-text-field';
     import '@esa/ecology/esa-select';
+    import '@esa/ecology/esa-combobox';
+    import '../components/bcn-date-picker';
     import '@esa/ecology/esa-textarea';
     import { initInvoiceWizard } from '../components/vendor-invoice/invoice-wizard.client';
     initInvoiceWizard();
@@ -102,7 +137,7 @@ const vendor = {
     min-height: 80vh;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-100);
-    overflow: hidden;
+    overflow: clip;
     background: var(--color-surface);
     box-shadow: 0 1px 3px rgba(19, 39, 62, 0.08);
   }
@@ -121,11 +156,81 @@ const vendor = {
     align-items: stretch;
   }
 
+  /* ---- Content column (parties bar + workspace) ---- */
+  .cbf-invoice-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---- Parties bar ---- */
+  .cbf-parties-bar {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-sunken, #f8f9fb);
+    padding: var(--spacing-400) var(--spacing-600);
+    gap: var(--spacing-600);
+  }
+  .cbf-parties-bar[hidden] { display: none; }
+
+  .cbf-parties-bar__divider {
+    width: 1px;
+    background: var(--color-border);
+    flex: none;
+  }
+
+  .cbf-party-card {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-050);
+  }
+  .cbf-party-card__eyebrow {
+    margin: 0;
+    font-size: 11px;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+  .cbf-party-card__name {
+    margin: 0;
+    font-size: 14px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-party-card__meta {
+    margin: 0;
+    font-size: 12px;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ---- Workspace (form + PDF panel) ---- */
+  .cbf-invoice-workspace {
+    flex: 1;
+    display: flex;
+    align-items: stretch;
+    min-height: 0;
+  }
+
   /* ---- Main content area ---- */
   .cbf-invoice-main {
     flex: 1;
     min-width: 0;
     padding: var(--spacing-600) var(--spacing-700);
     max-width: 820px;
+  }
+
+  /* When PDF panel is open alongside step 0, cap the form width */
+  .cbf-invoice-workspace.has-pdf .cbf-invoice-main {
+    flex: 0 0 520px;
+    max-width: 520px;
   }
 </style>

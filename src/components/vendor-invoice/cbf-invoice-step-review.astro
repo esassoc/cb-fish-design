@@ -13,7 +13,7 @@
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 ---
-<div class="cbf-wizard-step" data-step="2" hidden>
+<div class="cbf-wizard-step" data-step="1" hidden>
   <h1 class="cbf-page-title">Review &amp; Submit</h1>
 
   <div class="cbf-review-notice">
@@ -142,7 +142,7 @@ import EsaButton from '@esa/ecology/esa-button.astro';
   }
   .cbf-review-table th,
   .cbf-review-table td {
-    padding: var(--spacing-250, 10px) var(--spacing-300);
+    padding: var(--spacing-250) var(--spacing-300);
     text-align: left;
     border-bottom: 1px solid var(--color-border);
   }
@@ -166,6 +166,26 @@ import EsaButton from '@esa/ecology/esa-button.astro';
     background: var(--color-surface-sunken, #f8f9fb);
     border-bottom: 0;
   }
+
+  .cbf-review-file-actions {
+    display: flex;
+    gap: var(--spacing-200);
+    margin-left: auto;
+    flex: none;
+  }
+  .cbf-review-file-btn {
+    font-size: 13px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-secondary);
+    padding: var(--spacing-100) var(--spacing-300);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    background: var(--color-surface);
+    transition: background 0.12s ease, border-color 0.12s ease;
+  }
+  .cbf-review-file-btn:hover { background: var(--color-primary-subtle); border-color: var(--color-primary-border); }
+  .cbf-review-file-btn--danger { color: var(--color-danger, #dc2626); }
+  .cbf-review-file-btn--danger:hover { background: var(--color-danger-subtle, #fef2f2); border-color: var(--color-danger, #dc2626); }
 
   .cbf-review-notes {
     margin: 0;

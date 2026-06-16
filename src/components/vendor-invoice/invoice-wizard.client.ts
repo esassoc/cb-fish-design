@@ -16,6 +16,12 @@ export function initInvoiceWizard(): void {
 
   let current = 0;
 
+  const pdfPanel = wizard.querySelector<HTMLElement>('[data-pdf-panel]');
+  const pdfFrame = wizard.querySelector<HTMLIFrameElement>('[data-pdf-frame]');
+  const pdfFilenameEl = wizard.querySelector<HTMLElement>('[data-pdf-filename]');
+  const cardBody = wizard.querySelector<HTMLElement>('.cbf-invoice-workspace');
+  const partiesBar = wizard.querySelector<HTMLElement>('[data-parties-bar]');
+
   // ---- Step navigation ----
 
   function goTo(next: number): void {
@@ -24,7 +30,9 @@ export function initInvoiceWizard(): void {
     current = next;
     stepEls[current]?.removeAttribute('hidden');
     updateStepper();
-    if (current === 2) populateReview();
+    if (current === 1) populateReview();
+    // Show PDF panel only on step 0 (Invoice Details) when a file is loaded
+    syncPdfPanel();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -48,15 +56,36 @@ export function initInvoiceWizard(): void {
       current--;
       stepEls[current]?.removeAttribute('hidden');
       updateStepper();
+      syncPdfPanel();
     }
+    if (t.closest('[data-invoice-replace]')) uploadInput.click();
+    if (t.closest('[data-invoice-remove]')) { clearFile(); goTo(0); }
     if (t.closest('[data-wizard-submit]')) submitInvoice();
   });
+
+  // Show panel immediately on load (step 0)
+  syncPdfPanel();
+
+  // ---- Combobox initialization ----
+  // esa-combobox takes options as a JS property, not slotted HTML.
+  // We encode the options as JSON on a data attribute at build time and assign here.
+  wizard.querySelectorAll<any>('[data-combobox-options]').forEach((el) => {
+    try { el.options = JSON.parse(el.dataset.comboboxOptions ?? '[]'); } catch {}
+  });
+
+  // ---- PDF panel sync ----
+
+  function syncPdfPanel(): void {
+    const show = current === 0;
+    pdfPanel?.toggleAttribute('hidden', !show);
+    cardBody?.classList.toggle('has-pdf', show);
+    partiesBar?.toggleAttribute('hidden', !show);
+  }
 
   // ---- Validation ----
 
   function validate(step: number): boolean {
-    if (step === 0) return validateUpload();
-    if (step === 1) return validateDetails();
+    if (step === 0) { const a = validateUpload(); const b = validateDetails(); return a && b; }
     return true;
   }
 
@@ -72,6 +101,9 @@ export function initInvoiceWizard(): void {
     const required = [
       wizard.querySelector<any>('[data-field="invoice-number"]'),
       wizard.querySelector<any>('[data-field="invoice-date"]'),
+      wizard.querySelector<any>('[data-field="issue-date"]'),
+      wizard.querySelector<any>('[data-field="perf-start"]'),
+      wizard.querySelector<any>('[data-field="perf-end"]'),
       wizard.querySelector<any>('[data-field="contract"]'),
       wizard.querySelector<any>('[data-field="project"]'),
     ];
@@ -95,6 +127,31 @@ export function initInvoiceWizard(): void {
     return ok;
   }
 
+  // ---- Form lock (disabled until first PDF upload) ----
+
+  let pdfEverLoaded = false;
+
+  function syncFormLock(): void {
+    const locked = !pdfEverLoaded;
+    wizard.querySelector<HTMLElement>('[data-form-lock-notice]')?.toggleAttribute('hidden', !locked);
+
+    // Named form fields (esa-text-field, bcn-date-picker, esa-combobox, esa-textarea)
+    wizard.querySelectorAll<any>('[data-field]').forEach((el) => {
+      el.toggleAttribute('disabled', locked);
+    });
+
+    // Action buttons
+    (wizard.querySelector<HTMLButtonElement>('[data-add-line-item]') ?? null as any).disabled = locked;
+    (wizard.querySelector<HTMLButtonElement>('[data-docs-add]') ?? null as any).disabled = locked;
+
+    // Dynamically-rendered line item inputs/remove buttons
+    wizard.querySelectorAll<HTMLInputElement>('.cbf-li-input').forEach((el) => { el.disabled = locked; });
+    wizard.querySelectorAll<HTMLButtonElement>('.cbf-li-remove').forEach((el) => { el.disabled = locked; });
+  }
+
+  // Apply initial locked state
+  syncFormLock();
+
   // ---- File upload ----
 
   let uploadedFile: File | null = null;
@@ -102,27 +159,75 @@ export function initInvoiceWizard(): void {
   const uploadZone = wizard.querySelector<HTMLElement>('[data-upload-zone]')!;
   const uploadInput = wizard.querySelector<HTMLInputElement>('[data-upload-input]')!;
   const uploadIdle = wizard.querySelector<HTMLElement>('[data-upload-idle]')!;
-  const uploadFileEl = wizard.querySelector<HTMLElement>('[data-upload-file]')!;
-  const uploadFilename = wizard.querySelector<HTMLElement>('[data-upload-filename]')!;
-  const uploadFilesize = wizard.querySelector<HTMLElement>('[data-upload-filesize]')!;
+  const pdfViewer = wizard.querySelector<HTMLElement>('[data-pdf-viewer]')!;
+
+  let pdfObjectUrl: string | null = null;
 
   function showFile(file: File): void {
     uploadedFile = file;
-    uploadFilename.textContent = file.name;
-    uploadFilesize.textContent = formatBytes(file.size);
-    uploadIdle.setAttribute('hidden', '');
-    uploadFileEl.removeAttribute('hidden');
-    uploadZone.classList.add('has-file');
+    uploadIdle?.setAttribute('hidden', '');
+    pdfViewer?.removeAttribute('hidden');
     wizard.querySelector<HTMLElement>('[data-step-error="upload"]')?.setAttribute('hidden', '');
+    if (!pdfEverLoaded) { pdfEverLoaded = true; syncFormLock(); }
+    if (pdfObjectUrl) URL.revokeObjectURL(pdfObjectUrl);
+    pdfObjectUrl = URL.createObjectURL(file);
+    if (pdfFrame) pdfFrame.src = pdfObjectUrl;
+    if (pdfFilenameEl) pdfFilenameEl.textContent = file.name;
+    if (current === 1) populateReview();
+    syncPdfPanel();
   }
 
   function clearFile(): void {
     uploadedFile = null;
     uploadInput.value = '';
-    uploadFileEl.setAttribute('hidden', '');
-    uploadIdle.removeAttribute('hidden');
-    uploadZone.classList.remove('has-file');
+    pdfViewer?.setAttribute('hidden', '');
+    uploadIdle?.removeAttribute('hidden');
+    if (pdfObjectUrl) { URL.revokeObjectURL(pdfObjectUrl); pdfObjectUrl = null; }
+    if (pdfFrame) pdfFrame.src = '';
+    syncPdfPanel();
   }
+
+  // ---- Supporting documents ----
+
+  let supportingDocs: File[] = [];
+  const docsInput = wizard.querySelector<HTMLInputElement>('[data-docs-input]')!;
+  const docsList = wizard.querySelector<HTMLElement>('[data-docs-list]')!;
+
+  function renderDocs(): void {
+    if (!docsList) return;
+    docsList.innerHTML = supportingDocs.map((file, i) => `
+      <div class="cbf-doc-row">
+        <svg class="cbf-doc-row__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <div class="cbf-doc-row__info">
+          <span class="cbf-doc-row__name">${escHtml(file.name)}</span>
+          <span class="cbf-doc-row__size">${formatBytes(file.size)}</span>
+        </div>
+        <button type="button" class="cbf-doc-row__remove" data-doc-remove="${i}" aria-label="Remove ${escHtml(file.name)}">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    `).join('');
+  }
+
+  wizard.querySelector('[data-docs-add]')?.addEventListener('click', () => docsInput?.click());
+
+  docsInput?.addEventListener('change', () => {
+    const incoming = Array.from(docsInput.files ?? []);
+    const existingNames = new Set(supportingDocs.map((f) => f.name));
+    supportingDocs.push(...incoming.filter((f) => !existingNames.has(f.name)));
+    docsInput.value = '';
+    renderDocs();
+  });
+
+  docsList?.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-doc-remove]');
+    if (!btn) return;
+    supportingDocs.splice(Number(btn.dataset.docRemove), 1);
+    renderDocs();
+  });
 
   wizard.querySelector('[data-upload-browse]')?.addEventListener('click', () => uploadInput.click());
   wizard.querySelector('[data-upload-remove]')?.addEventListener('click', clearFile);
@@ -173,11 +278,12 @@ export function initInvoiceWizard(): void {
   }
 
   function renderLineItems(): void {
+    const dis = pdfEverLoaded ? '' : ' disabled';
     lineItemsBody.innerHTML = lineItems
       .map(
         (item, i) => `
       <div class="cbf-line-item" data-row="${i}">
-        <input
+        <input${dis}
           class="cbf-li-input cbf-li-desc"
           type="text"
           placeholder="Description…"
@@ -185,7 +291,7 @@ export function initInvoiceWizard(): void {
           data-li-field="description"
           data-li-idx="${i}"
         />
-        <input
+        <input${dis}
           class="cbf-li-input cbf-li-qty"
           type="number"
           min="1"
@@ -193,7 +299,7 @@ export function initInvoiceWizard(): void {
           data-li-field="qty"
           data-li-idx="${i}"
         />
-        <input
+        <input${dis}
           class="cbf-li-input cbf-li-price"
           type="number"
           min="0"
@@ -204,7 +310,7 @@ export function initInvoiceWizard(): void {
           data-li-idx="${i}"
         />
         <span class="cbf-li-total" data-li-total="${i}">${fmtCurrency(item.qty * item.unitPrice)}</span>
-        <button type="button" class="cbf-li-remove" data-li-remove="${i}" aria-label="Remove line item">
+        <button type="button"${dis} class="cbf-li-remove" data-li-remove="${i}" aria-label="Remove line item">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
@@ -258,18 +364,26 @@ export function initInvoiceWizard(): void {
     return el?.value ?? '';
   }
 
+  function comboboxLabel(selector: string): string {
+    const el = wizard.querySelector<any>(selector);
+    if (!el) return '';
+    const val = el.value ?? '';
+    const match = (el.options as Array<{value: string; label: string}> | undefined)
+      ?.find((o) => o.value === val);
+    return match?.label ?? val;
+  }
+
   function populateReview(): void {
     const container = wizard.querySelector<HTMLElement>('[data-review-content]');
     if (!container) return;
 
     const invoiceNum = fieldVal('[data-field="invoice-number"]');
     const invoiceDate = fieldVal('[data-field="invoice-date"]');
-    const contract = (wizard.querySelector('[data-field="contract"]') as HTMLSelectElement)?.options?.[
-      (wizard.querySelector('[data-field="contract"]') as HTMLSelectElement)?.selectedIndex
-    ]?.text ?? fieldVal('[data-field="contract"]');
-    const project = (wizard.querySelector('[data-field="project"]') as HTMLSelectElement)?.options?.[
-      (wizard.querySelector('[data-field="project"]') as HTMLSelectElement)?.selectedIndex
-    ]?.text ?? fieldVal('[data-field="project"]');
+    const issueDate = fieldVal('[data-field="issue-date"]');
+    const perfStart = fieldVal('[data-field="perf-start"]');
+    const perfEnd = fieldVal('[data-field="perf-end"]');
+    const contract = comboboxLabel('[data-field="contract"]');
+    const project = comboboxLabel('[data-field="project"]');
     const notes = fieldVal('[data-field="notes"]');
     const total = lineItems.reduce((acc, li) => acc + li.qty * li.unitPrice, 0);
 
@@ -280,6 +394,10 @@ export function initInvoiceWizard(): void {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           <span>${escHtml(uploadedFile?.name ?? '(no file)')}</span>
           <span class="cbf-review-meta">${uploadedFile ? formatBytes(uploadedFile.size) : ''}</span>
+          <div class="cbf-review-file-actions">
+            <button type="button" class="cbf-review-file-btn" data-invoice-replace>Replace</button>
+            <button type="button" class="cbf-review-file-btn cbf-review-file-btn--danger" data-invoice-remove>Remove</button>
+          </div>
         </div>
       </div>
 
@@ -288,6 +406,8 @@ export function initInvoiceWizard(): void {
         <dl class="cbf-review-dl">
           <div class="cbf-review-dl__row"><dt>Invoice Number</dt><dd>${escHtml(invoiceNum) || '—'}</dd></div>
           <div class="cbf-review-dl__row"><dt>Invoice Date</dt><dd>${escHtml(invoiceDate) || '—'}</dd></div>
+          <div class="cbf-review-dl__row"><dt>Issue Date</dt><dd>${escHtml(issueDate) || '—'}</dd></div>
+          <div class="cbf-review-dl__row"><dt>Performance Period</dt><dd>${escHtml(perfStart) || '—'} – ${escHtml(perfEnd) || '—'}</dd></div>
           <div class="cbf-review-dl__row"><dt>Contract</dt><dd>${escHtml(contract) || '—'}</dd></div>
           <div class="cbf-review-dl__row"><dt>Project</dt><dd>${escHtml(project) || '—'}</dd></div>
         </dl>
@@ -316,6 +436,18 @@ export function initInvoiceWizard(): void {
         </table>
       </div>
 
+      ${supportingDocs.length ? `
+      <div class="cbf-review-section">
+        <h3 class="cbf-review-section__title">Supporting Documents</h3>
+        ${supportingDocs.map(f => `
+          <div class="cbf-review-row">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span>${escHtml(f.name)}</span>
+            <span class="cbf-review-meta">${formatBytes(f.size)}</span>
+          </div>
+        `).join('')}
+      </div>` : ''}
+
       ${notes ? `
       <div class="cbf-review-section">
         <h3 class="cbf-review-section__title">Notes</h3>
@@ -327,9 +459,27 @@ export function initInvoiceWizard(): void {
   // ---- Submit ----
 
   function submitInvoice(): void {
-    const ref = `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 90000) + 10000)}`;
-    const refEl = wizard.querySelector<HTMLElement>('[data-confirm-ref]');
-    if (refEl) refEl.textContent = ref;
-    goTo(3);
+    // Engage loading state on the submit button so "Invoice Submitted" only
+    // appears after the simulated network round-trip, not on click.
+    const btn = wizard.querySelector<HTMLButtonElement>('[data-wizard-submit] button.esa-button');
+    if (btn) {
+      btn.classList.add('esa-button--loading');
+      btn.disabled = true;
+      btn.setAttribute('aria-busy', 'true');
+      if (!btn.querySelector('.esa-button__spinner')) {
+        const spinner = document.createElement('span');
+        spinner.className = 'esa-button__spinner';
+        spinner.setAttribute('aria-hidden', 'true');
+        btn.prepend(spinner);
+      }
+      btn.querySelector('.esa-button__label')?.classList.add('esa-button__label--hidden');
+    }
+
+    setTimeout(() => {
+      const ref = `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 90000) + 10000)}`;
+      const refEl = wizard.querySelector<HTMLElement>('[data-confirm-ref]');
+      if (refEl) refEl.textContent = ref;
+      goTo(2);
+    }, 1500);
   }
 }
