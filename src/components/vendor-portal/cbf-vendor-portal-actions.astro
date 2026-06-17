@@ -11,49 +11,49 @@ interface Props {
 }
 const { submitHref } = Astro.props;
 ---
-<div class="cbf-vendor-portal-actions grid" data-gap="md" style="--grid-min: 260px">
+<div class="cbf-vendor-portal-actions grid" data-gap="md" style="--grid-min: 260px; align-items: flex-start;">
   <EsaCard
-    title="Submit an Invoice"
+    title="Submit an invoice"
     subtitle="Upload a PDF and complete invoice details"
     variant="elevated"
     padding="spacious"
   >
     <p>Most submissions take under 5 minutes. You'll be guided step-by-step through uploading your invoice PDF, entering line items, and confirming totals before sending.</p>
     <div slot="footer">
-      <EsaButton href={submitHref} color="primary" icon="file-plus">Submit Invoice</EsaButton>
+      <EsaButton href={submitHref} color="primary" icon="file-plus">Submit invoice</EsaButton>
     </div>
   </EsaCard>
 
   <EsaCard
-    title="Submission History"
+    title="Submission history"
     subtitle="Review past invoices"
     variant="outlined"
   >
     <p>View all invoices you've submitted, track their current status, and download copies of previously submitted documents.</p>
     <div slot="footer">
-      <EsaButton appearance="outline" color="secondary">View History</EsaButton>
+      <EsaButton appearance="outline" color="secondary">View history</EsaButton>
     </div>
   </EsaCard>
 
   <EsaCard
-    title="Payment Status"
+    title="Payment status"
     subtitle="Track remittance"
     variant="outlined"
   >
     <p>Check when payments have been processed and view remittance details and payment dates for completed invoices.</p>
     <div slot="footer">
-      <EsaButton appearance="outline" color="secondary">Check Status</EsaButton>
+      <EsaButton appearance="outline" color="secondary">Check status</EsaButton>
     </div>
   </EsaCard>
 
   <EsaCard
-    title="Account & Profile"
+    title="Account & profile"
     subtitle="Manage company information"
     variant="outlined"
   >
     <p>Update your company details, banking information, and tax documentation on file with Columbia Basin Fish & Wildlife Program.</p>
     <div slot="footer">
-      <EsaButton appearance="outline" color="secondary">Manage Account</EsaButton>
+      <EsaButton appearance="outline" color="secondary">Manage account</EsaButton>
     </div>
   </EsaCard>
 </div>

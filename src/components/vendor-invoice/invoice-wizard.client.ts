@@ -170,6 +170,7 @@ export function initInvoiceWizard(): void {
 
   const uploadZone = wizard.querySelector<HTMLElement>('[data-upload-zone]')!;
   const uploadInput = wizard.querySelector<HTMLInputElement>('[data-upload-input]')!;
+  const mobileUploadInput = wizard.querySelector<HTMLInputElement>('[data-mobile-upload-input]');
   const uploadIdle = wizard.querySelector<HTMLElement>('[data-upload-idle]')!;
   const pdfViewer = wizard.querySelector<HTMLElement>('[data-pdf-viewer]')!;
 
@@ -192,6 +193,7 @@ export function initInvoiceWizard(): void {
   function clearFile(): void {
     uploadedFile = null;
     uploadInput.value = '';
+    if (mobileUploadInput) mobileUploadInput.value = '';
     pdfViewer?.setAttribute('hidden', '');
     uploadIdle?.removeAttribute('hidden');
     if (pdfObjectUrl) { URL.revokeObjectURL(pdfObjectUrl); pdfObjectUrl = null; }
@@ -243,9 +245,15 @@ export function initInvoiceWizard(): void {
 
   wizard.querySelector('[data-upload-browse]')?.addEventListener('click', () => uploadInput.click());
   wizard.querySelector('[data-upload-remove]')?.addEventListener('click', clearFile);
+  wizard.querySelector('[data-mobile-upload-btn]')?.addEventListener('click', () => mobileUploadInput?.click());
 
   uploadInput.addEventListener('change', () => {
     const file = uploadInput.files?.[0];
+    if (file) showFile(file);
+  });
+
+  mobileUploadInput?.addEventListener('change', () => {
+    const file = mobileUploadInput.files?.[0];
     if (file) showFile(file);
   });
 
@@ -403,7 +411,7 @@ export function initInvoiceWizard(): void {
 
     container.innerHTML = `
       <div class="cbf-review-section">
-        <h3 class="cbf-review-section__title">Uploaded Invoice</h3>
+        <h3 class="cbf-review-section__title">Uploaded invoice</h3>
         <div class="cbf-review-row">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
           <span>${escHtml(uploadedFile?.name ?? '(no file)')}</span>
@@ -416,21 +424,21 @@ export function initInvoiceWizard(): void {
       </div>
 
       <div class="cbf-review-section">
-        <h3 class="cbf-review-section__title">Invoice Details</h3>
+        <h3 class="cbf-review-section__title">Invoice details</h3>
         <dl class="cbf-review-dl">
-          <div class="cbf-review-dl__row"><dt>Invoice Number</dt><dd>${escHtml(invoiceNum) || '—'}</dd></div>
-          <div class="cbf-review-dl__row"><dt>Invoice Date</dt><dd>${escHtml(invoiceDate) || '—'}</dd></div>
-          <div class="cbf-review-dl__row"><dt>Issue Date</dt><dd>${escHtml(issueDate) || '—'}</dd></div>
-          <div class="cbf-review-dl__row"><dt>Performance Period</dt><dd>${escHtml(perfStart) || '—'} – ${escHtml(perfEnd) || '—'}</dd></div>
+          <div class="cbf-review-dl__row"><dt>Invoice number</dt><dd>${escHtml(invoiceNum) || '—'}</dd></div>
+          <div class="cbf-review-dl__row"><dt>Invoice date</dt><dd>${escHtml(invoiceDate) || '—'}</dd></div>
+          <div class="cbf-review-dl__row"><dt>Issue date</dt><dd>${escHtml(issueDate) || '—'}</dd></div>
+          <div class="cbf-review-dl__row"><dt>Performance period</dt><dd>${escHtml(perfStart) || '—'} – ${escHtml(perfEnd) || '—'}</dd></div>
           <div class="cbf-review-dl__row"><dt>Contract</dt><dd>${escHtml(contract) || '—'}</dd></div>
           <div class="cbf-review-dl__row"><dt>Project</dt><dd>${escHtml(project) || '—'}</dd></div>
         </dl>
       </div>
 
       <div class="cbf-review-section">
-        <h3 class="cbf-review-section__title">Line Items</h3>
+        <h3 class="cbf-review-section__title">Line items</h3>
         <table class="cbf-review-table">
-          <thead><tr><th>Description</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
+          <thead><tr><th>Description</th><th>Qty</th><th>Unit price</th><th>Total</th></tr></thead>
           <tbody>
             ${lineItems.map(li => `
               <tr>
@@ -452,7 +460,7 @@ export function initInvoiceWizard(): void {
 
       ${supportingDocs.length ? `
       <div class="cbf-review-section">
-        <h3 class="cbf-review-section__title">Supporting Documents</h3>
+        <h3 class="cbf-review-section__title">Supporting documents</h3>
         ${supportingDocs.map(f => `
           <div class="cbf-review-row">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
