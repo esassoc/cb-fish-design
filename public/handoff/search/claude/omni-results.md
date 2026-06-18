@@ -79,7 +79,7 @@ The palette mid-query — grouped results across types with scope pills, matched
           >
             <circle cx="11" cy="11" r="8"></circle>
             <path d="m21 21-4.3-4.3"></path></svg></span
-        >All <span class="cbf-scope-pill__count">16</span></button
+        >All <span class="cbf-scope-pill__count">15</span></button
       ><button type="button" class="cbf-scope-pill">
         <span class="cbf-icon"
           ><svg
@@ -150,244 +150,18 @@ The palette mid-query — grouped results across types with scope pills, matched
             <path
               d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"
             ></path></svg></span
-        >Publications <span class="cbf-scope-pill__count">2</span></button
-      ><button type="button" class="cbf-scope-pill">
-        <span class="cbf-icon"
-          ><svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path
-              d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 1-1 1v-1"
-            ></path>
-            <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg></span
-        >Funds <span class="cbf-scope-pill__count">1</span>
+        >Publications <span class="cbf-scope-pill__count">2</span>
       </button>
     </div>
     <div class="cbf-omni__body">
-      <!-- default view: Recent (injected) + illustration/note -->
+      <!-- default view: brand illustration + search note (Recent lives in the nav) -->
       <div class="cbf-omni__empty" data-omni-empty="" hidden="">
-        <div data-omni-recent="">
-          <div class="cbf-result-group">
-            <div class="cbf-result-group__head">
-              <span class="cbf-result-group__title"
-                ><span class="cbf-icon"
-                  ><svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
-                    <path d="M3 3v5h5"></path>
-                    <path d="M12 7v5l4 2"></path></svg></span
-                >Recent</span
-              >
-            </div>
-            <div class="cbf-result is-active">
-              <span class="cbf-result__lead"
-                ><span class="cbf-icon"
-                  ><svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"
-                    ></path></svg></span
-              ></span>
-              <div class="cbf-result__body">
-                <div class="cbf-result__title">2002-051-00 Salmon Subbasin Planning</div>
-                <div class="cbf-result__sub">Project · viewed 2h ago</div>
-              </div>
-
-              <span class="cbf-result__chevron cbf-icon"
-                ><svg
-                  width="17"
-                  height="17"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="m9 18 6-6-6-6"></path></svg
-              ></span>
-            </div>
-            <div class="cbf-result">
-              <span class="cbf-result__lead"
-                ><span class="cbf-icon"
-                  ><svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"
-                    ></path>
-                    <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
-                    <path d="M10 9H8"></path>
-                    <path d="M16 13H8"></path>
-                    <path d="M16 17H8"></path></svg></span
-              ></span>
-              <div class="cbf-result__body">
-                <div class="cbf-result__title">
-                  [10046] 2001-006-01 Salmon/Steelhead Days
-                </div>
-                <div class="cbf-result__sub">Contract · viewed yesterday</div>
-              </div>
-
-              <span class="cbf-result__chevron cbf-icon"
-                ><svg
-                  width="17"
-                  height="17"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="m9 18 6-6-6-6"></path></svg
-              ></span>
-            </div>
-            <div class="cbf-result">
-              <span class="cbf-result__lead"
-                ><span class="cbf-icon"
-                  ><svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="9" cy="7" r="4"></circle>
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span
-              ></span>
-              <div class="cbf-result__body">
-                <div class="cbf-result__title">David Roberts</div>
-                <div class="cbf-result__sub">Nez Perce Tribe · viewed yesterday</div>
-              </div>
-              <button class="cbf-impersonate" type="button" data-impersonate="">
-                <span class="cbf-icon"
-                  ><svg
-                    width="15"
-                    height="15"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M14 18a2 2 0 0 0-4 0"></path>
-                    <path
-                      d="m19 11-2.11-6.657a2 2 0 0 0-2.752-1.148l-1.276.61A2 2 0 0 1 11 4H8.5"
-                    ></path>
-                    <path d="m4 11 2.71-6.715a2 2 0 0 1 2.836-1.187L11 4"></path>
-                    <path
-                      d="M4.5 11h15a1 1 0 0 1 1 1v.5a2.5 2.5 0 0 1-2.5 2.5h-.5a2.5 2.5 0 0 1-2.5-2.5v-.5a1 1 0 0 0-1-1h-3a1 1 0 0 0-1 1v.5a2.5 2.5 0 0 1-2.5 2.5h-.5A2.5 2.5 0 0 1 3.5 12.5V12a1 1 0 0 1 1-1Z"
-                    ></path></svg></span
-                >Impersonate
-              </button>
-              <span class="cbf-result__chevron cbf-icon"
-                ><svg
-                  width="17"
-                  height="17"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="m9 18 6-6-6-6"></path></svg
-              ></span>
-            </div>
-            <div class="cbf-result">
-              <span class="cbf-result__lead"
-                ><span class="cbf-icon"
-                  ><svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"
-                    ></path></svg></span
-              ></span>
-              <div class="cbf-result__body">
-                <div class="cbf-result__title">
-                  2023 Annual Progress Report — Salmon Recovery
-                </div>
-                <div class="cbf-result__sub">Publication · viewed 3d ago</div>
-              </div>
-
-              <span class="cbf-result__chevron cbf-icon"
-                ><svg
-                  width="17"
-                  height="17"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="m9 18 6-6-6-6"></path></svg
-              ></span>
-            </div>
-          </div>
-        </div>
         <div class="cbf-omni__hero">
           <img class="cbf-omni__art" src="/cb-fish-design/dam-illustration.jpg" alt="" />
           <p class="cbf-omni__hero-title">Search the Program</p>
           <p class="cbf-omni__hero-note">
-            Find projects, contracts, people, publications, and funds across the Columbia
-            Basin. Start typing, or press <kbd class="cbf-kbd">Tab</kbd> to choose a
-            scope.
+            Find projects, contracts, people, and publications across the Columbia Basin.
+            Start typing, or press <kbd class="esa-kbd">Tab</kbd> to choose a scope.
           </p>
         </div>
       </div>
@@ -422,7 +196,6 @@ The palette mid-query — grouped results across types with scope pills, matched
               </div>
               <div class="cbf-result__sub">Project · FY2001 · Active</div>
             </div>
-
             <span class="cbf-result__chevron cbf-icon"
               ><svg
                 width="17"
@@ -445,7 +218,6 @@ The palette mid-query — grouped results across types with scope pills, matched
               </div>
               <div class="cbf-result__sub">Project · FY2002 · Active</div>
             </div>
-
             <span class="cbf-result__chevron cbf-icon"
               ><svg
                 width="17"
@@ -468,7 +240,6 @@ The palette mid-query — grouped results across types with scope pills, matched
               </div>
               <div class="cbf-result__sub">Project · FY2002</div>
             </div>
-
             <span class="cbf-result__chevron cbf-icon"
               ><svg
                 width="17"
@@ -491,7 +262,6 @@ The palette mid-query — grouped results across types with scope pills, matched
               </div>
               <div class="cbf-result__sub">Project · FY2002 · Active</div>
             </div>
-
             <span class="cbf-result__chevron cbf-icon"
               ><svg
                 width="17"
@@ -514,7 +284,6 @@ The palette mid-query — grouped results across types with scope pills, matched
               </div>
               <div class="cbf-result__sub">Project · FY2001</div>
             </div>
-
             <span class="cbf-result__chevron cbf-icon"
               ><svg
                 width="17"
@@ -564,7 +333,6 @@ The palette mid-query — grouped results across types with scope pills, matched
               </div>
               <div class="cbf-result__sub">Contract · Project 2001-006-00</div>
             </div>
-
             <span class="cbf-result__chevron cbf-icon"
               ><svg
                 width="17"
@@ -587,7 +355,6 @@ The palette mid-query — grouped results across types with scope pills, matched
               </div>
               <div class="cbf-result__sub">Contract · Project 2001-006-00</div>
             </div>
-
             <span class="cbf-result__chevron cbf-icon"
               ><svg
                 width="17"
@@ -610,7 +377,6 @@ The palette mid-query — grouped results across types with scope pills, matched
               </div>
               <div class="cbf-result__sub">Contract · Project 2001-025-00</div>
             </div>
-
             <span class="cbf-result__chevron cbf-icon"
               ><svg
                 width="17"
@@ -633,7 +399,6 @@ The palette mid-query — grouped results across types with scope pills, matched
               </div>
               <div class="cbf-result__sub">Contract · Project 2002-051-00</div>
             </div>
-
             <span class="cbf-result__chevron cbf-icon"
               ><svg
                 width="17"
@@ -656,7 +421,6 @@ The palette mid-query — grouped results across types with scope pills, matched
               </div>
               <div class="cbf-result__sub">Contract · Project 2002-051-00</div>
             </div>
-
             <span class="cbf-result__chevron cbf-icon"
               ><svg
                 width="17"
@@ -680,7 +444,6 @@ The palette mid-query — grouped results across types with scope pills, matched
               </div>
               <div class="cbf-result__sub">Contract · Project 2002-051-00</div>
             </div>
-
             <span class="cbf-result__chevron cbf-icon"
               ><svg
                 width="17"
@@ -703,7 +466,6 @@ The palette mid-query — grouped results across types with scope pills, matched
               </div>
               <div class="cbf-result__sub">Contract · Project 2002-033-00</div>
             </div>
-
             <span class="cbf-result__chevron cbf-icon"
               ><svg
                 width="17"
@@ -743,36 +505,13 @@ The palette mid-query — grouped results across types with scope pills, matched
             >
             <span class="cbf-result-group__count">1</span>
           </div>
-          <div class="cbf-result">
+          <div class="cbf-result cbf-result--person">
             <div class="cbf-result__body">
               <div class="cbf-result__title">Maria Gonzales</div>
               <div class="cbf-result__sub">
                 Idaho Dept of Fish &amp; Game · Salmon program
               </div>
             </div>
-            <button class="cbf-impersonate" type="button" data-impersonate="">
-              <span class="cbf-icon"
-                ><svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M14 18a2 2 0 0 0-4 0"></path>
-                  <path
-                    d="m19 11-2.11-6.657a2 2 0 0 0-2.752-1.148l-1.276.61A2 2 0 0 1 11 4H8.5"
-                  ></path>
-                  <path d="m4 11 2.71-6.715a2 2 0 0 1 2.836-1.187L11 4"></path>
-                  <path
-                    d="M4.5 11h15a1 1 0 0 1 1 1v.5a2.5 2.5 0 0 1-2.5 2.5h-.5a2.5 2.5 0 0 1-2.5-2.5v-.5a1 1 0 0 0-1-1h-3a1 1 0 0 0-1 1v.5a2.5 2.5 0 0 1-2.5 2.5h-.5A2.5 2.5 0 0 1 3.5 12.5V12a1 1 0 0 1 1-1Z"
-                  ></path></svg></span
-              >Impersonate
-            </button>
             <span class="cbf-result__chevron cbf-icon"
               ><svg
                 width="17"
@@ -818,7 +557,6 @@ The palette mid-query — grouped results across types with scope pills, matched
               </div>
               <div class="cbf-result__sub">Publication · Report Center</div>
             </div>
-
             <span class="cbf-result__chevron cbf-icon"
               ><svg
                 width="17"
@@ -841,54 +579,6 @@ The palette mid-query — grouped results across types with scope pills, matched
               </div>
               <div class="cbf-result__sub">Publication · Planning document</div>
             </div>
-
-            <span class="cbf-result__chevron cbf-icon"
-              ><svg
-                width="17"
-                height="17"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="m9 18 6-6-6-6"></path></svg
-            ></span>
-          </div>
-        </div>
-        <div class="cbf-result-group">
-          <div class="cbf-result-group__head">
-            <span class="cbf-result-group__title"
-              ><span class="cbf-icon"
-                ><svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 1-1 1v-1"
-                  ></path>
-                  <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"></path></svg></span
-              >Funds</span
-            >
-            <span class="cbf-result-group__count">1</span>
-          </div>
-          <div class="cbf-result">
-            <div class="cbf-result__body">
-              <div class="cbf-result__title">
-                <mark>Salmon</mark> Mitigation Fund (FY26)
-              </div>
-              <div class="cbf-result__sub">Fund · $24.7M committed</div>
-            </div>
-
             <span class="cbf-result__chevron cbf-icon"
               ><svg
                 width="17"
@@ -908,7 +598,7 @@ The palette mid-query — grouped results across types with scope pills, matched
       </div>
     </div>
     <button class="cbf-omni__showall" data-omni-showall="" type="button">
-      <span data-omni-showall-label="">Show all 16 results</span>
+      <span data-omni-showall-label="">Show all 15 results</span>
       <span class="cbf-icon"
         ><svg
           width="18"
@@ -926,10 +616,10 @@ The palette mid-query — grouped results across types with scope pills, matched
     </button>
     <div class="cbf-omni__footer">
       <div class="cbf-omni__hints">
-        <span><kbd class="cbf-kbd">↑</kbd> <kbd class="cbf-kbd">↓</kbd> Navigate</span>
-        <span><kbd class="cbf-kbd">↵</kbd> Select</span>
-        <span><kbd class="cbf-kbd">Tab</kbd> Scope</span>
-        <span><kbd class="cbf-kbd">Esc</kbd> Close</span>
+        <span><kbd class="esa-kbd">↑</kbd> <kbd class="esa-kbd">↓</kbd> Navigate</span>
+        <span><kbd class="esa-kbd">↵</kbd> Select</span>
+        <span><kbd class="esa-kbd">Tab</kbd> Scope</span>
+        <span><kbd class="esa-kbd">Esc</kbd> Close</span>
       </div>
     </div>
   </div>
@@ -938,6 +628,33 @@ The palette mid-query — grouped results across types with scope pills, matched
 
 ## Styles
 ```css
+.cbf-search-surface .cbf-facet {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-250);
+  width: 100%;
+  padding: var(--spacing-200) var(--spacing-300);
+  border-radius: var(--radius-100);
+  color: var(--color-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: var(--font-weight-regular);
+  text-align: left;
+}
+.cbf-search-surface .cbf-facet.is-active {
+  background: var(--color-primary-subtle);
+  font-weight: var(--font-weight-semibold);
+}
+.cbf-search-surface .cbf-facet .cbf-icon {
+  color: var(--color-secondary);
+}
+.cbf-search-surface .cbf-facet__label {
+  flex: 1;
+}
+.cbf-search-field .cbf-icon {
+  color: var(--color-text-muted);
+  display: inline-flex;
+}
 .cbf-omni-trigger {
   display: flex;
   align-items: center;
@@ -969,11 +686,11 @@ The palette mid-query — grouped results across types with scope pills, matched
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 17px;
-  height: 17px;
+  min-width: 18px;
+  height: 18px;
   padding: 0 5px;
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: var(--font-weight-medium);
   color: #ffffffd9;
   background: #ffffff1f;
@@ -992,35 +709,9 @@ The palette mid-query — grouped results across types with scope pills, matched
 .cbf-omni[hidden] {
   display: none;
 }
-.cbf-search-surface .cbf-facet {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 8px var(--spacing-300);
-  border-radius: var(--radius-100);
-  color: var(--color-primary);
-  font-family: var(--font-sans);
-  font-size: 16px;
-  font-weight: var(--font-weight-regular);
-  text-align: left;
-}
-.cbf-search-surface .cbf-facet.is-active {
-  background: var(--color-primary-subtle);
-  font-weight: var(--font-weight-semibold);
-}
 .cbf-search-surface .cbf-icon {
   display: inline-flex;
   align-items: center;
-}
-.cbf-search-surface .cbf-facet .cbf-icon {
-  color: var(--color-secondary);
-}
-.cbf-search-surface .cbf-facet__label {
-  flex: 1;
-}
-.cbf-search-field .cbf-icon {
-  color: var(--color-text-muted);
 }
 .cbf-search-surface .cbf-result-empty {
   padding: var(--spacing-600) var(--spacing-500);
@@ -1123,101 +814,6 @@ The palette mid-query — grouped results across types with scope pills, matched
   flex-direction: column;
   min-height: 100%;
 }
-.cbf-search-surface .cbf-result-group {
-  padding-block: 0;
-}
-.cbf-search-surface .cbf-result-group__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-200) var(--spacing-500);
-  background: var(--color-surface-sunken);
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
-}
-.cbf-search-surface .cbf-result-group:first-child .cbf-result-group__head {
-  border-top: 0;
-}
-.cbf-search-surface .cbf-result-group__title {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: var(--font-weight-semibold);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--color-text-primary);
-}
-.cbf-search-surface .cbf-result-group__title .cbf-icon {
-  color: var(--color-text-muted);
-}
-.cbf-search-surface .cbf-result {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-300);
-  padding: 8px var(--spacing-500);
-  cursor: pointer;
-  border-left: 3px solid transparent;
-}
-.cbf-search-surface .cbf-result:hover,
-.cbf-search-surface .cbf-result.is-active {
-  background: var(--color-primary-subtle);
-  border-left-color: var(--color-secondary);
-}
-.cbf-search-surface .cbf-result__lead {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-  flex: none;
-  background: var(--color-primary-subtle);
-  color: var(--color-primary);
-}
-.cbf-search-surface .cbf-result__body {
-  flex: 1;
-  min-width: 0;
-}
-.cbf-search-surface .cbf-result__title {
-  font-size: 15px;
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-}
-.cbf-search-surface .cbf-result__sub {
-  font-size: 13px;
-  color: var(--color-text-muted);
-  margin-top: 1px;
-}
-.cbf-search-surface .cbf-result__chevron {
-  color: var(--color-secondary);
-  opacity: 0;
-  flex: none;
-}
-.cbf-search-surface .cbf-result.is-active .cbf-result__chevron {
-  opacity: 1;
-}
-.cbf-search-surface .cbf-impersonate {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  flex: none;
-  padding: 4px var(--spacing-300);
-  border-radius: 999px;
-  border: 1px solid var(--color-primary-border);
-  background: var(--color-surface);
-  color: var(--color-primary);
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: var(--font-weight-medium);
-  transition:
-    background 0.1s,
-    border-color 0.1s,
-    color 0.1s;
-}
-.cbf-search-surface .cbf-result:has(.cbf-impersonate) .cbf-result__chevron {
-  display: none;
-}
 .cbf-omni__hero {
   flex: 1 1 auto;
   display: flex;
@@ -1248,7 +844,7 @@ The palette mid-query — grouped results across types with scope pills, matched
   line-height: 1.55;
   color: var(--color-text-muted);
 }
-.cbf-kbd {
+.esa-kbd {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1259,11 +855,11 @@ The palette mid-query — grouped results across types with scope pills, matched
   font-size: 12px;
   font-weight: var(--font-weight-medium);
   line-height: 1;
-  color: var(--color-text-muted);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  color: var(--kbd-color, var(--color-text-muted));
+  background: var(--kbd-bg, var(--color-surface));
+  border: 1px solid var(--kbd-border-color, var(--color-border));
   border-bottom-width: 2px;
-  border-radius: 4px;
+  border-radius: var(--kbd-radius, 4px);
 }
 .cbf-omni__results {
   padding: var(--spacing-100) 0;
@@ -1302,7 +898,7 @@ The palette mid-query — grouped results across types with scope pills, matched
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-text-muted);
 }
 .cbf-search-surface .cbf-scope-pill__count {
@@ -1312,38 +908,104 @@ The palette mid-query — grouped results across types with scope pills, matched
 .cbf-omni__empty[hidden] {
   display: none;
 }
+.cbf-search-surface .cbf-result-group {
+  padding-block: 0;
+}
+.cbf-search-surface .cbf-result-group__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-200) var(--spacing-500);
+  background: var(--color-surface-sunken);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+.cbf-search-surface .cbf-result-group:first-child .cbf-result-group__head {
+  border-top: 0;
+}
+.cbf-search-surface .cbf-result-group__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-text-primary);
+}
+.cbf-search-surface .cbf-result-group__title .cbf-icon {
+  color: var(--color-text-muted);
+}
 .cbf-search-surface .cbf-result-group__count {
   font-size: 13px;
   color: var(--color-text-muted);
 }
+.cbf-search-surface .cbf-result {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-300);
+  padding: 8px var(--spacing-500);
+  cursor: pointer;
+}
+.cbf-search-surface .cbf-result:hover,
+.cbf-search-surface .cbf-result.is-active {
+  background: var(--color-primary-subtle);
+}
+.cbf-search-surface .cbf-result__body {
+  flex: 1;
+  min-width: 0;
+}
+.cbf-search-surface .cbf-result__title {
+  font-size: 15px;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
 .cbf-search-surface .cbf-result__title mark {
-  background: #ffe9b0;
+  background: var(--cbf-search-highlight);
   color: inherit;
   border-radius: 2px;
   padding: 0 1px;
 }
+.cbf-search-surface .cbf-result__sub {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin-top: 1px;
+}
+.cbf-search-surface .cbf-result__chevron {
+  color: var(--color-secondary);
+  opacity: 0;
+  flex: none;
+}
+.cbf-search-surface .cbf-result.is-active .cbf-result__chevron {
+  opacity: 1;
+}
 ```
 
 ## Tokens
+- `--cbf-search-highlight`: #ffe9b0 _(brand)_
 - `--cbf-text-placeholder`: #9aa3ad _(brand)_
 - `--color-border`: #dcdcdc _(semantic)_
 - `--color-primary`: #1e5386 _(semantic)_
-- `--color-primary-border`: #c6dcf1 _(semantic)_
 - `--color-primary-subtle`: #f3f7fc _(semantic)_
 - `--color-secondary`: #2770b2 _(semantic)_
 - `--color-surface`: #ffffff _(semantic)_
 - `--color-surface-sunken`: #f3f7fc _(semantic)_
 - `--color-text-inverse`: #ffffff _(semantic)_
 - `--color-text-muted`: #7c7c7c _(semantic)_
-- `--color-text-primary`: #171717 _(semantic)_
+- `--color-text-primary`: #3d3d3d _(semantic)_
 - `--font-display`: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif _(primitive)_
 - `--font-sans`: "IBM Plex Sans", sans-serif _(primitive)_
 - `--font-weight-medium`: 500 _(primitive)_
 - `--font-weight-regular`: 400 _(primitive)_
 - `--font-weight-semibold`: 600 _(primitive)_
+- `--kbd-bg`: #ffffff _(component)_
+- `--kbd-border-color`: #dcdcdc _(component)_
+- `--kbd-color`: #7c7c7c _(component)_
+- `--kbd-radius`: 4px _(component)_
 - `--radius-100`: .25rem _(primitive)_
 - `--spacing-100`: .25rem _(primitive)_
 - `--spacing-200`: .5rem _(primitive)_
+- `--spacing-250`: .625rem _(primitive)_
 - `--spacing-300`: .75rem _(primitive)_
 - `--spacing-400`: 1rem _(primitive)_
 - `--spacing-500`: 1.5rem _(primitive)_
@@ -1363,9 +1025,10 @@ The palette mid-query — grouped results across types with scope pills, matched
 
 export type IconName =
   | 'search' | 'x' | 'chevron-right' | 'chevron-down'
-  | 'folder' | 'file-text' | 'users' | 'book' | 'wallet'
+  | 'folder' | 'file-text' | 'users' | 'book'
   | 'history' | 'hat-glasses' | 'rotate-ccw'
-  | 'circle-user' | 'layout-dashboard';
+  | 'circle-user' | 'layout-dashboard'
+  | 'building-2' | 'mail' | 'phone' | 'smartphone' | 'map-pin' | 'download';
 
 const ICONS: Record<IconName, string> = {
   search: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
@@ -1376,12 +1039,17 @@ const ICONS: Record<IconName, string> = {
   'file-text': '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
   users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   book: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/>',
-  wallet: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 1-1 1v-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
   history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
   'hat-glasses': '<path d="M14 18a2 2 0 0 0-4 0"/><path d="m19 11-2.11-6.657a2 2 0 0 0-2.752-1.148l-1.276.61A2 2 0 0 1 11 4H8.5"/><path d="m4 11 2.71-6.715a2 2 0 0 1 2.836-1.187L11 4"/><path d="M4.5 11h15a1 1 0 0 1 1 1v.5a2.5 2.5 0 0 1-2.5 2.5h-.5a2.5 2.5 0 0 1-2.5-2.5v-.5a1 1 0 0 0-1-1h-3a1 1 0 0 0-1 1v.5a2.5 2.5 0 0 1-2.5 2.5h-.5A2.5 2.5 0 0 1 3.5 12.5V12a1 1 0 0 1 1-1Z"/>',
   'rotate-ccw': '<path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 2.83-2.83L3 8"/>',
   'circle-user': '<circle cx="12" cy="12" r="10"/><path d="M18 20a6 6 0 0 0-12 0"/><circle cx="12" cy="10" r="4"/>',
   'layout-dashboard': '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
+  'building-2': '<path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/>',
+  mail: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+  phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+  smartphone: '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>',
+  'map-pin': '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>',
 };
 
 /** Full <svg> string for inline use (set:html in .astro, or innerHTML in JS). */
@@ -1395,7 +1063,7 @@ export function svg(name: IconName, px = 16): string {
 // demo reads as credible. People are the ESA dev/QA team (impersonation targets).
 import type { IconName } from './icons';
 
-export type EntityType = 'project' | 'contract' | 'person' | 'publication' | 'fund';
+export type EntityType = 'project' | 'contract' | 'person' | 'publication';
 export type ScopeId = 'all' | EntityType;
 
 export interface Scope {
@@ -1403,10 +1071,20 @@ export interface Scope {
   label: string;
   icon: IconName;
 }
+/** Contact detail for the person popover card (mirrors prod's "Find Person"). */
+export interface PersonContact {
+  org: string;
+  email: string;
+  businessPhone?: string;
+  mobilePhone?: string;
+  address?: string[];
+}
 export interface Entity {
   type: EntityType;
   title: string;
   sub: string;
+  /** People only — feeds the popover contact card. */
+  contact?: PersonContact;
 }
 
 export const SCOPES: Scope[] = [
@@ -1415,7 +1093,6 @@ export const SCOPES: Scope[] = [
   { id: 'contract', label: 'Contracts', icon: 'file-text' },
   { id: 'person', label: 'People', icon: 'users' },
   { id: 'publication', label: 'Publications', icon: 'book' },
-  { id: 'fund', label: 'Funds', icon: 'wallet' },
 ];
 
 export const SCOPE_BY_ID: Record<ScopeId, Scope> = Object.fromEntries(
@@ -1423,7 +1100,7 @@ export const SCOPE_BY_ID: Record<ScopeId, Scope> = Object.fromEntries(
 ) as Record<ScopeId, Scope>;
 
 /** Group render order for results. */
-export const GROUP_ORDER: EntityType[] = ['project', 'contract', 'person', 'publication', 'fund'];
+export const GROUP_ORDER: EntityType[] = ['project', 'contract', 'person', 'publication'];
 
 /** Per-group cap when browsing a scope with no query. */
 export const BROWSE_CAP = 6;
@@ -1444,33 +1121,34 @@ export const DATA: Entity[] = [
   { type: 'contract', title: '[10255 REL 18] Idaho Dept of Fish & Game — Salmon Subbasin', sub: 'Contract · Project 2002-051-00' },
   { type: 'contract', title: '[10952] 2002-033-00 John Day Salmonid Monitoring', sub: 'Contract · Project 2002-033-00' },
 
-  { type: 'person', title: 'Andrew Lovseth', sub: 'Bonneville Power Administration · Project lead' },
-  { type: 'person', title: 'Angela Zhao', sub: 'NW Power & Conservation Council · Program analyst' },
-  { type: 'person', title: 'David Roberts', sub: 'Nez Perce Tribe · Fisheries biologist' },
-  { type: 'person', title: 'Maria Gonzales', sub: 'Idaho Dept of Fish & Game · Salmon program' },
-  { type: 'person', title: 'Gloria Scott', sub: 'Environmental Technologist IV · DT-Technology Services, Portland' },
-  { type: 'person', title: 'Dan Squires', sub: 'Environmental Technologist II · Portland' },
-  { type: 'person', title: 'John Vivio', sub: 'Software Developer/Architect IV · Portland' },
-  { type: 'person', title: 'Adrian Mickel', sub: 'Software Developer II · Portland' },
-  { type: 'person', title: 'Hunter Kennedy', sub: 'Software Developer II · Sacramento' },
-  { type: 'person', title: 'Rex Ounekeo', sub: 'Software Developer III · Portland' },
-  { type: 'person', title: 'Tom Kamin', sub: 'Software Developer III · Portland' },
-  { type: 'person', title: 'Michael Ferrante', sub: 'Software Developer/Architect IV · Portland' },
+  { type: 'person', title: 'Andrew Lovseth', sub: 'Bonneville Power Administration · Project lead',
+    contact: { org: 'Bonneville Power Administration', email: 'alovseth@bpa.gov', businessPhone: '(503) 230-4471', address: ['905 NE 11th Ave', 'Portland, OR 97232'] } },
+  { type: 'person', title: 'Angela Zhao', sub: 'NW Power & Conservation Council · Program analyst',
+    contact: { org: 'NW Power & Conservation Council', email: 'azhao@nwcouncil.org', businessPhone: '(503) 222-5161', address: ['851 SW Sixth Ave Suite 1100', 'Portland, OR 97204'] } },
+  { type: 'person', title: 'David Roberts', sub: 'Nez Perce Tribe · Fisheries biologist',
+    contact: { org: 'Nez Perce Tribe — Dept of Fisheries Resources Mgmt', email: 'davidr@nezperce.org', businessPhone: '(208) 843-7320', mobilePhone: '(208) 553-1142', address: ['P.O. Box 365', 'Lapwai, ID 83540'] } },
+  { type: 'person', title: 'Maria Gonzales', sub: 'Idaho Dept of Fish & Game · Salmon program',
+    contact: { org: 'Idaho Dept of Fish & Game', email: 'maria.gonzales@idfg.idaho.gov', businessPhone: '(208) 334-3791', address: ['600 S Walnut St', 'Boise, ID 83712'] } },
+  { type: 'person', title: 'Gloria Scott', sub: 'Environmental Technologist IV · DT-Technology Services, Portland',
+    contact: { org: 'ESA — DT-Technology Services', email: 'gscott@esassoc.com', businessPhone: '(503) 274-2010', address: ['309 SW Sixth Ave Suite 575', 'Portland, OR 97204'] } },
+  { type: 'person', title: 'Dan Squires', sub: 'Environmental Technologist II · Portland',
+    contact: { org: 'ESA', email: 'dsquires@esassoc.com', businessPhone: '(503) 274-2014', address: ['309 SW Sixth Ave Suite 575', 'Portland, OR 97204'] } },
+  { type: 'person', title: 'John Vivio', sub: 'Software Developer/Architect IV · Portland',
+    contact: { org: 'ESA', email: 'jvivio@esassoc.com', businessPhone: '(503) 274-2023', mobilePhone: '(971) 340-8852', address: ['309 SW Sixth Ave Suite 575', 'Portland, OR 97204'] } },
+  { type: 'person', title: 'Adrian Mickel', sub: 'Software Developer II · Portland',
+    contact: { org: 'ESA', email: 'amickel@esassoc.com', businessPhone: '(503) 274-2031', address: ['309 SW Sixth Ave Suite 575', 'Portland, OR 97204'] } },
+  { type: 'person', title: 'Hunter Kennedy', sub: 'Software Developer II · Sacramento',
+    contact: { org: 'ESA', email: 'hkennedy@esassoc.com', businessPhone: '(916) 564-4500', address: ['2600 Capitol Ave Suite 200', 'Sacramento, CA 95816'] } },
+  { type: 'person', title: 'Rex Ounekeo', sub: 'Software Developer III · Portland',
+    contact: { org: 'ESA', email: 'rounekeo@esassoc.com', businessPhone: '(503) 274-2044', address: ['309 SW Sixth Ave Suite 575', 'Portland, OR 97204'] } },
+  { type: 'person', title: 'Tom Kamin', sub: 'Software Developer III · Portland',
+    contact: { org: 'ESA', email: 'tkamin@esassoc.com', businessPhone: '(503) 274-2056', mobilePhone: '(503) 481-7720', address: ['309 SW Sixth Ave Suite 575', 'Portland, OR 97204'] } },
+  { type: 'person', title: 'Michael Ferrante', sub: 'Software Developer/Architect IV · Portland',
+    contact: { org: 'Bonneville Power Administration', email: 'michael@sitkatech.com', businessPhone: '(503) 808-1207', address: ['309 SW Sixth Ave Suite 575', 'Portland, OR 97204'] } },
 
   { type: 'publication', title: '2023 Annual Progress Report — Salmon Recovery', sub: 'Publication · Report Center' },
   { type: 'publication', title: 'Subbasin Plan: Salmon River', sub: 'Publication · Planning document' },
   { type: 'publication', title: 'Smolt Monitoring Protocol (rev. 4)', sub: 'Publication · Methods' },
-
-  { type: 'fund', title: 'Salmon Mitigation Fund (FY26)', sub: 'Fund · $24.7M committed' },
-  { type: 'fund', title: 'Anadromous Fish Screening Fund', sub: 'Fund · $8.1M committed' },
-];
-
-/** Recently-viewed entities shown in the default (no-query) empty state. */
-export const RECENT: Entity[] = [
-  { type: 'project', title: '2002-051-00 Salmon Subbasin Planning', sub: 'Project · viewed 2h ago' },
-  { type: 'contract', title: '[10046] 2001-006-01 Salmon/Steelhead Days', sub: 'Contract · viewed yesterday' },
-  { type: 'person', title: 'David Roberts', sub: 'Nez Perce Tribe · viewed yesterday' },
-  { type: 'publication', title: '2023 Annual Progress Report — Salmon Recovery', sub: 'Publication · viewed 3d ago' },
 ];
 
 // ── src/components/search/omni-render.ts ──
@@ -1483,7 +1161,6 @@ import {
   SCOPES,
   SCOPE_BY_ID,
   DATA,
-  RECENT,
   GROUP_ORDER,
   type Entity,
   type EntityType,
@@ -1521,21 +1198,20 @@ function icon(name: IconName, px: number): string {
 export function makeRow(item: Entity, query: string, lead: boolean, h: RowHandlers): HTMLElement {
   const row = document.createElement('div');
   row.className = 'cbf-result';
+  if (item.type === 'person') row.classList.add('cbf-result--person');
   const leadHtml = lead ? `<span class="cbf-result__lead">${icon(SCOPE_BY_ID[item.type].icon, 16)}</span>` : '';
-  const impHtml =
-    item.type === 'person'
-      ? `<button class="cbf-impersonate" type="button" data-impersonate>${icon('hat-glasses', 15)}Impersonate</button>`
-      : '';
   row.innerHTML = `${leadHtml}
     <div class="cbf-result__body">
       <div class="cbf-result__title">${highlight(item.title, query)}</div>
       <div class="cbf-result__sub">${esc(item.sub)}</div>
     </div>
-    ${impHtml}
     <span class="cbf-result__chevron cbf-icon">${svg('chevron-right', 17)}</span>`;
-  row.addEventListener('click', () => h.onSelect(item));
-  const imp = row.querySelector<HTMLElement>('[data-impersonate]');
-  if (imp) imp.addEventListener('click', (e) => { e.stopPropagation(); h.onImpersonate(item); });
+  // People don't navigate — they reveal a contact card anchored to the row.
+  if (item.type === 'person' && item.contact) {
+    row.addEventListener('click', () => openPersonCard(row, item, h));
+  } else {
+    row.addEventListener('click', () => h.onSelect(item));
+  }
   return row;
 }
 
@@ -1592,7 +1268,11 @@ export function renderScopeFacets(
 /** Grouped results for a query. Returns the flat row list (for keyboard nav). */
 export function renderResults(
   container: HTMLElement,
-  opts: { query: string; scope: ScopeId } & RowHandlers,
+  opts: { query: string; scope: ScopeId } & RowHandlers & {
+    /** When set, the Publications group collapses to a single CTA that forks to
+        the document-search page instead of listing rows (used on /search). */
+    onPublicationsAll?: (count: number) => void;
+  },
 ): HTMLElement[] {
   const q = opts.query.trim();
   const matches = filterData(opts.query, opts.scope);
@@ -1608,6 +1288,24 @@ export function renderResults(
     if (items.length === 0) return;
     const s = SCOPE_BY_ID[type];
     const g = groupEl(s.icon, s.label, String(items.length));
+    if (type === 'publication' && opts.onPublicationsAll) {
+      // Publications fork to their own search — show one CTA, no listings.
+      const n = items.length;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'cbf-result cbf-result--allbtn';
+      btn.innerHTML = `
+        <div class="cbf-result__body">
+          <div class="cbf-result__title">${n} Publication result${n === 1 ? '' : 's'}</div>
+          <div class="cbf-result__sub">Open in Publications Search</div>
+        </div>
+        <span class="cbf-result__chevron cbf-icon">${svg('chevron-right', 18)}</span>`;
+      btn.addEventListener('click', () => opts.onPublicationsAll!(n));
+      out.push(btn);
+      g.appendChild(btn);
+      container.appendChild(g);
+      return;
+    }
     items.forEach((item) => {
       const row = makeRow(item, q, false, opts);
       out.push(row);
@@ -1618,18 +1316,121 @@ export function renderResults(
   return out;
 }
 
-/** Recently-viewed list for the default (no-query) view. */
-export function renderRecent(container: HTMLElement, h: RowHandlers): HTMLElement[] {
-  container.innerHTML = '';
-  const out: HTMLElement[] = [];
-  const g = groupEl('history', 'Recent', '');
-  RECENT.forEach((item) => {
-    const row = makeRow(item, '', true, h);
-    out.push(row);
-    g.appendChild(row);
+// ---- person contact card (popover, shared so palette + page behave identically) ----
+// Anchored to the clicked row; mirrors prod's "Find Person" modal without stacking a
+// second modal over the palette. One card open at a time; dismiss on outside-click/Esc.
+let openCard: HTMLElement | null = null;
+let cardCleanup: (() => void) | null = null;
+
+export function closePersonCard(): void {
+  if (cardCleanup) cardCleanup();
+  openCard?.remove();
+  openCard = null;
+  cardCleanup = null;
+}
+
+/** vCard data URL so the download is a real .vcf (no backend needed). */
+function vcardHref(p: Entity): string {
+  const c = p.contact!;
+  const [first, ...rest] = p.title.split(' ');
+  const lines = [
+    'BEGIN:VCARD', 'VERSION:3.0',
+    `N:${rest.join(' ')};${first};;;`,
+    `FN:${p.title}`,
+    `ORG:${c.org}`,
+    `EMAIL;TYPE=WORK:${c.email}`,
+  ];
+  if (c.businessPhone) lines.push(`TEL;TYPE=WORK,VOICE:${c.businessPhone}`);
+  if (c.mobilePhone) lines.push(`TEL;TYPE=CELL:${c.mobilePhone}`);
+  if (c.address) lines.push(`ADR;TYPE=WORK:;;${c.address.join(', ')};;;`);
+  lines.push('END:VCARD');
+  return 'data:text/vcard;charset=utf-8,' + encodeURIComponent(lines.join('\r\n'));
+}
+
+function detailRow(iconName: IconName, label: string, valueHtml: string): string {
+  return `<div class="cbf-person-card__row">
+      <dt class="cbf-person-card__label">${icon(iconName, 15)}${esc(label)}</dt>
+      <dd class="cbf-person-card__value">${valueHtml}</dd>
+    </div>`;
+}
+
+/** Position the card beside its anchor, preferring the right side, clamped to the viewport. */
+function positionCard(card: HTMLElement, anchor: HTMLElement): void {
+  const a = anchor.getBoundingClientRect();
+  const cw = card.offsetWidth;
+  const ch = card.offsetHeight;
+  const gap = 8;
+  const margin = 12;
+  let left = a.right + gap;
+  if (left + cw > window.innerWidth - margin) left = a.left - gap - cw; // flip to the left
+  if (left < margin) left = Math.max(margin, window.innerWidth - margin - cw); // last resort
+  let top = a.top;
+  if (top + ch > window.innerHeight - margin) top = window.innerHeight - margin - ch;
+  if (top < margin) top = margin;
+  card.style.left = `${Math.round(left)}px`;
+  card.style.top = `${Math.round(top)}px`;
+}
+
+export function openPersonCard(anchor: HTMLElement, person: Entity, h: RowHandlers): void {
+  closePersonCard();
+  const c = person.contact!;
+  const card = document.createElement('div');
+  card.className = 'cbf-person-card';
+  card.setAttribute('role', 'dialog');
+  card.setAttribute('aria-label', `Contact: ${person.title}`);
+
+  const rows = [
+    detailRow('building-2', 'Organization', esc(c.org)),
+    detailRow('mail', 'Email', `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`),
+    c.businessPhone ? detailRow('phone', 'Business phone', esc(c.businessPhone)) : '',
+    c.mobilePhone ? detailRow('smartphone', 'Mobile phone', esc(c.mobilePhone)) : '',
+    c.address ? detailRow('map-pin', 'Address', c.address.map(esc).join('<br>')) : '',
+  ].join('');
+
+  card.innerHTML = `
+    <div class="cbf-person-card__head">
+      <span class="cbf-person-card__head-title">${icon('circle-user', 16)} Find Person</span>
+      <button class="cbf-person-card__close" type="button" data-card-close aria-label="Close">${svg('x', 15)}</button>
+    </div>
+    <div class="cbf-person-card__body">
+      <p class="cbf-person-card__name">${esc(person.title)}</p>
+      <dl class="cbf-person-card__list">${rows}</dl>
+    </div>
+    <div class="cbf-person-card__foot">
+      <a class="cbf-person-card__vcard" href="${vcardHref(person)}" download="${esc(person.title)}.vcf">${icon('download', 15)} Download vCard</a>
+      <button class="cbf-impersonate" type="button" data-impersonate>${icon('hat-glasses', 15)} Impersonate</button>
+    </div>`;
+
+  document.body.appendChild(card);
+  openCard = card; // tracked so closePersonCard() can remove it (one card at a time)
+  positionCard(card, anchor);
+  anchor.classList.add('is-cardopen');
+
+  card.querySelector('[data-card-close]')!.addEventListener('click', closePersonCard);
+  card.querySelector('[data-impersonate]')!.addEventListener('click', () => {
+    impersonateUser(person);
+    closePersonCard();
   });
-  container.appendChild(g);
-  return out;
+
+  const onDown = (e: MouseEvent) => { if (!card.contains(e.target as Node)) closePersonCard(); };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') { e.stopPropagation(); closePersonCard(); }
+  };
+  const onScroll = () => positionCard(card, anchor);
+  // defer so the originating click doesn't immediately dismiss the card
+  setTimeout(() => document.addEventListener('mousedown', onDown), 0);
+  document.addEventListener('keydown', onKey, true);
+  window.addEventListener('resize', onScroll);
+  // capture-phase: reposition when ANY scroll container (palette body, page) moves
+  document.addEventListener('scroll', onScroll, true);
+
+  cardCleanup = () => {
+    anchor.classList.remove('is-cardopen');
+    document.removeEventListener('mousedown', onDown);
+    document.removeEventListener('keydown', onKey, true);
+    window.removeEventListener('resize', onScroll);
+    document.removeEventListener('scroll', onScroll, true);
+  };
 }
 
 // ---- impersonation (shared so palette + page behave identically) ----
@@ -1679,10 +1480,10 @@ export const withBase = (path: string): string =>
 import {
   renderScopePills,
   renderResults,
-  renderRecent,
   filterData,
   impersonateUser,
   initImpersonationRevert,
+  closePersonCard,
 } from './omni-render';
 import { SCOPES, type Entity, type ScopeId } from './omni-data';
 import { withBase } from '../../lib/base';
@@ -1695,7 +1496,7 @@ export function initOmniSearch(): void {
   const scopesEl = omni.querySelector<HTMLElement>('[data-omni-scopes]')!;
   const resultsEl = omni.querySelector<HTMLElement>('[data-omni-results]')!;
   const emptyEl = omni.querySelector<HTMLElement>('[data-omni-empty]')!;
-  const recentEl = omni.querySelector<HTMLElement>('[data-omni-recent]')!;
+  const clearBtn = omni.querySelector<HTMLButtonElement>('[data-omni-clear]')!;
   const showall = omni.querySelector<HTMLElement>('[data-omni-showall]')!;
   const showallLabel = omni.querySelector<HTMLElement>('[data-omni-showall-label]')!;
   const trigger = document.querySelector<HTMLElement>('[data-omni-open]');
@@ -1712,6 +1513,8 @@ export function initOmniSearch(): void {
 
   const handlers = {
     onSelect: (item: Entity) => {
+      // Publications fork to their own document-search page (mirrors prod).
+      if (item.type === 'publication') { goToPublications(); return; }
       console.log('[CBF-8117] selected:', item.type, '—', item.title);
       closePalette();
     },
@@ -1725,15 +1528,24 @@ export function initOmniSearch(): void {
     rows.forEach((row, i) => row.addEventListener('mousemove', () => setActive(i)));
   }
 
+  function selectScope(id: ScopeId): void {
+    // Publications fork to their own document-search page (mirrors prod).
+    if (id === 'publication') { goToPublications(); return; }
+    scope = id;
+    refresh();
+  }
+
   function refresh(): void {
-    renderScopePills(scopesEl, { scope, query: input.value, onSelect: (id) => { scope = id; refresh(); } });
-    // no query → no counts, no results: show the Recent + illustration empty state
+    renderScopePills(scopesEl, { scope, query: input.value, onSelect: selectScope });
+    // empty input → the clear (×) doubles as a close affordance for the palette
     const isDefault = !input.value.trim();
+    clearBtn.setAttribute('aria-label', isDefault ? 'Close' : 'Clear');
     if (isDefault) {
+      // no query → illustration-only empty state (Recent now lives in the nav)
       emptyEl.hidden = false;
       resultsEl.hidden = true;
       showall.hidden = true;
-      rows = renderRecent(recentEl, handlers);
+      rows = [];
     } else {
       emptyEl.hidden = true;
       resultsEl.hidden = false;
@@ -1755,6 +1567,11 @@ export function initOmniSearch(): void {
     window.location.href = withBase('/search') + (qs ? `?${qs}` : '');
   }
 
+  function goToPublications(): void {
+    const q = input.value.trim();
+    window.location.href = withBase('/publications') + (q ? `?q=${encodeURIComponent(q)}` : '');
+  }
+
   function openPalette(): void {
     omni!.hidden = false;
     input.value = '';
@@ -1763,12 +1580,19 @@ export function initOmniSearch(): void {
     setTimeout(() => input.focus(), 0);
   }
   function closePalette(): void {
+    closePersonCard();
     omni!.hidden = true;
   }
 
   // ---- wiring ----
   input.addEventListener('input', refresh);
-  omni.querySelector('[data-omni-clear]')!.addEventListener('click', () => { input.value = ''; refresh(); input.focus(); });
+  // clear when there's a query; close the palette when the input is already empty
+  clearBtn.addEventListener('click', () => {
+    if (input.value.trim() === '') { closePalette(); return; }
+    input.value = '';
+    refresh();
+    input.focus();
+  });
   omni.querySelector('[data-omni-close]')!.addEventListener('click', closePalette);
   showall.addEventListener('click', goToResults);
   trigger?.addEventListener('click', openPalette);
@@ -1782,8 +1606,7 @@ export function initOmniSearch(): void {
     else if (e.key === 'Tab') {
       e.preventDefault();
       const i = SCOPES.findIndex((s) => s.id === scope);
-      scope = SCOPES[(i + (e.shiftKey ? SCOPES.length - 1 : 1)) % SCOPES.length].id;
-      refresh();
+      selectScope(SCOPES[(i + (e.shiftKey ? SCOPES.length - 1 : 1)) % SCOPES.length].id);
     }
   });
 

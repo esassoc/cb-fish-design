@@ -53,3 +53,38 @@ private onInputFocus = (): void => {
   if (!this._open) this.openDropdown();
 };
 ```
+
+---
+
+### Lit class-field shadowing — component renders with empty shadow root
+
+**Status:** Workaround applied locally in ecology repo — pending upstream fix  
+**Affects:** All usages of `<esa-combobox>` at all viewport sizes
+
+**Reproduction:**
+1. Render any `<esa-combobox>` with options
+2. Component mounts but shadow root is empty — no label, no trigger, no dropdown
+3. Browser console warns: _"The following properties on element esa-combobox will not trigger updates as expected because they are set using class fields: `_search`, `_selected`, `_open`, `_active`."_
+
+**Root cause:**  
+`esa-combobox.ts` declares `_search`, `_selected`, `_open`, and `_active` in both the Lit `static properties` block (registering reactive accessors on the prototype) and as bare TypeScript class fields without the `declare` keyword. TypeScript/esbuild compiles bare class fields to `__publicField()` constructor calls, which run after `super()` and overwrite the Lit reactive accessor getters with plain `undefined` values. Lit's reactive system is broken for those properties and `render()` is never called.
+
+**Fix:**  
+Add the `declare` keyword to the four private class field declarations so TypeScript emits no constructor code for them — leaving Lit's prototype accessors intact.
+
+```ts
+// before (broken)
+private _search: string;
+private _selected: string[];
+private _open: boolean;
+private _active: number;
+
+// after
+private declare _search: string;
+private declare _selected: string[];
+private declare _open: boolean;
+private declare _active: number;
+```
+
+**Upstream request:**  
+Apply the same `declare` pattern to any other private reactive state properties that are declared as class fields without `declare` in any `esa-*` Lit component. The Lit documentation explicitly covers this: https://lit.dev/docs/components/properties/#avoiding-issues-with-class-fields

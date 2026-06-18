@@ -32,11 +32,20 @@ export const prototypes: Prototype[] = [
     status: 'live',
   },
   {
+    slug: 'vendor-portal',
+    title: 'Vendor portal',
+    description:
+      'Accountant landing page — activity snapshot and four quick-action cards for invoice management.',
+    route: '/vendor-portal',
+    createdAt: '2026-06-15',
+    status: 'in-progress',
+  },
+  {
     slug: 'vendor-invoice',
     title: 'Vendor invoice submission',
     description:
-      'Three-step wizard for vendor accountants: upload a PDF invoice, enter invoice metadata + contract reference + line items, then review and submit.',
-    route: '/vendor-portal',
+      'Three-step wizard: upload a PDF invoice, enter metadata + contract reference + line items, then review and submit.',
+    route: '/vendor-invoice',
     createdAt: '2026-06-15',
     status: 'in-progress',
   },

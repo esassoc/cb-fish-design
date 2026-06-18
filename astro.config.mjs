@@ -21,6 +21,13 @@ export default defineConfig({
   vite: {
     resolve: {
       dedupe: ['lit'],
+      // file: deps (@esa/docs, @esa/handoff, @esa/ecology, @esa/tokens) resolve to
+      // their real paths inside the ecology monorepo. When Vite follows those symlinks,
+      // imports like `@esa/tokens/type-roles.css` fail because the ecology monorepo
+      // doesn't have @esa/tokens in its own node_modules. preserveSymlinks: true keeps
+      // module resolution anchored at the spoke's node_modules so all @esa/* packages
+      // are found correctly.
+      preserveSymlinks: true,
     },
     optimizeDeps: {
       include: ['lit'],

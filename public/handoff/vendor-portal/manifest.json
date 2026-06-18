@@ -1,0 +1,494 @@
+{
+  "name": "vendor-portal",
+  "url": "http://localhost:18321/cb-fish-design/vendor-portal/",
+  "theme": "cb-fish",
+  "generatedFrom": "spec",
+  "sections": [
+    {
+      "label": "Portal header",
+      "tag": "div",
+      "selector": ".cbf-vendor-portal-header",
+      "html": "<div class=\"cbf-vendor-portal-header\">\n  <header class=\"esa-page-header\">\n    <div class=\"esa-page-header__bar\">\n      <div class=\"esa-page-header__titles\">\n        <p class=\"esa-page-header__eyebrow\">\n          <span>Pacific Environmental Services, LLC</span>\n        </p>\n        <h1 class=\"esa-page-header__title\">Welcome back, Maria</h1>\n        <p class=\"esa-page-header__lede\">\n          Submit and track invoices for your Columbia Basin Fish &amp; Wildlife Program\n          contracts.\n        </p>\n      </div>\n      <div class=\"esa-page-header__actions\">\n        <span\n          class=\"esa-button esa-button--color-primary esa-button--appearance-fill esa-button--lg\"\n        >\n          <a\n            class=\"esa-button__native\"\n            href=\"/cb-fish-design/vendor-invoice\"\n            role=\"button\"\n            ><span class=\"esa-icon esa-icon--lg\" aria-hidden=\"true\">\n              <svg\n                width=\"24\"\n                height=\"24\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              ></svg>\n            </span>\n            <span class=\"esa-button__label\"> Submit Invoice </span></a\n          >\n        </span>\n      </div>\n    </div>\n  </header>\n  <div class=\"cbf-vendor-portal-header__stats cluster\" data-gap=\"xl\">\n    <div class=\"esa-stat\">\n      <div class=\"esa-stat__value\">4</div>\n      <div class=\"esa-stat__label\">Invoices submitted</div>\n      <div class=\"esa-stat__sub\">FY 2026</div>\n    </div>\n    <div class=\"esa-stat esa-stat--accent\">\n      <div class=\"esa-stat__value\">1</div>\n      <div class=\"esa-stat__label\">Pending review</div>\n    </div>\n    <div class=\"esa-stat\">\n      <div class=\"esa-stat__value\">$14,200</div>\n      <div class=\"esa-stat__label\">Total submitted</div>\n      <div class=\"esa-stat__sub\">FY 2026</div>\n    </div>\n  </div>\n</div>",
+      "css": ".esa-icon {\n  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  line-height: 1;\n  color: inherit;\n}\n.esa-icon--xs {\n  --_icon-size: var(--icon-size-xs, 14px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-icon--sm {\n  --_icon-size: var(--icon-size-sm, var(--icon-size-small, 16px));\n}\n.esa-icon--lg {\n  --_icon-size: var(--icon-size-lg, var(--icon-size-large, 24px));\n}\n.esa-icon--md {\n  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));\n}\n.esa-nav-dropdown .esa-icon-link > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.esa-button {\n  --_btn-height: var(--form-height-md, 40px);\n  --_btn-padding-x: var(--form-padding-x-md, 16px);\n  --_btn-font-size: var(--form-font-size-md, 14px);\n  --_btn-radius: var(--form-radius-md, 6px);\n  --_accent: var(--color-primary, #43608a);\n  --_accent-hover: var(--color-primary-hover, #39506f);\n  --_on: var(--color-text-inverse, #ffffff);\n  display: inline-block;\n}\n.esa-button--lg {\n  --_btn-height: var(--form-height-lg, 48px);\n  --_btn-padding-x: var(--form-padding-x-lg, 20px);\n  --_btn-font-size: var(--form-font-size-lg, 16px);\n  --_btn-radius: var(--form-radius-lg, 8px);\n}\n.esa-button__native {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: var(--spacing-200, 8px);\n  width: 100%;\n  height: var(--_btn-height);\n  padding-inline: var(--_btn-padding-x);\n  border: 1px solid transparent;\n  border-radius: var(--_btn-radius);\n  font-size: var(--_btn-font-size);\n  font-family: var(--font-sans, system-ui, sans-serif);\n  font-weight: var(--font-weight-medium, 500);\n  line-height: 1;\n  text-decoration: none;\n  cursor: pointer;\n  transition:\n    background var(--transition-fast, 0.15s ease),\n    border-color var(--transition-fast, 0.15s ease);\n  -webkit-appearance: none;\n  appearance: none;\n}\n.esa-button--appearance-fill .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: transparent;\n}\n.esa-button__label {\n  white-space: nowrap;\n}\n.esa-button--color-secondary {\n  --_accent: var(--color-secondary, #5787b9);\n  --_accent-hover: var(--color-secondary-hover, #43608a);\n}\n.esa-button--appearance-outline .esa-button__native,\n.esa-button--appearance-dashed .esa-button__native {\n  background: transparent;\n  color: var(--_accent);\n  border-color: var(--_accent);\n}\n.cluster {\n  --gap: var(--spacing-300, 0.75rem);\n  --align: center;\n  --justify: flex-start;\n  display: flex;\n  flex-wrap: wrap;\n  gap: var(--gap);\n  align-items: var(--align);\n  justify-content: var(--justify);\n}\n.esa-icon-link {\n  --_il-font: var(--icon-link-font-size-md, 1rem);\n  display: inline-flex;\n  align-items: center;\n  gap: var(--icon-link-gap, var(--spacing-150, 6px));\n  padding: 0;\n  margin: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font-family: var(--font-sans, system-ui, sans-serif);\n  font-size: var(--_il-font);\n  font-weight: var(--font-weight-medium, 500);\n  line-height: 1;\n  text-decoration: none;\n  cursor: pointer;\n  white-space: nowrap;\n}\n.esa-icon-link--sm {\n  --_il-font: var(--icon-link-font-size-sm, 0.875rem);\n}\n.esa-icon-link--medium {\n  font-weight: var(--font-weight-medium, 500);\n}\n.esa-icon-link__label {\n  display: inline-block;\n}\nsummary.esa-icon-link {\n  list-style: none;\n}\n.cbf-vendor-portal-header {\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-600);\n  padding-bottom: var(--spacing-600);\n  border-bottom: 1px solid var(--color-border);\n}\n.esa-page-header {\n  --_ph-title-color: var(--page-header-title-color, var(--color-text-primary, #171717));\n  --_ph-title-font: var(\n    --page-header-title-font,\n    var(--font-display, var(--font-sans, \"DM Sans\", sans-serif))\n  );\n  --_ph-title-size: var(--page-header-title-size, var(--type-size-600, 1.875rem));\n  --_ph-title-weight: var(--page-header-title-weight, var(--font-weight-semibold, 550));\n  --_ph-lede-color: var(--page-header-lede-color, var(--color-text-secondary, #525252));\n  --_ph-lede-size: var(--page-header-lede-size, var(--type-size-300, 1.125rem));\n  --_ph-eyebrow-color: var(\n    --page-header-eyebrow-color,\n    var(--color-text-secondary, #525252)\n  );\n  --_ph-eyebrow-size: var(--page-header-eyebrow-size, var(--type-size-200, 0.9375rem));\n  --_ph-gap: var(--page-header-gap, var(--spacing-200, 0.5rem));\n  --_ph-bar-gap: var(--page-header-bar-gap, var(--spacing-500, 1.5rem));\n  --_ph-crumb-gap: var(--page-header-breadcrumbs-gap, var(--spacing-300, 0.75rem));\n  display: block;\n  background: transparent;\n}\n.esa-page-header__bar {\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  gap: var(--_ph-bar-gap);\n  flex-wrap: wrap;\n}\n.esa-page-header__titles {\n  display: flex;\n  flex-direction: column;\n  gap: var(--_ph-gap);\n  min-width: 0;\n}\n.esa-page-header__eyebrow {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-100, 0.25rem);\n  margin: 0;\n  font-size: var(--_ph-eyebrow-size);\n  font-weight: var(--font-weight-medium, 500);\n  line-height: var(--line-height-normal, 1.5);\n  color: var(--_ph-eyebrow-color);\n}\n.esa-page-header__title {\n  margin: 0;\n  font-family: var(--_ph-title-font);\n  font-size: var(--_ph-title-size);\n  font-weight: var(--_ph-title-weight);\n  line-height: var(--line-height-tight, 1.3);\n  letter-spacing: var(--letter-spacing-tight, -0.01em);\n  color: var(--_ph-title-color);\n}\n.esa-page-header__lede {\n  margin: 0;\n  font-size: var(--_ph-lede-size);\n  font-weight: var(--font-weight-regular, 350);\n  line-height: var(--line-height-relaxed, 1.8);\n  color: var(--_ph-lede-color);\n  max-width: 70ch;\n}\n.esa-page-header__actions {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-200, 0.5rem);\n  flex-shrink: 0;\n}\n.esa-stat {\n  --_stat-value-color: var(--stat-value-color, var(--color-text-primary, #171717));\n  --_stat-value-font: var(\n    --stat-value-font,\n    var(--font-display, var(--font-sans, \"DM Sans\", sans-serif))\n  );\n  --_stat-value-size: var(--stat-value-size, var(--type-size-700, 2.25rem));\n  --_stat-value-weight: var(--stat-value-weight, var(--font-weight-bold, 650));\n  --_stat-label-color: var(--stat-label-color, var(--color-text-secondary, #525252));\n  --_stat-label-size: var(--stat-label-size, var(--type-size-200, 0.9375rem));\n  --_stat-label-weight: var(--stat-label-weight, var(--font-weight-medium, 450));\n  --_stat-sub-color: var(--stat-sub-color, var(--color-text-muted, #737373));\n  --_stat-sub-size: var(--stat-sub-size, var(--type-size-150, 0.875rem));\n  --_stat-accent-color: var(--stat-accent-color, var(--color-secondary, #5787b9));\n  --_stat-gap: var(--stat-gap, var(--spacing-050, 0.125rem));\n  display: flex;\n  flex-direction: column;\n  gap: var(--_stat-gap);\n  background: transparent;\n}\n.esa-stat__value {\n  font-family: var(--_stat-value-font);\n  font-size: var(--_stat-value-size);\n  font-weight: var(--_stat-value-weight);\n  line-height: var(--line-height-tight, 1.3);\n  letter-spacing: var(--letter-spacing-tight, -0.01em);\n  color: var(--_stat-value-color);\n}\n.esa-stat__label {\n  font-size: var(--_stat-label-size);\n  font-weight: var(--_stat-label-weight);\n  line-height: var(--line-height-normal, 1.6);\n  color: var(--_stat-label-color);\n}\n.esa-stat__sub {\n  font-size: var(--_stat-sub-size);\n  font-weight: var(--font-weight-regular, 350);\n  line-height: var(--line-height-normal, 1.6);\n  color: var(--_stat-sub-color);\n}\n.esa-stat--accent .esa-stat__value {\n  color: var(--_stat-accent-color);\n}",
+      "guide": {
+        "intent": "Welcome banner and activity snapshot on the accountant landing page. Greets the vendor by first name using esa-page-header, then shows a read-only metrics row (invoices submitted, pending review, total billed) via esa-stat legos. The primary CTA drives to /vendor-invoice.",
+        "decisions": [
+          "esa-page-header owns the greeting + primary CTA — do not hand-roll a custom heading + button pair.",
+          "Stats use esa-stat inside the cluster layout primitive (data-gap=\"xl\") — not a custom flex row.",
+          "Primary CTA button links to /vendor-invoice; no secondary action in the header."
+        ],
+        "gotchas": [
+          "esa-stat does not accept a unit prop — currency and suffix formatting must be baked into the value string.",
+          "The greeting uses the vendor's first name split from the full contact string — \"Maria\" not \"Maria Garcia\"."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--color-border",
+          "value": "#dcdcdc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-primary",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-primary-hover",
+          "value": "#1a4570",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-secondary",
+          "value": "#2770b2",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-secondary-hover",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-text-inverse",
+          "value": "#ffffff",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-text-muted",
+          "value": "#7c7c7c",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-text-primary",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-text-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--font-display",
+          "value": "\"IBM Plex Sans Condensed\", \"IBM Plex Sans\", sans-serif",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-sans",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-weight-bold",
+          "value": "700",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-weight-medium",
+          "value": "500",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-weight-regular",
+          "value": "400",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-weight-semibold",
+          "value": "600",
+          "tier": "primitive"
+        },
+        {
+          "name": "--form-font-size-lg",
+          "value": "clamp(.875rem, .77rem + .52vw, 1.125rem)",
+          "tier": "component"
+        },
+        {
+          "name": "--form-font-size-md",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "component"
+        },
+        {
+          "name": "--form-height-lg",
+          "value": "48px",
+          "tier": "component"
+        },
+        {
+          "name": "--form-height-md",
+          "value": "40px",
+          "tier": "component"
+        },
+        {
+          "name": "--form-padding-x-lg",
+          "value": "1rem",
+          "tier": "component"
+        },
+        {
+          "name": "--form-padding-x-md",
+          "value": ".75rem",
+          "tier": "component"
+        },
+        {
+          "name": "--form-radius-lg",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--form-radius-md",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-link-font-size-md",
+          "value": "1rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-link-font-size-sm",
+          "value": ".875rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-link-gap",
+          "value": ".375rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-large",
+          "value": "24px",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-medium",
+          "value": "20px",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-small",
+          "value": "16px",
+          "tier": "component"
+        },
+        {
+          "name": "--spacing-050",
+          "value": ".125rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-150",
+          "value": ".375rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-500",
+          "value": "1.5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-600",
+          "value": "2rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-150",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-200",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-300",
+          "value": "clamp(.875rem, .77rem + .52vw, 1.125rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-600",
+          "value": "clamp(1.375rem, 1.2rem + .88vw, 1.875rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-700",
+          "value": "clamp(1.625rem, 1.41rem + 1.08vw, 2.25rem)",
+          "tier": "primitive"
+        }
+      ],
+      "claudePath": "claude/portal-header.md",
+      "repoPath": "public/handoff/vendor-portal/claude/portal-header.md"
+    },
+    {
+      "label": "Action cards",
+      "tag": "div",
+      "selector": ".cbf-vendor-portal-actions",
+      "html": "<div\n  class=\"cbf-vendor-portal-actions grid\"\n  data-gap=\"md\"\n  style=\"--grid-min: 260px; align-items: flex-start\"\n>\n  <div class=\"esa-card esa-card--elevated esa-card--padding-spacious\">\n    <div class=\"esa-card__header\">\n      <div class=\"esa-card__header-content\">\n        <div class=\"esa-card__titles\">\n          <h3 class=\"esa-card__title\">Submit an invoice</h3>\n          <p class=\"esa-card__subtitle\">Upload a PDF and complete invoice details</p>\n        </div>\n      </div>\n    </div>\n    <div class=\"esa-card__body\">\n      <p>\n        Most submissions take under 5 minutes. You'll be guided step-by-step through\n        uploading your invoice PDF, entering line items, and confirming totals before\n        sending.\n      </p>\n    </div>\n    <div class=\"esa-card__footer\">\n      <div>\n        <span\n          class=\"esa-button esa-button--color-primary esa-button--appearance-fill esa-button--md\"\n        >\n          <a\n            class=\"esa-button__native\"\n            href=\"/cb-fish-design/vendor-invoice\"\n            role=\"button\"\n            ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n              <svg\n                width=\"20\"\n                height=\"20\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              ></svg>\n            </span>\n            <span class=\"esa-button__label\"> Submit invoice </span></a\n          >\n        </span>\n      </div>\n    </div>\n  </div>\n  <div class=\"esa-card esa-card--outlined\">\n    <div class=\"esa-card__header\">\n      <div class=\"esa-card__header-content\">\n        <div class=\"esa-card__titles\">\n          <h3 class=\"esa-card__title\">Submission history</h3>\n          <p class=\"esa-card__subtitle\">Review past invoices</p>\n        </div>\n      </div>\n    </div>\n    <div class=\"esa-card__body\">\n      <p>\n        View all invoices you've submitted, track their current status, and download\n        copies of previously submitted documents.\n      </p>\n    </div>\n    <div class=\"esa-card__footer\">\n      <div>\n        <span\n          class=\"esa-button esa-button--color-secondary esa-button--appearance-outline esa-button--md\"\n        >\n          <button class=\"esa-button__native\" type=\"button\">\n            <span class=\"esa-button__label\"> View history </span>\n          </button>\n        </span>\n      </div>\n    </div>\n  </div>\n  <div class=\"esa-card esa-card--outlined\">\n    <div class=\"esa-card__header\">\n      <div class=\"esa-card__header-content\">\n        <div class=\"esa-card__titles\">\n          <h3 class=\"esa-card__title\">Payment status</h3>\n          <p class=\"esa-card__subtitle\">Track remittance</p>\n        </div>\n      </div>\n    </div>\n    <div class=\"esa-card__body\">\n      <p>\n        Check when payments have been processed and view remittance details and payment\n        dates for completed invoices.\n      </p>\n    </div>\n    <div class=\"esa-card__footer\">\n      <div>\n        <span\n          class=\"esa-button esa-button--color-secondary esa-button--appearance-outline esa-button--md\"\n        >\n          <button class=\"esa-button__native\" type=\"button\">\n            <span class=\"esa-button__label\"> Check status </span>\n          </button>\n        </span>\n      </div>\n    </div>\n  </div>\n  <div class=\"esa-card esa-card--outlined\">\n    <div class=\"esa-card__header\">\n      <div class=\"esa-card__header-content\">\n        <div class=\"esa-card__titles\">\n          <h3 class=\"esa-card__title\">Account &amp; profile</h3>\n          <p class=\"esa-card__subtitle\">Manage company information</p>\n        </div>\n      </div>\n    </div>\n    <div class=\"esa-card__body\">\n      <p>\n        Update your company details, banking information, and tax documentation on file\n        with Columbia Basin Fish &amp; Wildlife Program.\n      </p>\n    </div>\n    <div class=\"esa-card__footer\">\n      <div>\n        <span\n          class=\"esa-button esa-button--color-secondary esa-button--appearance-outline esa-button--md\"\n        >\n          <button class=\"esa-button__native\" type=\"button\">\n            <span class=\"esa-button__label\"> Manage account </span>\n          </button>\n        </span>\n      </div>\n    </div>\n  </div>\n</div>",
+      "css": ".esa-icon-link {\n  --_il-font: var(--icon-link-font-size-md, 1rem);\n  display: inline-flex;\n  align-items: center;\n  gap: var(--icon-link-gap, var(--spacing-150, 6px));\n  padding: 0;\n  margin: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font-family: var(--font-sans, system-ui, sans-serif);\n  font-size: var(--_il-font);\n  font-weight: var(--font-weight-medium, 500);\n  line-height: 1;\n  text-decoration: none;\n  cursor: pointer;\n  white-space: nowrap;\n}\n.esa-icon-link--sm {\n  --_il-font: var(--icon-link-font-size-sm, 0.875rem);\n}\n.esa-icon-link--medium {\n  font-weight: var(--font-weight-medium, 500);\n}\n.esa-icon-link__label {\n  display: inline-block;\n}\nsummary.esa-icon-link {\n  list-style: none;\n}\n.esa-nav-dropdown .esa-icon-link > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.esa-card {\n  --_card-bg: var(--card-bg, var(--color-surface, #ffffff));\n  --_card-border: var(--card-border-color, var(--color-border, #e5e5e5));\n  --_card-radius: var(--card-radius, var(--radius-300, 0.5rem));\n  --_card-padding: var(--card-padding, var(--spacing-500, 1.5rem));\n  --_card-header-bg: var(--card-header-bg, transparent);\n  --_card-header-color: var(--card-header-color, var(--color-text-primary, #171717));\n  --_card-header-border: var(\n    --card-header-border-color,\n    var(--color-border-light, #efefef)\n  );\n  display: block;\n  background: var(--_card-bg);\n  border: 1px solid var(--_card-border);\n  border-radius: var(--_card-radius);\n  overflow: hidden;\n}\n.esa-card--elevated {\n  --_card-border: transparent;\n  box-shadow: var(--shadow-100, 0 2px 12px 0 rgba(0, 0, 0, 0.04));\n}\n.esa-card--padding-spacious {\n  --_card-padding: var(--spacing-700, 3rem);\n}\n.esa-card__header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: var(--spacing-400, 1rem) var(--_card-padding);\n  background: var(--_card-header-bg);\n  color: var(--_card-header-color);\n  border-bottom: 1px solid var(--_card-header-border);\n  min-height: 56px;\n}\n.esa-card__header-content {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-300, 0.75rem);\n}\n.esa-card__titles {\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-050, 0.125rem);\n}\n.esa-card__title {\n  font-size: var(--type-size-250, 1.0625rem);\n  font-weight: 600;\n  margin: 0;\n  color: inherit;\n  font-family: var(--font-sans, \"DM Sans\", sans-serif);\n}\n.esa-card__subtitle {\n  font-size: var(--type-size-150, 0.8125rem);\n  color: var(--color-text-secondary, #525252);\n  margin: 0;\n}\n.esa-card__body {\n  padding: var(--_card-padding);\n}\n.esa-card__footer {\n  padding: var(--spacing-300, 0.75rem) var(--_card-padding);\n  border-top: 1px solid var(--_card-header-border);\n  background: var(--card-footer-bg, var(--color-surface-sunken, #efefef));\n}\n.esa-card--outlined {\n  --_card-border: var(--color-border, #e5e5e5);\n}\n.grid {\n  --gap: var(--spacing-400, 1rem);\n  --grid-min: 16rem;\n  display: grid;\n  gap: var(--gap);\n  grid-template-columns: repeat(auto-fit, minmax(min(var(--grid-min), 100%), 1fr));\n}\n.esa-button {\n  --_btn-height: var(--form-height-md, 40px);\n  --_btn-padding-x: var(--form-padding-x-md, 16px);\n  --_btn-font-size: var(--form-font-size-md, 14px);\n  --_btn-radius: var(--form-radius-md, 6px);\n  --_accent: var(--color-primary, #43608a);\n  --_accent-hover: var(--color-primary-hover, #39506f);\n  --_on: var(--color-text-inverse, #ffffff);\n  display: inline-block;\n}\n.esa-button--lg {\n  --_btn-height: var(--form-height-lg, 48px);\n  --_btn-padding-x: var(--form-padding-x-lg, 20px);\n  --_btn-font-size: var(--form-font-size-lg, 16px);\n  --_btn-radius: var(--form-radius-lg, 8px);\n}\n.esa-button__native {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: var(--spacing-200, 8px);\n  width: 100%;\n  height: var(--_btn-height);\n  padding-inline: var(--_btn-padding-x);\n  border: 1px solid transparent;\n  border-radius: var(--_btn-radius);\n  font-size: var(--_btn-font-size);\n  font-family: var(--font-sans, system-ui, sans-serif);\n  font-weight: var(--font-weight-medium, 500);\n  line-height: 1;\n  text-decoration: none;\n  cursor: pointer;\n  transition:\n    background var(--transition-fast, 0.15s ease),\n    border-color var(--transition-fast, 0.15s ease);\n  -webkit-appearance: none;\n  appearance: none;\n}\n.esa-button--appearance-fill .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: transparent;\n}\n.esa-button__label {\n  white-space: nowrap;\n}\n.esa-button--color-secondary {\n  --_accent: var(--color-secondary, #5787b9);\n  --_accent-hover: var(--color-secondary-hover, #43608a);\n}\n.esa-button--appearance-outline .esa-button__native,\n.esa-button--appearance-dashed .esa-button__native {\n  background: transparent;\n  color: var(--_accent);\n  border-color: var(--_accent);\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  line-height: 1;\n  color: inherit;\n}\n.esa-icon--xs {\n  --_icon-size: var(--icon-size-xs, 14px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-icon--sm {\n  --_icon-size: var(--icon-size-sm, var(--icon-size-small, 16px));\n}\n.esa-icon--lg {\n  --_icon-size: var(--icon-size-lg, var(--icon-size-large, 24px));\n}\n.esa-icon--md {\n  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));\n}",
+      "guide": {
+        "intent": "Four navigational quick-action cards in a 2×2 grid. \"Submit an invoice\" is elevated as the primary CTA; the remaining three (Submission history, Payment status, Account & profile) are standard informational cards.",
+        "decisions": [
+          "All four cards are esa-card legos — no custom card component.",
+          "Grid uses the .grid layout primitive with data-gap=\"md\", not a bespoke CSS grid.",
+          "\"Submit an invoice\" card carries a filled esa-button to reinforce the primary path; the others link via the card href."
+        ],
+        "gotchas": [
+          "esa-card elevation variants differ between lego versions — verify the \"elevated\" prop name against the installed ecology version.",
+          "Card actions are esa-button inside the card body, not anchor wrappers around the whole card."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--card-bg",
+          "value": "#ffffff",
+          "tier": "component"
+        },
+        {
+          "name": "--card-border-color",
+          "value": "#dcdcdc",
+          "tier": "component"
+        },
+        {
+          "name": "--card-footer-bg",
+          "value": "#f3f7fc",
+          "tier": "component"
+        },
+        {
+          "name": "--card-header-bg",
+          "value": "transparent",
+          "tier": "component"
+        },
+        {
+          "name": "--card-header-border-color",
+          "value": "#efefef",
+          "tier": "component"
+        },
+        {
+          "name": "--card-header-color",
+          "value": "#3d3d3d",
+          "tier": "component"
+        },
+        {
+          "name": "--card-padding",
+          "value": "1.5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--card-radius",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--color-border",
+          "value": "#dcdcdc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-light",
+          "value": "#efefef",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-primary",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-primary-hover",
+          "value": "#1a4570",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-secondary",
+          "value": "#2770b2",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-secondary-hover",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-surface",
+          "value": "#ffffff",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-surface-sunken",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-text-inverse",
+          "value": "#ffffff",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-text-primary",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-text-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--font-sans",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-weight-medium",
+          "value": "500",
+          "tier": "primitive"
+        },
+        {
+          "name": "--form-font-size-lg",
+          "value": "clamp(.875rem, .77rem + .52vw, 1.125rem)",
+          "tier": "component"
+        },
+        {
+          "name": "--form-font-size-md",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "component"
+        },
+        {
+          "name": "--form-height-lg",
+          "value": "48px",
+          "tier": "component"
+        },
+        {
+          "name": "--form-height-md",
+          "value": "40px",
+          "tier": "component"
+        },
+        {
+          "name": "--form-padding-x-lg",
+          "value": "1rem",
+          "tier": "component"
+        },
+        {
+          "name": "--form-padding-x-md",
+          "value": ".75rem",
+          "tier": "component"
+        },
+        {
+          "name": "--form-radius-lg",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--form-radius-md",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--gap",
+          "value": "1rem",
+          "tier": "component"
+        },
+        {
+          "name": "--grid-min",
+          "value": "260px",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-link-font-size-md",
+          "value": "1rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-link-font-size-sm",
+          "value": ".875rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-link-gap",
+          "value": ".375rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-large",
+          "value": "24px",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-medium",
+          "value": "20px",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-small",
+          "value": "16px",
+          "tier": "component"
+        },
+        {
+          "name": "--radius-300",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-050",
+          "value": ".125rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-150",
+          "value": ".375rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-500",
+          "value": "1.5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-700",
+          "value": "3rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-150",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-250",
+          "value": "clamp(.8125rem, .71rem + .5vw, 1.0625rem)",
+          "tier": "primitive"
+        }
+      ],
+      "claudePath": "claude/action-cards.md",
+      "repoPath": "public/handoff/vendor-portal/claude/action-cards.md"
+    }
+  ]
+}

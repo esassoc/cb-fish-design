@@ -17,7 +17,7 @@ import { dirname, resolve as presolve, relative as prelative } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { captureCurated } from './lib/capture-curated.mjs';
 
-const PORT = 4321;
+const PORT = Number(process.env.HANDOFF_PORT ?? 4321);
 const BASE = '/cb-fish-design/'; // production base — must match astro.config.mjs
 const ORIGIN = `http://localhost:${PORT}`;
 const root = (p) => fileURLToPath(new URL('../' + p, import.meta.url));

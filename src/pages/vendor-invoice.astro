@@ -249,10 +249,21 @@ const buyer = {
   }
 
   /* Below 960px: rail becomes a top bar (handled in rail component);
-     loosen the content padding */
+     loosen the content padding. Break the flex:1/flex-basis:0 chain so the
+     form grows to its natural content height instead of collapsing to zero
+     or being clipped to the card's 80vh. */
   @media (max-width: 960px) {
     .cbf-app-card__body {
       flex-direction: column;
+    }
+    /* Reset every flex:1 descendant so each sizes from its content, not from
+       a zero flex-basis that collapses in a parent with no explicit height. */
+    .cbf-invoice-content,
+    .cbf-invoice-workspace,
+    .cbf-invoice-main {
+      flex: none;
+      width: 100%;
+      min-height: unset;
     }
     .cbf-invoice-main {
       padding: var(--spacing-500);
