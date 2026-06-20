@@ -24,6 +24,26 @@ variant?: 'info' | 'success' | 'warning' | 'danger' | 'error';
 
 ---
 
+## esa-app-bar
+
+### No overflow / responsive handling — a dense bar clips on small viewports
+
+**Status:** Open — needs upstream change. Worked around locally in `cbf-public-nav.astro`.
+**Affects:** Any `<esa-app-bar>` that carries more inline items than fit the viewport width.
+
+**Problem:**
+`esa-app-bar`'s inner `.esa-app-bar__row` is a single-line flex row (`display: flex; align-items: center`) with `flex: none` start/end groups and no `flex-wrap`, `overflow`, or media queries — by design it's a pure layout primitive. The consequence is that a bar packed with real chrome (logo + several `esa-nav-dropdown`s + an end cluster, as in CB Fish's two-tier nav) **clips off the right edge** below ~1024px: items overflow the viewport with no scroll, wrap, or collapse. Every spoke that composes a non-trivial bar must hand-roll its own responsive collapse, which defeats the "assemble legos" promise for the single most prominent piece of chrome.
+
+**Requested change:**
+Give `esa-app-bar` a built-in overflow strategy so spokes get graceful small-viewport behavior for free. Options, least- to most-opinionated:
+1. A `reel`/scroll affordance hook (opt-in `overflow-x: auto` on the row) so content scrolls instead of clipping.
+2. A `collapse` prop + breakpoint token (`--app-bar-collapse`) that, below the breakpoint, hides flagged groups and exposes a standard hamburger slot wired to `esa-side-dialog` — i.e. promote the pattern below into the lego.
+
+**Local workaround (CB Fish):**
+`cbf-public-nav.astro` wraps the inline groups in `display: contents` `.cbf-nav-collapsible` gates and, below a 1024px breakpoint, folds them into an `esa-side-dialog` drawer opened by an `esa-icon-button` hamburger. It composes existing legos (`esa-side-dialog` + `esa-icon-button` + `esa-link-column`), but the breakpoint orchestration is bespoke per spoke — exactly what belongs upstream.
+
+---
+
 ## esa-combobox
 
 ### Mouse selection leaves dropdown open (`autocomplete` mode)

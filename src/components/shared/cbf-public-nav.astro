@@ -20,6 +20,7 @@
 // hub icon set) and the user menu's markup is rewritten live during impersonation.
 import EsaAppBar from '@esa/ecology/esa-app-bar.astro';
 import EsaIconLink from '@esa/ecology/esa-icon-link.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
 import EsaNavDropdown from '@esa/ecology/esa-nav-dropdown.astro';
 import EsaLinkColumn from '@esa/ecology/esa-link-column.astro';
 import CbfLogo from './cbf-logo.astro';
@@ -43,38 +44,56 @@ const funding = [
   { label: 'Start-of-year (SOY) budgets' }, { label: 'Working budgets' }, { label: 'Budget change requests' },
   { label: 'Expenditures' }, { label: 'Accruals' },
 ];
+// Items that live inline in the bars on desktop but collapse into the drawer below
+// --cbf-nav-collapse: the admin-tray dropdowns (no child menus in this mock, so they
+// list as flat labels) and the header end-cluster shortcuts.
+const system = [{ label: 'Data management' }, { label: 'System status' }, { label: 'System configuration' }];
+const quick = [{ label: 'Recent', href: '#' }, { label: 'Dashboard', href: '#' }];
 ---
 <EsaAppBar tone="brand-strong" as="nav" class="cbf-app-bar--admin">
-  <Fragment slot="start">
+  <div class="cbf-nav-collapsible" slot="start">
     <EsaIconLink size="sm" icon="database" trailing="chevron-down">Data management</EsaIconLink>
     <EsaIconLink size="sm" icon="activity" trailing="chevron-down">System status</EsaIconLink>
     <EsaIconLink size="sm" icon="settings" trailing="chevron-down">System configuration</EsaIconLink>
-  </Fragment>
+  </div>
   <CbfOmniTrigger />
-  <EsaNavDropdown slot="end" size="sm" align="end" icon="circle-question-mark" label="Help">
-    <EsaLinkColumn heading="Help" links={help} />
-  </EsaNavDropdown>
+  <div class="cbf-nav-collapsible" slot="end">
+    <EsaNavDropdown size="sm" align="end" icon="circle-question-mark" label="Help">
+      <EsaLinkColumn heading="Help" links={help} />
+    </EsaNavDropdown>
+  </div>
 </EsaAppBar>
 
 <EsaAppBar tone="brand" as="header" class="cbf-app-bar--header">
-  <CbfLogo slot="start" />
-  <EsaNavDropdown icon="trees" label="Mitigation work">
-    <EsaLinkColumn heading="Mitigation work" links={mitigation} />
-  </EsaNavDropdown>
-  <EsaNavDropdown icon="trending-up" label="Reporting">
-    <EsaLinkColumn heading="Reporting" links={reporting} />
-  </EsaNavDropdown>
-  <EsaNavDropdown icon="credit-card" label="Funding">
-    <EsaLinkColumn heading="Funding" links={funding} />
-  </EsaNavDropdown>
+  <Fragment slot="start">
+    <span class="cbf-nav-burger" data-nav-toggle>
+      <EsaIconButton icon="menu" label="Open menu" />
+    </span>
+    <CbfLogo />
+  </Fragment>
+  <div class="cbf-nav-collapsible cbf-nav-collapsible--inline">
+    <EsaNavDropdown icon="trees" label="Mitigation work">
+      <EsaLinkColumn heading="Mitigation work" links={mitigation} />
+    </EsaNavDropdown>
+    <EsaNavDropdown icon="trending-up" label="Reporting">
+      <EsaLinkColumn heading="Reporting" links={reporting} />
+    </EsaNavDropdown>
+    <EsaNavDropdown icon="credit-card" label="Funding">
+      <EsaLinkColumn heading="Funding" links={funding} />
+    </EsaNavDropdown>
+  </div>
 
   <div class="cbf-nav-actions" slot="end">
     {/* Recent = recently VISITED PAGES, distinct from search. Lives here in the
-        header now that the palette's no-query view is illustration-only. */}
-    <button class="cbf-nav-link" type="button">
+        header now that the palette's no-query view is illustration-only.
+        bcn-lego-checked: end-cluster stays local cbf-nav-link chrome (not esa-icon-link)
+        because it needs the `history` glyph absent from the hub icon set and the user
+        menu's markup is rewritten live during impersonation; --collapse hides Recent/
+        Dashboard below the nav breakpoint, where they reappear in the esa-side-dialog drawer. */}
+    <button class="cbf-nav-link cbf-nav-link--collapse" type="button">
       <CbfIcon name="history" size={16} /> Recent <CbfIcon name="chevron-down" size={14} />
     </button>
-    <a class="cbf-nav-link" href="#">
+    <a class="cbf-nav-link cbf-nav-link--collapse" href="#">
       <CbfIcon name="layout-dashboard" size={16} /> Dashboard
     </a>
     <button class="cbf-nav-link cbf-nav-link--user" type="button" data-omni-user>
@@ -84,6 +103,32 @@ const funding = [
 </EsaAppBar>
 
 <CbfOmniSearch />
+
+{/* Mobile nav drawer — the inline bar groups collapse in here below --cbf-nav-collapse.
+    esa-side-dialog gives the drawer mechanics (backdrop, focus trap, Esc, slide, focus
+    restore) for free; each section is an esa-link-column so the brand inherits via
+    currentColor. Opened by the header hamburger (esa-icon-button). */}
+<esa-side-dialog position="left" heading="Menu" size="sm" class="cbf-nav-drawer" data-nav-drawer>
+  <nav class="stack" data-gap="lg" aria-label="Site navigation">
+    <EsaLinkColumn heading="Mitigation work" links={mitigation} />
+    <EsaLinkColumn heading="Reporting" links={reporting} />
+    <EsaLinkColumn heading="Funding" links={funding} />
+    <EsaLinkColumn heading="Quick links" links={quick} />
+    <EsaLinkColumn heading="System" links={system} />
+    <EsaLinkColumn heading="Help" links={help} />
+  </nav>
+</esa-side-dialog>
+
+<script>
+  // Register the drawer custom element and wire the hamburger toggle. Tapping a link
+  // inside the drawer closes it (a navigation gesture should dismiss the sheet).
+  import '@esa/ecology/esa-side-dialog';
+  const drawer = document.querySelector('[data-nav-drawer]') as (HTMLElement & { show(): void; close(): void }) | null;
+  document.querySelector('[data-nav-toggle]')?.addEventListener('click', () => drawer?.show());
+  drawer?.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('a')) drawer.close();
+  });
+</script>
 
 <style>
   /* End cluster — spoke chrome on the brand bar (inherits white via currentColor). */
@@ -124,6 +169,24 @@ const funding = [
   }
   .cbf-nav-link--user.is-impersonating {
     color: var(--cbf-amber-attention);
+  }
+
+  /* Responsive collapse (esa-app-bar is a non-wrapping flex/grid primitive with no
+     overflow handling, so a dense bar clips below ~1024px). Below the breakpoint the
+     inline groups fold into the esa-side-dialog drawer, reached via the hamburger.
+     .cbf-nav-collapsible is display:contents so it never disturbs the bar's own
+     flex/grid layout above the breakpoint — it just gates visibility. */
+  .cbf-nav-collapsible { display: contents; }
+  .cbf-nav-burger { display: none; } /* hidden until the bar would overflow */
+
+  @media (max-width: 1024px) {
+    .cbf-nav-collapsible,
+    .cbf-nav-link--collapse { display: none; }
+    .cbf-nav-burger {
+      display: inline-flex;
+      align-items: center;
+      color: inherit; /* esa-icon-button inherits white via currentColor */
+    }
   }
 </style>
 
