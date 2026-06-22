@@ -28,6 +28,15 @@ const contracts = [
   { value: 'CON-2025-0112', label: 'CON-2025-0112 — Water Quality Monitoring' },
   { value: 'CON-2025-0234', label: 'CON-2025-0234 — Environmental Impact Review' },
 ];
+// Contract ledger — total awarded + remaining (unbilled) balance per contract.
+// In production these come from the API; the wizard uses them to auto-suggest
+// when an invoice looks like the final one (remaining ≈ invoice, within 5% of total).
+const contractAmounts: Record<string, { total: number; remaining: number }> = {
+  'CON-2024-0881': { total: 120000, remaining: 18500 },
+  'CON-2024-0903': { total: 85000, remaining: 85000 },
+  'CON-2025-0112': { total: 240000, remaining: 96000 },
+  'CON-2025-0234': { total: 60000, remaining: 12300 },
+};
 const projects = [
   { value: 'PRJ-0045', label: 'PRJ-0045 — Lower Columbia River Restoration' },
   { value: 'PRJ-0062', label: 'PRJ-0062 — Snake River Fish Passage' },
@@ -84,6 +93,7 @@ const projects = [
         required
         data-field="contract"
         data-combobox-options={JSON.stringify(contracts)}
+        data-contract-amounts={JSON.stringify(contractAmounts)}
       ></esa-combobox>
     </div>
   </div>
@@ -152,6 +162,22 @@ const projects = [
     </div>
   </div>
 
+  <!-- Final invoice — its own section so it reads as a deliberate decision the
+       vendor owns. The wizard never ticks this for them; if the invoice looks
+       final (remaining balance within 5% of the total), it asks via a modal on
+       Review & submit and lets the vendor decide. -->
+  <div class="cbf-form-section">
+    <h2 class="cbf-form-section__title">Final invoice</h2>
+    <div class="cbf-final-invoice" data-final-invoice-callout>
+      <esa-checkbox
+        size="lg"
+        label="This is the final invoice for this contract"
+        data-field="final-invoice"
+        data-final-invoice
+      ></esa-checkbox>
+    </div>
+  </div>
+
   <!-- Supporting documents -->
   <div class="cbf-form-section">
     <h2 class="cbf-form-section__title">
@@ -203,6 +229,16 @@ const projects = [
     </span>
   </div>
 </div>
+
+<!-- Final-invoice confirmation. Sibling of the step (no data-step) so the wizard's
+     step-visibility toggling never hides it. Opened from the client on Review &
+     submit when the invoice looks like a final one and the box isn't already set. -->
+<esa-confirm-dialog
+  data-final-invoice-dialog
+  heading="Is this the final invoice?"
+  confirm-label="Yes, mark as final"
+  cancel-label="No, not final"
+></esa-confirm-dialog>
 
 <style>
   .cbf-page-title {
@@ -393,6 +429,23 @@ const projects = [
     font-size: 14px;
     color: var(--color-text-muted);
     line-height: 1.5;
+  }
+
+  /* ---- Final invoice flag ---- */
+  /* A deliberate callout, not a quiet checkbox: bordered surface, generous
+     padding, and a stronger accent when the wizard auto-detects a final invoice. */
+  .cbf-final-invoice {
+    padding: var(--spacing-400) var(--spacing-450, var(--spacing-400));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    background: var(--color-surface-sunken, #f8f9fb);
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+  }
+  /* Emphasised state once the vendor confirms (or manually checks) it. */
+  .cbf-final-invoice.is-flagged {
+    border-color: var(--color-primary-border, var(--color-primary));
+    background: var(--color-primary-subtle);
+    box-shadow: 0 0 0 1px var(--color-primary-border, var(--color-primary));
   }
 
   /* ---- Supporting documents ---- */

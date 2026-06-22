@@ -36,8 +36,13 @@ const { placeholder = 'Search projects, contracts, people…' } = Astro.props;
   }
   .cbf-omni-trigger__ph {
     flex: 1;
+    min-width: 0;
     text-align: left;
     font-size: 13px;
+    /* Truncate rather than wrap when the trigger shrinks on narrow viewports. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .cbf-omni-trigger__kbd {
     display: inline-flex;

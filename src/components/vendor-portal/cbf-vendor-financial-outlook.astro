@@ -1,0 +1,56 @@
+---
+// cbf-vendor-financial-outlook — the headline money band for the invoices view.
+// Answers "across all my contracts, where do I stand?" WITHOUT making the vendor
+// drill into each contract: contracted value, expended-to-date, remaining, money
+// awaiting BPA approval, and approved-but-unpaid — one glanceable row.
+//
+// bcn-lego-checked: esa-stat is the single-metric lego (checked the full ecology
+// catalog — esa-stat owns value/label/sub); this component only composes a row of
+// them inside the .cluster layout primitive plus a provenance caption. No bespoke
+// metric markup. The as-of caption is required, not cosmetic: expenditures are a
+// nightly PeopleSoft feed, so an unstamped figure reads as an untrusted figure.
+import EsaStat from '@esa/ecology/esa-stat.astro';
+
+interface Stat {
+  value: string;
+  label: string;
+  sub?: string;
+  accent?: boolean;
+}
+interface Props {
+  stats: Stat[];
+  caption: string;
+}
+const { stats, caption } = Astro.props;
+---
+<section class="cbf-vendor-financial-outlook stack" data-gap="sm" aria-label="Financial outlook">
+  <header class="cbf-vendor-financial-outlook__head repel">
+    <h2 class="type-section-title">Financial outlook</h2>
+    <span class="type-caption cbf-vendor-financial-outlook__caption">{caption}</span>
+  </header>
+
+  <div class="cbf-vendor-financial-outlook__stats cluster" data-gap="xl">
+    {stats.map((s) => <EsaStat value={s.value} label={s.label} sub={s.sub} accent={s.accent} />)}
+  </div>
+</section>
+
+<style>
+  .cbf-vendor-financial-outlook {
+    padding-bottom: var(--spacing-600);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-vendor-financial-outlook__head {
+    align-items: baseline;
+    gap: var(--spacing-400);
+    flex-wrap: wrap;
+  }
+  .cbf-vendor-financial-outlook__caption {
+    color: var(--color-text-muted);
+  }
+  /* Let the metrics breathe into a row, wrapping on narrow viewports. */
+  .cbf-vendor-financial-outlook__stats {
+    /* Override the .cluster default (--align: center) so stats top-align instead of centering. */
+    --align: flex-start;
+    row-gap: var(--spacing-500);
+  }
+</style>

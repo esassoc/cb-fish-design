@@ -1,6 +1,6 @@
 # Hub component issues
 
-Issues found in `@esa/ecology` components during spoke development. Reported to the design system team for upstream fixes.
+Issues found in the hub (`@esa/ecology` components and `@esa/tokens` layout primitives) during spoke development. Reported to the design system team for upstream fixes.
 
 ---
 
@@ -108,3 +108,37 @@ private declare _active: number;
 
 **Upstream request:**  
 Apply the same `declare` pattern to any other private reactive state properties that are declared as class fields without `declare` in any `esa-*` Lit component. The Lit documentation explicitly covers this: https://lit.dev/docs/components/properties/#avoiding-issues-with-class-fields
+
+---
+
+## layout primitives (`@esa/tokens/src/layouts.css`)
+
+### `.cluster` defaults to `align-items: center` — rarely the desired behavior
+
+**Status:** Open — needs upstream change. Worked around locally with a `--align: flex-start` override in `cbf-vendor-financial-outlook.astro`.
+**Affects:** Every `.cluster` usage that holds items of differing heights — stat groups, label + value rows, anything that should align to the top or baseline.
+
+**Problem:**
+`.cluster` sets `--align: center`, applied via `align-items: var(--align)`. Centering is a poor default for a row-of-items primitive: when children differ in height (e.g. an `esa-stat` with a sub-label sitting next to one without), center alignment floats the shorter items to the vertical middle, breaking the top edge the eye expects. Authors must override `--align` on essentially every non-trivial cluster, which signals the default is wrong. There is no common case where center is the obvious right choice for a wrapping row of content blocks.
+
+**Requested change:**
+Change the `.cluster` default to `--align: flex-start` (top-align) — the least-surprising baseline for a wrapping row. Authors who genuinely want centering can opt in with `--align: center`. (`baseline` is also a reasonable default candidate for text-led clusters.)
+
+```css
+/* @esa/tokens/src/layouts.css */
+.cluster {
+  --gap: var(--spacing-300, 0.75rem);
+  --align: flex-start; /* was: center */
+  --justify: flex-start;
+  /* … */
+}
+```
+
+**Local workaround:**
+Override the custom property in scoped component CSS rather than touching the hub file:
+
+```css
+.cbf-vendor-financial-outlook__stats {
+  --align: flex-start; /* override .cluster's center default */
+}
+```
