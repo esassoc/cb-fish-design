@@ -142,3 +142,29 @@ Override the custom property in scoped component CSS rather than touching the hu
   --align: flex-start; /* override .cluster's center default */
 }
 ```
+
+---
+
+## `.stack` / `.cluster` primitives override the `[hidden]` attribute
+
+**Component:** `@esa/tokens/src/layouts.css` (layout primitives)
+
+**Problem:**
+`.stack` and `.cluster` set `display: flex` unconditionally. The UA stylesheet's `[hidden] { display: none }` has the same specificity (one attribute/element vs. one class — actually the class wins), so a `<div class="stack" hidden>` or `<div class="cluster" hidden>` STILL RENDERS. Any pattern that toggles a primitive group via the `hidden` attribute (the idiomatic way to show/hide in plain DOM) silently breaks: every "hidden" group is visible at once. Hit in `cbf-invoice-review-queue` where the Approve-confirm and Return-comment decision sub-states (both `.stack`/`.cluster` + `hidden`) rendered on top of the default Approve/Return row.
+
+**Requested change:**
+Guard the display rule so the `[hidden]` attribute keeps working:
+
+```css
+/* @esa/tokens/src/layouts.css */
+.stack:not([hidden])   { display: flex; }
+.cluster:not([hidden]) { display: flex; }
+/* (same for .repel/.grid/.switcher/.sidebar — any primitive that sets display) */
+```
+
+**Local workaround:**
+Force `[hidden]` to win within the affected container in scoped component CSS:
+
+```css
+.cbf-review-actions [hidden] { display: none !important; }
+```

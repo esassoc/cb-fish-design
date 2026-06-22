@@ -49,6 +49,15 @@ export const prototypes: Prototype[] = [
     createdAt: '2026-06-15',
     status: 'in-progress',
   },
+  {
+    slug: 'invoice-review',
+    title: 'Invoice review (COR)',
+    description:
+      'The reviewer’s side: an urgency-triaged queue of invoices assigned across contracts, and a split-view detail — submitted document beside the contract context — to QA/QC then Approve or Return for revision.',
+    route: '/invoice-review',
+    createdAt: '2026-06-22',
+    status: 'in-progress',
+  },
 ];
 
 /** Newest first — the order the index table renders. */

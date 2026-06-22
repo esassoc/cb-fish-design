@@ -196,33 +196,6 @@ The palette on open with no query — the Recent list (last-viewed records) as t
 
 ## Styles
 ```css
-.cbf-search-surface .cbf-facet {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-250);
-  width: 100%;
-  padding: var(--spacing-200) var(--spacing-300);
-  border-radius: var(--radius-100);
-  color: var(--color-primary);
-  font-family: var(--font-sans);
-  font-size: 16px;
-  font-weight: var(--font-weight-regular);
-  text-align: left;
-}
-.cbf-search-surface .cbf-facet.is-active {
-  background: var(--color-primary-subtle);
-  font-weight: var(--font-weight-semibold);
-}
-.cbf-search-surface .cbf-facet .cbf-icon {
-  color: var(--color-secondary);
-}
-.cbf-search-surface .cbf-facet__label {
-  flex: 1;
-}
-.cbf-search-field .cbf-icon {
-  color: var(--color-text-muted);
-  display: inline-flex;
-}
 .cbf-omni-trigger {
   display: flex;
   align-items: center;
@@ -238,6 +211,9 @@ The palette on open with no query — the Recent list (last-viewed records) as t
     background 0.12s,
     border-color 0.12s;
 }
+.cbf-app-bar--admin .cbf-omni-trigger {
+  min-width: 0;
+}
 .cbf-icon {
   display: inline-flex;
   align-items: center;
@@ -247,8 +223,12 @@ The palette on open with no query — the Recent list (last-viewed records) as t
 }
 .cbf-omni-trigger__ph {
   flex: 1;
+  min-width: 0;
   text-align: left;
   font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .cbf-omni-trigger__kbd {
   display: inline-flex;
@@ -468,6 +448,33 @@ The palette on open with no query — the Recent list (last-viewed records) as t
   gap: 5px;
   font-size: 13px;
   color: var(--color-text-muted);
+}
+.cbf-search-field .cbf-icon {
+  color: var(--color-text-muted);
+  display: inline-flex;
+}
+.cbf-search-surface .cbf-facet {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-250);
+  width: 100%;
+  padding: var(--spacing-200) var(--spacing-300);
+  border-radius: var(--radius-100);
+  color: var(--color-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: var(--font-weight-regular);
+  text-align: left;
+}
+.cbf-search-surface .cbf-facet.is-active {
+  background: var(--color-primary-subtle);
+  font-weight: var(--font-weight-semibold);
+}
+.cbf-search-surface .cbf-facet .cbf-icon {
+  color: var(--color-secondary);
+}
+.cbf-search-surface .cbf-facet__label {
+  flex: 1;
 }
 ```
 

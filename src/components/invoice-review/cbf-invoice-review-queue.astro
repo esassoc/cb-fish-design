@@ -1,0 +1,800 @@
+---
+// cbf-invoice-review-queue — the COR's invoice review queue AND its review
+// overlay. A searchable, status-filterable, sortable grid of every invoice
+// assigned to the reviewer, sorted by urgency (most overdue first) so the
+// review-by clock drives triage. Click a row → an esa-side-dialog overlay opens
+// the split-view review surface (à la Acctual): the SUBMITTED DOCUMENT on the
+// left, the REVIEW PANEL (contract context + Approve / Return) on the right.
+// Prev/next step through the displayed rows so the COR churns the queue without
+// leaving the page — same overlay mechanic as the vendor portal's invoices grid.
+//
+// bcn-lego-checked: (1) ecology has NO table/grid lego (checked the full
+// node_modules/@esa/ecology/src/components catalog — esa-badge/esa-pill are atoms,
+// none render a sortable tabular surface) — the grid is AG Grid Community (already
+// a dependency, used by the vendor grid). (2) No esa-* lego renders an invoice
+// DOCUMENT (a paper vendor bill with letterhead, bill-to, line-item ledger,
+// totals) — that markup is bespoke and reusable, and lives here. Beacon is not on
+// this machine. Every other control IS a lego: the overlay is esa-side-dialog; the
+// split is the .sidebar layout primitive; status + days-left are esa-badge (real
+// markup cloned into cells/panel so styling is identical, never reinvented); the
+// final-invoice notice + decision result are esa-alert-box; Approve/Return and the
+// nav are esa-button; Return's comment capture is esa-textarea; search reuses
+// cbf-search-field; the status filter is esa-chip-group; empty is esa-empty-state.
+import CbfSearchField from '../search/cbf-search-field.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import { reviewQueue as defaultQueue } from '../../data/invoice-review.mjs';
+
+type Stage = 'Submitted' | 'In review' | 'Returned' | 'Approved';
+
+interface Props {
+  invoices?: typeof defaultQueue;
+}
+
+// esa-badge variant per review stage — color conveys state, not decoration.
+const stageVariant: Record<Stage, 'info' | 'warning' | 'success' | 'danger'> = {
+  Submitted: 'info',
+  'In review': 'warning',
+  Returned: 'danger',
+  Approved: 'success',
+};
+const stages = Object.keys(stageVariant) as Stage[];
+
+// Urgency badge variants, keyed by bucket (see urgencyOf in the data module).
+const urgencyVariant = { overdue: 'danger', 'due-soon': 'warning', 'on-track': 'secondary' } as const;
+const urgencyKeys = Object.keys(urgencyVariant) as (keyof typeof urgencyVariant)[];
+
+const stageFilters = [
+  { value: '', label: 'All' },
+  { value: 'Submitted', label: 'Submitted' },
+  { value: 'In review', label: 'In review' },
+  { value: 'Returned', label: 'Returned' },
+  { value: 'Approved', label: 'Approved' },
+];
+
+const { invoices = defaultQueue } = Astro.props;
+---
+<section class="cbf-invoice-review-queue stack" data-gap="md">
+  <header class="cbf-invoice-review-queue__header repel">
+    <h2 class="type-section-title">Review queue</h2>
+    <div class="cbf-invoice-review-queue__search">
+      <CbfSearchField
+        placeholder="Search invoices, vendors or contracts…"
+        iconSize={18}
+        data-queue-search
+        aria-label="Search the review queue"
+      />
+    </div>
+  </header>
+
+  <div class="cbf-invoice-review-queue__controls">
+    <esa-chip-group
+      data-queue-stage-filter
+      size="sm"
+      label="Filter by status"
+      value=""
+      options={JSON.stringify(stageFilters)}
+    ></esa-chip-group>
+  </div>
+
+  <!-- AG Grid mounts here; auto-height grows with rows so the page owns scroll. -->
+  <div class="cbf-invoice-review-queue__grid" data-queue-grid></div>
+
+  <div class="cbf-invoice-review-queue__empty" data-queue-empty hidden>
+    <EsaEmptyState
+      title="No invoices match your filters"
+      description="Try a different invoice number, vendor, contract, or status."
+      size="sm"
+    />
+  </div>
+
+  <footer class="cbf-invoice-review-queue__footer">
+    <span class="type-caption" data-queue-count>
+      Showing {invoices.length} of {invoices.length} invoices
+    </span>
+  </footer>
+
+  <!-- Real esa-badge legos, server-rendered once per stage AND per urgency bucket
+       with the design-system scope hash intact. Grid cells + the panel clone the
+       matching template's markup — so every badge is byte-identical to the lego. -->
+  <div class="cbf-invoice-review-queue__badge-templates" data-badge-templates hidden aria-hidden="true">
+    {stages.map((s) => (
+      <span data-stage={s}><EsaBadge value={s} variant={stageVariant[s]} size="lg" /></span>
+    ))}
+    {urgencyKeys.map((u) => (
+      <span data-urgency={u}><EsaBadge value={u} variant={urgencyVariant[u]} size="lg" /></span>
+    ))}
+    <span data-flag="final"><EsaBadge value="Final" variant="secondary" size="lg" /></span>
+  </div>
+
+  <!-- Row data for the client grid module (avoids a second fetch). -->
+  <script type="application/json" data-queue-data set:html={JSON.stringify(invoices)}></script>
+
+  <!-- ───────── Review overlay: the split-view QA/QC surface (lego drawer) ─────────
+       Populated from the clicked row; prev/next step through the displayed rows. -->
+  <esa-side-dialog data-review-dialog size="lg" heading="Invoice" class="cbf-review-dialog">
+    <div
+      class="cbf-review-split sidebar"
+      data-side="end"
+      style="--sidebar-width: 22rem; --sidebar-content-min: 50%; --gap: var(--spacing-600);"
+    >
+      <!-- Panel (first child → ordered right by data-side=end). -->
+      <aside class="cbf-review-panel stack" data-gap="lg" aria-label="Review">
+        <div data-review-result hidden>
+          <EsaAlertBox variant="success" title="Approved">
+            <span data-result-text></span>
+          </EsaAlertBox>
+        </div>
+
+        <!-- Hero: the billed amount is the headline figure the COR is deciding on;
+             the status badge sits beside it, and the one line of context that
+             matters most (this invoice vs. what's left on the contract) sits
+             directly beneath. Everything below recedes in scale from here. -->
+        <header class="cbf-review-hero repel">
+          <div class="cbf-review-hero__group">
+            <span class="cbf-review__label">Amount billed</span>
+            <span class="cbf-review-hero__amount cbf-num" data-f-amount-hero></span>
+            <span class="cbf-review-hero__pct" data-f-pct></span>
+          </div>
+          <span class="cbf-review-hero__status" data-f-status></span>
+        </header>
+
+        <div class="cbf-review-panel__clock repel">
+          <span class="cbf-review__label">Review by <span data-f-reviewby></span></span>
+          <span data-f-urgency></span>
+        </div>
+
+        <div data-f-final-alert hidden>
+          <EsaAlertBox variant="info" title="Final invoice">
+            Closes out this contract. Confirm all deliverables are accepted and any retainage is accounted for before approving.
+          </EsaAlertBox>
+        </div>
+
+        <!-- Supporting context: smaller than the hero, read as one related set —
+             where this contract stands, so the amount above lands in proportion.
+             Compact figures (the exact billed amount is the hero above). -->
+        <section class="cbf-review-panel__context stack" data-gap="sm">
+          <h3 class="cbf-review__section-title">Against this contract</h3>
+          <div class="cbf-review-context">
+            <div class="cbf-review-context__item">
+              <span class="cbf-review-context__value cbf-num" data-f-contractvalue></span>
+              <span class="cbf-review-context__label">Contract value</span>
+            </div>
+            <div class="cbf-review-context__item">
+              <span class="cbf-review-context__value cbf-num" data-f-expended></span>
+              <span class="cbf-review-context__label" data-f-asof></span>
+            </div>
+            <div class="cbf-review-context__item">
+              <span class="cbf-review-context__value cbf-num cbf-review-context__value--accent" data-f-remaining></span>
+              <span class="cbf-review-context__label">Remaining</span>
+            </div>
+          </div>
+        </section>
+
+        <dl class="cbf-review-fields">
+          <div class="cbf-review-fields__row">
+            <dt class="cbf-review__label">Vendor</dt>
+            <dd class="cbf-review-fields__value cbf-review-fields__value--lead" data-f-vendor-panel></dd>
+          </div>
+          <div class="cbf-review-fields__row">
+            <dt class="cbf-review__label">Contract</dt>
+            <dd class="cbf-review-fields__value" data-f-contract></dd>
+          </div>
+          <div class="cbf-review-fields__row">
+            <dt class="cbf-review__label">Project</dt>
+            <dd class="cbf-review-fields__value" data-f-project></dd>
+          </div>
+          <div class="cbf-review-fields__row">
+            <dt class="cbf-review__label">Performance</dt>
+            <dd class="cbf-review-fields__value" data-f-perf></dd>
+          </div>
+          <div class="cbf-review-fields__row">
+            <dt class="cbf-review__label">Submitted</dt>
+            <dd class="cbf-review-fields__value" data-f-submitted></dd>
+          </div>
+        </dl>
+
+        <!-- Decisions. Inline confirm/comment (no nested modal). -->
+        <div class="cbf-review-actions" data-actions>
+          <div class="cluster" data-gap="sm" data-actions-default>
+            <span data-act-approve><EsaButton color="primary" appearance="fill" icon="check">Approve</EsaButton></span>
+            <span data-act-return><EsaButton color="danger" appearance="outline" icon="corner-up-left">Return for revision</EsaButton></span>
+          </div>
+
+          <div class="stack" data-gap="sm" data-actions-approve hidden>
+            <p class="cbf-review-fields__value">
+              Approve <strong class="cbf-num" data-f-num-approve></strong> for <span data-f-amount-approve></span> and route it to the Contracting Officer for payment? This records your QA/QC sign-off.
+            </p>
+            <div class="cluster" data-gap="sm">
+              <span data-act-approve-cancel><EsaButton appearance="outline" color="secondary">Cancel</EsaButton></span>
+              <span data-act-approve-confirm><EsaButton color="primary" appearance="fill" icon="check">Confirm approval</EsaButton></span>
+            </div>
+          </div>
+
+          <div class="stack" data-gap="sm" data-actions-return hidden>
+            <esa-textarea
+              data-return-reason
+              label="Comments for the vendor"
+              placeholder="Explain what needs to change — e.g. a line item needs a supporting receipt, or the mileage rate exceeds the contract."
+              rows="4"
+            ></esa-textarea>
+            <div class="cluster" data-gap="sm">
+              <span data-act-return-cancel><EsaButton appearance="outline" color="secondary">Cancel</EsaButton></span>
+              <span data-act-return-confirm><EsaButton color="danger" appearance="fill" icon="corner-up-left">Return for revision</EsaButton></span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Document (last child → fluid, left). The thing the COR reads. -->
+      <div class="cbf-review-docpane">
+        <article class="cbf-invoice-doc" aria-label="Submitted invoice document">
+          <div class="cbf-invoice-doc__stamp" data-f-stamp hidden>Final invoice</div>
+          <header class="cbf-invoice-doc__head">
+            <div>
+              <p class="cbf-invoice-doc__vendor" data-f-vendor-doc></p>
+              <p class="cbf-invoice-doc__sub">Vendor</p>
+            </div>
+            <div class="cbf-invoice-doc__meta">
+              <p><span>Invoice #</span> <strong class="cbf-num" data-f-num-doc></strong></p>
+              <p><span>Date</span> <strong data-f-date></strong></p>
+            </div>
+          </header>
+
+          <div class="cbf-invoice-doc__billto">
+            <p class="cbf-invoice-doc__sub">Bill to</p>
+            <p data-f-billto></p>
+          </div>
+
+          <table class="cbf-invoice-doc__items">
+            <thead>
+              <tr>
+                <th scope="col">Description</th>
+                <th scope="col" class="cbf-num">Qty</th>
+                <th scope="col" class="cbf-num">Unit</th>
+                <th scope="col" class="cbf-num">Total</th>
+              </tr>
+            </thead>
+            <tbody data-f-items></tbody>
+            <tfoot>
+              <tr><th scope="row" colspan="3">Subtotal</th><td class="cbf-num" data-f-subtotal></td></tr>
+              <tr><th scope="row" colspan="3">Tax</th><td class="cbf-num" data-f-tax></td></tr>
+              <tr class="cbf-invoice-doc__total"><th scope="row" colspan="3">Total</th><td class="cbf-num" data-f-total></td></tr>
+            </tfoot>
+          </table>
+
+          <p class="cbf-invoice-doc__memo" data-f-memo-wrap hidden><span>Memo:</span> <span data-f-memo></span></p>
+          <p class="cbf-invoice-doc__generated" data-f-pdf></p>
+        </article>
+      </div>
+    </div>
+
+    <div slot="footer" class="cbf-review-footer repel">
+      <span class="cbf-review-footer__position" data-f-position></span>
+      <div class="cluster" data-gap="xs">
+        <span data-review-prev><EsaButton appearance="outline" color="secondary" icon="chevron-left">Previous</EsaButton></span>
+        <span data-review-next><EsaButton appearance="outline" color="secondary" icon="chevron-right">Next</EsaButton></span>
+      </div>
+    </div>
+  </esa-side-dialog>
+</section>
+
+<style>
+  .cbf-invoice-review-queue__header {
+    align-items: center;
+    gap: var(--spacing-400);
+    flex-wrap: wrap;
+  }
+  .cbf-invoice-review-queue__search {
+    flex: 1 1 280px;
+    max-width: 440px;
+    min-width: 220px;
+  }
+  .cbf-invoice-review-queue__grid {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    overflow: hidden;
+    background: var(--color-surface);
+  }
+  .cbf-invoice-review-queue__footer { color: var(--color-text-muted); }
+
+  /* A wide overlay so the split breathes — clamps to the viewport on small screens.
+     Effectively a full-bleed review surface on desktop, like the Acctual reference.
+     NB: the panel is size="lg", so the lego resolves its width from
+     --side-dialog-width-lg (NOT --side-dialog-width, which the lg selector
+     overrides). Re-point the lg token or the override is silently ignored. */
+  .cbf-review-dialog { --side-dialog-width-lg: 1180px; }
+
+  /* Panel ----------------------------------------------------------------- */
+  .cbf-review__label {
+    font-size: var(--type-size-150);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+  }
+  .cbf-review__section-title {
+    margin: 0;
+    font-size: var(--type-size-150);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+  }
+
+  /* Hero — the billed amount, the top of the panel's hierarchy. */
+  .cbf-review-hero { align-items: flex-start; gap: var(--spacing-400); }
+  .cbf-review-hero__group { display: flex; flex-direction: column; gap: var(--spacing-50); min-width: 0; }
+  .cbf-review-hero__amount {
+    font-size: var(--type-size-600);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-tight);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-review-hero__pct { font-size: var(--type-size-100); color: var(--color-text-muted); }
+  .cbf-review-hero__status { flex: none; }
+
+  .cbf-review-panel__clock {
+    align-items: center;
+    gap: var(--spacing-300);
+    padding: var(--spacing-300) var(--spacing-400);
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+  }
+
+  /* Supporting context — deliberately smaller than the hero, read as one set.
+     (Not esa-stat: populated client-side per invoice; esa-stat is static SSR.) */
+  .cbf-review-panel__context {
+    padding-block: var(--spacing-400);
+    border-block: 1px solid var(--color-border);
+  }
+  .cbf-review-context {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-300) var(--spacing-500);
+  }
+  .cbf-review-context__item { display: flex; flex-direction: column; gap: var(--spacing-50); }
+  .cbf-review-context__value {
+    font-size: var(--type-size-250);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-review-context__value--accent { color: var(--color-text-primary); }
+  .cbf-review-context__label { font-size: var(--type-size-050); color: var(--color-text-muted); }
+
+  .cbf-review-fields { margin: 0; }
+  .cbf-review-fields__row {
+    display: grid;
+    grid-template-columns: 92px 1fr;
+    gap: var(--spacing-300);
+    align-items: baseline;
+    padding-block: var(--spacing-250);
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+  }
+  .cbf-review-fields__row:first-child { border-top: 0; padding-top: 0; }
+  .cbf-review-fields__value { margin: 0; font-size: var(--type-size-200); color: var(--color-text-secondary); }
+  .cbf-review-fields__value--lead { font-weight: var(--font-weight-medium); color: var(--color-text-primary); }
+
+  /* Decision sub-states (Approve-confirm / Return-comment) are .stack/.cluster
+     groups toggled via the [hidden] attribute. Those layout primitives set
+     `display: flex`, which OVERRIDES the UA `[hidden] { display: none }` — so
+     without this guard all three action groups render at once. Restore hidden's
+     intent for the toggled groups. (Hub gap: layouts.css primitives lack a
+     :not([hidden]) guard — logged in docs/hub-issues.md.) */
+  .cbf-review-actions [hidden] { display: none !important; }
+
+  /* Document pane --------------------------------------------------------- */
+  .cbf-review-docpane {
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    padding: var(--spacing-600);
+    display: flex;
+    justify-content: center;
+  }
+  .cbf-invoice-doc {
+    position: relative;
+    width: 100%;
+    max-width: 620px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--color-surface-inverse) 10%, transparent);
+    padding: var(--spacing-700) var(--spacing-700) var(--spacing-600);
+    color: var(--color-text-primary);
+    font-size: var(--type-size-150);
+    line-height: var(--line-height-normal);
+  }
+  .cbf-invoice-doc__stamp {
+    position: absolute;
+    top: var(--spacing-500);
+    right: var(--spacing-500);
+    font-size: var(--type-size-100);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-danger, #b42318);
+    border: 1.5px solid currentColor;
+    border-radius: var(--radius-100);
+    padding: 2px var(--spacing-200);
+    transform: rotate(-4deg);
+    opacity: 0.8;
+  }
+  .cbf-invoice-doc__head {
+    display: flex; justify-content: space-between; gap: var(--spacing-400);
+    align-items: flex-start; margin-bottom: var(--spacing-500);
+  }
+  .cbf-invoice-doc__vendor { margin: 0; font-size: var(--type-size-400); font-weight: var(--font-weight-bold); }
+  .cbf-invoice-doc__sub { margin: 0; color: var(--color-text-muted); font-size: var(--type-size-100); }
+  .cbf-invoice-doc__meta { text-align: right; }
+  .cbf-invoice-doc__meta p { margin: 0 0 var(--spacing-100); }
+  .cbf-invoice-doc__meta span { color: var(--color-text-muted); margin-right: var(--spacing-200); }
+  .cbf-invoice-doc__billto { margin-bottom: var(--spacing-500); }
+  .cbf-invoice-doc__billto p { margin: 0; }
+
+  .cbf-invoice-doc__items { width: 100%; border-collapse: collapse; }
+  .cbf-invoice-doc__items th, .cbf-invoice-doc__items td { text-align: left; padding: var(--spacing-250) 0; vertical-align: top; }
+  .cbf-invoice-doc__items thead th {
+    border-bottom: 1px solid var(--color-text-primary);
+    font-weight: var(--font-weight-semibold); font-size: var(--type-size-100); color: var(--color-text-secondary);
+  }
+  .cbf-invoice-doc__items tbody tr + tr td { border-top: 1px solid var(--color-border-light, var(--color-border)); }
+  .cbf-invoice-doc__items tfoot th, .cbf-invoice-doc__items tfoot td { padding: var(--spacing-150) 0; text-align: right; }
+  .cbf-invoice-doc__items tfoot th { font-weight: var(--font-weight-regular); color: var(--color-text-secondary); }
+  .cbf-invoice-doc__items tfoot tr:first-child th, .cbf-invoice-doc__items tfoot tr:first-child td { padding-top: var(--spacing-400); }
+  .cbf-invoice-doc__total th, .cbf-invoice-doc__total td {
+    border-top: 1px solid var(--color-text-primary); font-weight: var(--font-weight-bold);
+    font-size: var(--type-size-200); padding-top: var(--spacing-300) !important;
+  }
+  .cbf-invoice-doc .cbf-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cbf-invoice-doc__items th.cbf-num { text-align: right; }
+  .cbf-invoice-doc__memo { margin: var(--spacing-600) 0 0; color: var(--color-text-secondary); line-height: var(--line-height-relaxed); }
+  .cbf-invoice-doc__memo span { color: var(--color-text-muted); }
+  .cbf-invoice-doc__generated {
+    margin: var(--spacing-600) 0 0; padding-top: var(--spacing-400);
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+    color: var(--color-text-muted); font-size: var(--type-size-100); font-style: italic;
+  }
+
+  .cbf-review-footer { align-items: center; gap: var(--spacing-400); width: 100%; }
+  .cbf-review-footer__position {
+    font-size: var(--type-size-150); color: var(--color-text-muted); font-variant-numeric: tabular-nums;
+  }
+</style>
+
+<style is:global>
+  .cbf-invoice-review-queue__grid .cbf-grid-status { display: inline-flex; align-items: center; height: 100%; }
+  .cbf-invoice-review-queue__grid .cbf-grid-num,
+  .cbf-invoice-review-queue__grid .cbf-grid-num .ag-header-cell-label {
+    justify-content: flex-end; text-align: right; font-variant-numeric: tabular-nums;
+  }
+  .cbf-invoice-review-queue__grid .cbf-grid-id { font-variant-numeric: tabular-nums; color: var(--color-text-secondary); }
+  .cbf-invoice-review-queue__grid .ag-row { cursor: pointer; }
+
+  /* Document line items are injected by JS (no Astro scope hash) — styled globally. */
+  .cbf-invoice-doc__items tbody td { font-size: var(--type-size-150); }
+</style>
+
+<script>
+  import { createGrid, ModuleRegistry, AllCommunityModule, themeQuartz } from 'ag-grid-community';
+  import '@esa/ecology/esa-chip-group';
+  import '@esa/ecology/esa-side-dialog';
+  import '@esa/ecology/esa-textarea';
+
+  ModuleRegistry.registerModules([AllCommunityModule]);
+
+  type Dir = 1 | -1;
+  type Stage = 'Submitted' | 'In review' | 'Returned' | 'Approved';
+  type LineItem = { description: string; qty: number; unitPrice: number };
+  type Invoice = {
+    number: string; vendor: string; contract: string; project: string;
+    submitted: string; reviewBy: string; daysRemaining: number;
+    amount: number; stage: Stage; final: boolean;
+    invoiceDate: string; perfStart: string; perfEnd: string;
+    billTo: string; lineItems: LineItem[]; notes?: string; pdfName: string;
+    contractValue: number; expended: number; remaining: number; asOf: string;
+  };
+  type Decision = { variant: 'success' | 'danger'; title: string; text: string; badge: string };
+
+  const usd = new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+  });
+  // Compact for the supporting contract figures ($420K) — the exact billed amount
+  // is the hero; the context recedes in precision as well as in size.
+  const usdCompact = new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1,
+  });
+  const qtyFmt = new Intl.NumberFormat('en-US');
+
+  const urgencyOf = (d: number) => (d < 0 ? 'overdue' : d <= 3 ? 'due-soon' : 'on-track');
+  const daysLabel = (d: number) => {
+    if (d < 0) { const n = Math.abs(d); return `${n} day${n === 1 ? '' : 's'} overdue`; }
+    if (d === 0) return 'Due today';
+    return `${d} day${d === 1 ? '' : 's'} left`;
+  };
+
+  const cbfTheme = themeQuartz.withParams({
+    fontFamily: 'inherit', fontSize: '14px',
+    foregroundColor: 'var(--color-text-primary)', backgroundColor: 'var(--color-surface)',
+    headerBackgroundColor: 'var(--color-surface-sunken, transparent)',
+    headerTextColor: 'var(--color-text-secondary)', headerFontWeight: 600,
+    borderColor: 'var(--color-border)',
+    rowHoverColor: 'var(--color-surface-subtle, var(--color-primary-subtle))',
+    accentColor: 'var(--color-primary)', wrapperBorderRadius: 0, borderRadius: 'var(--radius-100, 4px)',
+  });
+
+  function initQueue(root: HTMLElement) {
+    const gridHost = root.querySelector<HTMLElement>('[data-queue-grid]');
+    const dataEl = root.querySelector<HTMLScriptElement>('[data-queue-data]');
+    if (!gridHost || !dataEl) return;
+
+    const data: Invoice[] = JSON.parse(dataEl.textContent ?? '[]');
+    const total = data.length;
+
+    const search = root.querySelector<HTMLInputElement>('[data-queue-search]');
+    const stageFilter = root.querySelector<HTMLElement & { value: string }>('[data-queue-stage-filter]');
+    const empty = root.querySelector<HTMLElement>('[data-queue-empty]');
+    const count = root.querySelector<HTMLElement>('[data-queue-count]');
+
+    // Pre-clone the real esa-badge markup per stage + urgency (scope hash intact).
+    const stageHTML = new Map<string, string>();
+    root.querySelectorAll<HTMLElement>('[data-badge-templates] [data-stage]').forEach((el) => {
+      stageHTML.set(el.dataset.stage ?? '', el.innerHTML);
+    });
+    const urgencyHTML = new Map<string, string>();
+    root.querySelectorAll<HTMLElement>('[data-badge-templates] [data-urgency]').forEach((el) => {
+      urgencyHTML.set(el.dataset.urgency ?? '', el.innerHTML);
+    });
+    const finalHTML = root.querySelector<HTMLElement>('[data-badge-templates] [data-flag="final"]')?.innerHTML ?? 'Final';
+
+    // Clone a badge template and swap its text node for a custom label.
+    const badgeWith = (html: string, label: string) => {
+      const tmpl = document.createElement('div');
+      tmpl.innerHTML = html;
+      const labelEl = tmpl.querySelector('.esa-badge__text') ?? tmpl.firstElementChild ?? tmpl;
+      labelEl.textContent = label;
+      return tmpl.innerHTML;
+    };
+    const urgencyBadge = (inv: Invoice) =>
+      `<span class="cbf-grid-status">${badgeWith(urgencyHTML.get(urgencyOf(inv.daysRemaining)) ?? '', daysLabel(inv.daysRemaining))}</span>`;
+
+    let stageValue = '';
+    let openDetail: (inv: Invoice) => void = () => {};
+
+    const gridApi = createGrid(gridHost, {
+      theme: cbfTheme,
+      rowData: data,
+      domLayout: 'autoHeight',
+      animateRows: false,
+      suppressCellFocus: true,
+      defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true },
+      columnDefs: [
+        {
+          headerName: 'Days left', field: 'daysRemaining', colId: 'daysRemaining',
+          minWidth: 150, sort: 'asc',
+          cellRenderer: (p: { data: Invoice }) => urgencyBadge(p.data),
+        },
+        { headerName: 'Review by', field: 'reviewBy', colId: 'reviewBy', minWidth: 130 },
+        {
+          headerName: 'Invoice #', field: 'number', colId: 'number',
+          cellClass: 'cbf-grid-id', minWidth: 160,
+          getQuickFilterText: (p) => `${p.data.number} ${p.data.project}`,
+        },
+        { headerName: 'Vendor', field: 'vendor', colId: 'vendor', flex: 2, minWidth: 200 },
+        { headerName: 'Contract', field: 'contract', colId: 'contract', flex: 2, minWidth: 200 },
+        {
+          headerName: 'Amount', field: 'amount', colId: 'amount',
+          type: 'numericColumn', headerClass: 'cbf-grid-num', cellClass: 'cbf-grid-num',
+          minWidth: 130, valueFormatter: (p) => usd.format(p.value as number),
+        },
+        {
+          headerName: 'Final?', field: 'final', colId: 'final', minWidth: 100, sortable: true,
+          cellRenderer: (p: { value: boolean }) => (p.value ? `<span class="cbf-grid-status">${finalHTML}</span>` : ''),
+        },
+        {
+          headerName: 'Status', field: 'stage', colId: 'stage', minWidth: 150,
+          cellRenderer: (p: { value: string }) => `<span class="cbf-grid-status">${stageHTML.get(p.value) ?? p.value}</span>`,
+        },
+      ],
+      isExternalFilterPresent: () => stageValue !== '',
+      doesExternalFilterPass: (node) => node.data.stage === stageValue,
+      onModelUpdated: () => {
+        const shown = gridApi.getDisplayedRowCount();
+        if (count) count.textContent = `Showing ${shown} of ${total} invoices`;
+        if (empty) empty.hidden = shown !== 0;
+        gridHost.hidden = shown === 0;
+      },
+      onRowClicked: (e) => { if (e.data) openDetail(e.data as Invoice); },
+    });
+
+    search?.addEventListener('input', () => {
+      gridApi.setGridOption('quickFilterText', (search.value ?? '').trim());
+    });
+    stageFilter?.addEventListener('change', () => {
+      stageValue = stageFilter.value ?? '';
+      gridApi.onFilterChanged();
+    });
+
+    openDetail = bindReview(root, gridApi, stageHTML, urgencyHTML);
+  }
+
+  // Bind the review overlay once; returns an opener that populates + shows it.
+  function bindReview(
+    root: HTMLElement,
+    gridApi: ReturnType<typeof createGrid>,
+    stageHTML: Map<string, string>,
+    urgencyHTML: Map<string, string>,
+  ): (inv: Invoice) => void {
+    const dialog = root.querySelector<HTMLElement & { heading: string; show(): void }>('[data-review-dialog]');
+    if (!dialog) return () => {};
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string) => dialog.querySelector<T>(sel);
+
+    const badgeWith = (html: string, label: string) => {
+      const t = document.createElement('div');
+      t.innerHTML = html;
+      const el = t.querySelector('.esa-badge__text') ?? t.firstElementChild ?? t;
+      el.textContent = label;
+      return t.innerHTML;
+    };
+
+    // Decisions persist across prev/next within the session (prototype-local).
+    const decisions = new Map<string, Decision>();
+
+    const result = $('[data-review-result]');
+    const resultText = $('[data-result-text]');
+    const actions = $('[data-actions]');
+    const def = $('[data-actions-default]');
+    const approveBox = $('[data-actions-approve]');
+    const returnBox = $('[data-actions-return]');
+    const reason = $<HTMLElement & { value: string }>('[data-return-reason]');
+    const statusSlot = $('[data-f-status]');
+    const prevWrap = $('[data-review-prev]');
+    const nextWrap = $('[data-review-next]');
+    const prevBtn = prevWrap?.querySelector('button') ?? null;
+    const nextBtn = nextWrap?.querySelector('button') ?? null;
+
+    const displayed = (): Invoice[] => {
+      const out: Invoice[] = [];
+      gridApi.forEachNodeAfterFilterAndSort((n) => { if (n.data) out.push(n.data as Invoice); });
+      return out;
+    };
+
+    let current = -1;
+
+    const showActionMode = (mode: 'default' | 'approve' | 'return' | 'done', dec?: Decision) => {
+      if (def) def.hidden = mode !== 'default';
+      if (approveBox) approveBox.hidden = mode !== 'approve';
+      if (returnBox) returnBox.hidden = mode !== 'return';
+      if (actions) actions.hidden = mode === 'done';
+      if (result) result.hidden = mode !== 'done';
+      if (mode === 'done' && dec && result && resultText) {
+        const box = result.querySelector('.esa-alert-box');
+        if (box) {
+          box.classList.remove('esa-alert-box--success', 'esa-alert-box--danger', 'esa-alert-box--info', 'esa-alert-box--warning');
+          box.classList.add(`esa-alert-box--${dec.variant}`);
+          const titleEl = box.querySelector('.esa-alert-box__title');
+          if (titleEl) titleEl.textContent = dec.title;
+        }
+        resultText.textContent = dec.text;
+      }
+    };
+
+    const setText = (sel: string, value: string) => { const el = $(sel); if (el) el.textContent = value; };
+
+    const populate = (inv: Invoice) => {
+      const list = displayed();
+      current = list.findIndex((d) => d.number === inv.number);
+      dialog.heading = inv.number;
+
+      // Status badge (decided stage overrides the queue stage).
+      const decided = decisions.get(inv.number);
+      const shownStage = decided ? decided.badge : inv.stage;
+      if (statusSlot) statusSlot.innerHTML = `<span class="cbf-grid-status">${stageHTML.get(shownStage) ?? shownStage}</span>`;
+
+      // Clock + urgency.
+      setText('[data-f-reviewby]', inv.reviewBy);
+      const urg = $('[data-f-urgency]');
+      if (urg) urg.innerHTML = `<span class="cbf-grid-status">${badgeWith(urgencyHTML.get(urgencyOf(inv.daysRemaining)) ?? '', daysLabel(inv.daysRemaining))}</span>`;
+
+      // Final-invoice notice + document stamp.
+      const finalAlert = $('[data-f-final-alert]');
+      if (finalAlert) finalAlert.hidden = !inv.final;
+      const stamp = $('[data-f-stamp]');
+      if (stamp) stamp.hidden = !inv.final;
+
+      // Hero: the billed amount (exact) + the one line of context that frames it.
+      setText('[data-f-amount-hero]', usd.format(inv.amount));
+      const pct = inv.remaining > 0 ? Math.round((inv.amount / inv.remaining) * 100) : 0;
+      setText('[data-f-pct]', `${pct}% of the ${usdCompact.format(inv.remaining)} remaining on this contract`);
+
+      // Supporting context (compact figures).
+      setText('[data-f-contractvalue]', usdCompact.format(inv.contractValue));
+      setText('[data-f-expended]', usdCompact.format(inv.expended));
+      setText('[data-f-asof]', `Expended · ${inv.asOf}`);
+      setText('[data-f-remaining]', usdCompact.format(inv.remaining));
+
+      // Spec fields.
+      setText('[data-f-vendor-panel]', inv.vendor);
+      setText('[data-f-contract]', inv.contract);
+      setText('[data-f-project]', inv.project);
+      setText('[data-f-perf]', `${inv.perfStart} – ${inv.perfEnd}`);
+      setText('[data-f-submitted]', inv.submitted);
+
+      // Document.
+      setText('[data-f-vendor-doc]', inv.vendor);
+      setText('[data-f-num-doc]', inv.number);
+      setText('[data-f-date]', inv.invoiceDate);
+      setText('[data-f-billto]', inv.billTo);
+      const itemsBody = $('[data-f-items]');
+      const subtotal = inv.lineItems.reduce((t, li) => t + li.qty * li.unitPrice, 0);
+      if (itemsBody) {
+        itemsBody.innerHTML = inv.lineItems.map((li) => `<tr>
+          <td>${li.description}</td>
+          <td class="cbf-num">${qtyFmt.format(li.qty)}</td>
+          <td class="cbf-num">${usd.format(li.unitPrice)}</td>
+          <td class="cbf-num">${usd.format(li.qty * li.unitPrice)}</td>
+        </tr>`).join('');
+      }
+      setText('[data-f-subtotal]', usd.format(subtotal));
+      setText('[data-f-tax]', usd.format(0));
+      setText('[data-f-total]', usd.format(inv.amount));
+      const memoWrap = $('[data-f-memo-wrap]');
+      if (memoWrap) memoWrap.hidden = !inv.notes;
+      setText('[data-f-memo]', inv.notes ?? '');
+      setText('[data-f-pdf]', `Submitted document · ${inv.pdfName}`);
+
+      // Approve-confirm copy.
+      setText('[data-f-num-approve]', inv.number);
+      setText('[data-f-amount-approve]', usd.format(inv.amount));
+      if (reason) reason.value = '';
+
+      // Action state: decided → done; else default.
+      showActionMode(decided ? 'done' : 'default', decided);
+
+      // Nav.
+      setText('[data-f-position]', `Invoice ${current + 1} of ${list.length}`);
+      if (prevBtn) prevBtn.disabled = current <= 0;
+      if (nextBtn) nextBtn.disabled = current >= list.length - 1;
+    };
+
+    const step = (dir: Dir) => { const t = displayed()[current + dir]; if (t) populate(t); };
+    const currentInv = () => displayed()[current];
+
+    // Wire actions (delegated to wrapper spans like the rest of the spoke).
+    $('[data-act-approve]')?.addEventListener('click', () => showActionMode('approve'));
+    $('[data-act-return]')?.addEventListener('click', () => showActionMode('return'));
+    $('[data-act-approve-cancel]')?.addEventListener('click', () => showActionMode('default'));
+    $('[data-act-return-cancel]')?.addEventListener('click', () => showActionMode('default'));
+
+    $('[data-act-approve-confirm]')?.addEventListener('click', () => {
+      const inv = currentInv(); if (!inv) return;
+      const dec: Decision = {
+        variant: 'success', title: 'Approved', badge: 'Approved',
+        text: 'This invoice has been approved and routed to the Contracting Officer for payment.',
+      };
+      decisions.set(inv.number, dec);
+      if (statusSlot) statusSlot.innerHTML = `<span class="cbf-grid-status">${stageHTML.get('Approved') ?? 'Approved'}</span>`;
+      showActionMode('done', dec);
+    });
+
+    $('[data-act-return-confirm]')?.addEventListener('click', () => {
+      const inv = currentInv(); if (!inv) return;
+      const note = (reason?.value ?? '').trim();
+      const dec: Decision = {
+        variant: 'danger', title: 'Returned for revision', badge: 'Returned',
+        text: note ? `Returned to the vendor with your comments: “${note}”` : 'Returned to the vendor for revision.',
+      };
+      decisions.set(inv.number, dec);
+      if (statusSlot) statusSlot.innerHTML = `<span class="cbf-grid-status">${stageHTML.get('Returned') ?? 'Returned'}</span>`;
+      showActionMode('done', dec);
+    });
+
+    prevWrap?.addEventListener('click', () => step(-1));
+    nextWrap?.addEventListener('click', () => step(1));
+
+    return (inv: Invoice) => { populate(inv); dialog.show(); };
+  }
+
+  document.querySelectorAll<HTMLElement>('.cbf-invoice-review-queue').forEach(initQueue);
+</script>

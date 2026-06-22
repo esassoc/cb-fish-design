@@ -1,17 +1,22 @@
 ---
 // cbf-vendor-portal-invoices — the invoices table for the vendor portal's
-// financial-outlook view. A searchable, status-filterable, group-able tracking
-// table of every submitted invoice across the vendor's contracts, with an
-// esa-badge status column, a click-a-row detail drawer, a live record-count
+// financial-outlook view. A searchable, status-filterable, group-able, sortable
+// tracking grid of every submitted invoice across the vendor's contracts, with
+// an esa-badge status column, a click-a-row detail drawer, a live record-count
 // footer, and an esa-empty-state when nothing matches.
 //
 // bcn-lego-checked: ecology has NO table/grid/data-grid lego (checked the full
 // node_modules/@esa/ecology/src/components catalog — esa-card/esa-pill/esa-badge
-// are atoms, none render tabular rows) and the spoke has no AG Grid dependency;
-// Beacon is not on this machine. Status uses esa-badge, the search input reuses
+// are atoms, none render a sortable tabular data surface) and Beacon is not on
+// this machine. The tabular surface is AG Grid Community (ag-grid-community), an
+// explicit dependency chosen for sort/filter/quick-search over a hand-rolled
+// <table>; this bcn- component is its reusable home. Every other control is a
+// lego: the status cell + drawer status reuse the real esa-badge markup (server-
+// rendered into hidden templates, cloned into grid cells so the design-system
+// styling is identical — never reinvented), the search input reuses
 // cbf-search-field, the status + group-by controls use esa-chip-group, the
 // detail drawer uses esa-side-dialog, and the no-results state uses
-// esa-empty-state — only the table scaffold itself is bespoke, its reusable home.
+// esa-empty-state.
 import CbfSearchField from '../search/cbf-search-field.astro';
 import EsaBadge from '@esa/ecology/esa-badge.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
@@ -54,6 +59,7 @@ const stageVariant: Record<Stage, 'info' | 'warning' | 'success' | 'secondary' |
   Paid: 'secondary',
   'Needs revision': 'danger',
 };
+const stages = Object.keys(stageVariant) as Stage[];
 
 // Single-select chip filters. value="" is the "All" escape; 'Needs revision'
 // gets the amber tone so the blocked-on-vendor stage stands out in the control.
@@ -106,51 +112,9 @@ const { invoices = defaultInvoices } = Astro.props;
     </label>
   </div>
 
-  <div class="cbf-vendor-portal-invoices__scroll" data-invoice-table>
-    <table class="cbf-vendor-portal-invoices__table">
-      <thead>
-        <tr>
-          <th scope="col">Invoice #</th>
-          <th scope="col">Contract</th>
-          <th scope="col">Submitted</th>
-          <th scope="col" class="cbf-num">Amount</th>
-          <th scope="col">Status</th>
-        </tr>
-      </thead>
-      <tbody data-invoice-body>
-        {invoices.map((inv) => (
-          <tr
-            data-row
-            data-haystack={`${inv.number} ${inv.contract} ${inv.project} ${inv.stage}`.toLowerCase()}
-            data-number={inv.number}
-            data-contract={inv.contract}
-            data-project={inv.project}
-            data-submitted={inv.submitted}
-            data-amount={fmtExact(inv.amount)}
-            data-stage={inv.stage}
-            data-detail={JSON.stringify({
-              invoiceDate: inv.invoiceDate,
-              issued: inv.issued,
-              perfStart: inv.perfStart,
-              perfEnd: inv.perfEnd,
-              lineItems: inv.lineItems,
-              notes: inv.notes ?? '',
-              pdfName: inv.pdfName,
-            })}
-            tabindex="0"
-            role="button"
-            aria-label={`View invoice ${inv.number}`}
-          >
-            <td class="cbf-mono-num">{inv.number}</td>
-            <td>{inv.contract}</td>
-            <td>{inv.submitted}</td>
-            <td class="cbf-num">{fmtExact(inv.amount)}</td>
-            <td data-status-cell><EsaBadge value={inv.stage} variant={stageVariant[inv.stage]} size="lg" /></td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
+  <!-- AG Grid mounts here. Sized by its container; auto-height grows with rows
+       so the page (not an inner pane) owns vertical scroll. -->
+  <div class="cbf-vendor-portal-invoices__grid" data-invoice-grid></div>
 
   <div class="cbf-vendor-portal-invoices__empty" data-invoice-empty hidden>
     <EsaEmptyState
@@ -166,73 +130,72 @@ const { invoices = defaultInvoices } = Astro.props;
     </span>
   </footer>
 
+  <!-- The real esa-badge lego, server-rendered once per stage with the design-
+       system scope hash intact. The grid's status cell renderer clones the
+       matching template's markup — so grid badges are byte-identical to the
+       lego, never a hand-rolled copy. -->
+  <div class="cbf-vendor-portal-invoices__badge-templates" data-badge-templates hidden aria-hidden="true">
+    {stages.map((s) => (
+      <span data-stage={s}><EsaBadge value={s} variant={stageVariant[s]} size="lg" /></span>
+    ))}
+  </div>
+
+  <!-- Row data for the grid. Serialized here so the client module (which imports
+       ag-grid-community) can hydrate without a second fetch. -->
+  <script type="application/json" data-invoice-data set:html={JSON.stringify(invoices)}></script>
+
   <!-- Click-a-row detail: the esa-side-dialog overlay drawer (lego). Body is
-       populated from the clicked row's data attributes; prev/next step through
-       the currently-visible rows so a reviewer can walk the whole list. -->
-  <esa-side-dialog data-invoice-dialog size="lg" heading="Invoice">
-    <div class="cbf-invoice-detail stack" data-gap="lg">
-      <!-- Hero: the billed amount is the invoice's headline figure; its pipeline
-           status sits beside it as the one accent. -->
-      <div class="cbf-invoice-detail__hero">
-        <div class="cbf-invoice-detail__amount-group">
-          <span class="cbf-invoice-detail__label">Amount billed</span>
-          <span class="type-page-title cbf-invoice-detail__amount cbf-num" data-detail-amount></span>
+       populated from the clicked row's invoice record; prev/next step through
+       the rows currently displayed (respecting search + filter + sort) so a
+       reviewer can walk the whole list. -->
+  <esa-side-dialog data-invoice-dialog size="lg" heading="Invoice" style="--side-dialog-width-lg: 980px;">
+    <!-- Wide screens: the document preview and the portal's tracking fields sit
+         side by side (mirrors the /vendor-invoice PDF-left / form-right layout).
+         Narrow screens: a single column led by the tracking fields, the document
+         beneath — the lego clamps the panel to the viewport, so this stacks
+         automatically without a horizontal scroll. -->
+    <div class="cbf-invoice-detail" data-gap="lg">
+
+      <!-- Tracking column (the "form"): the portal metadata the printed document
+           does not carry — the headline figure, its pipeline status, and what the
+           invoice is billed against. DOM-first so the narrow single-column stack
+           leads with the figure (the "narrow treatment"); on wide screens the
+           grid places it in the right column. -->
+      <div class="cbf-invoice-detail__meta stack" data-gap="lg">
+        <div class="cbf-invoice-detail__hero">
+          <div class="cbf-invoice-detail__amount-group">
+            <span class="cbf-invoice-detail__label">Amount billed</span>
+            <span class="type-page-title cbf-invoice-detail__amount cbf-num" data-detail-amount></span>
+          </div>
+          <div class="cbf-invoice-detail__status" data-detail-status></div>
         </div>
-        <div class="cbf-invoice-detail__status" data-detail-status></div>
+
+        <dl class="cbf-invoice-detail__fields">
+          <div class="cbf-invoice-detail__row">
+            <dt class="cbf-invoice-detail__label">Contract</dt>
+            <dd class="cbf-invoice-detail__value cbf-invoice-detail__value--lead" data-detail-contract></dd>
+          </div>
+          <div class="cbf-invoice-detail__row">
+            <dt class="cbf-invoice-detail__label">Project</dt>
+            <dd class="cbf-invoice-detail__value" data-detail-project></dd>
+          </div>
+          <div class="cbf-invoice-detail__row">
+            <dt class="cbf-invoice-detail__label">Submitted</dt>
+            <dd class="cbf-invoice-detail__value" data-detail-submitted></dd>
+          </div>
+        </dl>
       </div>
 
-      <!-- Spec list: what the invoice is against and when. Contract leads; the
-           rest recede via weight + color, not a smaller label. -->
-      <dl class="cbf-invoice-detail__fields">
-        <div class="cbf-invoice-detail__row">
-          <dt class="cbf-invoice-detail__label">Contract</dt>
-          <dd class="cbf-invoice-detail__value cbf-invoice-detail__value--lead" data-detail-contract></dd>
-        </div>
-        <div class="cbf-invoice-detail__row">
-          <dt class="cbf-invoice-detail__label">Project</dt>
-          <dd class="cbf-invoice-detail__value" data-detail-project></dd>
-        </div>
-        <div class="cbf-invoice-detail__row">
-          <dt class="cbf-invoice-detail__label">Invoice date</dt>
-          <dd class="cbf-invoice-detail__value" data-detail-invoice-date></dd>
-        </div>
-        <div class="cbf-invoice-detail__row">
-          <dt class="cbf-invoice-detail__label">Performance</dt>
-          <dd class="cbf-invoice-detail__value" data-detail-perf></dd>
-        </div>
-        <div class="cbf-invoice-detail__row">
-          <dt class="cbf-invoice-detail__label">Submitted</dt>
-          <dd class="cbf-invoice-detail__value" data-detail-submitted></dd>
-        </div>
-      </dl>
-
-      <!-- Line items: the breakdown behind the hero figure. -->
-      <section class="cbf-invoice-detail__section">
-        <h3 class="cbf-invoice-detail__section-title">Line items</h3>
-        <table class="cbf-detail-items">
-          <thead>
-            <tr>
-              <th scope="col">Description</th>
-              <th scope="col" class="cbf-num">Qty</th>
-              <th scope="col" class="cbf-num">Unit price</th>
-              <th scope="col" class="cbf-num">Amount</th>
-            </tr>
-          </thead>
-          <tbody data-detail-items></tbody>
-          <tfoot>
-            <tr>
-              <th scope="row" colspan="3">Invoice total</th>
-              <td class="cbf-num" data-detail-total></td>
-            </tr>
-          </tfoot>
-        </table>
-      </section>
-
-      <!-- Notes: only rendered when the invoice carries them. -->
-      <section class="cbf-invoice-detail__section" data-detail-notes-section hidden>
-        <h3 class="cbf-invoice-detail__section-title">Notes</h3>
-        <p class="cbf-invoice-detail__notes" data-detail-notes></p>
-      </section>
+      <!-- Document preview (the "PDF"): a paper rendering of the submitted invoice.
+           bcn-lego-checked: no esa- lego renders a document / paper-invoice
+           preview (checked the ecology catalog — esa-card/esa-badge are atoms,
+           esa-file-upload is an UPLOADER not a viewer), and there is no real PDF
+           asset for an already-submitted mock invoice, so the credible mock is an
+           HTML document sheet. Beacon has no ui- equivalent. This bcn- drawer is
+           its reusable home; the sheet's per-invoice body is injected by JS. -->
+      <div class="cbf-invoice-detail__doc">
+        <article class="cbf-doc-sheet" data-detail-doc></article>
+      </div>
     </div>
 
     <div slot="footer" class="cbf-invoice-detail__footer repel">
@@ -281,50 +244,13 @@ const { invoices = defaultInvoices } = Astro.props;
     white-space: nowrap;
   }
 
-  /* Horizontal scroll keeps the frame stable on narrow viewports. */
-  .cbf-vendor-portal-invoices__scroll {
-    overflow-x: auto;
+  /* The grid wrapper owns the framed surface; AG Grid's own border is disabled
+     via the theme so the frame reads like the rest of the spoke's data cards. */
+  .cbf-vendor-portal-invoices__grid {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-200);
+    overflow: hidden;
     background: var(--color-surface);
-  }
-
-  .cbf-vendor-portal-invoices__table {
-    width: 100%;
-    border-collapse: collapse;
-    /* Dense data surface — 14px floor, never fainter. */
-    font-size: 14px;
-    color: var(--color-text-primary);
-  }
-  .cbf-vendor-portal-invoices__table th,
-  .cbf-vendor-portal-invoices__table td {
-    text-align: left;
-    padding: var(--spacing-300) var(--spacing-400);
-    white-space: nowrap;
-    vertical-align: middle;
-  }
-  .cbf-vendor-portal-invoices__table thead th {
-    font-weight: 600;
-    color: var(--color-text-secondary);
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-surface-subtle, transparent);
-  }
-  .cbf-vendor-portal-invoices__table tbody tr[data-row] + tr[data-row] td {
-    border-top: 1px solid var(--color-border);
-  }
-  .cbf-vendor-portal-invoices__table tbody tr[data-row]:hover td {
-    background: var(--color-surface-subtle, var(--color-primary-subtle));
-    cursor: pointer;
-  }
-  .cbf-vendor-portal-invoices__table td.cbf-num,
-  .cbf-vendor-portal-invoices__table th.cbf-num {
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-  }
-  /* Invoice IDs read as data, not document text — tabular figures, never monospace. */
-  .cbf-mono-num {
-    font-variant-numeric: tabular-nums;
-    color: var(--color-text-secondary);
   }
 
   .cbf-vendor-portal-invoices__footer {
@@ -332,6 +258,34 @@ const { invoices = defaultInvoices } = Astro.props;
   }
 
   /* ---- Detail drawer ---------------------------------------------------- */
+
+  /* Single column by default (narrow / mobile): tracking fields lead, document
+     beneath — the "keep the narrow treatment" path. */
+  .cbf-invoice-detail {
+    display: grid;
+    gap: var(--spacing-500);
+  }
+  /* Wide screens: document left, tracking column right (PDF-left / form-right,
+     matching the submission page). DOM order is meta-then-doc so the narrow
+     stack leads with the figure; explicit placement flips them on desktop. */
+  @media (min-width: 900px) {
+    .cbf-invoice-detail {
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+      align-items: start;
+    }
+    .cbf-invoice-detail__doc { grid-column: 1; grid-row: 1; }
+    .cbf-invoice-detail__meta { grid-column: 2; grid-row: 1; }
+  }
+
+  /* The document gutter: a sunken track the white "sheet" floats on, like a
+     PDF viewer's page on its canvas. */
+  .cbf-invoice-detail__doc {
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    padding: var(--spacing-400);
+    min-width: 0;
+  }
 
   /* Labels are content, not ornament: normal-case, 14px, muted — never an
      uppercase micro-eyebrow. One shared role for every label in the drawer. */
@@ -388,21 +342,6 @@ const { invoices = defaultInvoices } = Astro.props;
     color: var(--color-text-primary);
   }
 
-  /* Subsection headers (Line items, Notes): content, not ornament — readable,
-     primary color, modest weight. Not the uppercase micro-label pattern. */
-  .cbf-invoice-detail__section-title {
-    margin: 0 0 var(--spacing-200);
-    font-size: var(--type-size-200);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
-  }
-  .cbf-invoice-detail__notes {
-    margin: 0;
-    font-size: var(--type-size-200);
-    line-height: var(--line-height-relaxed);
-    color: var(--color-text-secondary);
-  }
-
   .cbf-invoice-detail__position {
     font-size: var(--type-size-150);
     color: var(--color-text-muted);
@@ -428,225 +367,449 @@ const { invoices = defaultInvoices } = Astro.props;
 </style>
 
 <style is:global>
-  /* Detail-drawer line items. Body rows are injected by JS (no Astro scope
-     hash), so the table is styled globally, scoped under .cbf-detail-items. */
-  .cbf-detail-items {
+  /* AG Grid status cell: the cloned esa-badge sits in a flex cell so it centers
+     vertically without disturbing the lego's own box. */
+  .cbf-vendor-portal-invoices__grid .cbf-grid-status {
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+  }
+  /* Right-align numeric columns (amount) including the header label. */
+  .cbf-vendor-portal-invoices__grid .cbf-grid-num,
+  .cbf-vendor-portal-invoices__grid .cbf-grid-num .ag-header-cell-label {
+    justify-content: flex-end;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Invoice IDs read as data — tabular figures, recede in color. */
+  .cbf-vendor-portal-invoices__grid .cbf-grid-id {
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-secondary);
+  }
+
+  /* Detail-drawer document sheet. Its body is injected by JS (no Astro scope
+     hash), so everything under .cbf-doc-sheet is styled globally. The sheet
+     reads as a printed invoice: a white page with a soft shadow on the sunken
+     gutter, structured head → parties → line items → total. */
+  .cbf-doc-sheet {
+    display: block;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light, var(--color-border));
+    border-radius: var(--radius-100);
+    box-shadow: var(--shadow-200, 0 2px 8px -2px rgba(19, 39, 62, 0.12));
+    padding: var(--spacing-600);
+    color: var(--color-text-primary);
+  }
+
+  /* Head: supplier identity left, the document mark (Invoice + number) right. */
+  .cbf-doc__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    padding-bottom: var(--spacing-400);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-doc__supplier {
+    margin: 0;
+    font-size: var(--type-size-300);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-doc__supplier-meta {
+    margin: var(--spacing-050) 0 0;
+    font-size: var(--type-size-150);
+    color: var(--color-text-muted);
+  }
+  .cbf-doc__mark { text-align: right; flex: none; }
+  .cbf-doc__mark-word {
+    margin: 0;
+    font-size: var(--type-size-150);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+  .cbf-doc__mark-number {
+    margin: var(--spacing-050) 0 0;
+    font-size: var(--type-size-200);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Parties + dates band. */
+  .cbf-doc__parties {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    padding-block: var(--spacing-400);
+  }
+  .cbf-doc__dates {
+    display: flex;
+    gap: var(--spacing-500);
+    text-align: right;
+  }
+  .cbf-doc__label {
+    display: block;
+    font-size: var(--type-size-100, 0.75rem);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+  }
+  .cbf-doc__parties p {
+    margin: var(--spacing-050) 0 0;
+    font-size: var(--type-size-150);
+    color: var(--color-text-primary);
+  }
+  .cbf-doc__party-name { font-weight: var(--font-weight-medium); }
+
+  /* Line items table — the breakdown behind the total. */
+  .cbf-doc__items {
     width: 100%;
     border-collapse: collapse;
     font-size: var(--type-size-150);
     color: var(--color-text-primary);
   }
-  .cbf-detail-items th,
-  .cbf-detail-items td {
+  .cbf-doc__items th,
+  .cbf-doc__items td {
     text-align: left;
-    padding: var(--spacing-250) var(--spacing-300);
+    padding: var(--spacing-250) var(--spacing-200);
     vertical-align: top;
   }
-  .cbf-detail-items thead th {
+  /* Outer edges flush to the sheet so the table aligns with the total row. */
+  .cbf-doc__items th:first-child,
+  .cbf-doc__items td:first-child { padding-left: 0; }
+  .cbf-doc__items th:last-child,
+  .cbf-doc__items td:last-child { padding-right: 0; }
+  .cbf-doc__items thead th {
     font-weight: var(--font-weight-medium);
     color: var(--color-text-muted);
     border-bottom: 1px solid var(--color-border);
   }
-  .cbf-detail-items tbody tr + tr td { border-top: 1px solid var(--color-border-light, var(--color-border)); }
-  .cbf-detail-items tfoot th,
-  .cbf-detail-items tfoot td {
-    border-top: 1px solid var(--color-border);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
-    padding-top: var(--spacing-300);
-  }
-  .cbf-detail-items .cbf-num {
+  .cbf-doc__items tbody tr + tr td { border-top: 1px solid var(--color-border-light, var(--color-border)); }
+  .cbf-doc__items .cbf-num {
     text-align: right;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
-  /* Left-align the "Invoice total" caption that spans the description columns. */
-  .cbf-detail-items tfoot th { text-align: left; }
 
-  /* Group divider rows are injected by the group-by control (no Astro scope
-     hash), so they are styled globally, scoped under the component class. */
-  .cbf-vendor-portal-invoices__table tr[data-group-header] th {
-    text-align: left;
-    padding: var(--spacing-250) var(--spacing-400);
-    background: var(--color-surface-sunken, #efefef);
-    border-block: 1px solid var(--color-border);
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-semibold, 600);
-    color: var(--color-text-secondary);
+  /* Total due — the printed bottom line of the document. */
+  .cbf-doc__total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    margin-top: var(--spacing-300);
+    padding-top: var(--spacing-300);
+    border-top: 2px solid var(--color-border);
   }
-  .cbf-vendor-portal-invoices__group-count {
-    font-weight: var(--font-weight-regular, 400);
-    color: var(--color-text-muted);
+  .cbf-doc__total-label {
+    font-size: var(--type-size-150);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-doc__total-value {
+    font-size: var(--type-size-300);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Notes printed on the document, when present. */
+  .cbf-doc__notes {
+    margin-top: var(--spacing-400);
+    padding-top: var(--spacing-300);
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+  }
+  .cbf-doc__notes p {
+    margin: var(--spacing-100) 0 0;
+    font-size: var(--type-size-150);
+    line-height: var(--line-height-relaxed);
+    color: var(--color-text-secondary);
   }
 </style>
 
 <script>
+  import { createGrid, ModuleRegistry, AllCommunityModule, themeQuartz } from 'ag-grid-community';
   import '@esa/ecology/esa-chip-group';
   import '@esa/ecology/esa-side-dialog';
 
+  ModuleRegistry.registerModules([AllCommunityModule]);
+
   type Dir = 1 | -1;
+  type Stage = 'Submitted' | 'In review' | 'Approved' | 'Paid' | 'Needs revision';
+  type LineItem = { description: string; qty: number; unitPrice: number };
+  type Invoice = {
+    number: string; contract: string; project: string; submitted: string;
+    amount: number; stage: Stage; invoiceDate: string; issued: string;
+    perfStart: string; perfEnd: string; lineItems: LineItem[]; notes?: string; pdfName: string;
+  };
+
+  const usd = new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+  });
+
+  // Render a parsed Date back to the data's display form ("Jun 20, 2026") so the
+  // typed date column reads identically to the source string.
+  const dateFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const asDate = (s?: string): Date | null => {
+    if (!s) return null;
+    const d = new Date(s);
+    return Number.isNaN(d.getTime()) ? null : d;
+  };
+
+  // AG Grid Theming API mapped onto the spoke's semantic tokens — the grid reads
+  // like the rest of the surfaces instead of shipping its own palette.
+  const cbfTheme = themeQuartz.withParams({
+    fontFamily: 'inherit',
+    fontSize: '14px',
+    foregroundColor: 'var(--color-text-primary)',
+    backgroundColor: 'var(--color-surface)',
+    headerBackgroundColor: 'var(--color-surface-sunken, transparent)',
+    headerTextColor: 'var(--color-text-secondary)',
+    headerFontWeight: 600,
+    borderColor: 'var(--color-border)',
+    rowHoverColor: 'var(--color-surface-subtle, var(--color-primary-subtle))',
+    accentColor: 'var(--color-primary)',
+    wrapperBorderRadius: 0,
+    borderRadius: 'var(--radius-100, 4px)',
+  });
 
   function initInvoices(root: HTMLElement) {
+    const gridHost = root.querySelector<HTMLElement>('[data-invoice-grid]');
+    const dataEl = root.querySelector<HTMLScriptElement>('[data-invoice-data]');
+    if (!gridHost || !dataEl) return;
+
+    const data: Invoice[] = JSON.parse(dataEl.textContent ?? '[]');
+    const total = data.length;
+
     const search = root.querySelector<HTMLInputElement>('[data-invoice-search]');
     const stageFilter = root.querySelector<HTMLElement & { value: string }>('[data-invoice-stage-filter]');
     const groupControl = root.querySelector<HTMLElement & { value: string }>('[data-invoice-group]');
-    const body = root.querySelector<HTMLElement>('[data-invoice-body]');
-    const rows = Array.from(root.querySelectorAll<HTMLTableRowElement>('[data-row]'));
     const empty = root.querySelector<HTMLElement>('[data-invoice-empty]');
-    const tableWrap = root.querySelector<HTMLElement>('[data-invoice-table]');
     const count = root.querySelector<HTMLElement>('[data-invoice-count]');
-    if (!body) return;
 
-    const total = rows.length;
-    const colCount = root.querySelectorAll('thead th').length;
+    // Pre-clone the real esa-badge markup per stage (server-rendered with the
+    // design-system scope hash) so grid cells reuse the lego verbatim.
+    const badgeHTML = new Map<string, string>();
+    root.querySelectorAll<HTMLElement>('[data-badge-templates] [data-stage]').forEach((el) => {
+      badgeHTML.set(el.dataset.stage ?? '', el.innerHTML);
+    });
 
-    const clearGroupHeaders = () =>
-      body.querySelectorAll('[data-group-header]').forEach((el) => el.remove());
+    // External (chip-driven) status filter — kept out of the column filter UI so
+    // the esa-chip-group stays the single control surface.
+    let stageValue = '';
+    // Assigned once the grid exists (createGrid must already have an api to walk
+    // displayed rows); onRowClicked closes over this mutable reference.
+    let openDetail: (inv: Invoice) => void = () => {};
 
-    const makeGroupHeader = (label: string, n: number) => {
-      const tr = document.createElement('tr');
-      tr.setAttribute('data-group-header', '');
-      const th = document.createElement('th');
-      th.colSpan = colCount;
-      th.setAttribute('scope', 'colgroup');
-      th.innerHTML = `${label} <span class="cbf-vendor-portal-invoices__group-count">· ${n}</span>`;
-      tr.appendChild(th);
-      return tr;
-    };
+    const gridApi = createGrid(gridHost, {
+      theme: cbfTheme,
+      rowData: data,
+      domLayout: 'autoHeight',
+      animateRows: false,
+      suppressCellFocus: true,
+      defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true },
+      columnDefs: [
+        {
+          headerName: 'Invoice #', field: 'number', colId: 'number',
+          cellClass: 'cbf-grid-id', minWidth: 150,
+          // Search should also match the project (not shown as a column).
+          getQuickFilterText: (p) => `${p.data.number} ${p.data.project}`,
+        },
+        { headerName: 'Contract', field: 'contract', colId: 'contract', flex: 2, minWidth: 200 },
+        {
+          // Date column: parse the display string to a Date so sort/filter are
+          // chronological (a string column sorts "Apr"<"Jun"<"May"). The
+          // valueFormatter renders it back to the original "Jun 20, 2026" form.
+          headerName: 'Submitted', field: 'submitted', colId: 'submitted', minWidth: 130,
+          cellDataType: 'date',
+          valueGetter: (p) => asDate(p.data?.submitted),
+          valueFormatter: (p) => (p.value instanceof Date ? dateFmt.format(p.value) : ''),
+          getQuickFilterText: (p) => p.data?.submitted ?? '',
+        },
+        {
+          headerName: 'Amount', field: 'amount', colId: 'amount',
+          type: 'numericColumn', headerClass: 'cbf-grid-num', cellClass: 'cbf-grid-num',
+          minWidth: 130, valueFormatter: (p) => usd.format(p.value as number),
+        },
+        {
+          headerName: 'Status', field: 'stage', colId: 'stage', minWidth: 150, sortable: true,
+          cellRenderer: (p: { value: string }) =>
+            `<span class="cbf-grid-status">${badgeHTML.get(p.value) ?? p.value}</span>`,
+        },
+      ],
+      isExternalFilterPresent: () => stageValue !== '',
+      doesExternalFilterPass: (node) => node.data.stage === stageValue,
+      onModelUpdated: () => {
+        const shown = gridApi.getDisplayedRowCount();
+        if (count) count.textContent = `Showing ${shown} of ${total} invoices`;
+        if (empty) empty.hidden = shown !== 0;
+        gridHost.hidden = shown === 0;
+      },
+      onRowClicked: (e) => { if (e.data) openDetail(e.data as Invoice); },
+    });
 
-    const render = () => {
-      const q = (search?.value ?? '').trim().toLowerCase();
-      const stage = stageFilter?.value ?? '';
-      const groupKey = groupControl?.value ?? 'none';
+    // Search → AG Grid quick filter (matches across all columns + project).
+    search?.addEventListener('input', () => {
+      gridApi.setGridOption('quickFilterText', (search.value ?? '').trim());
+    });
 
-      // 1. Decide visibility from search + status filter.
-      const visible: HTMLTableRowElement[] = [];
-      for (const row of rows) {
-        const matchQ = !q || (row.dataset.haystack ?? '').includes(q);
-        const matchStage = !stage || row.dataset.stage === stage;
-        const show = matchQ && matchStage;
-        row.hidden = !show;
-        if (show) visible.push(row);
-      }
+    // Status chip → external filter.
+    stageFilter?.addEventListener('change', () => {
+      stageValue = stageFilter.value ?? '';
+      gridApi.onFilterChanged();
+    });
 
-      // 2. Re-flow the tbody: flat (original order) or grouped with divider rows.
-      clearGroupHeaders();
-      if (groupKey === 'none') {
-        for (const row of rows) body.appendChild(row); // restore original order
-      } else {
-        const groups = new Map<string, HTMLTableRowElement[]>();
-        for (const row of visible) {
-          const key = row.dataset[groupKey] ?? '—';
-          let bucket = groups.get(key);
-          if (!bucket) { bucket = []; groups.set(key, bucket); }
-          bucket.push(row);
-        }
-        for (const [key, grp] of [...groups.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-          body.appendChild(makeGroupHeader(key, grp.length));
-          for (const row of grp) body.appendChild(row);
-        }
-        for (const row of rows) if (row.hidden) body.appendChild(row); // park hidden rows last
-      }
+    // Group by → Community has no native row grouping (Enterprise only), so the
+    // control clusters rows by sorting on the chosen field; 'none' clears it.
+    groupControl?.addEventListener('change', () => {
+      const key = groupControl.value ?? 'none';
+      gridApi.applyColumnState({
+        state: key === 'none' ? [] : [{ colId: key, sort: 'asc' }],
+        defaultState: { sort: null },
+      });
+    });
 
-      // 3. Sync empty state + count.
-      if (empty) empty.hidden = visible.length !== 0;
-      if (tableWrap) tableWrap.hidden = visible.length === 0;
-      if (count) count.textContent = `Showing ${visible.length} of ${total} invoices`;
-    };
-
-    search?.addEventListener('input', render);
-    stageFilter?.addEventListener('change', render);
-    groupControl?.addEventListener('change', render);
-
-    initDetailDrawer(root, rows);
+    openDetail = bindDetail(root, gridApi, badgeHTML);
   }
 
-  // Click-a-row → open the side-dialog populated from the row; prev/next walk
-  // the rows currently visible (respecting the active search + filter).
-  function initDetailDrawer(root: HTMLElement, rows: HTMLTableRowElement[]) {
+  // Bind the drawer once; returns an opener that populates + shows it for a row.
+  function bindDetail(
+    root: HTMLElement,
+    gridApi: ReturnType<typeof createGrid>,
+    badgeHTML: Map<string, string>,
+  ): (inv: Invoice) => void {
     const dialog = root.querySelector<HTMLElement & { heading: string; show(): void }>('[data-invoice-dialog]');
-    if (!dialog) return;
-    const statusBox = dialog.querySelector<HTMLElement>('[data-detail-status]');
-    const fContract = dialog.querySelector<HTMLElement>('[data-detail-contract]');
-    const fProject = dialog.querySelector<HTMLElement>('[data-detail-project]');
-    const fInvoiceDate = dialog.querySelector<HTMLElement>('[data-detail-invoice-date]');
-    const fPerf = dialog.querySelector<HTMLElement>('[data-detail-perf]');
-    const fSubmitted = dialog.querySelector<HTMLElement>('[data-detail-submitted]');
-    const fAmount = dialog.querySelector<HTMLElement>('[data-detail-amount]');
-    const itemsBody = dialog.querySelector<HTMLElement>('[data-detail-items]');
-    const fTotal = dialog.querySelector<HTMLElement>('[data-detail-total]');
-    const notesSection = dialog.querySelector<HTMLElement>('[data-detail-notes-section]');
-    const fNotes = dialog.querySelector<HTMLElement>('[data-detail-notes]');
-    const position = dialog.querySelector<HTMLElement>('[data-detail-position]');
-
-    type LineItem = { description: string; qty: number; unitPrice: number };
-    type Detail = {
-      invoiceDate: string; issued: string; perfStart: string; perfEnd: string;
-      lineItems: LineItem[]; notes: string; pdfName: string;
-    };
-    const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
-    // EsaButton renders <span.esa-button><button>; the data-* hook lives on an
-    // outer wrapper span (EsaButton drops unknown attrs), so listen on the
-    // wrapper and toggle the inner native <button>'s disabled state.
-    const prevWrap = dialog.querySelector<HTMLElement>('[data-detail-prev]');
-    const nextWrap = dialog.querySelector<HTMLElement>('[data-detail-next]');
+    const statusBox = dialog?.querySelector<HTMLElement>('[data-detail-status]') ?? null;
+    const fContract = dialog?.querySelector<HTMLElement>('[data-detail-contract]') ?? null;
+    const fProject = dialog?.querySelector<HTMLElement>('[data-detail-project]') ?? null;
+    const fSubmitted = dialog?.querySelector<HTMLElement>('[data-detail-submitted]') ?? null;
+    const fAmount = dialog?.querySelector<HTMLElement>('[data-detail-amount]') ?? null;
+    const docSheet = dialog?.querySelector<HTMLElement>('[data-detail-doc]') ?? null;
+    const position = dialog?.querySelector<HTMLElement>('[data-detail-position]') ?? null;
+    const prevWrap = dialog?.querySelector<HTMLElement>('[data-detail-prev]') ?? null;
+    const nextWrap = dialog?.querySelector<HTMLElement>('[data-detail-next]') ?? null;
     const prev = prevWrap?.querySelector('button') ?? null;
     const next = nextWrap?.querySelector('button') ?? null;
 
+    const usd = new Intl.NumberFormat('en-US', {
+      style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+    });
+
+    // Document parties — fixed for this prototype's single mock vendor. The
+    // portal session is Pacific Environmental Services billing the Program.
+    const SUPPLIER = 'Pacific Environmental Services, LLC';
+    const SUPPLIER_META = 'Environmental consulting · Portland, OR';
+    const BUYER = 'Columbia Basin Fish & Wildlife Program';
+
+    const esc = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // The rows currently displayed, in filter+sort order — the walk order for
+    // prev/next, so the drawer matches what the reviewer sees in the grid.
+    const displayed = (): Invoice[] => {
+      const out: Invoice[] = [];
+      gridApi.forEachNodeAfterFilterAndSort((n) => { if (n.data) out.push(n.data as Invoice); });
+      return out;
+    };
+
     let current = -1;
-    const visibleRows = () => rows.filter((r) => !r.hidden);
 
-    const populate = (row: HTMLTableRowElement) => {
-      const vis = visibleRows();
-      current = vis.indexOf(row);
-      dialog.heading = row.dataset.number ?? 'Invoice';
-      const badge = row.querySelector('[data-status-cell]');
-      if (statusBox) statusBox.innerHTML = badge ? badge.innerHTML : '';
-      if (fContract) fContract.textContent = row.dataset.contract ?? '';
-      if (fProject) fProject.textContent = row.dataset.project ?? '';
-      if (fSubmitted) fSubmitted.textContent = row.dataset.submitted ?? '';
-      if (fAmount) fAmount.textContent = row.dataset.amount ?? '';
+    const populate = (inv: Invoice) => {
+      if (!dialog) return;
+      const list = displayed();
+      current = list.findIndex((d) => d.number === inv.number);
+      dialog.heading = inv.number ?? 'Invoice';
+      if (statusBox) statusBox.innerHTML = `<span class="cbf-grid-status">${badgeHTML.get(inv.stage) ?? inv.stage}</span>`;
+      if (fContract) fContract.textContent = inv.contract ?? '';
+      if (fProject) fProject.textContent = inv.project ?? '';
+      if (fSubmitted) fSubmitted.textContent = inv.submitted ?? '';
+      if (fAmount) fAmount.textContent = usd.format(inv.amount ?? 0);
 
-      const d = JSON.parse(row.dataset.detail ?? '{}') as Detail;
-      if (fInvoiceDate) fInvoiceDate.textContent = d.invoiceDate ?? '';
-      if (fPerf) fPerf.textContent = d.perfStart && d.perfEnd ? `${d.perfStart} – ${d.perfEnd}` : '';
-      if (itemsBody) {
-        itemsBody.innerHTML = (d.lineItems ?? [])
+      // The document "sheet": the printed invoice the vendor submitted.
+      if (docSheet) {
+        const rows = (inv.lineItems ?? [])
           .map(
-            (li) => `<tr>
-              <td>${li.description}</td>
+            (li: LineItem) => `<tr>
+              <td>${esc(li.description)}</td>
               <td class="cbf-num">${li.qty}</td>
               <td class="cbf-num">${usd.format(li.unitPrice)}</td>
               <td class="cbf-num">${usd.format(li.qty * li.unitPrice)}</td>
             </tr>`,
           )
           .join('');
-      }
-      if (fTotal) fTotal.textContent = row.dataset.amount ?? '';
-      if (notesSection && fNotes) {
-        fNotes.textContent = d.notes ?? '';
-        notesSection.hidden = !d.notes;
+        const perf = inv.perfStart && inv.perfEnd ? `${inv.perfStart} – ${inv.perfEnd}` : '—';
+        docSheet.innerHTML = `
+          <header class="cbf-doc__head">
+            <div class="cbf-doc__brand">
+              <p class="cbf-doc__supplier">${SUPPLIER}</p>
+              <p class="cbf-doc__supplier-meta">${SUPPLIER_META}</p>
+            </div>
+            <div class="cbf-doc__mark">
+              <p class="cbf-doc__mark-word">Invoice</p>
+              <p class="cbf-doc__mark-number">${esc(inv.number ?? '')}</p>
+            </div>
+          </header>
+          <div class="cbf-doc__parties">
+            <div class="cbf-doc__party">
+              <span class="cbf-doc__label">Billed to</span>
+              <p class="cbf-doc__party-name">${BUYER}</p>
+            </div>
+            <div class="cbf-doc__dates">
+              <div>
+                <span class="cbf-doc__label">Invoice date</span>
+                <p>${esc(inv.invoiceDate ?? '—')}</p>
+              </div>
+              <div>
+                <span class="cbf-doc__label">Performance period</span>
+                <p>${esc(perf)}</p>
+              </div>
+            </div>
+          </div>
+          <table class="cbf-doc__items">
+            <thead>
+              <tr>
+                <th scope="col">Description</th>
+                <th scope="col" class="cbf-num">Qty</th>
+                <th scope="col" class="cbf-num">Unit price</th>
+                <th scope="col" class="cbf-num">Amount</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <div class="cbf-doc__total">
+            <span class="cbf-doc__total-label">Total due</span>
+            <span class="cbf-doc__total-value">${usd.format(inv.amount ?? 0)}</span>
+          </div>
+          ${
+            inv.notes
+              ? `<div class="cbf-doc__notes">
+                   <span class="cbf-doc__label">Notes</span>
+                   <p>${esc(inv.notes)}</p>
+                 </div>`
+              : ''
+          }
+        `;
       }
 
-      if (position) position.textContent = `Invoice ${current + 1} of ${vis.length}`;
+      if (position) position.textContent = `Invoice ${current + 1} of ${list.length}`;
       if (prev) prev.disabled = current <= 0;
-      if (next) next.disabled = current >= vis.length - 1;
+      if (next) next.disabled = current >= list.length - 1;
     };
 
     const step = (dir: Dir) => {
-      const vis = visibleRows();
-      const target = vis[current + dir];
+      const list = displayed();
+      const target = list[current + dir];
       if (target) populate(target);
     };
 
-    for (const row of rows) {
-      row.addEventListener('click', () => { populate(row); dialog.show(); });
-      row.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); populate(row); dialog.show(); }
-      });
-    }
     prevWrap?.addEventListener('click', () => step(-1));
     nextWrap?.addEventListener('click', () => step(1));
+
+    return (inv: Invoice) => { populate(inv); dialog?.show(); };
   }
 
   document

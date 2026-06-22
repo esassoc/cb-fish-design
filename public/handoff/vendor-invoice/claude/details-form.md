@@ -89,6 +89,7 @@ Step 0 — the main data-entry form. Sections: contract/project selectors, invoi
         required="true"
         data-field="contract"
         data-combobox-options='[{"value":"CON-2024-0881","label":"CON-2024-0881 — Tributary Habitat Assessment"},{"value":"CON-2024-0903","label":"CON-2024-0903 — Salmon Passage Study"},{"value":"CON-2025-0112","label":"CON-2025-0112 — Water Quality Monitoring"},{"value":"CON-2025-0234","label":"CON-2025-0234 — Environmental Impact Review"}]'
+        data-contract-amounts='{"CON-2024-0881":{"total":120000,"remaining":18500},"CON-2024-0903":{"total":85000,"remaining":85000},"CON-2025-0112":{"total":240000,"remaining":96000},"CON-2025-0234":{"total":60000,"remaining":12300}}'
         disabled=""
         size="md"
       ></esa-combobox>
@@ -249,6 +250,22 @@ Step 0 — the main data-entry form. Sections: contract/project selectors, invoi
       </div>
     </div>
   </div>
+  <!-- Final invoice — its own section so it reads as a deliberate decision the
+       vendor owns. The wizard never ticks this for them; if the invoice looks
+       final (remaining balance within 5% of the total), it asks via a modal on
+       Review & submit and lets the vendor decide. -->
+  <div class="cbf-form-section">
+    <h2 class="cbf-form-section__title">Final invoice</h2>
+    <div class="cbf-final-invoice" data-final-invoice-callout="">
+      <esa-checkbox
+        size="lg"
+        label="This is the final invoice for this contract"
+        data-field="final-invoice"
+        data-final-invoice="true"
+        disabled=""
+      ></esa-checkbox>
+    </div>
+  </div>
   <!-- Supporting documents -->
   <div class="cbf-form-section">
     <h2 class="cbf-form-section__title">
@@ -344,6 +361,46 @@ Step 0 — the main data-entry form. Sections: contract/project selectors, invoi
 
 ## Styles
 ```css
+.esa-button {
+  --_btn-height: var(--form-height-md, 40px);
+  --_btn-padding-x: var(--form-padding-x-md, 16px);
+  --_btn-font-size: var(--form-font-size-md, 14px);
+  --_btn-radius: var(--form-radius-md, 6px);
+  --_accent: var(--color-primary, #43608a);
+  --_accent-hover: var(--color-primary-hover, #39506f);
+  --_on: var(--color-text-inverse, #ffffff);
+  display: inline-block;
+}
+.esa-button__native {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-200, 8px);
+  width: 100%;
+  height: var(--_btn-height);
+  padding-inline: var(--_btn-padding-x);
+  border: 1px solid transparent;
+  border-radius: var(--_btn-radius);
+  font-size: var(--_btn-font-size);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-weight: var(--font-weight-medium, 500);
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast, 0.15s ease),
+    border-color var(--transition-fast, 0.15s ease);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.esa-button--appearance-fill .esa-button__native {
+  background: var(--_accent);
+  color: var(--_on);
+  border-color: transparent;
+}
+.esa-button__label {
+  white-space: nowrap;
+}
 .cbf-page-title {
   margin: 0 0 var(--spacing-400);
   font-family: var(--font-display);
@@ -460,6 +517,16 @@ Step 0 — the main data-entry form. Sections: contract/project selectors, invoi
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
 }
+.cbf-final-invoice {
+  padding: var(--spacing-400) var(--spacing-450, var(--spacing-400));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-100);
+  background: var(--color-surface-sunken, #f8f9fb);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
 .cbf-optional {
   font-family: var(--font-sans);
   font-size: 13px;
@@ -574,46 +641,6 @@ Step 0 — the main data-entry form. Sections: contract/project selectors, invoi
   opacity: 0.4;
   cursor: not-allowed;
 }
-.esa-button {
-  --_btn-height: var(--form-height-md, 40px);
-  --_btn-padding-x: var(--form-padding-x-md, 16px);
-  --_btn-font-size: var(--form-font-size-md, 14px);
-  --_btn-radius: var(--form-radius-md, 6px);
-  --_accent: var(--color-primary, #43608a);
-  --_accent-hover: var(--color-primary-hover, #39506f);
-  --_on: var(--color-text-inverse, #ffffff);
-  display: inline-block;
-}
-.esa-button__native {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-200, 8px);
-  width: 100%;
-  height: var(--_btn-height);
-  padding-inline: var(--_btn-padding-x);
-  border: 1px solid transparent;
-  border-radius: var(--_btn-radius);
-  font-size: var(--_btn-font-size);
-  font-family: var(--font-sans, system-ui, sans-serif);
-  font-weight: var(--font-weight-medium, 500);
-  line-height: 1;
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    background var(--transition-fast, 0.15s ease),
-    border-color var(--transition-fast, 0.15s ease);
-  -webkit-appearance: none;
-  appearance: none;
-}
-.esa-button--appearance-fill .esa-button__native {
-  background: var(--_accent);
-  color: var(--_on);
-  border-color: transparent;
-}
-.esa-button__label {
-  white-space: nowrap;
-}
 ```
 
 ## Tokens
@@ -686,6 +713,13 @@ export function initInvoiceWizard(): void {
 
   function goTo(next: number): void {
     if (next !== confirmStep && !validate(current)) return;
+    // Leaving the details step for review: if the invoice looks like a final one
+    // and the vendor hasn't said either way, ask first — then resume this same
+    // transition once they've answered (shouldPromptFinal is false on re-entry).
+    if (current === 0 && next === 1 && shouldPromptFinal()) {
+      promptFinalInvoice(() => goTo(next));
+      return;
+    }
     setStepVisibility(current, false);
     current = next;
     setStepVisibility(current, true);
@@ -1028,6 +1062,74 @@ export function initInvoiceWizard(): void {
 
   wizard.querySelector('[data-add-line-item]')?.addEventListener('click', addLineItem);
 
+  // ---- Final-invoice flag + detection ----
+  // The vendor owns this checkbox — the wizard never ticks it for them. Detection
+  // only decides *whether to ask*: if the contract's remaining balance is the same
+  // as, or only slightly more than, this invoice's total ("slightly more" = the gap
+  // is under 5% of the total contract value), we prompt once on Review & submit.
+
+  const finalCheckbox = wizard.querySelector<any>('[data-final-invoice]');
+  const finalCallout = wizard.querySelector<HTMLElement>('[data-final-invoice-callout]');
+  const finalDialog = wizard.querySelector<any>('[data-final-invoice-dialog]');
+  const contractField = wizard.querySelector<any>('[data-field="contract"]');
+
+  let contractAmounts: Record<string, { total: number; remaining: number }> = {};
+  try {
+    contractAmounts = JSON.parse(contractField?.dataset.contractAmounts ?? '{}');
+  } catch { /* leave empty */ }
+
+  function syncFinalCallout(): void {
+    finalCallout?.classList.toggle('is-flagged', !!finalCheckbox?.checked);
+  }
+
+  // The vendor has decided once they toggle the box OR answer the prompt — either
+  // way we never auto-prompt again.
+  let finalDecided = false;
+  finalCheckbox?.addEventListener('change', () => {
+    finalDecided = true;
+    syncFinalCallout();
+  });
+
+  function invoiceTotal(): number {
+    return lineItems.reduce((acc, li) => acc + li.qty * li.unitPrice, 0);
+  }
+
+  function seemsFinalInvoice(): boolean {
+    const amounts = contractAmounts[contractField?.value ?? ''];
+    const total = invoiceTotal();
+    if (!amounts || total <= 0) return false;
+    const gap = amounts.remaining - total;
+    // Remaining must cover the invoice (gap ≥ 0) and leave less than 5% of the
+    // total contract unbilled — i.e. this invoice all but closes the contract.
+    return gap >= 0 && gap < 0.05 * amounts.total;
+  }
+
+  // Returns true if we still need the vendor's decision before proceeding.
+  function shouldPromptFinal(): boolean {
+    return !!finalCheckbox && !finalDecided && !finalCheckbox.checked && seemsFinalInvoice();
+  }
+
+  // Opens the confirm modal, then runs onResolved once the vendor answers.
+  function promptFinalInvoice(onResolved: () => void): void {
+    if (!finalDialog) { onResolved(); return; }
+    const contractName = contractField?.value || 'this contract';
+    finalDialog.message =
+      `The remaining balance on ${contractName} is within 5% of this invoice's total, ` +
+      `which usually means it's the last one. Marking it final closes out the contract — ` +
+      `should we flag this as the final invoice?`;
+    const handler = (e: CustomEvent<{ confirmed: boolean }>): void => {
+      finalDialog.removeEventListener('resolved', handler);
+      finalDecided = true;
+      if (e.detail?.confirmed) {
+        finalCheckbox.checked = true;
+        syncFinalCallout();
+      }
+      onResolved();
+    };
+    finalDialog.addEventListener('resolved', handler);
+    finalDialog.show();
+  }
+
   // Seed with one empty row
   addLineItem();
 
@@ -1084,6 +1186,7 @@ export function initInvoiceWizard(): void {
           <div class="cbf-review-dl__row"><dt>Performance period</dt><dd>${escHtml(perfStart) || '—'} – ${escHtml(perfEnd) || '—'}</dd></div>
           <div class="cbf-review-dl__row"><dt>Contract</dt><dd>${escHtml(contract) || '—'}</dd></div>
           <div class="cbf-review-dl__row"><dt>Project</dt><dd>${escHtml(project) || '—'}</dd></div>
+          <div class="cbf-review-dl__row"><dt>Final invoice</dt><dd>${finalCheckbox?.checked ? 'Yes' : 'No'}</dd></div>
         </dl>
       </div>
 

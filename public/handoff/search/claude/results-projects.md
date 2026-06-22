@@ -149,6 +149,61 @@ Project-scoped results — the same row component carrying a different entity ty
 
 ## Styles
 ```css
+.cbf-search-field .cbf-icon {
+  color: var(--color-text-muted);
+  display: inline-flex;
+}
+.cbf-search-surface .cbf-facet .cbf-icon {
+  color: var(--color-secondary);
+}
+.cbf-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-400);
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-100);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group__head {
+  background: var(--cbf-surface-section-head);
+  border-top: 0;
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--spacing-300) var(--spacing-400);
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group__title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-text-primary);
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon {
+  color: var(--color-secondary);
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group__count {
+  font-size: 16px;
+}
+.cbf-search-surface .cbf-result--allbtn {
+  width: 100%;
+  text-align: left;
+  padding: var(--spacing-400) var(--spacing-500);
+}
+.cbf-search-surface .cbf-result--allbtn .cbf-result__title {
+  color: var(--color-secondary);
+  font-weight: var(--font-weight-semibold);
+}
+.cbf-search-surface .cbf-result--allbtn .cbf-result__chevron {
+  color: var(--color-secondary);
+  opacity: 1;
+}
 .cbf-icon {
   display: inline-flex;
   align-items: center;
@@ -233,61 +288,6 @@ Project-scoped results — the same row component carrying a different entity ty
   color: var(--color-secondary);
   opacity: 0;
   flex: none;
-}
-.cbf-search-surface .cbf-facet .cbf-icon {
-  color: var(--color-secondary);
-}
-.cbf-search-field .cbf-icon {
-  color: var(--color-text-muted);
-  display: inline-flex;
-}
-.cbf-search-results {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-400);
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-100);
-  overflow: hidden;
-  background: var(--color-surface);
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group__head {
-  background: var(--cbf-surface-section-head);
-  border-top: 0;
-  border-bottom: 1px solid var(--color-border);
-  padding: var(--spacing-300) var(--spacing-400);
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group__title {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: var(--font-weight-medium);
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--color-text-primary);
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon {
-  color: var(--color-secondary);
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon svg {
-  width: 18px;
-  height: 18px;
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group__count {
-  font-size: 16px;
-}
-.cbf-search-surface .cbf-result--allbtn {
-  width: 100%;
-  text-align: left;
-  padding: var(--spacing-400) var(--spacing-500);
-}
-.cbf-search-surface .cbf-result--allbtn .cbf-result__title {
-  color: var(--color-secondary);
-  font-weight: var(--font-weight-semibold);
-}
-.cbf-search-surface .cbf-result--allbtn .cbf-result__chevron {
-  color: var(--color-secondary);
-  opacity: 1;
 }
 ```
 
