@@ -1,14 +1,13 @@
 # Portal header
 
-Welcome banner and activity snapshot on the accountant landing page. Greets the vendor by first name using esa-page-header, then shows a read-only metrics row (invoices submitted, pending review, total billed) via esa-stat legos. The primary CTA drives to /vendor-invoice.
+Welcome banner on the invoices view. Greets the vendor by first name using esa-page-header with the primary CTA (Submit Invoice → /vendor-invoice). The activity-stat row is suppressed here (showStats={false}) because the financial-outlook band below owns the numbers.
 
 ## Key decisions
 - esa-page-header owns the greeting + primary CTA — do not hand-roll a custom heading + button pair.
-- Stats use esa-stat inside the cluster layout primitive (data-gap="xl") — not a custom flex row.
+- showStats is false on this page so two stat rows do not compete; the financial-outlook band is the single source of headline metrics.
 - Primary CTA button links to /vendor-invoice; no secondary action in the header.
 
 ## Gotchas
-- esa-stat does not accept a unit prop — currency and suffix formatting must be baked into the value string.
 - The greeting uses the vendor's first name split from the full contact string — "Maria" not "Maria Garcia".
 
 ## Markup
@@ -53,22 +52,6 @@ Welcome banner and activity snapshot on the accountant landing page. Greets the 
       </div>
     </div>
   </header>
-  <div class="cbf-vendor-portal-header__stats cluster" data-gap="xl">
-    <div class="esa-stat">
-      <div class="esa-stat__value">4</div>
-      <div class="esa-stat__label">Invoices submitted</div>
-      <div class="esa-stat__sub">FY 2026</div>
-    </div>
-    <div class="esa-stat esa-stat--accent">
-      <div class="esa-stat__value">1</div>
-      <div class="esa-stat__label">Pending review</div>
-    </div>
-    <div class="esa-stat">
-      <div class="esa-stat__value">$14,200</div>
-      <div class="esa-stat__label">Total submitted</div>
-      <div class="esa-stat__sub">FY 2026</div>
-    </div>
-  </div>
 </div>
 ```
 
@@ -104,71 +87,12 @@ Welcome banner and activity snapshot on the accountant landing page. Greets the 
 .esa-nav-dropdown .esa-icon-link > .esa-icon:last-child {
   transition: transform 0.15s ease;
 }
-.esa-button {
-  --_btn-height: var(--form-height-md, 40px);
-  --_btn-padding-x: var(--form-padding-x-md, 16px);
-  --_btn-font-size: var(--form-font-size-md, 14px);
-  --_btn-radius: var(--form-radius-md, 6px);
-  --_accent: var(--color-primary, #43608a);
-  --_accent-hover: var(--color-primary-hover, #39506f);
-  --_on: var(--color-text-inverse, #ffffff);
-  display: inline-block;
-}
-.esa-button--lg {
-  --_btn-height: var(--form-height-lg, 48px);
-  --_btn-padding-x: var(--form-padding-x-lg, 20px);
-  --_btn-font-size: var(--form-font-size-lg, 16px);
-  --_btn-radius: var(--form-radius-lg, 8px);
-}
-.esa-button__native {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-200, 8px);
-  width: 100%;
-  height: var(--_btn-height);
-  padding-inline: var(--_btn-padding-x);
-  border: 1px solid transparent;
-  border-radius: var(--_btn-radius);
-  font-size: var(--_btn-font-size);
-  font-family: var(--font-sans, system-ui, sans-serif);
-  font-weight: var(--font-weight-medium, 500);
-  line-height: 1;
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    background var(--transition-fast, 0.15s ease),
-    border-color var(--transition-fast, 0.15s ease);
-  -webkit-appearance: none;
-  appearance: none;
-}
-.esa-button--appearance-fill .esa-button__native {
-  background: var(--_accent);
-  color: var(--_on);
-  border-color: transparent;
-}
-.esa-button__label {
-  white-space: nowrap;
-}
-.esa-button--color-secondary {
-  --_accent: var(--color-secondary, #5787b9);
-  --_accent-hover: var(--color-secondary-hover, #43608a);
-}
-.esa-button--appearance-outline .esa-button__native,
-.esa-button--appearance-dashed .esa-button__native {
-  background: transparent;
-  color: var(--_accent);
-  border-color: var(--_accent);
-}
-.cluster {
-  --gap: var(--spacing-300, 0.75rem);
-  --align: center;
-  --justify: flex-start;
+.cbf-vendor-portal-header {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--gap);
-  align-items: var(--align);
-  justify-content: var(--justify);
+  flex-direction: column;
+  gap: var(--spacing-600);
+  padding-bottom: var(--spacing-600);
+  border-bottom: 1px solid var(--color-border);
 }
 .esa-icon-link {
   --_il-font: var(--icon-link-font-size-md, 1rem);
@@ -199,13 +123,6 @@ Welcome banner and activity snapshot on the accountant landing page. Greets the 
 }
 summary.esa-icon-link {
   list-style: none;
-}
-.cbf-vendor-portal-header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-600);
-  padding-bottom: var(--spacing-600);
-  border-bottom: 1px solid var(--color-border);
 }
 .esa-page-header {
   --_ph-title-color: var(--page-header-title-color, var(--color-text-primary, #171717));
@@ -274,48 +191,67 @@ summary.esa-icon-link {
   gap: var(--spacing-200, 0.5rem);
   flex-shrink: 0;
 }
-.esa-stat {
-  --_stat-value-color: var(--stat-value-color, var(--color-text-primary, #171717));
-  --_stat-value-font: var(
-    --stat-value-font,
-    var(--font-display, var(--font-sans, "DM Sans", sans-serif))
-  );
-  --_stat-value-size: var(--stat-value-size, var(--type-size-700, 2.25rem));
-  --_stat-value-weight: var(--stat-value-weight, var(--font-weight-bold, 650));
-  --_stat-label-color: var(--stat-label-color, var(--color-text-secondary, #525252));
-  --_stat-label-size: var(--stat-label-size, var(--type-size-200, 0.9375rem));
-  --_stat-label-weight: var(--stat-label-weight, var(--font-weight-medium, 450));
-  --_stat-sub-color: var(--stat-sub-color, var(--color-text-muted, #737373));
-  --_stat-sub-size: var(--stat-sub-size, var(--type-size-150, 0.875rem));
-  --_stat-accent-color: var(--stat-accent-color, var(--color-secondary, #5787b9));
-  --_stat-gap: var(--stat-gap, var(--spacing-050, 0.125rem));
-  display: flex;
-  flex-direction: column;
-  gap: var(--_stat-gap);
+.esa-button {
+  --_btn-height: var(--form-height-md, 40px);
+  --_btn-padding-x: var(--form-padding-x-md, 16px);
+  --_btn-font-size: var(--form-font-size-md, 14px);
+  --_btn-radius: var(--form-radius-md, 6px);
+  --_accent: var(--color-primary, #43608a);
+  --_accent-hover: var(--color-primary-hover, #39506f);
+  --_on: var(--color-text-inverse, #ffffff);
+  display: inline-block;
+}
+.esa-button--lg {
+  --_btn-height: var(--form-height-lg, 48px);
+  --_btn-padding-x: var(--form-padding-x-lg, 20px);
+  --_btn-font-size: var(--form-font-size-lg, 16px);
+  --_btn-radius: var(--form-radius-lg, 8px);
+}
+.esa-button__native {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-200, 8px);
+  width: 100%;
+  height: var(--_btn-height);
+  padding-inline: var(--_btn-padding-x);
+  border: 1px solid transparent;
+  border-radius: var(--_btn-radius);
+  font-size: var(--_btn-font-size);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-weight: var(--font-weight-medium, 500);
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast, 0.15s ease),
+    border-color var(--transition-fast, 0.15s ease);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.esa-button--appearance-fill .esa-button__native {
+  background: var(--_accent);
+  color: var(--_on);
+  border-color: transparent;
+}
+.esa-button__label {
+  white-space: nowrap;
+}
+.esa-button--sm {
+  --_btn-height: var(--form-height-sm, 32px);
+  --_btn-padding-x: var(--form-padding-x-sm, 12px);
+  --_btn-font-size: var(--form-font-size-sm, 12px);
+  --_btn-radius: var(--form-radius-sm, 4px);
+}
+.esa-button--color-secondary {
+  --_accent: var(--color-secondary, #5787b9);
+  --_accent-hover: var(--color-secondary-hover, #43608a);
+}
+.esa-button--appearance-outline .esa-button__native,
+.esa-button--appearance-dashed .esa-button__native {
   background: transparent;
-}
-.esa-stat__value {
-  font-family: var(--_stat-value-font);
-  font-size: var(--_stat-value-size);
-  font-weight: var(--_stat-value-weight);
-  line-height: var(--line-height-tight, 1.3);
-  letter-spacing: var(--letter-spacing-tight, -0.01em);
-  color: var(--_stat-value-color);
-}
-.esa-stat__label {
-  font-size: var(--_stat-label-size);
-  font-weight: var(--_stat-label-weight);
-  line-height: var(--line-height-normal, 1.6);
-  color: var(--_stat-label-color);
-}
-.esa-stat__sub {
-  font-size: var(--_stat-sub-size);
-  font-weight: var(--font-weight-regular, 350);
-  line-height: var(--line-height-normal, 1.6);
-  color: var(--_stat-sub-color);
-}
-.esa-stat--accent .esa-stat__value {
-  color: var(--_stat-accent-color);
+  color: var(--_accent);
+  border-color: var(--_accent);
 }
 ```
 
@@ -326,38 +262,37 @@ summary.esa-icon-link {
 - `--color-secondary`: #2770b2 _(semantic)_
 - `--color-secondary-hover`: #1e5386 _(semantic)_
 - `--color-text-inverse`: #ffffff _(semantic)_
-- `--color-text-muted`: #7c7c7c _(semantic)_
 - `--color-text-primary`: #3d3d3d _(semantic)_
 - `--color-text-secondary`: #525252 _(semantic)_
 - `--font-display`: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif _(primitive)_
 - `--font-sans`: "IBM Plex Sans", sans-serif _(primitive)_
-- `--font-weight-bold`: 700 _(primitive)_
 - `--font-weight-medium`: 500 _(primitive)_
 - `--font-weight-regular`: 400 _(primitive)_
 - `--font-weight-semibold`: 600 _(primitive)_
 - `--form-font-size-lg`: clamp(.875rem, .77rem + .52vw, 1.125rem) _(component)_
 - `--form-font-size-md`: clamp(.75rem, .66rem + .44vw, .9375rem) _(component)_
+- `--form-font-size-sm`: clamp(.625rem, .56rem + .32vw, .75rem) _(component)_
 - `--form-height-lg`: 48px _(component)_
 - `--form-height-md`: 40px _(component)_
+- `--form-height-sm`: 32px _(component)_
 - `--form-padding-x-lg`: 1rem _(component)_
 - `--form-padding-x-md`: .75rem _(component)_
+- `--form-padding-x-sm`: .625rem _(component)_
 - `--form-radius-lg`: .5rem _(component)_
 - `--form-radius-md`: .5rem _(component)_
+- `--form-radius-sm`: .25rem _(component)_
 - `--icon-link-font-size-md`: 1rem _(component)_
 - `--icon-link-font-size-sm`: .875rem _(component)_
 - `--icon-link-gap`: .375rem _(component)_
 - `--icon-size-large`: 24px _(component)_
 - `--icon-size-medium`: 20px _(component)_
 - `--icon-size-small`: 16px _(component)_
-- `--spacing-050`: .125rem _(primitive)_
 - `--spacing-100`: .25rem _(primitive)_
 - `--spacing-150`: .375rem _(primitive)_
 - `--spacing-200`: .5rem _(primitive)_
 - `--spacing-300`: .75rem _(primitive)_
 - `--spacing-500`: 1.5rem _(primitive)_
 - `--spacing-600`: 2rem _(primitive)_
-- `--type-size-150`: clamp(.6875rem, .61rem + .38vw, .875rem) _(primitive)_
 - `--type-size-200`: clamp(.75rem, .66rem + .44vw, .9375rem) _(primitive)_
 - `--type-size-300`: clamp(.875rem, .77rem + .52vw, 1.125rem) _(primitive)_
 - `--type-size-600`: clamp(1.375rem, 1.2rem + .88vw, 1.875rem) _(primitive)_
-- `--type-size-700`: clamp(1.625rem, 1.41rem + 1.08vw, 2.25rem) _(primitive)_
