@@ -1,0 +1,101 @@
+---
+// cbf-related-items — the "Related items" section on a Report Center summary
+// page: a heading + a responsive grid of related-report cards. Each card is the
+// esa-card lego (its static surface + header title), filled with an overview
+// paragraph, optional keyword/owner meta, and a trailing action button
+// (esa-button). Mirrors the live CBFish accruals summary "Related items" block.
+//
+// The .grid / .type-section-title classes ship from @esa/tokens as separate CSS
+// modules (not bundled into tokens.css), so import them here to stay self-contained.
+//
+// bcn-lego-checked: the card SURFACE is esa-card and the CTA is esa-button — no
+// reinvented card/button. The action sits in esa-card's own "footer" slot (which
+// supplies the divider + sunken footer band); we only flex-end the button inside
+// it. Checked Beacon (report related-items cards). cbf-related-items is the
+// reusable home for the section.
+import '@esa/tokens/layouts.css';
+import '@esa/tokens/type-roles.css';
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+
+interface RelatedItem {
+  title: string;
+  overview: string;
+  keywords?: string;
+  owner?: string;
+  href?: string;
+  cta?: string;
+}
+interface Props {
+  items: RelatedItem[];
+  heading?: string;
+  /** Anchor id so the sub-nav "Related items" link can scroll here. */
+  id?: string;
+}
+const { items, heading = 'Related items', id = 'related-items' } = Astro.props;
+---
+<section class="cbf-related-items" id={id} aria-label={heading}>
+  <h2 class="cbf-related-items__head type-section-title">{heading}</h2>
+  <div class="cbf-related-items__grid grid">
+    {items.map((item) => (
+      <EsaCard title={item.title} variant="outlined" padding="default">
+        <div class="cbf-related-items__card">
+          <p class="cbf-related-items__overview">
+            <strong>Overview:</strong> {item.overview}
+          </p>
+          {item.keywords && (
+            <p class="cbf-related-items__meta"><strong>Keywords:</strong> {item.keywords}</p>
+          )}
+          {item.owner && (
+            <p class="cbf-related-items__meta"><strong>Owner:</strong> {item.owner}</p>
+          )}
+        </div>
+        <div slot="footer" class="cbf-related-items__foot">
+          <EsaButton color="primary" size="sm" href={item.href ?? '#'}>
+            {item.cta ?? 'View page'}
+          </EsaButton>
+        </div>
+      </EsaCard>
+    ))}
+  </div>
+</section>
+
+<style>
+  .cbf-related-items {
+    padding-top: var(--spacing-600);
+    border-top: 1px solid var(--color-border);
+  }
+  .cbf-related-items__head {
+    margin: 0 0 var(--spacing-400);
+  }
+  .cbf-related-items__grid {
+    --grid-min: 20rem;
+  }
+  /* Card body interior: overview + meta stacked. */
+  .cbf-related-items__card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-300);
+  }
+  .cbf-related-items__overview {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+  }
+  .cbf-related-items__overview strong,
+  .cbf-related-items__meta strong {
+    color: var(--color-text-primary);
+  }
+  .cbf-related-items__meta {
+    margin: 0;
+    font-size: 15px;
+    color: var(--color-text-secondary);
+  }
+  /* esa-card's footer slot supplies the band, divider, and padding; we only
+     push the action to the trailing edge. */
+  .cbf-related-items__foot {
+    display: flex;
+    justify-content: flex-end;
+  }
+</style>

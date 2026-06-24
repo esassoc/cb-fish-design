@@ -58,6 +58,15 @@ export const prototypes: Prototype[] = [
     createdAt: '2026-06-22',
     status: 'in-progress',
   },
+  {
+    slug: 'project-budgets',
+    title: 'Project budgets',
+    description:
+      'A new Funding area for managing project budgets by fiscal year and fund. Starts with the "Summary" landing — sub-nav across Baselines, SOY, Decisions, and Change requests (BOG), a photo/prose intro, and related report links.',
+    route: '/project-budgets',
+    createdAt: '2026-06-23',
+    status: 'in-progress',
+  },
 ];
 
 /** Newest first — the order the index table renders. */
