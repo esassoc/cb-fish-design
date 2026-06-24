@@ -1,0 +1,48 @@
+---
+// Right sidebar — wizard panel (hidden by default) + expert panel with PP / Habitat Work tabs.
+// Tab content and wizard steps are rendered dynamically by map-sow.js.
+// Initial display states (#wizard-panel hidden, #expert-panel flex, #inner-tabbar hidden)
+// are set via CSS; JS overrides style.display to toggle between modes.
+---
+<div id="sidebar" role="complementary" aria-label="Work element details">
+
+  <!-- Guided wizard panel (toggled by nav Guided button) — hidden by CSS default -->
+  <div id="wizard-panel" role="region" aria-label="Guided workflow"></div>
+
+  <!-- Expert panel (default view) — flex by CSS default -->
+  <div id="expert-panel">
+
+    <div id="sidebar-empty" aria-live="polite">
+      <div class="big" aria-hidden="true">&#9998;</div>
+      <p>Add a work element to begin entering pre-project metrics and habitat work details.</p>
+    </div>
+
+    <!-- Tab bar — hidden by CSS default, shown by JS when a WE is active -->
+    <div id="inner-tabbar" role="tablist" aria-label="Work element sections">
+      <div
+        class="itab active"
+        id="itab-pp"
+        role="tab"
+        aria-selected="true"
+        aria-controls="pp-side"
+        tabindex="0"
+        onclick="showInnerTab('pp')"
+        onkeydown="if(event.key==='Enter'||event.key===' ')showInnerTab('pp')"
+      >Pre-Project <span class="badge warn" id="pp-badge">0/11</span></div>
+      <div
+        class="itab"
+        id="itab-work"
+        role="tab"
+        aria-selected="false"
+        aria-controls="work-side"
+        tabindex="-1"
+        onclick="showInnerTab('work')"
+        onkeydown="if(event.key==='Enter'||event.key===' ')showInnerTab('work')"
+      >Habitat Work</div>
+    </div>
+
+    <div id="pp-side" role="tabpanel" aria-labelledby="itab-pp"></div>
+    <div id="work-side" role="tabpanel" aria-labelledby="itab-work"></div>
+
+  </div>
+</div>

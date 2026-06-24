@@ -1,0 +1,175 @@
+---
+// /map-sow — Habitat SOW Tool
+// Map-based SOW builder. Sits inside the standard page chrome (public nav +
+// EsaContainer + bordered card) matching vendor-invoice / vendor-portal.
+//
+// The tool nav bar has been dissolved into the breadcrumb strip (flex repel):
+// breadcrumbs on the left, action buttons on the right. This eliminates the
+// "3 bars" feeling and matches the single-strip pattern of all other prototypes.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import EsaBreadcrumbs from '@esa/ecology/esa-breadcrumbs.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import CbfMsowWePanel from '../components/map-sow/cbf-msow-we-panel.astro';
+import CbfMsowSidebar from '../components/map-sow/cbf-msow-sidebar.astro';
+import CbfMsowMap from '../components/map-sow/cbf-msow-map.astro';
+import CbfMsowModals from '../components/map-sow/cbf-msow-modals.astro';
+import '../styles/map-sow.css';
+import { withBase } from '../lib/base';
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+const crumbs = [
+  { label: 'Home', href: withBase('/'), icon: homeIcon },
+  { label: 'Habitat SOW Tool' },
+];
+
+const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js';
+---
+<BaseLayout title="Habitat SOW Tool — Columbia Basin Fish &amp; Wildlife Program">
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+  />
+
+  <a href="#map" class="skip-link">Skip to map</a>
+
+  <CbfPublicNav />
+
+  <!-- Same outer chrome as vendor-invoice / vendor-portal -->
+  <main class="msow-page">
+    <EsaContainer maxWidth="1920px">
+
+      <div class="msow-card">
+
+        <!-- Gold breadcrumb strip — breadcrumbs only, matches cbf-app-panel -->
+        <div class="msow-crumb-strip">
+          <EsaBreadcrumbs items={crumbs} />
+        </div>
+
+        <!-- White action bar — breathing room + tool actions, right-aligned -->
+        <div class="msow-toolbar">
+          <div class="msow-toolbar-actions">
+            <span onclick="clearAll()">
+              <EsaButton color="ghost" appearance="outline" size="sm">Clear All</EsaButton>
+            </span>
+            <!-- wizard-toggle-btn: raw button — map-sow.js sets .textContent + .style.background directly -->
+            <button
+              id="wizard-toggle-btn"
+              onclick="toggleWizardMode()"
+              aria-pressed="false"
+              class="msow-wizard-toggle"
+            >✦ Guided</button>
+            <span onclick="openSOW()">
+              <EsaButton color="primary" size="sm">Export SOW</EsaButton>
+            </span>
+          </div>
+        </div>
+
+        <!-- Three-column GIS layout: WE panel | sidebar | map -->
+        <div class="msow-root">
+          <div id="msow-layout">
+            <CbfMsowWePanel contractNum="84042 REL 117" cor="Tracy Hauser" fy="2026" />
+            <CbfMsowSidebar />
+            <CbfMsowMap />
+          </div>
+        </div>
+
+      </div>
+
+    </EsaContainer>
+  </main>
+
+  <CbfMsowModals />
+
+  <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script is:inline src={mapSowSrc}></script>
+
+  <script>
+    import '@esa/ecology/esa-text-field';
+    import '@esa/ecology/esa-checkbox';
+  </script>
+
+</BaseLayout>
+
+<style is:global>
+  /* Flex-column body so .msow-page can flex:1 below the site nav */
+  html:has(.msow-page) { height: 100%; }
+  html:has(.msow-page) body {
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Main region — outer padding matches vendor-invoice (.cbf-app-page) */
+  .msow-page {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding-block: var(--spacing-600);
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  /* EsaContainer needs to stretch so the card inside can fill height */
+  .msow-page .esa-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* Bordered card — mirrors cbf-app-card from vendor-invoice */
+  .msow-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    overflow: hidden;
+    background: var(--color-surface);
+    box-shadow: 0 1px 3px color-mix(in srgb, var(--color-surface-inverse) 8%, transparent);
+  }
+
+  /* Gold breadcrumb strip — breadcrumbs only, matches cbf-app-panel__crumb */
+  .msow-crumb-strip {
+    background: var(--color-gold-50);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--spacing-400) var(--spacing-600);
+    flex-shrink: 0;
+  }
+  .msow-crumb-strip .esa-breadcrumbs {
+    --breadcrumbs-link-color: var(--color-text-secondary);
+    --breadcrumbs-link-hover: var(--color-primary);
+  }
+
+  /* White action bar — sits below the gold strip, gives breathing room.
+     Buttons right-aligned; same horizontal padding as the card content. */
+  .msow-toolbar {
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--spacing-400) var(--spacing-600);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .msow-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-200);
+  }
+
+  /* Tool layout fills the card below the crumb strip */
+  .msow-root {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+  }
+</style>
