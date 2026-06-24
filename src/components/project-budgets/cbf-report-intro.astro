@@ -1,0 +1,83 @@
+---
+// cbf-report-intro — the Report Center summary "intro band": a photo on the
+// left, a bold lede + supporting body paragraph(s) on the right. Mirrors the
+// live CBFish accruals/expenditures summary header. First used by
+// /project-budgets; scoped here until a second summary page consumes it.
+//
+// bcn-lego-checked: no esa- media/hero lego exists — esa-page-header is a
+// title + lede + actions BLOCK with no media slot, and esa-card is a static
+// content surface, neither models a "photo beside prose" intro. The two-column
+// split is component-INTERNAL layout (legal per CLAUDE.md: only PAGES must read
+// as a manifest). The <img> uses object-fit:cover so a source photo of ANY
+// aspect ratio crops to fill the frame — no manual cropping needed. Checked
+// Beacon (no media-hero pattern). cbf-report-intro is the reusable home.
+interface Props {
+  image: { src: string; alt?: string };
+  lede: string;
+  /** One or more supporting paragraphs under the lede. */
+  body: string | string[];
+}
+const { image, lede, body } = Astro.props;
+const paragraphs = Array.isArray(body) ? body : [body];
+---
+<section class="cbf-report-intro">
+  <figure class="cbf-report-intro__media">
+    <img src={image.src} alt={image.alt ?? ''} loading="lazy" />
+  </figure>
+  <div class="cbf-report-intro__copy">
+    <p class="cbf-report-intro__lede">{lede}</p>
+    {paragraphs.map((p) => <p class="cbf-report-intro__body">{p}</p>)}
+  </div>
+</section>
+
+<style>
+  .cbf-report-intro {
+    display: grid;
+    grid-template-columns: minmax(280px, 38%) 1fr;
+    gap: var(--spacing-700, 2.5rem);
+    align-items: stretch;
+  }
+  .cbf-report-intro__media {
+    margin: 0;
+    align-self: start;     /* don't stretch to the prose column height */
+    aspect-ratio: 3 / 2;   /* shorter, landscape frame */
+    border-radius: var(--radius-100);
+    overflow: hidden;
+    background: var(--color-surface-sunken);
+  }
+  /* cover-crop anchored to the BOTTOM (object-position: bottom) so the crop eats
+     the TOP of the photo and keeps its lower focal point; fills the frame at any
+     source aspect ratio. */
+  .cbf-report-intro__media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center bottom;
+  }
+  .cbf-report-intro__copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-400);
+    justify-content: center;
+    min-width: 0;
+  }
+  .cbf-report-intro__lede {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.4;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-report-intro__body {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+  }
+
+  /* Stack on narrow viewports — photo on top, prose below. */
+  @media (max-width: 800px) {
+    .cbf-report-intro { grid-template-columns: 1fr; }
+    .cbf-report-intro__media { aspect-ratio: 2 / 1; }
+  }
+</style>
