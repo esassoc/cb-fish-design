@@ -5323,7 +5323,11 @@ function wizardStepStatus(we, stepId) {
       return ((ach&&(ach.layer||ach.bufferLayer)) && ((fpL&&fpL.layer)||(fpR&&fpR.layer))) ? 'done' : 'pending';
     }
     case 'fp_split':  return (we.ppData['area_fp'] && we.ppData['area_fp'].fpSplit) ? 'done' : 'pending';
-    case 'pp_done':   return 'done'; // always passable
+    case 'pp_done': {
+      // Done when core PP measurements are all complete
+      var corePP = ['perimeter','reach','ch_width','fp_left','fp_right'];
+      return corePP.every(function(id){ return wizardStepStatus(we, id) === 'done'; }) ? 'done' : 'pending';
+    }
     case 'chu_split':  return (we.chuUnits && we.chuUnits.length > 1) ? 'done' : 'pending';
     case 'chu_details': {
       if (!we.chuUnits || we.chuUnits.length < 2) return 'pending';
@@ -5367,18 +5371,29 @@ function renderWizardStep() {
   if (!step) return;
 
   // ── Vertical stepper (vendor-invoice pattern) ──────────────────────────
+  var workSectionLabels = {pc: 'Primary Channel', fp: 'Floodplain & Side Channels', rr: 'Riparian Restoration'};
   var stepsHtml = '<div class="wz-v-steps">';
-  var prevPhase = null;
+  var prevPhase = null, prevWorkSection = null;
   visSteps.forEach(function(s, i) {
     var st = wizardStepStatus(we, s.id);
     var isActive = (i === wizardStep);
     var isDone = st === 'done';
     var isLast = (i === visSteps.length - 1);
 
-    // Phase section header when phase changes
+    // Phase header — PP only; work phase uses type sub-sections instead
     if (s.phase !== prevPhase) {
-      stepsHtml += '<div class="wz-v-phase-head">' + (s.phase === 'pp' ? 'Pre-Project' : 'Habitat Work') + '</div>';
+      if (s.phase === 'pp') stepsHtml += '<div class="wz-v-phase-head">Pre-Project</div>';
       prevPhase = s.phase;
+      prevWorkSection = null;
+    }
+
+    // Work type headers replace the "Habitat Work" label (same style as Pre-Project)
+    if (s.phase === 'work' && s.types && s.types.length) {
+      var sectionKey = s.types[0];
+      if (sectionKey !== prevWorkSection) {
+        stepsHtml += '<div class="wz-v-phase-head">' + (workSectionLabels[sectionKey] || sectionKey) + '</div>';
+        prevWorkSection = sectionKey;
+      }
     }
 
     stepsHtml += '<div class="wz-v-item">';
@@ -5399,8 +5414,8 @@ function renderWizardStep() {
   // Left column: header + vertical stepper only
   panel.innerHTML =
     '<div class="wz-v-header">' +
-      '<div class="wz-v-mode-label">&#10022; Guided Mode</div>' +
-      '<div class="wz-v-current-step">' + step.title + '</div>' +
+      '<div class="wz-v-mode-label">Work Element</div>' +
+      '<div class="wz-v-current-step">' + (we ? we.name : '—') + '</div>' +
     '</div>' +
     stepsHtml;
 
