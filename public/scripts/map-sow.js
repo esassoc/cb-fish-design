@@ -216,6 +216,15 @@ window.onload = function() {
   map.on('mousemove', mapMove);
   map.on('dblclick', mapDbl);
   renderLegend();
+
+  // Wire esa-select change event for WE dropdown (dispatches CustomEvent, not native change)
+  var weDropdown = document.getElementById('msow-we-dropdown');
+  if (weDropdown) {
+    weDropdown.addEventListener('change', function(e) {
+      selectWEFromDropdown(e.detail && e.detail.value);
+    });
+  }
+
   // Default to guided mode on load
   toggleWizardMode();
 };
@@ -326,15 +335,18 @@ function renderWEDropdown() {
 
   if (sel) {
     if (!workElements.length) {
-      sel.innerHTML = '<option value="">— No work elements yet —</option>';
+      sel.options  = [];
       sel.disabled = true;
     } else {
       sel.disabled = false;
-      sel.innerHTML = workElements.map(function(we, i) {
+      sel.options = workElements.map(function(we, i) {
         var typeLabels = we.types.map(function(t){ return {pc:'PC',fp:'FP',rr:'RR'}[t]; }).join('/');
-        var label = 'WE ' + (i+1) + ': ' + we.name + (typeLabels ? ' ['+typeLabels+']' : '');
-        return '<option value="'+we.id+'"'+(we.id===activeWEId?' selected':'')+'>'+label+'</option>';
-      }).join('');
+        return {
+          label: 'WE ' + (i+1) + ': ' + we.name + (typeLabels ? ' ['+typeLabels+']' : ''),
+          value: we.id
+        };
+      });
+      if (activeWEId) sel.value = activeWEId;
     }
   }
 
@@ -579,7 +591,7 @@ function buildPPSide() {
     '<div class="pp-progress">' +
       '<div class="sbt"><span class="sbt-dot"></span>Pre-Project Conditions</div>' +
       '<div class="pp-prog-row"><div class="pp-prog-wrap"><div class="pp-prog-bar" id="pp-prog" style="width:0%"></div></div><span class="pp-prog-pct" id="pp-prog-pct">0%</span></div>' +
-      '<div style="font-size:10px;color:#8aaccc;margin-top:4px">Hover to highlight. Click row to zoom.</div>' +
+      '<div style="font-size:10px;color:var(--msow-muted-text,#8aaccc);margin-top:4px">Hover to highlight. Click row to zoom.</div>' +
     '</div>' +
     '<div id="pp-metrics-list"></div>';
   buildPPMetricsList();
@@ -657,7 +669,7 @@ function renderPMRow(m) {
         var editLink = (hasUserPoly || hasBuffer) ? ' <span class="pm-redraw" onclick="startPolyEdit(\''+bufId+'\')">'+(isEditingPoly?'editing…':'edit')+'</span>' : '';
         var redoBtn2 = hasUserPoly ? ' <span class="pm-redraw" onclick="clearPPGeom(\''+bufId+'\')">redo</span>' : '';
         var drawnResult = hasUserPoly ? '<span class="pm-result">&#10003; '+vs+editLink+redoBtn2+'</span>' : '';
-        var estResult = hasBuffer ? '<div style="margin-top:3px"><span class="pm-result" style="background:#e8f4fd;border-color:#7ab8df;color:#1a5a8c">~ '+vs+'</span><span style="font-size:10px;color:#7a96b0;margin-left:5px">'+srcNote+'</span>'+editLink+'</div>' : '';
+        var estResult = hasBuffer ? '<div style="margin-top:3px"><span class="pm-result" style="background:#e8f4fd;border-color:#7ab8df;color:#1a5a8c">~ '+vs+'</span><span style="font-size:10px;color:var(--msow-helper-text,#7a96b0);margin-left:5px">'+srcNote+'</span>'+editLink+'</div>' : '';
         var drawPrompt = !hasUserPoly ? '<div class="pm-meas-row" style="margin-top:4px"><button class="'+bc2+'" onclick="startPPDraw(\''+bufId+'\',0)" style="font-size:10px">&#9646; Draw from scratch</button></div>' : '';
         if (!vs) {
           h += '<div class="pm-meas-row"><button class="'+bc2+'" onclick="startPPDraw(\''+bufId+'\',0)">&#9646; Draw polygon</button><span class="pm-not-drawn" style="margin-left:6px">or draw reach length &amp; channel width</span></div>';
@@ -718,7 +730,7 @@ function renderPMRow(m) {
     var autoVal = (d && d.valueM) ? (d.valueM*0.000247105).toFixed(2)+' acres' : null;
     if (autoVal) {
       h += '<span class="pm-result">&#10003; '+autoVal+'</span>';
-      h += '<div style="font-size:10px;color:#7a96b0;margin-top:2px">Auto-calculated from floodplain split</div>';
+      h += '<div style="font-size:10px;color:var(--msow-helper-text,#7a96b0);margin-top:2px">Auto-calculated from floodplain split</div>';
     } else {
       h += '<span class="pm-waiting">Split Total Floodplain Area to calculate</span>';
     }
@@ -741,7 +753,7 @@ function renderPMRow(m) {
     } else if (m.id === 'fp_width') {
       if (res2 !== null) {
         h += '<span class="pm-result">'+Math.round(res2*3.28084)+' ft</span>';
-        h += '<span style="font-size:10px;color:#7a96b0;margin-left:5px">total area ÷ reach length</span>';
+        h += '<span style="font-size:10px;color:var(--msow-helper-text,#7a96b0);margin-left:5px">total area ÷ reach length</span>';
       } else {
         h += '<span class="pm-waiting">Draw floodplain polygons and reach length to calculate</span>';
       }
@@ -750,7 +762,7 @@ function renderPMRow(m) {
       if (res2 !== null) {
         var fpAcres = (res2 * 0.000247105).toFixed(2);
         h += '<span class="pm-result">'+fpAcres+' acres</span>';
-        h += '<span style="font-size:10px;color:#7a96b0;margin-left:5px">Left + Right</span>';
+        h += '<span style="font-size:10px;color:var(--msow-helper-text,#7a96b0);margin-left:5px">Left + Right</span>';
       } else {
         h += '<span class="pm-waiting">Draw Left and/or Right floodplain polygons</span>';
       }
@@ -1448,7 +1460,7 @@ function buildElevChartHTML(weId) {
   if (sd._elevLoading) {
     h += ' <span class="elev-loading">Querying USGS elevation service…</span></div>';
   } else if (sd._elevError) {
-    h += '</div><div style="font-size:10px;color:#c05050;padding:4px 0">'+sd._elevError+'</div>';
+    h += '</div><div style="font-size:10px;color:var(--msow-error-soft,#c05050);padding:4px 0">'+sd._elevError+'</div>';
     h += '<button class="pm-draw-btn" style="font-size:10px;margin-top:4px" onclick="fetchElevationProfile(getWE(\''+weId+'\'))">&#8635; Retry</button>';
   } else if (sd._elevProfile) {
     h += '</div>';
@@ -1726,21 +1738,21 @@ function buildPCPanelHTML(we) {
   h+=secOpen('Wood Structures');
   h+=fCalc('Total # large logs (>12&quot; dia, 15\' len)','large-logs');
   h+=fCalc('Total # small logs (&lt;12&quot; dia, 15\' len)','small-logs');
-  h+='<div style="font-size:10px;color:#7a96b0;margin-bottom:6px;font-style:italic">Totals calculated from structures below.</div>';
+  h+='<div style="font-size:10px;color:var(--msow-helper-text,#7a96b0);margin-bottom:6px;font-style:italic">Totals calculated from structures below.</div>';
   h+='<div id="structs-list"></div>';
   h+='<button class="add-entry-btn" onclick="addStructure()">+ Add Structure</button>';
   h+=secEnd();
   h+=secClosed('Channel Habitat Units');
   h+='<div id="chu-panel">';
   h+='<div class="f-row" style="flex-direction:column;align-items:flex-start;gap:6px">';
-  h+='<div style="font-size:11px;color:#7a96b0;line-height:1.5">Draw perpendicular split lines across the channel to divide it into channel habitat units (CHUs). Units follow a <b>riffle → pool → glide → run</b> sequence — click any unit type button to auto-assign the full sequence. Selecting a unit type on one unit sets all others relative to it.</div>';
-  h+='<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;font-size:10px;color:#5a7a9a">';
+  h+='<div style="font-size:11px;color:var(--msow-helper-text,#7a96b0);line-height:1.5">Draw perpendicular split lines across the channel to divide it into channel habitat units (CHUs). Units follow a <b>riffle → pool → glide → run</b> sequence — click any unit type button to auto-assign the full sequence. Selecting a unit type on one unit sets all others relative to it.</div>';
+  h+='<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;font-size:10px;color:var(--msow-desc-text,#5a7a9a)">';
   h+='<span style="color:#7ab8df">&#9632; Riffle</span><span>— shallow, fast, turbulent water over coarse substrate</span>';
   h+='</div>';
-  h+='<div style="display:flex;gap:4px;flex-wrap:wrap;font-size:10px;color:#5a7a9a">';
+  h+='<div style="display:flex;gap:4px;flex-wrap:wrap;font-size:10px;color:var(--msow-desc-text,#5a7a9a)">';
   h+='<span style="color:#b07bdf">&#9632; Pool</span><span>— deep, slow water; scoured by flow</span>';
   h+='</div>';
-  h+='<div style="display:flex;gap:4px;flex-wrap:wrap;font-size:10px;color:#5a7a9a">';
+  h+='<div style="display:flex;gap:4px;flex-wrap:wrap;font-size:10px;color:var(--msow-desc-text,#5a7a9a)">';
   h+='<span style="color:#5ddba5">&#9632; Glide</span><span>— smooth laminar flow, moderate depth, low gradient</span>';
   h+='</div>';
   h+='<div style="display:flex;gap:4px;flex-wrap:wrap;font-size:10px;color:var(--color-text-muted);margin-bottom:8px">';
@@ -1914,7 +1926,7 @@ function updateSOWCalcs() {
         var acresAuto = (areaM2 * 0.000247105).toFixed(3);
         we.sowLayers['pc-area'] = {layer: bufLayer, valueM: areaM2 * 0.000247105, acres: parseFloat(acresAuto), geo: 'polygon', label: 'Area of Restored Channel', _auto: true};
         pcAreaWrap.innerHTML =
-          '<span class="drawn-result">~ '+acresAuto+' acres</span> <span style="font-size:10px;color:#5a7a9a">(estimated)</span> ' +
+          '<span class="drawn-result">~ '+acresAuto+' acres</span> <span style="font-size:10px;color:var(--msow-desc-text,#5a7a9a)">(estimated)</span> ' +
           '<span class="drawn-redo" onclick="startPolyEditSOW(\'pc-area\')">edit</span> ' +
           '<span class="drawn-redo" onclick="startSOWDraw(\'pc-area\',\'polygon\',\'Area of Restored Channel\')">draw from scratch</span>';
       }
@@ -3204,7 +3216,7 @@ function updateCHUSummary(we) {
   el.innerHTML =
     '<div style="color:#7ab8df;font-weight:700;margin-bottom:4px">CHU Summary</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px 12px;font-size:10px;color:#c8d4df">'+
-    '<div style="color:#7a96b0">Type</div><div style="color:#7a96b0">Count</div><div style="color:#7a96b0">Area / Length</div>'+
+    '<div style="color:var(--msow-helper-text,#7a96b0)">Type</div><div style="color:var(--msow-helper-text,#7a96b0)">Count</div><div style="color:var(--msow-helper-text,#7a96b0)">Area / Length</div>'+
     (riffles.length?'<div style="color:#7ab8df">Riffles</div><div>'+riffles.length+'</div><div>'+rArea.toFixed(3)+' ac · ~'+Math.round(rLen).toLocaleString()+' ft</div>':'')+ 
     (riffles.length&&totalBoulders?'<div style="color:#7ab8df;padding-left:8px">↳ Boulders</div><div>'+totalBoulders+'</div><div></div>':'')+
     (pools.length?'<div style="color:#b07bdf">Pools</div><div>'+pools.length+'</div><div>'+pArea.toFixed(3)+' ac · ~'+Math.round(pLen).toLocaleString()+' ft</div>':'')+
@@ -4013,7 +4025,7 @@ function updateSOWSlopePanel(we) {
     return;
   }
   if (sd._error) {
-    wrap.innerHTML = '<span style="font-size:10px;color:#c05050">'+sd._error+'</span> ' +
+    wrap.innerHTML = '<span style="font-size:10px;color:var(--msow-error-soft,#c05050)">'+sd._error+'</span> ' +
       '<span class="drawn-redo" onclick="fetchSOWElevationProfile(getActiveWE())">retry</span>';
     return;
   }
@@ -4131,7 +4143,7 @@ function renderChannelReaches() {
     var h = '<div class="multi-entry-head" style="cursor:pointer" onclick="toggleCRCollapse(&apos;'+r.id+'&apos;)">';
     h += 'Reach ' + globalNum + summary;
     h += '<span style="display:flex;gap:8px;align-items:center">';
-    h += '<span style="color:#7a96b0;font-size:12px">'+(r.collapsed?'&#9654;':'&#9660;')+'</span>';
+    h += '<span style="color:var(--msow-helper-text,#7a96b0);font-size:12px">'+(r.collapsed?'&#9654;':'&#9660;')+'</span>';
     h += '<span class="multi-entry-del" onclick="event.stopPropagation();delChannelReach(&apos;'+r.id+'&apos;)">&#10005;</span>';
     h += '</span></div>';
 
@@ -4169,7 +4181,7 @@ function renderChannelReaches() {
         h += '</div>';
       });
       var avgW = crAvgWidth(r);
-      if (avgW) h += '<div style="font-size:11px;color:#8aaccc;margin-top:2px">Avg: '+Math.round(avgW)+' ft</div>';
+      if (avgW) h += '<div style="font-size:11px;color:var(--msow-muted-text,#8aaccc);margin-top:2px">Avg: '+Math.round(avgW)+' ft</div>';
       h += '</div></div>';
 
       // Bank height
@@ -4235,7 +4247,7 @@ function crAreaHTML(r) {
     return '<span class="drawn-result">~ '+ac+' acres</span> <span class="drawn-redo" onclick="startCRDraw(&apos;'+r.id+'&apos;,&apos;pc-area&apos;,&apos;polygon&apos;,&apos;Area&apos;)">draw from scratch</span>';
   } else if (areaSL && areaSL.layer && areaSL._auto) {
     var ac2 = ((areaSL.valueM||0)*0.000247105).toFixed(3);
-    return '<span class="drawn-result">~ '+ac2+' acres</span> <span style="font-size:10px;color:#5a7a9a">(estimated)</span> '+
+    return '<span class="drawn-result">~ '+ac2+' acres</span> <span style="font-size:10px;color:var(--msow-desc-text,#5a7a9a)">(estimated)</span> '+
       '<span class="drawn-redo" onclick="startCRPolyEdit(&apos;'+r.id+'&apos;)">edit</span> '+
       '<span class="drawn-redo" onclick="startCRDraw(&apos;'+r.id+'&apos;,&apos;pc-area&apos;,&apos;polygon&apos;,&apos;Area&apos;)">draw from scratch</span>';
   } else if (reachSL && reachSL.layer && avgW) {
@@ -4249,7 +4261,7 @@ function crAreaHTML(r) {
 function crSlopeHTML(r) {
   var sd = r.sowElev || {};
   if (sd._loading) return '<span class="pm-waiting" style="font-size:10px">Querying USGS…</span>';
-  if (sd._error) return '<span style="font-size:10px;color:#c05050">'+sd._error+'</span> <span class="drawn-redo" onclick="fetchCRElevProfile(&apos;'+r.id+'&apos;)">retry</span>';
+  if (sd._error) return '<span style="font-size:10px;color:var(--msow-error-soft,#c05050)">'+sd._error+'</span> <span class="drawn-redo" onclick="fetchCRElevProfile(&apos;'+r.id+'&apos;)">retry</span>';
   if (sd._profile) {
     var h = '<span class="drawn-result">'+(sd._slopeDeg||0).toFixed(2)+'° / '+(sd._slopePct||0).toFixed(2)+'%</span> ';
     h += '<span class="drawn-redo" onclick="fetchCRElevProfile(&apos;'+r.id+'&apos;)">&#8635; refresh</span>';

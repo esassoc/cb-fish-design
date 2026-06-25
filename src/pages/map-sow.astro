@@ -67,14 +67,14 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
           </div>
 
           <div class="msow-we-selector">
-            <select
+            <esa-select
               id="msow-we-dropdown"
-              class="msow-we-select"
-              onchange="selectWEFromDropdown(this.value)"
+              placeholder="— No work elements yet —"
               aria-label="Select work element"
-            >
-              <option value="">— No work elements yet —</option>
-            </select>
+              size="sm"
+              disabled
+              style="flex:1;max-width:280px;min-width:160px"
+            ></esa-select>
             <button
               id="we-edit-btn"
               class="msow-we-action-btn"
@@ -135,6 +135,7 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
   <script>
     import '@esa/ecology/esa-text-field';
     import '@esa/ecology/esa-checkbox';
+    import '@esa/ecology/esa-select';
   </script>
 
 </BaseLayout>
@@ -230,20 +231,8 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
     gap: var(--spacing-200);
     flex: 1;
   }
-  .msow-we-select {
-    flex: 1;
-    max-width: 280px;
-    height: var(--form-height-sm, 32px);
-    border: 1px solid var(--color-border);
-    border-radius: var(--form-radius-sm, 4px);
-    padding: 0 var(--form-padding-x-sm, 12px);
-    font-size: var(--form-font-size-sm, 12px);
-    font-family: var(--font-sans, system-ui, sans-serif);
-    color: var(--color-text-primary);
-    background: var(--color-surface);
-    cursor: pointer;
-  }
-  .msow-we-select:focus { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+  /* esa-select handles its own sizing/styling; just constrain width */
+  #msow-we-dropdown { flex: 1; min-width: 160px; }
 
   /* Edit / delete icon buttons flanking the WE dropdown */
   .msow-we-action-btn {
