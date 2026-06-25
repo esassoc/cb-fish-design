@@ -5383,12 +5383,12 @@ function renderWizardStep() {
 
     stepsHtml += '<div class="wz-v-item">';
     stepsHtml += '<div class="wz-v-left">';
-    stepsHtml += '<div class="wz-v-circle' + (isDone ? ' done' : isActive ? ' active' : '') + '">';
+    stepsHtml += '<div class="wz-v-circle' + (isDone && isActive ? ' done active' : isDone ? ' done' : isActive ? ' active' : '') + '">';
     stepsHtml += isDone ? '&#10003;' : (i + 1);
     stepsHtml += '</div>';
     if (!isLast) stepsHtml += '<div class="wz-v-line' + (isDone ? ' done' : '') + '"></div>';
     stepsHtml += '</div>';
-    stepsHtml += '<div class="wz-v-label' + (isDone ? ' done' : isActive ? ' active' : '') + '">' + s.label + '</div>';
+    stepsHtml += '<div class="wz-v-label' + (isActive ? ' active' : isDone ? ' done' : '') + '">' + s.label + '</div>';
     stepsHtml += '</div>';
   });
   stepsHtml += '</div>';

@@ -539,9 +539,15 @@
   color: var(--color-text-inverse, #fff);
 }
 .wz-v-circle.active {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
+  background: var(--color-secondary);
+  border-color: var(--color-secondary);
   color: var(--color-text-inverse, #fff);
+  box-shadow: 0 0 0 3px var(--color-primary-border, #c6dcf1);
+}
+/* Current step that is already done — keep secondary blue over the navy done style */
+.wz-v-circle.done.active {
+  background: var(--color-secondary);
+  border-color: var(--color-secondary);
   box-shadow: 0 0 0 3px var(--color-primary-border, #c6dcf1);
 }
 
@@ -565,7 +571,7 @@
   padding-bottom: 8px;
 }
 .wz-v-label.active {
-  color: var(--color-primary);
+  color: var(--color-secondary);
   font-weight: var(--font-weight-semibold);
 }
 .wz-v-label.done { color: var(--color-text-tertiary); }
