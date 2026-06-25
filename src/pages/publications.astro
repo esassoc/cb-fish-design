@@ -1,7 +1,7 @@
 ---
 // /publications — the document (full-text) search results page (CBF-8117).
 // Publications "fork" out of the unified /search into this prod-style flow
-// ("Publications Search → By Text in Documents"): a tabbed search-mode strip, a
+// ("Publications search → By text in documents"): a tabbed search-mode strip, a
 // Search/Clear toolbar, and [pdf]-badged document hits with green Viewer paths. Same
 // app-page panel as /search. Rows + filtering are painted by publications-page.client.
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -19,16 +19,16 @@ const homeIcon =
 const crumbs = [
   { label: 'Home', href: withBase('/'), icon: homeIcon },
   { label: 'Interactive Data and Reports' },
-  { label: 'Publications Search' },
-  { label: 'By Text in Documents' },
+  { label: 'Publications search' },
+  { label: 'By text in documents' },
 ];
 
-// Search modes mirror prod; only "By Text in Documents" is wired in this prototype.
+// Search modes mirror prod; only "By text in documents" is wired in this prototype.
 const tabs = [
   { label: 'By Title, Description, Type, Author or Publish Date' },
   { label: 'By Project and Contract' },
   { label: 'By Document ID' },
-  { label: 'By Text in Documents', active: true },
+  { label: 'By text in documents', active: true },
 ];
 ---
 <!-- manifest:
@@ -41,13 +41,13 @@ const tabs = [
     - toolbar      -> cbf-pubs-toolbar
     - results      -> cbf-pubs-results
 -->
-<BaseLayout title="Publications Search — Columbia Basin Fish & Wildlife Program">
+<BaseLayout title="Publications search — Columbia Basin Fish & Wildlife Program">
   <CbfPublicNav />
 
   <main class="cbf-page" data-pubs-page>
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
-        <CbfPageHeading title="By Text in Documents" />
+        <CbfPageHeading title="By text in documents" />
         <CbfPubsTabs tabs={tabs} />
         <CbfPubsToolbar />
         <CbfPubsResults />

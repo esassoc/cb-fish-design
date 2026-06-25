@@ -1,8 +1,8 @@
 ---
 // Per-component doc page wrapper — breadcrumbs, title, type/import meta, then
-// slotted specimens. Mirrors the Ecology ComponentDoc, scoped to the CB Fish
+// slotted specimens. Mirrors the Ecology ComponentDoc, scoped to the CBFish
 // design-system routes. The component itself is inherited from @esa/ecology;
-// this page just documents how it looks wearing the CB Fish skin.
+// this page just documents how it looks wearing the CBFish skin.
 import DocsLayout from './DocsLayout.astro';
 import { withBase } from '../lib/base';
 
@@ -22,9 +22,9 @@ const importLine =
     ? `import ${pascal} from '@esa/ecology/${slug}.astro';`
     : `import '@esa/ecology/${slug}';`;
 ---
-<DocsLayout title={`${name} — CB Fish`} activeHref={activeHref}>
+<DocsLayout title={`${name} — CBFish`} activeHref={activeHref}>
   <nav class="crumbs">
-    <a href={withBase('/design-system')}>CB Fish</a> <span>/</span>
+    <a href={withBase('/design-system')}>CBFish</a> <span>/</span>
     <span>{category}</span> <span>/</span> <span>{name}</span>
   </nav>
   <h1>{name}</h1>

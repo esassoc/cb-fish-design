@@ -25,7 +25,7 @@ export const prototypes: Prototype[] = [
     slug: 'search',
     title: 'Global search & command palette',
     description:
-      'Omni-search command palette (⌘K) plus a full /search results page with faceted filtering — CBFish Modernization "Report Center v2".',
+      'Omni-search command palette (⌘K) plus a full /search results page with faceted filtering.',
     route: '/search',
     createdAt: '2026-06-04',
     ticket: 'CBF-8117',

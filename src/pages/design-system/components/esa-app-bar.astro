@@ -15,14 +15,14 @@ const props = [
 ];
 ---
 <ComponentDoc
-  name="App Bar"
+  name="App bar"
   category="Navigation"
   slug="esa-app-bar"
   type=".astro"
-  summary="The inherited Ecology chrome shell, wearing the CB Fish skin. It sets a color context from semantic tokens via <code>tone</code> — the <code>brand</code> tone resolves to CB Fish navy from <code>--color-primary</code> — then exposes start / default / end slots. This is the shell behind the CB Fish public nav."
+  summary="The inherited Ecology chrome shell, wearing the CBFish skin. It sets a color context from semantic tokens via <code>tone</code> — the <code>brand</code> tone resolves to CBFish navy from <code>--color-primary</code> — then exposes start / default / end slots. This is the shell behind the CBFish public nav."
 >
   <Section id="tones" title="Tones">
-    <p>Each tone maps to ecology semantic tokens; CB Fish re-themes by re-pointing those tokens (e.g. <code>--color-primary</code>, <code>--color-surface-inverse</code>) — never by touching this component.</p>
+    <p>Each tone maps to ecology semantic tokens; CBFish re-themes by re-pointing those tokens (e.g. <code>--color-primary</code>, <code>--color-surface-inverse</code>) — never by touching this component.</p>
     <Preview align="start" code={`<EsaAppBar tone="surface">…</EsaAppBar>\n<EsaAppBar tone="brand">…</EsaAppBar>\n<EsaAppBar tone="brand-strong">…</EsaAppBar>`}>
       <div style="display:flex;flex-direction:column;gap:12px;width:100%">
         <EsaAppBar tone="surface">
@@ -45,8 +45,8 @@ const props = [
   </Section>
 
   <Section id="slots" title="Slots: start · main · end">
-    <p>The <code>end</code> slot is pushed right with <code>margin-left:auto</code>. This is the whole anatomy of a top bar — the CB Fish brand header is exactly this.</p>
-    <Preview align="start" code={`<EsaAppBar tone="brand" as="header">\n  <span slot="start"><strong>CB Fish</strong></span>\n  <EsaIconLink icon="trees" trailing="chevron-down">Mitigation work</EsaIconLink>\n  <EsaIconLink icon="trending-up" trailing="chevron-down">Reporting</EsaIconLink>\n  <EsaIconLink icon="credit-card" trailing="chevron-down">Funding</EsaIconLink>\n  <EsaIconButton slot="end" icon="search" label="Search" />\n  <EsaIconLink slot="end" href="/dashboard" icon="layout-dashboard">Dashboard</EsaIconLink>\n</EsaAppBar>`}>
+    <p>The <code>end</code> slot is pushed right with <code>margin-left:auto</code>. This is the whole anatomy of a top bar — the CBFish brand header is exactly this.</p>
+    <Preview align="start" code={`<EsaAppBar tone="brand" as="header">\n  <span slot="start"><strong>CBFish</strong></span>\n  <EsaIconLink icon="trees" trailing="chevron-down">Mitigation work</EsaIconLink>\n  <EsaIconLink icon="trending-up" trailing="chevron-down">Reporting</EsaIconLink>\n  <EsaIconLink icon="credit-card" trailing="chevron-down">Funding</EsaIconLink>\n  <EsaIconButton slot="end" icon="search" label="Search" />\n  <EsaIconLink slot="end" href="/dashboard" icon="layout-dashboard">Dashboard</EsaIconLink>\n</EsaAppBar>`}>
       <EsaAppBar tone="brand" as="header">
         <span slot="start" style="font-weight:700;font-size:18px">CB&nbsp;Fish</span>
         <EsaIconLink icon="trees" trailing="chevron-down">Mitigation work</EsaIconLink>
