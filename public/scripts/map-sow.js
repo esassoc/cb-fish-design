@@ -217,14 +217,6 @@ window.onload = function() {
   map.on('dblclick', mapDbl);
   renderLegend();
 
-  // Wire esa-select change event for WE dropdown (dispatches CustomEvent, not native change)
-  var weDropdown = document.getElementById('msow-we-dropdown');
-  if (weDropdown) {
-    weDropdown.addEventListener('change', function(e) {
-      selectWEFromDropdown(e.detail && e.detail.value);
-    });
-  }
-
   // Default to guided mode on load
   toggleWizardMode();
 };
@@ -335,18 +327,15 @@ function renderWEDropdown() {
 
   if (sel) {
     if (!workElements.length) {
-      sel.options  = [];
+      sel.innerHTML = '<option value="">— No work elements yet —</option>';
       sel.disabled = true;
     } else {
       sel.disabled = false;
-      sel.options = workElements.map(function(we, i) {
+      sel.innerHTML = workElements.map(function(we, i) {
         var typeLabels = we.types.map(function(t){ return {pc:'PC',fp:'FP',rr:'RR'}[t]; }).join('/');
-        return {
-          label: 'WE ' + (i+1) + ': ' + we.name + (typeLabels ? ' ['+typeLabels+']' : ''),
-          value: we.id
-        };
-      });
-      if (activeWEId) sel.value = activeWEId;
+        var label = 'WE ' + (i+1) + ': ' + we.name + (typeLabels ? ' ['+typeLabels+']' : '');
+        return '<option value="'+we.id+'"'+(we.id===activeWEId?' selected':'')+'>'+label+'</option>';
+      }).join('');
     }
   }
 
