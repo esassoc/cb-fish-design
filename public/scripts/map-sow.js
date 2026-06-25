@@ -291,6 +291,7 @@ function saveWEModal() {
   } else {
     var we2 = newWEData(); we2.name = name; we2.types = types;
     workElements.push(we2);
+    wizardStep = 0; // always start at step 1 for a new work element
     renderWEList();
     setActiveWE(we2.id);
   }
@@ -4891,7 +4892,7 @@ function reachTrimClick(latlng) {
         var ext = 0.0003;
         var p1 = L.latLng(snap.lat + perpLat*ext, snap.lng + perpLng*ext);
         var p2 = L.latLng(snap.lat - perpLat*ext, snap.lng - perpLng*ext);
-        var tick = L.polyline([p1, p2], {color:'#ffffff', weight:3, interactive:false}).addTo(map);
+        var tick = L.polyline([p1, p2], {color:'#c07820', weight:4, interactive:false}).addTo(map);
         reachTrimClicks[0]._tick = tick;
       }
     }
@@ -5321,7 +5322,7 @@ function wizardStepStatus(we, stepId) {
     case 'buffers': {
       var ach = we.ppData['area_ch'];
       var fpL = we.ppData['fp_left'], fpR = we.ppData['fp_right'];
-      return ((ach&&(ach.layer||ach.bufferLayer)) && ((fpL&&fpL.layer)||(fpR&&fpR.layer))) ? 'done' : 'pending';
+      return ((ach&&(ach.layer||ach.bufferLayer)) && (fpL&&fpL.layer) && (fpR&&fpR.layer)) ? 'done' : 'pending';
     }
     case 'fp_split':  return (we.ppData['area_fp'] && we.ppData['area_fp'].fpSplit) ? 'done' : 'pending';
     case 'pp_done': {
