@@ -1,15 +1,15 @@
 ---
-// Right sidebar — wizard panel (hidden by default) + expert panel with PP / Habitat Work tabs.
-// Tab content and wizard steps are rendered dynamically by map-sow.js.
-// Initial display states (#wizard-panel hidden, #expert-panel flex, #inner-tabbar hidden)
-// are set via CSS; JS overrides style.display to toggle between modes.
+// Right sidebar — wizard body panel + expert panel (toggled by wizard mode).
+// #wizard-panel (the stepper) lives in map-sow.astro as a separate left column.
+// When wizard is active: #wizard-body-panel shows, #expert-panel hides.
+// When expert mode: #expert-panel shows, #wizard-body-panel hides.
 ---
 <div id="sidebar" role="complementary" aria-label="Work element details">
 
-  <!-- Guided wizard panel (toggled by nav Guided button) — hidden by CSS default -->
-  <div id="wizard-panel" role="region" aria-label="Guided workflow"></div>
+  <!-- Wizard step body — shown when guided mode is active -->
+  <div id="wizard-body-panel"></div>
 
-  <!-- Expert panel (default view) — flex by CSS default -->
+  <!-- Expert panel — default view -->
   <div id="expert-panel">
 
     <div id="sidebar-empty" aria-live="polite">
@@ -17,7 +17,6 @@
       <p>Add a work element to begin entering pre-project metrics and habitat work details.</p>
     </div>
 
-    <!-- Tab bar — hidden by CSS default, shown by JS when a WE is active -->
     <div id="inner-tabbar" role="tablist" aria-label="Work element sections">
       <div
         class="itab active"

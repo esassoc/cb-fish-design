@@ -3,15 +3,14 @@
 // Map-based SOW builder. Sits inside the standard page chrome (public nav +
 // EsaContainer + bordered card) matching vendor-invoice / vendor-portal.
 //
-// The tool nav bar has been dissolved into the breadcrumb strip (flex repel):
-// breadcrumbs on the left, action buttons on the right. This eliminates the
-// "3 bars" feeling and matches the single-strip pattern of all other prototypes.
+// Layout: toolbar above map holds the H1, contract metadata, WE switcher,
+// and action buttons. The left WE panel is removed — WEs are managed via
+// the dropdown in the toolbar.
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
 import EsaBreadcrumbs from '@esa/ecology/esa-breadcrumbs.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
-import CbfMsowWePanel from '../components/map-sow/cbf-msow-we-panel.astro';
 import CbfMsowSidebar from '../components/map-sow/cbf-msow-sidebar.astro';
 import CbfMsowMap from '../components/map-sow/cbf-msow-map.astro';
 import CbfMsowModals from '../components/map-sow/cbf-msow-modals.astro';
@@ -25,7 +24,12 @@ const crumbs = [
   { label: 'Habitat SOW Tool' },
 ];
 
-const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js';
+const contractNum = '84042 REL 117';
+const cor = 'Tracy Hauser';
+const fy = '2026';
+
+// Cache-bust the vanilla JS in dev so browsers don't serve stale versions
+const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now();
 ---
 <BaseLayout title="Habitat SOW Tool — Columbia Basin Fish &amp; Wildlife Program">
 
@@ -38,19 +42,58 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js';
 
   <CbfPublicNav />
 
-  <!-- Same outer chrome as vendor-invoice / vendor-portal -->
   <main class="msow-page">
     <EsaContainer maxWidth="1920px">
 
       <div class="msow-card">
 
-        <!-- Gold breadcrumb strip — breadcrumbs only, matches cbf-app-panel -->
+        <!-- Gold breadcrumb strip -->
         <div class="msow-crumb-strip">
           <EsaBreadcrumbs items={crumbs} />
         </div>
 
-        <!-- White action bar — breathing room + tool actions, right-aligned -->
+        <!-- Toolbar: H1 + contract metadata | WE switcher | actions -->
         <div class="msow-toolbar">
+
+          <div class="msow-toolbar-identity">
+            <h1 class="msow-tool-title">Habitat SOW Tool</h1>
+            <div class="msow-contract-meta">
+              <span>#{contractNum}</span>
+              <span class="msow-meta-sep">·</span>
+              <span>FY {fy}</span>
+              <span class="msow-meta-sep">·</span>
+              <span>{cor}</span>
+            </div>
+          </div>
+
+          <div class="msow-we-selector">
+            <select
+              id="msow-we-dropdown"
+              class="msow-we-select"
+              onchange="selectWEFromDropdown(this.value)"
+              aria-label="Select work element"
+            >
+              <option value="">— No work elements yet —</option>
+            </select>
+            <button
+              id="we-edit-btn"
+              class="msow-we-action-btn"
+              onclick="openWEModal(activeWEId)"
+              title="Edit work element"
+              disabled
+            >&#9998;</button>
+            <button
+              id="we-delete-btn"
+              class="msow-we-action-btn msow-we-action-btn--danger"
+              onclick="deleteWE(activeWEId)"
+              title="Delete work element"
+              disabled
+            >&#10005;</button>
+            <span onclick="openWEModal(null)">
+              <EsaButton color="primary" size="sm" icon="plus">Add WE</EsaButton>
+            </span>
+          </div>
+
           <div class="msow-toolbar-actions">
             <span onclick="clearAll()">
               <EsaButton color="ghost" appearance="outline" size="sm">Clear All</EsaButton>
@@ -66,12 +109,14 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js';
               <EsaButton color="primary" size="sm">Export SOW</EsaButton>
             </span>
           </div>
+
         </div>
 
-        <!-- Three-column GIS layout: WE panel | sidebar | map -->
+        <!-- GIS layout: [wizard column] [sidebar] [map] — wizard only visible when active -->
         <div class="msow-root">
           <div id="msow-layout">
-            <CbfMsowWePanel contractNum="84042 REL 117" cor="Tracy Hauser" fy="2026" />
+            <!-- Wizard column — rendered by renderWizardStep(), hidden by CSS default -->
+            <div id="wizard-panel" role="region" aria-label="Guided workflow"></div>
             <CbfMsowSidebar />
             <CbfMsowMap />
           </div>
@@ -95,7 +140,6 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js';
 </BaseLayout>
 
 <style is:global>
-  /* Flex-column body so .msow-page can flex:1 below the site nav */
   html:has(.msow-page) { height: 100%; }
   html:has(.msow-page) body {
     height: 100%;
@@ -104,7 +148,6 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js';
     flex-direction: column;
   }
 
-  /* Main region — outer padding matches vendor-invoice (.cbf-app-page) */
   .msow-page {
     flex: 1;
     display: flex;
@@ -114,7 +157,6 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js';
     min-height: 0;
   }
 
-  /* EsaContainer needs to stretch so the card inside can fill height */
   .msow-page .esa-container {
     flex: 1;
     display: flex;
@@ -122,7 +164,6 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js';
     min-height: 0;
   }
 
-  /* Bordered card — mirrors cbf-app-card from vendor-invoice */
   .msow-card {
     flex: 1;
     display: flex;
@@ -135,7 +176,6 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js';
     box-shadow: 0 1px 3px color-mix(in srgb, var(--color-surface-inverse) 8%, transparent);
   }
 
-  /* Gold breadcrumb strip — breadcrumbs only, matches cbf-app-panel__crumb */
   .msow-crumb-strip {
     background: var(--color-gold-50);
     border-bottom: 1px solid var(--color-border);
@@ -147,24 +187,93 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js';
     --breadcrumbs-link-hover: var(--color-primary);
   }
 
-  /* White action bar — sits below the gold strip, gives breathing room.
-     Buttons right-aligned; same horizontal padding as the card content. */
+  /* Toolbar: three sections across the full width */
   .msow-toolbar {
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
-    padding: var(--spacing-400) var(--spacing-600);
+    padding: var(--spacing-300) var(--spacing-600);
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    gap: var(--spacing-600);
   }
+
+  /* Left: H1 + contract metadata */
+  .msow-toolbar-identity {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .msow-tool-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: var(--font-weight-bold);
+    font-family: var(--font-display, var(--font-sans));
+    color: var(--color-surface-inverse);
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+  .msow-contract-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-100);
+    font-size: 11px;
+    color: var(--color-text-muted);
+  }
+  .msow-meta-sep { color: var(--color-border-strong); }
+
+  /* Centre: WE dropdown + Add button */
+  .msow-we-selector {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-200);
+    flex: 1;
+  }
+  .msow-we-select {
+    flex: 1;
+    max-width: 280px;
+    height: var(--form-height-sm, 32px);
+    border: 1px solid var(--color-border);
+    border-radius: var(--form-radius-sm, 4px);
+    padding: 0 var(--form-padding-x-sm, 12px);
+    font-size: var(--form-font-size-sm, 12px);
+    font-family: var(--font-sans, system-ui, sans-serif);
+    color: var(--color-text-primary);
+    background: var(--color-surface);
+    cursor: pointer;
+  }
+  .msow-we-select:focus { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+
+  /* Edit / delete icon buttons flanking the WE dropdown */
+  .msow-we-action-btn {
+    height: var(--form-height-sm, 32px);
+    width: var(--form-height-sm, 32px);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--form-radius-sm, 4px);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 150ms ease, color 150ms ease;
+    flex-shrink: 0;
+  }
+  .msow-we-action-btn:hover:not(:disabled) { background: var(--color-primary-subtle); color: var(--color-primary); }
+  .msow-we-action-btn--danger:hover:not(:disabled) { background: color-mix(in srgb, var(--color-danger, #ef4444) 8%, transparent); color: var(--color-danger, #ef4444); border-color: var(--color-danger, #ef4444); }
+  .msow-we-action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  /* Right: action buttons */
   .msow-toolbar-actions {
     display: flex;
     align-items: center;
     gap: var(--spacing-200);
+    flex-shrink: 0;
+    margin-left: auto;
   }
 
-  /* Tool layout fills the card below the crumb strip */
   .msow-root {
     flex: 1;
     display: flex;

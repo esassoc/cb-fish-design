@@ -297,18 +297,51 @@ function saveWEModal() {
 // ── WE list ───────────────────────────────────────────────────────────────
 function renderWEList() {
   var el = document.getElementById('we-list');
-  if (!workElements.length) { el.innerHTML='<div class="we-empty">No work elements yet.<br/>Click + Add to begin.</div>'; return; }
-  el.innerHTML = '';
-  workElements.forEach(function(we, i) {
-    var div = document.createElement('div');
-    div.className = 'we-item' + (we.id===activeWEId?' active':'');
-    div.onclick = function(e) { if(e.target.classList.contains('we-item-gear')||e.target.classList.contains('we-item-del'))return; setActiveWE(we.id); };
-    var chips = we.types.map(function(t){
-      return '<span class="we-type-chip" style="background:'+TYPE_COLORS[t]+'">'+{pc:'PC',fp:'FP',rr:'RR'}[t]+'</span>';
-    }).join('');
-    div.innerHTML = '<div class="we-item-head"><span class="we-item-num">WE '+(i+1)+'</span><span class="we-item-name">'+we.name+'</span><span class="we-item-gear" onclick="openWEModal(\''+we.id+'\')">&#9881;</span><span class="we-item-del" title="Delete work element" onclick="deleteWE(\''+we.id+'\')">&#10005;</span></div><div class="we-item-types">'+chips+'</div>';
-    el.appendChild(div);
-  });
+  if (el) {
+    if (!workElements.length) { el.innerHTML='<div class="we-empty">No work elements yet.<br/>Click + Add to begin.</div>'; }
+    else {
+      el.innerHTML = '';
+      workElements.forEach(function(we, i) {
+        var div = document.createElement('div');
+        div.className = 'we-item' + (we.id===activeWEId?' active':'');
+        div.onclick = function(e) { if(e.target.classList.contains('we-item-gear')||e.target.classList.contains('we-item-del'))return; setActiveWE(we.id); };
+        var chips = we.types.map(function(t){
+          return '<span class="we-type-chip" style="background:'+TYPE_COLORS[t]+'">'+{pc:'PC',fp:'FP',rr:'RR'}[t]+'</span>';
+        }).join('');
+        div.innerHTML = '<div class="we-item-head"><span class="we-item-num">WE '+(i+1)+'</span><span class="we-item-name">'+we.name+'</span><span class="we-item-gear" onclick="openWEModal(\''+we.id+'\')">&#9881;</span><span class="we-item-del" title="Delete work element" onclick="deleteWE(\''+we.id+'\')">&#10005;</span></div><div class="we-item-types">'+chips+'</div>';
+        el.appendChild(div);
+      });
+    }
+  }
+  renderWEDropdown();
+}
+
+function renderWEDropdown() {
+  var sel = document.getElementById('msow-we-dropdown');
+  var editBtn = document.getElementById('we-edit-btn');
+  var delBtn  = document.getElementById('we-delete-btn');
+  var hasActive = !!activeWEId;
+
+  if (sel) {
+    if (!workElements.length) {
+      sel.innerHTML = '<option value="">— No work elements yet —</option>';
+      sel.disabled = true;
+    } else {
+      sel.disabled = false;
+      sel.innerHTML = workElements.map(function(we, i) {
+        var typeLabels = we.types.map(function(t){ return {pc:'PC',fp:'FP',rr:'RR'}[t]; }).join('/');
+        var label = 'WE ' + (i+1) + ': ' + we.name + (typeLabels ? ' ['+typeLabels+']' : '');
+        return '<option value="'+we.id+'"'+(we.id===activeWEId?' selected':'')+'>'+label+'</option>';
+      }).join('');
+    }
+  }
+
+  if (editBtn) editBtn.disabled = !hasActive;
+  if (delBtn)  delBtn.disabled  = !hasActive;
+}
+
+function selectWEFromDropdown(weId) {
+  if (weId) setActiveWE(weId);
 }
 
 function deleteWE(id) {
@@ -569,11 +602,7 @@ function renderPMRow(m) {
   var isDrawing = ppDrawing && ppDrawing.metricId===m.id && ppDrawing.weId===activeWEId;
   var isDone = pmIsDone(we, m);
   row.className = 'pm-row'+(isDrawing?' active-draw':isDone?' complete':'');
-  var geoCol = {polygon:'#7b4fbf',line:'#1a7abf'};
-  var methCol = {measured:'#2a7a5c',entered:'#1a3a5c',calc:'#7a96b0'};
-  var geoTag = m.geo ? '<span class="pm-tag" style="background:'+geoCol[m.geo]+'">'+m.geo+'</span>' : '';
-  var methTag = '<span class="pm-tag" style="background:'+methCol[m.method]+'">'+m.method+'</span>';
-  var h = '<div class="pm-head"><span class="pm-label">'+m.label+'</span>'+geoTag+methTag+'</div><div class="pm-desc">'+m.desc+'</div>';
+  var h = '<div class="pm-head"><span class="pm-label">'+m.label+'</span></div><div class="pm-desc">'+m.desc+'</div>';
   if (m.method==='entered') {
     var val = d.value||'';
     if (m.inputType==='select') {
@@ -5245,6 +5274,7 @@ function toggleWizardMode() {
   wizardMode = !wizardMode;
   var btn = document.getElementById('wizard-toggle-btn');
   var wiz = document.getElementById('wizard-panel');
+  var wizBody = document.getElementById('wizard-body-panel');
   var exp = document.getElementById('expert-panel');
   if (wizardMode) {
     btn.textContent = '☰ Expert';
@@ -5252,7 +5282,8 @@ function toggleWizardMode() {
     btn.style.color = '#fff';
     btn.setAttribute('aria-pressed', 'true');
     wiz.style.display = 'flex';
-    exp.style.display = 'none';
+    if (wizBody) wizBody.style.display = 'flex';
+    if (exp) exp.style.display = 'none';
     if (!activeWEId) wizardStep = 0;
     renderWizardStep();
   } else {
@@ -5261,7 +5292,9 @@ function toggleWizardMode() {
     btn.style.color = '';
     btn.setAttribute('aria-pressed', 'false');
     wiz.style.display = 'none';
-    exp.style.display = 'flex';
+    wiz.innerHTML = '';
+    if (wizBody) { wizBody.style.display = 'none'; wizBody.innerHTML = ''; }
+    if (exp) exp.style.display = 'flex';
     if (activeWEId) showInnerTab(activeInnerTab);
   }
 }
@@ -5329,55 +5362,49 @@ function renderWizardStep() {
   var step = visSteps[wizardStep] || visSteps[visSteps.length-1];
   if (!step) return;
 
-  // Progress bar - circles with connectors, grouped by phase
-  var progressHtml = '<div class="wz-progress">';
-  var ppSteps = visSteps.filter(function(s){ return s.phase==='pp'; });
-  var workSteps = visSteps.filter(function(s){ return s.phase==='work'; });
+  // ── Vertical stepper (vendor-invoice pattern) ──────────────────────────
+  var stepsHtml = '<div class="wz-v-steps">';
+  var prevPhase = null;
+  visSteps.forEach(function(s, i) {
+    var st = wizardStepStatus(we, s.id);
+    var isActive = (i === wizardStep);
+    var isDone = st === 'done';
+    var isLast = (i === visSteps.length - 1);
 
-  function renderPips(steps, phaseLabel, isCurrentPhase) {
-    var allDone = steps.every(function(s){ return wizardStepStatus(we, s.id) === 'done'; });
-    var html = '<div style="display:flex;flex-direction:column;gap:2px;'+(isCurrentPhase?'flex:1':'flex-shrink:0')+'">';
-    html += '<div style="font-size:8px;font-weight:600;color:#7c7c7c;text-transform:uppercase;letter-spacing:.06em;padding:0 2px">'+phaseLabel+'</div>';
-    html += '<div style="display:flex;align-items:center">';
-    if (!isCurrentPhase && allDone) {
-      // Collapsed: single green checkmark pill
-      html += '<div style="display:flex;align-items:center;gap:4px;background:#edf7f2;border:1px solid #aaddc4;border-radius:12px;padding:2px 8px;font-size:10px;font-weight:600;color:#0f6849;white-space:nowrap">&#10003; Complete</div>';
-    } else {
-      // Expanded: individual circles
-      steps.forEach(function(s, i) {
-        var globalIdx = visSteps.indexOf(s);
-        var st = wizardStepStatus(we, s.id);
-        var isActive = (globalIdx === wizardStep);
-        var cls = isActive ? 'active' : (st === 'done' ? 'done' : '');
-        var lbl = st === 'done' ? '✓' : (globalIdx + 1);
-        html += '<div class="wz-step-pip '+cls+'" title="'+s.title+'">'+lbl+'</div>';
-        if (i < steps.length-1) {
-          var connDone = wizardStepStatus(we, steps[i].id) === 'done' ? 'done' : '';
-          html += '<div class="wz-step-connector '+connDone+'"></div>';
-        }
-      });
+    // Phase section header when phase changes
+    if (s.phase !== prevPhase) {
+      stepsHtml += '<div class="wz-v-phase-head">' + (s.phase === 'pp' ? 'Pre-Project' : 'Habitat Work') + '</div>';
+      prevPhase = s.phase;
     }
-    html += '</div></div>';
-    return html;
-  }
 
-  var ppPhase = ppSteps.some(function(s){ return visSteps.indexOf(s) === wizardStep; });
-  var workPhase = workSteps.some(function(s){ return visSteps.indexOf(s) === wizardStep; });
+    stepsHtml += '<div class="wz-v-item">';
+    stepsHtml += '<div class="wz-v-left">';
+    stepsHtml += '<div class="wz-v-circle' + (isDone ? ' done' : isActive ? ' active' : '') + '">';
+    stepsHtml += isDone ? '&#10003;' : (i + 1);
+    stepsHtml += '</div>';
+    if (!isLast) stepsHtml += '<div class="wz-v-line' + (isDone ? ' done' : '') + '"></div>';
+    stepsHtml += '</div>';
+    stepsHtml += '<div class="wz-v-label' + (isDone ? ' done' : isActive ? ' active' : '') + '">' + s.label + '</div>';
+    stepsHtml += '</div>';
+  });
+  stepsHtml += '</div>';
 
-  progressHtml += renderPips(ppSteps, 'Pre-Project', ppPhase);
-  progressHtml += '<div style="width:1px;background:#dcdcdc;margin:0 6px;align-self:stretch"></div>';
-  progressHtml += renderPips(workSteps, 'Habitat Work', workPhase);
-  progressHtml += '</div>';
-  progressHtml += '<div style="padding:4px 12px 6px;background:#1e5386;border-bottom:1px solid rgba(255,255,255,0.15);font-size:11px;color:rgba(255,255,255,0.8);font-weight:600;letter-spacing:.03em">';
-  progressHtml += step.label + ' — ' + step.title;
-  progressHtml += '</div>';
-
-  var bodyHtml = wizardStepBody(we, step, wizardStep);
+  var bodyHtml = we ? wizardStepBody(we, step, wizardStep) : '<div class="wz-step-desc">Add a work element to get started.</div>';
   var footerHtml = wizardStepFooter(we, step, wizardStep);
 
-  panel.innerHTML = progressHtml +
-    '<div class="wz-body">'+bodyHtml+'</div>' +
-    '<div class="wz-footer">'+footerHtml+'</div>';
+  // Left column: header + vertical stepper only
+  panel.innerHTML =
+    '<div class="wz-v-header">' +
+      '<div class="wz-v-mode-label">&#10022; Guided Mode</div>' +
+      '<div class="wz-v-current-step">' + step.title + '</div>' +
+    '</div>' +
+    stepsHtml;
+
+  // Sidebar area: step body + footer (covers the expert panel)
+  var bodyPanel = document.getElementById('wizard-body-panel');
+  if (bodyPanel) {
+    bodyPanel.innerHTML = '<div class="wz-body">' + bodyHtml + '</div><div class="wz-footer">' + footerHtml + '</div>';
+  }
 }
 
 function wizardStepBody(we, step, idx) {
