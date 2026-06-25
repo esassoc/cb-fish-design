@@ -3,7 +3,7 @@
 //
 // One source of truth: src/data/prototypes.ts lists each prototype's slug + route.
 // For each route with a spec (src/data/handoff/<slug>.mjs) we run a CURATED capture
-// — authored sections, design guidance, and behavior refs — producing the smart
+// — authored sections and design guidance — producing the smart
 // manifest the runtime inspector reads. Routes without a spec fall back to the
 // hub's whole-page capture (the @esa/handoff CLI).
 //
@@ -13,7 +13,6 @@
 import { readFileSync, existsSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve as presolve, relative as prelative } from 'node:path';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { captureCurated } from './lib/capture-curated.mjs';
 
@@ -61,39 +60,6 @@ function guideOf(spec) {
   return Object.keys(g).length ? g : undefined;
 }
 
-// Resolve a relative import specifier to a real source file in the repo.
-function resolveImport(fromFile, spec) {
-  const b = presolve(dirname(fromFile), spec);
-  for (const c of [b, `${b}.ts`, `${b}.mjs`, `${b}.js`, presolve(b, 'index.ts')]) if (existsSync(c)) return c;
-  return null;
-}
-
-// A section's behavior as a SELF-CONTAINED bundle: the entry file(s) the spec
-// points at PLUS every spoke module they transitively import (relative imports
-// only — external @esa/astro imports stay as imports, since a re-implementer maps
-// those). Dependency-first order, so types/data are defined before they're used.
-// This is what makes the JS tab translatable: no dangling imports for Claude.
-function jsOf(spec) {
-  if (!spec.js?.length) return undefined;
-  const repo = root('');
-  const seen = new Set();
-  const order = [];
-  const visit = (abs) => {
-    if (!abs || seen.has(abs)) return;
-    seen.add(abs);
-    const src = readFileSync(abs, 'utf8');
-    for (const m of src.matchAll(/from\s+['"](\.[^'"]+)['"]/g)) visit(resolveImport(abs, m[1]));
-    order.push({ abs, src }); // after deps → dependency-first
-  };
-  for (const entry of spec.js) {
-    try {
-      visit(root(entry));
-    } catch {
-      order.push({ abs: root(entry), src: `// (${entry} not found)` });
-    }
-  }
-  return order.map(({ abs, src }) => `// ── ${prelative(repo, abs)} ──\n${src.trim()}`).join('\n\n');
-}
 
 // A self-contained, fetchable spec for "Copy for Claude".
 function specMarkdown(s) {
@@ -110,7 +76,6 @@ function specMarkdown(s) {
   if (s.css) lines.push('## Styles', '```css', s.css, '```', '');
   if (s.tokens?.length)
     lines.push('## Tokens', ...s.tokens.map((t) => `- \`${t.name}\`: ${t.value} _(${t.tier})_`), '');
-  if (s.js) lines.push('## Behavior', '```ts', s.js, '```', '');
   return lines.join('\n');
 }
 
@@ -128,7 +93,6 @@ function writeCuratedBundle(slug, url, theme, sections) {
       apply: s.apply,
       html: s.html,
       css: s.css,
-      js: s.js,
       guide: s.guide,
       tokens: s.tokens,
       claudePath: `claude/${fileSlug}.md`,
@@ -159,14 +123,13 @@ try {
       console.log(`\nhandoff:all — capturing ${slug} (curated)  →  ${url}`);
       const spec = (await import(specPath)).default;
       const { theme, sections } = await captureCurated(url, spec.sections, tierIndex, classifyTokens);
-      // Merge authored guidance + behavior onto each captured section by label.
+      // Merge authored guidance onto each captured section by label.
       const byLabel = new Map(spec.sections.map((s) => [s.label, s]));
       for (const s of sections) {
         const spc = byLabel.get(s.label) || {};
         s.selector = spc.selector; // so the inspector can highlight the live region
         s.apply = spc.apply; // recipe the inspector replays to drive the live app
         s.guide = guideOf(spc);
-        s.js = jsOf(spc);
       }
       writeCuratedBundle(slug, url, theme, sections);
     } else {

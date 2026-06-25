@@ -18,7 +18,6 @@ export default {
         'Connector lines between stepper circles are colored by JS on each goTo() call — do not try to color them with CSS alone.',
         'Step labels in the rail must match the STEPS array in vendor-invoice.astro exactly.',
       ],
-      js: ['src/components/vendor-invoice/invoice-wizard.client.ts'],
     },
     {
       label: 'PDF upload',
@@ -36,7 +35,6 @@ export default {
         'syncFormLock() is called on every file change — ALL [data-field] elements remain disabled until pdfEverLoaded is true.',
         'The iframe src is a Blob object URL — it is revoked on remove to avoid memory leaks.',
       ],
-      js: ['src/components/vendor-invoice/invoice-wizard.client.ts'],
     },
     {
       label: 'Details form',
@@ -55,7 +53,6 @@ export default {
         'Line items table has no Astro-scoped styles — any style changes need to target the global .cbf-line-item class.',
         'Supporting docs are deduplicated by filename before being added to the supportingDocs array.',
       ],
-      js: ['src/components/vendor-invoice/invoice-wizard.client.ts'],
     },
     {
       label: 'Review step',
@@ -71,7 +68,6 @@ export default {
         'The review card ([data-review-content]) is empty in SSR output — do not expect Astro-rendered content here.',
         'If the user goes back and changes form data, the review is re-populated fresh on the next goTo(1) call.',
       ],
-      js: ['src/components/vendor-invoice/invoice-wizard.client.ts'],
     },
     {
       label: 'Confirmation',
@@ -87,7 +83,6 @@ export default {
         'Step 2 is hidden by default (hidden attribute) — the capture will see the collapsed DOM unless the apply recipe drives through the wizard.',
         'The two action links are plain <a> elements, not esa-button — they are styled with utility classes (.cbf-confirm__link).',
       ],
-      js: ['src/components/vendor-invoice/invoice-wizard.client.ts'],
     },
   ],
 };

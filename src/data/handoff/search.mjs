@@ -18,7 +18,6 @@
  * @property {string[]} [decisions] Key design/implementation decisions.
  * @property {string[]} [gotchas]   Traps to avoid when re-implementing.
  * @property {string[]} [acceptance] "Done when…" checks.
- * @property {string[]} [js]    Source files that drive this section's behavior.
  */
 
 /** @type {{ sections: HandoffSection[] }} */
@@ -41,7 +40,6 @@ export default {
         'Chrome-on-dark: the trigger uses translucent white over the navy tray, not theme tokens — it must read on dark, not a light surface.',
         'Keep the trigger compact — it shares the tray with system utilities and should not dominate the bar.',
       ],
-      js: ['src/components/search/omni-search.client.ts'],
     },
     {
       // Two real palette states (the user asked) — the zero-state and mid-query.
@@ -56,7 +54,6 @@ export default {
         'Keyboard-first: ↑/↓ move the active row, ⏎ opens it, Esc closes, ⌘K/"/" toggle.',
       ],
       gotchas: ['Recents are a distinct view from results — do not collapse them into an empty results list.'],
-      js: ['src/components/search/omni-search.client.ts', 'src/components/search/omni-render.ts'],
     },
     {
       label: 'Omni — results',
@@ -70,7 +67,6 @@ export default {
       ],
       gotchas: ['"View all results" must carry the current query + scope to /search as ?q=&scope=.'],
       acceptance: ['Typing filters within ~1 frame; ↑/↓/⏎/Esc all work.'],
-      js: ['src/components/search/omni-search.client.ts', 'src/components/search/omni-render.ts'],
     },
     {
       label: 'Sidebar',
@@ -82,7 +78,6 @@ export default {
         'Selecting a facet updates the scope in place (no full navigation).',
       ],
       gotchas: ['Keep the facet list and the omni scope pills in sync — they represent the same scopes.'],
-      js: ['src/components/search/search-page.client.ts'],
     },
 
     // --- Search results, captured as three real states (the page reads ?q & ?scope
@@ -95,7 +90,6 @@ export default {
         'The default, no-query state — a first-class prompt, not a blank container. What the user sees on arrival.',
       decisions: ['Empty state is an intentional view (keyword prompt), deliberately distinct from "no matches".'],
       gotchas: ['Never render a bare empty div here — the empty state must read as guidance.'],
-      js: ['src/components/search/search-page.client.ts'],
     },
     {
       label: 'Results — people',
@@ -111,7 +105,6 @@ export default {
         'Matched query text is highlighted within the row title/subtitle.',
       ],
       gotchas: ['Results are permission-filtered server-side — show the "limited to records you can view" notice.'],
-      js: ['src/components/search/omni-render.ts', 'src/components/search/search-page.client.ts'],
     },
     {
       label: 'Results — projects',
@@ -124,7 +117,6 @@ export default {
         'Project-scoped results — the same row component carrying a different entity type (project number + fiscal year + status), proving the row generalizes across types.',
       decisions: ['One row component renders every entity type; type only changes the leading icon and subtitle shape.'],
       gotchas: ['Keep the row layout identical across types — only icon + subtitle content should vary.'],
-      js: ['src/components/search/omni-render.ts', 'src/components/search/search-page.client.ts'],
     },
   ],
 };
