@@ -1,0 +1,99 @@
+---
+// cbf-welcome-hero — the cbfish.org homepage banner: a full-bleed landscape photo
+// with an overlaid eyebrow + tagline and a photo credit. The CBFish "home" the
+// prototypes return to via the logo.
+//
+// bcn-lego-checked: no esa- media/hero/banner lego exists — esa-page-header is a
+// title + lede + actions BLOCK with no media, and esa-card is a static content
+// surface; neither models a full-bleed photo with overlaid text. cbf-report-intro
+// is photo-BESIDE-prose (a split grid), not a full-bleed overlay. Checked Beacon
+// (no media-hero pattern). The overlay/crop is component-internal layout (legal:
+// only PAGES must read as a manifest). The <img> uses object-fit:cover so any
+// source aspect ratio fills the frame.
+import { withBase } from '../../lib/base';
+interface Props {
+  image: { src: string; alt?: string };
+  eyebrow: string;
+  tagline: string;
+  credit?: string;
+}
+const { image, eyebrow, tagline, credit } = Astro.props;
+---
+<section class="cbf-welcome-hero">
+  <img class="cbf-welcome-hero__img" src={image.src} alt={image.alt ?? ''} />
+  <div class="cbf-welcome-hero__scrim"></div>
+  <div class="cbf-welcome-hero__inner">
+    <p class="cbf-welcome-hero__eyebrow">{eyebrow}</p>
+    <p class="cbf-welcome-hero__tagline">{tagline}</p>
+  </div>
+  {credit && <p class="cbf-welcome-hero__credit">{credit}</p>}
+</section>
+
+<style>
+  .cbf-welcome-hero {
+    position: relative;
+    min-height: clamp(320px, 42vw, 520px);
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .cbf-welcome-hero__img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 60%;
+    z-index: -2;
+  }
+  /* navy scrim — tokenized off the deepest brand surface so the overlaid text
+     keeps contrast at the bottom of the frame; no raw rgba. */
+  .cbf-welcome-hero__scrim {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(
+      to top,
+      color-mix(in srgb, var(--color-surface-inverse) 82%, transparent) 0%,
+      color-mix(in srgb, var(--color-surface-inverse) 38%, transparent) 38%,
+      transparent 72%
+    );
+  }
+  .cbf-welcome-hero__inner {
+    max-width: 1280px;
+    width: 100%;
+    margin: 0 auto;
+    padding: var(--spacing-800) var(--spacing-600);
+    color: var(--color-text-inverse, #fff);
+  }
+  .cbf-welcome-hero__eyebrow {
+    margin: 0 0 var(--spacing-200);
+    font-family: var(--font-sans-condensed, var(--font-sans));
+    font-size: 15px;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-gold-200, #f3d99b);
+  }
+  .cbf-welcome-hero__tagline {
+    margin: 0;
+    max-width: 22ch;
+    font-family: var(--font-display, var(--font-sans));
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: var(--font-weight-bold, 700);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .cbf-welcome-hero__credit {
+    position: absolute;
+    right: var(--spacing-400);
+    bottom: var(--spacing-200);
+    margin: 0;
+    font-size: 12px;
+    color: color-mix(in srgb, var(--color-text-inverse, #fff) 75%, transparent);
+  }
+  @media (max-width: 680px) {
+    .cbf-welcome-hero__inner { padding: var(--spacing-700) var(--spacing-500); }
+  }
+</style>
