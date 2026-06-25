@@ -5437,7 +5437,7 @@ function wizardStepBody(we, step, idx) {
         h += '<div class="wz-status pending">&#9654; Click the button below, then click on the map to place polygon vertices. Double-click to finish.</div>';
         h += '<button class="wz-action-btn" onclick="wizardDraw(\'perimeter\')">&#9632; Draw Project Boundary</button>';
         h += '<div class="wz-tip">Optional but recommended — makes later steps more accurate.</div>';
-        h += '<button class="wz-action-btn secondary" onclick="wizardSkip()">Skip this step ›</button>';
+        
       }
       break;
 
@@ -5502,7 +5502,7 @@ function wizardStepBody(we, step, idx) {
       if (bhVal) {
         h += '<div class="wz-status done">&#10003; Bank height recorded: <b>'+bhVal+' ft</b></div>';
       } else {
-        h += '<div class="wz-tip">This step can be skipped — enter a value when field data is available.</div>';
+        
       }
       break;
     }
@@ -5520,7 +5520,7 @@ function wizardStepBody(we, step, idx) {
       if (subVal) {
         h += '<div class="wz-status done">&#10003; Substrate recorded: <b>'+subVal+'</b></div>';
       } else {
-        h += '<div class="wz-tip">This step can be skipped — select a value when data is available.</div>';
+        
       }
       break;
     }
@@ -5642,9 +5642,6 @@ function wizardStepBody(we, step, idx) {
           we.chuUnits.forEach(function(u, i) {
             h += '<div class="wz-metric-row"><span class="wz-metric-label">Unit '+(i+1)+'</span><span class="wz-metric-val">'+(u.areaM2?((u.areaM2*0.000247105).toFixed(3)+' ac'):'—')+'</span></div>';
           });
-        } else {
-          // Only show skip if no splits drawn yet
-          h += '<button class="wz-action-btn secondary" onclick="wizardSkipCHU()">Skip — no splits needed ›</button>';
         }
       }
       break;
@@ -5765,19 +5762,19 @@ function wizardStepBody(we, step, idx) {
         h += '</div>';
       }
 
-      h += '<button class="wz-action-btn secondary" style="margin-top:10px" onclick="wizardSkip()">Skip — no structures ›</button>';
+      
       break;
 
     case 'fp_work':
       h += '<div class="wz-step-desc">Draw floodplain work features — floodplain structures, side channel improvements, and other floodplain enhancements.</div>';
       h += '<button class="wz-action-btn" onclick="toggleWizardMode();showInnerTab(\'work\');showWorkTab(\'fp\')">&#9654; Go to Floodplain Work</button>';
-      h += '<button class="wz-action-btn secondary" onclick="wizardSkip()">Skip this step ›</button>';
+      
       break;
 
     case 'rr_work':
       h += '<div class="wz-step-desc">Draw riparian work features — fencing lines, planting areas, and invasive species removal areas.</div>';
       h += '<button class="wz-action-btn" onclick="toggleWizardMode();showInnerTab(\'work\');showWorkTab(\'rr\')">&#9654; Go to Riparian Work</button>';
-      h += '<button class="wz-action-btn secondary" onclick="wizardSkip()">Skip this step ›</button>';
+      
       break;
 
     case 'done':
@@ -5808,11 +5805,26 @@ function wizardStepFooter(we, step, idx) {
   var backDisabled = idx === 0 ? 'disabled' : '';
   var status = wizardStepStatus(we, step.id);
   var isLast = idx === vis.length - 1;
-  var nextLabel = isLast ? '&#10003; Finish' : 'Next ›';
-  var nextCls = status === 'done' ? 'success' : (step.id==='perimeter'?'':'');
-  var nextDisabled = '';
-  var required = ['reach', 'ch_width', 'fp_left', 'fp_right'];
-  if (required.indexOf(step.id) >= 0 && status !== 'done') nextDisabled = 'disabled';
+  // Steps that must be completed before advancing
+  var required  = ['reach', 'ch_width', 'fp_left', 'fp_right'];
+  // Steps where "Skip ›" shows when empty, "Next ›" when something is entered
+  var skippable = ['bank_ht', 'substrate', 'chu_split', 'structures', 'fp_work', 'rr_work'];
+
+  var nextLabel, nextCls, nextDisabled;
+  if (isLast) {
+    nextLabel = '&#10003; Finish'; nextCls = 'success'; nextDisabled = '';
+  } else if (required.indexOf(step.id) >= 0) {
+    nextLabel = 'Next ›';
+    nextCls = status === 'done' ? 'success' : '';
+    nextDisabled = status !== 'done' ? 'disabled' : '';
+  } else if (skippable.indexOf(step.id) >= 0 && status !== 'done') {
+    // Nothing entered yet — show Skip in the same position
+    nextLabel = 'Skip ›'; nextCls = 'skip'; nextDisabled = '';
+  } else {
+    nextLabel = 'Next ›';
+    nextCls = status === 'done' ? 'success' : '';
+    nextDisabled = '';
+  }
   return '<button class="wz-btn-back" '+backDisabled+' onclick="wizardBack()">‹ Back</button>' +
          '<button class="wz-btn-next '+nextCls+'" '+nextDisabled+' onclick="wizardNext()">'+nextLabel+'</button>';
 }

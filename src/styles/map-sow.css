@@ -606,6 +606,8 @@
 .wz-btn-next:disabled { background: var(--color-border-light); color: var(--color-text-muted); cursor: default; }
 .wz-btn-next.success { background: #0f6849; }
 .wz-btn-next.success:hover { background: #0a5038; }
+.wz-btn-next.skip { background: transparent; border: 1px solid var(--color-border-strong); color: var(--color-text-secondary); }
+.wz-btn-next.skip:hover { background: var(--color-primary-subtle); }
 
 /* ── SOW export modal ────────────────────────────────────────────────────── */
 #sowmodal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
