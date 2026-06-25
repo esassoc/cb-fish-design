@@ -5257,21 +5257,21 @@ var wizardMode = false;
 var wizardStep = 0;
 
 var WIZARD_STEPS = [
-  { id:'perimeter',  label:'Boundary',  title:'Draw Project Boundary',          phase:'pp' },
-  { id:'reach',      label:'Reach',     title:'Identify Your Stream Reach',     phase:'pp' },
-  { id:'ch_width',   label:'Ch. Width', title:'Measure Channel Width',          phase:'pp' },
-  { id:'bank_ht',    label:'Bank Ht',   title:'Enter Average Bank Height',       phase:'pp' },
-  { id:'substrate',  label:'Substrate', title:'Enter Reach-Averaged Substrate',  phase:'pp' },
-  { id:'fp_left',    label:'Left FP',   title:'Draw Left Floodplain Boundary',  phase:'pp' },
-  { id:'fp_right',   label:'Right FP',  title:'Draw Right Floodplain Boundary', phase:'pp' },
-  { id:'buffers',    label:'Buffers',   title:'Review Floodplain Areas',        phase:'pp' },
-  { id:'pp_done',    label:'Pre-Proj',  title:'Pre-Project Complete!',          phase:'pp' },
-  { id:'chu_split',   label:'CH Splits',  title:'Split Channel into Units',       phase:'work', types:['pc'] },
-  { id:'chu_details', label:'CH Details', title:'Assign Unit Types & Depths',     phase:'work', types:['pc'] },
-  { id:'structures', label:'Structures',title:'Wood Structures',                phase:'work', types:['pc'] },
-  { id:'fp_work',    label:'FP Work',   title:'Floodplain Work Elements',       phase:'work', types:['fp'] },
-  { id:'rr_work',    label:'Riparian',  title:'Riparian Work Elements',         phase:'work', types:['rr'] },
-  { id:'done',       label:'Done',      title:'Work Element Complete!',         phase:'work' }
+  { id:'perimeter',  label:'Project Boundary', title:'Draw Project Boundary',          phase:'pp' },
+  { id:'reach',      label:'Stream Reach',     title:'Identify Your Stream Reach',     phase:'pp' },
+  { id:'ch_width',   label:'Channel Width',   title:'Measure Channel Width',          phase:'pp' },
+  { id:'bank_ht',    label:'Bank Height',     title:'Enter Average Bank Height',      phase:'pp' },
+  { id:'substrate',  label:'Substrate',       title:'Enter Reach-Averaged Substrate', phase:'pp' },
+  { id:'fp_left',    label:'Left Floodplain', title:'Draw Left Floodplain Boundary',  phase:'pp' },
+  { id:'fp_right',   label:'Right Floodplain',title:'Draw Right Floodplain Boundary', phase:'pp' },
+  { id:'buffers',    label:'Review Areas',    title:'Review Floodplain Areas',        phase:'pp' },
+  { id:'pp_done',    label:'Pre-Project Done',title:'Pre-Project Complete!',          phase:'pp' },
+  { id:'chu_split',   label:'Channel Splits',  title:'Split Channel into Units',       phase:'work', types:['pc'] },
+  { id:'chu_details', label:'Channel Details', title:'Assign Unit Types & Depths',     phase:'work', types:['pc'] },
+  { id:'structures', label:'Structures',      title:'Wood Structures',                phase:'work', types:['pc'] },
+  { id:'fp_work',    label:'Floodplain Work', title:'Floodplain Work Elements',       phase:'work', types:['fp'] },
+  { id:'rr_work',    label:'Riparian Work',   title:'Riparian Work Elements',         phase:'work', types:['rr'] },
+  { id:'done',       label:'Complete',        title:'Work Element Complete!',         phase:'work' }
 ];
 
 function toggleWizardMode() {

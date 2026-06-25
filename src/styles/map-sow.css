@@ -723,7 +723,7 @@ button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline: 3px s
   margin-top: var(--spacing-050, 2px);
 }
 .msow-welcome-body {
-  padding: var(--spacing-700) var(--spacing-600) var(--spacing-500);
+  padding: var(--spacing-500) var(--spacing-600) var(--spacing-500);
 }
 .msow-welcome-icon { font-size: 28px; margin-bottom: var(--spacing-400); }
 .msow-welcome-heading {
