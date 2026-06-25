@@ -1,6 +1,6 @@
 ---
-// CB Fish — Home. A mark-forward hub on white: the brand hero, then the three layers
-// of the repo — the Design System (live), the Pattern Library (coming soon), and the
+// CBFish — Home. A mark-forward hub on white: the brand hero, then the three layers
+// of the repo — the Design system (live), the Pattern library (coming soon), and the
 // Prototypes (working screens, straight off the typed registry in
 // src/data/prototypes.ts, so shipping one is a one-row data edit). Composed entirely
 // from cbf-* section components on layout-primitive spines (.switcher / .grid).
@@ -36,7 +36,7 @@ const STATUS_LABEL: Record<PrototypeStatus, string> = {
     - prototypes -> cbf-prototype
     - footer     -> cbf-site-footer
 -->
-<BaseLayout title="CB Fish — Design & Prototypes">
+<BaseLayout title="CBFish — Design & prototypes">
   <main class="home">
     <CbfHomeHero />
 
@@ -45,15 +45,15 @@ const STATUS_LABEL: Record<PrototypeStatus, string> = {
         href={withBase('/design-system')}
         tone="live"
         statusLabel="Live"
-        title="Design System"
-        body="The brand layer — navy + gold palette, IBM Plex type, and the inherited Ecology components re-skinned for CB Fish."
+        title="Design system"
+        body="The brand layer — navy + gold palette, IBM Plex type, and the inherited Ecology components re-skinned for CBFish."
         cta="Open the design system"
       />
       <CbfLayer
         href={withBase('/patterns')}
         tone="soon"
         statusLabel="Coming soon"
-        title="Pattern Library"
+        title="Pattern library"
         body="Composed, multi-component patterns — page shells, report views, search & filter flows — assembled from the system."
         cta="Preview"
       />

@@ -1,9 +1,9 @@
 # @cbfish/design
 
-The **CB Fish** design spoke — the brand and prototype layer for the Columbia
+The **CBFish** design spoke — the brand and prototype layer for the Columbia
 Basin Fish & Wildlife Program portal, built on the **[ESA Ecology](../ecology)**
 hub design system. An **Astro + plain-web-tech** repo (not Angular) that consumes
-the hub's tokens and components and re-skins them to the CB Fish brand.
+the hub's tokens and components and re-skins them to the CBFish brand.
 
 ## Hub & spoke
 
@@ -14,10 +14,10 @@ primitives  ───────────────────▶ inherit
 semantic    ───────────────────▶ inherit, then OVERRIDE brand
 component   ───────────────────▶ inherit
 esa-* components ──────────────▶ reuse (auto re-skinned by token overrides)
-                                 + CB Fish-specific components (cbf-*.astro)
+                                 + CBFish-specific components (cbf-*.astro)
 ```
 
-CB Fish keeps Ecology's structural foundation (spacing, radius, layout, the full
+CBFish keeps Ecology's structural foundation (spacing, radius, layout, the full
 component set) and overrides only the **brand layer**: a navy-blue palette and the
 IBM Plex type family. Because Ecology components read *semantic* tokens, the
 override re-skins them with no component changes. See [`NEEDS.md`](./NEEDS.md).
@@ -46,7 +46,7 @@ hub tokens. Wired in [`src/layouts/BaseLayout.astro`](./src/layouts/BaseLayout.a
 ```ts
 import '@esa/tokens/tokens.css';           // 1. hub primitives + default teal semantics
 import '@esa/tokens/component-tokens.css';  // 2. tier-3 component tokens
-import '../styles/theme-cb-fish.css';       // 3. CB Fish brand override
+import '../styles/theme-cb-fish.css';       // 3. CBFish brand override
 // <html data-theme="cb-fish"> activates the override
 ```
 

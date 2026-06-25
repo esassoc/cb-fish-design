@@ -9,7 +9,7 @@ export default {
       label: 'Portal header',
       selector: '.cbf-vendor-portal-header',
       intent:
-        'Welcome banner on the invoices view. Greets the vendor by first name using esa-page-header with the primary CTA (Submit Invoice → /vendor-invoice). The activity-stat row is suppressed here (showStats={false}) because the financial-outlook band below owns the numbers.',
+        'Welcome banner on the invoices view. Greets the vendor by first name using esa-page-header with the primary CTA (Submit invoice → /vendor-invoice). The activity-stat row is suppressed here (showStats={false}) because the financial-outlook band below owns the numbers.',
       decisions: [
         'esa-page-header owns the greeting + primary CTA — do not hand-roll a custom heading + button pair.',
         'showStats is false on this page so two stat rows do not compete; the financial-outlook band is the single source of headline metrics.',

@@ -4,11 +4,11 @@ import Section from '@esa/docs/Section.astro';
 import { withBase } from '../../lib/base';
 import { foundations, componentGroups } from '../../data/ds-nav';
 ---
-<DocsLayout title="CB Fish — Design System" activeHref="/design-system">
-  <nav class="crumbs"><a href={withBase('/')}>CB Fish</a> <span>/</span> <span>Design System</span></nav>
-  <h1>Design System</h1>
+<DocsLayout title="CBFish — Design system" activeHref="/design-system">
+  <nav class="crumbs"><a href={withBase('/')}>CBFish</a> <span>/</span> <span>Design system</span></nav>
+  <h1>Design system</h1>
   <p class="lede">
-    CB Fish is a brand spoke of the ESA Ecology design system. It inherits Ecology's
+    CBFish is a brand spoke of the ESA Ecology design system. It inherits Ecology's
     component set and structure, then re-skins one layer — navy blue + IBM Plex — by
     overriding semantic tokens. This documentation restates that brand layer and shows
     the inherited components wearing it.
@@ -19,7 +19,7 @@ import { foundations, componentGroups } from '../../data/ds-nav';
       Three token tiers cascade. <strong>Primitives</strong> (raw color ramps, the spacing and
       radius scales) never move. <strong>Semantic roles</strong> (<code>--color-primary</code>,
       <code>--color-border</code>, <code>--font-sans</code>…) are what components actually read —
-      and what the CB Fish theme re-points. <strong>Component tokens</strong> fine-tune individual
+      and what the CBFish theme re-points. <strong>Component tokens</strong> fine-tune individual
       parts. Because every <code>esa-*</code> component reads only the semantic layer, overriding
       that one layer re-skins the entire kit with no forks.
     </p>

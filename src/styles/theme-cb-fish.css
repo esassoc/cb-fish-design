@@ -1,17 +1,17 @@
 /*
- * CB Fish theme — a spoke of the Ecology hub (../ecology).
+ * CBFish theme — a spoke of the Ecology hub (../ecology).
  *
  * Follows the hub's theming contract (see ../ecology/apps/site/src/styles/themes.css):
  * a [data-theme] block overrides the SEMANTIC layer only. tokens.css (from
  * @esa/tokens) defines the primitives + default teal semantics on :root; this
- * re-skins to CB Fish's navy-blue + IBM Plex brand without touching primitives.
+ * re-skins to CBFish's navy-blue + IBM Plex brand without touching primitives.
  *
  * Because the hub chains --color-text-link / --focus-ring-color / --color-border-focus
  * off --color-primary, overriding --color-primary alone re-points links & focus rings.
  *
  * TOKEN TIERS (see ecology README "Spoke-specific tokens"):
  *   - ecology tokens (--color-*, --spacing-*, --font-*): the durable hub vocabulary.
- *     This file REASSIGNS them to CB Fish values; esa-* components read only these.
+ *     This file REASSIGNS them to CBFish values; esa-* components read only these.
  *   - --cbf-* tokens: the spoke tier. Live ONLY in this file. The --cbf-blue-* ramp is
  *     "re-point material" — raw values that feed the ecology tokens above; components
  *     never read --cbf-* directly. A spoke token never appears in a hub component.
@@ -37,13 +37,13 @@
   --color-primary-border:  var(--cbf-blue-200);
 
   /* Darkest chrome surface — the navy admin bar. Re-points the hub's
-     --color-surface-inverse (default gray-900) to CB Fish's deepest blue.
+     --color-surface-inverse (default gray-900) to CBFish's deepest blue.
      Consumed by esa-app-bar tone="brand-strong". (The blue header bar just uses
      tone="brand" → --color-primary, already navy above.) */
   --color-surface-inverse:       var(--cbf-blue-950);
   --color-surface-inverse-hover: #0d1b2c;
 
-  /* Re-point the full neutral chain to CB Fish's grays (--cbf-gray-* ramp below;
+  /* Re-point the full neutral chain to CBFish's grays (--cbf-gray-* ramp below;
      primitives never move). Symmetric with the blue ramp: ramp = raw material,
      semantics = var chains. This warms all body text vs the hub's cool grays —
      text-primary goes #171717 → #3d3d3d. Surfaces stay white; surface-sunken is
@@ -61,7 +61,7 @@
      can't be re-pointed by overriding --color-primary — set it explicitly to navy. */
   --color-active-overlay: color-mix(in srgb, var(--color-primary) 8%, transparent);
 
-  /* Brand the info tone — the hub's info defaults to a generic blue; CB Fish wants its
+  /* Brand the info tone — the hub's info defaults to a generic blue; CBFish wants its
      own navy. Re-pointing the semantic here brands every esa-alert-box variant="info"
      spoke-wide (replaces the per-page .cbf-search-note override /search used to carry). */
   --color-info:        var(--color-secondary);
@@ -80,12 +80,12 @@
   --font-weight-semibold: 600;
   --font-weight-bold:     700;
 
-  /* ===== CB Fish-specific additions (no ecology equivalent) ===== */
+  /* ===== CBFish-specific additions (no ecology equivalent) ===== */
 
   /* Condensed display face — logotype, big stat numbers, section titles */
   --font-display: 'IBM Plex Sans Condensed', 'IBM Plex Sans', sans-serif;
 
-  /* Brand navy ramp (the hub's --color-blue-* is a muted blue; CB Fish is deeper).
+  /* Brand navy ramp (the hub's --color-blue-* is a muted blue; CBFish is deeper).
      Raw material only — re-points ecology tokens above; components never read these. */
   --cbf-blue-50:  #f3f7fc;
   --cbf-blue-200: #c6dcf1;
@@ -94,7 +94,7 @@
   --cbf-blue-700: #1e5386;
   --cbf-blue-950: #13273e;
 
-  /* Brand neutral ramp — CB Fish's authoritative grays from Figma. Warmer/lighter
+  /* Brand neutral ramp — CBFish's authoritative grays from Figma. Warmer/lighter
      than the hub's cool gray-* (e.g. 900 #3d3d3d vs the hub's #171717). Raw material
      only: feeds the semantic re-points above; components never read --cbf-gray-* directly. */
   --cbf-gray-0:   #ffffff;
