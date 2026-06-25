@@ -22,6 +22,15 @@ export interface Prototype {
 
 export const prototypes: Prototype[] = [
   {
+    slug: 'home',
+    title: 'CBFish homepage',
+    description:
+      'A static, in-design-system snapshot of the live cbfish.org landing — the shared home every prototype returns to via the logo and the Home breadcrumb.',
+    route: '/home',
+    createdAt: '2026-06-24',
+    status: 'live',
+  },
+  {
     slug: 'search',
     title: 'Global search & command palette',
     description:

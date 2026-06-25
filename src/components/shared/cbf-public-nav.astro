@@ -27,28 +27,10 @@ import CbfLogo from './cbf-logo.astro';
 import CbfIcon from '../search/cbf-icon.astro';
 import CbfOmniTrigger from '../search/cbf-omni-trigger.astro';
 import CbfOmniSearch from '../search/cbf-omni-search.astro';
-
-const help = [
-  { label: 'Help center' }, { label: 'Data dictionary' }, { label: 'EF&W Program documents' },
-  { label: 'Request support' }, { label: 'Send feedback' },
-];
-const mitigation = [
-  { label: 'Projects' }, { label: 'Contracts' }, { label: 'Portfolios' }, { label: 'Work elements' },
-  { label: 'Estuary program' }, { label: 'Tributary habitat' }, { label: 'Land acquisitions' },
-];
-const reporting = [
-  { label: 'Report Center' }, { label: 'Maps' }, { label: 'Publications' },
-];
-const funding = [
-  { label: 'Funds' }, { label: 'Fund budgets summary' }, { label: 'Long-term funding agreements' },
-  { label: 'Start-of-year (SOY) budgets' }, { label: 'Working budgets' }, { label: 'Budget change requests' },
-  { label: 'Expenditures' }, { label: 'Accruals' },
-];
-// Items that live inline in the bars on desktop but collapse into the drawer below
-// --cbf-nav-collapse: the admin-tray dropdowns (no child menus in this mock, so they
-// list as flat labels) and the header end-cluster shortcuts.
-const system = [{ label: 'Data management' }, { label: 'System status' }, { label: 'System configuration' }];
-const quick = [{ label: 'Recent', href: '#' }, { label: 'Dashboard', href: '#' }];
+// Menu data is shared with the homepage footer (cbf-app-footer) via app-nav.ts so
+// the nav and the sitemap can never drift. `system`/`quick` are the admin-tray
+// dropdowns + header shortcuts that collapse into the drawer below --cbf-nav-collapse.
+import { help, mitigation, reporting, funding, system, quick } from '../../data/app-nav';
 ---
 <EsaAppBar tone="brand-strong" as="nav" class="cbf-app-bar--admin">
   <div class="cbf-nav-collapsible" slot="start">

@@ -1,0 +1,64 @@
+---
+// cbf-program-overview — the homepage "Welcome to…" band: the page h1 + intro
+// prose, then the program-at-a-glance stat cards (Funds / Projects / Contracts /
+// Work sites). Mirrors the cbfish.org homepage overview.
+//
+// bcn-lego-checked: the metrics ARE esa-stat legos (value/label/sub), each sitting
+// in an esa-card surface for the card look — not a bespoke metric block. The
+// heading/intro use the .type-* roles and the cards sit on the .grid primitive;
+// only the band's spacing is component-internal layout (legal per CLAUDE.md).
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaCard from '@esa/ecology/esa-card.astro';
+
+interface Stat {
+  value: string;
+  label: string;
+  sub?: string;
+}
+interface Props {
+  heading: string;
+  intro: string;
+  stats: Stat[];
+}
+const { heading, intro, stats } = Astro.props;
+---
+<section class="cbf-program-overview">
+  <div class="cbf-program-overview__copy">
+    <h1 class="type-page-title">{heading}</h1>
+    <p class="type-body cbf-program-overview__intro">{intro}</p>
+  </div>
+  <ul class="cbf-program-overview__stats grid">
+    {stats.map((s) => (
+      <li>
+        <EsaCard padding="default">
+          <EsaStat value={s.value} label={s.label} sub={s.sub} />
+        </EsaCard>
+      </li>
+    ))}
+  </ul>
+</section>
+
+<style>
+  .cbf-program-overview {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-600);
+  }
+  .cbf-program-overview__copy {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-300);
+    max-width: 70ch;
+  }
+  .cbf-program-overview__intro {
+    color: var(--color-text-secondary);
+    font-size: 18px;
+    line-height: 1.6;
+  }
+  .cbf-program-overview__stats {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    --grid-min: 12rem;
+  }
+</style>

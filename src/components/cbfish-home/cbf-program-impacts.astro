@@ -1,0 +1,85 @@
+---
+// cbf-program-impacts — the homepage "Program impacts" band: a heading, supporting
+// prose, and a static bar chart of funded amount by fiscal year. The live site's
+// chart is interactive; this is a faithful STATIC snapshot of that section.
+//
+// bcn-lego-checked: no esa- chart/dataviz lego exists in the ecology catalog
+// (checked the full list — closest is esa-progress-bar, a single value, not a
+// series). Checked Beacon (no static-chart pattern). The bars are a tokenized
+// inline SVG; chart geometry is component-internal layout. cbf-program-impacts is
+// the reusable home for this section.
+
+// Illustrative series — funded amount ($M) by fiscal year. Static snapshot data.
+const series: { year: string; value: number }[] = [
+  { year: 'FY05', value: 168 }, { year: 'FY08', value: 192 }, { year: 'FY11', value: 214 },
+  { year: 'FY14', value: 236 }, { year: 'FY17', value: 251 }, { year: 'FY20', value: 268 },
+  { year: 'FY23', value: 279 }, { year: 'FY26', value: 296 },
+];
+const max = Math.max(...series.map((d) => d.value));
+const W = 720, H = 240, padX = 8, padBottom = 28, gap = 18;
+const barW = (W - padX * 2 - gap * (series.length - 1)) / series.length;
+const chartH = H - padBottom;
+---
+<section class="cbf-program-impacts">
+  <div class="cbf-program-impacts__head">
+    <h2 class="type-section-title">Program impacts</h2>
+    <p class="type-body cbf-program-impacts__lede">
+      Funding invested in fish &amp; wildlife mitigation across the Columbia River Basin,
+      fiscal years 2005&ndash;2026.
+    </p>
+  </div>
+
+  <figure class="cbf-program-impacts__chart">
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Bar chart of funded amount by fiscal year, rising from FY05 to FY26." preserveAspectRatio="xMidYMid meet">
+      {series.map((d, i) => {
+        const h = Math.round((d.value / max) * (chartH - 16));
+        const x = padX + i * (barW + gap);
+        const y = chartH - h;
+        return (
+          <g>
+            <rect x={x} y={y} width={barW} height={h} rx="3" class="cbf-program-impacts__bar" />
+            <text x={x + barW / 2} y={chartH + 18} class="cbf-program-impacts__xlabel" text-anchor="middle">{d.year}</text>
+          </g>
+        );
+      })}
+    </svg>
+    <figcaption class="cbf-program-impacts__caption">
+      Illustrative figures. <a href="#">Download raw data</a>
+    </figcaption>
+  </figure>
+</section>
+
+<style>
+  .cbf-program-impacts {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-500);
+  }
+  .cbf-program-impacts__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-200);
+    max-width: 70ch;
+  }
+  .cbf-program-impacts__lede { color: var(--color-text-secondary); }
+  .cbf-program-impacts__chart {
+    margin: 0;
+    padding: var(--spacing-500);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-300);
+    background: var(--color-surface);
+  }
+  .cbf-program-impacts__chart svg { width: 100%; height: auto; display: block; }
+  .cbf-program-impacts__bar { fill: var(--color-primary); }
+  .cbf-program-impacts__bar:hover { fill: var(--color-secondary); }
+  .cbf-program-impacts__xlabel {
+    fill: var(--color-text-muted);
+    font-size: 12px;
+    font-family: var(--font-sans);
+  }
+  .cbf-program-impacts__caption {
+    margin-top: var(--spacing-300);
+    font-size: 14px;
+    color: var(--color-text-muted);
+  }
+</style>
