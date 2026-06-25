@@ -216,6 +216,8 @@ window.onload = function() {
   map.on('mousemove', mapMove);
   map.on('dblclick', mapDbl);
   renderLegend();
+  // Default to guided mode on load
+  toggleWizardMode();
 };
 
 // ── WE helpers ────────────────────────────────────────────────────────────
@@ -1112,25 +1114,14 @@ function buildFpFromOuterLine(we, outerPts) {
   var arcFwd = traceArc(endIdx, startIdx, 1);
   var arcRev = traceArc(endIdx, startIdx, -1);
 
-  // Pick the arc whose midpoint is on the SAME SIDE of the reach as the outer line.
-  // arcMidDist (proximity) fails when the floodplain is wide — the correct-side arc
-  // can be farther from the outer centroid than the opposite-side arc.
-  function arcMidSide(arc) {
-    if (!reachPts || reachPts.length < 2) return side; // fallback
-    var mid = arc[Math.floor(arc.length / 2)];
-    var bestA2 = reachPts[0], bestB2 = reachPts[1], bestD2 = Infinity;
-    for (var k = 0; k < reachPts.length - 1; k++) {
-      var near2 = nearestOnSegment(mid, reachPts[k], reachPts[k+1]);
-      var d2 = Math.sqrt(Math.pow(mid.lat-near2.lat,2)+Math.pow(mid.lng-near2.lng,2));
-      if (d2 < bestD2) { bestD2 = d2; bestA2 = reachPts[k]; bestB2 = reachPts[k+1]; }
-    }
-    var dx2 = bestB2.lng - bestA2.lng, dy2 = bestB2.lat - bestA2.lat;
-    var cross2 = dx2 * (mid.lat - bestA2.lat) - dy2 * (mid.lng - bestA2.lng);
-    return cross2 > 0 ? 'left' : 'right';
-  }
-  var arc = arcMidSide(arcFwd) === side ? arcFwd : arcRev;
-
-  var poly = outerPts.concat(arc);
+  // Pick the arc that produces the SMALLER polygon area.
+  // The correct arc (tracing the same-side bank) always creates a modest
+  // floodplain polygon; the wrong arc wraps all the way around the channel
+  // producing a huge polygon regardless of floodplain width or reach curvature.
+  var polyFwd = outerPts.concat(arcFwd);
+  var polyRev = outerPts.concat(arcRev);
+  var arc  = geoAreaM2(polyFwd) <= geoAreaM2(polyRev) ? arcFwd : arcRev;
+  var poly = geoAreaM2(polyFwd) <= geoAreaM2(polyRev) ? polyFwd : polyRev;
   return {poly: poly, side: side};
 }
 
@@ -2191,6 +2182,7 @@ function changeStructType(oldType, id, newType) {
     var icon = L.divIcon({className:'',iconSize:[20,20],iconAnchor:[10,10],
       html:'<div style="width:20px;height:20px;border-radius:50%;background:'+col+';border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">'+num+'</div>'});
     s.marker.setIcon(icon);
+    s.marker.setTooltipContent(STRUCT_LABEL[newType]+' '+num+(s.desc?' – '+s.desc:''));
   }
   s.structType = newType;
   // Sync legacy arrays
@@ -2238,7 +2230,12 @@ function renderStructures(type) {
 function updateStructure(type,id,field,val) {
   var we=getActiveWE();if(!we)return;
   var s=(we.structs&&we.structs.filter(function(x){return x.id===id;})[0])||we.structures[type].filter(function(x){return x.id===id;})[0];if(!s)return;
-  s[field]=val;if(field==='desc'&&s.marker){var num=globalStructNum(we,type,id);s.marker.setTooltipContent(STRUCT_LABEL[type]+' '+num+(val?' – '+val:''));}
+  s[field]=val;
+  if(field==='desc'&&s.marker){
+    var t2=s.structType||type;
+    var num2=(we.structs&&we.structs.indexOf(s)>=0)?we.structs.indexOf(s)+1:globalStructNum(we,t2,id);
+    s.marker.setTooltipContent(STRUCT_LABEL[t2]+' '+num2+(val?' – '+val:''));
+  }
   updateLogTotals();
 }
 
@@ -2268,6 +2265,9 @@ function updateLogTotals() {
   ['cms','mcs','css','fps','scs'].forEach(function(t){we.structures[t].forEach(function(s){tL+=+s.large||0;tS+=+s.small||0;});});
   var cl=document.getElementById('calc-large-logs');if(cl)cl.textContent=tL||'—';
   var cs=document.getElementById('calc-small-logs');if(cs)cs.textContent=tS||'—';
+  // Also update wizard totals if visible
+  var wl=document.getElementById('wz-struct-total-l');if(wl)wl.textContent=tL;
+  var ws=document.getElementById('wz-struct-total-s');if(ws)ws.textContent=tS;
 }
 
 function startStructPoint(type,id) {
@@ -2682,7 +2682,8 @@ function commitLineEdit() {
     if (id === 'reach_len' && !confirmReachChange(we)) {
       startLineEdit('pp', id); return;
     }
-    we.ppData[id].valueM = newLen;
+    // fp_left / fp_right are polygons — store area not line length
+    we.ppData[id].valueM = (id === 'fp_left' || id === 'fp_right') ? geoAreaM2(pts) : newLen;
     // For no-display metrics (valley_len), store updated pts and remove temp layer
     if (we.ppData[id]._tempLayer) {
       we.ppData[id]._pts = layer.getLatLngs();
@@ -3226,14 +3227,18 @@ function startReachAutoDetect() {
   var we = getActiveWE(); if (!we) return;
   if (lineEditing) cancelLineEdit();
   ppDrawing = null; sowDrawing = null; chuDrawing = false;
-  reachAutoDetecting = true;
+  // Clear any existing manually-drawn reach before re-detecting
   if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
-  we.ppData['reach_len']._autoDetecting = true;
-  we.ppData['reach_len']._autoResults = null;
+  var rd = we.ppData['reach_len'];
+  if (rd.layer) { map.removeLayer(rd.layer); rd.layer = null; rd.valueM = 0; }
+  if (rd._arrowMarker) { map.removeLayer(rd._arrowMarker); rd._arrowMarker = null; }
+  reachAutoDetecting = true;
+  rd._autoDetecting = true;
+  rd._autoResults = null;
   document.getElementById('mapwrap').classList.add('drawing');
   setMapHint('Loading NHD streams...');
   var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
-  renderPMRow(m);
+  renderPMRow(m); rerenderCalcs();
   loadNHDPreview();
 }
 
@@ -5252,7 +5257,6 @@ var wizardMode = false;
 var wizardStep = 0;
 
 var WIZARD_STEPS = [
-  { id:'setup',      label:'Setup',     title:'Name Your Work Element',         phase:'pp' },
   { id:'perimeter',  label:'Boundary',  title:'Draw Project Boundary',          phase:'pp' },
   { id:'reach',      label:'Reach',     title:'Identify Your Stream Reach',     phase:'pp' },
   { id:'ch_width',   label:'Ch. Width', title:'Measure Channel Width',          phase:'pp' },
@@ -5307,7 +5311,7 @@ function wizardStepStatus(we, stepId) {
     case 'reach':     return (we.ppData['reach_len'] && we.ppData['reach_len'].layer) ? 'done' : 'pending';
     case 'ch_width': {
       var ch = we.ppData['ch_width'];
-      return (ch && ch.lines && ch.lines.filter(function(l){return l&&l.lengthM;}).length >= 1) ? 'done' : 'pending';
+      return (ch && ch.lines && ch.lines.filter(function(l){return l&&l.lengthM;}).length >= 3) ? 'done' : 'pending';
     }
     case 'bank_ht':   return (we.ppData['bank_ht']   && we.ppData['bank_ht'].value)   ? 'done' : 'pending';
     case 'substrate': return (we.ppData['substrate'] && we.ppData['substrate'].value) ? 'done' : 'pending';
@@ -5710,63 +5714,54 @@ function wizardStepBody(we, step, idx) {
         structCount += list.length;
       });
 
-      // Add buttons
-      h += '<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">';
-      structTypes.forEach(function(st){
-        h += '<button class="pm-draw-btn" style="flex:1;min-width:80px;height:auto;padding:7px 4px" ';
-        h += 'onclick="wizardAddStructure(\''+st.key+'\',\''+st.label+'\')">&#43; '+st.label+'</button>';
-      });
+      // Single add button — type is set after adding via the per-structure dropdown
+      h += '<div style="margin-bottom:14px">';
+      h += '<button class="pm-draw-btn" style="height:var(--form-height-sm,32px);padding:0 12px" ';
+      h += 'onclick="wizardAddStructure(\'cms\',\'Channel Margin\')">&#43; Add Structure</button>';
       h += '</div>';
 
-      if (structCount === 0) {
+      // Flat structure list — same source as expert mode renderAllStructures()
+      var structs = (we && we.structs) || [];
+      if (!structs.length) {
         h += '<div class="wz-status pending">&#9654; No structures added yet.</div>';
       }
-
-      // Inline list for each type
-      structTypes.forEach(function(st) {
-        var list = (we && we.structures && we.structures[st.key]) || [];
-        if (!list.length) return;
-        h += '<div style="font-size:11px;font-weight:600;color:#525252;margin:8px 0 4px">'+st.label+'</div>';
-        list.forEach(function(s, i) {
-          var isWaiting = pendingStructPoint && pendingStructPoint.type===st.key && pendingStructPoint.id===s.id;
-          h += '<div style="background:#fff;border:1px solid #dcdcdc;border-radius:5px;padding:8px;margin-bottom:6px">';
-          h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
-          h += '<span style="font-size:11px;font-weight:600;color:#3d3d3d">'+st.label+' '+(i+1)+'</span>';
-          h += '<span style="cursor:pointer;color:#ef4444;font-size:12px" onclick="wizardDelStructure(\''+st.key+'\',\''+s.id+'\')">&#10005;</span>';
-          h += '</div>';
-          // Location
-          if (s.latlng) {
-            h += '<div style="font-size:11px;color:#0f6849;margin-bottom:4px">&#10003; Placed on map</div>';
-          } else {
-            h += '<button class="pm-draw-btn'+(isWaiting?' active':'')+'" style="width:100%;height:auto;padding:5px;margin-bottom:4px" ';
-            h += 'onclick="startStructPoint(\''+st.key+'\',\''+s.id+'\')">&#9679; '+(isWaiting?'Click map to place…':'Place on map')+'</button>';
-          }
-          // Description
-          h += '<input type="text" placeholder="Description (e.g. Single-key LWD jam)" ';
-          h += 'value="'+(s.desc||'')+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:4px 6px;border-radius:3px;font-size:11px;margin-bottom:4px" ';
-          h += 'oninput="updateStructure(\''+st.key+'\',\''+s.id+'\',\'desc\',this.value)">';
-          // Counts
-          h += '<div style="display:flex;gap:8px">';
-          h += '<div style="flex:1"><div style="font-size:11px;color:#7c7c7c;margin-bottom:2px">Large pieces (&gt;12")</div>';
-          h += '<input type="number" min="0" value="'+(s.large||0)+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" ';
-          h += 'oninput="updateStructure(\''+st.key+'\',\''+s.id+'\',\'large\',+this.value)"></div>';
-          h += '<div style="flex:1"><div style="font-size:11px;color:#7c7c7c;margin-bottom:2px">Small pieces (&lt;12")</div>';
-          h += '<input type="number" min="0" value="'+(s.small||0)+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" ';
-          h += 'oninput="updateStructure(\''+st.key+'\',\''+s.id+'\',\'small\',+this.value)"></div>';
-          h += '</div>';
-          h += '</div>';
-        });
+      structs.forEach(function(s, i) {
+        var t = s.structType || 'cms';
+        var isWaiting = pendingStructPoint && pendingStructPoint.id === s.id;
+        h += '<div style="background:#fff;border:1px solid #dcdcdc;border-radius:5px;padding:8px;margin-bottom:6px">';
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
+        var typeSelect2 = '<select style="font-size:11px;border:1px solid var(--color-border);border-radius:3px;padding:2px 4px;background:var(--color-surface);color:var(--color-text-primary);font-family:var(--font-sans,system-ui)" onchange="changeStructType(null,\''+s.id+'\',this.value)">';
+        typeSelect2 += '<option value="cms"'+(t==='cms'?' selected':'')+'>Channel Margin</option>';
+        typeSelect2 += '<option value="mcs"'+(t==='mcs'?' selected':'')+'>Mid Channel</option>';
+        typeSelect2 += '<option value="css"'+(t==='css'?' selected':'')+'>Channel Spanning</option>';
+        typeSelect2 += '</select>';
+        h += typeSelect2;
+        h += '<span style="cursor:pointer;color:#ef4444;font-size:12px" onclick="wizardDelStructure(\''+t+'\',\''+s.id+'\')">&#10005;</span>';
+        h += '</div>';
+        if (s.latlng) {
+          h += '<div style="font-size:11px;color:#0f6849;margin-bottom:4px">&#10003; Placed on map</div>';
+        } else {
+          h += '<button class="pm-draw-btn'+(isWaiting?' active':'')+'" style="width:100%;height:auto;padding:5px;margin-bottom:4px" ';
+          h += 'onclick="startStructPoint(\''+t+'\',\''+s.id+'\')">&#9679; '+(isWaiting?'Click map to place…':'Place on map')+'</button>';
+        }
+        h += '<input type="text" placeholder="Description (e.g. Single-key LWD jam)" ';
+        h += 'value="'+(s.desc||'')+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:4px 6px;border-radius:3px;font-size:11px;margin-bottom:4px" ';
+        h += 'oninput="updateStructure(\''+t+'\',\''+s.id+'\',\'desc\',this.value)">';
+        h += '<div style="display:flex;gap:8px">';
+        h += '<div style="flex:1"><div style="font-size:11px;color:#7c7c7c;margin-bottom:2px">Large pieces (&gt;12")</div>';
+        h += '<input type="number" min="0" value="'+(s.large||0)+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" ';
+        h += 'oninput="updateStructure(\''+t+'\',\''+s.id+'\',\'large\',+this.value)"></div>';
+        h += '<div style="flex:1"><div style="font-size:11px;color:#7c7c7c;margin-bottom:2px">Small pieces (&lt;12")</div>';
+        h += '<input type="number" min="0" value="'+(s.small||0)+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" ';
+        h += 'oninput="updateStructure(\''+t+'\',\''+s.id+'\',\'small\',+this.value)"></div>';
+        h += '</div></div>';
       });
-
-      if (structCount > 0) {
-        var tL = 0, tS = 0;
-        structTypes.forEach(function(st){
-          var list = (we && we.structures && we.structures[st.key]) || [];
-          list.forEach(function(s){ tL += (+s.large||0); tS += (+s.small||0); });
-        });
-        h += '<div style="background:rgba(255,255,255,0.07);border-radius:4px;padding:8px;margin-top:8px">';
-        h += '<div class="wz-metric-row"><span class="wz-metric-label">Total large pieces (&gt;12")</span><span class="wz-metric-val">'+tL+'</span></div>';
-        h += '<div class="wz-metric-row"><span class="wz-metric-label">Total small pieces (&lt;12")</span><span class="wz-metric-val">'+tS+'</span></div>';
+      if (structs.length) {
+        var tL=0, tS=0;
+        structs.forEach(function(s){ tL+=(+s.large||0); tS+=(+s.small||0); });
+        h += '<div style="background:#f3f7fc;border-radius:4px;padding:8px;margin-top:8px">';
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Total large pieces (&gt;12")</span><span id="wz-struct-total-l" class="wz-metric-val">'+tL+'</span></div>';
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Total small pieces (&lt;12")</span><span id="wz-struct-total-s" class="wz-metric-val">'+tS+'</span></div>';
         h += '</div>';
       }
 
@@ -5816,7 +5811,7 @@ function wizardStepFooter(we, step, idx) {
   var nextLabel = isLast ? '&#10003; Finish' : 'Next ›';
   var nextCls = status === 'done' ? 'success' : (step.id==='perimeter'?'':'');
   var nextDisabled = '';
-  var required = ['setup','reach'];
+  var required = ['reach', 'ch_width', 'fp_left', 'fp_right'];
   if (required.indexOf(step.id) >= 0 && status !== 'done') nextDisabled = 'disabled';
   return '<button class="wz-btn-back" '+backDisabled+' onclick="wizardBack()">‹ Back</button>' +
          '<button class="wz-btn-next '+nextCls+'" '+nextDisabled+' onclick="wizardNext()">'+nextLabel+'</button>';
