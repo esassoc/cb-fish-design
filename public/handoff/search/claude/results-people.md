@@ -183,13 +183,13 @@ People-scoped results — each row resolves to a person with an Impersonate affo
 
 ## Styles
 ```css
+.cbf-search-surface .cbf-facet .cbf-icon {
+  color: var(--color-secondary);
+}
 .cbf-search-results {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-400);
-}
-.cbf-search-surface .cbf-facet .cbf-icon {
-  color: var(--color-secondary);
 }
 .cbf-search-surface .cbf-search-results .cbf-result-group {
   border: 1px solid var(--color-border);
@@ -220,6 +220,10 @@ People-scoped results — each row resolves to a person with an Impersonate affo
 }
 .cbf-search-surface .cbf-search-results .cbf-result-group__count {
   font-size: 16px;
+}
+.cbf-search-field .cbf-icon {
+  color: var(--color-text-muted);
+  display: inline-flex;
 }
 .cbf-icon {
   display: inline-flex;
@@ -299,10 +303,6 @@ People-scoped results — each row resolves to a person with an Impersonate affo
   color: var(--color-secondary);
   opacity: 0;
   flex: none;
-}
-.cbf-search-field .cbf-icon {
-  color: var(--color-text-muted);
-  display: inline-flex;
 }
 ```
 

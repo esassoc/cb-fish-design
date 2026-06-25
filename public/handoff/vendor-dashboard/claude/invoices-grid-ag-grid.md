@@ -1,102 +1,2262 @@
-:root,
-[data-theme="cb-fish"] {
-  --ag-internal-hover-color: rgba(0, 0, 0, 0);
-  --ag-internal-moving-color: rgba(0, 0, 0, 0);
-  --app-bar-bg: #ffffff;
-  --app-bar-brand-bg: #1e5386;
-  --app-bar-brand-strong-bg: #13273e;
-  --app-bar-brand-strong-text: #ffffff;
-  --app-bar-brand-text: #ffffff;
-  --app-bar-gap: 2rem;
-  --app-bar-pad-x: 2rem;
-  --app-bar-pad-y: 1rem;
-  --app-bar-text: #3d3d3d;
-  --badge-bg: #1e5386;
-  --badge-height-lg: 24px;
-  --badge-height-md: 20px;
-  --badge-radius: .25rem;
-  --badge-text-color: #ffffff;
-  --breadcrumbs-link-color: #525252;
-  --breadcrumbs-link-hover: #3d3d3d;
-  --breadcrumbs-separator-color: #a3a3a3;
-  --cbf-text-placeholder: #9aa3ad;
-  --color-border: #dcdcdc;
-  --color-border-light: #efefef;
-  --color-border-strong: #bdbdbd;
-  --color-danger: #ef4444;
-  --color-primary: #1e5386;
-  --color-primary-hover: #1a4570;
-  --color-primary-subtle: #f3f7fc;
-  --color-secondary: #2770b2;
-  --color-secondary-hover: #1e5386;
-  --color-surface: #ffffff;
-  --color-surface-inverse: #13273e;
-  --color-surface-sunken: #f3f7fc;
-  --color-text-inverse: #ffffff;
-  --color-text-link: #1e5386;
-  --color-text-muted: #7c7c7c;
-  --color-text-primary: #3d3d3d;
-  --color-text-secondary: #525252;
-  --color-text-tertiary: #656565;
-  --color-warning: #f59e0b;
-  --container-gutter: 2rem;
-  --font-display: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
-  --font-sans: "IBM Plex Sans", sans-serif;
-  --font-weight-bold: 700;
-  --font-weight-medium: 500;
-  --font-weight-regular: 400;
-  --font-weight-semibold: 600;
-  --form-font-size-md: clamp(.75rem, .66rem + .44vw, .9375rem);
-  --form-font-size-sm: clamp(.625rem, .56rem + .32vw, .75rem);
-  --form-height-md: 40px;
-  --form-height-sm: 32px;
-  --form-height-xs: 28px;
-  --form-padding-x-md: .75rem;
-  --form-padding-x-sm: .625rem;
-  --form-radius-md: .5rem;
-  --form-radius-sm: .25rem;
-  --icon-link-font-size-md: 1rem;
-  --icon-link-font-size-sm: .875rem;
-  --icon-link-gap: .375rem;
-  --icon-size-medium: 20px;
-  --icon-size-small: 16px;
-  --link-column-heading-font-size: clamp(.75rem, .66rem + .44vw, .9375rem);
-  --link-column-item-font-size: clamp(.6875rem, .61rem + .38vw, .875rem);
-  --link-column-rule-color: color-mix(in srgb, currentColor 40%, transparent);
-  --radius-100: .25rem;
-  --radius-200: .5rem;
-  --side-dialog-width: 400px;
-  --side-dialog-width-lg: 520px;
-  --side-dialog-width-sm: 320px;
-  --spacing-050: .125rem;
-  --spacing-100: .25rem;
-  --spacing-150: .375rem;
-  --spacing-200: .5rem;
-  --spacing-250: .625rem;
-  --spacing-300: .75rem;
-  --spacing-400: 1rem;
-  --spacing-500: 1.5rem;
-  --spacing-600: 2rem;
-  --spacing-650: 2.5rem;
-  --spacing-700: 3rem;
-  --spacing-800: 4rem;
-  --type-size-050: clamp(.5rem, .44rem + .3vw, .625rem);
-  --type-size-100: clamp(.625rem, .56rem + .32vw, .75rem);
-  --type-size-150: clamp(.6875rem, .61rem + .38vw, .875rem);
-  --type-size-200: clamp(.75rem, .66rem + .44vw, .9375rem);
-  --type-size-250: clamp(.8125rem, .71rem + .5vw, 1.0625rem);
-  --type-size-300: clamp(.875rem, .77rem + .52vw, 1.125rem);
-  --type-size-400: clamp(1rem, .88rem + .6vw, 1.25rem);
-  --type-size-500: clamp(1.125rem, .98rem + .72vw, 1.5rem);
-  --type-size-600: clamp(1.375rem, 1.2rem + .88vw, 1.875rem);
-  --type-size-700: clamp(1.625rem, 1.41rem + 1.08vw, 2.25rem);
-}
+# Invoices grid (AG Grid)
 
+A searchable, status-filterable, group-able, SORTABLE tracking grid of the vendor's invoices across every pipeline stage (Submitted, In review, Approved, Paid, Needs revision). Search header + status chip filter + group-by (None/Contract/Project) over an AG Grid Community data grid with an esa-badge status column, a click-a-row esa-side-dialog detail drawer, an esa-empty-state for no matches, and a live record-count footer.
+
+## Key decisions
+- No esa-table/data-grid lego exists, so the tabular surface is AG Grid Community (ag-grid-community, MIT) — an explicit dependency chosen for built-in sort/filter/quick-search over a hand-rolled <table>. The bcn- component is its reusable home; every other control stays a lego: status uses esa-badge, search reuses cbf-search-field, status + group-by controls use esa-chip-group, the detail drawer uses esa-side-dialog, and the no-results state uses esa-empty-state.
+- AG Grid is wired to the spoke's tokens via the Theming API (themeQuartz.withParams mapping --color-surface / --color-border / --color-text-* / --color-primary) so the grid reads like the surrounding data cards, not a third-party palette. The grid's own border/radius are suppressed; the bcn wrapper owns the framed surface. domLayout is autoHeight so the page (not an inner pane) owns vertical scroll.
+- Status color encodes stage (info/warning/success/secondary/danger) — color conveys data, not decoration; no colored left-border row indicators.
+- Search drives AG Grid's quickFilterText; the status chip drives an EXTERNAL filter (isExternalFilterPresent/doesExternalFilterPass) so the esa-chip-group stays the single control surface and the column header filter UI is suppressed. Column sorting is enabled on every column (the new capability the grid buys).
+- Community has NO native row grouping (Enterprise-only), so the Group-by control clusters rows by applying a column sort on the chosen field; "None" clears it — it does not draw grouped header bands.
+- The drawer is a two-pane layout mirroring the /vendor-invoice PDF-left / form-right workspace: a document "sheet" (a paper rendering of the submitted invoice — supplier letterhead, billed-to, invoice date + performance period, the line-item table, total due, and printed notes) sits beside a tracking column (the dashboard metadata the document does not carry: a sunken amount hero with the status badge, then contract/project/submitted). On wide screens (>=900px) the panel widens to 980px and the two panes sit side by side; on narrow viewports the lego clamps the panel to the viewport and the panes stack into one column LED BY the tracking hero (the "narrow treatment"), with the document beneath. A Download PDF action and Previous/Next sit in the footer. Previous/Next step through the rows CURRENTLY DISPLAYED (forEachNodeAfterFilterAndSort) so search, filter, AND sort all scope the walk-through.
+- Hierarchy is carried by type-role + weight + color, not decoration: the amount is the type-page-title hero, contract is the lead value, labels are 14px normal-case muted (never uppercase micro-labels).
+
+## Gotchas
+- Mock invoices are deterministic and fictional — amounts, contracts, and line items are invented, not derived from client documents. Line-item totals sum exactly to each invoice amount so the drawer math always reconciles.
+- esa-badge is a presentational .astro (Astro-scoped CSS), NOT a web component — so grid status cells cannot just write <span class="esa-badge">. One real esa-badge per stage is server-rendered into hidden [data-badge-templates] (scope hash intact); the cellRenderer and the drawer clone that exact markup, so grid badges are byte-identical to the lego and never reinvented.
+- Row data reaches the client module (which imports ag-grid-community) via a <script type="application/json" data-invoice-data> blob — no second fetch.
+- The drawer document sheet (.cbf-doc-sheet) is built per-invoice by JS on row click, so all its styles live in a <style is:global> block (Astro scope hashes do not reach JS-created nodes). Its parties (Pacific Environmental Services / Columbia Basin Fish & Wildlife Program) are fixed mock constants in the client module; injected strings are HTML-escaped. The drawer panel widens via an inline --side-dialog-width-lg override (980px); the lego still clamps to calc(100vw - inset) so mobile stays single-column and overflow-free.
+- The Submitted column is configured as cellDataType:"date" with a valueGetter that parses the display string to a Date (a plain string column sorts lexically — "Apr"<"Jun"<"May", wrong for dates) and a valueFormatter that renders it back to the "Jun 20, 2026" form; a getQuickFilterText feeds the original string so search still matches typed dates. Amount is type:"numericColumn"; the other columns are genuinely string-typed.
+- AG Grid Community is registered via ModuleRegistry.registerModules([AllCommunityModule]) before createGrid; amounts use a USD valueFormatter + tabular-nums and right-align.
+- esa-chip-group is single-select with value="" as the "All" escape; it emits a bubbling change event the grid listens for (search→quickFilter, status→external filter, group→column sort).
+- EsaButton drops unknown attrs, so the drawer's prev/next data-hooks live on wrapper spans — the script toggles the inner native <button>'s disabled state.
+- Installing ag-grid-community while `astro dev` is live trips the 504 Outdated-Optimize-Dep break on the esa-* web components — stop the dev server before any dependency churn, then restart.
+
+## Markup
+```html
+<section class="cbf-vendor-dashboard-invoices stack" data-gap="md">
+  <header class="cbf-vendor-dashboard-invoices__header repel">
+    <h2 class="type-section-title">Invoices</h2>
+    <div class="cbf-vendor-dashboard-invoices__search">
+      <label class="cbf-search-field">
+        <span class="cbf-icon"
+          ><svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path></svg
+        ></span>
+        <input
+          type="text"
+          autocomplete="off"
+          placeholder="Search invoices, contracts or status…"
+          data-invoice-search="true"
+          aria-label="Search invoices"
+          class="astro-lfax72z2"
+        />
+      </label>
+    </div>
+  </header>
+  <div class="cbf-vendor-dashboard-invoices__controls repel">
+    <esa-chip-group
+      data-invoice-stage-filter="true"
+      size="sm"
+      label="Filter by status"
+      value=""
+      options='[{"value":"","label":"All"},{"value":"Submitted","label":"Submitted"},{"value":"In review","label":"In review"},{"value":"Approved","label":"Approved"},{"value":"Paid","label":"Paid"},{"value":"Needs revision","label":"Needs revision","tone":"amber"}]'
+    ></esa-chip-group>
+    <label class="cbf-vendor-dashboard-invoices__group">
+      <span class="type-caption">Group by</span>
+      <esa-chip-group
+        data-invoice-group="true"
+        size="sm"
+        label="Group invoices by"
+        value="none"
+        options='[{"value":"none","label":"No grouping"},{"value":"contract","label":"Contract"},{"value":"project","label":"Project"}]'
+      ></esa-chip-group>
+    </label>
+  </div>
+  <!-- AG Grid mounts here. Sized by its container; auto-height grows with rows
+       so the page (not an inner pane) owns vertical scroll. -->
+  <div class="cbf-vendor-dashboard-invoices__grid" data-invoice-grid="">
+    <div
+      class="ag-theme-buttonStyle-1 ag-theme-columnDropStyle-2 ag-theme-batchEditStyle-3 ag-theme-checkboxStyle-4 ag-theme-iconSet-5 ag-theme-tabStyle-6 ag-theme-inputStyle-7 ag-theme-columnDropStyle-2 ag-theme-params-1"
+      style="height: 100%; --ag-internal-row-border-width: 1px"
+    >
+      <div class="ag-measurement-container">
+        <div style="width: var(--ag-list-item-height, 15538px)"></div>
+        <div style="width: var(--ag-row-height, 15538px)"></div>
+        <div style="width: var(--ag-header-height, 15538px)"></div>
+        <div
+          class="ag-measurement-element-border"
+          style="--ag-internal-measurement-border: var(--ag-row-border, solid 15538px)"
+        ></div>
+        <div
+          class="ag-measurement-element-border"
+          style="
+            --ag-internal-measurement-border: var(--ag-pinned-row-border, solid 15538px);
+          "
+        ></div>
+        <div
+          class="ag-measurement-element-border"
+          style="
+            --ag-internal-measurement-border: var(--ag-header-row-border, solid 15538px);
+          "
+        ></div>
+      </div>
+      <div
+        class="ag-aria-description-container"
+        aria-live="polite"
+        aria-relevant="additions text"
+        aria-atomic="true"
+      ></div>
+      <div
+        class="ag-root-wrapper ag-layout-auto-height ag-ltr"
+        role="presentation"
+        grid-id="1"
+      >
+        <div
+          class="ag-root-wrapper-body ag-layout-auto-height ag-focus-managed"
+          data-ref="rootWrapperBody"
+          role="presentation"
+        >
+          <div
+            class="ag-tab-guard ag-tab-guard-top"
+            role="presentation"
+            tabindex="0"
+          ></div>
+          <!--AG-GRID-BODY-->
+          <div
+            class="ag-root ag-unselectable ag-layout-auto-height ag-body-vertical-content-no-gap ag-body-horizontal-content-no-gap"
+            data-ref="eGridRoot"
+            role="grid"
+            aria-colcount="5"
+            aria-rowcount="9"
+          >
+            <!--AG-HEADER-ROOT-->
+            <div
+              class="ag-header ag-focus-managed ag-pivot-off ag-header-allow-overflow"
+              role="presentation"
+              style="height: 49px; min-height: 49px"
+            >
+              <div
+                class="ag-pinned-left-header ag-hidden"
+                role="rowgroup"
+                aria-hidden="true"
+                style="width: 0px; max-width: 0px; min-width: 0px"
+              ></div>
+              <div class="ag-header-viewport" role="rowgroup" tabindex="-1">
+                <div
+                  class="ag-header-container"
+                  data-ref="eCenterContainer"
+                  role="presentation"
+                  style="width: 1146px"
+                >
+                  <div
+                    class="ag-header-row ag-header-row-column"
+                    role="row"
+                    tabindex="0"
+                    aria-rowindex="1"
+                    style="top: 0px; height: 48px; width: 1146px"
+                  >
+                    <div
+                      class="ag-header-cell ag-column-first ag-header-parent-hidden ag-header-cell-sortable ag-focus-managed"
+                      role="columnheader"
+                      col-id="number"
+                      aria-colindex="1"
+                      tabindex="-1"
+                      aria-sort="none"
+                      style="
+                        top: 0px;
+                        height: 48px;
+                        width: 200px;
+                        touch-action: none;
+                        left: 0px;
+                      "
+                    >
+                      <div
+                        class="ag-header-cell-resize"
+                        data-ref="eResize"
+                        role="presentation"
+                        aria-hidden="false"
+                        style="touch-action: none"
+                      ></div>
+                      <div
+                        class="ag-header-cell-comp-wrapper"
+                        data-ref="eHeaderCompWrapper"
+                        role="presentation"
+                      >
+                        <div class="ag-cell-label-container" role="presentation">
+                          <div
+                            class="ag-header-cell-label"
+                            data-ref="eLabel"
+                            role="presentation"
+                          >
+                            <span class="ag-header-cell-text" data-ref="eText"
+                              >Invoice #</span
+                            >
+                            <span
+                              class="ag-header-icon ag-header-label-icon ag-filter-icon ag-hidden"
+                              data-ref="eFilter"
+                              aria-hidden="true"
+                              ><span
+                                class="ag-icon ag-icon-filter"
+                                role="presentation"
+                                unselectable="on"
+                              ></span
+                            ></span>
+                            <!--AG-SORT-INDICATOR--><span
+                              class="ag-sort-indicator-container"
+                              data-ref="eSortIndicator"
+                            >
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-order ag-hidden"
+                                data-ref="eSortOrder"
+                                aria-hidden="true"
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-ascending-icon ag-hidden"
+                                data-ref="eSortAsc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-asc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-descending-icon ag-hidden"
+                                data-ref="eSortDesc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-desc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-mixed-icon ag-hidden"
+                                data-ref="eSortMixed"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-none"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-absolute-ascending-icon ag-hidden"
+                                data-ref="eSortAbsoluteAsc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-aasc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-absolute-descending-icon ag-hidden"
+                                data-ref="eSortAbsoluteDesc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-adesc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-none-icon ag-hidden"
+                                data-ref="eSortNone"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-none"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="ag-header-cell ag-header-parent-hidden ag-header-cell-sortable ag-focus-managed"
+                      role="columnheader"
+                      col-id="contract"
+                      aria-colindex="2"
+                      tabindex="-1"
+                      aria-sort="none"
+                      style="
+                        top: 0px;
+                        height: 48px;
+                        width: 346px;
+                        touch-action: none;
+                        left: 200px;
+                      "
+                    >
+                      <div
+                        class="ag-header-cell-resize"
+                        data-ref="eResize"
+                        role="presentation"
+                        aria-hidden="false"
+                        style="touch-action: none"
+                      ></div>
+                      <div
+                        class="ag-header-cell-comp-wrapper"
+                        data-ref="eHeaderCompWrapper"
+                        role="presentation"
+                      >
+                        <div class="ag-cell-label-container" role="presentation">
+                          <div
+                            class="ag-header-cell-label"
+                            data-ref="eLabel"
+                            role="presentation"
+                          >
+                            <span class="ag-header-cell-text" data-ref="eText"
+                              >Contract</span
+                            >
+                            <span
+                              class="ag-header-icon ag-header-label-icon ag-filter-icon ag-hidden"
+                              data-ref="eFilter"
+                              aria-hidden="true"
+                              ><span
+                                class="ag-icon ag-icon-filter"
+                                role="presentation"
+                                unselectable="on"
+                              ></span
+                            ></span>
+                            <!--AG-SORT-INDICATOR--><span
+                              class="ag-sort-indicator-container"
+                              data-ref="eSortIndicator"
+                            >
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-order ag-hidden"
+                                data-ref="eSortOrder"
+                                aria-hidden="true"
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-ascending-icon ag-hidden"
+                                data-ref="eSortAsc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-asc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-descending-icon ag-hidden"
+                                data-ref="eSortDesc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-desc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-mixed-icon ag-hidden"
+                                data-ref="eSortMixed"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-none"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-absolute-ascending-icon ag-hidden"
+                                data-ref="eSortAbsoluteAsc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-aasc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-absolute-descending-icon ag-hidden"
+                                data-ref="eSortAbsoluteDesc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-adesc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-none-icon ag-hidden"
+                                data-ref="eSortNone"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-none"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="ag-header-cell ag-header-parent-hidden ag-header-cell-sortable ag-focus-managed"
+                      role="columnheader"
+                      col-id="submitted"
+                      aria-colindex="3"
+                      tabindex="-1"
+                      aria-sort="none"
+                      style="
+                        top: 0px;
+                        height: 48px;
+                        width: 200px;
+                        touch-action: none;
+                        left: 546px;
+                      "
+                    >
+                      <div
+                        class="ag-header-cell-resize"
+                        data-ref="eResize"
+                        role="presentation"
+                        aria-hidden="false"
+                        style="touch-action: none"
+                      ></div>
+                      <div
+                        class="ag-header-cell-comp-wrapper"
+                        data-ref="eHeaderCompWrapper"
+                        role="presentation"
+                      >
+                        <div class="ag-cell-label-container" role="presentation">
+                          <div
+                            class="ag-header-cell-label"
+                            data-ref="eLabel"
+                            role="presentation"
+                          >
+                            <span class="ag-header-cell-text" data-ref="eText"
+                              >Submitted</span
+                            >
+                            <span
+                              class="ag-header-icon ag-header-label-icon ag-filter-icon ag-hidden"
+                              data-ref="eFilter"
+                              aria-hidden="true"
+                              ><span
+                                class="ag-icon ag-icon-filter"
+                                role="presentation"
+                                unselectable="on"
+                              ></span
+                            ></span>
+                            <!--AG-SORT-INDICATOR--><span
+                              class="ag-sort-indicator-container"
+                              data-ref="eSortIndicator"
+                            >
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-order ag-hidden"
+                                data-ref="eSortOrder"
+                                aria-hidden="true"
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-ascending-icon ag-hidden"
+                                data-ref="eSortAsc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-asc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-descending-icon ag-hidden"
+                                data-ref="eSortDesc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-desc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-mixed-icon ag-hidden"
+                                data-ref="eSortMixed"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-none"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-absolute-ascending-icon ag-hidden"
+                                data-ref="eSortAbsoluteAsc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-aasc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-absolute-descending-icon ag-hidden"
+                                data-ref="eSortAbsoluteDesc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-adesc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-none-icon ag-hidden"
+                                data-ref="eSortNone"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-none"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="ag-header-cell ag-header-parent-hidden ag-header-cell-sortable cbf-grid-num ag-focus-managed"
+                      role="columnheader"
+                      col-id="amount"
+                      aria-colindex="4"
+                      tabindex="-1"
+                      aria-sort="none"
+                      style="
+                        top: 0px;
+                        height: 48px;
+                        width: 200px;
+                        touch-action: none;
+                        left: 746px;
+                      "
+                    >
+                      <div
+                        class="ag-header-cell-resize"
+                        data-ref="eResize"
+                        role="presentation"
+                        aria-hidden="false"
+                        style="touch-action: none"
+                      ></div>
+                      <div
+                        class="ag-header-cell-comp-wrapper"
+                        data-ref="eHeaderCompWrapper"
+                        role="presentation"
+                      >
+                        <div class="ag-cell-label-container" role="presentation">
+                          <div
+                            class="ag-header-cell-label"
+                            data-ref="eLabel"
+                            role="presentation"
+                          >
+                            <span class="ag-header-cell-text" data-ref="eText"
+                              >Amount</span
+                            >
+                            <span
+                              class="ag-header-icon ag-header-label-icon ag-filter-icon ag-hidden"
+                              data-ref="eFilter"
+                              aria-hidden="true"
+                              ><span
+                                class="ag-icon ag-icon-filter"
+                                role="presentation"
+                                unselectable="on"
+                              ></span
+                            ></span>
+                            <!--AG-SORT-INDICATOR--><span
+                              class="ag-sort-indicator-container"
+                              data-ref="eSortIndicator"
+                            >
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-order ag-hidden"
+                                data-ref="eSortOrder"
+                                aria-hidden="true"
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-ascending-icon ag-hidden"
+                                data-ref="eSortAsc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-asc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-descending-icon ag-hidden"
+                                data-ref="eSortDesc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-desc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-mixed-icon ag-hidden"
+                                data-ref="eSortMixed"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-none"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-absolute-ascending-icon ag-hidden"
+                                data-ref="eSortAbsoluteAsc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-aasc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-absolute-descending-icon ag-hidden"
+                                data-ref="eSortAbsoluteDesc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-adesc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-none-icon ag-hidden"
+                                data-ref="eSortNone"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-none"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div
+                      class="ag-header-cell ag-column-last ag-header-parent-hidden ag-header-cell-sortable ag-focus-managed"
+                      role="columnheader"
+                      col-id="stage"
+                      aria-colindex="5"
+                      tabindex="-1"
+                      aria-sort="none"
+                      style="
+                        top: 0px;
+                        height: 48px;
+                        width: 200px;
+                        touch-action: none;
+                        left: 946px;
+                      "
+                    >
+                      <div
+                        class="ag-header-cell-resize"
+                        data-ref="eResize"
+                        role="presentation"
+                        aria-hidden="false"
+                        style="touch-action: none"
+                      ></div>
+                      <div
+                        class="ag-header-cell-comp-wrapper"
+                        data-ref="eHeaderCompWrapper"
+                        role="presentation"
+                      >
+                        <div class="ag-cell-label-container" role="presentation">
+                          <div
+                            class="ag-header-cell-label"
+                            data-ref="eLabel"
+                            role="presentation"
+                          >
+                            <span class="ag-header-cell-text" data-ref="eText"
+                              >Status</span
+                            >
+                            <span
+                              class="ag-header-icon ag-header-label-icon ag-filter-icon ag-hidden"
+                              data-ref="eFilter"
+                              aria-hidden="true"
+                              ><span
+                                class="ag-icon ag-icon-filter"
+                                role="presentation"
+                                unselectable="on"
+                              ></span
+                            ></span>
+                            <!--AG-SORT-INDICATOR--><span
+                              class="ag-sort-indicator-container"
+                              data-ref="eSortIndicator"
+                            >
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-order ag-hidden"
+                                data-ref="eSortOrder"
+                                aria-hidden="true"
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-ascending-icon ag-hidden"
+                                data-ref="eSortAsc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-asc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-descending-icon ag-hidden"
+                                data-ref="eSortDesc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-desc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-mixed-icon ag-hidden"
+                                data-ref="eSortMixed"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-none"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-absolute-ascending-icon ag-hidden"
+                                data-ref="eSortAbsoluteAsc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-aasc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-absolute-descending-icon ag-hidden"
+                                data-ref="eSortAbsoluteDesc"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-adesc"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                              <span
+                                class="ag-sort-indicator-icon ag-sort-none-icon ag-hidden"
+                                data-ref="eSortNone"
+                                aria-hidden="true"
+                                ><span
+                                  class="ag-icon ag-icon-none"
+                                  role="presentation"
+                                  unselectable="on"
+                                ></span
+                              ></span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div
+                class="ag-pinned-right-header ag-hidden"
+                role="rowgroup"
+                aria-hidden="true"
+                style="width: 0px; max-width: 0px; min-width: 0px"
+              ></div>
+            </div>
+            <div
+              class="ag-floating-top ag-invisible"
+              data-ref="eTop"
+              role="presentation"
+              style="min-height: 0px; height: 0px"
+            >
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-pinned-left-floating-top ag-hidden"
+                data-ref="eContainer"
+                role="rowgroup"
+                aria-hidden="true"
+                style="width: 0px; max-width: 0px; min-width: 0px"
+              ></div>
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-viewport ag-floating-top-viewport"
+                data-ref="eViewport"
+                role="rowgroup"
+              >
+                <div
+                  class="ag-floating-top-container"
+                  data-ref="eContainer"
+                  role="presentation"
+                  style="width: 1146px"
+                ></div>
+              </div>
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-pinned-right-floating-top ag-hidden"
+                data-ref="eContainer"
+                role="rowgroup"
+                aria-hidden="true"
+                style="width: 0px; max-width: 0px; min-width: 0px"
+              ></div>
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-floating-top-full-width-container"
+                data-ref="eContainer"
+                role="rowgroup"
+              ></div>
+            </div>
+            <div
+              class="ag-body ag-layout-auto-height"
+              data-ref="eBody"
+              role="presentation"
+            >
+              <div
+                class="ag-body-viewport ag-layout-auto-height ag-row-no-animation"
+                data-ref="eBodyViewport"
+                role="presentation"
+              >
+                <!--AG-ROW-CONTAINER-->
+                <div
+                  class="ag-pinned-left-cols-container ag-hidden"
+                  data-ref="eContainer"
+                  role="rowgroup"
+                  aria-hidden="true"
+                  style="height: 336px; width: 0px; max-width: 0px; min-width: 0px"
+                ></div>
+                <!--AG-ROW-CONTAINER-->
+                <div
+                  class="ag-viewport ag-center-cols-viewport"
+                  data-ref="eViewport"
+                  role="rowgroup"
+                  style="height: 336px"
+                >
+                  <div
+                    class="ag-center-cols-container"
+                    data-ref="eContainer"
+                    role="presentation"
+                    style="width: 1146px; height: 336px"
+                  >
+                    <div
+                      role="row"
+                      comp-id="54"
+                      tabindex="0"
+                      row-index="0"
+                      class="ag-row-even ag-row-no-focus ag-row ag-row-level-0 ag-row-position-absolute ag-row-first"
+                      aria-rowindex="2"
+                      row-id="0"
+                      style="transform: translateY(0px); height: 42px"
+                    >
+                      <div
+                        role="gridcell"
+                        comp-id="55"
+                        col-id="number"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-first cbf-grid-id"
+                        aria-colindex="1"
+                        style="left: 0px; width: 200px"
+                      >
+                        INV-2026-0045
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="56"
+                        col-id="contract"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="2"
+                        style="left: 200px; width: 346px"
+                      >
+                        Salmon Habitat Restoration — Wenatchee
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="57"
+                        col-id="submitted"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="3"
+                        style="left: 546px; width: 200px"
+                      >
+                        Jun 20, 2026
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="58"
+                        col-id="amount"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height cbf-grid-num"
+                        aria-colindex="4"
+                        style="left: 746px; width: 200px"
+                      >
+                        $5,210.00
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="59"
+                        col-id="stage"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-last"
+                        aria-colindex="5"
+                        style="left: 946px; width: 200px"
+                      >
+                        <span
+                          ><span class="cbf-grid-status"
+                            ><span class="esa-badge esa-badge--info esa-badge--lg">
+                              <span class="esa-badge__text">Submitted</span>
+                            </span>
+                          </span></span
+                        >
+                      </div>
+                    </div>
+                    <div
+                      role="row"
+                      comp-id="60"
+                      tabindex="0"
+                      row-index="1"
+                      class="ag-row-odd ag-row-no-focus ag-row ag-row-level-0 ag-row-position-absolute"
+                      aria-rowindex="3"
+                      row-id="1"
+                      style="transform: translateY(42px); height: 42px"
+                    >
+                      <div
+                        role="gridcell"
+                        comp-id="61"
+                        col-id="number"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-first cbf-grid-id"
+                        aria-colindex="1"
+                        style="left: 0px; width: 200px"
+                      >
+                        INV-2026-0042
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="62"
+                        col-id="contract"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="2"
+                        style="left: 200px; width: 346px"
+                      >
+                        Salmon Habitat Restoration — Wenatchee
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="63"
+                        col-id="submitted"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="3"
+                        style="left: 546px; width: 200px"
+                      >
+                        Jun 18, 2026
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="64"
+                        col-id="amount"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height cbf-grid-num"
+                        aria-colindex="4"
+                        style="left: 746px; width: 200px"
+                      >
+                        $4,850.00
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="65"
+                        col-id="stage"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-last"
+                        aria-colindex="5"
+                        style="left: 946px; width: 200px"
+                      >
+                        <span
+                          ><span class="cbf-grid-status"
+                            ><span class="esa-badge esa-badge--info esa-badge--lg">
+                              <span class="esa-badge__text">Submitted</span>
+                            </span>
+                          </span></span
+                        >
+                      </div>
+                    </div>
+                    <div
+                      role="row"
+                      comp-id="66"
+                      tabindex="0"
+                      row-index="2"
+                      class="ag-row-even ag-row-no-focus ag-row ag-row-level-0 ag-row-position-absolute"
+                      aria-rowindex="4"
+                      row-id="2"
+                      style="transform: translateY(84px); height: 42px"
+                    >
+                      <div
+                        role="gridcell"
+                        comp-id="67"
+                        col-id="number"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-first cbf-grid-id"
+                        aria-colindex="1"
+                        style="left: 0px; width: 200px"
+                      >
+                        INV-2026-0039
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="68"
+                        col-id="contract"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="2"
+                        style="left: 200px; width: 346px"
+                      >
+                        Riparian Vegetation Monitoring — Methow
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="69"
+                        col-id="submitted"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="3"
+                        style="left: 546px; width: 200px"
+                      >
+                        Jun 11, 2026
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="70"
+                        col-id="amount"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height cbf-grid-num"
+                        aria-colindex="4"
+                        style="left: 746px; width: 200px"
+                      >
+                        $2,310.00
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="71"
+                        col-id="stage"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-last"
+                        aria-colindex="5"
+                        style="left: 946px; width: 200px"
+                      >
+                        <span
+                          ><span class="cbf-grid-status"
+                            ><span class="esa-badge esa-badge--warning esa-badge--lg">
+                              <span class="esa-badge__text">In review</span>
+                            </span>
+                          </span></span
+                        >
+                      </div>
+                    </div>
+                    <div
+                      role="row"
+                      comp-id="72"
+                      tabindex="0"
+                      row-index="3"
+                      class="ag-row-odd ag-row-no-focus ag-row ag-row-level-0 ag-row-position-absolute"
+                      aria-rowindex="5"
+                      row-id="3"
+                      style="transform: translateY(126px); height: 42px"
+                    >
+                      <div
+                        role="gridcell"
+                        comp-id="73"
+                        col-id="number"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-first cbf-grid-id"
+                        aria-colindex="1"
+                        style="left: 0px; width: 200px"
+                      >
+                        INV-2026-0035
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="74"
+                        col-id="contract"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="2"
+                        style="left: 200px; width: 346px"
+                      >
+                        Smolt Survival Telemetry Study
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="75"
+                        col-id="submitted"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="3"
+                        style="left: 546px; width: 200px"
+                      >
+                        May 29, 2026
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="76"
+                        col-id="amount"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height cbf-grid-num"
+                        aria-colindex="4"
+                        style="left: 746px; width: 200px"
+                      >
+                        $3,975.00
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="77"
+                        col-id="stage"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-last"
+                        aria-colindex="5"
+                        style="left: 946px; width: 200px"
+                      >
+                        <span
+                          ><span class="cbf-grid-status"
+                            ><span class="esa-badge esa-badge--success esa-badge--lg">
+                              <span class="esa-badge__text">Approved</span>
+                            </span>
+                          </span></span
+                        >
+                      </div>
+                    </div>
+                    <div
+                      role="row"
+                      comp-id="78"
+                      tabindex="0"
+                      row-index="4"
+                      class="ag-row-even ag-row-no-focus ag-row ag-row-level-0 ag-row-position-absolute"
+                      aria-rowindex="6"
+                      row-id="4"
+                      style="transform: translateY(168px); height: 42px"
+                    >
+                      <div
+                        role="gridcell"
+                        comp-id="79"
+                        col-id="number"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-first cbf-grid-id"
+                        aria-colindex="1"
+                        style="left: 0px; width: 200px"
+                      >
+                        INV-2026-0031
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="80"
+                        col-id="contract"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="2"
+                        style="left: 200px; width: 346px"
+                      >
+                        Hatchery Supplementation — Entiat
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="81"
+                        col-id="submitted"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="3"
+                        style="left: 546px; width: 200px"
+                      >
+                        May 14, 2026
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="82"
+                        col-id="amount"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height cbf-grid-num"
+                        aria-colindex="4"
+                        style="left: 746px; width: 200px"
+                      >
+                        $1,640.00
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="83"
+                        col-id="stage"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-last"
+                        aria-colindex="5"
+                        style="left: 946px; width: 200px"
+                      >
+                        <span
+                          ><span class="cbf-grid-status"
+                            ><span class="esa-badge esa-badge--secondary esa-badge--lg">
+                              <span class="esa-badge__text">Paid</span>
+                            </span>
+                          </span></span
+                        >
+                      </div>
+                    </div>
+                    <div
+                      role="row"
+                      comp-id="84"
+                      tabindex="0"
+                      row-index="5"
+                      class="ag-row-odd ag-row-no-focus ag-row ag-row-level-0 ag-row-position-absolute"
+                      aria-rowindex="7"
+                      row-id="5"
+                      style="transform: translateY(210px); height: 42px"
+                    >
+                      <div
+                        role="gridcell"
+                        comp-id="85"
+                        col-id="number"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-first cbf-grid-id"
+                        aria-colindex="1"
+                        style="left: 0px; width: 200px"
+                      >
+                        INV-2026-0028
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="86"
+                        col-id="contract"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="2"
+                        style="left: 200px; width: 346px"
+                      >
+                        Water Quality Sampling — Okanogan
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="87"
+                        col-id="submitted"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="3"
+                        style="left: 546px; width: 200px"
+                      >
+                        May 2, 2026
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="88"
+                        col-id="amount"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height cbf-grid-num"
+                        aria-colindex="4"
+                        style="left: 746px; width: 200px"
+                      >
+                        $1,425.00
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="89"
+                        col-id="stage"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-last"
+                        aria-colindex="5"
+                        style="left: 946px; width: 200px"
+                      >
+                        <span
+                          ><span class="cbf-grid-status"
+                            ><span class="esa-badge esa-badge--danger esa-badge--lg">
+                              <span class="esa-badge__text">Needs revision</span>
+                            </span>
+                          </span></span
+                        >
+                      </div>
+                    </div>
+                    <div
+                      role="row"
+                      comp-id="90"
+                      tabindex="0"
+                      row-index="6"
+                      class="ag-row-even ag-row-no-focus ag-row ag-row-level-0 ag-row-position-absolute"
+                      aria-rowindex="8"
+                      row-id="6"
+                      style="transform: translateY(252px); height: 42px"
+                    >
+                      <div
+                        role="gridcell"
+                        comp-id="91"
+                        col-id="number"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-first cbf-grid-id"
+                        aria-colindex="1"
+                        style="left: 0px; width: 200px"
+                      >
+                        INV-2026-0024
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="92"
+                        col-id="contract"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="2"
+                        style="left: 200px; width: 346px"
+                      >
+                        Smolt Survival Telemetry Study
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="93"
+                        col-id="submitted"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="3"
+                        style="left: 546px; width: 200px"
+                      >
+                        Apr 22, 2026
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="94"
+                        col-id="amount"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height cbf-grid-num"
+                        aria-colindex="4"
+                        style="left: 746px; width: 200px"
+                      >
+                        $2,890.00
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="95"
+                        col-id="stage"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-last"
+                        aria-colindex="5"
+                        style="left: 946px; width: 200px"
+                      >
+                        <span
+                          ><span class="cbf-grid-status"
+                            ><span class="esa-badge esa-badge--secondary esa-badge--lg">
+                              <span class="esa-badge__text">Paid</span>
+                            </span>
+                          </span></span
+                        >
+                      </div>
+                    </div>
+                    <div
+                      role="row"
+                      comp-id="96"
+                      tabindex="0"
+                      row-index="7"
+                      class="ag-row-odd ag-row-no-focus ag-row ag-row-level-0 ag-row-position-absolute ag-row-last"
+                      aria-rowindex="9"
+                      row-id="7"
+                      style="transform: translateY(294px); height: 42px"
+                    >
+                      <div
+                        role="gridcell"
+                        comp-id="97"
+                        col-id="number"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-first cbf-grid-id"
+                        aria-colindex="1"
+                        style="left: 0px; width: 200px"
+                      >
+                        INV-2026-0019
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="98"
+                        col-id="contract"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="2"
+                        style="left: 200px; width: 346px"
+                      >
+                        Riparian Vegetation Monitoring — Methow
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="99"
+                        col-id="submitted"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height"
+                        aria-colindex="3"
+                        style="left: 546px; width: 200px"
+                      >
+                        Apr 8, 2026
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="100"
+                        col-id="amount"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height cbf-grid-num"
+                        aria-colindex="4"
+                        style="left: 746px; width: 200px"
+                      >
+                        $1,980.00
+                      </div>
+                      <div
+                        role="gridcell"
+                        comp-id="101"
+                        col-id="stage"
+                        class="ag-cell-value ag-cell ag-cell-not-inline-editing ag-cell-normal-height ag-column-last"
+                        aria-colindex="5"
+                        style="left: 946px; width: 200px"
+                      >
+                        <span
+                          ><span class="cbf-grid-status"
+                            ><span class="esa-badge esa-badge--secondary esa-badge--lg">
+                              <span class="esa-badge__text">Paid</span>
+                            </span>
+                          </span></span
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!--AG-ROW-CONTAINER-->
+                <div
+                  class="ag-pinned-right-cols-container ag-hidden"
+                  data-ref="eContainer"
+                  role="rowgroup"
+                  aria-hidden="true"
+                  style="height: 336px; width: 0px; max-width: 0px; min-width: 0px"
+                ></div>
+                <!--AG-ROW-CONTAINER-->
+                <div
+                  class="ag-full-width-container"
+                  data-ref="eContainer"
+                  role="rowgroup"
+                  style="height: 336px"
+                ></div>
+              </div>
+              <!--AG-FAKE-VERTICAL-SCROLL-->
+              <div
+                class="ag-body-vertical-scroll ag-apple-scrollbar ag-scrollbar-invisible ag-hidden"
+                aria-hidden="true"
+                style="width: 16px; max-width: 16px; min-width: 16px"
+              >
+                <div
+                  class="ag-body-vertical-scroll-viewport"
+                  data-ref="eViewport"
+                  style="width: 16px; max-width: 16px; min-width: 16px"
+                >
+                  <div
+                    class="ag-body-vertical-scroll-container"
+                    data-ref="eContainer"
+                    style="height: 336px; width: 16px; max-width: 16px; min-width: 16px"
+                  ></div>
+                </div>
+              </div>
+            </div>
+            <div
+              class="ag-sticky-top"
+              data-ref="eStickyTop"
+              role="presentation"
+              style="top: 49px; height: 0px"
+            >
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-pinned-left-sticky-top ag-hidden"
+                data-ref="eContainer"
+                role="rowgroup"
+                aria-hidden="true"
+                style="width: 0px; max-width: 0px; min-width: 0px"
+              ></div>
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-viewport ag-sticky-top-viewport"
+                data-ref="eViewport"
+                role="rowgroup"
+              >
+                <div
+                  class="ag-sticky-top-container"
+                  data-ref="eContainer"
+                  role="presentation"
+                  style="width: 1146px"
+                ></div>
+              </div>
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-pinned-right-sticky-top ag-hidden"
+                data-ref="eContainer"
+                role="rowgroup"
+                aria-hidden="true"
+                style="width: 0px; max-width: 0px; min-width: 0px"
+              ></div>
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-sticky-top-full-width-container"
+                data-ref="eContainer"
+                role="rowgroup"
+              ></div>
+            </div>
+            <div
+              class="ag-sticky-bottom ag-invisible"
+              data-ref="eStickyBottom"
+              role="presentation"
+              style="bottom: 0px; height: 0px"
+            >
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-pinned-left-sticky-bottom ag-hidden"
+                data-ref="eContainer"
+                role="rowgroup"
+                aria-hidden="true"
+                style="width: 0px; max-width: 0px; min-width: 0px"
+              ></div>
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-viewport ag-sticky-bottom-viewport"
+                data-ref="eViewport"
+                role="rowgroup"
+              >
+                <div
+                  class="ag-sticky-bottom-container"
+                  data-ref="eContainer"
+                  role="presentation"
+                  style="width: 1146px"
+                ></div>
+              </div>
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-pinned-right-sticky-bottom ag-hidden"
+                data-ref="eContainer"
+                role="rowgroup"
+                aria-hidden="true"
+                style="width: 0px; max-width: 0px; min-width: 0px"
+              ></div>
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-sticky-bottom-full-width-container"
+                data-ref="eContainer"
+                role="rowgroup"
+              ></div>
+            </div>
+            <div
+              class="ag-floating-bottom ag-invisible"
+              data-ref="eBottom"
+              role="presentation"
+              style="min-height: 0px; height: 0px"
+            >
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-pinned-left-floating-bottom ag-hidden"
+                data-ref="eContainer"
+                role="rowgroup"
+                aria-hidden="true"
+                style="width: 0px; max-width: 0px; min-width: 0px"
+              ></div>
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-viewport ag-floating-bottom-viewport"
+                data-ref="eViewport"
+                role="rowgroup"
+              >
+                <div
+                  class="ag-floating-bottom-container"
+                  data-ref="eContainer"
+                  role="presentation"
+                  style="width: 1146px"
+                ></div>
+              </div>
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-pinned-right-floating-bottom ag-hidden"
+                data-ref="eContainer"
+                role="rowgroup"
+                aria-hidden="true"
+                style="width: 0px; max-width: 0px; min-width: 0px"
+              ></div>
+              <!--AG-ROW-CONTAINER-->
+              <div
+                class="ag-floating-bottom-full-width-container"
+                data-ref="eContainer"
+                role="rowgroup"
+              ></div>
+            </div>
+            <!--AG-FAKE-HORIZONTAL-SCROLL-->
+            <div
+              class="ag-body-horizontal-scroll ag-apple-scrollbar ag-scrollbar-invisible ag-invisible"
+              aria-hidden="true"
+              style="bottom: 0px; height: 16px; max-height: 16px; min-height: 16px"
+            >
+              <div
+                class="ag-horizontal-left-spacer ag-scroller-corner"
+                data-ref="eLeftSpacer"
+                style="width: 0px; max-width: 0px; min-width: 0px"
+              ></div>
+              <div
+                class="ag-body-horizontal-scroll-viewport"
+                data-ref="eViewport"
+                style="height: 16px; max-height: 16px; min-height: 16px"
+              >
+                <div
+                  class="ag-body-horizontal-scroll-container"
+                  data-ref="eContainer"
+                  style="width: 1146px; height: 16px; max-height: 16px; min-height: 16px"
+                ></div>
+              </div>
+              <div
+                class="ag-horizontal-right-spacer ag-scroller-corner"
+                data-ref="eRightSpacer"
+                style="width: 0px; max-width: 0px; min-width: 0px"
+              ></div>
+            </div>
+            <!--AG-OVERLAY-WRAPPER-->
+            <div class="ag-overlay ag-hidden" role="presentation">
+              <div class="ag-overlay-panel" role="presentation">
+                <div
+                  class="ag-overlay-wrapper ag-layout-auto-height"
+                  data-ref="eOverlayWrapper"
+                  role="presentation"
+                  style="padding-top: 0px"
+                ></div>
+              </div>
+            </div>
+          </div>
+          <div
+            class="ag-tab-guard ag-tab-guard-bottom"
+            role="presentation"
+            tabindex="0"
+          ></div>
+        </div>
+        <!--AG-PAGINATION-->
+        <div
+          class="ag-paging-panel ag-unselectable ag-focus-managed ag-hidden"
+          id="ag-29"
+          aria-hidden="true"
+        >
+          <div
+            class="ag-tab-guard ag-tab-guard-top"
+            role="presentation"
+            tabindex="0"
+          ></div>
+          <span class="ag-paging-page-size"
+            ><div
+              class="ag-picker-field ag-labeled ag-label-align-left ag-select"
+              role="presentation"
+            >
+              <div
+                data-ref="eLabel"
+                class="ag-label"
+                aria-hidden="false"
+                id="ag-31-label"
+              >
+                Page Size:
+              </div>
+              <div
+                class="ag-wrapper ag-picker-field-wrapper ag-picker-collapsed"
+                data-ref="eWrapper"
+                tabindex="0"
+                aria-expanded="false"
+                role="combobox"
+                aria-controls="ag-select-list-32"
+                aria-label="Page Size"
+              >
+                <div
+                  class="ag-picker-field-display"
+                  data-ref="eDisplayField"
+                  id="ag-31-display"
+                >
+                  100
+                </div>
+                <div class="ag-picker-field-icon" data-ref="eIcon" aria-hidden="true">
+                  <span
+                    class="ag-icon ag-icon-small-down"
+                    role="presentation"
+                    unselectable="on"
+                  ></span>
+                </div>
+              </div></div></span
+          ><span class="ag-paging-row-summary-panel">
+            <span
+              class="ag-paging-row-summary-panel-number"
+              data-ref="lbFirstRowOnPage"
+              id="ag-29-first-row"
+              >1</span
+            >
+            <span id="ag-29-to">to</span>
+            <span
+              class="ag-paging-row-summary-panel-number"
+              data-ref="lbLastRowOnPage"
+              id="ag-29-last-row"
+              >0</span
+            >
+            <span id="ag-29-of">of</span>
+            <span
+              class="ag-paging-row-summary-panel-number"
+              data-ref="lbRecordCount"
+              id="ag-29-row-count"
+              >0</span
+            > </span
+          ><span class="ag-paging-page-summary-panel" role="presentation">
+            <div
+              class="ag-button ag-paging-button ag-disabled"
+              data-ref="btFirst"
+              role="button"
+              aria-label="First Page"
+              tabindex="0"
+              aria-disabled="true"
+            >
+              <span
+                class="ag-icon ag-icon-first"
+                role="presentation"
+                unselectable="on"
+              ></span>
+            </div>
+            <div
+              class="ag-button ag-paging-button ag-disabled"
+              data-ref="btPrevious"
+              role="button"
+              aria-label="Previous Page"
+              tabindex="0"
+              aria-disabled="true"
+            >
+              <span
+                class="ag-icon ag-icon-previous"
+                role="presentation"
+                unselectable="on"
+              ></span>
+            </div>
+            <span class="ag-paging-description">
+              <span id="ag-29-start-page">Page</span>
+              <span
+                class="ag-paging-number"
+                data-ref="lbCurrent"
+                id="ag-29-start-page-number"
+                >1</span
+              >
+              <span id="ag-29-of-page">of</span>
+              <span class="ag-paging-number" data-ref="lbTotal" id="ag-29-of-page-number"
+                >1</span
+              >
+            </span>
+            <div
+              class="ag-button ag-paging-button ag-disabled"
+              data-ref="btNext"
+              role="button"
+              aria-label="Next Page"
+              tabindex="0"
+              aria-disabled="true"
+            >
+              <span
+                class="ag-icon ag-icon-next"
+                role="presentation"
+                unselectable="on"
+              ></span>
+            </div>
+            <div
+              class="ag-button ag-paging-button ag-disabled"
+              data-ref="btLast"
+              role="button"
+              aria-label="Last Page"
+              tabindex="0"
+              aria-disabled="true"
+            >
+              <span
+                class="ag-icon ag-icon-last"
+                role="presentation"
+                unselectable="on"
+              ></span>
+            </div>
+          </span>
+          <div
+            class="ag-tab-guard ag-tab-guard-bottom"
+            role="presentation"
+            tabindex="0"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="cbf-vendor-dashboard-invoices__empty" data-invoice-empty="" hidden="">
+    <div class="esa-empty-state esa-empty-state--sm">
+      <h3 class="esa-empty-state__title">No invoices match your filters</h3>
+      <p class="esa-empty-state__description">
+        Try a different invoice number, contract name, or status.
+      </p>
+      <div class="esa-empty-state__actions"></div>
+    </div>
+  </div>
+  <footer class="cbf-vendor-dashboard-invoices__footer">
+    <span class="type-caption" data-invoice-count="">Showing 8 of 8 invoices</span>
+  </footer>
+  <!-- The real esa-badge lego, server-rendered once per stage with the design-
+       system scope hash intact. The grid's status cell renderer clones the
+       matching template's markup — so grid badges are byte-identical to the
+       lego, never a hand-rolled copy. -->
+  <div
+    class="cbf-vendor-dashboard-invoices__badge-templates"
+    data-badge-templates=""
+    hidden=""
+    aria-hidden="true"
+  >
+    <span data-stage="Submitted"
+      ><span class="esa-badge esa-badge--info esa-badge--lg">
+        <span class="esa-badge__text">Submitted</span>
+      </span> </span
+    ><span data-stage="In review"
+      ><span class="esa-badge esa-badge--warning esa-badge--lg">
+        <span class="esa-badge__text">In review</span>
+      </span> </span
+    ><span data-stage="Approved"
+      ><span class="esa-badge esa-badge--success esa-badge--lg">
+        <span class="esa-badge__text">Approved</span>
+      </span> </span
+    ><span data-stage="Paid"
+      ><span class="esa-badge esa-badge--secondary esa-badge--lg">
+        <span class="esa-badge__text">Paid</span>
+      </span> </span
+    ><span data-stage="Needs revision"
+      ><span class="esa-badge esa-badge--danger esa-badge--lg">
+        <span class="esa-badge__text">Needs revision</span>
+      </span>
+    </span>
+  </div>
+  <!-- Row data for the grid. Serialized here so the client module (which imports
+       ag-grid-community) can hydrate without a second fetch. -->
+  <script type="application/json" data-invoice-data="">
+    [
+      {
+        "number": "INV-2026-0045",
+        "contract": "Salmon Habitat Restoration — Wenatchee",
+        "project": "Wenatchee Subbasin",
+        "submitted": "Jun 20, 2026",
+        "amount": 5210,
+        "stage": "Submitted",
+        "invoiceDate": "Jun 18, 2026",
+        "issued": "Jun 18, 2026",
+        "perfStart": "Jun 1, 2026",
+        "perfEnd": "Jun 15, 2026",
+        "pdfName": "INV-2026-0045-PacificEnv.pdf",
+        "supportingDocs": ["timesheet-jun-2026.pdf", "equipment-receipt.pdf"],
+        "notes": "Partial-month billing for the June survey window.",
+        "lineItems": [
+          { "description": "Field biologist labor", "qty": 44, "unitPrice": 95 },
+          {
+            "description": "Habitat survey equipment rental",
+            "qty": 1,
+            "unitPrice": 650
+          },
+          { "description": "Field mileage", "qty": 760, "unitPrice": 0.5 }
+        ]
+      },
+      {
+        "number": "INV-2026-0042",
+        "contract": "Salmon Habitat Restoration — Wenatchee",
+        "project": "Wenatchee Subbasin",
+        "submitted": "Jun 18, 2026",
+        "amount": 4850,
+        "stage": "Submitted",
+        "invoiceDate": "Jun 1, 2026",
+        "issued": "Jun 1, 2026",
+        "perfStart": "May 1, 2026",
+        "perfEnd": "May 31, 2026",
+        "pdfName": "INV-2026-0042-PacificEnv.pdf",
+        "supportingDocs": ["timesheet-may-2026.pdf"],
+        "lineItems": [
+          { "description": "Field biologist labor", "qty": 40, "unitPrice": 95 },
+          {
+            "description": "Habitat survey equipment rental",
+            "qty": 1,
+            "unitPrice": 650
+          },
+          { "description": "Field mileage", "qty": 800, "unitPrice": 0.5 }
+        ]
+      },
+      {
+        "number": "INV-2026-0039",
+        "contract": "Riparian Vegetation Monitoring — Methow",
+        "project": "Methow Subbasin",
+        "submitted": "Jun 11, 2026",
+        "amount": 2310,
+        "stage": "In review",
+        "invoiceDate": "Jun 2, 2026",
+        "issued": "Jun 2, 2026",
+        "perfStart": "May 1, 2026",
+        "perfEnd": "May 31, 2026",
+        "pdfName": "INV-2026-0039-PacificEnv.pdf",
+        "supportingDocs": ["transect-data.xlsx"],
+        "lineItems": [
+          {
+            "description": "Vegetation transect monitoring",
+            "qty": 18,
+            "unitPrice": 110
+          },
+          { "description": "Data processing & reporting", "qty": 3, "unitPrice": 110 }
+        ]
+      },
+      {
+        "number": "INV-2026-0035",
+        "contract": "Smolt Survival Telemetry Study",
+        "project": "Mainstem Survival",
+        "submitted": "May 29, 2026",
+        "amount": 3975,
+        "stage": "Approved",
+        "invoiceDate": "May 5, 2026",
+        "issued": "May 5, 2026",
+        "perfStart": "Apr 1, 2026",
+        "perfEnd": "Apr 30, 2026",
+        "pdfName": "INV-2026-0035-PacificEnv.pdf",
+        "supportingDocs": ["receiver-log.pdf", "maintenance-photos.pdf"],
+        "notes": "Telemetry receivers redeployed after the spring high-water event.",
+        "lineItems": [
+          {
+            "description": "Acoustic telemetry tag deployment",
+            "qty": 25,
+            "unitPrice": 135
+          },
+          { "description": "Receiver maintenance", "qty": 6, "unitPrice": 100 }
+        ]
+      },
+      {
+        "number": "INV-2026-0031",
+        "contract": "Hatchery Supplementation — Entiat",
+        "project": "Entiat Subbasin",
+        "submitted": "May 14, 2026",
+        "amount": 1640,
+        "stage": "Paid",
+        "invoiceDate": "May 1, 2026",
+        "issued": "May 1, 2026",
+        "perfStart": "Apr 1, 2026",
+        "perfEnd": "Apr 30, 2026",
+        "pdfName": "INV-2026-0031-PacificEnv.pdf",
+        "supportingDocs": ["broodstock-log.pdf"],
+        "paidDate": "May 28, 2026",
+        "lineItems": [
+          { "description": "Broodstock collection labor", "qty": 16, "unitPrice": 95 },
+          { "description": "Field supplies", "qty": 1, "unitPrice": 120 }
+        ]
+      },
+      {
+        "number": "INV-2026-0028",
+        "contract": "Water Quality Sampling — Okanogan",
+        "project": "Okanogan Subbasin",
+        "submitted": "May 2, 2026",
+        "amount": 1425,
+        "stage": "Needs revision",
+        "invoiceDate": "Apr 20, 2026",
+        "issued": "Apr 20, 2026",
+        "perfStart": "Mar 1, 2026",
+        "perfEnd": "Mar 31, 2026",
+        "pdfName": "INV-2026-0028-PacificEnv.pdf",
+        "supportingDocs": ["sample-chain-of-custody.pdf"],
+        "notes": "Returned for revision — lab analysis line item needs a supporting receipt.",
+        "lineItems": [
+          { "description": "Water sample collection", "qty": 10, "unitPrice": 85 },
+          { "description": "Lab analysis", "qty": 5, "unitPrice": 115 }
+        ]
+      },
+      {
+        "number": "INV-2026-0024",
+        "contract": "Smolt Survival Telemetry Study",
+        "project": "Mainstem Survival",
+        "submitted": "Apr 22, 2026",
+        "amount": 2890,
+        "stage": "Paid",
+        "invoiceDate": "Apr 10, 2026",
+        "issued": "Apr 10, 2026",
+        "perfStart": "Mar 1, 2026",
+        "perfEnd": "Mar 31, 2026",
+        "pdfName": "INV-2026-0024-PacificEnv.pdf",
+        "supportingDocs": ["data-analysis.pdf"],
+        "paidDate": "May 9, 2026",
+        "lineItems": [
+          {
+            "description": "Acoustic telemetry data analysis",
+            "qty": 20,
+            "unitPrice": 120
+          },
+          { "description": "Receiver retrieval", "qty": 1, "unitPrice": 490 }
+        ]
+      },
+      {
+        "number": "INV-2026-0019",
+        "contract": "Riparian Vegetation Monitoring — Methow",
+        "project": "Methow Subbasin",
+        "submitted": "Apr 8, 2026",
+        "amount": 1980,
+        "stage": "Paid",
+        "invoiceDate": "Mar 25, 2026",
+        "issued": "Mar 25, 2026",
+        "perfStart": "Feb 1, 2026",
+        "perfEnd": "Feb 28, 2026",
+        "pdfName": "INV-2026-0019-PacificEnv.pdf",
+        "supportingDocs": [],
+        "paidDate": "Apr 24, 2026",
+        "lineItems": [
+          { "description": "Vegetation transect monitoring", "qty": 18, "unitPrice": 110 }
+        ]
+      }
+    ]
+  </script>
+  <!-- Click-a-row detail: the esa-side-dialog overlay drawer (lego). Body is
+       populated from the clicked row's invoice record; prev/next step through
+       the rows currently displayed (respecting search + filter + sort) so a
+       reviewer can walk the whole list. -->
+  <esa-side-dialog
+    data-invoice-dialog="true"
+    size="lg"
+    heading="Invoice"
+    style="--side-dialog-width-lg: 980px"
+    position="right"
+  >
+    <!-- Wide screens: the document preview and the dashboard's tracking fields sit
+         side by side (mirrors the /vendor-invoice PDF-left / form-right layout).
+         Narrow screens: a single column led by the tracking fields, the document
+         beneath — the lego clamps the panel to the viewport, so this stacks
+         automatically without a horizontal scroll. -->
+    <div class="cbf-invoice-detail" data-gap="lg">
+      <!-- Tracking column (the "form"): the dashboard metadata the printed document
+           does not carry — the headline figure, its pipeline status, and what the
+           invoice is billed against. DOM-first so the narrow single-column stack
+           leads with the figure (the "narrow treatment"); on wide screens the
+           grid places it in the right column. -->
+      <div class="cbf-invoice-detail__meta stack" data-gap="lg">
+        <!-- Hero: the amount is the headline figure; the status badge + a
+             plain-language state line sit beneath so the vendor reads "how much"
+             and "where is it" before anything else. -->
+        <div class="cbf-invoice-detail__hero">
+          <div class="cbf-invoice-detail__amount-group">
+            <span class="cbf-invoice-detail__label">Amount billed</span>
+            <span
+              class="type-page-title cbf-invoice-detail__amount cbf-num"
+              data-detail-amount=""
+            ></span>
+            <span class="cbf-invoice-detail__state" data-detail-state=""></span>
+          </div>
+          <div class="cbf-invoice-detail__status" data-detail-status=""></div>
+        </div>
+        <!-- Status pipeline: where the invoice sits in the Submitted → Paid flow,
+             so the vendor can see progress at a glance. Steps injected by JS. -->
+        <ol
+          class="cbf-invoice-pipeline"
+          data-detail-pipeline=""
+          aria-label="Invoice status"
+        ></ol>
+        <dl class="cbf-invoice-detail__fields">
+          <div class="cbf-invoice-detail__row">
+            <dt class="cbf-invoice-detail__label">Contract</dt>
+            <dd
+              class="cbf-invoice-detail__value cbf-invoice-detail__value--lead"
+              data-detail-contract=""
+            ></dd>
+          </div>
+          <div class="cbf-invoice-detail__row">
+            <dt class="cbf-invoice-detail__label">Project</dt>
+            <dd class="cbf-invoice-detail__value" data-detail-project=""></dd>
+          </div>
+          <div class="cbf-invoice-detail__row">
+            <dt class="cbf-invoice-detail__label">Invoice date</dt>
+            <dd class="cbf-invoice-detail__value" data-detail-invoice-date=""></dd>
+          </div>
+          <div class="cbf-invoice-detail__row">
+            <dt class="cbf-invoice-detail__label">Performance</dt>
+            <dd class="cbf-invoice-detail__value" data-detail-perf=""></dd>
+          </div>
+          <div class="cbf-invoice-detail__row">
+            <dt class="cbf-invoice-detail__label">Submitted</dt>
+            <dd class="cbf-invoice-detail__value" data-detail-submitted=""></dd>
+          </div>
+        </dl>
+        <!-- Attachments: the invoice document + the vendor's own uploaded files,
+             re-downloadable. Rows injected by JS; the per-row download control
+             clones the server-rendered esa-icon-button template below. -->
+        <section class="cbf-invoice-detail__attach">
+          <div class="cbf-invoice-detail__attach-head repel">
+            <h3 class="cbf-invoice-detail__section-title" data-detail-attach-title="">
+              Attachments
+            </h3>
+            <span data-detail-download-all="">
+              <span
+                class="esa-button esa-button--color-secondary esa-button--appearance-outline esa-button--sm"
+              >
+                <button class="esa-button__native" type="button">
+                  <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      focusable="false"
+                    >
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" x2="12" y1="15" y2="3"></line>
+                    </svg>
+                  </span>
+                  <span class="esa-button__label"> Download all </span>
+                </button>
+              </span>
+            </span>
+          </div>
+          <ul class="cbf-invoice-attach-list" data-detail-attachments=""></ul>
+        </section>
+        <div data-detail-dl-template="" hidden="" aria-hidden="true">
+          <button
+            class="esa-icon-button esa-icon-button--sm"
+            type="button"
+            aria-label="Download file"
+            title="Download file"
+          >
+            <span class="esa-icon esa-icon--sm" aria-hidden="true">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                focusable="false"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" x2="12" y1="15" y2="3"></line>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
+      <!-- Document preview (the "PDF"): a paper rendering of the submitted invoice.
+           bcn-lego-checked: no esa- lego renders a document / paper-invoice
+           preview (checked the ecology catalog — esa-card/esa-badge are atoms,
+           esa-file-upload is an UPLOADER not a viewer), and there is no real PDF
+           asset for an already-submitted mock invoice, so the credible mock is an
+           HTML document sheet. Beacon has no ui- equivalent. This bcn- drawer is
+           its reusable home; the sheet's per-invoice body is injected by JS. -->
+      <div class="cbf-invoice-detail__doc">
+        <article class="cbf-doc-sheet" data-detail-doc=""></article>
+      </div>
+    </div>
+    <div slot="footer" class="cbf-invoice-detail__footer repel">
+      <span class="cbf-invoice-detail__position" data-detail-position=""></span>
+      <div class="cluster" data-gap="xs">
+        <span data-detail-prev="">
+          <span
+            class="esa-button esa-button--color-secondary esa-button--appearance-outline esa-button--md"
+          >
+            <button class="esa-button__native" type="button">
+              <span class="esa-icon esa-icon--md" aria-hidden="true">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <path d="m15 18-6-6 6-6"></path>
+                </svg>
+              </span>
+              <span class="esa-button__label"> Previous </span>
+            </button>
+          </span>
+        </span>
+        <span data-detail-next="">
+          <span
+            class="esa-button esa-button--color-secondary esa-button--appearance-outline esa-button--md"
+          >
+            <button class="esa-button__native" type="button">
+              <span class="esa-icon esa-icon--md" aria-hidden="true">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <path d="m9 18 6-6-6-6"></path>
+                </svg>
+              </span>
+              <span class="esa-button__label"> Next </span>
+            </button>
+          </span>
+        </span>
+      </div>
+    </div>
+  </esa-side-dialog>
+</section>
+```
+
+## Styles
+```css
+.cbf-vendor-dashboard-invoices__header{align-items:center;gap:var(--spacing-400);flex-wrap:wrap}
+.cbf-vendor-dashboard-invoices__search{flex:1 1 280px;max-width:420px;min-width:220px}
+.cbf-vendor-dashboard-invoices__controls{align-items:center;gap:var(--spacing-400);flex-wrap:wrap}
+.cbf-vendor-dashboard-invoices__group{display:inline-flex;align-items:center;gap:var(--spacing-200)}
+.cbf-vendor-dashboard-invoices__group .type-caption{color:var(--color-text-muted);white-space:nowrap}
+.cbf-vendor-dashboard-invoices__grid{border:1px solid var(--color-border);border-radius:var(--radius-200);overflow:hidden;background:var(--color-surface)}
+.cbf-vendor-dashboard-invoices__footer{color:var(--color-text-muted)}
+.cbf-invoice-detail{display:grid;gap:var(--spacing-500)}
+.cbf-invoice-detail{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);grid-template-rows:1fr;align-items:stretch;min-height:100%}
+.cbf-invoice-detail__meta{grid-column:2;grid-row:1}
+.cbf-invoice-detail__hero{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--spacing-400);padding:var(--spacing-450, var(--spacing-400));background:var(--color-surface-sunken);border:1px solid var(--color-border);border-radius:var(--radius-200)}
+.cbf-invoice-detail__amount-group{display:flex;flex-direction:column;gap:var(--spacing-100);min-width:0}
+.cbf-invoice-detail__label{font-size:var(--type-size-150);font-weight:var(--font-weight-medium);color:var(--color-text-muted)}
+.cbf-invoice-detail__amount{color:var(--color-text-primary);font-variant-numeric:tabular-nums}
+.cbf-invoice-detail__state{font-size:var(--type-size-150);color:var(--color-text-secondary)}
+.cbf-invoice-detail__status{flex:none}
+.cbf-invoice-pipeline{display:flex;list-style:none;margin:0;padding:0}
+.cbf-invoice-detail__fields{margin:0}
+.cbf-invoice-detail__row{display:grid;grid-template-columns:96px 1fr;gap:var(--spacing-400);align-items:baseline;padding-block:var(--spacing-300);border-top:1px solid var(--color-border-light, var(--color-border))}
+.cbf-invoice-detail__row:first-child{border-top:0;padding-top:0}
+.cbf-invoice-detail__value{margin:0;font-size:var(--type-size-200);color:var(--color-text-secondary)}
+.cbf-invoice-detail__value--lead{font-size:var(--type-size-300);font-weight:var(--font-weight-medium);color:var(--color-text-primary)}
+.cbf-invoice-detail__attach-head{align-items:center;gap:var(--spacing-300)}
+.cbf-invoice-detail__section-title{margin:0;font-size:var(--type-size-200);font-weight:var(--font-weight-semibold);color:var(--color-text-primary)}
+.cbf-invoice-attach-list{list-style:none;margin:var(--spacing-300) 0 0;padding:0;border:1px solid var(--color-border);border-radius:var(--radius-200);overflow:hidden}
+.cbf-invoice-detail__doc{grid-column:1;grid-row:1}
+.cbf-invoice-detail__doc{background:var(--color-surface-sunken);border:1px solid var(--color-border);border-radius:var(--radius-200);padding:var(--spacing-400);min-width:0;display:flex;flex-direction:column;overflow-y:auto}
+.cbf-doc-sheet{display:block;background:var(--color-surface);border:1px solid var(--color-border-light, var(--color-border));border-radius:var(--radius-100);box-shadow:var(--shadow-200, 0 2px 8px -2px rgba(19, 39, 62, .12));padding:var(--spacing-600);color:var(--color-text-primary)}
+.cbf-doc-sheet{flex:1 0 auto}
+.cbf-invoice-detail__footer{gap:var(--spacing-300);flex-wrap:wrap}
+.cbf-invoice-detail__position{font-size:var(--type-size-150);color:var(--color-text-muted);font-variant-numeric:tabular-nums}
+.cbf-vendor-dashboard-invoices__grid .cbf-grid-num,.cbf-vendor-dashboard-invoices__grid .cbf-grid-num .ag-header-cell-label{justify-content:flex-end;text-align:right;font-variant-numeric:tabular-nums}
+.cbf-vendor-dashboard-invoices__grid .cbf-grid-id{font-variant-numeric:tabular-nums;color:var(--color-text-secondary)}
+.cbf-vendor-dashboard-invoices__grid .cbf-grid-status{display:inline-flex;align-items:center;height:100%}
+:where(.ag-theme-checkboxStyle-4) {
+.ag-checkbox-input-wrapper,.ag-radio-button-input-wrapper{background-color:var(--ag-checkbox-unchecked-background-color);border:solid var(--ag-checkbox-border-width) var(--ag-checkbox-unchecked-border-color);flex:none;height:var(--ag-icon-size);position:relative;width:var(--ag-icon-size);&:where(.ag-checked){background-color:var(--ag-checkbox-checked-background-color);border-color:var(--ag-checkbox-checked-border-color)}
+&:where(.ag-disabled){filter:grayscale();opacity:.5}
+.ag-cell-editing-error .ag-checkbox-input-wrapper:focus-within{box-shadow:var(--ag-focus-error-shadow)}
+.esa-badge{--_badge-bg: var(--badge-bg, var(--color-primary, #43608a));--_badge-text: var(--badge-text-color, var(--color-text-inverse, #fff));--_badge-height: var(--badge-height-md, 20px);--_badge-font-size: 11px;--_badge-padding-x: 6px;--_badge-min-width: var(--badge-height-md, 20px);display:inline-flex;align-items:center;justify-content:center;height:var(--_badge-height);min-width:var(--_badge-min-width);padding-inline:var(--_badge-padding-x);border-radius:var(--badge-radius, var(--radius-100, 4px));background:var(--_badge-bg);color:var(--_badge-text);font-size:var(--_badge-font-size);font-weight:600;line-height:1;white-space:nowrap;box-sizing:border-box}
+.esa-badge--lg{--_badge-height: var(--badge-height-lg, 24px);--_badge-font-size: 12px;--_badge-padding-x: 8px;--_badge-min-width: var(--badge-height-lg, 24px)}
+.esa-badge--info{--_badge-bg: var(--color-info, #3b82f6)}
+.esa-badge--warning{--_badge-bg: var(--color-warning, #f59e0b)}
+.esa-badge--success{--_badge-bg: var(--color-success, #22c55e)}
+.esa-badge--secondary{--_badge-bg: var(--color-secondary, #5787b9)}
+.esa-badge--danger{--_badge-bg: var(--color-danger, #ef4444)}
 .esa-icon{--_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));display:inline-flex;align-items:center;justify-content:center;width:var(--_icon-size);height:var(--_icon-size);line-height:1;color:inherit}
 .esa-icon--xs{--_icon-size: var(--icon-size-xs, 14px)}
 .esa-icon svg{display:block;width:var(--_icon-size);height:var(--_icon-size)}
 .esa-icon--sm{--_icon-size: var(--icon-size-sm, var(--icon-size-small, 16px))}
+.esa-icon--lg{--_icon-size: var(--icon-size-lg, var(--icon-size-large, 24px))}
+.cbf-search-field{display:flex;align-items:center;gap:var(--spacing-300);width:100%;padding:var(--spacing-300) var(--spacing-400);border:1px solid var(--color-border);border-radius:var(--radius-100);background:var(--color-surface)}
+.cbf-search-field .cbf-icon{color:var(--color-text-muted);display:inline-flex}
+.cbf-search-field input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-family:var(--font-sans);font-size:18px;color:var(--color-text-primary)}
+.cbf-search-field input::placeholder{color:var(--cbf-text-placeholder)}
 .esa-icon--md{--_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px))}
+.cbf-icon{display:inline-flex;align-items:center;justify-content:center;flex:none;color:inherit}
+.esa-nav-dropdown .esa-icon-link>.esa-icon:last-child{transition:transform .15s ease}
+.cbf-nav-link .cbf-icon{display:inline-flex;align-items:center}
+.ag-cell,.ag-header-cell,.ag-header-group-cell,.ag-row,.ag-spanned-cell-wrapper{visibility:hidden}
+:where(.ag-theme-inputStyle-7) {
+:where(.ag-input-field-input[type=number]:not(.ag-number-field-input-stepper)){-webkit-appearance:textfield;-moz-appearance:textfield;appearance:textfield;&::-webkit-inner-spin-button,&::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0}
+:where(.ag-ltr) .ag-input-field-input:where(input:not([type]),input[type=text],input[type=number],input[type=tel],input[type=date],input[type=datetime-local],textarea){padding-left:var(--ag-input-padding-start)}
+&:where(.ag-ltr,.ag-rtl) .ag-input-field-input:where(input:not([type]),input[type=text],input[type=number],input[type=tel],input[type=date],input[type=datetime-local],textarea){padding:0 var(--ag-input-padding-start)}
+:where(.ag-ltr) :where(.ag-column-select-header-filter-wrapper),:where(.ag-ltr) :where(.ag-filter-add-select),:where(.ag-ltr) :where(.ag-filter-filter),:where(.ag-ltr) :where(.ag-filter-toolpanel-search),:where(.ag-ltr) :where(.ag-floating-filter-search-icon),:where(.ag-ltr) :where(.ag-mini-filter){.ag-input-wrapper:before{margin-left:var(--ag-spacing)}
+:where(.ag-theme-buttonStyle-1) {
+:where(.ag-button){background:none;border:none;color:inherit;cursor:pointer;font-family:inherit;font-size:inherit;font-weight:inherit;letter-spacing:inherit;line-height:inherit;margin:0;padding:0;text-indent:inherit;text-shadow:inherit;text-transform:inherit;word-spacing:inherit;&:disabled{cursor:default}
+:where(.ag-theme-batchEditStyle-3) {
+.ag-cell-batch-edit{background-color:var(--ag-cell-batch-edit-background-color);color:var(--ag-cell-batch-edit-text-color);display:inherit}
+.ag-row-batch-edit{background-color:var(--ag-row-batch-edit-background-color);color:var(--ag-row-batch-edit-text-color)}
+.ag-paging-panel{align-items:center;border-top:var(--ag-footer-row-border);display:flex;flex-wrap:wrap-reverse;gap:calc(var(--ag-spacing)*4);justify-content:flex-end;min-height:var(--ag-pagination-panel-height);padding:calc(var(--ag-spacing)*.5) var(--ag-cell-horizontal-padding);row-gap:calc(var(--ag-spacing)*.5);@container (width < 600px){justify-content:center}
+:where(.ag-theme-tabStyle-6) {
+.ag-tabs-header{background-color:var(--ag-tab-bar-background-color);border-bottom:var(--ag-tab-bar-border);display:flex;flex:1;gap:var(--ag-tab-spacing);padding:var(--ag-tab-bar-top-padding) var(--ag-tab-bar-horizontal-padding) 0}
+:where(.ag-ltr) .ag-tabs-close-button-wrapper{border-right:solid var(--ag-border-width) var(--ag-border-color)}
+:where(.ag-ltr) .ag-tab.ag-tab-selected:where(:not(:first-of-type)){border-left-color:var(--ag-tab-selected-border-color)}
+:where(.ag-ltr) .ag-tab.ag-tab-selected:where(:not(:last-of-type)){border-right-color:var(--ag-tab-selected-border-color)}
+.ag-overlay{inset:0;pointer-events:none;position:absolute;z-index:2}
+.stack{--gap: var(--spacing-400, 1rem);display:flex;flex-direction:column;gap:var(--gap)}
+.repel{--gap: var(--spacing-400, 1rem);--align: center;display:flex;flex-wrap:wrap;gap:var(--gap);align-items:var(--align);justify-content:space-between}
+.type-section-title{font-family:var(--font-display, var(--font-sans));font-size:var(--type-size-500);font-weight:var(--font-weight-semibold);line-height:var(--line-height-tight);letter-spacing:var(--letter-spacing-tight)}
+.type-caption{font-size:var(--type-size-100);font-weight:var(--font-weight-regular);line-height:var(--line-height-normal);letter-spacing:var(--letter-spacing-normal)}
+.cluster{--gap: var(--spacing-300, .75rem);--align: center;--justify: flex-start;display:flex;flex-wrap:wrap;gap:var(--gap);align-items:var(--align);justify-content:var(--justify)}
+.type-page-title{font-family:var(--font-display, var(--font-sans));font-size:var(--type-size-600);font-weight:var(--font-weight-semibold);line-height:var(--line-height-tight);letter-spacing:var(--letter-spacing-tight)}
+.esa-button{--_btn-height: var(--form-height-md, 40px);--_btn-padding-x: var(--form-padding-x-md, 16px);--_btn-font-size: var(--form-font-size-md, 14px);--_btn-radius: var(--form-radius-md, 6px);--_accent: var(--color-primary, #43608a);--_accent-hover: var(--color-primary-hover, #39506f);--_on: var(--color-text-inverse, #ffffff);display:inline-block}
+.esa-button--lg{--_btn-height: var(--form-height-lg, 48px);--_btn-padding-x: var(--form-padding-x-lg, 20px);--_btn-font-size: var(--form-font-size-lg, 16px);--_btn-radius: var(--form-radius-lg, 8px)}
+.esa-button__native{display:inline-flex;align-items:center;justify-content:center;gap:var(--spacing-200, 8px);width:100%;height:var(--_btn-height);padding-inline:var(--_btn-padding-x);border:1px solid transparent;border-radius:var(--_btn-radius);font-size:var(--_btn-font-size);font-family:var(--font-sans, system-ui, sans-serif);font-weight:var(--font-weight-medium, 500);line-height:1;text-decoration:none;cursor:pointer;transition:background var(--transition-fast, .15s ease),border-color var(--transition-fast, .15s ease);-webkit-appearance:none;appearance:none}
+.esa-button--appearance-fill .esa-button__native{background:var(--_accent);color:var(--_on);border-color:transparent}
+.esa-button__label{white-space:nowrap}
+.esa-button--sm{--_btn-height: var(--form-height-sm, 32px);--_btn-padding-x: var(--form-padding-x-sm, 12px);--_btn-font-size: var(--form-font-size-sm, 12px);--_btn-radius: var(--form-radius-sm, 4px)}
+.esa-button--color-secondary{--_accent: var(--color-secondary, #5787b9);--_accent-hover: var(--color-secondary-hover, #43608a)}
+.esa-button--appearance-outline .esa-button__native,.esa-button--appearance-dashed .esa-button__native{background:transparent;color:var(--_accent);border-color:var(--_accent)}
+.ag-measurement-container{height:0;overflow:hidden;visibility:hidden;width:0}
+.ag-measurement-element-border{display:inline-block}
+.ag-measurement-element-border:before{border-left:var(--ag-internal-measurement-border);content:"";display:block}
+.ag-chart,.ag-dnd-ghost,.ag-external,.ag-popup,.ag-root-wrapper{cursor:default;line-height:normal;white-space:normal;-webkit-font-smoothing:antialiased;background-color:var(--ag-wrapper-background-color);color:var(--ag-text-color);color-scheme:var(--ag-browser-color-scheme);font-family:var(--ag-font-family);font-size:var(--ag-font-size);font-weight:var(--ag-font-weight);--ag-indentation-level:0}
+.ag-tab-guard{display:block;height:0;position:absolute;width:0}
+.ag-tab-guard-top{top:1px}
+.ag-invisible{visibility:hidden!important}
+.ag-hidden{display:none!important}
+.ag-tab-guard-bottom{bottom:1px}
 :has(> :where(.ag-theme-params-1)):not(:where(.ag-theme-params-1)) {
 	--ag-inherited-accent-color: var(--ag-accent-color);
 	--ag-inherited-advanced-filter-builder-button-bar-border: var(--ag-advanced-filter-builder-button-bar-border);
@@ -402,64 +2562,6 @@
 :where([data-ag-theme-mode="light"]) & {
 	--ag-inherited-browser-color-scheme: var(--ag-browser-color-scheme);
 	--ag-inherited-chrome-background-color: var(--ag-chrome-background-color);
-}
-:where([data-ag-theme-mode="dark"]) & {
-	--ag-inherited-advanced-filter-builder-column-pill-color: var(--ag-advanced-filter-builder-column-pill-color);
-	--ag-inherited-advanced-filter-builder-join-pill-color: var(--ag-advanced-filter-builder-join-pill-color);
-	--ag-inherited-advanced-filter-builder-option-pill-color: var(--ag-advanced-filter-builder-option-pill-color);
-	--ag-inherited-advanced-filter-builder-value-pill-color: var(--ag-advanced-filter-builder-value-pill-color);
-	--ag-inherited-browser-color-scheme: var(--ag-browser-color-scheme);
-	--ag-inherited-card-shadow: var(--ag-card-shadow);
-	--ag-inherited-cell-batch-edit-background-color: var(--ag-cell-batch-edit-background-color);
-	--ag-inherited-cell-batch-edit-text-color: var(--ag-cell-batch-edit-text-color);
-	--ag-inherited-checkbox-unchecked-border-color: var(--ag-checkbox-unchecked-border-color);
-	--ag-inherited-chrome-background-color: var(--ag-chrome-background-color);
-	--ag-inherited-column-panel-apply-button-color: var(--ag-column-panel-apply-button-color);
-	--ag-inherited-filter-panel-apply-button-color: var(--ag-filter-panel-apply-button-color);
-	--ag-inherited-find-active-match-color: var(--ag-find-active-match-color);
-	--ag-inherited-find-match-color: var(--ag-find-match-color);
-	--ag-inherited-formula-token-1-color: var(--ag-formula-token-1-color);
-	--ag-inherited-formula-token-2-color: var(--ag-formula-token-2-color);
-	--ag-inherited-formula-token-3-color: var(--ag-formula-token-3-color);
-	--ag-inherited-formula-token-4-color: var(--ag-formula-token-4-color);
-	--ag-inherited-formula-token-5-color: var(--ag-formula-token-5-color);
-	--ag-inherited-formula-token-6-color: var(--ag-formula-token-6-color);
-	--ag-inherited-formula-token-7-color: var(--ag-formula-token-7-color);
-	--ag-inherited-menu-background-color: var(--ag-menu-background-color);
-	--ag-inherited-popup-shadow: var(--ag-popup-shadow);
-	--ag-inherited-row-batch-edit-background-color: var(--ag-row-batch-edit-background-color);
-	--ag-inherited-row-batch-edit-text-color: var(--ag-row-batch-edit-text-color);
-	--ag-inherited-selected-row-background-color: var(--ag-selected-row-background-color);
-	--ag-inherited-toggle-button-off-background-color: var(--ag-toggle-button-off-background-color);
-}
-:where([data-ag-theme-mode="dark-blue"]) & {
-	--ag-inherited-advanced-filter-builder-column-pill-color: var(--ag-advanced-filter-builder-column-pill-color);
-	--ag-inherited-advanced-filter-builder-join-pill-color: var(--ag-advanced-filter-builder-join-pill-color);
-	--ag-inherited-advanced-filter-builder-option-pill-color: var(--ag-advanced-filter-builder-option-pill-color);
-	--ag-inherited-advanced-filter-builder-value-pill-color: var(--ag-advanced-filter-builder-value-pill-color);
-	--ag-inherited-browser-color-scheme: var(--ag-browser-color-scheme);
-	--ag-inherited-card-shadow: var(--ag-card-shadow);
-	--ag-inherited-cell-batch-edit-background-color: var(--ag-cell-batch-edit-background-color);
-	--ag-inherited-cell-batch-edit-text-color: var(--ag-cell-batch-edit-text-color);
-	--ag-inherited-checkbox-unchecked-border-color: var(--ag-checkbox-unchecked-border-color);
-	--ag-inherited-chrome-background-color: var(--ag-chrome-background-color);
-	--ag-inherited-column-panel-apply-button-color: var(--ag-column-panel-apply-button-color);
-	--ag-inherited-filter-panel-apply-button-color: var(--ag-filter-panel-apply-button-color);
-	--ag-inherited-find-active-match-color: var(--ag-find-active-match-color);
-	--ag-inherited-find-match-color: var(--ag-find-match-color);
-	--ag-inherited-formula-token-1-color: var(--ag-formula-token-1-color);
-	--ag-inherited-formula-token-2-color: var(--ag-formula-token-2-color);
-	--ag-inherited-formula-token-3-color: var(--ag-formula-token-3-color);
-	--ag-inherited-formula-token-4-color: var(--ag-formula-token-4-color);
-	--ag-inherited-formula-token-5-color: var(--ag-formula-token-5-color);
-	--ag-inherited-formula-token-6-color: var(--ag-formula-token-6-color);
-	--ag-inherited-formula-token-7-color: var(--ag-formula-token-7-color);
-	--ag-inherited-menu-background-color: var(--ag-menu-background-color);
-	--ag-inherited-popup-shadow: var(--ag-popup-shadow);
-	--ag-inherited-row-batch-edit-background-color: var(--ag-row-batch-edit-background-color);
-	--ag-inherited-row-batch-edit-text-color: var(--ag-row-batch-edit-text-color);
-	--ag-inherited-selected-row-background-color: var(--ag-selected-row-background-color);
-	--ag-inherited-toggle-button-off-background-color: var(--ag-toggle-button-off-background-color);
 }
 :where(.ag-theme-params-1) {
 	--ag-accent-color: var(--ag-inherited-accent-color, var(--color-primary));
@@ -767,72 +2869,16 @@
 	--ag-browser-color-scheme: var(--ag-inherited-browser-color-scheme, light);
 	--ag-chrome-background-color: var(--ag-inherited-chrome-background-color, color-mix(in srgb, var(--ag-background-color), var(--ag-foreground-color) 2%));
 }
-:where([data-ag-theme-mode="dark"]) & {
-	--ag-advanced-filter-builder-column-pill-color: var(--ag-inherited-advanced-filter-builder-column-pill-color, #355f2d);
-	--ag-advanced-filter-builder-join-pill-color: var(--ag-inherited-advanced-filter-builder-join-pill-color, #7a3a37);
-	--ag-advanced-filter-builder-option-pill-color: var(--ag-inherited-advanced-filter-builder-option-pill-color, #5a3168);
-	--ag-advanced-filter-builder-value-pill-color: var(--ag-inherited-advanced-filter-builder-value-pill-color, #374c86);
-	--ag-browser-color-scheme: var(--ag-inherited-browser-color-scheme, dark);
-	--ag-card-shadow: var(--ag-inherited-card-shadow, 0 1px 4px 1px #000A);
-	--ag-cell-batch-edit-background-color: var(--ag-inherited-cell-batch-edit-background-color, rgba(220 181 139 / 16%));
-	--ag-cell-batch-edit-text-color: var(--ag-inherited-cell-batch-edit-text-color, #f3d0b3);
-	--ag-checkbox-unchecked-border-color: var(--ag-inherited-checkbox-unchecked-border-color, color-mix(in srgb, var(--ag-background-color), var(--ag-foreground-color) 40%));
-	--ag-chrome-background-color: var(--ag-inherited-chrome-background-color, color-mix(in srgb, var(--ag-background-color), var(--ag-foreground-color) 5%));
-	--ag-column-panel-apply-button-color: var(--ag-inherited-column-panel-apply-button-color, var(--ag-foreground-color));
-	--ag-filter-panel-apply-button-color: var(--ag-inherited-filter-panel-apply-button-color, var(--ag-foreground-color));
-	--ag-find-active-match-color: var(--ag-inherited-find-active-match-color, var(--ag-background-color));
-	--ag-find-match-color: var(--ag-inherited-find-match-color, var(--ag-background-color));
-	--ag-formula-token-1-color: var(--ag-inherited-formula-token-1-color, #4da3e5);
-	--ag-formula-token-2-color: var(--ag-inherited-formula-token-2-color, #f55864);
-	--ag-formula-token-3-color: var(--ag-inherited-formula-token-3-color, #b688f2);
-	--ag-formula-token-4-color: var(--ag-inherited-formula-token-4-color, #24bb4a);
-	--ag-formula-token-5-color: var(--ag-inherited-formula-token-5-color, #e772ba);
-	--ag-formula-token-6-color: var(--ag-inherited-formula-token-6-color, #f69b5f);
-	--ag-formula-token-7-color: var(--ag-inherited-formula-token-7-color, #a3e6ff);
-	--ag-menu-background-color: var(--ag-inherited-menu-background-color, color-mix(in srgb, var(--ag-background-color), var(--ag-foreground-color) 10%));
-	--ag-popup-shadow: var(--ag-inherited-popup-shadow, 0 0px 20px #000A);
-	--ag-row-batch-edit-background-color: var(--ag-inherited-row-batch-edit-background-color, color-mix(in srgb, var(--ag-background-color), var(--ag-foreground-color) 10%));
-	--ag-row-batch-edit-text-color: var(--ag-inherited-row-batch-edit-text-color, var(--ag-cell-batch-edit-text-color));
-	--ag-selected-row-background-color: var(--ag-inherited-selected-row-background-color, color-mix(in srgb, transparent, var(--ag-accent-color) 20%));
-	--ag-toggle-button-off-background-color: var(--ag-inherited-toggle-button-off-background-color, color-mix(in srgb, var(--ag-background-color), var(--ag-foreground-color) 40%));
-}
-:where([data-ag-theme-mode="dark-blue"]) & {
-	--ag-advanced-filter-builder-column-pill-color: var(--ag-inherited-advanced-filter-builder-column-pill-color, #355f2d);
-	--ag-advanced-filter-builder-join-pill-color: var(--ag-inherited-advanced-filter-builder-join-pill-color, #7a3a37);
-	--ag-advanced-filter-builder-option-pill-color: var(--ag-inherited-advanced-filter-builder-option-pill-color, #5a3168);
-	--ag-advanced-filter-builder-value-pill-color: var(--ag-inherited-advanced-filter-builder-value-pill-color, #374c86);
-	--ag-browser-color-scheme: var(--ag-inherited-browser-color-scheme, dark);
-	--ag-card-shadow: var(--ag-inherited-card-shadow, 0 1px 4px 1px #000A);
-	--ag-cell-batch-edit-background-color: var(--ag-inherited-cell-batch-edit-background-color, rgba(220 181 139 / 16%));
-	--ag-cell-batch-edit-text-color: var(--ag-inherited-cell-batch-edit-text-color, #f3d0b3);
-	--ag-checkbox-unchecked-border-color: var(--ag-inherited-checkbox-unchecked-border-color, color-mix(in srgb, var(--ag-background-color), var(--ag-foreground-color) 40%));
-	--ag-chrome-background-color: var(--ag-inherited-chrome-background-color, color-mix(in srgb, var(--ag-background-color), var(--ag-foreground-color) 5%));
-	--ag-column-panel-apply-button-color: var(--ag-inherited-column-panel-apply-button-color, var(--ag-foreground-color));
-	--ag-filter-panel-apply-button-color: var(--ag-inherited-filter-panel-apply-button-color, var(--ag-foreground-color));
-	--ag-find-active-match-color: var(--ag-inherited-find-active-match-color, var(--ag-background-color));
-	--ag-find-match-color: var(--ag-inherited-find-match-color, var(--ag-background-color));
-	--ag-formula-token-1-color: var(--ag-inherited-formula-token-1-color, #4da3e5);
-	--ag-formula-token-2-color: var(--ag-inherited-formula-token-2-color, #f55864);
-	--ag-formula-token-3-color: var(--ag-inherited-formula-token-3-color, #b688f2);
-	--ag-formula-token-4-color: var(--ag-inherited-formula-token-4-color, #24bb4a);
-	--ag-formula-token-5-color: var(--ag-inherited-formula-token-5-color, #e772ba);
-	--ag-formula-token-6-color: var(--ag-inherited-formula-token-6-color, #f69b5f);
-	--ag-formula-token-7-color: var(--ag-inherited-formula-token-7-color, #a3e6ff);
-	--ag-menu-background-color: var(--ag-inherited-menu-background-color, color-mix(in srgb, var(--ag-background-color), var(--ag-foreground-color) 10%));
-	--ag-popup-shadow: var(--ag-inherited-popup-shadow, 0 0px 20px #000A);
-	--ag-row-batch-edit-background-color: var(--ag-inherited-row-batch-edit-background-color, color-mix(in srgb, var(--ag-background-color), var(--ag-foreground-color) 10%));
-	--ag-row-batch-edit-text-color: var(--ag-inherited-row-batch-edit-text-color, var(--ag-cell-batch-edit-text-color));
-	--ag-selected-row-background-color: var(--ag-inherited-selected-row-background-color, color-mix(in srgb, transparent, var(--ag-accent-color) 20%));
-	--ag-toggle-button-off-background-color: var(--ag-inherited-toggle-button-off-background-color, color-mix(in srgb, var(--ag-background-color), var(--ag-foreground-color) 40%));
-}
-.esa-button{--_btn-height: var(--form-height-md, 40px);--_btn-padding-x: var(--form-padding-x-md, 16px);--_btn-font-size: var(--form-font-size-md, 14px);--_btn-radius: var(--form-radius-md, 6px);--_accent: var(--color-primary, #43608a);--_accent-hover: var(--color-primary-hover, #39506f);--_on: var(--color-text-inverse, #ffffff);display:inline-block}
-.esa-button--sm{--_btn-height: var(--form-height-sm, 32px);--_btn-padding-x: var(--form-padding-x-sm, 12px);--_btn-font-size: var(--form-font-size-sm, 12px);--_btn-radius: var(--form-radius-sm, 4px)}
-.esa-button--color-secondary{--_accent: var(--color-secondary, #5787b9);--_accent-hover: var(--color-secondary-hover, #43608a)}
-.esa-button__native{display:inline-flex;align-items:center;justify-content:center;gap:var(--spacing-200, 8px);width:100%;height:var(--_btn-height);padding-inline:var(--_btn-padding-x);border:1px solid transparent;border-radius:var(--_btn-radius);font-size:var(--_btn-font-size);font-family:var(--font-sans, system-ui, sans-serif);font-weight:var(--font-weight-medium, 500);line-height:1;text-decoration:none;cursor:pointer;transition:background var(--transition-fast, .15s ease),border-color var(--transition-fast, .15s ease);-webkit-appearance:none;appearance:none}
-.esa-button--appearance-outline .esa-button__native,.esa-button--appearance-dashed .esa-button__native{background:transparent;color:var(--_accent);border-color:var(--_accent)}
-.esa-button__label{white-space:nowrap}
-.esa-button--appearance-fill .esa-button__native{background:var(--_accent);color:var(--_on);border-color:transparent}
-.esa-button--color-danger{--_accent: var(--color-danger, #ef4444);--_accent-hover: color-mix(in srgb, var(--color-danger, #ef4444) 85%, #000)}
+:where(.ag-theme-columnDropStyle-2) {
+.ag-column-drop-vertical-empty-message{align-items:center;border:dashed var(--ag-border-width);border-color:var(--ag-border-color);display:flex;inset:0;justify-content:center;margin:calc(var(--ag-spacing)*1.5) calc(var(--ag-spacing)*2);overflow:hidden;padding:calc(var(--ag-spacing)*2);position:absolute}
+.ag-pinned-left-header,.ag-pinned-right-header{display:inline-block;height:100%;overflow:hidden;position:relative}
+.ag-pinned-left-header{border-right:var(--ag-pinned-column-border)}
+.ag-pinned-right-header{border-left:var(--ag-pinned-column-border)}
+.ag-pinned-left-floating-bottom,.ag-pinned-left-floating-top,.ag-pinned-right-floating-bottom,.ag-pinned-right-floating-top{min-width:0;overflow:hidden;position:relative}
+.ag-pinned-left-sticky-top,.ag-pinned-right-sticky-top{height:100%;overflow:hidden;position:relative}
+.ag-sticky-bottom-full-width-container,.ag-sticky-top-full-width-container{height:100%;overflow:hidden;width:100%}
+.ag-body-horizontal-scroll:not(.ag-scrollbar-invisible){.ag-horizontal-left-spacer:not(.ag-scroller-corner){border-right:var(--ag-pinned-column-border)}
+.ag-horizontal-right-spacer:not(.ag-scroller-corner){border-left:var(--ag-pinned-column-border)}
 .ag-aria-description-container{border:0;clip-path:inset(50%);height:1px;overflow:hidden;padding:0;position:absolute;white-space:nowrap;width:1px;z-index:9999}
 :where(.ag-ltr){direction:ltr;.ag-body,.ag-body-horizontal-scroll,.ag-body-viewport,.ag-floating-bottom,.ag-floating-top,.ag-header,.ag-sticky-bottom,.ag-sticky-top{flex-direction:row}
 .ag-layout-auto-height,.ag-layout-print{.ag-center-cols-viewport{min-height:150px}
@@ -840,7 +2886,6 @@
 .ag-root-wrapper-body{display:flex;flex-direction:row;&.ag-layout-normal{flex:1 1 auto;height:0;min-height:0}
 .ag-unselectable{-webkit-user-select:none;-moz-user-select:none;user-select:none}
 .ag-root{display:flex;flex-direction:column;position:relative;&.ag-layout-auto-height,&.ag-layout-normal{flex:1 1 auto;overflow:hidden;width:0}
-&.ag-layout-normal{height:100%}
 &.ag-layout-auto-height,&.ag-layout-normal{flex:1 1 auto;overflow:hidden;width:0}
 .ag-body,.ag-body-horizontal-scroll,.ag-body-viewport,.ag-floating-bottom,.ag-floating-top,.ag-header,.ag-sticky-bottom,.ag-sticky-top{flex-direction:row}
 .ag-header{background-color:var(--ag-header-background-color);border-bottom:var(--ag-header-row-border);color:var(--ag-header-text-color);display:flex;font-family:var(--ag-header-font-family);font-size:var(--ag-header-font-size);font-weight:var(--ag-header-font-weight);overflow:hidden;white-space:nowrap;width:100%}
@@ -917,138 +2962,14 @@
 &:where(.ag-apple-scrollbar){opacity:0;transition:opacity .4s;visibility:hidden;&:where(.ag-scrollbar-active),&:where(.ag-scrollbar-scrolling){opacity:1;visibility:visible}
 &:where(.ag-scrollbar-invisible){top:0;z-index:10}
 &:where(.ag-scrollbar-invisible){right:0}
-:where(.ag-body-vertical-content-no-gap>div>div>div,.ag-body-vertical-content-no-gap>div>div>div>div)>.ag-row-last{border-bottom-color:transparent}
-&:where(.ag-scrollbar-active),&:where(.ag-scrollbar-scrolling){opacity:1;visibility:visible}
 &:where(.ag-scrollbar-invisible){left:0;right:0}
-:host { --_width: var(--side-dialog-width, 400px); }
-:host([size='sm']) { --_width: var(--side-dialog-width-sm, 320px); }
-:host([size='lg']) { --_width: var(--side-dialog-width-lg, 520px); }
-.cbf-app-bar--admin{--app-bar-pad-y: var(--spacing-300)}
-.cbf-app-bar--admin .esa-app-bar__row{display:grid;grid-template-columns:1fr minmax(0,380px) 1fr}
-.cbf-app-bar--admin .esa-app-bar__start{justify-self:start}
-.cbf-nav-collapsible{display:contents}
-.cbf-app-bar--admin .esa-app-bar__main{justify-content:center}
-.cbf-omni-trigger{display:flex;align-items:center;gap:var(--spacing-200);width:380px;max-width:100%;padding:5px var(--spacing-200) 5px var(--spacing-300);background:#ffffff1a;border:1px solid rgba(255,255,255,.22);border-radius:999px;color:#ffffffbf;transition:background .12s,border-color .12s}
-.cbf-app-bar--admin .cbf-omni-trigger{min-width:0}
-.cbf-icon{display:inline-flex;align-items:center;justify-content:center;flex:none;color:inherit}
-.cbf-omni-trigger__ph{flex:1;min-width:0;text-align:left;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cbf-omni-trigger__kbd{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;font-family:var(--font-sans);font-size:13px;font-weight:var(--font-weight-medium);color:#ffffffd9;background:#ffffff1f;border:1px solid rgba(255,255,255,.25);border-radius:4px}
-.cbf-app-bar--admin .esa-app-bar__end{justify-self:end}
-.esa-nav-dropdown{position:relative}
-.esa-nav-dropdown .esa-icon-link>.esa-icon:last-child{transition:transform .15s ease}
-.cbf-nav-burger{display:none}
-.cbf-logo{display:inline-flex;align-items:center;gap:var(--spacing-300, 12px);flex:none;color:inherit;text-decoration:none}
-.cbf-logo__mark{width:48px;height:48px;flex:none}
-.cbf-logo__type{height:40px;width:auto}
-.cbf-nav-actions{display:inline-flex;align-items:center;gap:var(--spacing-600)}
-.cbf-nav-link{display:inline-flex;align-items:center;gap:6px;color:inherit;background:none;border:0;font-size:16px;font-weight:var(--font-weight-medium);white-space:nowrap}
-.cbf-nav-link .cbf-icon{display:inline-flex;align-items:center}
-.cbf-nav-link--user{position:relative;padding-left:var(--spacing-500)}
-.cbf-nav-link--user:before{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:1px;height:1.1em;background:#ffffff40}
-.cbf-omni{position:fixed;inset:0;z-index:80}
-.cbf-omni[hidden]{display:none}
-.esa-link-column{color:inherit}
-.esa-link-column__head{display:block;margin:0 0 var(--spacing-100, 4px);font-size:var(--link-column-heading-font-size, var(--type-size-200, 1rem));font-weight:var(--font-weight-medium, 500);color:inherit;text-decoration:none}
-.esa-link-column__rule{height:1px;border:0;margin:0 0 var(--spacing-200, 8px);background:var(--link-column-rule-color, color-mix(in srgb, currentColor 40%, transparent))}
-.esa-link-column__list{list-style:none;margin:0;padding:0}
-.esa-link-column__list li{font-size:var(--link-column-item-font-size, var(--type-size-150, .875rem));line-height:22px;margin-bottom:var(--spacing-100, 4px)}
-.esa-link-column__list a{color:inherit;text-decoration:none}
-.esa-container{width:100%;max-width:var(--_container-max, 1556px);margin-inline:auto;padding-inline:var(--container-gutter, var(--spacing-600, 2rem))}
-.cbf-page{padding-block:var(--spacing-600) var(--spacing-800)}
-.cbf-review-triage-strip{padding-bottom:var(--spacing-600);border-bottom:1px solid var(--color-border)}
-.cbf-review-triage-strip__head{align-items:baseline;gap:var(--spacing-400);flex-wrap:wrap}
-.cbf-review-triage-strip__caption{color:var(--color-text-muted)}
-.cbf-review-triage-strip__stats{--align: flex-start;row-gap:var(--spacing-500)}
-.cbf-invoice-review-queue__header{align-items:center;gap:var(--spacing-400);flex-wrap:wrap}
-.cbf-invoice-review-queue__search{flex:1 1 280px;max-width:440px;min-width:220px}
-.cbf-invoice-review-queue__grid{border:1px solid var(--color-border);border-radius:var(--radius-200);overflow:hidden;background:var(--color-surface)}
-.cbf-invoice-review-queue__footer{color:var(--color-text-muted)}
-.cbf-review-dialog{--side-dialog-width-lg: max(1180px, 75vw)}
-.cbf-review-split{min-height:100%}
-.cbf-review-hero{align-items:flex-start;gap:var(--spacing-400)}
-.cbf-review-hero__group{display:flex;flex-direction:column;gap:var(--spacing-50);min-width:0}
-.cbf-review__label{font-size:var(--type-size-150);font-weight:var(--font-weight-medium);color:var(--color-text-muted)}
-.cbf-review-hero__amount-row{display:flex;align-items:center;gap:var(--spacing-200)}
-.cbf-review-hero__amount{font-size:var(--type-size-600);font-weight:var(--font-weight-bold);line-height:var(--line-height-tight);color:var(--color-text-primary);font-variant-numeric:tabular-nums}
-.cbf-review-fields__copy{align-self:center;position:relative;line-height:0;color:var(--color-text-muted)}
-.cbf-review-fields__copy .esa-icon-button{color:inherit}
-.cbf-review-hero__pct{font-size:var(--type-size-100);color:var(--color-text-muted)}
-.cbf-review-hero__status{flex:none}
-.cbf-review-panel__clock{align-items:center;gap:var(--spacing-300);padding:var(--spacing-300) var(--spacing-400);background:var(--color-surface-sunken);border:1px solid var(--color-border);border-radius:var(--radius-200)}
-.cbf-review-panel__context{padding-block:var(--spacing-400);border-block:1px solid var(--color-border)}
-.cbf-review__section-title{margin:0;font-size:var(--type-size-150);font-weight:var(--font-weight-semibold);color:var(--color-text-muted)}
-.cbf-review-context{display:flex;flex-wrap:wrap;gap:var(--spacing-300) var(--spacing-500)}
-.cbf-review-context__item{display:flex;flex-direction:column;gap:var(--spacing-50)}
-.cbf-review-context__value{font-size:var(--type-size-250);font-weight:var(--font-weight-semibold);color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
-.cbf-review-context__label{font-size:var(--type-size-050);color:var(--color-text-muted)}
-.cbf-review-context__value--accent{color:var(--color-text-primary)}
-.cbf-review-impact{margin-top:var(--spacing-200)}
-.cbf-review-impact__ledger{margin:var(--spacing-200) 0 0;border:1px solid var(--color-border);border-radius:var(--radius-200);overflow:hidden}
-.cbf-review-impact__row{display:flex;align-items:baseline;justify-content:space-between;gap:var(--spacing-400);padding:var(--spacing-250) var(--spacing-400)}
-.cbf-review-impact__row dt{margin:0;font-size:var(--type-size-150);color:var(--color-text-secondary)}
-.cbf-review-impact__row dd{margin:0;font-size:var(--type-size-200);color:var(--color-text-primary);font-variant-numeric:tabular-nums}
-.cbf-review-impact__row+.cbf-review-impact__row{border-top:1px solid var(--color-border-light, var(--color-border))}
-.cbf-review-impact__delta{color:var(--color-text-secondary)}
-.cbf-review-impact__row--total{background:var(--color-surface-sunken);border-top:1px solid var(--color-border)}
-.cbf-review-impact__row--total dt{font-weight:var(--font-weight-semibold);color:var(--color-text-primary)}
-.cbf-review-impact__row--total dd{font-weight:var(--font-weight-semibold)}
-.cbf-review-fields{margin:0}
-.cbf-review-fields__row{display:grid;grid-template-columns:92px 1fr auto;gap:var(--spacing-300);align-items:baseline;padding-block:var(--spacing-250);border-top:1px solid var(--color-border-light, var(--color-border))}
-.cbf-review-fields__row:first-child{border-top:0;padding-top:0}
-.cbf-review-fields__value{margin:0;font-size:var(--type-size-200);color:var(--color-text-secondary)}
-.cbf-review-fields__value--lead{font-weight:var(--font-weight-medium);color:var(--color-text-primary)}
-.cbf-review-attachments{margin-top:var(--spacing-200)}
-.cbf-review-attachments__head{align-items:center;gap:var(--spacing-300);margin-bottom:var(--spacing-300)}
-.cbf-review-attachments__head .cbf-review__section-title{margin:0}
-.cbf-review-attachments__list{list-style:none;margin:0;padding:0;border:1px solid var(--color-border);border-radius:var(--radius-200);overflow:hidden}
-.cbf-review-actions [hidden]{display:none!important}
-.cbf-review-docpane{background:var(--color-surface-sunken);border:1px solid var(--color-border);border-radius:var(--radius-200);padding:var(--spacing-600);display:flex;flex-direction:column;align-items:center;overflow-y:auto}
-.cbf-invoice-doc{position:relative;flex:1 0 auto;width:100%;max-width:620px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-100);box-shadow:0 1px 4px color-mix(in srgb,var(--color-surface-inverse) 10%,transparent);padding:var(--spacing-700) var(--spacing-700) var(--spacing-600);color:var(--color-text-primary);font-size:var(--type-size-150);line-height:var(--line-height-normal)}
-.cbf-invoice-doc__stamp{position:absolute;top:var(--spacing-500);right:var(--spacing-500);font-size:var(--type-size-100);font-weight:var(--font-weight-semibold);text-transform:uppercase;letter-spacing:.06em;color:var(--color-danger, #b42318);border:1.5px solid currentColor;border-radius:var(--radius-100);padding:2px var(--spacing-200);transform:rotate(-4deg);opacity:.8}
-.cbf-invoice-doc__head{display:flex;justify-content:space-between;gap:var(--spacing-400);align-items:flex-start;margin-bottom:var(--spacing-500)}
-.cbf-invoice-doc__vendor{margin:0;font-size:var(--type-size-400);font-weight:var(--font-weight-bold)}
-.cbf-invoice-doc__sub{margin:0;color:var(--color-text-muted);font-size:var(--type-size-100)}
-.cbf-invoice-doc__meta{text-align:right}
-.cbf-invoice-doc__meta p{margin:0 0 var(--spacing-100)}
-.cbf-invoice-doc__meta span{color:var(--color-text-muted);margin-right:var(--spacing-200)}
-.cbf-invoice-doc .cbf-num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.cbf-invoice-doc__billto{margin-bottom:var(--spacing-500)}
-.cbf-invoice-doc__billto p{margin:0}
-.cbf-invoice-doc__items{width:100%;border-collapse:collapse}
-.cbf-invoice-doc__items th,.cbf-invoice-doc__items td{text-align:left;padding:var(--spacing-250) 0;vertical-align:top}
-.cbf-invoice-doc__items thead th{border-bottom:1px solid var(--color-text-primary);font-weight:var(--font-weight-semibold);font-size:var(--type-size-100);color:var(--color-text-secondary)}
-.cbf-invoice-doc__items th.cbf-num{text-align:right}
-.cbf-invoice-doc__items tfoot th,.cbf-invoice-doc__items tfoot td{padding:var(--spacing-150) 0;text-align:right}
-.cbf-invoice-doc__items tfoot th{font-weight:var(--font-weight-regular);color:var(--color-text-secondary)}
-.cbf-invoice-doc__items tfoot tr:first-child th,.cbf-invoice-doc__items tfoot tr:first-child td{padding-top:var(--spacing-400)}
-.cbf-invoice-doc__total th,.cbf-invoice-doc__total td{border-top:1px solid var(--color-text-primary);font-weight:var(--font-weight-bold);font-size:var(--type-size-200);padding-top:var(--spacing-300)!important}
-.cbf-invoice-doc__memo{margin:var(--spacing-600) 0 0;color:var(--color-text-secondary);line-height:var(--line-height-relaxed)}
-.cbf-invoice-doc__generated{margin:var(--spacing-600) 0 0;padding-top:var(--spacing-400);border-top:1px solid var(--color-border-light, var(--color-border));color:var(--color-text-muted);font-size:var(--type-size-100);font-style:italic}
-.cbf-review-footer{align-items:center;gap:var(--spacing-400);width:100%}
-.cbf-review-footer__position{font-size:var(--type-size-150);color:var(--color-text-muted);font-variant-numeric:tabular-nums}
-.cbf-invoice-review-queue__grid .cbf-grid-num,.cbf-invoice-review-queue__grid .cbf-grid-num .ag-header-cell-label{justify-content:flex-end;text-align:right;font-variant-numeric:tabular-nums}
-.cbf-invoice-review-queue__grid .ag-row{cursor:pointer}
-.cbf-invoice-review-queue__grid .cbf-grid-id{font-variant-numeric:tabular-nums;color:var(--color-text-secondary)}
-.cbf-invoice-review-queue__grid .cbf-grid-status{display:inline-flex;align-items:center;height:100%}
-:where(.ag-theme-tabStyle-6) {
-.ag-tabs-header{background-color:var(--ag-tab-bar-background-color);border-bottom:var(--ag-tab-bar-border);display:flex;flex:1;gap:var(--ag-tab-spacing);padding:var(--ag-tab-bar-top-padding) var(--ag-tab-bar-horizontal-padding) 0}
-.ag-tabs-header-wrapper{display:flex}
-.ag-tabs-close-button-wrapper{align-items:center;border:0;display:flex;padding:var(--ag-spacing)}
-:where(.ag-ltr) .ag-tabs-close-button-wrapper{border-right:solid var(--ag-border-width) var(--ag-border-color)}
-:where(.ag-rtl) .ag-tabs-close-button-wrapper{border-left:solid var(--ag-border-width) var(--ag-border-color)}
-.ag-tabs-close-button{background-color:unset;border:0;cursor:pointer;padding:0}
-.ag-tab{align-items:center;background-color:var(--ag-tab-background-color);border-left:var(--ag-tab-selected-border-width) solid transparent;border-right:var(--ag-tab-selected-border-width) solid transparent;color:var(--ag-tab-text-color);cursor:pointer;display:flex;flex:1;justify-content:center;padding:var(--ag-tab-top-padding) var(--ag-tab-horizontal-padding) var(--ag-tab-bottom-padding);position:relative}
-.ag-tab:hover{background-color:var(--ag-tab-hover-background-color);color:var(--ag-tab-hover-text-color)}
-.ag-tab.ag-tab-selected{background-color:var(--ag-tab-selected-background-color);color:var(--ag-tab-selected-text-color)}
-:where(.ag-ltr) .ag-tab.ag-tab-selected:where(:not(:first-of-type)){border-left-color:var(--ag-tab-selected-border-color)}
-:where(.ag-rtl) .ag-tab.ag-tab-selected:where(:not(:first-of-type)){border-right-color:var(--ag-tab-selected-border-color)}
-:where(.ag-ltr) .ag-tab.ag-tab-selected:where(:not(:last-of-type)){border-right-color:var(--ag-tab-selected-border-color)}
-:where(.ag-rtl) .ag-tab.ag-tab-selected:where(:not(:last-of-type)){border-left-color:var(--ag-tab-selected-border-color)}
-.ag-tab:after{background-color:var(--ag-tab-selected-underline-color);bottom:0;content:"";display:block;height:var(--ag-tab-selected-underline-width);left:0;opacity:0;position:absolute;right:0;transition:opacity var(--ag-tab-selected-underline-transition-duration)}
-.ag-tab.ag-tab-selected:after{opacity:1}
-:where(.ag-theme-columnDropStyle-2) {
-.ag-column-drop-vertical-empty-message{align-items:center;border:dashed var(--ag-border-width);border-color:var(--ag-border-color);display:flex;inset:0;justify-content:center;margin:calc(var(--ag-spacing)*1.5) calc(var(--ag-spacing)*2);overflow:hidden;padding:calc(var(--ag-spacing)*2);position:absolute}
-.ag-paging-panel{align-items:center;border-top:var(--ag-footer-row-border);display:flex;flex-wrap:wrap-reverse;gap:calc(var(--ag-spacing)*4);justify-content:flex-end;min-height:var(--ag-pagination-panel-height);padding:calc(var(--ag-spacing)*.5) var(--ag-cell-horizontal-padding);row-gap:calc(var(--ag-spacing)*.5);@container (width < 600px){justify-content:center}
+:where(.ag-body-vertical-content-no-gap>div>div>div,.ag-body-vertical-content-no-gap>div>div>div>div)>.ag-row-last{border-bottom-color:transparent}
+:where(.ag-ltr) :where(.ag-body-horizontal-content-no-gap) .ag-column-last{border-right-color:transparent}
+.esa-icon-link{--_il-font: var(--icon-link-font-size-md, 1rem);display:inline-flex;align-items:center;gap:var(--icon-link-gap, var(--spacing-150, 6px));padding:0;margin:0;border:0;background:none;color:inherit;font-family:var(--font-sans, system-ui, sans-serif);font-size:var(--_il-font);font-weight:var(--font-weight-medium, 500);line-height:1;text-decoration:none;cursor:pointer;white-space:nowrap}
+.esa-icon-link--sm{--_il-font: var(--icon-link-font-size-sm, .875rem)}
+.esa-icon-link--medium{font-weight:var(--font-weight-medium, 500)}
+.esa-icon-link__label{display:inline-block}
+summary.esa-icon-link{list-style:none}
 :where(.ag-theme-iconSet-5) {
 .ag-icon-aggregation::before { mask-image: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20class%3D%22ag-icon%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cstyle%3E*%20%7B%20vector-effect%3A%20non-scaling-stroke%3B%20%7D%3C%2Fstyle%3E%3Cpath%20d%3D%22M18%207V4H6l6%208-6%208h12v-3%22%2F%3E%3C%2Fsvg%3E'); }
 .ag-icon-arrows::before { mask-image: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20class%3D%22ag-icon%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cstyle%3E*%20%7B%20vector-effect%3A%20non-scaling-stroke%3B%20%7D%3C%2Fstyle%3E%3Cpolyline%20points%3D%225%209%202%2012%205%2015%22%2F%3E%3Cpolyline%20points%3D%229%205%2012%202%2015%205%22%2F%3E%3Cpolyline%20points%3D%2215%2019%2012%2022%209%2019%22%2F%3E%3Cpolyline%20points%3D%2219%209%2022%2012%2019%2015%22%2F%3E%3Cline%20x1%3D%222%22%20x2%3D%2222%22%20y1%3D%2212%22%20y2%3D%2212%22%2F%3E%3Cline%20x1%3D%2212%22%20x2%3D%2212%22%20y1%3D%222%22%20y2%3D%2222%22%2F%3E%3C%2Fsvg%3E'); }
@@ -1115,234 +3036,70 @@
 .ag-icon-small-down::before { mask-image: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20class%3D%22ag-icon%22%20fill%3D%22black%22%20stroke%3D%22none%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20d%3D%22M7.334%2010.667%2016%2021.334l8.667-10.667H7.334Z%22%2F%3E%3C%2Fsvg%3E'); }
 .ag-icon-small-up::before { mask-image: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20class%3D%22ag-icon%22%20fill%3D%22black%22%20stroke%3D%22none%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20d%3D%22M7.334%2021.333%2016%2010.666l8.667%2010.667H7.334Z%22%2F%3E%3C%2Fsvg%3E'); }
 .ag-icon-un-pin::before { mask-image: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20class%3D%22ag-icon%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M8%2011a.75.75%200%200%200-.75.75v3.333a.75.75%200%201%200%201.5%200V11.75A.75.75%200%200%200%208%2011Z%22%2F%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M13.11%201.436a.75.75%200%200%200-1.22-.872l-10%2014a.75.75%200%201%200%201.22.872L5.207%2012.5h7.376a.75.75%200%200%200%20.75-.75v-1.174a2.08%202.08%200%200%200-1.153-1.863l-1.185-.599-.005-.002a.58.58%200%200%201-.323-.522V5.165a2.083%202.083%200%200%200%201.854-2.904l.589-.825Zm-3.943%205.52v.634a2.08%202.08%200%200%200%201.153%201.863l1.185.6.005.002a.58.58%200%200%201%20.323.522V11H6.28l2.887-4.044ZM9.277%201H5.25a2.084%202.084%200%200%200-.083%204.165v1.676l1.5-2.132v-.292a.75.75%200%200%200-.75-.75H5.25a.584.584%200%200%201%200-1.167h2.972L9.277%201Z%22%2F%3E%3C%2Fsvg%3E'); }
-.ag-icon-asc::before { mask-image: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20class%3D%22ag-icon%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cstyle%3E*%20%7B%20vector-effect%3A%20non-scaling-stroke%3B%20%7D%3C%2Fstyle%3E%3Cpath%20d%3D%22m5%2012%207-7%207%207%22%2F%3E%3Cpath%20d%3D%22M12%2019V5%22%2F%3E%3C%2Fsvg%3E'); }
-.cbf-search-field{display:flex;align-items:center;gap:var(--spacing-300);width:100%;padding:var(--spacing-300) var(--spacing-400);border:1px solid var(--color-border);border-radius:var(--radius-100);background:var(--color-surface)}
-.cbf-search-field .cbf-icon{color:var(--color-text-muted);display:inline-flex}
-.cbf-search-field input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-family:var(--font-sans);font-size:18px;color:var(--color-text-primary)}
-.cbf-search-field input::placeholder{color:var(--cbf-text-placeholder)}
-.esa-badge{--_badge-bg: var(--badge-bg, var(--color-primary, #43608a));--_badge-text: var(--badge-text-color, var(--color-text-inverse, #fff));--_badge-height: var(--badge-height-md, 20px);--_badge-font-size: 11px;--_badge-padding-x: 6px;--_badge-min-width: var(--badge-height-md, 20px);display:inline-flex;align-items:center;justify-content:center;height:var(--_badge-height);min-width:var(--_badge-min-width);padding-inline:var(--_badge-padding-x);border-radius:var(--badge-radius, var(--radius-100, 4px));background:var(--_badge-bg);color:var(--_badge-text);font-size:var(--_badge-font-size);font-weight:600;line-height:1;white-space:nowrap;box-sizing:border-box}
-.esa-badge--lg{--_badge-height: var(--badge-height-lg, 24px);--_badge-font-size: 12px;--_badge-padding-x: 8px;--_badge-min-width: var(--badge-height-lg, 24px)}
-.esa-badge--danger{--_badge-bg: var(--color-danger, #ef4444)}
-.esa-badge--warning{--_badge-bg: var(--color-warning, #f59e0b)}
-.esa-badge--secondary{--_badge-bg: var(--color-secondary, #5787b9)}
-.ag-overlay{inset:0;pointer-events:none;position:absolute;z-index:2}
-:where([class^=ag-]),:where([class^=ag-]):after,:where([class^=ag-]):before{box-sizing:border-box}
-.ag-measurement-container{height:0;overflow:hidden;visibility:hidden;width:0}
-.ag-measurement-element-border{display:inline-block}
-.ag-measurement-element-border:before{border-left:var(--ag-internal-measurement-border);content:"";display:block}
-.ag-chart,.ag-dnd-ghost,.ag-external,.ag-popup,.ag-root-wrapper{cursor:default;line-height:normal;white-space:normal;-webkit-font-smoothing:antialiased;background-color:var(--ag-wrapper-background-color);color:var(--ag-text-color);color-scheme:var(--ag-browser-color-scheme);font-family:var(--ag-font-family);font-size:var(--ag-font-size);font-weight:var(--ag-font-weight);--ag-indentation-level:0}
-.ag-tab-guard{display:block;height:0;position:absolute;width:0}
-.ag-tab-guard-top{top:1px}
-.ag-invisible{visibility:hidden!important}
-.ag-hidden{display:none!important}
-.ag-tab-guard-bottom{bottom:1px}
-.ag-icon{background-position:50%;background-repeat:no-repeat;background-size:contain;color:var(--ag-icon-color);display:block;height:var(--ag-icon-size);position:relative;-webkit-user-select:none;-moz-user-select:none;user-select:none;width:var(--ag-icon-size)}
-:where(.ag-icon):before{align-items:center;background-color:currentcolor;color:inherit;content:"";display:flex;font-family:inherit;font-size:var(--ag-icon-size);font-style:normal;font-variant:normal;height:var(--ag-icon-size);justify-content:center;line-height:var(--ag-icon-size);-webkit-mask-size:contain;mask-size:contain;text-transform:none;width:var(--ag-icon-size)}
-:where(.ag-delay-render){.ag-cell,.ag-header-cell,.ag-header-group-cell,.ag-row,.ag-spanned-cell-wrapper{visibility:hidden}
-.ag-cell,.ag-header-cell,.ag-header-group-cell,.ag-row,.ag-spanned-cell-wrapper{visibility:hidden}
-:where(.ag-theme-inputStyle-7) {
-:where(.ag-input-field-input[type=number]:not(.ag-number-field-input-stepper)){-webkit-appearance:textfield;-moz-appearance:textfield;appearance:textfield;&::-webkit-inner-spin-button,&::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0}
-.ag-input-field-input:where(input:not([type]),input[type=text],input[type=number],input[type=tel],input[type=date],input[type=datetime-local],textarea){background-color:var(--ag-input-background-color);border:var(--ag-input-border);border-radius:var(--ag-input-border-radius);color:var(--ag-input-text-color);font-family:inherit;font-size:inherit;line-height:inherit;margin:0;min-height:var(--ag-input-height);padding:0;&:where(:disabled){background-color:var(--ag-input-disabled-background-color);border:var(--ag-input-disabled-border);color:var(--ag-input-disabled-text-color)}
-&:where(:focus){background-color:var(--ag-input-focus-background-color);border:var(--ag-input-focus-border);box-shadow:var(--ag-input-focus-shadow);color:var(--ag-input-focus-text-color);outline:none}
-&:where(:invalid){background-color:var(--ag-input-invalid-background-color);border:var(--ag-input-invalid-border);color:var(--ag-input-invalid-text-color)}
-&:where(.invalid){background-color:var(--ag-input-invalid-background-color);border:var(--ag-input-invalid-border);color:var(--ag-input-invalid-text-color)}
-&::-moz-placeholder{color:var(--ag-input-placeholder-text-color)}
-&::placeholder{color:var(--ag-input-placeholder-text-color)}
-:where(.ag-ltr) .ag-input-field-input:where(input:not([type]),input[type=text],input[type=number],input[type=tel],input[type=date],input[type=datetime-local],textarea){padding-left:var(--ag-input-padding-start)}
-:where(.ag-rtl) .ag-input-field-input:where(input:not([type]),input[type=text],input[type=number],input[type=tel],input[type=date],input[type=datetime-local],textarea){padding-right:var(--ag-input-padding-start)}
-&:where(.ag-ltr,.ag-rtl) .ag-input-field-input:where(input:not([type]),input[type=text],input[type=number],input[type=tel],input[type=date],input[type=datetime-local],textarea){padding:0 var(--ag-input-padding-start)}
-:where(.ag-column-select-header-filter-wrapper),:where(.ag-filter-add-select),:where(.ag-filter-filter),:where(.ag-filter-toolpanel-search),:where(.ag-floating-filter-search-icon),:where(.ag-mini-filter){.ag-input-wrapper:before{background-color:currentcolor;color:var(--ag-input-icon-color);content:"";display:block;height:12px;-webkit-mask-image:url("data:image/svg+xml;charset=utf-8;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxMiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iMS41Ij48cGF0aCBkPSJNNS4zIDlhMy43IDMuNyAwIDEgMCAwLTcuNSAzLjcgMy43IDAgMCAwIDAgNy41Wk0xMC41IDEwLjUgOC4zIDguMiIvPjwvc3ZnPg==");mask-image:url("data:image/svg+xml;charset=utf-8;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMiIgaGVpZ2h0PSIxMiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMDAwIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIHN0cm9rZS13aWR0aD0iMS41Ij48cGF0aCBkPSJNNS4zIDlhMy43IDMuNyAwIDEgMCAwLTcuNSAzLjcgMy43IDAgMCAwIDAgNy41Wk0xMC41IDEwLjUgOC4zIDguMiIvPjwvc3ZnPg==");-webkit-mask-position:center;mask-position:center;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;opacity:.5;position:absolute;width:12px}
-:where(.ag-ltr) :where(.ag-column-select-header-filter-wrapper),:where(.ag-ltr) :where(.ag-filter-add-select),:where(.ag-ltr) :where(.ag-filter-filter),:where(.ag-ltr) :where(.ag-filter-toolpanel-search),:where(.ag-ltr) :where(.ag-floating-filter-search-icon),:where(.ag-ltr) :where(.ag-mini-filter){.ag-input-wrapper:before{margin-left:var(--ag-spacing)}
-.ag-number-field-input,.ag-text-field-input{padding-left:calc(var(--ag-spacing)*1.5 + 12px)}
-:where(.ag-rtl) :where(.ag-column-select-header-filter-wrapper),:where(.ag-rtl) :where(.ag-filter-add-select),:where(.ag-rtl) :where(.ag-filter-filter),:where(.ag-rtl) :where(.ag-filter-toolpanel-search),:where(.ag-rtl) :where(.ag-floating-filter-search-icon),:where(.ag-rtl) :where(.ag-mini-filter){.ag-input-wrapper:before{margin-right:var(--ag-spacing)}
-.ag-number-field-input,.ag-text-field-input{padding-right:calc(var(--ag-spacing)*1.5 + 12px)}
-.ag-input-field-input:where(input:not([type]),input[type=text],input[type=number],input[type=tel],input[type=date],input[type=datetime-local],textarea){&:focus{box-shadow:var(--ag-focus-shadow);&:where(.invalid),&:where(:invalid){box-shadow:var(--ag-focus-error-shadow)}
-.stack{--gap: var(--spacing-400, 1rem);display:flex;flex-direction:column;gap:var(--gap)}
-[data-gap=lg]{--gap: var(--spacing-500, 1.5rem)}
-:where(h1,h2,h3,h4,h5,h6,p,figure,blockquote,dl,dd,ul,ol,pre){margin:0}
-[data-gap=sm]{--gap: var(--spacing-300, .75rem)}
-.repel{--gap: var(--spacing-400, 1rem);--align: center;display:flex;flex-wrap:wrap;gap:var(--gap);align-items:var(--align);justify-content:space-between}
-.type-section-title{font-family:var(--font-display, var(--font-sans));font-size:var(--type-size-500);font-weight:var(--font-weight-semibold);line-height:var(--line-height-tight);letter-spacing:var(--letter-spacing-tight)}
-.type-caption{font-size:var(--type-size-100);font-weight:var(--font-weight-regular);line-height:var(--line-height-normal);letter-spacing:var(--letter-spacing-normal)}
-.cluster{--gap: var(--spacing-300, .75rem);--align: center;--justify: flex-start;display:flex;flex-wrap:wrap;gap:var(--gap);align-items:var(--align);justify-content:var(--justify)}
-[data-gap=xl]{--gap: var(--spacing-600, 2rem)}
-[data-gap=md]{--gap: var(--spacing-400, 1rem)}
-.sidebar{--gap: var(--spacing-500, 1.5rem);--sidebar-width: 18rem;--sidebar-content-min: 60%;display:flex;flex-wrap:wrap;gap:var(--gap)}
-.sidebar>:first-child{flex-basis:var(--sidebar-width);flex-grow:1}
-.sidebar[data-side=end]>:first-child{order:2}
-.sidebar>:last-child{flex-basis:0;flex-grow:999;min-inline-size:var(--sidebar-content-min)}
-[data-gap=xs]{--gap: var(--spacing-200, .5rem)}
-*,*:before,*:after{box-sizing:border-box}
-body{margin:0;font-family:var(--font-sans, system-ui, sans-serif);color:var(--color-text-primary, #171717);background:var(--color-surface, #fff);-webkit-font-smoothing:antialiased}
-button{font-family:inherit;cursor:pointer;background:none;border:0}
-a{color:var(--color-text-link, #1e5386);text-decoration:none}
-img{display:block;max-width:100%}
-.cbf-app-bar--admin{--app-bar-gap: var(--spacing-650)}
-.cbf-app-bar--header{--app-bar-gap: var(--spacing-800)}
-.cbf-app-panel{display:flex;flex-direction:column;min-height:80vh;border:1px solid var(--color-border);border-radius:var(--radius-100);overflow:hidden;background:var(--color-surface);box-shadow:0 1px 3px color-mix(in srgb,var(--color-surface-inverse) 8%,transparent)}
-.cbf-app-panel__crumb{background:var(--color-gold-50);border-bottom:1px solid var(--color-border);padding:var(--spacing-400) var(--spacing-600)}
-.esa-breadcrumbs{--_crumb-font-size: var(--type-size-200, .875rem);--_crumb-link-color: var(--breadcrumbs-link-color, #43608a);--_crumb-link-hover: var(--breadcrumbs-link-hover, #39506f);--_crumb-current-color: var(--color-text-primary, #171717);--_crumb-separator-color: var(--breadcrumbs-separator-color, #737373);--_crumb-gap: var(--spacing-200, 8px);display:block}
-.cbf-app-panel__crumb .esa-breadcrumbs{--breadcrumbs-link-color: var(--color-text-secondary);--breadcrumbs-link-hover: var(--color-primary)}
-.esa-breadcrumbs__list{display:flex;align-items:center;flex-wrap:wrap;gap:var(--_crumb-gap);list-style:none;margin:0;padding:0;font-size:var(--_crumb-font-size)}
-.esa-breadcrumbs__item{display:flex;align-items:center;gap:var(--_crumb-gap)}
-.esa-breadcrumbs__link{display:inline-flex;align-items:center;gap:var(--spacing-100, 4px);color:var(--_crumb-link-color);text-decoration:none}
-.esa-breadcrumbs__icon{display:inline-flex;align-items:center}
-.esa-breadcrumbs__separator{flex-shrink:0;color:var(--_crumb-separator-color)}
-.esa-breadcrumbs__current{display:inline-flex;align-items:center;gap:var(--spacing-100, 4px);color:var(--_crumb-current-color);font-weight:var(--font-weight-medium, 500)}
-.cbf-app-panel__body{flex:1}
-.cbf-app-panel__content{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--spacing-400);padding:var(--spacing-600)}
-.esa-page-header{--_ph-title-color: var(--page-header-title-color, var(--color-text-primary, #171717));--_ph-title-font: var(--page-header-title-font, var(--font-display, var(--font-sans, "DM Sans", sans-serif)));--_ph-title-size: var(--page-header-title-size, var(--type-size-600, 1.875rem));--_ph-title-weight: var(--page-header-title-weight, var(--font-weight-semibold, 550));--_ph-lede-color: var(--page-header-lede-color, var(--color-text-secondary, #525252));--_ph-lede-size: var(--page-header-lede-size, var(--type-size-300, 1.125rem));--_ph-eyebrow-color: var(--page-header-eyebrow-color, var(--color-text-secondary, #525252));--_ph-eyebrow-size: var(--page-header-eyebrow-size, var(--type-size-200, .9375rem));--_ph-gap: var(--page-header-gap, var(--spacing-200, .5rem));--_ph-bar-gap: var(--page-header-bar-gap, var(--spacing-500, 1.5rem));--_ph-crumb-gap: var(--page-header-breadcrumbs-gap, var(--spacing-300, .75rem));display:block;background:transparent}
-.esa-page-header__bar{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--_ph-bar-gap);flex-wrap:wrap}
-.esa-page-header__titles{display:flex;flex-direction:column;gap:var(--_ph-gap);min-width:0}
-.esa-page-header__eyebrow{display:flex;align-items:center;gap:var(--spacing-100, .25rem);margin:0;font-size:var(--_ph-eyebrow-size);font-weight:var(--font-weight-medium, 500);line-height:var(--line-height-normal, 1.5);color:var(--_ph-eyebrow-color)}
-.esa-page-header__title{margin:0;font-family:var(--_ph-title-font);font-size:var(--_ph-title-size);font-weight:var(--_ph-title-weight);line-height:var(--line-height-tight, 1.3);letter-spacing:var(--letter-spacing-tight, -.01em);color:var(--_ph-title-color)}
-.esa-page-header__lede{margin:0;font-size:var(--_ph-lede-size);font-weight:var(--font-weight-regular, 350);line-height:var(--line-height-relaxed, 1.8);color:var(--_ph-lede-color);max-width:70ch}
-.esa-stat{--_stat-value-color: var(--stat-value-color, var(--color-text-primary, #171717));--_stat-value-font: var(--stat-value-font, var(--font-display, var(--font-sans, "DM Sans", sans-serif)));--_stat-value-size: var(--stat-value-size, var(--type-size-700, 2.25rem));--_stat-value-weight: var(--stat-value-weight, var(--font-weight-bold, 650));--_stat-label-color: var(--stat-label-color, var(--color-text-secondary, #525252));--_stat-label-size: var(--stat-label-size, var(--type-size-200, .9375rem));--_stat-label-weight: var(--stat-label-weight, var(--font-weight-medium, 450));--_stat-sub-color: var(--stat-sub-color, var(--color-text-muted, #737373));--_stat-sub-size: var(--stat-sub-size, var(--type-size-150, .875rem));--_stat-accent-color: var(--stat-accent-color, var(--color-secondary, #5787b9));--_stat-gap: var(--stat-gap, var(--spacing-050, .125rem));display:flex;flex-direction:column;gap:var(--_stat-gap);background:transparent}
-.esa-stat__value{font-family:var(--_stat-value-font);font-size:var(--_stat-value-size);font-weight:var(--_stat-value-weight);line-height:var(--line-height-tight, 1.3);letter-spacing:var(--letter-spacing-tight, -.01em);color:var(--_stat-value-color)}
-.esa-stat__label{font-size:var(--_stat-label-size);font-weight:var(--_stat-label-weight);line-height:var(--line-height-normal, 1.6);color:var(--_stat-label-color)}
-.esa-stat__sub{font-size:var(--_stat-sub-size);font-weight:var(--font-weight-regular, 350);line-height:var(--line-height-normal, 1.6);color:var(--_stat-sub-color)}
-.esa-stat--accent .esa-stat__value{color:var(--_stat-accent-color)}
-.esa-app-bar{--_bar-gap: var(--app-bar-gap, var(--spacing-600, 32px));--_bar-pad-x: var(--app-bar-pad-x, var(--spacing-600, 32px));--_bar-pad-y: var(--app-bar-pad-y, var(--spacing-400, 16px));display:block;width:100%;background:var(--app-bar-bg, var(--color-surface, #fff));color:var(--app-bar-text, var(--color-text-primary, #171717))}
-.esa-app-bar--brand-strong{background:var(--app-bar-brand-strong-bg, var(--color-surface-inverse, #171717));color:var(--app-bar-brand-strong-text, var(--color-text-inverse, #fff))}
-.esa-app-bar__row{display:flex;align-items:center;gap:var(--_bar-gap);padding:var(--_bar-pad-y) var(--_bar-pad-x)}
-.esa-app-bar__start,.esa-app-bar__main,.esa-app-bar__end{display:inline-flex;align-items:center;gap:var(--_bar-gap)}
-.esa-app-bar__start{flex:none}
-.esa-icon-link{--_il-font: var(--icon-link-font-size-md, 1rem);display:inline-flex;align-items:center;gap:var(--icon-link-gap, var(--spacing-150, 6px));padding:0;margin:0;border:0;background:none;color:inherit;font-family:var(--font-sans, system-ui, sans-serif);font-size:var(--_il-font);font-weight:var(--font-weight-medium, 500);line-height:1;text-decoration:none;cursor:pointer;white-space:nowrap}
-.esa-icon-link--sm{--_il-font: var(--icon-link-font-size-sm, .875rem)}
-.esa-icon-link--medium{font-weight:var(--font-weight-medium, 500)}
-.esa-icon-link__label{display:inline-block}
-.esa-app-bar__main{flex:1 1 auto}
-.esa-app-bar__end{flex:none;margin-left:auto}
-summary.esa-icon-link{list-style:none}
-.esa-app-bar--brand{background:var(--app-bar-brand-bg, var(--color-primary, #43608a));color:var(--app-bar-brand-text, var(--color-text-inverse, #fff))}
-.esa-icon-button{--_ib-size: var(--form-height-md, 40px);display:inline-flex;align-items:center;justify-content:center;width:var(--_ib-size);height:var(--_ib-size);padding:0;border:0;border-radius:var(--radius-200, 8px);background:transparent;color:inherit;cursor:pointer;transition:background var(--transition-fast, .15s ease);-webkit-appearance:none;appearance:none}
-.esa-icon-button--xs{--_ib-size: var(--form-height-xs, 28px)}
-.ag-pinned-left-header,.ag-pinned-right-header{display:inline-block;height:100%;overflow:hidden;position:relative}
-.ag-pinned-left-header{border-right:var(--ag-pinned-column-border)}
-.ag-pinned-right-header{border-left:var(--ag-pinned-column-border)}
-.ag-pinned-left-floating-bottom,.ag-pinned-left-floating-top,.ag-pinned-right-floating-bottom,.ag-pinned-right-floating-top{min-width:0;overflow:hidden;position:relative}
-.ag-pinned-left-sticky-top,.ag-pinned-right-sticky-top{height:100%;overflow:hidden;position:relative}
-.ag-sticky-bottom-full-width-container,.ag-sticky-top-full-width-container{height:100%;overflow:hidden;width:100%}
-.ag-body-horizontal-scroll:not(.ag-scrollbar-invisible){.ag-horizontal-left-spacer:not(.ag-scroller-corner){border-right:var(--ag-pinned-column-border)}
-.ag-horizontal-right-spacer:not(.ag-scroller-corner){border-left:var(--ag-pinned-column-border)}
-:host {
-      --_gap: var(--spacing-150, 0.375rem);
-      --_pad-y: var(--spacing-150, 0.375rem);
-      --_pad-x: var(--form-padding-x-md, 0.75rem);
-      --_font: var(--form-font-size-md, 0.9375rem);
-      --_radius: var(--radius-100, 0.25rem);
+```
 
-      /* Resting (unselected) chrome. */
-      --_bg: var(--color-surface, #fff);
-      --_border: var(--color-border, #e5e5e5);
-      --_color: var(--color-text-secondary, #525252);
-      --_bg-hover: var(--color-surface-sunken, #f5f5f5);
-      --_border-hover: var(--color-border-strong, #d4d4d4);
-      --_color-hover: var(--color-text-primary, #171717);
-
-      display: inline-flex;
-    }
-:host([size='sm']) { --_pad-x: var(--form-padding-x-sm, 0.625rem); --_font: var(--form-font-size-sm, 0.75rem); --_pad-y: var(--spacing-100, 0.25rem); }
-.root {
-      display: inline-flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: var(--_gap);
-    }
-.chip {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--spacing-100, 0.25rem);
-      padding: var(--_pad-y) var(--_pad-x);
-      border-radius: var(--_radius, 0.25rem);
-      border: 1px solid var(--_border);
-      background: var(--_bg);
-      color: var(--_color);
-      font: inherit;
-      font-size: var(--_font);
-      font-weight: 600;
-      line-height: 1;
-      white-space: nowrap;
-      cursor: pointer;
-      transition:
-        background-color var(--transition-fast, 150ms ease),
-        border-color var(--transition-fast, 150ms ease),
-        color var(--transition-fast, 150ms ease);
-    }
-.chip--active.chip--neutral {
-      background: var(--color-surface-sunken, #efefef);
-      border-color: var(--color-border-strong, #d4d4d4);
-      color: var(--color-text-tertiary, #404040);
-    }
-.chip__label { line-height: 1; }
-:where(.ag-theme-buttonStyle-1) {
-:where(.ag-button){background:none;border:none;color:inherit;cursor:pointer;font-family:inherit;font-size:inherit;font-weight:inherit;letter-spacing:inherit;line-height:inherit;margin:0;padding:0;text-indent:inherit;text-shadow:inherit;text-transform:inherit;word-spacing:inherit;&:disabled{cursor:default}
-&:focus-visible{box-shadow:var(--ag-focus-shadow);outline:none}
-.ag-standard-button{-webkit-appearance:none;-moz-appearance:none;appearance:none;background-color:var(--ag-button-background-color);border:var(--ag-button-border);border-radius:var(--ag-button-border-radius);color:var(--ag-button-text-color);cursor:pointer;font-weight:var(--ag-button-font-weight);padding:var(--ag-button-vertical-padding) var(--ag-button-horizontal-padding);&:active{background-color:var(--ag-button-active-background-color);border:var(--ag-button-active-border);color:var(--ag-button-active-text-color)}
-&:disabled{background-color:var(--ag-button-disabled-background-color);border:var(--ag-button-disabled-border);color:var(--ag-button-disabled-text-color)}
-.ag-standard-button:hover{background-color:var(--ag-button-hover-background-color);border:var(--ag-button-hover-border);color:var(--ag-button-hover-text-color)}
-:host { all: initial; }
-.host-root { position: fixed; inset: 0; pointer-events: none; z-index: 2147483000;
-    font-family: system-ui, sans-serif; }
-.host-root > * { pointer-events: auto; }
-.launch { position: fixed; bottom: 22px; left: 22px; display: inline-flex; align-items: center; gap: 9px;
-    padding: 13px 19px; border-radius: 999px; color: #fff; cursor: pointer; font-size: 15px; font-weight: 600;
-    letter-spacing: .01em; border: 1px solid #3d6fd6;
-    background: linear-gradient(180deg, #1f6feb, #1551c4);
-    box-shadow: 0 10px 28px -8px rgba(31,111,235,.65), inset 0 1px 0 rgba(255,255,255,.18);
-    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease; }
-.launch svg { flex: none; }
-.panel { position: fixed; top: 18px; right: 18px; bottom: 18px; width: min(720px, 94vw);
-    display: flex; flex-direction: column; color: #ffffff; border-radius: 16px;
-    background: linear-gradient(155deg, rgba(26,31,40,.74), rgba(11,15,21,.86));
-    backdrop-filter: blur(26px) saturate(150%); -webkit-backdrop-filter: blur(26px) saturate(150%);
-    border: 1px solid rgba(255,255,255,.15);
-    box-shadow: 0 28px 70px -18px rgba(0,0,0,.62), inset 0 1px 0 rgba(255,255,255,.10);
-    font-size: 12.5px; overflow: hidden;
-    /* slide in from the right */
-    transform: translateX(calc(100% + 32px)); opacity: 0; visibility: hidden;
-    transition: transform .3s cubic-bezier(.4,0,.2,1), opacity .22s ease, visibility 0s linear .3s; }
-.head { display: flex; align-items: center; gap: 8px; padding: 13px 16px; border-bottom: 1px solid rgba(255,255,255,.09); }
-.head strong { font-size: 14px; }
-.head .sub { flex: 1; color: #ccd5e0; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.x { border: 0; background: none; color: #c4cdd8; font-size: 20px; line-height: 1; cursor: pointer; }
-.picker { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,.09); }
-.chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chip { padding: 5px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04);
-    color: #eef2f6; font: inherit; font-size: 12.5px; cursor: pointer; white-space: nowrap;
-    transition: border-color .12s ease, background .12s ease, color .12s ease; }
-.chip.on { background: rgba(31,111,235,.28); border-color: #4493f8; color: #fff; font-weight: 600; }
-.tabs { display: flex; gap: 4px; padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,.09); }
-.tabs button { padding: 5px 12px; border: 0; border-radius: 6px; background: none; color: #ccd5e0;
-    font: inherit; font-size: 12.5px; cursor: pointer; }
-.tabs button.on { background: rgba(255,255,255,.12); color: #fff; }
-.body { overflow: auto; padding: 13px 16px; flex: 1; }
-.hint { margin: 0; color: #c4cdd8; line-height: 1.6; }
-.footer { position: relative; display: flex; justify-content: flex-end; gap: 8px; padding: 11px 16px;
-    border-top: 1px solid rgba(255,255,255,.10); background: rgba(0,0,0,.18); }
-[hidden] { display: none !important; }
-.cpreview { position: absolute; left: 16px; right: 16px; bottom: calc(100% + 8px);
-    background: rgba(13,17,23,.96); border: 1px solid rgba(255,255,255,.16); border-radius: 12px;
-    box-shadow: 0 18px 50px -14px rgba(0,0,0,.7); padding: 12px 14px; max-height: 50vh; overflow: auto; }
-.copy { color: #eef2f6; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.05); }
-.footer button { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-    padding: 8px 14px; border-radius: 8px; font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer; }
-.claude { color: #fff; border: 1px solid #d97757;
-    background: linear-gradient(180deg, #e0805f, #c25e3c);
-    box-shadow: 0 6px 18px -6px rgba(217,119,87,.6), inset 0 1px 0 rgba(255,255,255,.2); }
-.claude svg { flex: none; }
-:where(.ag-theme-checkboxStyle-4) {
-.ag-checkbox-input-wrapper,.ag-radio-button-input-wrapper{background-color:var(--ag-checkbox-unchecked-background-color);border:solid var(--ag-checkbox-border-width) var(--ag-checkbox-unchecked-border-color);flex:none;height:var(--ag-icon-size);position:relative;width:var(--ag-icon-size);&:where(.ag-checked){background-color:var(--ag-checkbox-checked-background-color);border-color:var(--ag-checkbox-checked-border-color)}
-&:where(.ag-checked):after{background-color:var(--ag-checkbox-checked-shape-color)}
-&:where(.ag-disabled){filter:grayscale();opacity:.5}
-.ag-checkbox-input,.ag-radio-button-input{-webkit-appearance:none;-moz-appearance:none;appearance:none;cursor:pointer;display:block;height:var(--ag-icon-size);margin:0;opacity:0;width:var(--ag-icon-size)}
-.ag-checkbox-input-wrapper:after,.ag-radio-button-input-wrapper:after{content:"";display:block;inset:0;-webkit-mask-position:center;mask-position:center;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;pointer-events:none;position:absolute}
-.ag-checkbox-input-wrapper:where(:focus-within,:active),.ag-radio-button-input-wrapper:where(:focus-within,:active){box-shadow:var(--ag-focus-shadow)}
-.ag-checkbox-input-wrapper{border-radius:var(--ag-checkbox-border-radius);&:where(.ag-checked):after{-webkit-mask-image:var(--ag-checkbox-checked-shape-image);mask-image:var(--ag-checkbox-checked-shape-image)}
-&:where(.ag-indeterminate){background-color:var(--ag-checkbox-indeterminate-background-color);border-color:var(--ag-checkbox-indeterminate-border-color)}
-&:where(.ag-indeterminate):after{background-color:var(--ag-checkbox-indeterminate-shape-color);-webkit-mask-image:var(--ag-checkbox-indeterminate-shape-image);mask-image:var(--ag-checkbox-indeterminate-shape-image)}
-.ag-cell-editing-error .ag-checkbox-input-wrapper:focus-within{box-shadow:var(--ag-focus-error-shadow)}
-.ag-radio-button-input-wrapper{border-radius:100%;&:where(.ag-checked):after{-webkit-mask-image:var(--ag-radio-checked-shape-image);mask-image:var(--ag-radio-checked-shape-image)}
-:where(.ag-theme-batchEditStyle-3) {
-.ag-cell-batch-edit{background-color:var(--ag-cell-batch-edit-background-color);color:var(--ag-cell-batch-edit-text-color);display:inherit}
-.ag-row-batch-edit{background-color:var(--ag-row-batch-edit-background-color);color:var(--ag-row-batch-edit-text-color)}
+## Tokens
+- `--ag-internal-hover-color`: rgba(0, 0, 0, 0) _(component)_
+- `--ag-internal-moving-color`: rgba(0, 0, 0, 0) _(component)_
+- `--badge-bg`: #1e5386 _(component)_
+- `--badge-height-lg`: 24px _(component)_
+- `--badge-height-md`: 20px _(component)_
+- `--badge-radius`: .25rem _(component)_
+- `--badge-text-color`: #ffffff _(component)_
+- `--cbf-text-placeholder`: #9aa3ad _(brand)_
+- `--color-border`: #dcdcdc _(semantic)_
+- `--color-border-light`: #efefef _(semantic)_
+- `--color-danger`: #ef4444 _(semantic)_
+- `--color-info`: #2770b2 _(semantic)_
+- `--color-primary`: #1e5386 _(semantic)_
+- `--color-primary-hover`: #1a4570 _(semantic)_
+- `--color-primary-subtle`: #f3f7fc _(semantic)_
+- `--color-secondary`: #2770b2 _(semantic)_
+- `--color-secondary-hover`: #1e5386 _(semantic)_
+- `--color-success`: #22c55e _(semantic)_
+- `--color-surface`: #ffffff _(semantic)_
+- `--color-surface-sunken`: #f3f7fc _(semantic)_
+- `--color-text-inverse`: #ffffff _(semantic)_
+- `--color-text-muted`: #7c7c7c _(semantic)_
+- `--color-text-primary`: #3d3d3d _(semantic)_
+- `--color-text-secondary`: #525252 _(semantic)_
+- `--color-warning`: #f59e0b _(semantic)_
+- `--font-display`: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif _(primitive)_
+- `--font-sans`: "IBM Plex Sans", sans-serif _(primitive)_
+- `--font-weight-medium`: 500 _(primitive)_
+- `--font-weight-regular`: 400 _(primitive)_
+- `--font-weight-semibold`: 600 _(primitive)_
+- `--form-font-size-lg`: clamp(.875rem, .77rem + .52vw, 1.125rem) _(component)_
+- `--form-font-size-md`: clamp(.75rem, .66rem + .44vw, .9375rem) _(component)_
+- `--form-font-size-sm`: clamp(.625rem, .56rem + .32vw, .75rem) _(component)_
+- `--form-height-lg`: 48px _(component)_
+- `--form-height-md`: 40px _(component)_
+- `--form-height-sm`: 32px _(component)_
+- `--form-padding-x-lg`: 1rem _(component)_
+- `--form-padding-x-md`: .75rem _(component)_
+- `--form-padding-x-sm`: .625rem _(component)_
+- `--form-radius-lg`: .5rem _(component)_
+- `--form-radius-md`: .5rem _(component)_
+- `--form-radius-sm`: .25rem _(component)_
+- `--gap`: 1rem _(component)_
+- `--icon-link-font-size-md`: 1rem _(component)_
+- `--icon-link-font-size-sm`: .875rem _(component)_
+- `--icon-link-gap`: .375rem _(component)_
+- `--icon-size-large`: 24px _(component)_
+- `--icon-size-medium`: 20px _(component)_
+- `--icon-size-small`: 16px _(component)_
+- `--radius-100`: .25rem _(primitive)_
+- `--radius-200`: .5rem _(primitive)_
+- `--spacing-100`: .25rem _(primitive)_
+- `--spacing-150`: .375rem _(primitive)_
+- `--spacing-200`: .5rem _(primitive)_
+- `--spacing-300`: .75rem _(primitive)_
+- `--spacing-400`: 1rem _(primitive)_
+- `--spacing-500`: 1.5rem _(primitive)_
+- `--spacing-600`: 2rem _(primitive)_
+- `--type-size-100`: clamp(.625rem, .56rem + .32vw, .75rem) _(primitive)_
+- `--type-size-150`: clamp(.6875rem, .61rem + .38vw, .875rem) _(primitive)_
+- `--type-size-200`: clamp(.75rem, .66rem + .44vw, .9375rem) _(primitive)_
+- `--type-size-300`: clamp(.875rem, .77rem + .52vw, 1.125rem) _(primitive)_
+- `--type-size-500`: clamp(1.125rem, .98rem + .72vw, 1.5rem) _(primitive)_
+- `--type-size-600`: clamp(1.375rem, 1.2rem + .88vw, 1.875rem) _(primitive)_

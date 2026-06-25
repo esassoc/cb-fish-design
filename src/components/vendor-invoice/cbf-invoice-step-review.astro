@@ -134,6 +134,12 @@ import EsaButton from '@esa/ecology/esa-button.astro';
     font-weight: var(--font-weight-medium);
   }
   .cbf-review-dl__row dd { margin: 0; color: var(--color-text-primary); }
+  /* Emphasise the invoice total — it's the headline figure on review. */
+  .cbf-review-dl__row--total dd {
+    font-size: 18px;
+    font-weight: var(--font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
 
   .cbf-review-table {
     width: 100%;

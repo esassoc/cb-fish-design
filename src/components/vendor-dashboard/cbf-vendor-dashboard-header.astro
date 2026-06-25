@@ -1,5 +1,5 @@
 ---
-// cbf-vendor-portal-header — vendor portal welcome section.
+// cbf-vendor-dashboard-header — vendor dashboard welcome section.
 // Composes esa-page-header (greeting + primary CTA) + esa-stat row (activity snapshot).
 // bcn-lego-checked: esa-page-header covers the title/eyebrow/actions pattern; esa-stat
 // covers individual metrics; the outer flex column + stats row are layout composition
@@ -18,7 +18,7 @@ interface Props {
 }
 const { firstName, company, submitHref, showStats = true } = Astro.props;
 ---
-<div class="cbf-vendor-portal-header">
+<div class="cbf-vendor-dashboard-header">
   <EsaPageHeader
     eyebrow={company}
     title={`Welcome back, ${firstName}`}
@@ -30,7 +30,7 @@ const { firstName, company, submitHref, showStats = true } = Astro.props;
   </EsaPageHeader>
 
   {showStats && (
-    <div class="cbf-vendor-portal-header__stats cluster" data-gap="xl">
+    <div class="cbf-vendor-dashboard-header__stats cluster" data-gap="xl">
       <EsaStat value="4" label="Invoices submitted" sub="FY 2026" />
       <EsaStat value="1" label="Pending review" accent />
       <EsaStat value="$14,200" label="Total submitted" sub="FY 2026" />
@@ -39,7 +39,7 @@ const { firstName, company, submitHref, showStats = true } = Astro.props;
 </div>
 
 <style>
-  .cbf-vendor-portal-header {
+  .cbf-vendor-dashboard-header {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-600);

@@ -6,7 +6,7 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
 
 - **Source prototype:** http://localhost:4321/cb-fish-design/invoice-review/
 - **Section element:** `<main>`
-- **Components:** cbf-app-panel (spoke), cbf-grid-id (spoke), cbf-grid-num (spoke), cbf-grid-status (spoke), cbf-icon (spoke), cbf-invoice-doc (spoke), cbf-invoice-review-queue (spoke), cbf-num (spoke), cbf-page (spoke), cbf-review (spoke), cbf-review-actions (spoke), cbf-review-context (spoke), cbf-review-dialog (spoke), cbf-review-docpane (spoke), cbf-review-fields (spoke), cbf-review-footer (spoke), cbf-review-hero (spoke), cbf-review-panel (spoke), cbf-review-split (spoke), cbf-review-triage-strip (spoke), cbf-search-field (spoke), esa-alert-box (hub), esa-badge (hub), esa-breadcrumbs (hub), esa-button (hub), esa-container (hub), esa-empty-state (hub), esa-icon (hub), esa-page-header (hub), esa-stat (hub)
+- **Components:** cbf-app-panel (spoke), cbf-grid-id (spoke), cbf-grid-num (spoke), cbf-grid-status (spoke), cbf-icon (spoke), cbf-invoice-doc (spoke), cbf-invoice-review-queue (spoke), cbf-num (spoke), cbf-page (spoke), cbf-review (spoke), cbf-review-actions (spoke), cbf-review-attachments (spoke), cbf-review-context (spoke), cbf-review-dialog (spoke), cbf-review-docpane (spoke), cbf-review-fields (spoke), cbf-review-footer (spoke), cbf-review-hero (spoke), cbf-review-impact (spoke), cbf-review-panel (spoke), cbf-review-split (spoke), cbf-review-triage-strip (spoke), cbf-search-field (spoke), esa-alert-box (hub), esa-badge (hub), esa-breadcrumbs (hub), esa-button (hub), esa-container (hub), esa-empty-state (hub), esa-icon (hub), esa-icon-button (hub), esa-page-header (hub), esa-stat (hub)
 
 ## Markup (de-scoped, framework-free)
 ```html
@@ -2199,6 +2199,7 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
                   "perfEnd": "Jun 15, 2026",
                   "billTo": "BPA — Columbia Basin Fish & Wildlife Program",
                   "pdfName": "INV-2026-0051-PacificEnv.pdf",
+                  "supportingDocs": ["timesheet-jun-2026.pdf", "equipment-rental-receipt.pdf"],
                   "lineItems": [
                     { "description": "Field biologist labor", "qty": 52, "unitPrice": 95 },
                     {
@@ -2229,6 +2230,7 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
                   "perfEnd": "May 31, 2026",
                   "billTo": "BPA — Columbia Basin Fish & Wildlife Program",
                   "pdfName": "INV-2026-0049-Cascade.pdf",
+                  "supportingDocs": ["receiver-deployment-log.pdf", "data-analysis-summary.pdf"],
                   "notes": "Receivers redeployed after the spring high-water event; deployment hours above baseline.",
                   "lineItems": [
                     {
@@ -2264,6 +2266,7 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
                   "perfEnd": "Apr 30, 2026",
                   "billTo": "BPA — Columbia Basin Fish & Wildlife Program",
                   "pdfName": "INV-2026-0047-Methow.pdf",
+                  "supportingDocs": ["timesheet-apr-2026.pdf", "field-receipts.pdf"],
                   "lineItems": [
                     {
                       "description": "Vegetation transect monitoring",
@@ -2293,6 +2296,7 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
                   "perfEnd": "May 31, 2026",
                   "billTo": "BPA — Columbia Basin Fish & Wildlife Program",
                   "pdfName": "INV-2026-0046-PacificEnv.pdf",
+                  "supportingDocs": ["broodstock-field-log.pdf"],
                   "lineItems": [
                     { "description": "Broodstock collection labor", "qty": 22, "unitPrice": 95 },
                     { "description": "Field supplies", "qty": 1, "unitPrice": 190 }
@@ -2318,6 +2322,11 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
                   "perfEnd": "Jun 13, 2026",
                   "billTo": "BPA — Columbia Basin Fish & Wildlife Program",
                   "pdfName": "INV-2026-0044-Okanogan-FINAL.pdf",
+                  "supportingDocs": [
+                    "lab-analysis-report.pdf",
+                    "sampling-field-notes.pdf",
+                    "final-data-deliverable.xlsx"
+                  ],
                   "notes": "Final invoice — closes out the FY26 sampling contract. Includes the held-back retainage.",
                   "lineItems": [
                     { "description": "Water sample collection", "qty": 120, "unitPrice": 85 },
@@ -2349,6 +2358,7 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
                   "perfEnd": "May 31, 2026",
                   "billTo": "BPA — Columbia Basin Fish & Wildlife Program",
                   "pdfName": "INV-2026-0041-Cascade.pdf",
+                  "supportingDocs": [],
                   "notes": "Returned Jun 8 — receiver-maintenance line lacks a supporting field log; mileage exceeds the approved rate.",
                   "lineItems": [
                     { "description": "Receiver maintenance", "qty": 22, "unitPrice": 100 },
@@ -2375,6 +2385,7 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
                   "perfEnd": "May 15, 2026",
                   "billTo": "BPA — Columbia Basin Fish & Wildlife Program",
                   "pdfName": "INV-2026-0038-PacificEnv.pdf",
+                  "supportingDocs": ["timesheet-may-2026.pdf"],
                   "lineItems": [
                     { "description": "Field biologist labor", "qty": 44, "unitPrice": 95 },
                     {
@@ -2443,7 +2454,36 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
                   <header class="cbf-review-hero repel">
                     <div class="cbf-review-hero__group">
                       <span class="cbf-review__label">Amount billed</span>
-                      <span class="cbf-review-hero__amount cbf-num" data-f-amount-hero=""></span>
+                      <div class="cbf-review-hero__amount-row">
+                        <span class="cbf-review-hero__amount cbf-num" data-f-amount-hero=""></span>
+                        <span class="cbf-review-fields__copy" data-copy="" data-f-amount-copy="">
+                          <button
+                            class="esa-icon-button esa-icon-button--xs"
+                            type="button"
+                            aria-label="Copy amount"
+                            title="Copy amount"
+                          >
+                            <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                focusable="false"
+                              >
+                                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                                <path
+                                  d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+                                ></path>
+                              </svg>
+                            </span>
+                          </button>
+                        </span>
+                      </div>
                       <span class="cbf-review-hero__pct" data-f-pct=""></span>
                     </div>
                     <span class="cbf-review-hero__status" data-f-status=""></span>
@@ -2509,31 +2549,317 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
                       </div>
                     </div>
                   </section>
+                  <!-- Budget impact: what processing THIS invoice does to the contract's
+             remaining balance — a before → after ledger so the COR sees the
+             draw-down at the moment of decision. Exact figures (not compact) so
+             the arithmetic reconciles on screen. -->
+                  <section class="cbf-review-impact" aria-label="Budget impact if approved">
+                    <h3 class="cbf-review__section-title">If this invoice is processed</h3>
+                    <dl class="cbf-review-impact__ledger">
+                      <div class="cbf-review-impact__row">
+                        <dt>Remaining before</dt>
+                        <dd class="cbf-num" data-f-rem-before=""></dd>
+                      </div>
+                      <div class="cbf-review-impact__row">
+                        <dt>This invoice</dt>
+                        <dd class="cbf-num cbf-review-impact__delta" data-f-rem-delta=""></dd>
+                      </div>
+                      <div class="cbf-review-impact__row cbf-review-impact__row--total">
+                        <dt>Remaining after</dt>
+                        <dd class="cbf-num" data-f-rem-after=""></dd>
+                      </div>
+                    </dl>
+                  </section>
+                  <!-- Spec fields. Each row carries a copy control (esa-icon-button lego)
+             that copies that field's value to the clipboard. Invoice number is
+             repeated here (it also heads the modal) so it is copyable in-line
+             with the rest of the metadata. -->
                   <dl class="cbf-review-fields">
+                    <div class="cbf-review-fields__row">
+                      <dt class="cbf-review__label">Invoice</dt>
+                      <dd class="cbf-review-fields__value cbf-num" data-f-number-panel=""></dd>
+                      <span class="cbf-review-fields__copy" data-copy="">
+                        <button
+                          class="esa-icon-button esa-icon-button--xs"
+                          type="button"
+                          aria-label="Copy invoice number"
+                          title="Copy invoice number"
+                        >
+                          <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              focusable="false"
+                            >
+                              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                              <path
+                                d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+                              ></path>
+                            </svg>
+                          </span>
+                        </button>
+                      </span>
+                    </div>
                     <div class="cbf-review-fields__row">
                       <dt class="cbf-review__label">Vendor</dt>
                       <dd
                         class="cbf-review-fields__value cbf-review-fields__value--lead"
                         data-f-vendor-panel=""
                       ></dd>
+                      <span class="cbf-review-fields__copy" data-copy="">
+                        <button
+                          class="esa-icon-button esa-icon-button--xs"
+                          type="button"
+                          aria-label="Copy vendor"
+                          title="Copy vendor"
+                        >
+                          <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              focusable="false"
+                            >
+                              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                              <path
+                                d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+                              ></path>
+                            </svg>
+                          </span>
+                        </button>
+                      </span>
                     </div>
                     <div class="cbf-review-fields__row">
                       <dt class="cbf-review__label">Contract</dt>
                       <dd class="cbf-review-fields__value" data-f-contract=""></dd>
+                      <span class="cbf-review-fields__copy" data-copy="">
+                        <button
+                          class="esa-icon-button esa-icon-button--xs"
+                          type="button"
+                          aria-label="Copy contract"
+                          title="Copy contract"
+                        >
+                          <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              focusable="false"
+                            >
+                              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                              <path
+                                d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+                              ></path>
+                            </svg>
+                          </span>
+                        </button>
+                      </span>
                     </div>
                     <div class="cbf-review-fields__row">
                       <dt class="cbf-review__label">Project</dt>
                       <dd class="cbf-review-fields__value" data-f-project=""></dd>
+                      <span class="cbf-review-fields__copy" data-copy="">
+                        <button
+                          class="esa-icon-button esa-icon-button--xs"
+                          type="button"
+                          aria-label="Copy project"
+                          title="Copy project"
+                        >
+                          <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              focusable="false"
+                            >
+                              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                              <path
+                                d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+                              ></path>
+                            </svg>
+                          </span>
+                        </button>
+                      </span>
                     </div>
                     <div class="cbf-review-fields__row">
-                      <dt class="cbf-review__label">Performance</dt>
-                      <dd class="cbf-review-fields__value" data-f-perf=""></dd>
+                      <dt class="cbf-review__label">Perf. start</dt>
+                      <dd class="cbf-review-fields__value" data-f-perf-start=""></dd>
+                      <span class="cbf-review-fields__copy" data-copy="">
+                        <button
+                          class="esa-icon-button esa-icon-button--xs"
+                          type="button"
+                          aria-label="Copy performance start date"
+                          title="Copy performance start date"
+                        >
+                          <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              focusable="false"
+                            >
+                              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                              <path
+                                d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+                              ></path>
+                            </svg>
+                          </span>
+                        </button>
+                      </span>
+                    </div>
+                    <div class="cbf-review-fields__row">
+                      <dt class="cbf-review__label">Perf. end</dt>
+                      <dd class="cbf-review-fields__value" data-f-perf-end=""></dd>
+                      <span class="cbf-review-fields__copy" data-copy="">
+                        <button
+                          class="esa-icon-button esa-icon-button--xs"
+                          type="button"
+                          aria-label="Copy performance end date"
+                          title="Copy performance end date"
+                        >
+                          <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              focusable="false"
+                            >
+                              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                              <path
+                                d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+                              ></path>
+                            </svg>
+                          </span>
+                        </button>
+                      </span>
                     </div>
                     <div class="cbf-review-fields__row">
                       <dt class="cbf-review__label">Submitted</dt>
                       <dd class="cbf-review-fields__value" data-f-submitted=""></dd>
+                      <span class="cbf-review-fields__copy" data-copy="">
+                        <button
+                          class="esa-icon-button esa-icon-button--xs"
+                          type="button"
+                          aria-label="Copy submitted date"
+                          title="Copy submitted date"
+                        >
+                          <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              focusable="false"
+                            >
+                              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                              <path
+                                d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+                              ></path>
+                            </svg>
+                          </span>
+                        </button>
+                      </span>
                     </div>
                   </dl>
+                  <!-- Attachments: the invoice document the vendor submitted + the
+             supporting files they uploaded. The COR downloads any single file or
+             all at once. Rows are injected by JS; the per-row download control
+             clones the server-rendered esa-icon-button template below so the lego
+             markup stays byte-identical. (Mock files — download produces a named
+             placeholder PDF, since no real blob exists.) -->
+                  <section class="cbf-review-attachments" aria-label="Attachments">
+                    <div class="cbf-review-attachments__head repel">
+                      <h3 class="cbf-review__section-title" data-f-attach-title="">Attachments</h3>
+                      <span data-attach-all="">
+                        <span
+                          class="esa-button esa-button--color-secondary esa-button--appearance-outline esa-button--sm"
+                        >
+                          <button class="esa-button__native" type="button">
+                            <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                              <svg
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                focusable="false"
+                              >
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" x2="12" y1="15" y2="3"></line>
+                              </svg>
+                            </span>
+                            <span class="esa-button__label"> Download all </span>
+                          </button>
+                        </span>
+                      </span>
+                    </div>
+                    <ul class="cbf-review-attachments__list" data-f-attachments=""></ul>
+                  </section>
+                  <div data-dl-template="" hidden="" aria-hidden="true">
+                    <button
+                      class="esa-icon-button esa-icon-button--sm"
+                      type="button"
+                      aria-label="Download file"
+                      title="Download file"
+                    >
+                      <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          focusable="false"
+                        >
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="7 10 12 15 17 10"></polyline>
+                          <line x1="12" x2="12" y1="15" y2="3"></line>
+                        </svg>
+                      </span>
+                    </button>
+                  </div>
                   <!-- Decisions. Inline confirm/comment (no nested modal). -->
                   <div class="cbf-review-actions" data-actions="">
                     <div class="cluster" data-gap="sm" data-actions-default="">
@@ -2781,7 +3107,7 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
           </section>
           <script
             type="module"
-            src="/cb-fish-design/_astro/cbf-invoice-review-queue.astro_astro_type_script_index_0_lang.Ablq_UQm.js"
+            src="/cb-fish-design/_astro/cbf-invoice-review-queue.astro_astro_type_script_index_0_lang.B540lmiu.js"
           ></script>
         </div>
       </div>
@@ -2792,6 +3118,11 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
 
 ## Styles (only what this section uses; tokens resolved for the theme)
 ```css
+.esa-icon{--_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));display:inline-flex;align-items:center;justify-content:center;width:var(--_icon-size);height:var(--_icon-size);line-height:1;color:inherit}
+.esa-icon--xs{--_icon-size: var(--icon-size-xs, 14px)}
+.esa-icon svg{display:block;width:var(--_icon-size);height:var(--_icon-size)}
+.esa-icon--sm{--_icon-size: var(--icon-size-sm, var(--icon-size-small, 16px))}
+.esa-icon--md{--_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px))}
 :has(> :where(.ag-theme-params-1)):not(:where(.ag-theme-params-1)) {
 	--ag-inherited-accent-color: var(--ag-accent-color);
 	--ag-inherited-advanced-filter-builder-button-bar-border: var(--ag-advanced-filter-builder-button-bar-border);
@@ -3404,50 +3735,14 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
 	--ag-browser-color-scheme: var(--ag-inherited-browser-color-scheme, light);
 	--ag-chrome-background-color: var(--ag-inherited-chrome-background-color, color-mix(in srgb, var(--ag-background-color), var(--ag-foreground-color) 2%));
 }
-:where(.ag-theme-inputStyle-7) {
-:where(.ag-input-field-input[type=number]:not(.ag-number-field-input-stepper)){-webkit-appearance:textfield;-moz-appearance:textfield;appearance:textfield;&::-webkit-inner-spin-button,&::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0}
-:where(.ag-ltr) .ag-input-field-input:where(input:not([type]),input[type=text],input[type=number],input[type=tel],input[type=date],input[type=datetime-local],textarea){padding-left:var(--ag-input-padding-start)}
-&:where(.ag-ltr,.ag-rtl) .ag-input-field-input:where(input:not([type]),input[type=text],input[type=number],input[type=tel],input[type=date],input[type=datetime-local],textarea){padding:0 var(--ag-input-padding-start)}
-:where(.ag-ltr) :where(.ag-column-select-header-filter-wrapper),:where(.ag-ltr) :where(.ag-filter-add-select),:where(.ag-ltr) :where(.ag-filter-filter),:where(.ag-ltr) :where(.ag-filter-toolpanel-search),:where(.ag-ltr) :where(.ag-floating-filter-search-icon),:where(.ag-ltr) :where(.ag-mini-filter){.ag-input-wrapper:before{margin-left:var(--ag-spacing)}
-.ag-paging-panel{align-items:center;border-top:var(--ag-footer-row-border);display:flex;flex-wrap:wrap-reverse;gap:calc(var(--ag-spacing)*4);justify-content:flex-end;min-height:var(--ag-pagination-panel-height);padding:calc(var(--ag-spacing)*.5) var(--ag-cell-horizontal-padding);row-gap:calc(var(--ag-spacing)*.5);@container (width < 600px){justify-content:center}
-:where(.ag-theme-batchEditStyle-3) {
-.ag-cell-batch-edit{background-color:var(--ag-cell-batch-edit-background-color);color:var(--ag-cell-batch-edit-text-color);display:inherit}
-.ag-row-batch-edit{background-color:var(--ag-row-batch-edit-background-color);color:var(--ag-row-batch-edit-text-color)}
-.stack{--gap: var(--spacing-400, 1rem);display:flex;flex-direction:column;gap:var(--gap)}
-.repel{--gap: var(--spacing-400, 1rem);--align: center;display:flex;flex-wrap:wrap;gap:var(--gap);align-items:var(--align);justify-content:space-between}
-.type-section-title{font-family:var(--font-display, var(--font-sans));font-size:var(--type-size-500);font-weight:var(--font-weight-semibold);line-height:var(--line-height-tight);letter-spacing:var(--letter-spacing-tight)}
-.type-caption{font-size:var(--type-size-100);font-weight:var(--font-weight-regular);line-height:var(--line-height-normal);letter-spacing:var(--letter-spacing-normal)}
-.cluster{--gap: var(--spacing-300, .75rem);--align: center;--justify: flex-start;display:flex;flex-wrap:wrap;gap:var(--gap);align-items:var(--align);justify-content:var(--justify)}
-.sidebar{--gap: var(--spacing-500, 1.5rem);--sidebar-width: 18rem;--sidebar-content-min: 60%;display:flex;flex-wrap:wrap;gap:var(--gap)}
-.sidebar>:first-child{flex-basis:var(--sidebar-width);flex-grow:1}
-.sidebar[data-side=end]>:first-child{order:2}
-.sidebar>:last-child{flex-basis:0;flex-grow:999;min-inline-size:var(--sidebar-content-min)}
-.ag-measurement-container{height:0;overflow:hidden;visibility:hidden;width:0}
-.ag-measurement-element-border{display:inline-block}
-.ag-measurement-element-border:before{border-left:var(--ag-internal-measurement-border);content:"";display:block}
-.ag-chart,.ag-dnd-ghost,.ag-external,.ag-popup,.ag-root-wrapper{cursor:default;line-height:normal;white-space:normal;-webkit-font-smoothing:antialiased;background-color:var(--ag-wrapper-background-color);color:var(--ag-text-color);color-scheme:var(--ag-browser-color-scheme);font-family:var(--ag-font-family);font-size:var(--ag-font-size);font-weight:var(--ag-font-weight);--ag-indentation-level:0}
-.ag-tab-guard{display:block;height:0;position:absolute;width:0}
-.ag-tab-guard-top{top:1px}
-.ag-invisible{visibility:hidden!important}
-.ag-hidden{display:none!important}
-.ag-tab-guard-bottom{bottom:1px}
-.ag-icon{background-position:50%;background-repeat:no-repeat;background-size:contain;color:var(--ag-icon-color);display:block;height:var(--ag-icon-size);position:relative;-webkit-user-select:none;-moz-user-select:none;user-select:none;width:var(--ag-icon-size)}
-:where(.ag-icon):before{align-items:center;background-color:currentcolor;color:inherit;content:"";display:flex;font-family:inherit;font-size:var(--ag-icon-size);font-style:normal;font-variant:normal;height:var(--ag-icon-size);justify-content:center;line-height:var(--ag-icon-size);-webkit-mask-size:contain;mask-size:contain;text-transform:none;width:var(--ag-icon-size)}
-:where(.ag-theme-columnDropStyle-2) {
-.ag-column-drop-vertical-empty-message{align-items:center;border:dashed var(--ag-border-width);border-color:var(--ag-border-color);display:flex;inset:0;justify-content:center;margin:calc(var(--ag-spacing)*1.5) calc(var(--ag-spacing)*2);overflow:hidden;padding:calc(var(--ag-spacing)*2);position:absolute}
-.esa-icon-link{--_il-font: var(--icon-link-font-size-md, 1rem);display:inline-flex;align-items:center;gap:var(--icon-link-gap, var(--spacing-150, 6px));padding:0;margin:0;border:0;background:none;color:inherit;font-family:var(--font-sans, system-ui, sans-serif);font-size:var(--_il-font);font-weight:var(--font-weight-medium, 500);line-height:1;text-decoration:none;cursor:pointer;white-space:nowrap}
-.esa-icon-link--sm{--_il-font: var(--icon-link-font-size-sm, .875rem)}
-.esa-icon-link--medium{font-weight:var(--font-weight-medium, 500)}
-.esa-icon-link__label{display:inline-block}
-summary.esa-icon-link{list-style:none}
-.ag-pinned-left-header,.ag-pinned-right-header{display:inline-block;height:100%;overflow:hidden;position:relative}
-.ag-pinned-left-header{border-right:var(--ag-pinned-column-border)}
-.ag-pinned-right-header{border-left:var(--ag-pinned-column-border)}
-.ag-pinned-left-floating-bottom,.ag-pinned-left-floating-top,.ag-pinned-right-floating-bottom,.ag-pinned-right-floating-top{min-width:0;overflow:hidden;position:relative}
-.ag-pinned-left-sticky-top,.ag-pinned-right-sticky-top{height:100%;overflow:hidden;position:relative}
-.ag-sticky-bottom-full-width-container,.ag-sticky-top-full-width-container{height:100%;overflow:hidden;width:100%}
-.ag-body-horizontal-scroll:not(.ag-scrollbar-invisible){.ag-horizontal-left-spacer:not(.ag-scroller-corner){border-right:var(--ag-pinned-column-border)}
-.ag-horizontal-right-spacer:not(.ag-scroller-corner){border-left:var(--ag-pinned-column-border)}
+.esa-button{--_btn-height: var(--form-height-md, 40px);--_btn-padding-x: var(--form-padding-x-md, 16px);--_btn-font-size: var(--form-font-size-md, 14px);--_btn-radius: var(--form-radius-md, 6px);--_accent: var(--color-primary, #43608a);--_accent-hover: var(--color-primary-hover, #39506f);--_on: var(--color-text-inverse, #ffffff);display:inline-block}
+.esa-button--sm{--_btn-height: var(--form-height-sm, 32px);--_btn-padding-x: var(--form-padding-x-sm, 12px);--_btn-font-size: var(--form-font-size-sm, 12px);--_btn-radius: var(--form-radius-sm, 4px)}
+.esa-button--color-secondary{--_accent: var(--color-secondary, #5787b9);--_accent-hover: var(--color-secondary-hover, #43608a)}
+.esa-button__native{display:inline-flex;align-items:center;justify-content:center;gap:var(--spacing-200, 8px);width:100%;height:var(--_btn-height);padding-inline:var(--_btn-padding-x);border:1px solid transparent;border-radius:var(--_btn-radius);font-size:var(--_btn-font-size);font-family:var(--font-sans, system-ui, sans-serif);font-weight:var(--font-weight-medium, 500);line-height:1;text-decoration:none;cursor:pointer;transition:background var(--transition-fast, .15s ease),border-color var(--transition-fast, .15s ease);-webkit-appearance:none;appearance:none}
+.esa-button--appearance-outline .esa-button__native,.esa-button--appearance-dashed .esa-button__native{background:transparent;color:var(--_accent);border-color:var(--_accent)}
+.esa-button__label{white-space:nowrap}
+.esa-button--appearance-fill .esa-button__native{background:var(--_accent);color:var(--_on);border-color:transparent}
+.esa-button--color-danger{--_accent: var(--color-danger, #ef4444);--_accent-hover: color-mix(in srgb, var(--color-danger, #ef4444) 85%, #000)}
 .ag-aria-description-container{border:0;clip-path:inset(50%);height:1px;overflow:hidden;padding:0;position:absolute;white-space:nowrap;width:1px;z-index:9999}
 :where(.ag-ltr){direction:ltr;.ag-body,.ag-body-horizontal-scroll,.ag-body-viewport,.ag-floating-bottom,.ag-floating-top,.ag-header,.ag-sticky-bottom,.ag-sticky-top{flex-direction:row}
 .ag-layout-auto-height,.ag-layout-print{.ag-center-cols-viewport{min-height:150px}
@@ -3533,16 +3828,94 @@ summary.esa-icon-link{list-style:none}
 &:where(.ag-scrollbar-invisible){right:0}
 :where(.ag-body-vertical-content-no-gap>div>div>div,.ag-body-vertical-content-no-gap>div>div>div>div)>.ag-row-last{border-bottom-color:transparent}
 &:where(.ag-scrollbar-invisible){left:0;right:0}
-.ag-overlay{inset:0;pointer-events:none;position:absolute;z-index:2}
-.cbf-search-field{display:flex;align-items:center;gap:var(--spacing-300);width:100%;padding:var(--spacing-300) var(--spacing-400);border:1px solid var(--color-border);border-radius:var(--radius-100);background:var(--color-surface)}
-.cbf-search-field .cbf-icon{color:var(--color-text-muted);display:inline-flex}
-.cbf-search-field input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-family:var(--font-sans);font-size:18px;color:var(--color-text-primary)}
-.cbf-search-field input::placeholder{color:var(--cbf-text-placeholder)}
-.esa-badge{--_badge-bg: var(--badge-bg, var(--color-primary, #43608a));--_badge-text: var(--badge-text-color, var(--color-text-inverse, #fff));--_badge-height: var(--badge-height-md, 20px);--_badge-font-size: 11px;--_badge-padding-x: 6px;--_badge-min-width: var(--badge-height-md, 20px);display:inline-flex;align-items:center;justify-content:center;height:var(--_badge-height);min-width:var(--_badge-min-width);padding-inline:var(--_badge-padding-x);border-radius:var(--badge-radius, var(--radius-100, 4px));background:var(--_badge-bg);color:var(--_badge-text);font-size:var(--_badge-font-size);font-weight:600;line-height:1;white-space:nowrap;box-sizing:border-box}
-.esa-badge--lg{--_badge-height: var(--badge-height-lg, 24px);--_badge-font-size: 12px;--_badge-padding-x: 8px;--_badge-min-width: var(--badge-height-lg, 24px)}
-.esa-badge--danger{--_badge-bg: var(--color-danger, #ef4444)}
-.esa-badge--warning{--_badge-bg: var(--color-warning, #f59e0b)}
-.esa-badge--secondary{--_badge-bg: var(--color-secondary, #5787b9)}
+.cbf-icon{display:inline-flex;align-items:center;justify-content:center;flex:none;color:inherit}
+.esa-nav-dropdown .esa-icon-link>.esa-icon:last-child{transition:transform .15s ease}
+.cbf-nav-link .cbf-icon{display:inline-flex;align-items:center}
+.esa-container{width:100%;max-width:var(--_container-max, 1556px);margin-inline:auto;padding-inline:var(--container-gutter, var(--spacing-600, 2rem))}
+.cbf-page{padding-block:var(--spacing-600) var(--spacing-800)}
+.cbf-review-triage-strip{padding-bottom:var(--spacing-600);border-bottom:1px solid var(--color-border)}
+.cbf-review-triage-strip__head{align-items:baseline;gap:var(--spacing-400);flex-wrap:wrap}
+.cbf-review-triage-strip__caption{color:var(--color-text-muted)}
+.cbf-review-triage-strip__stats{--align: flex-start;row-gap:var(--spacing-500)}
+.cbf-invoice-review-queue__header{align-items:center;gap:var(--spacing-400);flex-wrap:wrap}
+.cbf-invoice-review-queue__search{flex:1 1 280px;max-width:440px;min-width:220px}
+.cbf-invoice-review-queue__grid{border:1px solid var(--color-border);border-radius:var(--radius-200);overflow:hidden;background:var(--color-surface)}
+.cbf-invoice-review-queue__footer{color:var(--color-text-muted)}
+.cbf-review-dialog{--side-dialog-width-lg: max(1180px, 75vw)}
+.cbf-review-split{min-height:100%}
+.cbf-review-hero{align-items:flex-start;gap:var(--spacing-400)}
+.cbf-review-hero__group{display:flex;flex-direction:column;gap:var(--spacing-50);min-width:0}
+.cbf-review__label{font-size:var(--type-size-150);font-weight:var(--font-weight-medium);color:var(--color-text-muted)}
+.cbf-review-hero__amount-row{display:flex;align-items:center;gap:var(--spacing-200)}
+.cbf-review-hero__amount{font-size:var(--type-size-600);font-weight:var(--font-weight-bold);line-height:var(--line-height-tight);color:var(--color-text-primary);font-variant-numeric:tabular-nums}
+.cbf-review-fields__copy{align-self:center;position:relative;line-height:0;color:var(--color-text-muted)}
+.cbf-review-fields__copy .esa-icon-button{color:inherit}
+.cbf-review-hero__pct{font-size:var(--type-size-100);color:var(--color-text-muted)}
+.cbf-review-hero__status{flex:none}
+.cbf-review-panel__clock{align-items:center;gap:var(--spacing-300);padding:var(--spacing-300) var(--spacing-400);background:var(--color-surface-sunken);border:1px solid var(--color-border);border-radius:var(--radius-200)}
+.cbf-review-panel__context{padding-block:var(--spacing-400);border-block:1px solid var(--color-border)}
+.cbf-review__section-title{margin:0;font-size:var(--type-size-150);font-weight:var(--font-weight-semibold);color:var(--color-text-muted)}
+.cbf-review-context{display:flex;flex-wrap:wrap;gap:var(--spacing-300) var(--spacing-500)}
+.cbf-review-context__item{display:flex;flex-direction:column;gap:var(--spacing-50)}
+.cbf-review-context__value{font-size:var(--type-size-250);font-weight:var(--font-weight-semibold);color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
+.cbf-review-context__label{font-size:var(--type-size-050);color:var(--color-text-muted)}
+.cbf-review-context__value--accent{color:var(--color-text-primary)}
+.cbf-review-impact{margin-top:var(--spacing-200)}
+.cbf-review-impact__ledger{margin:var(--spacing-200) 0 0;border:1px solid var(--color-border);border-radius:var(--radius-200);overflow:hidden}
+.cbf-review-impact__row{display:flex;align-items:baseline;justify-content:space-between;gap:var(--spacing-400);padding:var(--spacing-250) var(--spacing-400)}
+.cbf-review-impact__row dt{margin:0;font-size:var(--type-size-150);color:var(--color-text-secondary)}
+.cbf-review-impact__row dd{margin:0;font-size:var(--type-size-200);color:var(--color-text-primary);font-variant-numeric:tabular-nums}
+.cbf-review-impact__row+.cbf-review-impact__row{border-top:1px solid var(--color-border-light, var(--color-border))}
+.cbf-review-impact__delta{color:var(--color-text-secondary)}
+.cbf-review-impact__row--total{background:var(--color-surface-sunken);border-top:1px solid var(--color-border)}
+.cbf-review-impact__row--total dt{font-weight:var(--font-weight-semibold);color:var(--color-text-primary)}
+.cbf-review-impact__row--total dd{font-weight:var(--font-weight-semibold)}
+.cbf-review-fields{margin:0}
+.cbf-review-fields__row{display:grid;grid-template-columns:92px 1fr auto;gap:var(--spacing-300);align-items:baseline;padding-block:var(--spacing-250);border-top:1px solid var(--color-border-light, var(--color-border))}
+.cbf-review-fields__row:first-child{border-top:0;padding-top:0}
+.cbf-review-fields__value{margin:0;font-size:var(--type-size-200);color:var(--color-text-secondary)}
+.cbf-review-fields__value--lead{font-weight:var(--font-weight-medium);color:var(--color-text-primary)}
+.cbf-review-attachments{margin-top:var(--spacing-200)}
+.cbf-review-attachments__head{align-items:center;gap:var(--spacing-300);margin-bottom:var(--spacing-300)}
+.cbf-review-attachments__head .cbf-review__section-title{margin:0}
+.cbf-review-attachments__list{list-style:none;margin:0;padding:0;border:1px solid var(--color-border);border-radius:var(--radius-200);overflow:hidden}
+.cbf-review-actions [hidden]{display:none!important}
+.cbf-review-docpane{background:var(--color-surface-sunken);border:1px solid var(--color-border);border-radius:var(--radius-200);padding:var(--spacing-600);display:flex;flex-direction:column;align-items:center;overflow-y:auto}
+.cbf-invoice-doc{position:relative;flex:1 0 auto;width:100%;max-width:620px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-100);box-shadow:0 1px 4px color-mix(in srgb,var(--color-surface-inverse) 10%,transparent);padding:var(--spacing-700) var(--spacing-700) var(--spacing-600);color:var(--color-text-primary);font-size:var(--type-size-150);line-height:var(--line-height-normal)}
+.cbf-invoice-doc__stamp{position:absolute;top:var(--spacing-500);right:var(--spacing-500);font-size:var(--type-size-100);font-weight:var(--font-weight-semibold);text-transform:uppercase;letter-spacing:.06em;color:var(--color-danger, #b42318);border:1.5px solid currentColor;border-radius:var(--radius-100);padding:2px var(--spacing-200);transform:rotate(-4deg);opacity:.8}
+.cbf-invoice-doc__head{display:flex;justify-content:space-between;gap:var(--spacing-400);align-items:flex-start;margin-bottom:var(--spacing-500)}
+.cbf-invoice-doc__vendor{margin:0;font-size:var(--type-size-400);font-weight:var(--font-weight-bold)}
+.cbf-invoice-doc__sub{margin:0;color:var(--color-text-muted);font-size:var(--type-size-100)}
+.cbf-invoice-doc__meta{text-align:right}
+.cbf-invoice-doc__meta p{margin:0 0 var(--spacing-100)}
+.cbf-invoice-doc__meta span{color:var(--color-text-muted);margin-right:var(--spacing-200)}
+.cbf-invoice-doc .cbf-num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cbf-invoice-doc__billto{margin-bottom:var(--spacing-500)}
+.cbf-invoice-doc__billto p{margin:0}
+.cbf-invoice-doc__items{width:100%;border-collapse:collapse}
+.cbf-invoice-doc__items th,.cbf-invoice-doc__items td{text-align:left;padding:var(--spacing-250) 0;vertical-align:top}
+.cbf-invoice-doc__items thead th{border-bottom:1px solid var(--color-text-primary);font-weight:var(--font-weight-semibold);font-size:var(--type-size-100);color:var(--color-text-secondary)}
+.cbf-invoice-doc__items th.cbf-num{text-align:right}
+.cbf-invoice-doc__items tfoot th,.cbf-invoice-doc__items tfoot td{padding:var(--spacing-150) 0;text-align:right}
+.cbf-invoice-doc__items tfoot th{font-weight:var(--font-weight-regular);color:var(--color-text-secondary)}
+.cbf-invoice-doc__items tfoot tr:first-child th,.cbf-invoice-doc__items tfoot tr:first-child td{padding-top:var(--spacing-400)}
+.cbf-invoice-doc__total th,.cbf-invoice-doc__total td{border-top:1px solid var(--color-text-primary);font-weight:var(--font-weight-bold);font-size:var(--type-size-200);padding-top:var(--spacing-300)!important}
+.cbf-invoice-doc__memo{margin:var(--spacing-600) 0 0;color:var(--color-text-secondary);line-height:var(--line-height-relaxed)}
+.cbf-invoice-doc__generated{margin:var(--spacing-600) 0 0;padding-top:var(--spacing-400);border-top:1px solid var(--color-border-light, var(--color-border));color:var(--color-text-muted);font-size:var(--type-size-100);font-style:italic}
+.cbf-review-footer{align-items:center;gap:var(--spacing-400);width:100%}
+.cbf-review-footer__position{font-size:var(--type-size-150);color:var(--color-text-muted);font-variant-numeric:tabular-nums}
+.cbf-invoice-review-queue__grid .cbf-grid-num,.cbf-invoice-review-queue__grid .cbf-grid-num .ag-header-cell-label{justify-content:flex-end;text-align:right;font-variant-numeric:tabular-nums}
+.cbf-invoice-review-queue__grid .ag-row{cursor:pointer}
+.cbf-invoice-review-queue__grid .cbf-grid-id{font-variant-numeric:tabular-nums;color:var(--color-text-secondary)}
+.cbf-invoice-review-queue__grid .cbf-grid-status{display:inline-flex;align-items:center;height:100%}
+:where(.ag-theme-tabStyle-6) {
+.ag-tabs-header{background-color:var(--ag-tab-bar-background-color);border-bottom:var(--ag-tab-bar-border);display:flex;flex:1;gap:var(--ag-tab-spacing);padding:var(--ag-tab-bar-top-padding) var(--ag-tab-bar-horizontal-padding) 0}
+:where(.ag-ltr) .ag-tabs-close-button-wrapper{border-right:solid var(--ag-border-width) var(--ag-border-color)}
+:where(.ag-ltr) .ag-tab.ag-tab-selected:where(:not(:first-of-type)){border-left-color:var(--ag-tab-selected-border-color)}
+:where(.ag-ltr) .ag-tab.ag-tab-selected:where(:not(:last-of-type)){border-right-color:var(--ag-tab-selected-border-color)}
+:where(.ag-theme-columnDropStyle-2) {
+.ag-column-drop-vertical-empty-message{align-items:center;border:dashed var(--ag-border-width);border-color:var(--ag-border-color);display:flex;inset:0;justify-content:center;margin:calc(var(--ag-spacing)*1.5) calc(var(--ag-spacing)*2);overflow:hidden;padding:calc(var(--ag-spacing)*2);position:absolute}
+.ag-paging-panel{align-items:center;border-top:var(--ag-footer-row-border);display:flex;flex-wrap:wrap-reverse;gap:calc(var(--ag-spacing)*4);justify-content:flex-end;min-height:var(--ag-pagination-panel-height);padding:calc(var(--ag-spacing)*.5) var(--ag-cell-horizontal-padding);row-gap:calc(var(--ag-spacing)*.5);@container (width < 600px){justify-content:center}
 :where(.ag-theme-iconSet-5) {
 .ag-icon-aggregation::before { mask-image: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20class%3D%22ag-icon%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cstyle%3E*%20%7B%20vector-effect%3A%20non-scaling-stroke%3B%20%7D%3C%2Fstyle%3E%3Cpath%20d%3D%22M18%207V4H6l6%208-6%208h12v-3%22%2F%3E%3C%2Fsvg%3E'); }
 .ag-icon-arrows::before { mask-image: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20class%3D%22ag-icon%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cstyle%3E*%20%7B%20vector-effect%3A%20non-scaling-stroke%3B%20%7D%3C%2Fstyle%3E%3Cpolyline%20points%3D%225%209%202%2012%205%2015%22%2F%3E%3Cpolyline%20points%3D%229%205%2012%202%2015%205%22%2F%3E%3Cpolyline%20points%3D%2215%2019%2012%2022%209%2019%22%2F%3E%3Cpolyline%20points%3D%2219%209%2022%2012%2019%2015%22%2F%3E%3Cline%20x1%3D%222%22%20x2%3D%2222%22%20y1%3D%2212%22%20y2%3D%2212%22%2F%3E%3Cline%20x1%3D%2212%22%20x2%3D%2212%22%20y1%3D%222%22%20y2%3D%2222%22%2F%3E%3C%2Fsvg%3E'); }
@@ -3610,10 +3983,42 @@ summary.esa-icon-link{list-style:none}
 .ag-icon-small-up::before { mask-image: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20class%3D%22ag-icon%22%20fill%3D%22black%22%20stroke%3D%22none%22%20viewBox%3D%220%200%2032%2032%22%3E%3Cpath%20d%3D%22M7.334%2021.333%2016%2010.666l8.667%2010.667H7.334Z%22%2F%3E%3C%2Fsvg%3E'); }
 .ag-icon-un-pin::before { mask-image: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20class%3D%22ag-icon%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M8%2011a.75.75%200%200%200-.75.75v3.333a.75.75%200%201%200%201.5%200V11.75A.75.75%200%200%200%208%2011Z%22%2F%3E%3Cpath%20fill%3D%22currentColor%22%20d%3D%22M13.11%201.436a.75.75%200%200%200-1.22-.872l-10%2014a.75.75%200%201%200%201.22.872L5.207%2012.5h7.376a.75.75%200%200%200%20.75-.75v-1.174a2.08%202.08%200%200%200-1.153-1.863l-1.185-.599-.005-.002a.58.58%200%200%201-.323-.522V5.165a2.083%202.083%200%200%200%201.854-2.904l.589-.825Zm-3.943%205.52v.634a2.08%202.08%200%200%200%201.153%201.863l1.185.6.005.002a.58.58%200%200%201%20.323.522V11H6.28l2.887-4.044ZM9.277%201H5.25a2.084%202.084%200%200%200-.083%204.165v1.676l1.5-2.132v-.292a.75.75%200%200%200-.75-.75H5.25a.584.584%200%200%201%200-1.167h2.972L9.277%201Z%22%2F%3E%3C%2Fsvg%3E'); }
 .ag-icon-asc::before { mask-image: url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20class%3D%22ag-icon%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke%3D%22black%22%20stroke-width%3D%221.5%22%20viewBox%3D%220%200%2024%2024%22%3E%3Cstyle%3E*%20%7B%20vector-effect%3A%20non-scaling-stroke%3B%20%7D%3C%2Fstyle%3E%3Cpath%20d%3D%22m5%2012%207-7%207%207%22%2F%3E%3Cpath%20d%3D%22M12%2019V5%22%2F%3E%3C%2Fsvg%3E'); }
-:where(.ag-theme-checkboxStyle-4) {
-.ag-checkbox-input-wrapper,.ag-radio-button-input-wrapper{background-color:var(--ag-checkbox-unchecked-background-color);border:solid var(--ag-checkbox-border-width) var(--ag-checkbox-unchecked-border-color);flex:none;height:var(--ag-icon-size);position:relative;width:var(--ag-icon-size);&:where(.ag-checked){background-color:var(--ag-checkbox-checked-background-color);border-color:var(--ag-checkbox-checked-border-color)}
-&:where(.ag-disabled){filter:grayscale();opacity:.5}
-.ag-cell-editing-error .ag-checkbox-input-wrapper:focus-within{box-shadow:var(--ag-focus-error-shadow)}
+.cbf-search-field{display:flex;align-items:center;gap:var(--spacing-300);width:100%;padding:var(--spacing-300) var(--spacing-400);border:1px solid var(--color-border);border-radius:var(--radius-100);background:var(--color-surface)}
+.cbf-search-field .cbf-icon{color:var(--color-text-muted);display:inline-flex}
+.cbf-search-field input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-family:var(--font-sans);font-size:18px;color:var(--color-text-primary)}
+.cbf-search-field input::placeholder{color:var(--cbf-text-placeholder)}
+.esa-badge{--_badge-bg: var(--badge-bg, var(--color-primary, #43608a));--_badge-text: var(--badge-text-color, var(--color-text-inverse, #fff));--_badge-height: var(--badge-height-md, 20px);--_badge-font-size: 11px;--_badge-padding-x: 6px;--_badge-min-width: var(--badge-height-md, 20px);display:inline-flex;align-items:center;justify-content:center;height:var(--_badge-height);min-width:var(--_badge-min-width);padding-inline:var(--_badge-padding-x);border-radius:var(--badge-radius, var(--radius-100, 4px));background:var(--_badge-bg);color:var(--_badge-text);font-size:var(--_badge-font-size);font-weight:600;line-height:1;white-space:nowrap;box-sizing:border-box}
+.esa-badge--lg{--_badge-height: var(--badge-height-lg, 24px);--_badge-font-size: 12px;--_badge-padding-x: 8px;--_badge-min-width: var(--badge-height-lg, 24px)}
+.esa-badge--danger{--_badge-bg: var(--color-danger, #ef4444)}
+.esa-badge--warning{--_badge-bg: var(--color-warning, #f59e0b)}
+.esa-badge--secondary{--_badge-bg: var(--color-secondary, #5787b9)}
+.ag-overlay{inset:0;pointer-events:none;position:absolute;z-index:2}
+.ag-measurement-container{height:0;overflow:hidden;visibility:hidden;width:0}
+.ag-measurement-element-border{display:inline-block}
+.ag-measurement-element-border:before{border-left:var(--ag-internal-measurement-border);content:"";display:block}
+.ag-chart,.ag-dnd-ghost,.ag-external,.ag-popup,.ag-root-wrapper{cursor:default;line-height:normal;white-space:normal;-webkit-font-smoothing:antialiased;background-color:var(--ag-wrapper-background-color);color:var(--ag-text-color);color-scheme:var(--ag-browser-color-scheme);font-family:var(--ag-font-family);font-size:var(--ag-font-size);font-weight:var(--ag-font-weight);--ag-indentation-level:0}
+.ag-tab-guard{display:block;height:0;position:absolute;width:0}
+.ag-tab-guard-top{top:1px}
+.ag-invisible{visibility:hidden!important}
+.ag-hidden{display:none!important}
+.ag-tab-guard-bottom{bottom:1px}
+.ag-icon{background-position:50%;background-repeat:no-repeat;background-size:contain;color:var(--ag-icon-color);display:block;height:var(--ag-icon-size);position:relative;-webkit-user-select:none;-moz-user-select:none;user-select:none;width:var(--ag-icon-size)}
+:where(.ag-icon):before{align-items:center;background-color:currentcolor;color:inherit;content:"";display:flex;font-family:inherit;font-size:var(--ag-icon-size);font-style:normal;font-variant:normal;height:var(--ag-icon-size);justify-content:center;line-height:var(--ag-icon-size);-webkit-mask-size:contain;mask-size:contain;text-transform:none;width:var(--ag-icon-size)}
+.ag-cell,.ag-header-cell,.ag-header-group-cell,.ag-row,.ag-spanned-cell-wrapper{visibility:hidden}
+:where(.ag-theme-inputStyle-7) {
+:where(.ag-input-field-input[type=number]:not(.ag-number-field-input-stepper)){-webkit-appearance:textfield;-moz-appearance:textfield;appearance:textfield;&::-webkit-inner-spin-button,&::-webkit-outer-spin-button{-webkit-appearance:none;appearance:none;margin:0}
+:where(.ag-ltr) .ag-input-field-input:where(input:not([type]),input[type=text],input[type=number],input[type=tel],input[type=date],input[type=datetime-local],textarea){padding-left:var(--ag-input-padding-start)}
+&:where(.ag-ltr,.ag-rtl) .ag-input-field-input:where(input:not([type]),input[type=text],input[type=number],input[type=tel],input[type=date],input[type=datetime-local],textarea){padding:0 var(--ag-input-padding-start)}
+:where(.ag-ltr) :where(.ag-column-select-header-filter-wrapper),:where(.ag-ltr) :where(.ag-filter-add-select),:where(.ag-ltr) :where(.ag-filter-filter),:where(.ag-ltr) :where(.ag-filter-toolpanel-search),:where(.ag-ltr) :where(.ag-floating-filter-search-icon),:where(.ag-ltr) :where(.ag-mini-filter){.ag-input-wrapper:before{margin-left:var(--ag-spacing)}
+.stack{--gap: var(--spacing-400, 1rem);display:flex;flex-direction:column;gap:var(--gap)}
+.repel{--gap: var(--spacing-400, 1rem);--align: center;display:flex;flex-wrap:wrap;gap:var(--gap);align-items:var(--align);justify-content:space-between}
+.type-section-title{font-family:var(--font-display, var(--font-sans));font-size:var(--type-size-500);font-weight:var(--font-weight-semibold);line-height:var(--line-height-tight);letter-spacing:var(--letter-spacing-tight)}
+.type-caption{font-size:var(--type-size-100);font-weight:var(--font-weight-regular);line-height:var(--line-height-normal);letter-spacing:var(--letter-spacing-normal)}
+.cluster{--gap: var(--spacing-300, .75rem);--align: center;--justify: flex-start;display:flex;flex-wrap:wrap;gap:var(--gap);align-items:var(--align);justify-content:var(--justify)}
+.sidebar{--gap: var(--spacing-500, 1.5rem);--sidebar-width: 18rem;--sidebar-content-min: 60%;display:flex;flex-wrap:wrap;gap:var(--gap)}
+.sidebar>:first-child{flex-basis:var(--sidebar-width);flex-grow:1}
+.sidebar[data-side=end]>:first-child{order:2}
+.sidebar>:last-child{flex-basis:0;flex-grow:999;min-inline-size:var(--sidebar-content-min)}
 .cbf-app-panel{display:flex;flex-direction:column;min-height:80vh;border:1px solid var(--color-border);border-radius:var(--radius-100);overflow:hidden;background:var(--color-surface);box-shadow:0 1px 3px color-mix(in srgb,var(--color-surface-inverse) 8%,transparent)}
 .cbf-app-panel__crumb{background:var(--color-gold-50);border-bottom:1px solid var(--color-border);padding:var(--spacing-400) var(--spacing-600)}
 .esa-breadcrumbs{--_crumb-font-size: var(--type-size-200, .875rem);--_crumb-link-color: var(--breadcrumbs-link-color, #43608a);--_crumb-link-hover: var(--breadcrumbs-link-hover, #39506f);--_crumb-current-color: var(--color-text-primary, #171717);--_crumb-separator-color: var(--breadcrumbs-separator-color, #737373);--_crumb-gap: var(--spacing-200, 8px);display:block}
@@ -3637,88 +4042,30 @@ summary.esa-icon-link{list-style:none}
 .esa-stat__label{font-size:var(--_stat-label-size);font-weight:var(--_stat-label-weight);line-height:var(--line-height-normal, 1.6);color:var(--_stat-label-color)}
 .esa-stat__sub{font-size:var(--_stat-sub-size);font-weight:var(--font-weight-regular, 350);line-height:var(--line-height-normal, 1.6);color:var(--_stat-sub-color)}
 .esa-stat--accent .esa-stat__value{color:var(--_stat-accent-color)}
-.ag-cell,.ag-header-cell,.ag-header-group-cell,.ag-row,.ag-spanned-cell-wrapper{visibility:hidden}
+.esa-icon-link{--_il-font: var(--icon-link-font-size-md, 1rem);display:inline-flex;align-items:center;gap:var(--icon-link-gap, var(--spacing-150, 6px));padding:0;margin:0;border:0;background:none;color:inherit;font-family:var(--font-sans, system-ui, sans-serif);font-size:var(--_il-font);font-weight:var(--font-weight-medium, 500);line-height:1;text-decoration:none;cursor:pointer;white-space:nowrap}
+.esa-icon-link--sm{--_il-font: var(--icon-link-font-size-sm, .875rem)}
+.esa-icon-link--medium{font-weight:var(--font-weight-medium, 500)}
+.esa-icon-link__label{display:inline-block}
+summary.esa-icon-link{list-style:none}
+.esa-icon-button{--_ib-size: var(--form-height-md, 40px);display:inline-flex;align-items:center;justify-content:center;width:var(--_ib-size);height:var(--_ib-size);padding:0;border:0;border-radius:var(--radius-200, 8px);background:transparent;color:inherit;cursor:pointer;transition:background var(--transition-fast, .15s ease);-webkit-appearance:none;appearance:none}
+.esa-icon-button--xs{--_ib-size: var(--form-height-xs, 28px)}
+.ag-pinned-left-header,.ag-pinned-right-header{display:inline-block;height:100%;overflow:hidden;position:relative}
+.ag-pinned-left-header{border-right:var(--ag-pinned-column-border)}
+.ag-pinned-right-header{border-left:var(--ag-pinned-column-border)}
+.ag-pinned-left-floating-bottom,.ag-pinned-left-floating-top,.ag-pinned-right-floating-bottom,.ag-pinned-right-floating-top{min-width:0;overflow:hidden;position:relative}
+.ag-pinned-left-sticky-top,.ag-pinned-right-sticky-top{height:100%;overflow:hidden;position:relative}
+.ag-sticky-bottom-full-width-container,.ag-sticky-top-full-width-container{height:100%;overflow:hidden;width:100%}
+.ag-body-horizontal-scroll:not(.ag-scrollbar-invisible){.ag-horizontal-left-spacer:not(.ag-scroller-corner){border-right:var(--ag-pinned-column-border)}
+.ag-horizontal-right-spacer:not(.ag-scroller-corner){border-left:var(--ag-pinned-column-border)}
 :where(.ag-theme-buttonStyle-1) {
 :where(.ag-button){background:none;border:none;color:inherit;cursor:pointer;font-family:inherit;font-size:inherit;font-weight:inherit;letter-spacing:inherit;line-height:inherit;margin:0;padding:0;text-indent:inherit;text-shadow:inherit;text-transform:inherit;word-spacing:inherit;&:disabled{cursor:default}
-.cbf-page{padding-block:var(--spacing-600) var(--spacing-800)}
-.cbf-review-triage-strip{padding-bottom:var(--spacing-600);border-bottom:1px solid var(--color-border)}
-.cbf-review-triage-strip__head{align-items:baseline;gap:var(--spacing-400);flex-wrap:wrap}
-.cbf-review-triage-strip__caption{color:var(--color-text-muted)}
-.cbf-review-triage-strip__stats{--align: flex-start;row-gap:var(--spacing-500)}
-.cbf-invoice-review-queue__header{align-items:center;gap:var(--spacing-400);flex-wrap:wrap}
-.cbf-invoice-review-queue__search{flex:1 1 280px;max-width:440px;min-width:220px}
-.cbf-invoice-review-queue__grid{border:1px solid var(--color-border);border-radius:var(--radius-200);overflow:hidden;background:var(--color-surface)}
-.cbf-invoice-review-queue__footer{color:var(--color-text-muted)}
-.cbf-review-dialog{--side-dialog-width-lg: 1180px}
-.cbf-review-hero{align-items:flex-start;gap:var(--spacing-400)}
-.cbf-review-hero__group{display:flex;flex-direction:column;gap:var(--spacing-50);min-width:0}
-.cbf-review__label{font-size:var(--type-size-150);font-weight:var(--font-weight-medium);color:var(--color-text-muted)}
-.cbf-review-hero__amount{font-size:var(--type-size-600);font-weight:var(--font-weight-bold);line-height:var(--line-height-tight);color:var(--color-text-primary);font-variant-numeric:tabular-nums}
-.cbf-review-hero__pct{font-size:var(--type-size-100);color:var(--color-text-muted)}
-.cbf-review-hero__status{flex:none}
-.cbf-review-panel__clock{align-items:center;gap:var(--spacing-300);padding:var(--spacing-300) var(--spacing-400);background:var(--color-surface-sunken);border:1px solid var(--color-border);border-radius:var(--radius-200)}
-.cbf-review-panel__context{padding-block:var(--spacing-400);border-block:1px solid var(--color-border)}
-.cbf-review__section-title{margin:0;font-size:var(--type-size-150);font-weight:var(--font-weight-semibold);color:var(--color-text-muted)}
-.cbf-review-context{display:flex;flex-wrap:wrap;gap:var(--spacing-300) var(--spacing-500)}
-.cbf-review-context__item{display:flex;flex-direction:column;gap:var(--spacing-50)}
-.cbf-review-context__value{font-size:var(--type-size-250);font-weight:var(--font-weight-semibold);color:var(--color-text-secondary);font-variant-numeric:tabular-nums}
-.cbf-review-context__label{font-size:var(--type-size-050);color:var(--color-text-muted)}
-.cbf-review-context__value--accent{color:var(--color-text-primary)}
-.cbf-review-fields{margin:0}
-.cbf-review-fields__row{display:grid;grid-template-columns:92px 1fr;gap:var(--spacing-300);align-items:baseline;padding-block:var(--spacing-250);border-top:1px solid var(--color-border-light, var(--color-border))}
-.cbf-review-fields__row:first-child{border-top:0;padding-top:0}
-.cbf-review-fields__value{margin:0;font-size:var(--type-size-200);color:var(--color-text-secondary)}
-.cbf-review-fields__value--lead{font-weight:var(--font-weight-medium);color:var(--color-text-primary)}
-.cbf-review-actions [hidden]{display:none!important}
-.cbf-review-docpane{background:var(--color-surface-sunken);border:1px solid var(--color-border);border-radius:var(--radius-200);padding:var(--spacing-600);display:flex;justify-content:center}
-.cbf-invoice-doc{position:relative;width:100%;max-width:620px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-100);box-shadow:0 1px 4px color-mix(in srgb,var(--color-surface-inverse) 10%,transparent);padding:var(--spacing-700) var(--spacing-700) var(--spacing-600);color:var(--color-text-primary);font-size:var(--type-size-150);line-height:var(--line-height-normal)}
-.cbf-invoice-doc__stamp{position:absolute;top:var(--spacing-500);right:var(--spacing-500);font-size:var(--type-size-100);font-weight:var(--font-weight-semibold);text-transform:uppercase;letter-spacing:.06em;color:var(--color-danger, #b42318);border:1.5px solid currentColor;border-radius:var(--radius-100);padding:2px var(--spacing-200);transform:rotate(-4deg);opacity:.8}
-.cbf-invoice-doc__head{display:flex;justify-content:space-between;gap:var(--spacing-400);align-items:flex-start;margin-bottom:var(--spacing-500)}
-.cbf-invoice-doc__vendor{margin:0;font-size:var(--type-size-400);font-weight:var(--font-weight-bold)}
-.cbf-invoice-doc__sub{margin:0;color:var(--color-text-muted);font-size:var(--type-size-100)}
-.cbf-invoice-doc__meta{text-align:right}
-.cbf-invoice-doc__meta p{margin:0 0 var(--spacing-100)}
-.cbf-invoice-doc__meta span{color:var(--color-text-muted);margin-right:var(--spacing-200)}
-.cbf-invoice-doc .cbf-num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.cbf-invoice-doc__billto{margin-bottom:var(--spacing-500)}
-.cbf-invoice-doc__billto p{margin:0}
-.cbf-invoice-doc__items{width:100%;border-collapse:collapse}
-.cbf-invoice-doc__items th,.cbf-invoice-doc__items td{text-align:left;padding:var(--spacing-250) 0;vertical-align:top}
-.cbf-invoice-doc__items thead th{border-bottom:1px solid var(--color-text-primary);font-weight:var(--font-weight-semibold);font-size:var(--type-size-100);color:var(--color-text-secondary)}
-.cbf-invoice-doc__items th.cbf-num{text-align:right}
-.cbf-invoice-doc__items tfoot th,.cbf-invoice-doc__items tfoot td{padding:var(--spacing-150) 0;text-align:right}
-.cbf-invoice-doc__items tfoot th{font-weight:var(--font-weight-regular);color:var(--color-text-secondary)}
-.cbf-invoice-doc__items tfoot tr:first-child th,.cbf-invoice-doc__items tfoot tr:first-child td{padding-top:var(--spacing-400)}
-.cbf-invoice-doc__total th,.cbf-invoice-doc__total td{border-top:1px solid var(--color-text-primary);font-weight:var(--font-weight-bold);font-size:var(--type-size-200);padding-top:var(--spacing-300)!important}
-.cbf-invoice-doc__memo{margin:var(--spacing-600) 0 0;color:var(--color-text-secondary);line-height:var(--line-height-relaxed)}
-.cbf-invoice-doc__generated{margin:var(--spacing-600) 0 0;padding-top:var(--spacing-400);border-top:1px solid var(--color-border-light, var(--color-border));color:var(--color-text-muted);font-size:var(--type-size-100);font-style:italic}
-.cbf-review-footer{align-items:center;gap:var(--spacing-400);width:100%}
-.cbf-review-footer__position{font-size:var(--type-size-150);color:var(--color-text-muted);font-variant-numeric:tabular-nums}
-.cbf-invoice-review-queue__grid .cbf-grid-num,.cbf-invoice-review-queue__grid .cbf-grid-num .ag-header-cell-label{justify-content:flex-end;text-align:right;font-variant-numeric:tabular-nums}
-.cbf-invoice-review-queue__grid .ag-row{cursor:pointer}
-.cbf-invoice-review-queue__grid .cbf-grid-id{font-variant-numeric:tabular-nums;color:var(--color-text-secondary)}
-.cbf-invoice-review-queue__grid .cbf-grid-status{display:inline-flex;align-items:center;height:100%}
-:where(.ag-theme-tabStyle-6) {
-.ag-tabs-header{background-color:var(--ag-tab-bar-background-color);border-bottom:var(--ag-tab-bar-border);display:flex;flex:1;gap:var(--ag-tab-spacing);padding:var(--ag-tab-bar-top-padding) var(--ag-tab-bar-horizontal-padding) 0}
-:where(.ag-ltr) .ag-tabs-close-button-wrapper{border-right:solid var(--ag-border-width) var(--ag-border-color)}
-:where(.ag-ltr) .ag-tab.ag-tab-selected:where(:not(:first-of-type)){border-left-color:var(--ag-tab-selected-border-color)}
-:where(.ag-ltr) .ag-tab.ag-tab-selected:where(:not(:last-of-type)){border-right-color:var(--ag-tab-selected-border-color)}
-.esa-button{--_btn-height: var(--form-height-md, 40px);--_btn-padding-x: var(--form-padding-x-md, 16px);--_btn-font-size: var(--form-font-size-md, 14px);--_btn-radius: var(--form-radius-md, 6px);--_accent: var(--color-primary, #43608a);--_accent-hover: var(--color-primary-hover, #39506f);--_on: var(--color-text-inverse, #ffffff);display:inline-block}
-.esa-button__native{display:inline-flex;align-items:center;justify-content:center;gap:var(--spacing-200, 8px);width:100%;height:var(--_btn-height);padding-inline:var(--_btn-padding-x);border:1px solid transparent;border-radius:var(--_btn-radius);font-size:var(--_btn-font-size);font-family:var(--font-sans, system-ui, sans-serif);font-weight:var(--font-weight-medium, 500);line-height:1;text-decoration:none;cursor:pointer;transition:background var(--transition-fast, .15s ease),border-color var(--transition-fast, .15s ease);-webkit-appearance:none;appearance:none}
-.esa-button--appearance-fill .esa-button__native{background:var(--_accent);color:var(--_on);border-color:transparent}
-.esa-button__label{white-space:nowrap}
-.esa-button--color-danger{--_accent: var(--color-danger, #ef4444);--_accent-hover: color-mix(in srgb, var(--color-danger, #ef4444) 85%, #000)}
-.esa-button--appearance-outline .esa-button__native,.esa-button--appearance-dashed .esa-button__native{background:transparent;color:var(--_accent);border-color:var(--_accent)}
-.esa-button--color-secondary{--_accent: var(--color-secondary, #5787b9);--_accent-hover: var(--color-secondary-hover, #43608a)}
-.esa-icon{--_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));display:inline-flex;align-items:center;justify-content:center;width:var(--_icon-size);height:var(--_icon-size);line-height:1;color:inherit}
-.esa-icon--xs{--_icon-size: var(--icon-size-xs, 14px)}
-.esa-icon svg{display:block;width:var(--_icon-size);height:var(--_icon-size)}
-.esa-icon--sm{--_icon-size: var(--icon-size-sm, var(--icon-size-small, 16px))}
-.esa-icon--md{--_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px))}
-.cbf-icon{display:inline-flex;align-items:center;justify-content:center;flex:none;color:inherit}
-.esa-nav-dropdown .esa-icon-link>.esa-icon:last-child{transition:transform .15s ease}
-.cbf-nav-link .cbf-icon{display:inline-flex;align-items:center}
-.esa-container{width:100%;max-width:var(--_container-max, 1556px);margin-inline:auto;padding-inline:var(--container-gutter, var(--spacing-600, 2rem))}
+:where(.ag-theme-checkboxStyle-4) {
+.ag-checkbox-input-wrapper,.ag-radio-button-input-wrapper{background-color:var(--ag-checkbox-unchecked-background-color);border:solid var(--ag-checkbox-border-width) var(--ag-checkbox-unchecked-border-color);flex:none;height:var(--ag-icon-size);position:relative;width:var(--ag-icon-size);&:where(.ag-checked){background-color:var(--ag-checkbox-checked-background-color);border-color:var(--ag-checkbox-checked-border-color)}
+&:where(.ag-disabled){filter:grayscale();opacity:.5}
+.ag-cell-editing-error .ag-checkbox-input-wrapper:focus-within{box-shadow:var(--ag-focus-error-shadow)}
+:where(.ag-theme-batchEditStyle-3) {
+.ag-cell-batch-edit{background-color:var(--ag-cell-batch-edit-background-color);color:var(--ag-cell-batch-edit-text-color);display:inherit}
+.ag-row-batch-edit{background-color:var(--ag-row-batch-edit-background-color);color:var(--ag-row-batch-edit-text-color)}
 ```
 
 ## Tokens
@@ -3759,9 +4106,14 @@ summary.esa-icon-link{list-style:none}
 | `--font-weight-regular` | `400` | primitive |
 | `--font-weight-semibold` | `600` | primitive |
 | `--form-font-size-md` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | component |
+| `--form-font-size-sm` | `clamp(.625rem, .56rem + .32vw, .75rem)` | component |
 | `--form-height-md` | `40px` | component |
+| `--form-height-sm` | `32px` | component |
+| `--form-height-xs` | `28px` | component |
 | `--form-padding-x-md` | `.75rem` | component |
+| `--form-padding-x-sm` | `.625rem` | component |
 | `--form-radius-md` | `.5rem` | component |
+| `--form-radius-sm` | `.25rem` | component |
 | `--icon-link-font-size-md` | `1rem` | component |
 | `--icon-link-font-size-sm` | `.875rem` | component |
 | `--icon-link-gap` | `.375rem` | component |

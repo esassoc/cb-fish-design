@@ -41,11 +41,11 @@ export const prototypes: Prototype[] = [
     status: 'live',
   },
   {
-    slug: 'vendor-portal',
-    title: 'Vendor portal',
+    slug: 'vendor-dashboard',
+    title: 'Vendor dashboard',
     description:
-      'Accountant landing page — activity snapshot and four quick-action cards for invoice management.',
-    route: '/vendor-portal',
+      'Vendor’s invoices & financial-outlook view — cross-contract money position, a needs-attention strip, and a sortable invoices grid with a click-through detail drawer.',
+    route: '/vendor-dashboard',
     createdAt: '2026-06-15',
     status: 'in-progress',
   },

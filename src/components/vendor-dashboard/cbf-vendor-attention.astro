@@ -1,5 +1,5 @@
 ---
-// cbf-vendor-attention — "needs your attention" strip for the vendor portal.
+// cbf-vendor-attention — "needs your attention" strip for the vendor dashboard.
 // Hoists the invoices currently blocked ON THE VENDOR (Needs revision) out of
 // the table into a single, unmissable call to action — the rejection/fix loop
 // the discovery interviews flagged as the most painful hand-off. Renders nothing
@@ -48,7 +48,7 @@ const plural = count === 1 ? 'invoice needs' : 'invoices need';
   document.querySelectorAll<HTMLElement>('[data-review-needs-revision]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const chip = document.querySelector<HTMLElement & { value: string }>('[data-invoice-stage-filter]');
-      const table = document.querySelector('.cbf-vendor-portal-invoices');
+      const table = document.querySelector('.cbf-vendor-dashboard-invoices');
       if (chip) {
         chip.value = 'Needs revision';
         chip.dispatchEvent(new CustomEvent('change', { bubbles: true }));
