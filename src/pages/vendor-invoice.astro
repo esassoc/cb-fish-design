@@ -99,6 +99,18 @@ const buyer = {
                   homeHref={withBase('/home')}
                   resubmitHref={withBase('/vendor-invoice')}
                 />
+
+                <!-- Dev toggle: prototype-only, not shown in production -->
+                <div class="cbf-dev-bar" data-confirm-mode-bar aria-label="Dev tools">
+                  <span class="cbf-dev-bar__label">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    Confirmation mode
+                  </span>
+                  <div class="cbf-dev-bar__options">
+                    <button type="button" class="cbf-dev-bar__opt is-active" data-confirm-mode="page">Page</button>
+                    <button type="button" class="cbf-dev-bar__opt" data-confirm-mode="modal">Modal</button>
+                  </div>
+                </div>
               </section>
             </div>
 
@@ -115,6 +127,7 @@ const buyer = {
     import '@esa/ecology/esa-combobox';
     import '@esa/ecology/esa-checkbox';
     import '@esa/ecology/esa-confirm-dialog';
+    import '@esa/ecology/esa-dialog';
     import '../components/bcn-date-picker';
     import '@esa/ecology/esa-textarea';
     import { initInvoiceWizard } from '../components/vendor-invoice/invoice-wizard.client';
@@ -282,5 +295,52 @@ const buyer = {
     .cbf-parties-bar__divider {
       display: none;
     }
+  }
+
+  /* ---- Dev toggle bar ---- */
+  .cbf-dev-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300);
+    margin-top: var(--spacing-700);
+    padding: var(--spacing-250) var(--spacing-400);
+    border: 1px dashed color-mix(in srgb, var(--color-border) 60%, transparent);
+    border-radius: var(--radius-100);
+    background: color-mix(in srgb, var(--color-surface-sunken, #f8f9fb) 60%, transparent);
+  }
+  .cbf-dev-bar__label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-150);
+    font-size: 11px;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    flex: none;
+  }
+  .cbf-dev-bar__options {
+    display: flex;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    overflow: hidden;
+    background: var(--color-surface);
+  }
+  .cbf-dev-bar__opt {
+    padding: var(--spacing-100) var(--spacing-300);
+    font-size: 12px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    border-right: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: background 0.1s ease, color 0.1s ease;
+  }
+  .cbf-dev-bar__opt:last-child { border-right: none; }
+  .cbf-dev-bar__opt:hover { background: var(--color-surface-sunken, #f8f9fb); color: var(--color-text-primary); }
+  .cbf-dev-bar__opt.is-active {
+    background: var(--color-primary);
+    color: var(--color-surface);
   }
 </style>
