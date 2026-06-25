@@ -5917,12 +5917,13 @@ function wizardSkipCHU() {
 
 function wizardAddStructure(type, label) {
   var we = getActiveWE(); if (!we) return;
-  we.structures[type].push({id:type+'-'+Date.now(),label:label,desc:'',large:0,small:0,latlng:null,marker:null});
+  var s = {id:type+'-'+Date.now(), structType:type, label:label, desc:'', large:0, small:0, latlng:null, marker:null};
+  // Write to both arrays so the expert panel's renderAllStructures() picks it up
+  if (!we.structs) we.structs = [];
+  we.structs.push(s);
+  we.structures[type].push(s);
   renderWizardStep();
-  // Immediately enter place mode for the new structure
-  var list = we.structures[type];
-  var newStruct = list[list.length-1];
-  startStructPoint(type, newStruct.id);
+  startStructPoint(type, s.id);
 }
 
 function wizardDelStructure(type, id) {
