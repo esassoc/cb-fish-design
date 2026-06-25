@@ -1,6 +1,7 @@
 ---
-// cbf-invoice-confirm — Step 2: success screen shown after invoice submission.
-// Not shown in the sidebar stepper — the stepper hides once submission completes.
+// cbf-invoice-confirm — Step 2 page + modal variant for post-submission confirmation.
+// The page step is shown in "page" mode; the esa-dialog is shown in "modal" mode.
+// Both share the same content structure; the dev toggle in vendor-invoice.astro picks the mode.
 interface Props {
   vendorEmail: string;
   homeHref: string;
@@ -33,6 +34,38 @@ const { vendorEmail, homeHref, resubmitHref } = Astro.props;
     </div>
   </div>
 </div>
+
+<!-- bcn-lego-checked: esa-dialog provides the overlay shell (focus trap, Esc, backdrop).
+     The inner layout — success icon + body text + ref chip + footer actions — is the
+     cbf-confirm pattern reused from the page step above. No esa-* lego covers a
+     post-submission success layout; no Beacon ui-* equivalent exists. -->
+<esa-dialog
+  data-confirm-modal
+  heading="Invoice submitted"
+  size="sm"
+  show-close-button
+>
+  <div class="cbf-confirm-modal-body">
+    <div class="cbf-confirm__icon" aria-hidden="true">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+    </div>
+    <p class="cbf-confirm__body">
+      Your invoice has been submitted for processing.<br />
+      You'll receive a confirmation email at <strong>{vendorEmail}</strong>.
+    </p>
+    <p class="cbf-confirm__ref">
+      Reference number: <strong data-confirm-ref>&nbsp;</strong>
+    </p>
+  </div>
+
+  <div slot="footer" class="cbf-confirm-modal-footer">
+    <a href={homeHref} class="cbf-confirm__link cbf-confirm__link--outline">Return to home</a>
+    <a href={resubmitHref} class="cbf-confirm__link">Submit another invoice</a>
+  </div>
+</esa-dialog>
 
 <style>
   .cbf-wizard-step--confirm {
@@ -123,5 +156,17 @@ const { vendorEmail, homeHref, resubmitHref } = Astro.props;
     background: var(--color-surface-sunken, #f8f9fb);
     border-color: var(--color-primary-border);
     color: var(--color-text-primary);
+  }
+
+  /* ---- Modal body ---- */
+  .cbf-confirm-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-400);
+  }
+  .cbf-confirm-modal-footer {
+    display: flex;
+    gap: var(--spacing-300);
+    flex-wrap: wrap;
   }
 </style>

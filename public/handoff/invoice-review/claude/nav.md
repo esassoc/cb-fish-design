@@ -203,83 +203,6 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
 
 ## Styles (only what this section uses; tokens resolved for the theme)
 ```css
-.esa-app-bar {
-  --_bar-gap: var(--app-bar-gap, var(--spacing-600, 32px));
-  --_bar-pad-x: var(--app-bar-pad-x, var(--spacing-600, 32px));
-  --_bar-pad-y: var(--app-bar-pad-y, var(--spacing-400, 16px));
-  display: block;
-  width: 100%;
-  background: var(--app-bar-bg, var(--color-surface, #fff));
-  color: var(--app-bar-text, var(--color-text-primary, #171717));
-}
-.esa-app-bar--brand-strong {
-  background: var(--app-bar-brand-strong-bg, var(--color-surface-inverse, #171717));
-  color: var(--app-bar-brand-strong-text, var(--color-text-inverse, #fff));
-}
-.esa-app-bar__row {
-  display: flex;
-  align-items: center;
-  gap: var(--_bar-gap);
-  padding: var(--_bar-pad-y) var(--_bar-pad-x);
-}
-.esa-app-bar__start,
-.esa-app-bar__main,
-.esa-app-bar__end {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--_bar-gap);
-}
-.esa-app-bar__start {
-  flex: none;
-}
-.esa-icon-link {
-  --_il-font: var(--icon-link-font-size-md, 1rem);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--icon-link-gap, var(--spacing-150, 6px));
-  padding: 0;
-  margin: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font-family: var(--font-sans, system-ui, sans-serif);
-  font-size: var(--_il-font);
-  font-weight: var(--font-weight-medium, 500);
-  line-height: 1;
-  text-decoration: none;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.esa-icon-link--sm {
-  --_il-font: var(--icon-link-font-size-sm, 0.875rem);
-}
-.esa-icon-link--medium {
-  font-weight: var(--font-weight-medium, 500);
-}
-.esa-icon-link__label {
-  display: inline-block;
-}
-.esa-app-bar__main {
-  flex: 1 1 auto;
-}
-.esa-app-bar__end {
-  flex: none;
-  margin-left: auto;
-}
-summary.esa-icon-link {
-  list-style: none;
-}
-.esa-app-bar--brand {
-  background: var(--app-bar-brand-bg, var(--color-primary, #43608a));
-  color: var(--app-bar-brand-text, var(--color-text-inverse, #fff));
-}
-.cbf-search-field .cbf-icon {
-  color: var(--color-text-muted);
-  display: inline-flex;
-}
-.cbf-app-bar--admin {
-  --app-bar-gap: var(--spacing-650);
-}
 .esa-icon {
   --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
   display: inline-flex;
@@ -413,6 +336,106 @@ summary.esa-icon-link {
   color: inherit;
   text-decoration: none;
 }
+.cbf-review-fields__copy .esa-icon-button {
+  color: inherit;
+}
+.cbf-search-field .cbf-icon {
+  color: var(--color-text-muted);
+  display: inline-flex;
+}
+.cbf-app-bar--admin {
+  --app-bar-gap: var(--spacing-650);
+}
+.esa-app-bar {
+  --_bar-gap: var(--app-bar-gap, var(--spacing-600, 32px));
+  --_bar-pad-x: var(--app-bar-pad-x, var(--spacing-600, 32px));
+  --_bar-pad-y: var(--app-bar-pad-y, var(--spacing-400, 16px));
+  display: block;
+  width: 100%;
+  background: var(--app-bar-bg, var(--color-surface, #fff));
+  color: var(--app-bar-text, var(--color-text-primary, #171717));
+}
+.esa-app-bar--brand-strong {
+  background: var(--app-bar-brand-strong-bg, var(--color-surface-inverse, #171717));
+  color: var(--app-bar-brand-strong-text, var(--color-text-inverse, #fff));
+}
+.esa-app-bar__row {
+  display: flex;
+  align-items: center;
+  gap: var(--_bar-gap);
+  padding: var(--_bar-pad-y) var(--_bar-pad-x);
+}
+.esa-app-bar__start,
+.esa-app-bar__main,
+.esa-app-bar__end {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--_bar-gap);
+}
+.esa-app-bar__start {
+  flex: none;
+}
+.esa-icon-link {
+  --_il-font: var(--icon-link-font-size-md, 1rem);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--icon-link-gap, var(--spacing-150, 6px));
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--_il-font);
+  font-weight: var(--font-weight-medium, 500);
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.esa-icon-link--sm {
+  --_il-font: var(--icon-link-font-size-sm, 0.875rem);
+}
+.esa-icon-link--medium {
+  font-weight: var(--font-weight-medium, 500);
+}
+.esa-icon-link__label {
+  display: inline-block;
+}
+.esa-app-bar__main {
+  flex: 1 1 auto;
+}
+.esa-app-bar__end {
+  flex: none;
+  margin-left: auto;
+}
+summary.esa-icon-link {
+  list-style: none;
+}
+.esa-app-bar--brand {
+  background: var(--app-bar-brand-bg, var(--color-primary, #43608a));
+  color: var(--app-bar-brand-text, var(--color-text-inverse, #fff));
+}
+.esa-icon-button {
+  --_ib-size: var(--form-height-md, 40px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_ib-size);
+  height: var(--_ib-size);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-200, 8px);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background var(--transition-fast, 0.15s ease);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.esa-icon-button--xs {
+  --_ib-size: var(--form-height-xs, 28px);
+}
 ```
 
 ## Tokens
@@ -435,6 +458,8 @@ summary.esa-icon-link {
 | `--color-text-primary` | `#3d3d3d` | semantic |
 | `--font-sans` | `"IBM Plex Sans", sans-serif` | primitive |
 | `--font-weight-medium` | `500` | primitive |
+| `--form-height-md` | `40px` | component |
+| `--form-height-xs` | `28px` | component |
 | `--icon-link-font-size-md` | `1rem` | component |
 | `--icon-link-font-size-sm` | `.875rem` | component |
 | `--icon-link-gap` | `.375rem` | component |
@@ -443,6 +468,7 @@ summary.esa-icon-link {
 | `--link-column-heading-font-size` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | component |
 | `--link-column-item-font-size` | `clamp(.6875rem, .61rem + .38vw, .875rem)` | component |
 | `--link-column-rule-color` | `color-mix(in srgb, currentColor 40%, transparent)` | component |
+| `--radius-200` | `.5rem` | primitive |
 | `--spacing-100` | `.25rem` | primitive |
 | `--spacing-150` | `.375rem` | primitive |
 | `--spacing-200` | `.5rem` | primitive |

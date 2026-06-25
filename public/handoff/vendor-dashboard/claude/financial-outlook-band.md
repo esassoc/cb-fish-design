@@ -4,7 +4,7 @@ The headline money rollup — total contracted, expended-to-date, remaining, awa
 
 ## Key decisions
 - Metrics are esa-stat legos inside the cluster primitive — not a bespoke metric block.
-- Figures derive from the shared vendor-portal-invoices data module (deriveOutlook) so the band, attention strip, and table can never drift.
+- Figures derive from the shared vendor-dashboard-invoices data module (deriveOutlook) so the band, attention strip, and table can never drift.
 - The as-of caption is required, not cosmetic: expenditures are a nightly PeopleSoft feed, so an unstamped figure reads as an untrusted figure.
 - Awaiting approval is accented (esa-stat accent) — it is the money in flight the vendor cares about most.
 
@@ -93,6 +93,26 @@ The headline money rollup — total contracted, expended-to-date, remaining, awa
   align-items: var(--align);
   justify-content: var(--justify);
 }
+.cbf-vendor-financial-outlook {
+  padding-bottom: var(--spacing-600);
+  border-bottom: 1px solid var(--color-border);
+}
+.cbf-vendor-financial-outlook__head {
+  align-items: baseline;
+  gap: var(--spacing-400);
+  flex-wrap: wrap;
+}
+.cbf-vendor-financial-outlook__caption {
+  color: var(--color-text-muted);
+}
+.cbf-vendor-financial-outlook__stats {
+  --align: flex-start;
+  row-gap: var(--spacing-500);
+}
+.cbf-vendor-dashboard-invoices__group .type-caption {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
 .esa-stat {
   --_stat-value-color: var(--stat-value-color, var(--color-text-primary, #171717));
   --_stat-value-font: var(
@@ -135,26 +155,6 @@ The headline money rollup — total contracted, expended-to-date, remaining, awa
 }
 .esa-stat--accent .esa-stat__value {
   color: var(--_stat-accent-color);
-}
-.cbf-vendor-financial-outlook {
-  padding-bottom: var(--spacing-600);
-  border-bottom: 1px solid var(--color-border);
-}
-.cbf-vendor-financial-outlook__head {
-  align-items: baseline;
-  gap: var(--spacing-400);
-  flex-wrap: wrap;
-}
-.cbf-vendor-financial-outlook__caption {
-  color: var(--color-text-muted);
-}
-.cbf-vendor-financial-outlook__stats {
-  --align: flex-start;
-  row-gap: var(--spacing-500);
-}
-.cbf-vendor-portal-invoices__group .type-caption {
-  color: var(--color-text-muted);
-  white-space: nowrap;
 }
 ```
 

@@ -1,4 +1,4 @@
-// Handoff spec for the /vendor-portal prototype — curated sections for the
+// Handoff spec for the /vendor-dashboard prototype — curated sections for the
 // vendor's invoices & financial-outlook view. Consumed only by
 // scripts/gen-handoff.mjs at build time.
 
@@ -6,8 +6,8 @@
 export default {
   sections: [
     {
-      label: 'Portal header',
-      selector: '.cbf-vendor-portal-header',
+      label: 'Dashboard header',
+      selector: '.cbf-vendor-dashboard-header',
       intent:
         'Welcome banner on the invoices view. Greets the vendor by first name using esa-page-header with the primary CTA (Submit invoice → /vendor-invoice). The activity-stat row is suppressed here (showStats={false}) because the financial-outlook band below owns the numbers.',
       decisions: [
@@ -26,7 +26,7 @@ export default {
         'The headline money rollup — total contracted, expended-to-date, remaining, awaiting BPA approval, and approved-but-unpaid — so the vendor reads their cross-contract position WITHOUT drilling into each contract. A row of esa-stat legos plus an as-of provenance caption.',
       decisions: [
         'Metrics are esa-stat legos inside the cluster primitive — not a bespoke metric block.',
-        'Figures derive from the shared vendor-portal-invoices data module (deriveOutlook) so the band, attention strip, and table can never drift.',
+        'Figures derive from the shared vendor-dashboard-invoices data module (deriveOutlook) so the band, attention strip, and table can never drift.',
         'The as-of caption is required, not cosmetic: expenditures are a nightly PeopleSoft feed, so an unstamped figure reads as an untrusted figure.',
         'Awaiting approval is accented (esa-stat accent) — it is the money in flight the vendor cares about most.',
       ],
@@ -50,7 +50,7 @@ export default {
     },
     {
       label: 'Invoices grid (AG Grid)',
-      selector: '.cbf-vendor-portal-invoices',
+      selector: '.cbf-vendor-dashboard-invoices',
       intent:
         'A searchable, status-filterable, group-able, SORTABLE tracking grid of the vendor\'s invoices across every pipeline stage (Submitted, In review, Approved, Paid, Needs revision). Search header + status chip filter + group-by (None/Contract/Project) over an AG Grid Community data grid with an esa-badge status column, a click-a-row esa-side-dialog detail drawer, an esa-empty-state for no matches, and a live record-count footer.',
       decisions: [
@@ -59,7 +59,7 @@ export default {
         'Status color encodes stage (info/warning/success/secondary/danger) — color conveys data, not decoration; no colored left-border row indicators.',
         'Search drives AG Grid\'s quickFilterText; the status chip drives an EXTERNAL filter (isExternalFilterPresent/doesExternalFilterPass) so the esa-chip-group stays the single control surface and the column header filter UI is suppressed. Column sorting is enabled on every column (the new capability the grid buys).',
         'Community has NO native row grouping (Enterprise-only), so the Group-by control clusters rows by applying a column sort on the chosen field; "None" clears it — it does not draw grouped header bands.',
-        'The drawer is a two-pane layout mirroring the /vendor-invoice PDF-left / form-right workspace: a document "sheet" (a paper rendering of the submitted invoice — supplier letterhead, billed-to, invoice date + performance period, the line-item table, total due, and printed notes) sits beside a tracking column (the portal metadata the document does not carry: a sunken amount hero with the status badge, then contract/project/submitted). On wide screens (>=900px) the panel widens to 980px and the two panes sit side by side; on narrow viewports the lego clamps the panel to the viewport and the panes stack into one column LED BY the tracking hero (the "narrow treatment"), with the document beneath. A Download PDF action and Previous/Next sit in the footer. Previous/Next step through the rows CURRENTLY DISPLAYED (forEachNodeAfterFilterAndSort) so search, filter, AND sort all scope the walk-through.',
+        'The drawer is a two-pane layout mirroring the /vendor-invoice PDF-left / form-right workspace: a document "sheet" (a paper rendering of the submitted invoice — supplier letterhead, billed-to, invoice date + performance period, the line-item table, total due, and printed notes) sits beside a tracking column (the dashboard metadata the document does not carry: a sunken amount hero with the status badge, then contract/project/submitted). On wide screens (>=900px) the panel widens to 980px and the two panes sit side by side; on narrow viewports the lego clamps the panel to the viewport and the panes stack into one column LED BY the tracking hero (the "narrow treatment"), with the document beneath. A Download PDF action and Previous/Next sit in the footer. Previous/Next step through the rows CURRENTLY DISPLAYED (forEachNodeAfterFilterAndSort) so search, filter, AND sort all scope the walk-through.',
         'Hierarchy is carried by type-role + weight + color, not decoration: the amount is the type-page-title hero, contract is the lead value, labels are 14px normal-case muted (never uppercase micro-labels).',
       ],
       gotchas: [

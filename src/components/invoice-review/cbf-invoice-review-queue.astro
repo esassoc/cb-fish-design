@@ -6,7 +6,7 @@
 // the split-view review surface (à la Acctual): the SUBMITTED DOCUMENT on the
 // left, the REVIEW PANEL (contract context + Approve / Return) on the right.
 // Prev/next step through the displayed rows so the COR churns the queue without
-// leaving the page — same overlay mechanic as the vendor portal's invoices grid.
+// leaving the page — same overlay mechanic as the vendor dashboard's invoices grid.
 //
 // bcn-lego-checked: (1) ecology has NO table/grid lego (checked the full
 // node_modules/@esa/ecology/src/components catalog — esa-badge/esa-pill are atoms,
@@ -23,6 +23,7 @@
 import CbfSearchField from '../search/cbf-search-field.astro';
 import EsaBadge from '@esa/ecology/esa-badge.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 import { reviewQueue as defaultQueue } from '../../data/invoice-review.mjs';
@@ -135,7 +136,12 @@ const { invoices = defaultQueue } = Astro.props;
         <header class="cbf-review-hero repel">
           <div class="cbf-review-hero__group">
             <span class="cbf-review__label">Amount billed</span>
-            <span class="cbf-review-hero__amount cbf-num" data-f-amount-hero></span>
+            <div class="cbf-review-hero__amount-row">
+              <span class="cbf-review-hero__amount cbf-num" data-f-amount-hero></span>
+              <span class="cbf-review-fields__copy" data-copy data-f-amount-copy>
+                <EsaIconButton icon="copy" label="Copy amount" size="xs" />
+              </span>
+            </div>
             <span class="cbf-review-hero__pct" data-f-pct></span>
           </div>
           <span class="cbf-review-hero__status" data-f-status></span>
@@ -173,34 +179,108 @@ const { invoices = defaultQueue } = Astro.props;
           </div>
         </section>
 
+        <!-- Budget impact: what processing THIS invoice does to the contract's
+             remaining balance — a before → after ledger so the COR sees the
+             draw-down at the moment of decision. Exact figures (not compact) so
+             the arithmetic reconciles on screen. -->
+        <section class="cbf-review-impact" aria-label="Budget impact if approved">
+          <h3 class="cbf-review__section-title">If this invoice is processed</h3>
+          <dl class="cbf-review-impact__ledger">
+            <div class="cbf-review-impact__row">
+              <dt>Remaining before</dt>
+              <dd class="cbf-num" data-f-rem-before></dd>
+            </div>
+            <div class="cbf-review-impact__row">
+              <dt>This invoice</dt>
+              <dd class="cbf-num cbf-review-impact__delta" data-f-rem-delta></dd>
+            </div>
+            <div class="cbf-review-impact__row cbf-review-impact__row--total">
+              <dt>Remaining after</dt>
+              <dd class="cbf-num" data-f-rem-after></dd>
+            </div>
+          </dl>
+        </section>
+
+        <!-- Spec fields. Each row carries a copy control (esa-icon-button lego)
+             that copies that field's value to the clipboard. Invoice number is
+             repeated here (it also heads the modal) so it is copyable in-line
+             with the rest of the metadata. -->
         <dl class="cbf-review-fields">
+          <div class="cbf-review-fields__row">
+            <dt class="cbf-review__label">Invoice</dt>
+            <dd class="cbf-review-fields__value cbf-num" data-f-number-panel></dd>
+            <span class="cbf-review-fields__copy" data-copy>
+              <EsaIconButton icon="copy" label="Copy invoice number" size="xs" />
+            </span>
+          </div>
           <div class="cbf-review-fields__row">
             <dt class="cbf-review__label">Vendor</dt>
             <dd class="cbf-review-fields__value cbf-review-fields__value--lead" data-f-vendor-panel></dd>
+            <span class="cbf-review-fields__copy" data-copy>
+              <EsaIconButton icon="copy" label="Copy vendor" size="xs" />
+            </span>
           </div>
           <div class="cbf-review-fields__row">
             <dt class="cbf-review__label">Contract</dt>
             <dd class="cbf-review-fields__value" data-f-contract></dd>
+            <span class="cbf-review-fields__copy" data-copy>
+              <EsaIconButton icon="copy" label="Copy contract" size="xs" />
+            </span>
           </div>
           <div class="cbf-review-fields__row">
             <dt class="cbf-review__label">Project</dt>
             <dd class="cbf-review-fields__value" data-f-project></dd>
+            <span class="cbf-review-fields__copy" data-copy>
+              <EsaIconButton icon="copy" label="Copy project" size="xs" />
+            </span>
           </div>
           <div class="cbf-review-fields__row">
-            <dt class="cbf-review__label">Performance</dt>
-            <dd class="cbf-review-fields__value" data-f-perf></dd>
+            <dt class="cbf-review__label">Perf. start</dt>
+            <dd class="cbf-review-fields__value" data-f-perf-start></dd>
+            <span class="cbf-review-fields__copy" data-copy>
+              <EsaIconButton icon="copy" label="Copy performance start date" size="xs" />
+            </span>
+          </div>
+          <div class="cbf-review-fields__row">
+            <dt class="cbf-review__label">Perf. end</dt>
+            <dd class="cbf-review-fields__value" data-f-perf-end></dd>
+            <span class="cbf-review-fields__copy" data-copy>
+              <EsaIconButton icon="copy" label="Copy performance end date" size="xs" />
+            </span>
           </div>
           <div class="cbf-review-fields__row">
             <dt class="cbf-review__label">Submitted</dt>
             <dd class="cbf-review-fields__value" data-f-submitted></dd>
+            <span class="cbf-review-fields__copy" data-copy>
+              <EsaIconButton icon="copy" label="Copy submitted date" size="xs" />
+            </span>
           </div>
         </dl>
+
+        <!-- Attachments: the invoice document the vendor submitted + the
+             supporting files they uploaded. The COR downloads any single file or
+             all at once. Rows are injected by JS; the per-row download control
+             clones the server-rendered esa-icon-button template below so the lego
+             markup stays byte-identical. (Mock files — download produces a named
+             placeholder PDF, since no real blob exists.) -->
+        <section class="cbf-review-attachments" aria-label="Attachments">
+          <div class="cbf-review-attachments__head repel">
+            <h3 class="cbf-review__section-title" data-f-attach-title>Attachments</h3>
+            <span data-attach-all>
+              <EsaButton appearance="outline" color="secondary" size="sm" icon="download">Download all</EsaButton>
+            </span>
+          </div>
+          <ul class="cbf-review-attachments__list" data-f-attachments></ul>
+        </section>
+        <div data-dl-template hidden aria-hidden="true">
+          <EsaIconButton icon="download" label="Download file" size="sm" />
+        </div>
 
         <!-- Decisions. Inline confirm/comment (no nested modal). -->
         <div class="cbf-review-actions" data-actions>
           <div class="cluster" data-gap="sm" data-actions-default>
             <span data-act-approve><EsaButton color="primary" appearance="fill" icon="check">Approve</EsaButton></span>
-            <span data-act-return><EsaButton color="danger" appearance="outline" icon="corner-up-left">Return for revision</EsaButton></span>
+            <span data-act-return><EsaButton color="danger" appearance="outline" icon="rotate-ccw">Return for revision</EsaButton></span>
           </div>
 
           <div class="stack" data-gap="sm" data-actions-approve hidden>
@@ -222,7 +302,7 @@ const { invoices = defaultQueue } = Astro.props;
             ></esa-textarea>
             <div class="cluster" data-gap="sm">
               <span data-act-return-cancel><EsaButton appearance="outline" color="secondary">Cancel</EsaButton></span>
-              <span data-act-return-confirm><EsaButton color="danger" appearance="fill" icon="corner-up-left">Return for revision</EsaButton></span>
+              <span data-act-return-confirm><EsaButton color="danger" appearance="fill" icon="rotate-ccw">Return for revision</EsaButton></span>
             </div>
           </div>
         </div>
@@ -302,10 +382,13 @@ const { invoices = defaultQueue } = Astro.props;
 
   /* A wide overlay so the split breathes — clamps to the viewport on small screens.
      Effectively a full-bleed review surface on desktop, like the Acctual reference.
+     Scales to 75% of the viewport on the widest screens, but never below 1180px so
+     mid-width desktops don't regress (a flat 75vw would be narrower than 1180 below
+     ~1573px). The lego still clamps to calc(100vw - inset) on small screens.
      NB: the panel is size="lg", so the lego resolves its width from
      --side-dialog-width-lg (NOT --side-dialog-width, which the lg selector
      overrides). Re-point the lg token or the override is silently ignored. */
-  .cbf-review-dialog { --side-dialog-width-lg: 1180px; }
+  .cbf-review-dialog { --side-dialog-width-lg: max(1180px, 75vw); }
 
   /* Panel ----------------------------------------------------------------- */
   .cbf-review__label {
@@ -366,7 +449,7 @@ const { invoices = defaultQueue } = Astro.props;
   .cbf-review-fields { margin: 0; }
   .cbf-review-fields__row {
     display: grid;
-    grid-template-columns: 92px 1fr;
+    grid-template-columns: 92px 1fr auto;
     gap: var(--spacing-300);
     align-items: baseline;
     padding-block: var(--spacing-250);
@@ -376,6 +459,99 @@ const { invoices = defaultQueue } = Astro.props;
   .cbf-review-fields__value { margin: 0; font-size: var(--type-size-200); color: var(--color-text-secondary); }
   .cbf-review-fields__value--lead { font-weight: var(--font-weight-medium); color: var(--color-text-primary); }
 
+  /* Per-field copy control — the esa-icon-button lego, quiet until hovered.
+     They're transcribing these values into another system, so every atomic
+     value (incl. the split performance dates) is copyable on its own. */
+  .cbf-review-fields__copy {
+    align-self: center;
+    position: relative;
+    line-height: 0;
+    color: var(--color-text-muted);
+  }
+  .cbf-review-fields__copy :global(.esa-icon-button) { color: inherit; }
+  .cbf-review-fields__copy :global(.esa-icon-button:hover) {
+    background: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
+    color: var(--color-text-primary);
+  }
+  /* Copied feedback: tint the control + a transient "Copied" label beside it. */
+  .cbf-review-fields__copy[data-state='copied'] { color: var(--color-success, #1f8a4c); }
+  .cbf-review-fields__copy[data-state='copied']::after {
+    content: 'Copied';
+    position: absolute;
+    right: calc(100% + var(--spacing-150));
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    font-size: var(--type-size-050);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-success, #1f8a4c);
+    pointer-events: none;
+  }
+
+  /* Hero amount + its inline copy control. */
+  .cbf-review-hero__amount-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-200);
+  }
+
+  /* Budget-impact ledger: remaining before → −invoice → remaining after. */
+  .cbf-review-impact { margin-top: var(--spacing-200); }
+  .cbf-review-impact__ledger {
+    margin: var(--spacing-200) 0 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    overflow: hidden;
+  }
+  .cbf-review-impact__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    padding: var(--spacing-250) var(--spacing-400);
+  }
+  .cbf-review-impact__row + .cbf-review-impact__row {
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+  }
+  .cbf-review-impact__row dt {
+    margin: 0;
+    font-size: var(--type-size-150);
+    color: var(--color-text-secondary);
+  }
+  .cbf-review-impact__row dd {
+    margin: 0;
+    font-size: var(--type-size-200);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-review-impact__delta { color: var(--color-text-secondary); }
+  .cbf-review-impact__row--total {
+    background: var(--color-surface-sunken);
+    border-top: 1px solid var(--color-border);
+  }
+  .cbf-review-impact__row--total dt {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-review-impact__row--total dd { font-weight: var(--font-weight-semibold); }
+
+  /* Attachments ----------------------------------------------------------- */
+  .cbf-review-attachments { margin-top: var(--spacing-200); }
+  .cbf-review-attachments__head {
+    align-items: center;
+    gap: var(--spacing-300);
+    margin-bottom: var(--spacing-300);
+  }
+  .cbf-review-attachments__head .cbf-review__section-title { margin: 0; }
+  .cbf-review-attachments__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    overflow: hidden;
+  }
+
   /* Decision sub-states (Approve-confirm / Return-comment) are .stack/.cluster
      groups toggled via the [hidden] attribute. Those layout primitives set
      `display: flex`, which OVERRIDES the UA `[hidden] { display: none }` — so
@@ -384,6 +560,12 @@ const { invoices = defaultQueue } = Astro.props;
      :not([hidden]) guard — logged in docs/hub-issues.md.) */
   .cbf-review-actions [hidden] { display: none !important; }
 
+  /* Fill the dialog body's full height (the side-dialog .body is flex:1 inside a
+     fixed-height panel) so the split — and the document pane within it — runs the
+     whole height of the overlay, like a real PDF viewer, instead of sizing to the
+     taller of the two columns. */
+  .cbf-review-split { min-height: 100%; }
+
   /* Document pane --------------------------------------------------------- */
   .cbf-review-docpane {
     background: var(--color-surface-sunken);
@@ -391,10 +573,13 @@ const { invoices = defaultQueue } = Astro.props;
     border-radius: var(--radius-200);
     padding: var(--spacing-600);
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
   }
   .cbf-invoice-doc {
     position: relative;
+    flex: 1 0 auto;
     width: 100%;
     max-width: 620px;
     background: var(--color-surface);
@@ -474,6 +659,38 @@ const { invoices = defaultQueue } = Astro.props;
 
   /* Document line items are injected by JS (no Astro scope hash) — styled globally. */
   .cbf-invoice-doc__items tbody td { font-size: var(--type-size-150); }
+
+  /* Attachment rows are injected by JS — styled globally. No per-item icon
+     (design principle: icons mark structure, not items); the filename carries
+     its own extension, the primary doc is marked with a quiet role label, and
+     the only affordance is the download control (an action, not decoration). */
+  .cbf-review-attach {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300);
+    padding: var(--spacing-150) var(--spacing-200) var(--spacing-150) var(--spacing-400);
+  }
+  .cbf-review-attach + .cbf-review-attach { border-top: 1px solid var(--color-border-light, var(--color-border)); }
+  .cbf-review-attach__name {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--type-size-150);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cbf-review-attach[data-primary='true'] .cbf-review-attach__name { font-weight: var(--font-weight-medium); }
+  .cbf-review-attach__role {
+    flex: none;
+    font-size: var(--type-size-100, 0.75rem);
+    color: var(--color-text-muted);
+  }
+  .cbf-review-attach__dl { flex: none; line-height: 0; color: var(--color-text-muted); }
+  .cbf-review-attach__dl .esa-icon-button:hover {
+    background: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
+    color: var(--color-text-primary);
+  }
 </style>
 
 <script>
@@ -493,6 +710,7 @@ const { invoices = defaultQueue } = Astro.props;
     amount: number; stage: Stage; final: boolean;
     invoiceDate: string; perfStart: string; perfEnd: string;
     billTo: string; lineItems: LineItem[]; notes?: string; pdfName: string;
+    supportingDocs: string[];
     contractValue: number; expended: number; remaining: number; asOf: string;
   };
   type Decision = { variant: 'success' | 'danger'; title: string; text: string; badge: string };
@@ -506,6 +724,44 @@ const { invoices = defaultQueue } = Astro.props;
     style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1,
   });
   const qtyFmt = new Intl.NumberFormat('en-US');
+
+  // ---- File download (prototype) ---------------------------------------
+  // No real blobs exist for the mock invoices, so a download builds a minimal
+  // valid one-page PDF named after the file. Enough for the COR flow to feel
+  // real — the file saves with the right name and opens.
+  const pdfEscape = (s: string) => s.replace(/([()\\])/g, '\\$1');
+  function makePlaceholderPdf(filename: string, subtitle: string): Blob {
+    const body =
+      `BT /F1 18 Tf 60 740 Td (${pdfEscape(filename)}) Tj ` +
+      `/F1 11 Tf 0 -26 Td (${pdfEscape(subtitle)}) Tj ` +
+      `0 -18 Td (Columbia Basin Fish & Wildlife Program — prototype placeholder) Tj ET`;
+    const objs = [
+      '<</Type/Catalog/Pages 2 0 R>>',
+      '<</Type/Pages/Kids[3 0 R]/Count 1>>',
+      '<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Resources<</Font<</F1 5 0 R>>>>/Contents 4 0 R>>',
+      `<</Length ${body.length}>>\nstream\n${body}\nendstream`,
+      '<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>',
+    ];
+    let pdf = '%PDF-1.4\n';
+    const offsets: number[] = [];
+    objs.forEach((o, i) => { offsets.push(pdf.length); pdf += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+    const xref = pdf.length;
+    pdf += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+    offsets.forEach((off) => { pdf += `${String(off).padStart(10, '0')} 00000 n \n`; });
+    pdf += `trailer\n<</Size ${objs.length + 1}/Root 1 0 R>>\nstartxref\n${xref}\n%%EOF`;
+    return new Blob([pdf], { type: 'application/pdf' });
+  }
+  function downloadFile(filename: string, invoiceNumber: string) {
+    const blob = makePlaceholderPdf(filename, `Attachment for invoice ${invoiceNumber}`);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 
   const urgencyOf = (d: number) => (d < 0 ? 'overdue' : d <= 3 ? 'due-soon' : 'on-track');
   const daysLabel = (d: number) => {
@@ -654,6 +910,16 @@ const { invoices = defaultQueue } = Astro.props;
     const prevBtn = prevWrap?.querySelector('button') ?? null;
     const nextBtn = nextWrap?.querySelector('button') ?? null;
 
+    // Attachments: list element + the cloneable download-button markup (the
+    // server-rendered esa-icon-button lego, reused verbatim per row).
+    const attachList = $('[data-f-attachments]');
+    const attachTitle = $('[data-f-attach-title]');
+    const dlBtnHTML = $('[data-dl-template]')?.querySelector('button')?.outerHTML ?? '';
+    const escAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // The files for the currently shown invoice (invoice doc first, then supporting).
+    let currentFiles: string[] = [];
+    let currentNumber = '';
+
     const displayed = (): Invoice[] => {
       const out: Invoice[] = [];
       gridApi.forEachNodeAfterFilterAndSort((n) => { if (n.data) out.push(n.data as Invoice); });
@@ -705,6 +971,9 @@ const { invoices = defaultQueue } = Astro.props;
 
       // Hero: the billed amount (exact) + the one line of context that frames it.
       setText('[data-f-amount-hero]', usd.format(inv.amount));
+      // Amount copies as raw cents (3960.00) for paste into a numeric field.
+      const amtCopy = $('[data-f-amount-copy]');
+      if (amtCopy) amtCopy.dataset.copyValue = inv.amount.toFixed(2);
       const pct = inv.remaining > 0 ? Math.round((inv.amount / inv.remaining) * 100) : 0;
       setText('[data-f-pct]', `${pct}% of the ${usdCompact.format(inv.remaining)} remaining on this contract`);
 
@@ -714,11 +983,19 @@ const { invoices = defaultQueue } = Astro.props;
       setText('[data-f-asof]', `Expended · ${inv.asOf}`);
       setText('[data-f-remaining]', usdCompact.format(inv.remaining));
 
-      // Spec fields.
+      // Budget impact (exact figures so the before − invoice = after reconciles).
+      const remAfter = inv.remaining - inv.amount;
+      setText('[data-f-rem-before]', usd.format(inv.remaining));
+      setText('[data-f-rem-delta]', `− ${usd.format(inv.amount)}`);
+      setText('[data-f-rem-after]', usd.format(remAfter));
+
+      // Spec fields. Performance is split into start/end so each is copyable.
+      setText('[data-f-number-panel]', inv.number);
       setText('[data-f-vendor-panel]', inv.vendor);
       setText('[data-f-contract]', inv.contract);
       setText('[data-f-project]', inv.project);
-      setText('[data-f-perf]', `${inv.perfStart} – ${inv.perfEnd}`);
+      setText('[data-f-perf-start]', inv.perfStart);
+      setText('[data-f-perf-end]', inv.perfEnd);
       setText('[data-f-submitted]', inv.submitted);
 
       // Document.
@@ -743,6 +1020,26 @@ const { invoices = defaultQueue } = Astro.props;
       if (memoWrap) memoWrap.hidden = !inv.notes;
       setText('[data-f-memo]', inv.notes ?? '');
       setText('[data-f-pdf]', `Submitted document · ${inv.pdfName}`);
+
+      // Attachments: the invoice document first, then the supporting files.
+      currentFiles = [inv.pdfName, ...inv.supportingDocs];
+      currentNumber = inv.number;
+      if (attachTitle) attachTitle.textContent = `Attachments (${currentFiles.length})`;
+      if (attachList) {
+        attachList.innerHTML = currentFiles
+          .map((name, i) => `<li class="cbf-review-attach" data-primary="${i === 0}">
+            <span class="cbf-review-attach__name" title="${escAttr(name)}">${escAttr(name)}</span>
+            ${i === 0 ? '<span class="cbf-review-attach__role">Invoice</span>' : ''}
+            <span class="cbf-review-attach__dl" data-attach-dl data-file="${escAttr(name)}">${dlBtnHTML}</span>
+          </li>`)
+          .join('');
+        // Give each cloned download control a file-specific accessible name.
+        attachList.querySelectorAll<HTMLElement>('[data-attach-dl]').forEach((slot) => {
+          const file = slot.dataset.file ?? '';
+          const btn = slot.querySelector('button');
+          if (btn) { btn.setAttribute('aria-label', `Download ${file}`); btn.setAttribute('title', `Download ${file}`); }
+        });
+      }
 
       // Approve-confirm copy.
       setText('[data-f-num-approve]', inv.number);
@@ -792,6 +1089,63 @@ const { invoices = defaultQueue } = Astro.props;
 
     prevWrap?.addEventListener('click', () => step(-1));
     nextWrap?.addEventListener('click', () => step(1));
+
+    // Per-file download (delegated over the injected rows).
+    attachList?.addEventListener('click', (e) => {
+      const slot = (e.target as HTMLElement)?.closest<HTMLElement>('[data-attach-dl]');
+      const file = slot?.dataset.file;
+      if (file) downloadFile(file, currentNumber);
+    });
+    // Download all: each file in turn, lightly staggered so the browser accepts
+    // the burst rather than blocking it as repeated auto-downloads.
+    $('[data-attach-all]')?.addEventListener('click', () => {
+      currentFiles.forEach((file, i) => setTimeout(() => downloadFile(file, currentNumber), i * 250));
+    });
+
+    // Copy controls: they're transcribing these values into another system, so
+    // each [data-copy] copies one atomic value to the clipboard. Source priority:
+    // a raw [data-copy-value] override (money copies as a bare 3960.00 — no symbol
+    // or commas — so it pastes into a numeric field cleanly), then an explicit
+    // [data-copy-target], then the value cell in the same field row. Delegated so
+    // it covers every row without per-row wiring.
+    const copyTimers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
+    const writeClipboard = async (text: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        // Fallback for non-secure contexts: a transient textarea + execCommand.
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch { ok = false; }
+        ta.remove();
+        return ok;
+      }
+    };
+    dialog.addEventListener('click', (e) => {
+      const trigger = (e.target as HTMLElement)?.closest<HTMLElement>('[data-copy]');
+      if (!trigger || !dialog.contains(trigger)) return;
+      let text = (trigger.dataset.copyValue ?? '').trim();
+      if (!text) {
+        const targetSel = trigger.dataset.copyTarget;
+        const valueEl = targetSel
+          ? dialog.querySelector<HTMLElement>(targetSel)
+          : trigger.closest('.cbf-review-fields__row')?.querySelector<HTMLElement>('.cbf-review-fields__value');
+        text = (valueEl?.textContent ?? '').trim();
+      }
+      if (!text) return;
+      void writeClipboard(text).then((ok) => {
+        if (!ok) return;
+        trigger.dataset.state = 'copied';
+        clearTimeout(copyTimers.get(trigger));
+        copyTimers.set(trigger, setTimeout(() => { delete trigger.dataset.state; }, 1200));
+      });
+    });
 
     return (inv: Invoice) => { populate(inv); dialog.show(); };
   }

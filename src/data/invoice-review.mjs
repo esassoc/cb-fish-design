@@ -16,7 +16,7 @@
 // totals sum to `amount`; performance period precedes the invoice date, which
 // precedes submission; expended + remaining never exceed the contract value.
 
-import { fmtExact, fmtCompact } from './vendor-portal-invoices.mjs';
+import { fmtExact, fmtCompact } from './vendor-dashboard-invoices.mjs';
 export { fmtExact, fmtCompact };
 
 /**
@@ -28,8 +28,13 @@ export { fmtExact, fmtCompact };
  *   amount: number; stage: ReviewStage; final: boolean;
  *   invoiceDate: string; perfStart: string; perfEnd: string;
  *   billTo: string; lineItems: LineItem[]; notes?: string; pdfName: string;
+ *   supportingDocs: string[];
  *   contractValue: number; expended: number; remaining: number; asOf: string;
  * }} ReviewInvoice
+ *
+ * `pdfName` is the invoice document the vendor submitted; `supportingDocs` are the
+ * extra files they attached (timesheets, receipts, reports). The COR downloads any
+ * one of them or all at once. Fictional filenames — no real blobs exist.
  */
 
 /** The signed-in reviewer. In production this comes from the authenticated COR. */
@@ -56,7 +61,7 @@ export const reviewQueue = [
     amount: 6120, stage: 'Submitted', final: false,
     invoiceDate: 'Jun 17, 2026', perfStart: 'Jun 1, 2026', perfEnd: 'Jun 15, 2026',
     billTo: 'BPA — Columbia Basin Fish & Wildlife Program',
-    pdfName: 'INV-2026-0051-PacificEnv.pdf',
+    pdfName: 'INV-2026-0051-PacificEnv.pdf', supportingDocs: ['timesheet-jun-2026.pdf', 'equipment-rental-receipt.pdf'],
     lineItems: [
       { description: 'Field biologist labor', qty: 52, unitPrice: 95 },
       { description: 'Habitat survey equipment rental', qty: 1, unitPrice: 650 },
@@ -71,7 +76,7 @@ export const reviewQueue = [
     amount: 12_480, stage: 'In review', final: false,
     invoiceDate: 'Jun 10, 2026', perfStart: 'May 1, 2026', perfEnd: 'May 31, 2026',
     billTo: 'BPA — Columbia Basin Fish & Wildlife Program',
-    pdfName: 'INV-2026-0049-Cascade.pdf',
+    pdfName: 'INV-2026-0049-Cascade.pdf', supportingDocs: ['receiver-deployment-log.pdf', 'data-analysis-summary.pdf'],
     notes: 'Receivers redeployed after the spring high-water event; deployment hours above baseline.',
     lineItems: [
       { description: 'Acoustic telemetry tag deployment', qty: 64, unitPrice: 135 },
@@ -87,7 +92,7 @@ export const reviewQueue = [
     amount: 3960, stage: 'In review', final: false,
     invoiceDate: 'May 22, 2026', perfStart: 'Apr 1, 2026', perfEnd: 'Apr 30, 2026',
     billTo: 'BPA — Columbia Basin Fish & Wildlife Program',
-    pdfName: 'INV-2026-0047-Methow.pdf',
+    pdfName: 'INV-2026-0047-Methow.pdf', supportingDocs: ['timesheet-apr-2026.pdf', 'field-receipts.pdf'],
     lineItems: [
       { description: 'Vegetation transect monitoring', qty: 30, unitPrice: 110 },
       { description: 'Data processing & reporting', qty: 6, unitPrice: 110 },
@@ -101,7 +106,7 @@ export const reviewQueue = [
     amount: 2280, stage: 'Submitted', final: false,
     invoiceDate: 'Jun 12, 2026', perfStart: 'May 1, 2026', perfEnd: 'May 31, 2026',
     billTo: 'BPA — Columbia Basin Fish & Wildlife Program',
-    pdfName: 'INV-2026-0046-PacificEnv.pdf',
+    pdfName: 'INV-2026-0046-PacificEnv.pdf', supportingDocs: ['broodstock-field-log.pdf'],
     lineItems: [
       { description: 'Broodstock collection labor', qty: 22, unitPrice: 95 },
       { description: 'Field supplies', qty: 1, unitPrice: 190 },
@@ -115,7 +120,7 @@ export const reviewQueue = [
     amount: 18_750, stage: 'Submitted', final: true,
     invoiceDate: 'Jun 14, 2026', perfStart: 'Apr 1, 2026', perfEnd: 'Jun 13, 2026',
     billTo: 'BPA — Columbia Basin Fish & Wildlife Program',
-    pdfName: 'INV-2026-0044-Okanogan-FINAL.pdf',
+    pdfName: 'INV-2026-0044-Okanogan-FINAL.pdf', supportingDocs: ['lab-analysis-report.pdf', 'sampling-field-notes.pdf', 'final-data-deliverable.xlsx'],
     notes: 'Final invoice — closes out the FY26 sampling contract. Includes the held-back retainage.',
     lineItems: [
       { description: 'Water sample collection', qty: 120, unitPrice: 85 },
@@ -131,7 +136,7 @@ export const reviewQueue = [
     amount: 4310, stage: 'Returned', final: false,
     invoiceDate: 'May 30, 2026', perfStart: 'May 1, 2026', perfEnd: 'May 31, 2026',
     billTo: 'BPA — Columbia Basin Fish & Wildlife Program',
-    pdfName: 'INV-2026-0041-Cascade.pdf',
+    pdfName: 'INV-2026-0041-Cascade.pdf', supportingDocs: [],
     notes: 'Returned Jun 8 — receiver-maintenance line lacks a supporting field log; mileage exceeds the approved rate.',
     lineItems: [
       { description: 'Receiver maintenance', qty: 22, unitPrice: 100 },
@@ -146,7 +151,7 @@ export const reviewQueue = [
     amount: 5210, stage: 'Approved', final: false,
     invoiceDate: 'May 24, 2026', perfStart: 'May 1, 2026', perfEnd: 'May 15, 2026',
     billTo: 'BPA — Columbia Basin Fish & Wildlife Program',
-    pdfName: 'INV-2026-0038-PacificEnv.pdf',
+    pdfName: 'INV-2026-0038-PacificEnv.pdf', supportingDocs: ['timesheet-may-2026.pdf'],
     lineItems: [
       { description: 'Field biologist labor', qty: 44, unitPrice: 95 },
       { description: 'Habitat survey equipment rental', qty: 1, unitPrice: 650 },

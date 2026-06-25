@@ -19,16 +19,16 @@ The default, no-query state — a first-class prompt, not a blank container. Wha
 
 ## Styles
 ```css
+.cbf-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-400);
+}
 .cbf-search-surface .cbf-result-empty {
   padding: var(--spacing-600) var(--spacing-500);
   text-align: center;
   color: var(--color-text-muted);
   font-size: 15px;
-}
-.cbf-search-results {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-400);
 }
 ```
 

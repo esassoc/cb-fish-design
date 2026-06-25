@@ -16,7 +16,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import EsaBreadcrumbs from '@esa/ecology/esa-breadcrumbs.astro';
-import CbfInvoiceRail from '../components/vendor-invoice/cbf-invoice-rail.astro';
 import CbfInvoiceStepDetails from '../components/vendor-invoice/cbf-invoice-step-details.astro';
 import CbfInvoiceStepReview from '../components/vendor-invoice/cbf-invoice-step-review.astro';
 import CbfInvoiceConfirm from '../components/vendor-invoice/cbf-invoice-confirm.astro';
@@ -27,11 +26,9 @@ const homeIcon =
   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
 const crumbs = [
   { label: 'Home', href: withBase('/home'), icon: homeIcon },
-  { label: 'Vendor portal', href: withBase('/vendor-portal') },
+  { label: 'Vendor dashboard', href: withBase('/vendor-dashboard') },
   { label: 'Submit invoice' },
 ];
-
-const STEPS = ['Invoice details', 'Review & submit'];
 
 // Mock supplier context — in production this comes from the authenticated session.
 const vendor = {
@@ -54,7 +51,6 @@ const buyer = {
   layout: cbf-app-card
   sections:
     - nav             -> cbf-public-nav
-    - wizard rail     -> cbf-invoice-rail
     - upload step     -> cbf-invoice-pdf-panel (step 0 workspace)
     - details step    -> cbf-invoice-step-details
     - review step     -> cbf-invoice-step-review
@@ -72,8 +68,6 @@ const buyer = {
         </div>
 
         <div class="cbf-app-card__body">
-          <CbfInvoiceRail vendor={vendor} steps={STEPS} />
-
           <div class="cbf-invoice-content">
 
             <!-- Parties bar: full-width above the workspace, only on step 0 -->
@@ -105,6 +99,18 @@ const buyer = {
                   homeHref={withBase('/home')}
                   resubmitHref={withBase('/vendor-invoice')}
                 />
+
+                <!-- Dev toggle: prototype-only, not shown in production -->
+                <div class="cbf-dev-bar" data-confirm-mode-bar aria-label="Dev tools">
+                  <span class="cbf-dev-bar__label">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+                    Confirmation mode
+                  </span>
+                  <div class="cbf-dev-bar__options">
+                    <button type="button" class="cbf-dev-bar__opt is-active" data-confirm-mode="page">Page</button>
+                    <button type="button" class="cbf-dev-bar__opt" data-confirm-mode="modal">Modal</button>
+                  </div>
+                </div>
               </section>
             </div>
 
@@ -121,6 +127,7 @@ const buyer = {
     import '@esa/ecology/esa-combobox';
     import '@esa/ecology/esa-checkbox';
     import '@esa/ecology/esa-confirm-dialog';
+    import '@esa/ecology/esa-dialog';
     import '../components/bcn-date-picker';
     import '@esa/ecology/esa-textarea';
     import { initInvoiceWizard } from '../components/vendor-invoice/invoice-wizard.client';
@@ -250,14 +257,10 @@ const buyer = {
     }
   }
 
-  /* Below 960px: rail becomes a top bar (handled in rail component);
-     loosen the content padding. Break the flex:1/flex-basis:0 chain so the
-     form grows to its natural content height instead of collapsing to zero
-     or being clipped to the card's 80vh. */
+  /* Below 960px: break the flex:1/flex-basis:0 chain so the form grows to its
+     natural content height instead of collapsing to zero or being clipped to
+     the card's 80vh. */
   @media (max-width: 960px) {
-    .cbf-app-card__body {
-      flex-direction: column;
-    }
     /* Reset every flex:1 descendant so each sizes from its content, not from
        a zero flex-basis that collapses in a parent with no explicit height. */
     .cbf-invoice-content,
@@ -292,5 +295,52 @@ const buyer = {
     .cbf-parties-bar__divider {
       display: none;
     }
+  }
+
+  /* ---- Dev toggle bar ---- */
+  .cbf-dev-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300);
+    margin-top: var(--spacing-700);
+    padding: var(--spacing-250) var(--spacing-400);
+    border: 1px dashed color-mix(in srgb, var(--color-border) 60%, transparent);
+    border-radius: var(--radius-100);
+    background: color-mix(in srgb, var(--color-surface-sunken, #f8f9fb) 60%, transparent);
+  }
+  .cbf-dev-bar__label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-150);
+    font-size: 11px;
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    flex: none;
+  }
+  .cbf-dev-bar__options {
+    display: flex;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    overflow: hidden;
+    background: var(--color-surface);
+  }
+  .cbf-dev-bar__opt {
+    padding: var(--spacing-100) var(--spacing-300);
+    font-size: 12px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    background: none;
+    border: none;
+    border-right: 1px solid var(--color-border);
+    cursor: pointer;
+    transition: background 0.1s ease, color 0.1s ease;
+  }
+  .cbf-dev-bar__opt:last-child { border-right: none; }
+  .cbf-dev-bar__opt:hover { background: var(--color-surface-sunken, #f8f9fb); color: var(--color-text-primary); }
+  .cbf-dev-bar__opt.is-active {
+    background: var(--color-primary);
+    color: var(--color-surface);
   }
 </style>

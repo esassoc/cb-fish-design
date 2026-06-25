@@ -67,6 +67,19 @@ export function initInvoiceWizard(): void {
     });
   }
 
+  // Dev toggle: switch confirmation mode between "page" and "modal"
+  wizard.querySelector('[data-confirm-mode-bar]')?.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-confirm-mode]');
+    if (!btn) return;
+    wizard.querySelectorAll('[data-confirm-mode]').forEach(b => b.classList.remove('is-active'));
+    btn.classList.add('is-active');
+  });
+
+  function confirmMode(): string {
+    return wizard.querySelector<HTMLElement>('.cbf-dev-bar__opt.is-active')
+      ?.dataset.confirmMode ?? 'page';
+  }
+
   wizard.addEventListener('click', (e) => {
     const t = e.target as HTMLElement;
     if (t.closest('[data-wizard-next]')) goTo(current + 1);
@@ -120,11 +133,9 @@ export function initInvoiceWizard(): void {
     const required = [
       wizard.querySelector<any>('[data-field="invoice-number"]'),
       wizard.querySelector<any>('[data-field="invoice-date"]'),
-      wizard.querySelector<any>('[data-field="issue-date"]'),
       wizard.querySelector<any>('[data-field="perf-start"]'),
       wizard.querySelector<any>('[data-field="perf-end"]'),
       wizard.querySelector<any>('[data-field="contract"]'),
-      wizard.querySelector<any>('[data-field="project"]'),
     ];
     required.forEach((el) => {
       if (!el) return;
@@ -136,12 +147,33 @@ export function initInvoiceWizard(): void {
         el.removeAttribute('error-text');
       }
     });
-    if (!lineItems.length) {
+    // Performance period cross-check: start must not be after end
+    const perfStartEl = wizard.querySelector<any>('[data-field="perf-start"]');
+    const perfEndEl = wizard.querySelector<any>('[data-field="perf-end"]');
+    const pStart = perfStartEl?.value ?? '';
+    const pEnd = perfEndEl?.value ?? '';
+    if (pStart && pEnd && pStart > pEnd) {
+      perfEndEl?.setAttribute('error-text', 'End date must be on or after start date.');
       ok = false;
-      const err = wizard.querySelector<HTMLElement>('[data-step-error="lineitems"]');
-      err?.removeAttribute('hidden');
+    }
+    // Invoice total must be a positive amount, and must not exceed the remaining
+    // balance on the selected contract (replaces the old line-item check).
+    const totalErr = wizard.querySelector<HTMLElement>('[data-step-error="total"]');
+    const exceedsErr = wizard.querySelector<HTMLElement>('[data-step-error="total-exceeds"]');
+    if (readInvoiceTotal() <= 0) {
+      ok = false;
+      totalErr?.removeAttribute('hidden');
+      exceedsErr?.setAttribute('hidden', '');
+      totalAmountField?.setAttribute('error-text', 'Enter the invoice total amount.');
     } else {
-      wizard.querySelector<HTMLElement>('[data-step-error="lineitems"]')?.setAttribute('hidden', '');
+      totalErr?.setAttribute('hidden', '');
+      if (exceedsRemaining()) {
+        ok = false;
+        refreshTotalExceeds(); // shows the over-balance alert + field error
+      } else {
+        exceedsErr?.setAttribute('hidden', '');
+        totalAmountField?.removeAttribute('error-text');
+      }
     }
     return ok;
   }
@@ -294,6 +326,44 @@ export function initInvoiceWizard(): void {
   const lineItemsBody = wizard.querySelector<HTMLElement>('[data-line-items]')!;
   const totalEl = wizard.querySelector<HTMLElement>('[data-invoice-total]')!;
 
+  // The invoice total is now entered directly (line items live in the PDF). Parse
+  // the field leniently — strip $, commas, spaces — so "4,850.00" or "$4850" work.
+  const totalAmountField = wizard.querySelector<any>('[data-field="total-amount"]');
+  function readInvoiceTotal(): number {
+    const raw = String(totalAmountField?.value ?? '').replace(/[^0-9.]/g, '');
+    const n = parseFloat(raw);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  }
+
+  // Remaining (unbilled) balance on the selected contract, from the contract
+  // ledger encoded on the combobox; null when no contract is chosen.
+  function remainingForContract(): number | null {
+    const a = contractAmounts[contractField?.value ?? ''];
+    return a ? a.remaining : null;
+  }
+  // True when the entered total is strictly over the contract's remaining balance.
+  // (Equal is allowed — that's a final invoice, handled separately.)
+  function exceedsRemaining(): boolean {
+    const rem = remainingForContract();
+    return rem != null && readInvoiceTotal() > rem;
+  }
+  // Live toggle for the over-balance alert (run on total/contract change).
+  function refreshTotalExceeds(): void {
+    const exceedsErr = wizard.querySelector<HTMLElement>('[data-step-error="total-exceeds"]');
+    const rem = remainingForContract();
+    if (rem != null && exceedsRemaining()) {
+      const amtEl = exceedsErr?.querySelector<HTMLElement>('[data-remaining-amount]');
+      if (amtEl) amtEl.textContent = fmtCurrency(rem);
+      exceedsErr?.removeAttribute('hidden');
+      totalAmountField?.setAttribute('error-text', 'Exceeds the remaining contract balance.');
+    } else {
+      exceedsErr?.setAttribute('hidden', '');
+      if (totalAmountField?.getAttribute('error-text') === 'Exceeds the remaining contract balance.') {
+        totalAmountField.removeAttribute('error-text');
+      }
+    }
+  }
+
   function addLineItem(): void {
     lineItems.push({ description: '', qty: 1, unitPrice: 0 });
     renderLineItems();
@@ -399,6 +469,20 @@ export function initInvoiceWizard(): void {
     contractAmounts = JSON.parse(contractField?.dataset.contractAmounts ?? '{}');
   } catch { /* leave empty */ }
 
+  // Live over-balance feedback: re-check whenever the total or the chosen
+  // contract changes, so the alert appears/clears without waiting for Next.
+  totalAmountField?.addEventListener('input', refreshTotalExceeds);
+  totalAmountField?.addEventListener('change', refreshTotalExceeds);
+  contractField?.addEventListener('change', refreshTotalExceeds);
+
+  // Contract → project auto-populate (project field is read-only for reference only).
+  const projectDisplayField = wizard.querySelector<any>('[data-field="project"]');
+  let contractProjectMap: Record<string, string> = {};
+  try { contractProjectMap = JSON.parse(contractField?.dataset.contractProjects ?? '{}'); } catch { /* leave empty */ }
+  contractField?.addEventListener('change', () => {
+    if (projectDisplayField) projectDisplayField.value = contractProjectMap[contractField.value ?? ''] ?? '';
+  });
+
   function syncFinalCallout(): void {
     finalCallout?.classList.toggle('is-flagged', !!finalCheckbox?.checked);
   }
@@ -412,7 +496,7 @@ export function initInvoiceWizard(): void {
   });
 
   function invoiceTotal(): number {
-    return lineItems.reduce((acc, li) => acc + li.qty * li.unitPrice, 0);
+    return readInvoiceTotal();
   }
 
   function seemsFinalInvoice(): boolean {
@@ -476,13 +560,12 @@ export function initInvoiceWizard(): void {
 
     const invoiceNum = fieldVal('[data-field="invoice-number"]');
     const invoiceDate = fieldVal('[data-field="invoice-date"]');
-    const issueDate = fieldVal('[data-field="issue-date"]');
     const perfStart = fieldVal('[data-field="perf-start"]');
     const perfEnd = fieldVal('[data-field="perf-end"]');
     const contract = comboboxLabel('[data-field="contract"]');
     const project = comboboxLabel('[data-field="project"]');
     const notes = fieldVal('[data-field="notes"]');
-    const total = lineItems.reduce((acc, li) => acc + li.qty * li.unitPrice, 0);
+    const total = invoiceTotal();
 
     container.innerHTML = `
       <div class="cbf-review-section">
@@ -503,7 +586,6 @@ export function initInvoiceWizard(): void {
         <dl class="cbf-review-dl">
           <div class="cbf-review-dl__row"><dt>Invoice number</dt><dd>${escHtml(invoiceNum) || '—'}</dd></div>
           <div class="cbf-review-dl__row"><dt>Invoice date</dt><dd>${escHtml(invoiceDate) || '—'}</dd></div>
-          <div class="cbf-review-dl__row"><dt>Issue date</dt><dd>${escHtml(issueDate) || '—'}</dd></div>
           <div class="cbf-review-dl__row"><dt>Performance period</dt><dd>${escHtml(perfStart) || '—'} – ${escHtml(perfEnd) || '—'}</dd></div>
           <div class="cbf-review-dl__row"><dt>Contract</dt><dd>${escHtml(contract) || '—'}</dd></div>
           <div class="cbf-review-dl__row"><dt>Project</dt><dd>${escHtml(project) || '—'}</dd></div>
@@ -512,26 +594,10 @@ export function initInvoiceWizard(): void {
       </div>
 
       <div class="cbf-review-section">
-        <h3 class="cbf-review-section__title">Line items</h3>
-        <table class="cbf-review-table">
-          <thead><tr><th>Description</th><th>Qty</th><th>Unit price</th><th>Total</th></tr></thead>
-          <tbody>
-            ${lineItems.map(li => `
-              <tr>
-                <td>${escHtml(li.description) || '—'}</td>
-                <td>${li.qty}</td>
-                <td>${fmtCurrency(li.unitPrice)}</td>
-                <td>${fmtCurrency(li.qty * li.unitPrice)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-          <tfoot>
-            <tr class="cbf-review-table__total">
-              <td colspan="3">Total</td>
-              <td>${fmtCurrency(total)}</td>
-            </tr>
-          </tfoot>
-        </table>
+        <h3 class="cbf-review-section__title">Invoice total</h3>
+        <dl class="cbf-review-dl">
+          <div class="cbf-review-dl__row cbf-review-dl__row--total"><dt>Total amount</dt><dd>${fmtCurrency(total)}</dd></div>
+        </dl>
       </div>
 
       ${supportingDocs.length ? `
@@ -575,9 +641,22 @@ export function initInvoiceWizard(): void {
 
     setTimeout(() => {
       const ref = `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 90000) + 10000)}`;
-      const refEl = wizard.querySelector<HTMLElement>('[data-confirm-ref]');
-      if (refEl) refEl.textContent = ref;
-      goTo(2);
+      // Set the reference number in both the page step and the modal.
+      wizard.querySelectorAll<HTMLElement>('[data-confirm-ref]').forEach(el => { el.textContent = ref; });
+
+      if (confirmMode() === 'modal') {
+        // Reset the submit button so the review step is clean while the modal is open.
+        if (btn) {
+          btn.classList.remove('esa-button--loading');
+          btn.disabled = false;
+          btn.removeAttribute('aria-busy');
+          btn.querySelector('.esa-button__spinner')?.remove();
+          btn.querySelector('.esa-button__label')?.classList.remove('esa-button__label--hidden');
+        }
+        wizard.querySelector<any>('[data-confirm-modal]')?.show();
+      } else {
+        goTo(2);
+      }
     }, 1500);
   }
 }

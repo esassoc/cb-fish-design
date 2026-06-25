@@ -77,7 +77,7 @@ export default {
       label: 'Confirmation',
       selector: '[data-step="2"]',
       intent:
-        'Step 2 — success screen shown after submitInvoice() completes. Contains a checkmark icon, a success message, a generated reference number (INV-YYYY-NNNNN format written into [data-confirm-ref]), and two action links: "Return to portal" and "Submit another invoice".',
+        'Step 2 — success screen shown after submitInvoice() completes. Contains a checkmark icon, a success message, a generated reference number (INV-YYYY-NNNNN format written into [data-confirm-ref]), and two action links: "Return to dashboard" and "Submit another invoice".',
       decisions: [
         'submitInvoice() simulates a 1.5 s network delay, then calls goTo(2) — the confirmation is shown only after the fake submission resolves.',
         'Reference number is generated client-side as INV-<year>-<5-digit-random> and is for prototype demonstration only.',

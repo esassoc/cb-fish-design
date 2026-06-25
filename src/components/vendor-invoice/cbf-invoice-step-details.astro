@@ -21,7 +21,9 @@ interface Props {
 }
 const { vendor } = Astro.props;
 
-// Mock contract + project options — in production these come from the API.
+const today = new Date().toISOString().split('T')[0];
+
+// Mock contract options — in production these come from the API.
 const contracts = [
   { value: 'CON-2024-0881', label: 'CON-2024-0881 — Tributary Habitat Assessment' },
   { value: 'CON-2024-0903', label: 'CON-2024-0903 — Salmon Passage Study' },
@@ -29,19 +31,19 @@ const contracts = [
   { value: 'CON-2025-0234', label: 'CON-2025-0234 — Environmental Impact Review' },
 ];
 // Contract ledger — total awarded + remaining (unbilled) balance per contract.
-// In production these come from the API; the wizard uses them to auto-suggest
-// when an invoice looks like the final one (remaining ≈ invoice, within 5% of total).
 const contractAmounts: Record<string, { total: number; remaining: number }> = {
   'CON-2024-0881': { total: 120000, remaining: 18500 },
   'CON-2024-0903': { total: 85000, remaining: 85000 },
   'CON-2025-0112': { total: 240000, remaining: 96000 },
   'CON-2025-0234': { total: 60000, remaining: 12300 },
 };
-const projects = [
-  { value: 'PRJ-0045', label: 'PRJ-0045 — Lower Columbia River Restoration' },
-  { value: 'PRJ-0062', label: 'PRJ-0062 — Snake River Fish Passage' },
-  { value: 'PRJ-0071', label: 'PRJ-0071 — Wetland Mitigation Banking' },
-];
+// Contract → project mapping (read-only reference; JS auto-populates the project field).
+const contractProjects: Record<string, string> = {
+  'CON-2024-0881': 'PRJ-0045 — Lower Columbia River Restoration',
+  'CON-2024-0903': 'PRJ-0062 — Snake River Fish Passage',
+  'CON-2025-0112': 'PRJ-0071 — Wetland Mitigation Banking',
+  'CON-2025-0234': 'PRJ-0045 — Lower Columbia River Restoration',
+};
 ---
 <div class="cbf-wizard-step" data-step="0">
   <h1 class="cbf-page-title">Invoice details</h1>
@@ -74,100 +76,96 @@ const projects = [
     aria-hidden="true"
   />
 
-  <!-- Contract & project reference -->
-  <div class="cbf-form-section cbf-form-section--first">
-    <h2 class="cbf-form-section__title">Contract &amp; project</h2>
-    <div class="cbf-form-row--2col">
-        <esa-combobox
-          mode="autocomplete"
-          label="Project"
-          placeholder="Search projects…"
-          required
-          data-field="project"
-          data-combobox-options={JSON.stringify(projects)}
-        ></esa-combobox>
-        <esa-combobox
-        mode="autocomplete"
-        label="Contract"
-        placeholder="Search contracts…"
-        required
-        data-field="contract"
-        data-combobox-options={JSON.stringify(contracts)}
-        data-contract-amounts={JSON.stringify(contractAmounts)}
-      ></esa-combobox>
-    </div>
-  </div>
+  <div class="cbf-form-fields">
 
-  <!-- Invoice metadata + performance period (merged) -->
-  <div class="cbf-form-section">
-    <h2 class="cbf-form-section__title">Invoice metadata</h2>
-    <div class="cbf-form-row--2col">
-      <esa-text-field
-        label="Invoice number"
-        placeholder="e.g. INV-2026-0042"
-        required
-        data-field="invoice-number"
-      ></esa-text-field>
-      <bcn-date-picker
-        label="Invoice date"
-        required
-        data-field="invoice-date"
-      ></bcn-date-picker>
-      <bcn-date-picker
-        label="Issue date"
-        required
-        data-field="issue-date"
-      ></bcn-date-picker>
-      <bcn-date-picker
-        label="Performance period — Start"
-        required
-        data-field="perf-start"
-      ></bcn-date-picker>
-      <bcn-date-picker
-        label="Performance period — End"
-        required
-        data-field="perf-end"
-      ></bcn-date-picker>
-    </div>
-  </div>
+    <esa-combobox
+      mode="autocomplete"
+      label="Contract"
+      placeholder="Search contracts…"
+      required
+      data-field="contract"
+      data-combobox-options={JSON.stringify(contracts)}
+      data-contract-amounts={JSON.stringify(contractAmounts)}
+      data-contract-projects={JSON.stringify(contractProjects)}
+    ></esa-combobox>
+    <esa-text-field
+      label="Project"
+      placeholder="Auto-populated from contract"
+      disabled
+      data-field="project"
+      help-text="Read-only — determined by the selected contract."
+    ></esa-text-field>
 
-  <!-- Line items -->
-  <div class="cbf-form-section">
-    <h2 class="cbf-form-section__title">Line items</h2>
-    <div class="cbf-line-items">
-      <div class="cbf-line-items__head" aria-hidden="true">
-        <span class="cbf-li-col--desc">Description</span>
-        <span class="cbf-li-col--qty">Qty</span>
-        <span class="cbf-li-col--price">Unit price</span>
-        <span class="cbf-li-col--total">Total</span>
-        <span class="cbf-li-col--action"></span>
-      </div>
-      <div class="cbf-line-items__body" data-line-items></div>
-      <div class="cbf-line-items__foot">
-        <button type="button" class="cbf-add-row" data-add-line-item>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
-          Add line item
-        </button>
-        <div class="cbf-line-items__total">
-          <span>Invoice total</span>
-          <strong data-invoice-total>$0.00</strong>
+    <esa-text-field
+      label="Invoice number"
+      placeholder="e.g. INV-2026-0042"
+      required
+      data-field="invoice-number"
+    ></esa-text-field>
+    <bcn-date-picker
+      label="Invoice date"
+      required
+      data-field="invoice-date"
+      value={today}
+    ></bcn-date-picker>
+    <bcn-date-picker
+      label="Performance period — Start"
+      required
+      data-field="perf-start"
+    ></bcn-date-picker>
+    <bcn-date-picker
+      label="Performance period — End"
+      required
+      data-field="perf-end"
+    ></bcn-date-picker>
+
+    <esa-text-field
+      label="Total amount (USD)"
+      placeholder="e.g. 4,850.00"
+      inputmode="decimal"
+      required
+      data-field="total-amount"
+      help-text="Enter the total due, matching your uploaded invoice PDF."
+    ></esa-text-field>
+    <div data-step-error="total" hidden>
+      <EsaAlertBox variant="danger">Please enter the invoice total amount.</EsaAlertBox>
+    </div>
+    <div data-step-error="total-exceeds" hidden>
+      <EsaAlertBox variant="danger">
+        This amount exceeds the <span data-remaining-amount>remaining balance</span> remaining on this contract. Reduce the total, or contact your contract manager.
+      </EsaAlertBox>
+    </div>
+
+    <!-- Line items — hidden; the breakdown lives in the PDF. -->
+    <div hidden>
+      <div class="cbf-line-items">
+        <div class="cbf-line-items__head" aria-hidden="true">
+          <span class="cbf-li-col--desc">Description</span>
+          <span class="cbf-li-col--qty">Qty</span>
+          <span class="cbf-li-col--price">Unit price</span>
+          <span class="cbf-li-col--total">Total</span>
+          <span class="cbf-li-col--action"></span>
+        </div>
+        <div class="cbf-line-items__body" data-line-items></div>
+        <div class="cbf-line-items__foot">
+          <button type="button" class="cbf-add-row" data-add-line-item>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add line item
+          </button>
+          <div class="cbf-line-items__total">
+            <span>Invoice total</span>
+            <strong data-invoice-total>$0.00</strong>
+          </div>
         </div>
       </div>
+      <div data-step-error="lineitems" hidden>
+        <EsaAlertBox variant="danger">Please add at least one line item.</EsaAlertBox>
+      </div>
     </div>
-    <div data-step-error="lineitems" hidden>
-      <EsaAlertBox variant="danger">Please add at least one line item.</EsaAlertBox>
-    </div>
-  </div>
 
-  <!-- Final invoice — its own section so it reads as a deliberate decision the
-       vendor owns. The wizard never ticks this for them; if the invoice looks
-       final (remaining balance within 5% of the total), it asks via a modal on
-       Review & submit and lets the vendor decide. -->
-  <div class="cbf-form-section">
-    <h2 class="cbf-form-section__title">Final invoice</h2>
     <div class="cbf-final-invoice" data-final-invoice-callout>
       <esa-checkbox
         size="lg"
@@ -176,47 +174,40 @@ const projects = [
         data-final-invoice
       ></esa-checkbox>
     </div>
-  </div>
 
-  <!-- Supporting documents -->
-  <div class="cbf-form-section">
-    <h2 class="cbf-form-section__title">
-      Supporting documents <span class="cbf-optional">(optional)</span>
-    </h2>
-    <p class="cbf-section-desc">Attach timesheets, receipts, reports, or any other supporting files.</p>
-
-    <div class="cbf-support-docs">
-      <div class="cbf-support-docs__list" data-docs-list></div>
-      <button type="button" class="cbf-support-docs__add" data-docs-add>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <line x1="12" y1="5" x2="12" y2="19"/>
-          <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-        Add documents
-      </button>
+    <div class="cbf-support-docs-group">
+      <p class="cbf-support-docs-group__label">
+        Supporting documents <span class="cbf-optional">(optional)</span>
+      </p>
+      <p class="cbf-support-docs-group__desc">Attach timesheets, receipts, reports, or any other supporting files.</p>
+      <div class="cbf-support-docs">
+        <div class="cbf-support-docs__list" data-docs-list></div>
+        <button type="button" class="cbf-support-docs__add" data-docs-add>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Add documents
+        </button>
+      </div>
+      <input
+        type="file"
+        multiple
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+        class="cbf-docs-input"
+        data-docs-input
+        tabindex="-1"
+        aria-hidden="true"
+      />
     </div>
-    <input
-      type="file"
-      multiple
-      accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
-      class="cbf-docs-input"
-      data-docs-input
-      tabindex="-1"
-      aria-hidden="true"
-    />
-  </div>
 
-  <!-- Notes (optional) -->
-  <div class="cbf-form-section">
-    <h2 class="cbf-form-section__title">
-      Notes <span class="cbf-optional">(optional)</span>
-    </h2>
     <esa-textarea
       label="Additional notes"
       placeholder="Any additional context for the payment processor…"
       rows="3"
       data-field="notes"
     ></esa-textarea>
+
   </div>
 
   <div data-step-error="upload" hidden>
@@ -251,16 +242,11 @@ const projects = [
     color: var(--color-surface-inverse);
   }
 
-  /* ---- Form sections ---- */
-  .cbf-form-section {
-    margin-top: var(--spacing-600);
-    padding-top: var(--spacing-500);
-    border-top: 1px solid var(--color-border);
-  }
-  .cbf-form-section--first {
-    margin-top: 0;
-    padding-top: 0;
-    border-top: 0;
+  /* ---- Flat form field stack ---- */
+  .cbf-form-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-500);
   }
 
   /* ---- Form lock notice ---- */
@@ -316,21 +302,24 @@ const projects = [
     opacity: 0;
     pointer-events: none;
   }
-  .cbf-form-section__title {
-    margin: 0 0 var(--spacing-400);
-    font-family: var(--font-display);
-    font-size: 20px;
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
-    display: flex;
-    align-items: baseline;
-    gap: var(--spacing-200);
-  }
   .cbf-optional {
-    font-family: var(--font-sans);
     font-size: 13px;
     font-weight: var(--font-weight-regular);
     color: var(--color-text-muted);
+  }
+
+  /* ---- Supporting documents group ---- */
+  .cbf-support-docs-group__label {
+    margin: 0 0 var(--spacing-050);
+    font-size: var(--type-size-200, 13px);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+  }
+  .cbf-support-docs-group__desc {
+    margin: 0 0 var(--spacing-300);
+    font-size: 13px;
+    color: var(--color-text-muted);
+    line-height: 1.5;
   }
 
   /* ---- Read-only grid ---- */
@@ -361,13 +350,6 @@ const projects = [
     flex: 1;
     font-size: 14px;
     color: var(--color-text-primary);
-  }
-
-  /* ---- Stacked form row ---- */
-  .cbf-form-row--2col {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-400);
   }
 
   /* ---- Line items ---- */
@@ -422,13 +404,6 @@ const projects = [
     font-size: 17px;
     font-weight: var(--font-weight-semibold);
     color: var(--color-text-primary);
-  }
-
-  .cbf-section-desc {
-    margin: calc(-1 * var(--spacing-200)) 0 var(--spacing-400);
-    font-size: 14px;
-    color: var(--color-text-muted);
-    line-height: 1.5;
   }
 
   /* ---- Final invoice flag ---- */

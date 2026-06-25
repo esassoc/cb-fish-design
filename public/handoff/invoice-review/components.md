@@ -24,12 +24,14 @@ The component blocks composing this page. Hub (`esa-*`) components are the share
 | `cbf-page` | spoke | — |
 | `cbf-review` | spoke | — |
 | `cbf-review-actions` | spoke | — |
+| `cbf-review-attachments` | spoke | — |
 | `cbf-review-context` | spoke | — |
 | `cbf-review-dialog` | spoke | — |
 | `cbf-review-docpane` | spoke | — |
 | `cbf-review-fields` | spoke | — |
 | `cbf-review-footer` | spoke | — |
 | `cbf-review-hero` | spoke | — |
+| `cbf-review-impact` | spoke | — |
 | `cbf-review-panel` | spoke | — |
 | `cbf-review-split` | spoke | — |
 | `cbf-review-triage-strip` | spoke | src/components/invoice-review/cbf-review-triage-strip.astro |
