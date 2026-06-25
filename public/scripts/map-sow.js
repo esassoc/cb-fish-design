@@ -190,9 +190,9 @@ window.onload = function() {
         var row = document.createElement('label'); row.className='layer-row';
         var cb = document.createElement('input'); cb.type='checkbox';
         var slider = document.createElement('input'); slider.type='range'; slider.className='layer-opacity';
-        if (name === 'NHD Streams') { cb.checked = true; slider.style.display='block'; }
         slider.min='0'; slider.max='1'; slider.step='0.05'; slider.value=String(overlays[name].options.opacity||0.7);
         slider.style.display='none';
+        if (name === 'NHD Streams') { cb.checked = true; slider.style.display='block'; }
         slider.oninput = function(){ overlays[name].setOpacity(parseFloat(slider.value)); };
         cb.onchange = function() {
           if(cb.checked){ overlays[name].addTo(map); slider.style.display='block'; } else { map.removeLayer(overlays[name]); slider.style.display='none'; }
@@ -5428,7 +5428,7 @@ function renderWizardStep() {
 }
 
 function wizardStepBody(we, step, idx) {
-  var h = '<div class="wz-step-num">Step '+(idx+1)+' of '+WIZARD_STEPS.length+'</div>';
+  var h = '<div class="wz-step-num">Step '+(idx+1)+' of '+getVisibleSteps().length+'</div>';
   h += '<div class="wz-step-title">'+step.title+'</div>';
 
   switch(step.id) {
