@@ -449,10 +449,6 @@ The palette on open with no query — the Recent list (last-viewed records) as t
   font-size: 13px;
   color: var(--color-text-muted);
 }
-.cbf-search-field .cbf-icon {
-  color: var(--color-text-muted);
-  display: inline-flex;
-}
 .cbf-search-surface .cbf-facet {
   display: flex;
   align-items: center;
@@ -475,6 +471,10 @@ The palette on open with no query — the Recent list (last-viewed records) as t
 }
 .cbf-search-surface .cbf-facet__label {
   flex: 1;
+}
+.cbf-search-field .cbf-icon {
+  color: var(--color-text-muted);
+  display: inline-flex;
 }
 ```
 

@@ -689,6 +689,10 @@ The palette mid-query — grouped results across types with scope pills, matched
 .cbf-omni[hidden] {
   display: none;
 }
+.cbf-omni-trigger:hover {
+  background: #ffffff29;
+  border-color: #ffffff59;
+}
 .cbf-search-surface .cbf-icon {
   display: inline-flex;
   align-items: center;
@@ -698,10 +702,6 @@ The palette mid-query — grouped results across types with scope pills, matched
   text-align: center;
   color: var(--color-text-muted);
   font-size: 15px;
-}
-.cbf-omni-trigger:hover {
-  background: #ffffff29;
-  border-color: #ffffff59;
 }
 .cbf-omni__scrim {
   position: absolute;

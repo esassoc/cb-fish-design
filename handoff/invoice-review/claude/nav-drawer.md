@@ -88,12 +88,6 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
 
 ## Styles (only what this section uses; tokens resolved for the theme)
 ```css
-.stack {
-  --gap: var(--spacing-400, 1rem);
-  display: flex;
-  flex-direction: column;
-  gap: var(--gap);
-}
 .esa-link-column {
   color: inherit;
 }
@@ -124,6 +118,12 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
 .esa-link-column__list a {
   color: inherit;
   text-decoration: none;
+}
+.stack {
+  --gap: var(--spacing-400, 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
 }
 ```
 

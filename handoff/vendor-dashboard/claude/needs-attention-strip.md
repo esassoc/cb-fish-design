@@ -72,6 +72,21 @@ Hoists invoices blocked ON THE VENDOR (Needs revision) out of the table into one
 
 ## Styles
 ```css
+.repel {
+  --gap: var(--spacing-400, 1rem);
+  --align: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  align-items: var(--align);
+  justify-content: space-between;
+}
+.type-body {
+  font-size: var(--type-size-200);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-relaxed);
+  letter-spacing: var(--letter-spacing-normal);
+}
 .esa-icon {
   --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
   display: inline-flex;
@@ -95,6 +110,9 @@ Hoists invoices blocked ON THE VENDOR (Needs revision) out of the table into one
 }
 .esa-icon--lg {
   --_icon-size: var(--icon-size-lg, var(--icon-size-large, 24px));
+}
+.esa-icon--md {
+  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
 }
 .esa-icon-link {
   --_il-font: var(--icon-link-font-size-md, 1rem);
@@ -126,62 +144,10 @@ Hoists invoices blocked ON THE VENDOR (Needs revision) out of the table into one
 summary.esa-icon-link {
   list-style: none;
 }
-.esa-alert-box {
-  --_alert-bg: var(--alert-box-bg, var(--color-info-subtle, #eff6ff));
-  --_alert-border: var(--alert-box-border-color, var(--color-info-border, #bfdbfe));
-  --_alert-icon-color: var(--color-info, #3b82f6);
-  --_alert-title-color: var(--alert-box-title-color, var(--color-text-primary, #171717));
-  --_alert-text-color: var(--alert-box-text-color, var(--color-text-secondary, #525252));
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-300, 0.75rem);
-  padding: var(--alert-box-padding, var(--spacing-300, 0.75rem) var(--spacing-400, 1rem));
-  border: 1px solid var(--_alert-border);
-  border-radius: var(--alert-box-radius, var(--radius-200, 0.5rem));
-  background: var(--_alert-bg);
-  font-size: var(--type-size-150, 0.875rem);
-  line-height: 1.5;
-}
-.esa-alert-box--warning {
-  --_alert-bg: var(--color-warning-subtle, #fffbeb);
-  --_alert-border: var(--color-warning-border, #fde68a);
-  --_alert-icon-color: var(--color-warning, #f59e0b);
-}
-.esa-alert-box__icon {
-  flex-shrink: 0;
-  color: var(--_alert-icon-color);
-  padding-top: 1px;
-}
-.esa-alert-box__body {
-  flex: 1;
-  min-width: 0;
-}
-.esa-alert-box__title {
-  display: block;
-  font-weight: 600;
-  color: var(--_alert-title-color);
-  margin-bottom: var(--spacing-050, 0.125rem);
-}
-.esa-alert-box__message {
-  color: var(--_alert-text-color);
-}
-.esa-nav-dropdown .esa-icon-link > .esa-icon:last-child {
-  transition: transform 0.15s ease;
-}
-.repel {
-  --gap: var(--spacing-400, 1rem);
-  --align: center;
-  display: flex;
+.cbf-vendor-attention__body {
+  align-items: center;
+  gap: var(--spacing-400);
   flex-wrap: wrap;
-  gap: var(--gap);
-  align-items: var(--align);
-  justify-content: space-between;
-}
-.type-body {
-  font-size: var(--type-size-200);
-  font-weight: var(--font-weight-regular);
-  line-height: var(--line-height-relaxed);
-  letter-spacing: var(--letter-spacing-normal);
 }
 .esa-button {
   --_btn-height: var(--form-height-md, 40px);
@@ -235,10 +201,57 @@ summary.esa-icon-link {
   --_btn-font-size: var(--form-font-size-sm, 12px);
   --_btn-radius: var(--form-radius-sm, 4px);
 }
-.cbf-vendor-attention__body {
-  align-items: center;
-  gap: var(--spacing-400);
-  flex-wrap: wrap;
+.esa-button--color-secondary {
+  --_accent: var(--color-secondary, #5787b9);
+  --_accent-hover: var(--color-secondary-hover, #43608a);
+}
+.esa-button--appearance-outline .esa-button__native,
+.esa-button--appearance-dashed .esa-button__native {
+  background: transparent;
+  color: var(--_accent);
+  border-color: var(--_accent);
+}
+.esa-nav-dropdown .esa-icon-link > .esa-icon:last-child {
+  transition: transform 0.15s ease;
+}
+.esa-alert-box {
+  --_alert-bg: var(--alert-box-bg, var(--color-info-subtle, #eff6ff));
+  --_alert-border: var(--alert-box-border-color, var(--color-info-border, #bfdbfe));
+  --_alert-icon-color: var(--color-info, #3b82f6);
+  --_alert-title-color: var(--alert-box-title-color, var(--color-text-primary, #171717));
+  --_alert-text-color: var(--alert-box-text-color, var(--color-text-secondary, #525252));
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-300, 0.75rem);
+  padding: var(--alert-box-padding, var(--spacing-300, 0.75rem) var(--spacing-400, 1rem));
+  border: 1px solid var(--_alert-border);
+  border-radius: var(--alert-box-radius, var(--radius-200, 0.5rem));
+  background: var(--_alert-bg);
+  font-size: var(--type-size-150, 0.875rem);
+  line-height: 1.5;
+}
+.esa-alert-box--warning {
+  --_alert-bg: var(--color-warning-subtle, #fffbeb);
+  --_alert-border: var(--color-warning-border, #fde68a);
+  --_alert-icon-color: var(--color-warning, #f59e0b);
+}
+.esa-alert-box__icon {
+  flex-shrink: 0;
+  color: var(--_alert-icon-color);
+  padding-top: 1px;
+}
+.esa-alert-box__body {
+  flex: 1;
+  min-width: 0;
+}
+.esa-alert-box__title {
+  display: block;
+  font-weight: 600;
+  color: var(--_alert-title-color);
+  margin-bottom: var(--spacing-050, 0.125rem);
+}
+.esa-alert-box__message {
+  color: var(--_alert-text-color);
 }
 ```
 
@@ -254,6 +267,8 @@ summary.esa-icon-link {
 - `--color-info-subtle`: #f3f7fc _(semantic)_
 - `--color-primary`: #1e5386 _(semantic)_
 - `--color-primary-hover`: #1a4570 _(semantic)_
+- `--color-secondary`: #2770b2 _(semantic)_
+- `--color-secondary-hover`: #1e5386 _(semantic)_
 - `--color-text-inverse`: #ffffff _(semantic)_
 - `--color-text-primary`: #3d3d3d _(semantic)_
 - `--color-text-secondary`: #525252 _(semantic)_

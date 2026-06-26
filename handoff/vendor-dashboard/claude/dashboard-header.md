@@ -1,4 +1,4 @@
-# Portal header
+# Dashboard header
 
 Welcome banner on the invoices view. Greets the vendor by first name using esa-page-header with the primary CTA (Submit Invoice → /vendor-invoice). The activity-stat row is suppressed here (showStats={false}) because the financial-outlook band below owns the numbers.
 
@@ -12,7 +12,7 @@ Welcome banner on the invoices view. Greets the vendor by first name using esa-p
 
 ## Markup
 ```html
-<div class="cbf-vendor-portal-header">
+<div class="cbf-vendor-dashboard-header">
   <header class="esa-page-header">
     <div class="esa-page-header__bar">
       <div class="esa-page-header__titles">
@@ -84,45 +84,70 @@ Welcome banner on the invoices view. Greets the vendor by first name using esa-p
 .esa-icon--md {
   --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
 }
-.esa-nav-dropdown .esa-icon-link > .esa-icon:last-child {
-  transition: transform 0.15s ease;
+.esa-button {
+  --_btn-height: var(--form-height-md, 40px);
+  --_btn-padding-x: var(--form-padding-x-md, 16px);
+  --_btn-font-size: var(--form-font-size-md, 14px);
+  --_btn-radius: var(--form-radius-md, 6px);
+  --_accent: var(--color-primary, #43608a);
+  --_accent-hover: var(--color-primary-hover, #39506f);
+  --_on: var(--color-text-inverse, #ffffff);
+  display: inline-block;
 }
-.cbf-vendor-portal-header {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-600);
-  padding-bottom: var(--spacing-600);
-  border-bottom: 1px solid var(--color-border);
+.esa-button--lg {
+  --_btn-height: var(--form-height-lg, 48px);
+  --_btn-padding-x: var(--form-padding-x-lg, 20px);
+  --_btn-font-size: var(--form-font-size-lg, 16px);
+  --_btn-radius: var(--form-radius-lg, 8px);
 }
-.esa-icon-link {
-  --_il-font: var(--icon-link-font-size-md, 1rem);
+.esa-button__native {
   display: inline-flex;
   align-items: center;
-  gap: var(--icon-link-gap, var(--spacing-150, 6px));
-  padding: 0;
-  margin: 0;
-  border: 0;
-  background: none;
-  color: inherit;
+  justify-content: center;
+  gap: var(--spacing-200, 8px);
+  width: 100%;
+  height: var(--_btn-height);
+  padding-inline: var(--_btn-padding-x);
+  border: 1px solid transparent;
+  border-radius: var(--_btn-radius);
+  font-size: var(--_btn-font-size);
   font-family: var(--font-sans, system-ui, sans-serif);
-  font-size: var(--_il-font);
   font-weight: var(--font-weight-medium, 500);
   line-height: 1;
   text-decoration: none;
   cursor: pointer;
+  transition:
+    background var(--transition-fast, 0.15s ease),
+    border-color var(--transition-fast, 0.15s ease);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.esa-button--appearance-fill .esa-button__native {
+  background: var(--_accent);
+  color: var(--_on);
+  border-color: transparent;
+}
+.esa-button__label {
   white-space: nowrap;
 }
-.esa-icon-link--sm {
-  --_il-font: var(--icon-link-font-size-sm, 0.875rem);
+.esa-button--sm {
+  --_btn-height: var(--form-height-sm, 32px);
+  --_btn-padding-x: var(--form-padding-x-sm, 12px);
+  --_btn-font-size: var(--form-font-size-sm, 12px);
+  --_btn-radius: var(--form-radius-sm, 4px);
 }
-.esa-icon-link--medium {
-  font-weight: var(--font-weight-medium, 500);
+.esa-button--color-secondary {
+  --_accent: var(--color-secondary, #5787b9);
+  --_accent-hover: var(--color-secondary-hover, #43608a);
 }
-.esa-icon-link__label {
-  display: inline-block;
+.esa-button--appearance-outline .esa-button__native,
+.esa-button--appearance-dashed .esa-button__native {
+  background: transparent;
+  color: var(--_accent);
+  border-color: var(--_accent);
 }
-summary.esa-icon-link {
-  list-style: none;
+.esa-nav-dropdown .esa-icon-link > .esa-icon:last-child {
+  transition: transform 0.15s ease;
 }
 .esa-page-header {
   --_ph-title-color: var(--page-header-title-color, var(--color-text-primary, #171717));
@@ -191,67 +216,42 @@ summary.esa-icon-link {
   gap: var(--spacing-200, 0.5rem);
   flex-shrink: 0;
 }
-.esa-button {
-  --_btn-height: var(--form-height-md, 40px);
-  --_btn-padding-x: var(--form-padding-x-md, 16px);
-  --_btn-font-size: var(--form-font-size-md, 14px);
-  --_btn-radius: var(--form-radius-md, 6px);
-  --_accent: var(--color-primary, #43608a);
-  --_accent-hover: var(--color-primary-hover, #39506f);
-  --_on: var(--color-text-inverse, #ffffff);
-  display: inline-block;
-}
-.esa-button--lg {
-  --_btn-height: var(--form-height-lg, 48px);
-  --_btn-padding-x: var(--form-padding-x-lg, 20px);
-  --_btn-font-size: var(--form-font-size-lg, 16px);
-  --_btn-radius: var(--form-radius-lg, 8px);
-}
-.esa-button__native {
+.esa-icon-link {
+  --_il-font: var(--icon-link-font-size-md, 1rem);
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--spacing-200, 8px);
-  width: 100%;
-  height: var(--_btn-height);
-  padding-inline: var(--_btn-padding-x);
-  border: 1px solid transparent;
-  border-radius: var(--_btn-radius);
-  font-size: var(--_btn-font-size);
+  gap: var(--icon-link-gap, var(--spacing-150, 6px));
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  color: inherit;
   font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--_il-font);
   font-weight: var(--font-weight-medium, 500);
   line-height: 1;
   text-decoration: none;
   cursor: pointer;
-  transition:
-    background var(--transition-fast, 0.15s ease),
-    border-color var(--transition-fast, 0.15s ease);
-  -webkit-appearance: none;
-  appearance: none;
-}
-.esa-button--appearance-fill .esa-button__native {
-  background: var(--_accent);
-  color: var(--_on);
-  border-color: transparent;
-}
-.esa-button__label {
   white-space: nowrap;
 }
-.esa-button--sm {
-  --_btn-height: var(--form-height-sm, 32px);
-  --_btn-padding-x: var(--form-padding-x-sm, 12px);
-  --_btn-font-size: var(--form-font-size-sm, 12px);
-  --_btn-radius: var(--form-radius-sm, 4px);
+.esa-icon-link--sm {
+  --_il-font: var(--icon-link-font-size-sm, 0.875rem);
 }
-.esa-button--color-secondary {
-  --_accent: var(--color-secondary, #5787b9);
-  --_accent-hover: var(--color-secondary-hover, #43608a);
+.esa-icon-link--medium {
+  font-weight: var(--font-weight-medium, 500);
 }
-.esa-button--appearance-outline .esa-button__native,
-.esa-button--appearance-dashed .esa-button__native {
-  background: transparent;
-  color: var(--_accent);
-  border-color: var(--_accent);
+.esa-icon-link__label {
+  display: inline-block;
+}
+summary.esa-icon-link {
+  list-style: none;
+}
+.cbf-vendor-dashboard-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-600);
+  padding-bottom: var(--spacing-600);
+  border-bottom: 1px solid var(--color-border);
 }
 ```
 

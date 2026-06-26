@@ -1,6 +1,6 @@
 # Token contract — invoice-review
 
-The 87 design tokens this page actually uses, resolved to their final values for the `cb-fish` theme. Component CSS still references them by name (`var(--color-primary)`), so the names carry the intent; the values below are what they currently resolve to.
+The 90 design tokens this page actually uses, resolved to their final values for the `cb-fish` theme. Component CSS still references them by name (`var(--color-primary)`), so the names carry the intent; the values below are what they currently resolve to.
 
 ## Brand
 
@@ -59,9 +59,12 @@ The 87 design tokens this page actually uses, resolved to their final values for
 | `--form-font-size-md` | `clamp(.75rem, .66rem + .44vw, .9375rem)` |
 | `--form-font-size-sm` | `clamp(.625rem, .56rem + .32vw, .75rem)` |
 | `--form-height-md` | `40px` |
+| `--form-height-sm` | `32px` |
+| `--form-height-xs` | `28px` |
 | `--form-padding-x-md` | `.75rem` |
 | `--form-padding-x-sm` | `.625rem` |
 | `--form-radius-md` | `.5rem` |
+| `--form-radius-sm` | `.25rem` |
 | `--icon-link-font-size-md` | `1rem` |
 | `--icon-link-font-size-sm` | `.875rem` |
 | `--icon-link-gap` | `.375rem` |
