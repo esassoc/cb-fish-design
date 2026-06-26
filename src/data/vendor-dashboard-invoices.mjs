@@ -42,7 +42,8 @@ export const portfolio = {
 /** @type {Invoice[]} */
 export const invoices = [
   {
-    number: 'INV-2026-0045', contract: 'Salmon Habitat Restoration — Wenatchee', project: 'Wenatchee Subbasin',
+    number: 'INV-2026-0045', contractNumber: 'C-2024-042', contract: 'Salmon Habitat Restoration — Wenatchee',
+    projectNumber: 'PRJ-2024-112', project: 'Wenatchee Subbasin',
     submitted: 'Jun 20, 2026', amount: 5210, stage: 'Submitted',
     invoiceDate: 'Jun 18, 2026', issued: 'Jun 18, 2026', perfStart: 'Jun 1, 2026', perfEnd: 'Jun 15, 2026',
     pdfName: 'INV-2026-0045-PacificEnv.pdf', supportingDocs: ['timesheet-jun-2026.pdf', 'equipment-receipt.pdf'],
@@ -54,7 +55,8 @@ export const invoices = [
     ],
   },
   {
-    number: 'INV-2026-0042', contract: 'Salmon Habitat Restoration — Wenatchee', project: 'Wenatchee Subbasin',
+    number: 'INV-2026-0042', contractNumber: 'C-2024-042', contract: 'Salmon Habitat Restoration — Wenatchee',
+    projectNumber: 'PRJ-2024-112', project: 'Wenatchee Subbasin',
     submitted: 'Jun 18, 2026', amount: 4850, stage: 'Submitted',
     invoiceDate: 'Jun 1, 2026', issued: 'Jun 1, 2026', perfStart: 'May 1, 2026', perfEnd: 'May 31, 2026',
     pdfName: 'INV-2026-0042-PacificEnv.pdf', supportingDocs: ['timesheet-may-2026.pdf'],
@@ -65,7 +67,8 @@ export const invoices = [
     ],
   },
   {
-    number: 'INV-2026-0039', contract: 'Riparian Vegetation Monitoring — Methow', project: 'Methow Subbasin',
+    number: 'INV-2026-0039', contractNumber: 'C-2024-051', contract: 'Riparian Vegetation Monitoring — Methow',
+    projectNumber: 'PRJ-2024-088', project: 'Methow Subbasin',
     submitted: 'Jun 11, 2026', amount: 2310, stage: 'In review',
     invoiceDate: 'Jun 2, 2026', issued: 'Jun 2, 2026', perfStart: 'May 1, 2026', perfEnd: 'May 31, 2026',
     pdfName: 'INV-2026-0039-PacificEnv.pdf', supportingDocs: ['transect-data.xlsx'],
@@ -75,7 +78,8 @@ export const invoices = [
     ],
   },
   {
-    number: 'INV-2026-0035', contract: 'Smolt Survival Telemetry Study', project: 'Mainstem Survival',
+    number: 'INV-2026-0035', contractNumber: 'C-2024-067', contract: 'Smolt Survival Telemetry Study',
+    projectNumber: 'PRJ-2024-201', project: 'Mainstem Survival',
     submitted: 'May 29, 2026', amount: 3975, stage: 'Approved',
     invoiceDate: 'May 5, 2026', issued: 'May 5, 2026', perfStart: 'Apr 1, 2026', perfEnd: 'Apr 30, 2026',
     pdfName: 'INV-2026-0035-PacificEnv.pdf', supportingDocs: ['receiver-log.pdf', 'maintenance-photos.pdf'],
@@ -86,7 +90,8 @@ export const invoices = [
     ],
   },
   {
-    number: 'INV-2026-0031', contract: 'Hatchery Supplementation — Entiat', project: 'Entiat Subbasin',
+    number: 'INV-2026-0031', contractNumber: 'C-2024-073', contract: 'Hatchery Supplementation — Entiat',
+    projectNumber: 'PRJ-2024-095', project: 'Entiat Subbasin',
     submitted: 'May 14, 2026', amount: 1640, stage: 'Paid',
     invoiceDate: 'May 1, 2026', issued: 'May 1, 2026', perfStart: 'Apr 1, 2026', perfEnd: 'Apr 30, 2026',
     pdfName: 'INV-2026-0031-PacificEnv.pdf', supportingDocs: ['broodstock-log.pdf'], paidDate: 'May 28, 2026',
@@ -96,7 +101,8 @@ export const invoices = [
     ],
   },
   {
-    number: 'INV-2026-0028', contract: 'Water Quality Sampling — Okanogan', project: 'Okanogan Subbasin',
+    number: 'INV-2026-0028', contractNumber: 'C-2024-058', contract: 'Water Quality Sampling — Okanogan',
+    projectNumber: 'PRJ-2024-143', project: 'Okanogan Subbasin',
     submitted: 'May 2, 2026', amount: 1425, stage: 'Needs revision',
     invoiceDate: 'Apr 20, 2026', issued: 'Apr 20, 2026', perfStart: 'Mar 1, 2026', perfEnd: 'Mar 31, 2026',
     pdfName: 'INV-2026-0028-PacificEnv.pdf', supportingDocs: ['sample-chain-of-custody.pdf'],
@@ -107,7 +113,8 @@ export const invoices = [
     ],
   },
   {
-    number: 'INV-2026-0024', contract: 'Smolt Survival Telemetry Study', project: 'Mainstem Survival',
+    number: 'INV-2026-0024', contractNumber: 'C-2024-067', contract: 'Smolt Survival Telemetry Study',
+    projectNumber: 'PRJ-2024-201', project: 'Mainstem Survival',
     submitted: 'Apr 22, 2026', amount: 2890, stage: 'Paid',
     invoiceDate: 'Apr 10, 2026', issued: 'Apr 10, 2026', perfStart: 'Mar 1, 2026', perfEnd: 'Mar 31, 2026',
     pdfName: 'INV-2026-0024-PacificEnv.pdf', supportingDocs: ['data-analysis.pdf'], paidDate: 'May 9, 2026',
@@ -117,7 +124,8 @@ export const invoices = [
     ],
   },
   {
-    number: 'INV-2026-0019', contract: 'Riparian Vegetation Monitoring — Methow', project: 'Methow Subbasin',
+    number: 'INV-2026-0019', contractNumber: 'C-2024-051', contract: 'Riparian Vegetation Monitoring — Methow',
+    projectNumber: 'PRJ-2024-088', project: 'Methow Subbasin',
     submitted: 'Apr 8, 2026', amount: 1980, stage: 'Paid',
     invoiceDate: 'Mar 25, 2026', issued: 'Mar 25, 2026', perfStart: 'Feb 1, 2026', perfEnd: 'Feb 28, 2026',
     pdfName: 'INV-2026-0019-PacificEnv.pdf', supportingDocs: [], paidDate: 'Apr 24, 2026',

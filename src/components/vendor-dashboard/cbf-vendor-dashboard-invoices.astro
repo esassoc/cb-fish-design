@@ -34,7 +34,9 @@ interface LineItem {
 
 interface Invoice {
   number: string;
+  contractNumber: string;
   contract: string;
+  projectNumber: string;
   project: string;
   submitted: string;
   amount: number;
@@ -682,7 +684,8 @@ const { invoices = defaultInvoices } = Astro.props;
   type Stage = 'Submitted' | 'In review' | 'Approved' | 'Paid' | 'Needs revision';
   type LineItem = { description: string; qty: number; unitPrice: number };
   type Invoice = {
-    number: string; contract: string; project: string; submitted: string;
+    number: string; contractNumber: string; contract: string;
+    projectNumber: string; project: string; submitted: string;
     amount: number; stage: Stage; invoiceDate: string; issued: string;
     perfStart: string; perfEnd: string; lineItems: LineItem[]; notes?: string; pdfName: string;
     supportingDocs: string[]; paidDate?: string;
@@ -803,10 +806,17 @@ const { invoices = defaultInvoices } = Astro.props;
         {
           headerName: 'Invoice #', field: 'number', colId: 'number',
           cellClass: 'cbf-grid-id', minWidth: 150,
-          // Search should also match the project (not shown as a column).
-          getQuickFilterText: (p) => `${p.data.number} ${p.data.project}`,
+          getQuickFilterText: (p) => `${p.data.number} ${p.data.contractNumber} ${p.data.projectNumber} ${p.data.project}`,
+        },
+        {
+          headerName: 'Contract #', field: 'contractNumber', colId: 'contractNumber',
+          cellClass: 'cbf-grid-id', minWidth: 120, maxWidth: 140,
         },
         { headerName: 'Contract', field: 'contract', colId: 'contract', flex: 2, minWidth: 200 },
+        {
+          headerName: 'Project #', field: 'projectNumber', colId: 'projectNumber',
+          cellClass: 'cbf-grid-id', minWidth: 120, maxWidth: 140,
+        },
         {
           // Date column: parse the display string to a Date so sort/filter are
           // chronological (a string column sorts "Apr"<"Jun"<"May"). The

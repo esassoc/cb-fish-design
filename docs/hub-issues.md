@@ -46,6 +46,33 @@ Give `esa-app-bar` a built-in overflow strategy so spokes get graceful small-vie
 
 ## esa-combobox
 
+### Click on already-focused input does not reopen dropdown (`autocomplete` mode)
+
+**Status:** Workaround applied locally in ecology repo — pending upstream fix  
+**Affects:** `mode="autocomplete"`, single-select, after a mouse selection
+
+**Reproduction:**
+1. Render an `<esa-combobox mode="autocomplete">` with options
+2. Click an option to select it (closes dropdown, focus returns to input via `requestAnimationFrame`)
+3. Immediately click the input field again
+4. Dropdown does not reopen — must click away first, then click again
+
+**Root cause:**  
+After mouse-selection, `selectOption()` restores focus with `requestAnimationFrame(() => input.focus())`. The `focus` event fires `onInputFocus`, which opens the dropdown — but the existing `_suppressNextOpen` flag (added for the prior bug) correctly suppresses that. However, the input now has focus. When the user clicks it again, no `focus` event fires (the element already has focus), and there was no `@click` handler, so nothing opened the dropdown.
+
+**Fix:**  
+Add an `onInputClick` handler that calls `openDropdown()` when the panel is closed, and bind it to `@click` on the autocomplete input.
+
+```ts
+private onInputClick = (): void => {
+  if (!this._open) this.openDropdown();
+};
+// in renderAutocomplete template:
+// @click=${this.onInputClick}
+```
+
+---
+
 ### Mouse selection leaves dropdown open (`autocomplete` mode)
 
 **Status:** Workaround applied locally in ecology repo — pending upstream fix  

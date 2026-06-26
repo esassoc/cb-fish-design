@@ -41,6 +41,11 @@ export function initInvoiceWizard(): void {
       promptFinalInvoice(() => goTo(next));
       return;
     }
+    // Modal mode: step 1 opens the modal review page instead of the page step.
+    if (next === 1 && confirmMode() === 'modal') {
+      openModalAtReview();
+      return;
+    }
     setStepVisibility(current, false);
     current = next;
     setStepVisibility(current, true);
@@ -49,6 +54,28 @@ export function initInvoiceWizard(): void {
     // Show PDF panel only on step 0 (Invoice Details) when a file is loaded
     syncPdfPanel();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function openModalAtReview(): void {
+    const modal = wizard.querySelector<any>('[data-confirm-modal]');
+    if (!modal) return;
+    // Reset to page 1 (review) in case the modal was previously on page 2 (success).
+    wizard.querySelector<HTMLElement>('[data-modal-page="review"]')?.removeAttribute('hidden');
+    wizard.querySelector<HTMLElement>('[data-modal-page="success"]')?.setAttribute('hidden', '');
+    wizard.querySelector<HTMLElement>('[data-modal-footer="review"]')?.removeAttribute('hidden');
+    wizard.querySelector<HTMLElement>('[data-modal-footer="success"]')?.setAttribute('hidden', '');
+    modal.heading = 'Review & submit';
+    populateModalReview();
+    modal.show();
+  }
+
+  function transitionModalToSuccess(): void {
+    wizard.querySelector<HTMLElement>('[data-modal-page="review"]')?.setAttribute('hidden', '');
+    wizard.querySelector<HTMLElement>('[data-modal-page="success"]')?.removeAttribute('hidden');
+    wizard.querySelector<HTMLElement>('[data-modal-footer="review"]')?.setAttribute('hidden', '');
+    wizard.querySelector<HTMLElement>('[data-modal-footer="success"]')?.removeAttribute('hidden');
+    const modal = wizard.querySelector<any>('[data-confirm-modal]');
+    if (modal) modal.heading = 'Invoice submitted';
   }
 
   function updateStepper(): void {
@@ -67,17 +94,24 @@ export function initInvoiceWizard(): void {
     });
   }
 
-  // Dev toggle: switch confirmation mode between "page" and "modal"
-  wizard.querySelector('[data-confirm-mode-bar]')?.addEventListener('click', (e) => {
+  // Dev toggle: switch confirmation mode between "page" and "modal".
+  // Mode is stored in a plain variable so confirmMode() never re-reads the DOM
+  // (avoids fragility around Astro-scoped class selectors on dynamically toggled nodes).
+  let activeConfirmMode: 'page' | 'modal' = 'page';
+  const confirmModeBar = wizard.querySelector<HTMLElement>('[data-confirm-mode-bar]');
+  confirmModeBar?.addEventListener('click', (e) => {
     const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-confirm-mode]');
     if (!btn) return;
-    wizard.querySelectorAll('[data-confirm-mode]').forEach(b => b.classList.remove('is-active'));
-    btn.classList.add('is-active');
+    const mode = btn.dataset.confirmMode as 'page' | 'modal' | undefined;
+    if (!mode) return;
+    activeConfirmMode = mode;
+    confirmModeBar.querySelectorAll<HTMLElement>('[data-confirm-mode]').forEach((b) => {
+      b.classList.toggle('is-active', b.dataset.confirmMode === mode);
+    });
   });
 
   function confirmMode(): string {
-    return wizard.querySelector<HTMLElement>('.cbf-dev-bar__opt.is-active')
-      ?.dataset.confirmMode ?? 'page';
+    return activeConfirmMode;
   }
 
   wizard.addEventListener('click', (e) => {
@@ -93,6 +127,8 @@ export function initInvoiceWizard(): void {
     if (t.closest('[data-invoice-replace]')) uploadInput.click();
     if (t.closest('[data-invoice-remove]')) { clearFile(); goTo(0); }
     if (t.closest('[data-wizard-submit]')) submitInvoice();
+    if (t.closest('[data-modal-submit]')) submitInvoice();
+    if (t.closest('[data-modal-back]')) wizard.querySelector<any>('[data-confirm-modal]')?.close();
   });
 
   // Show panel immediately on load (step 0)
@@ -186,8 +222,9 @@ export function initInvoiceWizard(): void {
     const locked = !pdfEverLoaded;
     wizard.querySelector<HTMLElement>('[data-form-lock-notice]')?.toggleAttribute('hidden', !locked);
 
-    // Named form fields (esa-text-field, bcn-date-picker, esa-combobox, esa-textarea)
-    wizard.querySelectorAll<any>('[data-field]').forEach((el) => {
+    // Named form fields (esa-text-field, bcn-date-picker, esa-combobox, esa-textarea).
+    // Skip [data-readonly] fields — they stay disabled regardless of lock state.
+    wizard.querySelectorAll<any>('[data-field]:not([data-readonly])').forEach((el) => {
       el.toggleAttribute('disabled', locked);
     });
 
@@ -554,10 +591,7 @@ export function initInvoiceWizard(): void {
     return match?.label ?? val;
   }
 
-  function populateReview(): void {
-    const container = wizard.querySelector<HTMLElement>('[data-review-content]');
-    if (!container) return;
-
+  function buildReviewHTML(): string {
     const invoiceNum = fieldVal('[data-field="invoice-number"]');
     const invoiceDate = fieldVal('[data-field="invoice-date"]');
     const perfStart = fieldVal('[data-field="perf-start"]');
@@ -566,8 +600,7 @@ export function initInvoiceWizard(): void {
     const project = comboboxLabel('[data-field="project"]');
     const notes = fieldVal('[data-field="notes"]');
     const total = invoiceTotal();
-
-    container.innerHTML = `
+    return `
       <div class="cbf-review-section">
         <h3 class="cbf-review-section__title">Uploaded invoice</h3>
         <div class="cbf-review-row">
@@ -620,12 +653,23 @@ export function initInvoiceWizard(): void {
     `;
   }
 
+  function populateReview(): void {
+    const container = wizard.querySelector<HTMLElement>('[data-review-content]');
+    if (container) container.innerHTML = buildReviewHTML();
+  }
+
+  function populateModalReview(): void {
+    const container = wizard.querySelector<HTMLElement>('[data-modal-review-content]');
+    if (container) container.innerHTML = buildReviewHTML();
+  }
+
   // ---- Submit ----
 
   function submitInvoice(): void {
-    // Engage loading state on the submit button so "Invoice Submitted" only
-    // appears after the simulated network round-trip, not on click.
-    const btn = wizard.querySelector<HTMLButtonElement>('[data-wizard-submit] button.esa-button');
+    const isModal = confirmMode() === 'modal';
+    // Target the submit button in whichever surface is active.
+    const btnWrap = isModal ? '[data-modal-submit]' : '[data-wizard-submit]';
+    const btn = wizard.querySelector<HTMLButtonElement>(`${btnWrap} button.esa-button`);
     if (btn) {
       btn.classList.add('esa-button--loading');
       btn.disabled = true;
@@ -641,19 +685,10 @@ export function initInvoiceWizard(): void {
 
     setTimeout(() => {
       const ref = `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 90000) + 10000)}`;
-      // Set the reference number in both the page step and the modal.
       wizard.querySelectorAll<HTMLElement>('[data-confirm-ref]').forEach(el => { el.textContent = ref; });
 
-      if (confirmMode() === 'modal') {
-        // Reset the submit button so the review step is clean while the modal is open.
-        if (btn) {
-          btn.classList.remove('esa-button--loading');
-          btn.disabled = false;
-          btn.removeAttribute('aria-busy');
-          btn.querySelector('.esa-button__spinner')?.remove();
-          btn.querySelector('.esa-button__label')?.classList.remove('esa-button__label--hidden');
-        }
-        wizard.querySelector<any>('[data-confirm-modal]')?.show();
+      if (isModal) {
+        transitionModalToSuccess();
       } else {
         goTo(2);
       }
