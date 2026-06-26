@@ -5459,7 +5459,7 @@ function wizardStepBody(we, step, idx) {
       break;
 
     case 'reach':
-      h += '<div class="wz-step-desc">Identify the stream centerline within your project area. You can auto-detect it from OpenStreetMap or draw it manually.</div>';
+      h += '<div class="wz-step-desc">Identify the stream centerline within your project area. You can auto-detect it from the NHD stream network or draw it manually.</div>';
       var reachD = we && we.ppData['reach_len'];
       var reachDone = reachD && reachD.layer;
       var reachPreTrim = reachD && reachD._preTrim && !reachDone;
@@ -5483,7 +5483,7 @@ function wizardStepBody(we, step, idx) {
       } else {
         h += '<button class="wz-action-btn" onclick="startReachAutoDetect();renderWizardStep()">&#127760; Auto-Detect from Map</button>';
         h += '<button class="wz-action-btn secondary" onclick="wizardDraw(\'reach_len\')">&#128207; Draw Manually</button>';
-        h += '<div class="wz-tip">Auto-detect queries OpenStreetMap — click near the stream and select the matching waterway.</div>';
+        h += '<div class="wz-tip">Auto-detect queries the NHD stream network — click on the stream to detect it.</div>';
       }
       break;
 
