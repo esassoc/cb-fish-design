@@ -12,6 +12,7 @@ var PP_DEFS = [
   {id:'fp_right',  label:'Right Floodplain Area',       geo:'line',    method:'measured', multi:0, segment:false, desc:'Draw the outer edge of the right floodplain — inner edge auto-completes along channel buffer.'},
   {id:'fp_width',  label:'Average Width of Floodplain', geo:'line',    method:'calc',     multi:0, segment:false, desc:'Auto-calculated: Total floodplain area ÷ reach length.'},
   {id:'area_fp',   label:'Total Active Floodplain Area',geo:null,      method:'calc',     multi:0, segment:false, desc:'Auto-calculated: Left + Right floodplain areas.'},
+  {id:'fp_poly',   label:'Floodplain Area',             geo:'polygon', method:'measured', multi:0, segment:false, desc:'Draw the floodplain extent — the stream channel is subtracted automatically to give net floodplain area.'},
   {id:'substrate', label:'Reach-Averaged Substrate',    geo:null,      method:'entered',  multi:0, segment:false, desc:'Prioritization substrate data layer.', inputLabel:'Dominant substrate', inputType:'select', opts:['','Silt','Sand','Gravel','Cobble','Boulders','Bedrock']}
 ];
 
@@ -868,6 +869,8 @@ function ppCalc(we,id) {
     return (fpM2&&reachM)?(fpM2/reachM):null;
   }
   if(id==='area_fp'){
+    var fpPoly=we.ppData['fp_poly'];
+    if(fpPoly && typeof fpPoly.valueM==='number') return fpPoly.valueM;
     var leftD=we.ppData['fp_left'], rightD=we.ppData['fp_right'];
     var leftM2=(leftD&&leftD.layer&&leftD.valueM)?leftD.valueM:0;
     var rightM2=(rightD&&rightD.layer&&rightD.valueM)?rightD.valueM:0;
@@ -1026,6 +1029,55 @@ function confirmReachChange(we) {
   return false;
 }
 
+// Returns true if every interior angle of the polygon is the same sign (convex).
+function isConvexPolygon(pts) {
+  var n = pts.length; if (n < 3) return false;
+  var sign = 0;
+  for (var i = 0; i < n; i++) {
+    var a=pts[i], b=pts[(i+1)%n], c=pts[(i+2)%n];
+    var cross=(b.lat-a.lat)*(c.lng-b.lng)-(b.lng-a.lng)*(c.lat-b.lat);
+    if (Math.abs(cross)<1e-12) continue;
+    var s=cross>0?1:-1;
+    if (!sign) sign=s; else if (s!==sign) return false;
+  }
+  return true;
+}
+
+// Standalone point-in-polygon (ray-casting)
+function ptInsidePoly(p, poly) {
+  var inside=false;
+  for(var i=0,j=poly.length-1;i<poly.length;j=i++){
+    var xi=poly[i].lng,yi=poly[i].lat,xj=poly[j].lng,yj=poly[j].lat;
+    if(((yi>p.lat)!==(yj>p.lat))&&(p.lng<(xj-xi)*(p.lat-yi)/(yj-yi)+xi))inside=!inside;
+  }
+  return inside;
+}
+
+// Nearest point on segment a→b to point p
+function nearestPtOnSeg(p, a, b) {
+  var dx=b.lng-a.lng, dy=b.lat-a.lat, lenSq=dx*dx+dy*dy;
+  if(lenSq<1e-16) return {lat:a.lat,lng:a.lng};
+  var t=Math.max(0,Math.min(1,((p.lng-a.lng)*dx+(p.lat-a.lat)*dy)/lenSq));
+  return {lat:a.lat+t*dy, lng:a.lng+t*dx};
+}
+
+// If latlng falls outside the project perimeter, snap it to the nearest boundary point.
+function snapToPerimeter(we, latlng) {
+  var perimD=we&&we.ppData['perimeter'];
+  if(!perimD||!perimD.layer) return latlng;
+  var pp=perimD.layer.getLatLngs();
+  if(pp.length&&Array.isArray(pp[0])) pp=pp[0];
+  if(!pp||pp.length<3) return latlng;
+  if(ptInsidePoly(latlng,pp)) return latlng;
+  var best=null, bestD=Infinity;
+  for(var i=0;i<pp.length;i++){
+    var s=nearestPtOnSeg(latlng,pp[i],pp[(i+1)%pp.length]);
+    var d=(s.lat-latlng.lat)*(s.lat-latlng.lat)+(s.lng-latlng.lng)*(s.lng-latlng.lng);
+    if(d<bestD){bestD=d;best=s;}
+  }
+  return best?L.latLng(best.lat,best.lng):latlng;
+}
+
 // Sutherland-Hodgman polygon clipping — clips subject ring to clip polygon.
 // Handles CW and CCW winding automatically. Works correctly for convex clip
 // polygons; for concave clip polygons it may over-clip but won't crash.
@@ -1125,14 +1177,9 @@ function updateAreaChBuffer(we) {
   pts = extendReachPts(pts);
   var ring = buildBufferPoly(pts, halfW);
   if (!ring) return;
-  // Clip buffer to project perimeter using Sutherland-Hodgman polygon intersection.
-  var perimD2 = we.ppData['perimeter'];
-  if (perimD2 && perimD2.layer) {
-    var perimPts2 = perimD2.layer.getLatLngs();
-    if (perimPts2.length && Array.isArray(perimPts2[0])) perimPts2 = perimPts2[0];
-    var clipped = clipPolygonToPolygon(ring, perimPts2);
-    if (clipped && clipped.length >= 3) ring = clipped;
-  }
+  // No perimeter clipping — S-H fails on non-convex subject polygons (bent reach
+  // buffers have an indent at the inner corner). The buffer may extend slightly
+  // past the boundary at endpoints but will never be truncated mid-reach.
   d.bufferLayer = L.polygon(ring, {
     color: PP_COLOR.buffer, fillColor: PP_COLOR.buffer,
     fillOpacity: 0.15, weight: 2, dashArray: '6,4', interactive: false
@@ -1238,6 +1285,59 @@ function buildFpFromOuterLine(we, outerPts) {
   var arc  = geoAreaM2(polyFwd) <= geoAreaM2(polyRev) ? arcFwd : arcRev;
   var poly = geoAreaM2(polyFwd) <= geoAreaM2(polyRev) ? polyFwd : polyRev;
   return {poly: poly, side: side};
+}
+
+function commitFpPoly(we, pts) {
+  if (!we || !pts || pts.length < 3) return;
+  // Clip to project perimeter — only when perimeter is convex. S-H is correct
+  // for any subject shape against a convex clip; non-convex perimeters cause
+  // partial clips that eat the drawn polygon (skip clipping in that case).
+  var perimD = we.ppData['perimeter'];
+  if (perimD && perimD.layer) {
+    var perimPts = perimD.layer.getLatLngs();
+    if (perimPts.length && Array.isArray(perimPts[0])) perimPts = perimPts[0];
+    if (isConvexPolygon(perimPts)) {
+      var clipped = clipPolygonToPolygon(pts, perimPts);
+      if (clipped && clipped.length >= 3) pts = clipped;
+    }
+  }
+  var d = we.ppData['fp_poly'] || {};
+  we.ppData['fp_poly'] = d;
+  if (d.layer) { map.removeLayer(d.layer); d.layer = null; }
+  d._pts = pts;
+  // Check for any vertices that fell outside the perimeter (belt-and-suspenders)
+  var perimD3 = we.ppData['perimeter'];
+  if (perimD3 && perimD3.layer) {
+    var pp3 = perimD3.layer.getLatLngs();
+    if (pp3.length && Array.isArray(pp3[0])) pp3 = pp3[0];
+    d._outsidePerim = pp3.length>=3 && pts.some(function(p){ return !ptInsidePoly(p, pp3); });
+  } else { d._outsidePerim = false; }
+  var grossAreaM2 = geoAreaM2(pts);
+  // Get channel buffer ring to subtract as a hole
+  var achD = we.ppData['area_ch'];
+  var chRing = null;
+  if (achD) {
+    var chLayer = achD.userDrawn ? achD.layer : achD.bufferLayer;
+    if (chLayer) {
+      var lls = chLayer.getLatLngs();
+      chRing = (lls.length && Array.isArray(lls[0])) ? lls[0] : lls;
+    }
+  }
+  var col = '#2a7a5c';
+  if (chRing && chRing.length >= 3) {
+    d.layer = L.polygon([pts, chRing.slice().reverse()], {
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:false
+    }).bindTooltip('Floodplain Area').addTo(map);
+    var chAreaM2 = geoAreaM2(chRing);
+    d.valueM = Math.max(0, grossAreaM2 - chAreaM2);
+  } else {
+    d.layer = L.polygon(pts, {
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:false
+    }).bindTooltip('Floodplain Area').addTo(map);
+    d.valueM = grossAreaM2;
+  }
+  var m = PP_DEFS.filter(function(x){return x.id==='fp_poly';})[0];
+  if (m) renderPMRow(m);
 }
 
 function commitFpSide(we, id, poly, side) {
@@ -1657,6 +1757,16 @@ function finishPPDraw() {
   } else if(m.geo==='line') {
     if(m.id==='reach_len' && we.ppData[m.id] && we.ppData[m.id].layer && !confirmReachChange(we)) {
       ppDrawing=null; document.getElementById('mapwrap').classList.remove('drawing'); setMapHint(''); return;
+    }
+    if (m.id === 'fp_poly') {
+      ppDrawing=null;
+      document.getElementById('mapwrap').classList.remove('drawing');
+      setMapHint('');
+      clearPreview();
+      commitFpPoly(we, pts);
+      rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
+      if (wizardMode) wizardRefreshIfActive();
+      return;
     }
     // fp_left / fp_right: build closed polygon from outer line + channel buffer arc
     if (m.id === 'fp_left' || m.id === 'fp_right') {
@@ -2475,6 +2585,21 @@ function startPolyEdit(id) {
   var m = PP_DEFS.filter(function(x){return x.id===id;})[0];
   var tipLabel = m ? m.label : id;
 
+  // fp_poly: edit the outer boundary ring, not the donut (which has a hole)
+  if (id === 'fp_poly' && d._pts) {
+    if (d.layer) { map.removeLayer(d.layer); d.layer = null; }
+    d.layer = L.polygon(d._pts.slice(), {
+      color:'#2a7a5c', fillColor:'#2a7a5c', fillOpacity:0.18, weight:2, interactive:false
+    }).bindTooltip('Floodplain (editing)').addTo(map);
+    d._editingBoundary = true;
+    lineEditing = {type:'pp-poly', id:id, weId:activeWEId, layer:d.layer};
+    showEditHandles(d.layer, 'polygon');
+    document.getElementById('edit-done-bar').style.display='flex';
+    document.getElementById('mapwrap').classList.add('editing');
+    if (wizardMode) renderWizardStep();
+    return;
+  }
+
   // Special handling for area_fp: edit the boundary polygon, not the donut
   if (id === 'area_fp' && d._fpBoundaryDrawn && d._fpBoundaryPts) {
     // Create a temporary editable polygon from boundary pts
@@ -2525,6 +2650,9 @@ function buildPolyEditHandles(layer, ring) {
       document.body.style.userSelect = 'none';
       var onMove = function(domEvt) {
         var latlng = map.mouseEventToLatLng(domEvt);
+        if (lineEditing && lineEditing.id === 'fp_poly') {
+          latlng = snapToPerimeter(getActiveWE(), latlng);
+        }
         var lls = h._editLayer.getLatLngs();
         var flat = (lls.length && Array.isArray(lls[0])) ? lls[0] : lls;
         flat[h._editIdx] = latlng;
@@ -2889,6 +3017,15 @@ function commitLineEdit() {
     if (ring2.length && Array.isArray(ring2[0])) ring2 = ring2[0];
     we.ppData[id].valueM = geoAreaM2(ring2);
     we.ppData[id].userDrawn = true;
+
+    // If editing fp_poly boundary, rebuild the donut from the new ring
+    if (id === 'fp_poly' && we.ppData[id]._editingBoundary) {
+      we.ppData[id]._editingBoundary = false;
+      if (we.ppData[id].layer) { map.removeLayer(we.ppData[id].layer); we.ppData[id].layer = null; }
+      commitFpPoly(we, ring2.slice());
+      if (wizardMode) wizardRefreshIfActive();
+      return;
+    }
 
     // If editing area_fp boundary, save back and rebuild donut
     if (id === 'area_fp' && we.ppData[id]._editingBoundary) {
@@ -5351,7 +5488,8 @@ function mapClick(e) {
   }
   if(ppDrawing){
     var m=PP_DEFS.filter(function(x){return x.id===ppDrawing.metricId;})[0];
-    drawPts.push(e.latlng);redraw();
+    var clickPt = (m&&m.id==='fp_poly') ? snapToPerimeter(getActiveWE(), e.latlng) : e.latlng;
+    drawPts.push(clickPt);redraw();
     if((m.multi>0||m.segment)&&drawPts.length===2)finishPPDraw();
     return;
   }
@@ -5462,8 +5600,7 @@ var WIZARD_STEPS = [
   { id:'reach',      label:'Stream Reach',     title:'Identify Your Stream Reach',     phase:'pp' },
   { id:'ch_width',   label:'Channel Width',   title:'Measure Channel Width',          phase:'pp' },
   { id:'substrate',  label:'Substrate',       title:'Enter Reach-Averaged Substrate', phase:'pp' },
-  { id:'fp_left',    label:'Left Floodplain', title:'Draw Left Floodplain Boundary',  phase:'pp' },
-  { id:'fp_right',   label:'Right Floodplain',title:'Draw Right Floodplain Boundary', phase:'pp' },
+  { id:'fp_poly',    label:'Floodplain',      title:'Draw Floodplain Boundary',       phase:'pp' },
   { id:'buffers',    label:'Review Areas',    title:'Review Floodplain Areas',        phase:'pp' },
   { id:'pp_done',    label:'Pre-Project Done',title:'Pre-Project Complete!',          phase:'pp' },
   { id:'chu_split',   label:'Channel Splits',  title:'Split Channel into Units',       phase:'work', types:['pc'] },
@@ -5517,15 +5654,18 @@ function wizardStepStatus(we, stepId) {
     case 'substrate': return (we.ppData['substrate'] && we.ppData['substrate'].value) ? 'done' : 'pending';
     case 'fp_left':  return (we.ppData['fp_left']  && we.ppData['fp_left'].layer)  ? 'done' : 'pending';
     case 'fp_right': return (we.ppData['fp_right'] && we.ppData['fp_right'].layer) ? 'done' : 'pending';
+    case 'fp_poly':  return (we.ppData['fp_poly']  && we.ppData['fp_poly'].layer)  ? 'done' : 'pending';
     case 'buffers': {
       var ach = we.ppData['area_ch'];
-      var fpL = we.ppData['fp_left'], fpR = we.ppData['fp_right'];
-      return ((ach&&(ach.layer||ach.bufferLayer)) && (fpL&&fpL.layer) && (fpR&&fpR.layer)) ? 'done' : 'pending';
+      var achDone = ach && (ach.layer || ach.bufferLayer);
+      var fpDone = (we.ppData['fp_poly'] && we.ppData['fp_poly'].layer) ||
+                   ((we.ppData['fp_left'] && we.ppData['fp_left'].layer) && (we.ppData['fp_right'] && we.ppData['fp_right'].layer));
+      return (achDone && fpDone) ? 'done' : 'pending';
     }
     case 'fp_split':  return (we.ppData['area_fp'] && we.ppData['area_fp'].fpSplit) ? 'done' : 'pending';
     case 'pp_done': {
       // Done when core PP measurements are all complete
-      var corePP = ['perimeter','reach','ch_width','fp_left','fp_right'];
+      var corePP = ['perimeter','reach','ch_width','fp_poly'];
       return corePP.every(function(id){ return wizardStepStatus(we, id) === 'done'; }) ? 'done' : 'pending';
     }
     case 'chu_split':  return (we.chuUnits && we.chuUnits.length > 1) ? 'done' : 'pending';
@@ -5791,35 +5931,60 @@ function wizardStepBody(we, step, idx) {
       break;
     }
 
+    case 'fp_poly': {
+      var dFp = we && we.ppData['fp_poly'];
+      var fpPolyDone = dFp && dFp.layer;
+      h += '<div class="wz-step-desc">Draw a polygon covering the active floodplain on both sides of the channel. The channel area will be automatically subtracted to give net floodplain area.</div>';
+      var isEditingFpPoly = lineEditing && lineEditing.type==='pp-poly' && lineEditing.id==='fp_poly';
+      if (fpPolyDone) {
+        h += '<div class="wz-status done">&#10003; Floodplain: <b>'+((dFp.valueM||0)*0.000247105).toFixed(2)+' ac (net)</b></div>';
+        if (dFp._outsidePerim) {
+          h += '<div class="wz-status warning">&#9888; Some vertices are outside the project boundary — edit or redraw to correct.</div>';
+        }
+        h += '<button class="wz-action-btn secondary" onclick="startPolyEdit(\'fp_poly\');renderWizardStep()">'+(isEditingFpPoly?'&#9998; Editing…':'&#9998; Edit Vertices')+'</button>';
+        h += '<button class="wz-action-btn secondary" onclick="clearPPGeom(\'fp_poly\');startPPDraw(\'fp_poly\',0);renderWizardStep()">&#128207; Redraw</button>';
+      } else {
+        h += '<button class="wz-action-btn" onclick="startPPDraw(\'fp_poly\',0);renderWizardStep()">&#128207; Draw Floodplain Boundary</button>';
+        h += '<div class="wz-tip">Draw the outer boundary of the active floodplain — include both banks in one polygon. Clicks outside the project boundary snap to the nearest boundary point.</div>';
+      }
+      break;
+    }
+
     case 'buffers': {
       h += '<div class="wz-step-desc">Review the auto-calculated areas on the map. Edit vertices if the shaded polygons don\'t match the real boundaries.</div>';
       var achB = we && we.ppData['area_ch'];
+      var fpPolyB = we && we.ppData['fp_poly'];
       var fpLB = we && we.ppData['fp_left'];
       var fpRB = we && we.ppData['fp_right'];
       var achDoneB = achB && (achB.layer || achB.bufferLayer);
+      var fpPolyDoneB = fpPolyB && fpPolyB.layer;
       var fpLDoneB = fpLB && fpLB.layer;
       var fpRDoneB = fpRB && fpRB.layer;
       h += '<div class="wz-metric-row"><span class="wz-metric-label">Area of Channel</span>';
       h += achDoneB ? '<span class="wz-metric-val">'+((achB.valueM||0)*0.000247105).toFixed(2)+' ac</span>' : '<span class="wz-metric-val missing">pending channel widths</span>';
       h += achDoneB ? '<button style="background:#f3f7fc;color:#3d3d3d;border:1px solid #dcdcdc;padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:8px" onclick="startPolyEdit(\'area_ch\')">edit</button>' : '';
       h += '</div>';
-      h += '<div class="wz-metric-row"><span class="wz-metric-label">Left Floodplain</span>';
-      h += fpLDoneB ? '<span class="wz-metric-val">'+((fpLB.valueM||0)*0.000247105).toFixed(2)+' ac</span>' : '<span class="wz-metric-val missing">not drawn</span>';
-      h += fpLDoneB ? '<button style="background:#f3f7fc;color:#3d3d3d;border:1px solid #dcdcdc;padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:8px" onclick="startLineEdit(\'pp\',\'fp_left\')">edit</button>' : '';
-      h += '</div>';
-      h += '<div class="wz-metric-row"><span class="wz-metric-label">Right Floodplain</span>';
-      h += fpRDoneB ? '<span class="wz-metric-val">'+((fpRB.valueM||0)*0.000247105).toFixed(2)+' ac</span>' : '<span class="wz-metric-val missing">not drawn</span>';
-      h += fpRDoneB ? '<button style="background:#f3f7fc;color:#3d3d3d;border:1px solid #dcdcdc;padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:8px" onclick="startLineEdit(\'pp\',\'fp_right\')">edit</button>' : '';
-      h += '</div>';
+      if (fpPolyDoneB) {
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Floodplain (net)</span>';
+        h += '<span class="wz-metric-val">'+((fpPolyB.valueM||0)*0.000247105).toFixed(2)+' ac</span>';
+        h += '<button style="background:#f3f7fc;color:#3d3d3d;border:1px solid #dcdcdc;padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:8px" onclick="clearPPGeom(\'fp_poly\');startPPDraw(\'fp_poly\',0)">redraw</button>';
+        h += '</div>';
+      } else if (fpLDoneB || fpRDoneB) {
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Left Floodplain</span>';
+        h += fpLDoneB ? '<span class="wz-metric-val">'+((fpLB.valueM||0)*0.000247105).toFixed(2)+' ac</span>' : '<span class="wz-metric-val missing">not drawn</span>';
+        h += '</div>';
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Right Floodplain</span>';
+        h += fpRDoneB ? '<span class="wz-metric-val">'+((fpRB.valueM||0)*0.000247105).toFixed(2)+' ac</span>' : '<span class="wz-metric-val missing">not drawn</span>';
+        h += '</div>';
+      } else {
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Floodplain</span><span class="wz-metric-val missing">not drawn</span></div>';
+      }
       if (!achDoneB) {
         h += '<div class="wz-status warning">&#9888; Go back and draw channel width measurements to auto-generate the channel area.</div>';
-      } else if (!fpLDoneB && !fpRDoneB) {
-        h += '<div class="wz-status warning">&#9888; Go back and draw at least one floodplain boundary.</div>';
+      } else if (!fpPolyDoneB && !fpLDoneB && !fpRDoneB) {
+        h += '<div class="wz-status warning">&#9888; Go back and draw the floodplain boundary.</div>';
       } else {
-        h += '<div class="wz-tip">The shaded areas show the channel (blue) and floodplain (green/purple). Edit vertices if they don\'t match the real boundaries.</div>';
-      }
-      if (fpLDoneB && fpRDoneB) {
-        h += '<button class="wz-action-btn secondary" onclick="swapFpLeftRight();renderWizardStep()">&#8646; Swap Left / Right</button>';
+        h += '<div class="wz-tip">The shaded areas show the channel (blue) and floodplain (green). Edit if they don\'t match the real boundaries.</div>';
       }
       break;
     }
@@ -6096,7 +6261,7 @@ function wizardAutoActivate() {
     case 'reach':
       setMapHint('Click Auto-Detect or Draw Manually to add your reach line');
       break;
-    case 'ch_width': case 'fp_left': case 'fp_right':
+    case 'ch_width': case 'fp_left': case 'fp_right': case 'fp_poly':
       if (we && we.ppData['reach_len'] && we.ppData['reach_len'].layer) map.fitBounds(we.ppData['reach_len'].layer.getBounds(), {padding:[60,60]});
       break;
     case 'buffers':
