@@ -501,8 +501,8 @@ function setPPLayerVisibility(we, show) {
     if (d.layer) applyLayer(d.layer);
     if (d.bufferLayer) applyLayer(d.bufferLayer);
     if (d.lines) d.lines.forEach(function(ln){ if(ln&&ln.layer) applyLayer(ln.layer); });
-    // reach direction arrow
-    if (m.id==='reach_len' && d._arrowMarker) d._arrowMarker.setOpacity(opacity);
+    // reach direction arrows
+    if (m.id==='reach_len' && d._arrowMarkers) d._arrowMarkers.forEach(function(a){ if(a) a.setOpacity(opacity); });
     // hide/show fp_left and fp_right label markers
     if (d.labelMarker) d.labelMarker.setOpacity(show ? 1 : 0);
   });
@@ -992,6 +992,25 @@ function clipRingToPerimeter(ring, perimPts) {
   var clipped = clipLineToPolygon(closed.map(function(p){ return L.latLng(p.lat, p.lng); }), perimPts);
   if (!clipped || clipped.length < 3) return ring; // fallback to original
   return clipped;
+}
+
+// Clip drawn points to the project perimeter (if one exists).
+// geo: 'line'|'segment' → clipLineToPolygon; 'polygon' → clipRingToPerimeter.
+// Returns original pts unchanged when no perimeter is drawn yet.
+function clipPtsToPerimeter(we, pts, geo) {
+  var perimD = we && we.ppData['perimeter'];
+  if (!perimD || !perimD.layer) return pts;
+  var perimLLs = perimD.layer.getLatLngs();
+  if (perimLLs.length && Array.isArray(perimLLs[0])) perimLLs = perimLLs[0];
+  if (!perimLLs || perimLLs.length < 3) return pts;
+
+  if (geo === 'polygon') {
+    var cp = clipRingToPerimeter(pts, perimLLs);
+    return (cp && cp.length >= 3) ? cp : pts;
+  } else {
+    var cl = clipLineToPolygon(pts, perimLLs);
+    return (cl && cl.length >= 2) ? cl : pts;
+  }
 }
 
 function updateAreaChBuffer(we) {
@@ -1528,6 +1547,7 @@ function finishPPDraw() {
   // so there's no visible frame gap where nothing is shown.
   var we=getWE(ppDrawing.weId);if(!we)return;
   var pts=drawPts.slice();drawPts=[];
+  if(m.id!=='perimeter') pts=clipPtsToPerimeter(we,pts,m.geo);
   var col=PP_COLOR[m.geo]||'#c07820';
   if(m.id==='fp_left') col='#2a7a5c';
   if(m.id==='fp_right') col='#5c2a7a';
@@ -1598,31 +1618,63 @@ function finishPPDraw() {
 // ── Reach direction arrow ─────────────────────────────────────────────────
 function addReachArrow(we) {
   var rd = we && we.ppData['reach_len'];
+  // Remove existing arrow markers
+  if(rd && rd._arrowMarkers) { rd._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); rd._arrowMarkers = null; }
   if(rd && rd._arrowMarker){ map.removeLayer(rd._arrowMarker); rd._arrowMarker = null; }
   if(!rd || !rd.layer) return;
   var pts = rd.layer.getLatLngs();
   if(pts.length && Array.isArray(pts[0])) pts = pts[0];
   if(!pts || pts.length < 2) return;
-  // Position at midpoint; use surrounding segment for bearing
-  var mid = Math.floor(pts.length / 2);
-  var p1 = pts[Math.max(0, mid - 1)];
-  var p2 = pts[Math.min(pts.length - 1, mid + 1)];
-  var lat1 = p1.lat * Math.PI/180, lat2 = p2.lat * Math.PI/180;
-  var dLng = (p2.lng - p1.lng) * Math.PI/180;
-  var y = Math.sin(dLng) * Math.cos(lat2);
-  var x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLng);
-  var brg = Math.atan2(y, x) * 180 / Math.PI;
-  var html = '<div style="transform:rotate('+brg+'deg);width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin-left:-11px;margin-top:-11px">' +
-    '<svg width="18" height="18" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="#c07820" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></div>';
-  var icon = L.divIcon({ className: '', html: html, iconSize: [0, 0], iconAnchor: [0, 0] });
-  rd._arrowMarker = L.marker([pts[mid].lat, pts[mid].lng], { icon: icon, interactive: false }).addTo(map);
+
+  // Build cumulative arc-length table
+  var cumLen = [0];
+  for (var i = 1; i < pts.length; i++) {
+    var dlat = pts[i].lat - pts[i-1].lat, dlng = pts[i].lng - pts[i-1].lng;
+    cumLen.push(cumLen[i-1] + Math.sqrt(dlat*dlat + dlng*dlng));
+  }
+  var total = cumLen[cumLen.length - 1];
+
+  function makeArrowAtFraction(frac) {
+    var target = total * frac;
+    // Find the segment containing this distance
+    var seg = 0;
+    for (var k = 1; k < cumLen.length; k++) {
+      if (cumLen[k] >= target) { seg = k - 1; break; }
+    }
+    var segLen = cumLen[seg+1] - cumLen[seg];
+    var t = segLen > 0 ? (target - cumLen[seg]) / segLen : 0;
+    var pos = L.latLng(
+      pts[seg].lat + t * (pts[seg+1].lat - pts[seg].lat),
+      pts[seg].lng + t * (pts[seg+1].lng - pts[seg].lng)
+    );
+    // Bearing from segment direction
+    var p1 = pts[seg], p2 = pts[seg+1];
+    var lat1 = p1.lat * Math.PI/180, lat2 = p2.lat * Math.PI/180;
+    var dLng = (p2.lng - p1.lng) * Math.PI/180;
+    var y = Math.sin(dLng) * Math.cos(lat2);
+    var x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLng);
+    var brg = Math.atan2(y, x) * 180 / Math.PI;
+    var html = '<div style="transform:rotate('+brg+'deg);width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin-left:-11px;margin-top:-11px">' +
+      '<svg width="18" height="18" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="#c07820" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></div>';
+    var icon = L.divIcon({ className: '', html: html, iconSize: [0, 0], iconAnchor: [0, 0] });
+    return L.marker([pos.lat, pos.lng], { icon: icon, interactive: false }).addTo(map);
+  }
+
+  // Place arrows at 25%, 50%, 75% of total arc length
+  var markers = [
+    makeArrowAtFraction(0.25),
+    makeArrowAtFraction(0.5),
+    makeArrowAtFraction(0.75)
+  ];
+  rd._arrowMarkers = markers;
+  rd._arrowMarker = markers[1]; // keep reference to middle arrow for legacy code
 }
 
 function clearPPGeom(id) {
   var we=getActiveWE();if(!we)return;var d=we.ppData[id];if(!d)return;
   if(id==='reach_len' && d.layer && !confirmReachChange(we)) return;
   if(d.layer){map.removeLayer(d.layer);d.layer=null;d.valueM=0;}
-  if(id==='reach_len' && d._arrowMarker){ map.removeLayer(d._arrowMarker); d._arrowMarker=null; }
+  if(id==='reach_len' && d._arrowMarkers){ d._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); d._arrowMarkers=null; d._arrowMarker=null; }
   if(id==='area_ch'){d.userDrawn=false;updateAreaChBuffer(we);updateAreaFpBuffer(we);}
   if(id==='area_fp'){
     d.userDrawn=false;
@@ -1840,6 +1892,7 @@ function finishSOWDraw() {
   var we=getWE(sowDrawing.weId);if(!we)return;
   var d=sowDrawing,col=SOW_COLOR[d.geo]||'#1a3a5c';
   var pts=drawPts.slice();drawPts=[];clearPreview();
+  pts=clipPtsToPerimeter(we,pts,d.geo);
   var layer,valueM=0,acres=0;
   var NO_DISPLAY_IDS = {pcw1:1,pcw2:1,pcw3:1};
   if(d.geo==='segment'||d.geo==='line'){
@@ -2354,7 +2407,7 @@ function startPolyEdit(id) {
   var ring = d.layer.getLatLngs();
   if (ring.length && Array.isArray(ring[0])) ring = ring[0];
   buildPolyEditHandles(d.layer, ring);
-  document.getElementById('edit-done-bar').style.display = 'flex';
+  document.getElementById('edit-done-bar').style.display = 'flex'; document.getElementById('mapwrap').classList.add('editing');
   renderPMRow(m);
 }
 
@@ -2476,7 +2529,10 @@ function startLineEdit(type, id) {
   lineEditing = {type: type, id: id, weId: activeWEId, layer: layer};
   buildEditHandles(layer);
   setMapHint('');
-  document.getElementById('edit-done-bar').style.display = 'flex';
+  document.getElementById('edit-done-bar').style.display = 'flex'; document.getElementById('mapwrap').classList.add('editing');
+  var ddb = document.getElementById('draw-done-btn'); if (ddb) ddb.style.display = 'none';
+  // Hide reach arrows during editing — recalculated on commit
+  if (id === 'reach_len') { var _weE=getWE(activeWEId); var _rdE=_weE&&_weE.ppData['reach_len']; if(_rdE&&_rdE._arrowMarkers) _rdE._arrowMarkers.forEach(function(a){if(a)a.setOpacity(0);}); }
   // reflect editing state in sidebar
   if (type === 'pp') {
     var m = PP_DEFS.filter(function(x){return x.id===id;})[0];
@@ -2596,16 +2652,18 @@ function togglePanShape() {
     btn.textContent = panShapeActive ? '\u2715 Exit pan' : '\u21d5 Pan shape';
   }
   if (!lineEditing) return;
+  var drawDoneBtn = document.getElementById('draw-done-btn');
   if (panShapeActive) {
     editHandles.forEach(function(h){ h.setStyle({opacity:0.3, fillOpacity:0.3}); });
-    setMapHint('Click and drag anywhere on the <b>map</b> to shift the whole shape');
+    setMapHint('Drag anywhere on the map to shift the shape');
     document.getElementById('mapwrap').classList.add('drawing');
-    // Listen for mousedown on the map container directly
+    if (drawDoneBtn) drawDoneBtn.style.display = 'none';
     document.getElementById('map').addEventListener('mousedown', _panShapeMapMousedown);
   } else {
     editHandles.forEach(function(h){ h.setStyle({opacity:1, fillOpacity:1}); });
     setMapHint('');
     document.getElementById('mapwrap').classList.remove('drawing');
+    if (drawDoneBtn) drawDoneBtn.style.display = '';
     document.getElementById('map').removeEventListener('mousedown', _panShapeMapMousedown);
   }
 }
@@ -2660,7 +2718,7 @@ function cancelLineEdit() {
   clearEditHandles();
   map.dragging.enable();
   lineEditing = null;
-  document.getElementById('edit-done-bar').style.display = 'none';
+  document.getElementById('edit-done-bar').style.display = 'none'; document.getElementById('mapwrap').classList.remove('editing'); var _ddb=document.getElementById('draw-done-btn'); if(_ddb) _ddb.style.display = '';
   // Re-render the row that was showing "editing\u2026" so it returns to its normal state
   if(wasEditing && (wasEditing.type==='pp'||wasEditing.type==='pp-poly')) {
     var m=PP_DEFS.filter(function(x){return x.id===wasEditing.id;})[0];
@@ -2681,13 +2739,22 @@ function commitLineEdit() {
   var layer = lineEditing.layer;
   clearEditHandles();
   map.dragging.enable();
-  // recalculate length from updated latlngs
+  // recalculate length from updated latlngs, clip to perimeter
   var pts = layer.getLatLngs();
   if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+  // Determine geo type for clipping: fp_left/fp_right are polygon-area lines, others are lines
+  var editGeo = (lineEditing.id==='fp_left'||lineEditing.id==='fp_right') ? 'line' : 'line';
+  if (lineEditing.id !== 'perimeter') {
+    var clippedPts = clipPtsToPerimeter(we, pts, editGeo);
+    if (clippedPts && clippedPts.length >= 2) {
+      pts = clippedPts;
+      layer.setLatLngs(pts);
+    }
+  }
   var newLen = geoLen(pts);
   var type = lineEditing.type, id = lineEditing.id;
   lineEditing = null;
-  document.getElementById('edit-done-bar').style.display = 'none';
+  document.getElementById('edit-done-bar').style.display = 'none'; document.getElementById('mapwrap').classList.remove('editing'); var _ddb=document.getElementById('draw-done-btn'); if(_ddb) _ddb.style.display = '';
   if (type === 'pp') {
     if (id === 'reach_len' && !confirmReachChange(we)) {
       startLineEdit('pp', id); return;
@@ -4345,6 +4412,7 @@ function finishCRDraw() {
   var we = getWE(crDrawing.weId); if (!we) return;
   var r = getCR(we, crDrawing.reachId); if (!r) return;
   var pts = drawPts.slice(); drawPts = [];
+  pts = clipPtsToPerimeter(we, pts, geo);
   var key = crDrawing.key;
   var label = crDrawing.label;
   var noDisplay = {pcw1:1, pcw2:1, pcw3:1};
@@ -4488,7 +4556,7 @@ function startCRPolyEdit(reachId) {
   // Use existing line edit system — store context
   lineEditing = {type:'cr-poly', id:'pc-area', reachId:reachId, weId:we.id, layer:sl.layer};
   buildPolyEditHandles(sl.layer);
-  document.getElementById('edit-done-bar').style.display='flex';
+  document.getElementById('edit-done-bar').style.display='flex'; document.getElementById('mapwrap').classList.add('editing');
 }
 
 function fetchCRElevProfile(reachId) {
@@ -5020,6 +5088,7 @@ function nearestParamOnLine(pts, latlng) {
 function commitAutoReach(pts) {
   var we = getActiveWE(); if (!we) return;
   if (we.ppData['reach_len'] && we.ppData['reach_len'].layer && !confirmReachChange(we)) return;
+  pts = clipPtsToPerimeter(we, pts, 'line');
   if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
   if (we.ppData['reach_len'].layer) map.removeLayer(we.ppData['reach_len'].layer);
   var layer = L.polyline(pts, {color:'#c07820', weight:2.5, interactive:false}).addTo(map);
@@ -5083,24 +5152,46 @@ function clipLineToPolygon(linePts, polyPts) {
     return hits;
   }
 
-  // Walk the line, collecting points inside the polygon
-  // When crossing the boundary, interpolate the exact crossing point
-  var result = [], inside = ptInPoly(linePts[0], polyPts);
-  if (inside) result.push(linePts[0]);
+  // Walk the line splitting into continuous interior segments, then return
+  // only the longest one. Concatenating all interior segments creates false
+  // straight-line jumps between crossing points (the spider-web artifact).
+  var segments = [], curSeg = [];
+  var inside = ptInPoly(linePts[0], polyPts);
+  if (inside) curSeg.push(linePts[0]);
 
   for (var i = 0; i < linePts.length-1; i++) {
     var hits = segPolyIntersections(linePts[i], linePts[i+1], polyPts);
     hits.forEach(function(h) {
       var pt = L.latLng(h.lat, h.lng);
-      result.push(pt);
+      if (inside) {
+        curSeg.push(pt);          // close current interior segment at exit
+        if (curSeg.length >= 2) segments.push(curSeg);
+        curSeg = [];
+      } else {
+        curSeg = [pt];            // start new interior segment at entry
+      }
       inside = !inside;
     });
-    if (inside) result.push(linePts[i+1]);
+    if (inside) curSeg.push(linePts[i+1]);
   }
+  if (curSeg.length >= 2) segments.push(curSeg);
 
-  // Return the longest continuous interior segment
-  if (result.length < 2) return null;
-  return result;
+  if (!segments.length) return null;
+
+  // Pick the longest segment by approximate arc length
+  function arcLen(seg) {
+    var d = 0;
+    for (var k = 1; k < seg.length; k++) {
+      var dlat = seg[k].lat - seg[k-1].lat, dlng = seg[k].lng - seg[k-1].lng;
+      d += Math.sqrt(dlat*dlat + dlng*dlng);
+    }
+    return d;
+  }
+  var longest = segments[0];
+  for (var s = 1; s < segments.length; s++) {
+    if (arcLen(segments[s]) > arcLen(longest)) longest = segments[s];
+  }
+  return longest.length >= 2 ? longest : null;
 }
 
 // Global keyboard handler
@@ -5240,7 +5331,8 @@ function renderLegend() {
   var el=document.getElementById('leg-body');if(!el)return;
   var h='<div class="leg-section"><div class="leg-sec-title">Pre-Project</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:#7b4fbf"></span>Polygons</div>';
-  h+='<div class="leg-row"><span class="leg-line" style="background:#c07820"></span>Lines</div></div>';
+  h+='<div class="leg-row"><span class="leg-line" style="background:#c07820"></span>Lines</div>';
+  h+='<div class="leg-row"><span style="width:14px;height:10px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center"><svg width="11" height="13" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="#c07820" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></span>Flow direction</div></div>';
   h+='<div class="leg-section"><div class="leg-sec-title">Habitat Work</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:#2a7a5c"></span>Polygons</div>';
   h+='<div class="leg-row"><span class="leg-line" style="background:#1a7abf"></span>Lines</div>';

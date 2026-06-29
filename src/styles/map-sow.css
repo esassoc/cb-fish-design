@@ -406,6 +406,7 @@
 }
 #draw-done-btn:hover { background: var(--color-primary-hover); }
 .drawing #draw-done-btn { display: block; }
+.editing #draw-done-btn { display: none !important; }
 #map-hint {
   position: absolute;
   top: 10px;
@@ -700,7 +701,7 @@ button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline: 3px s
 #edit-done-bar {
   display: none;
   position: absolute;
-  top: 10px;
+  top: 52px; /* sits below #map-hint which occupies ~10–46px */
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
