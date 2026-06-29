@@ -7,6 +7,11 @@
 
   <div id="map-hint" role="status" aria-live="polite"></div>
 
+  <!-- Done Drawing button — shown by CSS whenever #mapwrap has .drawing class -->
+  <button id="draw-done-btn" onclick="finishActiveDraw()" aria-label="Finish drawing">
+    &#10003; Done
+  </button>
+
   <!-- Inline editing toolbar — shown/hidden via JS adding .visible class -->
   <div id="edit-done-bar" role="status" aria-live="assertive">
     <button id="pan-shape-btn" onclick="togglePanShape()" class="msow-pan-btn">

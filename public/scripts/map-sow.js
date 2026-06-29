@@ -1511,6 +1511,14 @@ function startPPDraw(metricId,idx) {
   setMapHint(msg); renderPMRow(m);
 }
 
+// Called by the "Done" button on the map — routes to the active draw finisher
+function finishActiveDraw() {
+  if (ppDrawing)   { finishPPDraw(); }
+  else if (sowDrawing)  { finishSOWDraw(); }
+  else if (chuDrawing)  { commitCHUSplit(); }
+  else if (crDrawing)   { finishCRDraw(); }
+}
+
 function finishPPDraw() {
   if(!ppDrawing)return;
   var m=PP_DEFS.filter(function(x){return x.id===ppDrawing.metricId;})[0];if(!m)return;

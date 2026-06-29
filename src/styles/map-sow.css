@@ -383,6 +383,29 @@
 #mapwrap { flex: 1; position: relative; overflow: hidden; user-select: none; -webkit-user-select: none; }
 #map { width: 100%; height: 100%; user-select: none; -webkit-user-select: none; }
 .drawing #map { cursor: crosshair; }
+
+/* Done Drawing button — hidden until drawing mode is active */
+#draw-done-btn {
+  display: none;
+  position: absolute;
+  top: 52px; /* sits below #map-hint which occupies ~10–46px */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: var(--color-primary);
+  color: var(--color-text-inverse, #fff);
+  border: none;
+  padding: 6px 16px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: var(--font-weight-bold);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: background 150ms ease;
+}
+#draw-done-btn:hover { background: var(--color-primary-hover); }
+.drawing #draw-done-btn { display: block; }
 #map-hint {
   position: absolute;
   top: 10px;
