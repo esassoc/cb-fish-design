@@ -149,8 +149,11 @@ window.onload = function() {
       var container = L.DomUtil.create('div', 'layer-control-container');
       container.style.position = 'relative';
       container.innerHTML =
+        '<button class="zoom-we-btn" style="margin-top:0;margin-right:4px" onclick="zoomToActiveWE()">&#8982; Zoom to WE</button>' +
         '<button class="layer-control-btn" aria-haspopup="true" aria-expanded="false" id="layer-toggle-btn">&#9864; Layers</button>' +
         '<div class="layer-control-panel" id="layer-panel" style="display:none;position:absolute;right:0;top:32px;z-index:1000;min-width:170px"></div>';
+      container.style.display = 'flex';
+      container.style.alignItems = 'center';
       L.DomEvent.disableClickPropagation(container);
       L.DomEvent.disableScrollPropagation(container);
       return container;
@@ -390,6 +393,21 @@ function dimAllLayers() {
   workElements.forEach(function(we) {
     allWELayers(we).forEach(function(l) { if(l&&l.setStyle) l.setStyle({opacity:.25,fillOpacity:.07}); else if(l&&l.setOpacity) l.setOpacity(.25); });
   });
+}
+
+function zoomToActiveWE() {
+  var we = getActiveWE(); if (!we) return;
+  // Prefer zooming to the drawn project boundary
+  var perimD = we.ppData['perimeter'];
+  if (perimD && perimD.layer) {
+    try { map.fitBounds(perimD.layer.getBounds(), {padding:[30,30]}); return; } catch(e) {}
+  }
+  // Fall back to bounding box of all drawn features
+  var bounds = null;
+  function eb(layer) { try { var b=layer&&layer.getBounds&&layer.getBounds(); if(b&&b.isValid()) bounds=bounds?bounds.extend(b):b; } catch(e){} }
+  PP_DEFS.forEach(function(m){ var d=we.ppData[m.id];if(!d)return; eb(d.layer); eb(d.bufferLayer); });
+  Object.keys(we.sowLayers||{}).forEach(function(k){ if(we.sowLayers[k]&&we.sowLayers[k].layer) eb(we.sowLayers[k].layer); });
+  if (bounds && bounds.isValid()) map.fitBounds(bounds, {padding:[30,30]});
 }
 
 function showActiveWELayers() {

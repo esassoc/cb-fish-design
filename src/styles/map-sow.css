@@ -330,6 +330,20 @@
   white-space: nowrap;
 }
 .layer-control-btn:hover { background: var(--color-primary-hover); }
+.zoom-we-btn {
+  display: block;
+  background: var(--color-primary);
+  color: var(--color-text-inverse, #fff);
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: var(--font-weight-semibold);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  white-space: nowrap;
+}
+.zoom-we-btn:hover { background: var(--color-primary-hover); }
 .layer-control-panel {
   background: var(--color-primary);
   border: 1px solid rgba(255,255,255,0.15);
