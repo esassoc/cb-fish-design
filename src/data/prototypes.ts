@@ -51,7 +51,7 @@ export const prototypes: Prototype[] = [
   },
   {
     slug: 'map-sow',
-    title: 'Habitat SOW tool',
+    title: 'Habitat Design Tool',
     description:
       'Map-based statement-of-work builder — draw work elements on a Leaflet map, compute pre-project metrics from digitized features, and export a formatted SOW.',
     route: '/map-sow',

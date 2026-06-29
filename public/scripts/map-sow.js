@@ -5810,7 +5810,7 @@ function wizardStepBody(we, step, idx) {
           h += '<span class="wz-metric-val '+(m[1]?'':'missing')+'">'+( m[1] || 'not entered')+'</span></div>';
         });
       }
-      h += '<button class="wz-action-btn" style="margin-top:16px" onclick="openSOW()">&#128196; Export SOW</button>';
+      h += '<button class="wz-action-btn" style="margin-top:16px" onclick="openSOW()">&#128196; Export Metrics</button>';
       h += '<button class="wz-action-btn secondary" onclick="openWEModal(null)">&#43; Add Another Work Element</button>';
       break;
   }

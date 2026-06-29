@@ -1,4 +1,4 @@
-/* ── Habitat SOW Tool — CB Fish token skin ────────────────────────────────
+/* ── Habitat Design Tool — CB Fish token skin ────────────────────────────────
    Hardcoded hex → CB Fish design tokens (theme-cb-fish.css):
      UI greens (#2a7a5c)      → var(--color-primary)            #1e5386
      Green hover (#1f6549)    → var(--color-primary-hover)      #1a4570
@@ -14,7 +14,7 @@
      Habitat map colors       → kept (CHU types, success result green)
    ──────────────────────────────────────────────────────────────────────── */
 
-/* ── Habitat SOW Tool domain-specific tokens ─────────────────────────────
+/* ── Habitat Design Tool domain-specific tokens ─────────────────────────────
    These colors don't exist in CB Fish tokens but are used throughout the
    JS-generated sidebar HTML. Defining them here makes them maintainable
    and allows theme overrides. Fallback literals keep behavior if not loaded.
