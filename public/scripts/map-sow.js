@@ -12,7 +12,7 @@ var PP_DEFS = [
   {id:'fp_right',  label:'Right Floodplain Area',       geo:'line',    method:'measured', multi:0, segment:false, desc:'Draw the outer edge of the right floodplain — inner edge auto-completes along channel buffer.'},
   {id:'fp_width',  label:'Average Width of Floodplain', geo:'line',    method:'calc',     multi:0, segment:false, desc:'Auto-calculated: Total floodplain area ÷ reach length.'},
   {id:'area_fp',   label:'Total Active Floodplain Area',geo:null,      method:'calc',     multi:0, segment:false, desc:'Auto-calculated: Left + Right floodplain areas.'},
-  {id:'substrate', label:'Reach-Averaged Substrate',    geo:null,      method:'entered',  multi:0, segment:false, desc:'Prioritization substrate data layer.', inputLabel:'Dominant substrate', inputType:'select', opts:['','Sand','Gravel','Cobble']}
+  {id:'substrate', label:'Reach-Averaged Substrate',    geo:null,      method:'entered',  multi:0, segment:false, desc:'Prioritization substrate data layer.', inputLabel:'Dominant substrate', inputType:'select', opts:['','Silt','Sand','Gravel','Cobble','Boulders','Bedrock']}
 ];
 
 var TYPE_COLORS = {pc:'#1a7abf', fp:'#7b4fbf', rr:'#2a7a5c'};
@@ -1008,6 +1008,37 @@ function confirmReachChange(we) {
   return false;
 }
 
+// Sutherland-Hodgman polygon clipping — clips subject ring to clip polygon.
+// Handles CW and CCW winding automatically. Works correctly for convex clip
+// polygons; for concave clip polygons it may over-clip but won't crash.
+function clipPolygonToPolygon(subject, clip) {
+  function cross2D(o, a, b) {
+    return (a.lat-o.lat)*(b.lng-o.lng)-(a.lng-o.lng)*(b.lat-o.lat);
+  }
+  var clipArea = 0;
+  for (var k=0; k<clip.length; k++) { var nk=(k+1)%clip.length; clipArea+=clip[k].lat*clip[nk].lng-clip[nk].lat*clip[k].lng; }
+  var clipSign = clipArea >= 0 ? 1 : -1;
+  function inside(p, a, b) { return cross2D(a,b,p)*clipSign >= 0; }
+  function lineIntersect(a, b, c, d) {
+    var r={lat:b.lat-a.lat,lng:b.lng-a.lng}, s={lat:d.lat-c.lat,lng:d.lng-c.lng};
+    var denom=r.lat*s.lng-r.lng*s.lat; if(Math.abs(denom)<1e-14) return null;
+    var t=((c.lat-a.lat)*s.lng-(c.lng-a.lng)*s.lat)/denom;
+    return {lat:a.lat+t*r.lat, lng:a.lng+t*r.lng};
+  }
+  var output = subject.slice();
+  for (var i=0; i<clip.length; i++) {
+    if (!output.length) return null;
+    var input=output; output=[];
+    var A=clip[i], B=clip[(i+1)%clip.length];
+    for (var j=0; j<input.length; j++) {
+      var curr=input[j], prev=input[(j+input.length-1)%input.length];
+      if (inside(curr,A,B)) { if(!inside(prev,A,B)){ var ix=lineIntersect(prev,curr,A,B); if(ix)output.push(ix); } output.push(curr); }
+      else if (inside(prev,A,B)) { var ix2=lineIntersect(prev,curr,A,B); if(ix2)output.push(ix2); }
+    }
+  }
+  return output.length>=3 ? output : null;
+}
+
 // Clip a polygon ring to the project perimeter using simple point-in-poly filter
 // (keeps only vertices inside perimeter, inserts crossing points)
 function clipRingToPerimeter(ring, perimPts) {
@@ -1038,6 +1069,25 @@ function clipPtsToPerimeter(we, pts, geo) {
   }
 }
 
+// Re-clip the reach line to the current perimeter.
+// Called after perimeter is drawn or edited so an existing reach snaps to the new boundary.
+function reClipReachToPerimeter(we) {
+  var rd = we && we.ppData['reach_len'];
+  if (!rd || !rd.layer) return;
+  var pts = rd.layer.getLatLngs();
+  if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+  var clipped = clipPtsToPerimeter(we, pts, 'line');
+  if (!clipped || clipped.length < 2) return;
+  rd.layer.setLatLngs(clipped);
+  rd.valueM = geoLen(clipped);
+  addReachArrow(we);
+  updateAreaChBuffer(we);
+  updateAreaFpBuffer(we);
+  var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
+  if (m) renderPMRow(m);
+  rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
+}
+
 function updateAreaChBuffer(we) {
   if (!we) return;
   var d = we.ppData['area_ch'];
@@ -1057,12 +1107,13 @@ function updateAreaChBuffer(we) {
   pts = extendReachPts(pts);
   var ring = buildBufferPoly(pts, halfW);
   if (!ring) return;
-  // Clip to project perimeter if available
-  var perimD = we.ppData['perimeter'];
-  if (perimD && perimD.layer) {
-    var perimPts = perimD.layer.getLatLngs();
-    if (perimPts.length && Array.isArray(perimPts[0])) perimPts = perimPts[0];
-    ring = clipRingToPerimeter(ring, perimPts);
+  // Clip buffer to project perimeter using Sutherland-Hodgman polygon intersection.
+  var perimD2 = we.ppData['perimeter'];
+  if (perimD2 && perimD2.layer) {
+    var perimPts2 = perimD2.layer.getLatLngs();
+    if (perimPts2.length && Array.isArray(perimPts2[0])) perimPts2 = perimPts2[0];
+    var clipped = clipPolygonToPolygon(ring, perimPts2);
+    if (clipped && clipped.length >= 3) ring = clipped;
   }
   d.bufferLayer = L.polygon(ring, {
     color: PP_COLOR.buffer, fillColor: PP_COLOR.buffer,
@@ -1572,7 +1623,8 @@ function finishPPDraw() {
   // so there's no visible frame gap where nothing is shown.
   var we=getWE(ppDrawing.weId);if(!we)return;
   var pts=drawPts.slice();drawPts=[];
-  if(m.id!=='perimeter') pts=clipPtsToPerimeter(we,pts,m.geo);
+  var NO_CLIP_PP = {perimeter:1, ch_width:1};
+  if(!NO_CLIP_PP[m.id]) pts=clipPtsToPerimeter(we,pts,m.geo);
   var col=PP_COLOR[m.geo]||'#c07820';
   if(m.id==='fp_left') col='#2a7a5c';
   if(m.id==='fp_right') col='#5c2a7a';
@@ -1583,7 +1635,6 @@ function finishPPDraw() {
     if(we.ppData[m.id].lines[ppDrawing.idx]&&we.ppData[m.id].lines[ppDrawing.idx].layer) {
       map.removeLayer(we.ppData[m.id].lines[ppDrawing.idx].layer);
     }
-    // Store geometry without adding to map — measurements are shown in sidebar only
     we.ppData[m.id].lines[ppDrawing.idx]={layer:null, pts:pts, lengthM:geoLen(pts)};
   } else if(m.geo==='line') {
     if(m.id==='reach_len' && we.ppData[m.id] && we.ppData[m.id].layer && !confirmReachChange(we)) {
@@ -1634,6 +1685,7 @@ function finishPPDraw() {
   updateAreaChBuffer(getWE(we.id));
   updateAreaFpBuffer(getWE(we.id));
   if(m.id==='reach_len') addReachArrow(getWE(we.id));
+  if(m.id==='perimeter') reClipReachToPerimeter(getWE(we.id));
   if(m.id==='reach_len') {
     updateWELabel(getWE(we.id), true);
     setTimeout(function(){ fetchElevationProfile(getWE(we.id)); }, 300);
@@ -1917,7 +1969,8 @@ function finishSOWDraw() {
   var we=getWE(sowDrawing.weId);if(!we)return;
   var d=sowDrawing,col=SOW_COLOR[d.geo]||'#1a3a5c';
   var pts=drawPts.slice();drawPts=[];clearPreview();
-  pts=clipPtsToPerimeter(we,pts,d.geo);
+  var NO_CLIP_SOW = {pcw1:1,pcw2:1,pcw3:1};
+  if(!NO_CLIP_SOW[d.id]) pts=clipPtsToPerimeter(we,pts,d.geo);
   var layer,valueM=0,acres=0;
   var NO_DISPLAY_IDS = {pcw1:1,pcw2:1,pcw3:1};
   if(d.geo==='segment'||d.geo==='line'){
@@ -2769,7 +2822,8 @@ function commitLineEdit() {
   if (pts.length && Array.isArray(pts[0])) pts = pts[0];
   // Determine geo type for clipping: fp_left/fp_right are polygon-area lines, others are lines
   var editGeo = (lineEditing.id==='fp_left'||lineEditing.id==='fp_right') ? 'line' : 'line';
-  if (lineEditing.id !== 'perimeter') {
+  var NO_CLIP_EDIT = {perimeter:1, ch_width:1};
+  if (!NO_CLIP_EDIT[lineEditing.id]) {
     var clippedPts = clipPtsToPerimeter(we, pts, editGeo);
     if (clippedPts && clippedPts.length >= 2) {
       pts = clippedPts;
@@ -2798,6 +2852,7 @@ function commitLineEdit() {
     updateAreaChBuffer(we);
     updateAreaFpBuffer(we);
     if (id === 'reach_len') { addReachArrow(we); setTimeout(function(){ fetchElevationProfile(getWE(activeWEId)); }, 300); }
+    if (id === 'perimeter') reClipReachToPerimeter(we);
   } else if (type === 'cr-poly') {
     var crWe = getWE(lineEditing.weId);
     if (crWe) {
@@ -4437,7 +4492,8 @@ function finishCRDraw() {
   var we = getWE(crDrawing.weId); if (!we) return;
   var r = getCR(we, crDrawing.reachId); if (!r) return;
   var pts = drawPts.slice(); drawPts = [];
-  pts = clipPtsToPerimeter(we, pts, geo);
+  var NO_CLIP_CR = {pcw1:1,pcw2:1,pcw3:1};
+  if(!NO_CLIP_CR[crDrawing.key]) pts = clipPtsToPerimeter(we, pts, geo);
   var key = crDrawing.key;
   var label = crDrawing.label;
   var noDisplay = {pcw1:1, pcw2:1, pcw3:1};
@@ -5672,7 +5728,7 @@ function wizardStepBody(we, step, idx) {
     case 'substrate': {
       var subD = we && we.ppData['substrate'];
       var subVal = subD && subD.value;
-      var subOpts = ['', 'Sand', 'Gravel', 'Cobble'];
+      var subOpts = ['', 'Silt', 'Sand', 'Gravel', 'Cobble', 'Boulders', 'Bedrock'];
       h += '<div class="wz-step-desc">Select the dominant substrate material for this reach based on the prioritization data layer or field observation.</div>';
       h += '<div class="wz-metric-row"><span class="wz-metric-label">Dominant substrate</span>';
       h += '<select style="background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:4px 8px;border-radius:3px;font-size:12px;font-family:inherit" ';
