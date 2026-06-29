@@ -6,7 +6,7 @@ var PP_DEFS = [
   {id:'sinuosity', label:'Sinuosity',                   geo:null,      method:'calc',     multi:0, segment:false, desc:'Reach Length divided by Valley Length.'},
   {id:'avg_slope', label:'Average Reach Slope',         geo:null,      method:'calc',     multi:0, segment:false, desc:'Auto-calculated from USGS 10M DEM elevation data.'},
   {id:'ch_width',  label:'Average Channel Width',       geo:'line',    method:'measured', multi:3, segment:false, desc:'3 cross-section lines at representative riffle locations.'},
-  {id:'bank_ht',   label:'Average Bank Height',         geo:null,      method:'entered',  multi:0, segment:false, desc:'Averaged bank height within project reach, at a riffle.', inputLabel:'Bank height (ft)', inputType:'number'},
+  {id:'bank_ht',   label:'Average Bank Height',         geo:null,      method:'calc',     multi:0, segment:false, desc:'Auto-calculated as the average of bank heights entered with each channel width measurement.'},
   {id:'area_ch',   label:'Area of Channel',             geo:'polygon', method:'measured', multi:0, segment:false, desc:'Digitize over data layers.'},
   {id:'fp_left',   label:'Left Floodplain Area',        geo:'line',    method:'measured', multi:0, segment:false, desc:'Draw the outer edge of the left floodplain — inner edge auto-completes along channel buffer.'},
   {id:'fp_right',  label:'Right Floodplain Area',       geo:'line',    method:'measured', multi:0, segment:false, desc:'Draw the outer edge of the right floodplain — inner edge auto-completes along channel buffer.'},
@@ -636,6 +636,10 @@ function renderPMRow(m) {
         var bc='pm-draw-btn'+(isDrawing&&ppDrawing.idx===i?' active':'');
         var res=ln?'<span class="pm-result">'+Math.round(ln.lengthM*3.28084).toLocaleString()+' ft <span class="pm-redraw" onclick="clearPPLine(\''+m.id+'\','+i+')">redo</span></span>':'<span class="pm-not-drawn">not drawn</span>';
         h+='<div class="pm-meas-row"><button class="'+bc+'" onclick="startPPDraw(\''+m.id+'\','+i+')">&#128207; Meas. '+(i+1)+'</button>'+res+'</div>';
+        if (ln) {
+          h+='<div class="pm-meas-row" style="gap:6px"><label style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">Bank ht (ft):</label>';
+          h+='<input type="number" min="0" step="0.1" value="'+(ln.bankHt||'')+'" placeholder="0.0" style="width:70px;border:1px solid var(--color-border);border-radius:3px;padding:2px 5px;font-size:11px;font-family:var(--font-sans)" oninput="ppSetBankHt('+i+',this.value)"></div>';
+        }
       }
       var avg=ppMultiAvgFt(we,m.id);
       h+='<div><span class="pm-result" style="min-width:110px;display:inline-block">'+(avg!==null?'Avg: '+Math.round(avg).toLocaleString()+' ft':'Avg: —')+'</span></div>';
@@ -747,6 +751,12 @@ function renderPMRow(m) {
       } else {
         h += '<span class="pm-waiting">Draw floodplain polygons and reach length to calculate</span>';
       }
+    } else if (m.id === 'bank_ht') {
+      if (res2 !== null) {
+        h += '<span class="pm-result">'+res2.toFixed(1)+' ft (avg)</span>';
+      } else {
+        h += '<span class="pm-waiting">Enter bank height with each channel width measurement</span>';
+      }
     } else if (m.id === 'area_fp') {
       // Show total as acres (left + right), with swap button
       if (res2 !== null) {
@@ -803,7 +813,22 @@ function pmIsDone(we,m) {
   return false;
 }
 
+function ppSetBankHt(idx, val) {
+  var we = getActiveWE(); if (!we) return;
+  if (!we.ppData['ch_width'] || !we.ppData['ch_width'].lines) return;
+  var line = we.ppData['ch_width'].lines[idx]; if (!line) return;
+  line.bankHt = parseFloat(val) || null;
+  rerenderCalcs();
+  if (wizardMode) wizardRefreshIfActive();
+}
+
 function ppCalc(we,id) {
+  if(id==='bank_ht'){
+    var cw = we.ppData['ch_width'];
+    if(!cw || !cw.lines) return null;
+    var heights = cw.lines.filter(function(l){ return l && l.bankHt; }).map(function(l){ return l.bankHt; });
+    return heights.length ? heights.reduce(function(a,b){return a+b;},0)/heights.length : null;
+  }
   if(id==='valley_len'){
     var rd=we.ppData['reach_len'];
     if(!rd||!rd.layer)return null;
@@ -5362,7 +5387,6 @@ var WIZARD_STEPS = [
   { id:'perimeter',  label:'Project Boundary', title:'Draw Project Boundary',          phase:'pp' },
   { id:'reach',      label:'Stream Reach',     title:'Identify Your Stream Reach',     phase:'pp' },
   { id:'ch_width',   label:'Channel Width',   title:'Measure Channel Width',          phase:'pp' },
-  { id:'bank_ht',    label:'Bank Height',     title:'Enter Average Bank Height',      phase:'pp' },
   { id:'substrate',  label:'Substrate',       title:'Enter Reach-Averaged Substrate', phase:'pp' },
   { id:'fp_left',    label:'Left Floodplain', title:'Draw Left Floodplain Boundary',  phase:'pp' },
   { id:'fp_right',   label:'Right Floodplain',title:'Draw Right Floodplain Boundary', phase:'pp' },
@@ -5415,7 +5439,7 @@ function wizardStepStatus(we, stepId) {
       var ch = we.ppData['ch_width'];
       return (ch && ch.lines && ch.lines.filter(function(l){return l&&l.lengthM;}).length >= 3) ? 'done' : 'pending';
     }
-    case 'bank_ht':   return (we.ppData['bank_ht']   && we.ppData['bank_ht'].value)   ? 'done' : 'pending';
+    case 'bank_ht':   { var bh=ppCalc(we,'bank_ht'); return bh!==null?'done':'pending'; }
     case 'substrate': return (we.ppData['substrate'] && we.ppData['substrate'].value) ? 'done' : 'pending';
     case 'fp_left':  return (we.ppData['fp_left']  && we.ppData['fp_left'].layer)  ? 'done' : 'pending';
     case 'fp_right': return (we.ppData['fp_right'] && we.ppData['fp_right'].layer) ? 'done' : 'pending';
@@ -5613,6 +5637,14 @@ function wizardStepBody(we, step, idx) {
         h += '<span class="wz-metric-val '+(ln?'':'missing')+'">'+(ln ? Math.round(ln.lengthM*3.28084)+' ft' : 'not drawn')+'</span>';
         h += '<button style="background:'+(ln?'#f3f7fc':'#1e5386')+';color:'+(ln?'#3d3d3d':'#fff')+';border:1px solid '+(ln?'#dcdcdc':'transparent')+';padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:8px" onclick="wizardDrawLine(\'ch_width\','+i+')">'+(ln?'redo':'draw')+'</button>';
         h += '</div>';
+        if (ln) {
+          h += '<div style="display:flex;align-items:center;gap:6px;padding:2px 0 4px 0">';
+          h += '<span style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">Bank height (ft):</span>';
+          h += '<input type="number" min="0" step="0.1" value="'+(ln.bankHt||'')+'" placeholder="0.0" ';
+          h += 'style="width:80px;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px;font-family:var(--font-sans)" ';
+          h += 'oninput="ppSetBankHt('+i+',this.value)">';
+          h += '</div>';
+        }
       }
       if (chLines.length > 0) {
         var avgFt = Math.round(chLines.reduce(function(a,l){return a+l.lengthM;},0)/chLines.length*3.28084);
@@ -5743,7 +5775,7 @@ function wizardStepBody(we, step, idx) {
         var ppMetrics = [
           ['Reach Length', ppLenFt(we,'reach_len') ? Math.round(ppLenFt(we,'reach_len')).toLocaleString()+' ft' : null],
           ['Channel Width (avg)', ppMultiAvgFt(we,'ch_width') ? Math.round(ppMultiAvgFt(we,'ch_width'))+' ft' : null],
-          ['Bank Height', we.ppData['bank_ht'] && we.ppData['bank_ht'].value ? we.ppData['bank_ht'].value+' ft' : null],
+          ['Bank Height (avg)', (function(){ var bh=ppCalc(we,'bank_ht'); return bh!==null?bh.toFixed(1)+' ft':null; })()],
           ['Substrate', we.ppData['substrate'] && we.ppData['substrate'].value ? we.ppData['substrate'].value : null],
           ['Area of Channel', ppAcres(we,'area_ch') ? ppAcres(we,'area_ch').toFixed(2)+' ac' : null],
           ['Left Floodplain', ppAcres(we,'fp_left') ? ppAcres(we,'fp_left').toFixed(2)+' ac' : null],
