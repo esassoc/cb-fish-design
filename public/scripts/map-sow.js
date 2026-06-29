@@ -1389,11 +1389,11 @@ function fetchElevationProfile(we) {
     we.ppData['avg_slope']._slopePct = slopePct;
     we.ppData['avg_slope']._slopeDeg = slopeDeg;
     we.ppData['avg_slope'].value = slopeDeg.toFixed(3);
-    renderPMRow(m); rerenderCalcs(); updatePPProgress();
+    renderPMRow(m); rerenderCalcs(); updatePPProgress(); wizardRefreshIfActive();
   }).catch(function() {
     we.ppData['avg_slope']._elevLoading = false;
     we.ppData['avg_slope']._elevError = 'Could not reach USGS elevation service — check connection.';
-    renderPMRow(m);
+    renderPMRow(m); wizardRefreshIfActive();
   });
 }
 
@@ -5525,6 +5525,13 @@ function renderWizardStep() {
   var bodyPanel = document.getElementById('wizard-body-panel');
   if (bodyPanel) {
     bodyPanel.innerHTML = '<div class="wz-body">' + bodyHtml + '</div><div class="wz-footer">' + footerHtml + '</div>';
+    // Draw elevation chart canvas if reach step is showing it
+    if (step.id === 'reach' && we) {
+      var _sd = we.ppData['avg_slope'] || {};
+      if (_sd._elevProfile) {
+        setTimeout(function(){ drawElevChart('elev-chart-' + we.id, _sd._elevProfile); }, 0);
+      }
+    }
   }
 }
 
@@ -5565,8 +5572,15 @@ function wizardStepBody(we, step, idx) {
       var reachDetecting = reachD && reachD._autoDetecting;
       if (reachDone) {
         var reachFt = Math.round((reachD.valueM||0) * 3.28084).toLocaleString();
+        var valleyFt = ppCalcFt(we, 'valley_len');
+        var sinuosity = ppCalc(we, 'sinuosity');
         h += '<div class="wz-status done">&#10003; Reach length: <b>'+reachFt+' ft</b></div>';
-        h += '<button class="wz-action-btn secondary" onclick="startReachAutoDetect();renderWizardStep()">&#127760; Re-detect from Map</button>';
+        // Calculated metrics
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Valley Length</span><span class="wz-metric-val '+(valleyFt?'':'missing')+'">'+(valleyFt?Math.round(valleyFt).toLocaleString()+' ft':'calculating…')+'</span></div>';
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Sinuosity</span><span class="wz-metric-val '+(sinuosity?'':'missing')+'">'+(sinuosity||'calculating…')+'</span></div>';
+        // Elevation profile
+        h += buildElevChartHTML(we.id);
+        h += '<button class="wz-action-btn secondary" style="margin-top:12px" onclick="startReachAutoDetect();renderWizardStep()">&#127760; Re-detect from Map</button>';
         h += '<button class="wz-action-btn secondary" onclick="wizardRedraw(\'reach_len\')">&#128207; Redraw Manually</button>';
         h += '<button class="wz-action-btn secondary" onclick="startLineEdit(\'pp\',\'reach_len\');renderWizardStep()">&#9998; Edit Vertices</button>';
       } else if (reachPreTrim) {
