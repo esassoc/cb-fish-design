@@ -5448,7 +5448,8 @@ function wizardStepBody(we, step, idx) {
       h += '<div class="wz-step-desc">Draw the outer boundary of your project area. This helps auto-clip the stream reach and other features to your site.</div>';
       var perimDone = we && we.ppData['perimeter'] && we.ppData['perimeter'].layer;
       if (perimDone) {
-        h += '<div class="wz-status done">&#10003; Project boundary drawn.</div>';
+        var perimAc = ((we.ppData['perimeter'].valueM||0)*0.000247105).toFixed(2);
+        h += '<div class="wz-status done">&#10003; Project boundary drawn — <b>'+perimAc+' ac</b></div>';
         h += '<button class="wz-action-btn secondary" onclick="wizardRedraw(\'perimeter\')">&#8635; Redraw Boundary</button>';
       } else {
         h += '<div class="wz-status pending">&#9654; Click the button below, then click on the map to place polygon vertices. Double-click to finish.</div>';
