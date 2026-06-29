@@ -5454,8 +5454,6 @@ function wizardStepBody(we, step, idx) {
       } else {
         h += '<div class="wz-status pending">&#9654; Click the button below, then click on the map to place polygon vertices. Double-click to finish.</div>';
         h += '<button class="wz-action-btn" onclick="wizardDraw(\'perimeter\')">&#9632; Draw Project Boundary</button>';
-        h += '<div class="wz-tip">Optional but recommended — makes later steps more accurate.</div>';
-        
       }
       break;
 
@@ -5824,7 +5822,7 @@ function wizardStepFooter(we, step, idx) {
   var status = wizardStepStatus(we, step.id);
   var isLast = idx === vis.length - 1;
   // Steps that must be completed before advancing
-  var required  = ['reach', 'ch_width', 'fp_left', 'fp_right'];
+  var required  = ['perimeter', 'reach', 'ch_width', 'fp_left', 'fp_right'];
   // Steps where "Skip ›" shows when empty, "Next ›" when something is entered
   var skippable = ['bank_ht', 'substrate', 'chu_split', 'structures', 'fp_work', 'rr_work'];
 
