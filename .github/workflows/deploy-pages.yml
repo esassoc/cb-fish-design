@@ -1,0 +1,81 @@
+# Build the spoke from `main` and publish it to GitHub Pages.
+#
+# Why this exists: previously the live site was published manually with
+# `npm run deploy` (astro build && gh-pages -d dist), which builds whatever is in
+# the operator's working copy and pushes it to the `gh-pages` branch. That meant
+# the live site and `main` could silently drift — stale if nobody deployed, or
+# ahead of/divergent from main if someone deployed local edits. This workflow makes
+# `main` the single source of truth: every push to main rebuilds and redeploys.
+#
+# After merging, set Pages source to "GitHub Actions" (Settings → Pages → Source),
+# and you can retire the manual `npm run deploy` script.
+#
+# Note the cross-repo checkout: this spoke consumes the hub design system via
+# `file:../ecology/...` deps (see package.json), so the build needs the public
+# `esassoc/ecology` repo checked out as a SIBLING directory. We lay both repos out
+# under the workspace as cb-fish-design/ + ecology/ so `../ecology` resolves.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Least-privilege token for the official Pages deploy action.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; let a newer push supersede an in-flight run.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout spoke
+        uses: actions/checkout@v4
+        with:
+          path: cb-fish-design
+
+      - name: Checkout ecology hub (sibling — provides the @esa/* file: deps)
+        uses: actions/checkout@v4
+        with:
+          repository: esassoc/ecology
+          path: ecology
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: cb-fish-design/package-lock.json
+
+      - name: Install dependencies
+        working-directory: cb-fish-design
+        run: npm ci
+
+      - name: Build (production base = /cb-fish-design/)
+        working-directory: cb-fish-design
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: cb-fish-design/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
