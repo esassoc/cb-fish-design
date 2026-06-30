@@ -58,12 +58,12 @@ const contractProjects: Record<string, string> = {
     <span class="cbf-form-lock__msg--wide">Drop an invoice PDF on the right to unlock the form.</span>
     <span class="cbf-form-lock__msg--narrow">Upload your invoice PDF to unlock the form.</span>
     <button type="button" class="cbf-form-lock__upload-btn" data-mobile-upload-btn>
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
         <polyline points="17 8 12 3 7 8"/>
         <line x1="12" y1="3" x2="12" y2="15"/>
       </svg>
-      Upload PDF
+      Upload Invoice
     </button>
   </div>
   <!-- Mobile PDF input: lives outside the notice so it survives after the notice is hidden -->
@@ -200,6 +200,9 @@ const contractProjects: Record<string, string> = {
         tabindex="-1"
         aria-hidden="true"
       />
+      <div data-docs-error hidden>
+        <EsaAlertBox variant="danger"><span data-docs-error-msg></span></EsaAlertBox>
+      </div>
     </div>
 
     <esa-textarea
@@ -292,6 +295,30 @@ const contractProjects: Record<string, string> = {
     .cbf-form-lock__upload-btn:hover {
       background: var(--color-primary-subtle);
       border-color: var(--color-primary-border);
+    }
+  }
+
+  /* Mobile: the drop zone is hidden, so the upload button IS the upload affordance —
+     give it real presence: full-width, larger, and a prominent primary fill. */
+  @media (max-width: 600px) {
+    .cbf-form-lock {
+      flex-wrap: wrap;
+    }
+    .cbf-form-lock__upload-btn {
+      width: 100%;
+      margin-left: 0;
+      justify-content: center;
+      gap: var(--spacing-200);
+      padding: var(--spacing-300) var(--spacing-400);
+      font-size: 16px;
+      color: var(--color-text-inverse, #fff);
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+    .cbf-form-lock__upload-btn svg { width: 17px; height: 17px; }
+    .cbf-form-lock__upload-btn:hover {
+      background: var(--color-primary-hover, var(--color-secondary));
+      border-color: var(--color-primary-hover, var(--color-secondary));
     }
   }
 
@@ -458,11 +485,13 @@ const contractProjects: Record<string, string> = {
   }
 
   [data-step-error] { margin-top: var(--spacing-300); }
+  [data-docs-error] { margin-top: var(--spacing-300); }
 
   /* ---- Step actions ---- */
   .cbf-step-actions {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: var(--spacing-300);
     margin-top: var(--spacing-700);
     padding-top: var(--spacing-500);

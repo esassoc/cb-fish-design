@@ -172,12 +172,16 @@ Override the custom property in scoped component CSS rather than touching the hu
 
 ---
 
-## `.stack` / `.cluster` primitives override the `[hidden]` attribute
+## `.stack` / `.cluster` / `.grid` primitives override the `[hidden]` attribute
 
 **Component:** `@esa/tokens/src/layouts.css` (layout primitives)
 
 **Problem:**
-`.stack` and `.cluster` set `display: flex` unconditionally. The UA stylesheet's `[hidden] { display: none }` has the same specificity (one attribute/element vs. one class — actually the class wins), so a `<div class="stack" hidden>` or `<div class="cluster" hidden>` STILL RENDERS. Any pattern that toggles a primitive group via the `hidden` attribute (the idiomatic way to show/hide in plain DOM) silently breaks: every "hidden" group is visible at once. Hit in `cbf-invoice-review-queue` where the Approve-confirm and Return-comment decision sub-states (both `.stack`/`.cluster` + `hidden`) rendered on top of the default Approve/Return row.
+`.stack`/`.cluster` set `display: flex` and `.grid` sets `display: grid` unconditionally. Author `display` declarations beat the UA stylesheet's `[hidden] { display: none }` (author styles win over UA styles regardless of specificity), so a `<div class="stack" hidden>`, `<div class="cluster" hidden>`, or `<div class="grid" hidden>` STILL RENDERS. Any pattern that toggles a primitive group via the `hidden` attribute (the idiomatic way to show/hide in plain DOM) silently breaks: every "hidden" group is visible at once.
+
+Hit twice so far:
+- `cbf-invoice-review-queue` — the Approve-confirm and Return-comment decision sub-states (both `.stack`/`.cluster` + `hidden`) rendered on top of the default Approve/Return row.
+- `cbf-vendor-dashboard-invoices` — the Grid ⇄ Cards view toggle: the card container is `<div class="... grid" hidden>`, so the cards leaked into the Grid (table) view because `.grid`'s `display: grid` defeated `hidden`.
 
 **Requested change:**
 Guard the display rule so the `[hidden]` attribute keeps working:
@@ -190,8 +194,72 @@ Guard the display rule so the `[hidden]` attribute keeps working:
 ```
 
 **Local workaround:**
-Force `[hidden]` to win within the affected container in scoped component CSS:
+Force `[hidden]` to win in scoped component CSS — either within the affected container, or with an attribute+class selector that out-specifies the primitive:
 
 ```css
+/* container scope (cbf-invoice-review-queue) */
 .cbf-review-actions [hidden] { display: none !important; }
+
+/* attribute + class out-specifies .grid (cbf-vendor-dashboard-invoices) */
+.cbf-vendor-dashboard-invoices__cards[hidden] { display: none; }
 ```
+
+---
+
+## esa-confirm-dialog
+
+### Backdrop/Esc dismiss is indistinguishable from the explicit Cancel button
+
+**Status:** Patched upstream (2026-06-29, user-approved hub edit). Backward-compatible.
+**Affects:** Any consumer that proceeds with a flow on the `resolved` event — a backdrop click or Esc was treated as an answer, not an abort.
+
+**Problem:**
+Backdrop click (`@click=${this.cancel}`) and Esc both called `cancel()` → `resolve(false)`, emitting the same `cancel` + `resolved { confirmed: false }` as the explicit "Cancel" button. A consumer cannot tell "the user clicked Cancel" from "the user dismissed the dialog without deciding". In `cbf-invoice` the final-invoice prompt advanced the wizard to Review on a backdrop click, when an outside click should cancel/abort the process and leave the user where they were.
+
+**Change made:**
+`resolve(confirmed, dismissed = false)` now carries a `dismissed` flag; backdrop/Esc route through a new `dismiss()` method (`resolve(false, true)`) that also fires a `dismiss` event. The explicit Cancel button is unchanged (`dismissed: false`). Fully additive — existing `confirmed`-only consumers keep working.
+
+```ts
+dismiss = (): void => this.resolve(false, true);
+// resolved.detail is now { confirmed, dismissed }
+```
+
+**Spoke usage:** the `resolved` handler returns early when `e.detail.dismissed` is true, so a dismiss neither marks the decision nor advances the step.
+
+### No close (X) button — only confirm/cancel + backdrop/Esc
+
+**Status:** Patched upstream (2026-06-29, user-approved hub edit). Backward-compatible.
+**Affects:** Any confirm dialog where the user expects a standard top-right X to dismiss.
+
+**Problem:**
+`esa-confirm-dialog` rendered only the footer confirm/cancel buttons; there was no X affordance, so the only non-answer exits were the backdrop and Esc (both invisible affordances).
+
+**Change made:**
+Added a `show-close-button` boolean prop (**default `true`**) that renders a top-right X. The X routes through `dismiss()` (same as backdrop/Esc — an abort, `dismissed: true`), not `cancel()`. Set `show-close-button="false"` to opt out.
+
+---
+
+## esa-snackbar-container
+
+### Toasts never render — reactive `snackbars` state shadowed by a class field
+
+**Status:** Patched upstream (2026-06-29, user-approved hub edit).
+**Affects:** Every `container.show()/.success()/.info()/…` call — the toast was added to internal state but never rendered.
+
+**Problem:**
+`snackbars` is declared reactive (`static properties = { snackbars: { state: true } }`) but was initialized with a class-field initializer (`private snackbars: SnackbarEntry[] = []`). Under `useDefineForClassFields`, the field overwrites Lit's generated accessor, so `this.snackbars = [...]` writes a plain property and never triggers a re-render. Lit logs the `class-field-shadowing` warning. Net effect: `.success()` returns an id, but no `<esa-snackbar-item>` ever appears.
+
+**Change made:**
+Switched to the same pattern every other esa-* component uses — `declare private snackbars: SnackbarEntry[]` + initialize in the constructor (`this.snackbars = []`). Reactivity restored; toasts render and auto-dismiss.
+
+---
+
+## esa-dialog / esa-confirm-dialog — mobile bottom-sheet
+
+### Centered dialogs on small viewports read better as bottom sheets
+
+**Status:** Added upstream (2026-06-30, user-approved hub edit). Additive, mobile-only.
+**Affects:** All modal dialogs on narrow viewports.
+
+**Change made:**
+Added a `@media (max-width: 600px)` rule to both `esa-dialog` and `esa-confirm-dialog`: the panel aligns to the bottom (`align-items: flex-end`), the surface goes full-width with only the top corners rounded, and it slides up on open (`translateY(100%) → 0`). Desktop (>600px) is unchanged — still centered.

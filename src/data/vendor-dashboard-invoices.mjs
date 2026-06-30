@@ -6,7 +6,7 @@
 // names are invented, NOT derived from any client document.
 
 /**
- * @typedef {'Submitted' | 'In review' | 'Approved' | 'Paid' | 'Needs revision'} Stage
+ * @typedef {'In review' | 'Paid' | 'Needs revision'} Stage
  * @typedef {{ description: string; qty: number; unitPrice: number }} LineItem
  * @typedef {{
  *   number: string; contract: string; project: string; submitted: string;
@@ -44,7 +44,7 @@ export const invoices = [
   {
     number: 'INV-2026-0045', contractNumber: 'C-2024-042', contract: 'Salmon Habitat Restoration — Wenatchee',
     projectNumber: 'PRJ-2024-112', project: 'Wenatchee Subbasin',
-    submitted: 'Jun 20, 2026', amount: 5210, stage: 'Submitted',
+    submitted: 'Jun 20, 2026', amount: 5210, stage: 'In review',
     invoiceDate: 'Jun 18, 2026', issued: 'Jun 18, 2026', perfStart: 'Jun 1, 2026', perfEnd: 'Jun 15, 2026',
     pdfName: 'INV-2026-0045-PacificEnv.pdf', supportingDocs: ['timesheet-jun-2026.pdf', 'equipment-receipt.pdf'],
     notes: 'Partial-month billing for the June survey window.',
@@ -57,7 +57,7 @@ export const invoices = [
   {
     number: 'INV-2026-0042', contractNumber: 'C-2024-042', contract: 'Salmon Habitat Restoration — Wenatchee',
     projectNumber: 'PRJ-2024-112', project: 'Wenatchee Subbasin',
-    submitted: 'Jun 18, 2026', amount: 4850, stage: 'Submitted',
+    submitted: 'Jun 18, 2026', amount: 4850, stage: 'In review',
     invoiceDate: 'Jun 1, 2026', issued: 'Jun 1, 2026', perfStart: 'May 1, 2026', perfEnd: 'May 31, 2026',
     pdfName: 'INV-2026-0042-PacificEnv.pdf', supportingDocs: ['timesheet-may-2026.pdf'],
     lineItems: [
@@ -80,7 +80,7 @@ export const invoices = [
   {
     number: 'INV-2026-0035', contractNumber: 'C-2024-067', contract: 'Smolt Survival Telemetry Study',
     projectNumber: 'PRJ-2024-201', project: 'Mainstem Survival',
-    submitted: 'May 29, 2026', amount: 3975, stage: 'Approved',
+    submitted: 'May 29, 2026', amount: 3975, stage: 'In review',
     invoiceDate: 'May 5, 2026', issued: 'May 5, 2026', perfStart: 'Apr 1, 2026', perfEnd: 'Apr 30, 2026',
     pdfName: 'INV-2026-0035-PacificEnv.pdf', supportingDocs: ['receiver-log.pdf', 'maintenance-photos.pdf'],
     notes: 'Telemetry receivers redeployed after the spring high-water event.',
@@ -157,8 +157,7 @@ export function fmtExact(n) {
 
 /**
  * Derive the cross-contract financial position from the invoice pipeline.
- * Awaiting = money the vendor has billed but BPA has not yet approved
- * (Submitted + In review). Approved-unpaid = approved, not yet Paid.
+ * Awaiting = money the vendor has billed but BPA has not yet paid (In review).
  */
 export function deriveOutlook(list = invoices) {
   const sumWhere = (stages) =>
@@ -167,8 +166,7 @@ export function deriveOutlook(list = invoices) {
 
   return {
     ...portfolio,
-    awaiting: { amount: sumWhere(['Submitted', 'In review']), count: countWhere(['Submitted', 'In review']) },
-    approvedUnpaid: { amount: sumWhere(['Approved']), count: countWhere(['Approved']) },
+    awaiting: { amount: sumWhere(['In review']), count: countWhere(['In review']) },
     needsRevision: { count: countWhere(['Needs revision']) },
     asOf,
     contractCount,

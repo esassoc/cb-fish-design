@@ -1,224 +1,44 @@
 ---
-// cbf-invoice-confirm — Step 2 page + modal variant for post-submission confirmation.
-// The page step is shown in "page" mode; the esa-dialog is shown in "modal" mode.
-// Modal is two pages: page 1 = Review & submit (review card + Back/Submit footer);
-// page 2 = Invoice submitted (success). JS swaps pages after the submit completes.
-// Both modal pages share the same esa-dialog shell; JS updates the heading on transition.
+// cbf-invoice-confirm — the "Review & submit" modal (modal confirmation mode).
+// esa-dialog shell wrapping the shared review summary, with a Back/Submit footer that
+// drives the wizard. Post-submit confirmation is a success toast (not a page) — see
+// invoice-wizard.client.ts submitInvoice.
 import EsaButton from '@esa/ecology/esa-button.astro';
-interface Props {
-  vendorEmail: string;
-  homeHref: string;
-  resubmitHref: string;
-}
-const { vendorEmail, homeHref, resubmitHref } = Astro.props;
+import CbfInvoiceReviewSummary from './cbf-invoice-review-summary.astro';
 ---
-<div class="cbf-wizard-step cbf-wizard-step--confirm" data-step="2" hidden>
-  <div class="cbf-confirm">
-    <div class="cbf-confirm__icon" aria-hidden="true">
-      <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-        <polyline points="22 4 12 14.01 9 11.01"/>
-      </svg>
-    </div>
-
-    <h1 class="cbf-confirm__title">Invoice submitted</h1>
-    <p class="cbf-confirm__body">
-      Your invoice has been submitted for processing.<br />
-      You'll receive a confirmation email at <strong>{vendorEmail}</strong>.
-    </p>
-
-    <p class="cbf-confirm__ref">
-      Reference number: <strong data-confirm-ref>&nbsp;</strong>
-    </p>
-
-    <div class="cbf-confirm__actions">
-      <a href={homeHref} class="cbf-confirm__link cbf-confirm__link--outline">Return to home</a>
-      <a href={resubmitHref} class="cbf-confirm__link">Submit another invoice</a>
-    </div>
-  </div>
-</div>
-
-<!-- bcn-lego-checked: esa-dialog provides the overlay shell (focus trap, Esc, backdrop).
-     Two-page modal: page 1 = review summary (esa-dialog as container, review card inside);
-     page 2 = success. No esa-* lego covers a multi-page confirmation modal; no Beacon
-     ui-* equivalent exists. The review card re-uses the global .cbf-review-* styles from
-     cbf-invoice-step-review (is:global). Back button is a bcn-btn-ghost (same token-driven
-     pattern as step-review). -->
+<!-- bcn-lego-checked: esa-dialog provides the overlay shell (focus trap, Esc, backdrop,
+     close button). The summary inside is composed of esa-card legos
+     (CbfInvoiceReviewSummary). Back is a bcn-btn-ghost (same token-driven pattern as the
+     page step's Back button); esa-button is the primary Submit CTA. -->
 <esa-dialog
   data-confirm-modal
   heading="Review &amp; submit"
   size="lg"
   show-close-button
 >
-  <!-- Page 1: review summary (populated by JS into [data-modal-review-content]) -->
-  <div data-modal-page="review">
-    <div class="cbf-review-card" data-modal-review-content></div>
+  <!-- JS fills the [data-review] placeholders (populateModalReview). -->
+  <div data-modal-review-content>
+    <CbfInvoiceReviewSummary />
   </div>
 
-  <!-- Page 2: success (hidden until JS transitions after submit) -->
-  <div data-modal-page="success" hidden>
-    <div class="cbf-confirm-modal-body">
-      <div class="cbf-confirm__icon" aria-hidden="true">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-          <polyline points="22 4 12 14.01 9 11.01"/>
-        </svg>
-      </div>
-      <p class="cbf-confirm__body">
-        Your invoice has been submitted for processing.<br />
-        You'll receive a confirmation email at <strong>{vendorEmail}</strong>.
-      </p>
-      <p class="cbf-confirm__ref">
-        Reference number: <strong data-confirm-ref>&nbsp;</strong>
-      </p>
-    </div>
-  </div>
-
-  <!-- Single footer slot; JS swaps which inner group is visible. -->
   <div slot="footer" class="cbf-confirm-modal-footer">
-    <div data-modal-footer="review" class="cbf-confirm-modal-footer__group">
-      <button type="button" class="cbf-btn-ghost" data-modal-back>Back</button>
-      <span data-modal-submit>
-        <EsaButton color="primary" size="md">Submit invoice</EsaButton>
-      </span>
-    </div>
-    <div data-modal-footer="success" class="cbf-confirm-modal-footer__group" hidden>
-      <a href={homeHref} class="cbf-confirm__link cbf-confirm__link--outline">Return to home</a>
-      <a href={resubmitHref} class="cbf-confirm__link">Submit another invoice</a>
-    </div>
+    <button type="button" class="cbf-btn-ghost" data-modal-back>Back</button>
+    <span data-modal-submit>
+      <EsaButton color="primary" size="md">Submit invoice</EsaButton>
+    </span>
   </div>
 </esa-dialog>
 
 <style>
-  .cbf-wizard-step--confirm {
-    display: flex;
-    align-items: flex-start;
-  }
-  .cbf-wizard-step--confirm[hidden] {
-    display: none;
-  }
-
-  .cbf-confirm {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-400);
-    padding-top: var(--spacing-400);
-    max-width: 560px;
-  }
-
-  .cbf-confirm__icon {
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    background: var(--color-success-subtle, #f0fdf4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-success-strong, #15803d);
-  }
-
-  .cbf-confirm__title {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: 40px;
-    font-weight: var(--font-weight-medium);
-    letter-spacing: -1px;
-    color: var(--color-surface-inverse);
-  }
-
-  .cbf-confirm__body {
-    margin: 0;
-    font-size: 16px;
-    color: var(--color-text-secondary);
-    line-height: 1.6;
-  }
-
-  .cbf-confirm__ref {
-    margin: 0;
-    font-size: 15px;
-    color: var(--color-text-secondary);
-    padding: var(--spacing-300) var(--spacing-400);
-    background: var(--color-surface-sunken, #f8f9fb);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-100);
-    width: 100%;
-    box-sizing: border-box;
-  }
-  .cbf-confirm__ref strong { color: var(--color-primary); }
-
-  .cbf-confirm__actions {
-    display: flex;
-    gap: var(--spacing-300);
-    flex-wrap: wrap;
-  }
-
-  .cbf-confirm__link {
-    display: inline-flex;
-    align-items: center;
-    height: 40px;
-    padding: 0 var(--spacing-400);
-    border-radius: var(--radius-100);
-    font-family: var(--font-sans);
-    font-size: 15px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-secondary);
-    border: 1px solid transparent;
-    text-decoration: none;
-    transition: background 0.12s ease, border-color 0.12s ease;
-  }
-  .cbf-confirm__link:hover { background: var(--color-primary-subtle); }
-
-  .cbf-confirm__link--outline {
-    color: var(--color-text-secondary);
-    border-color: var(--color-border);
-    background: var(--color-surface);
-  }
-  .cbf-confirm__link--outline:hover {
-    background: var(--color-surface-sunken, #f8f9fb);
-    border-color: var(--color-primary-border);
-    color: var(--color-text-primary);
-  }
-
-  /* ---- Modal ---- */
-
-  /* Review card inside the modal (same bordered container as the page step). */
-  .cbf-review-card {
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-100);
-    overflow: hidden;
-  }
-
-  /* Success page body: icon + body + ref stacked with breathing room. */
-  .cbf-confirm-modal-body {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-400);
-    padding: var(--spacing-200) 0;
-  }
-  /* Success icon — smaller than the page variant (modal already frames it). */
-  .cbf-confirm-modal-body .cbf-confirm__icon {
-    width: 56px;
-    height: 56px;
-  }
-  /* Ref box fills the modal width (no percentage width in a flex column). */
-  .cbf-confirm-modal-body .cbf-confirm__ref {
-    width: auto;
-  }
-
-  /* Single footer slot wrapper — fills whatever width the dialog gives it. */
-  .cbf-confirm-modal-footer { width: 100%; }
-
-  /* Each page's footer group: Back left + Submit right (review), or two links (success). */
-  .cbf-confirm-modal-footer__group {
+  /* Footer: Back left, Submit pushed to the right. */
+  .cbf-confirm-modal-footer {
     display: flex;
     align-items: center;
     gap: var(--spacing-300);
     flex-wrap: wrap;
     width: 100%;
   }
-  /* Push Submit to the right on the review footer. */
-  [data-modal-footer="review"] [data-modal-submit] { margin-left: auto; }
+  .cbf-confirm-modal-footer [data-modal-submit] { margin-left: auto; }
 
   /* Back button — same ghost pattern as the page step's Back button. */
   .cbf-btn-ghost {

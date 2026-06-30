@@ -75,7 +75,7 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
       <span class="esa-link-column__head">Help</span>
       <hr class="esa-link-column__rule" />
       <ul class="esa-link-column__list">
-        <li>Help Center</li>
+        <li>Help center</li>
         <li>Data dictionary</li>
         <li>EF&amp;W Program documents</li>
         <li>Request support</li>

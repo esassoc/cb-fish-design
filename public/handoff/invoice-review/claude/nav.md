@@ -186,7 +186,7 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
               <span class="esa-link-column__head">Help</span>
               <hr class="esa-link-column__rule" />
               <ul class="esa-link-column__list">
-                <li>Help Center</li>
+                <li>Help center</li>
                 <li>Data dictionary</li>
                 <li>EF&amp;W Program documents</li>
                 <li>Request support</li>
@@ -203,29 +203,9 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
 
 ## Styles (only what this section uses; tokens resolved for the theme)
 ```css
-.esa-icon {
-  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
+.cbf-search-field .cbf-icon {
+  color: var(--color-text-muted);
   display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--_icon-size);
-  height: var(--_icon-size);
-  line-height: 1;
-  color: inherit;
-}
-.esa-icon--xs {
-  --_icon-size: var(--icon-size-xs, 14px);
-}
-.esa-icon svg {
-  display: block;
-  width: var(--_icon-size);
-  height: var(--_icon-size);
-}
-.esa-icon--sm {
-  --_icon-size: var(--icon-size-sm, var(--icon-size-small, 16px));
-}
-.esa-icon--md {
-  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
 }
 .cbf-app-bar--admin {
   --app-bar-pad-y: var(--spacing-300);
@@ -336,12 +316,50 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
   color: inherit;
   text-decoration: none;
 }
-.cbf-review-fields__copy .esa-icon-button {
+.esa-icon {
+  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+  line-height: 1;
   color: inherit;
 }
-.cbf-search-field .cbf-icon {
-  color: var(--color-text-muted);
+.esa-icon--xs {
+  --_icon-size: var(--icon-size-xs, 14px);
+}
+.esa-icon svg {
+  display: block;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+}
+.esa-icon--sm {
+  --_icon-size: var(--icon-size-sm, var(--icon-size-small, 16px));
+}
+.esa-icon-button {
+  --_ib-size: var(--form-height-md, 40px);
+  --_ib-bg-hover: var(--icon-button-bg-hover, color-mix(in srgb, currentColor 14%, transparent));
   display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_ib-size);
+  height: var(--_ib-size);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-200, 8px);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background var(--transition-fast, 0.15s ease);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.esa-icon-button--xs {
+  --_ib-size: var(--form-height-xs, 28px);
+}
+.esa-icon--md {
+  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
 }
 .cbf-app-bar--admin {
   --app-bar-gap: var(--spacing-650);
@@ -416,55 +434,42 @@ summary.esa-icon-link {
   background: var(--app-bar-brand-bg, var(--color-primary, #43608a));
   color: var(--app-bar-brand-text, var(--color-text-inverse, #fff));
 }
-.esa-icon-button {
-  --_ib-size: var(--form-height-md, 40px);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--_ib-size);
-  height: var(--_ib-size);
-  padding: 0;
-  border: 0;
-  border-radius: var(--radius-200, 8px);
-  background: transparent;
+.cbf-review-fields__copy .esa-icon-button {
   color: inherit;
-  cursor: pointer;
-  transition: background var(--transition-fast, 0.15s ease);
-  -webkit-appearance: none;
-  appearance: none;
-}
-.esa-icon-button--xs {
-  --_ib-size: var(--form-height-xs, 28px);
 }
 ```
 
 ## Tokens
 | Token | Value | Tier |
 |---|---|---|
-| `--app-bar-bg` | `#ffffff` | component |
+| `--app-bar-bg` | `#fcfcfc` | component |
 | `--app-bar-brand-bg` | `#1e5386` | component |
 | `--app-bar-brand-strong-bg` | `#13273e` | component |
-| `--app-bar-brand-strong-text` | `#ffffff` | component |
-| `--app-bar-brand-text` | `#ffffff` | component |
+| `--app-bar-brand-strong-text` | `#fcfcfc` | component |
+| `--app-bar-brand-text` | `#fcfcfc` | component |
 | `--app-bar-gap` | `2.5rem` | component |
 | `--app-bar-pad-x` | `2rem` | component |
 | `--app-bar-pad-y` | `.75rem` | component |
 | `--app-bar-text` | `#3d3d3d` | component |
 | `--color-primary` | `#1e5386` | semantic |
-| `--color-surface` | `#ffffff` | semantic |
+| `--color-surface` | `#fcfcfc` | semantic |
 | `--color-surface-inverse` | `#13273e` | semantic |
-| `--color-text-inverse` | `#ffffff` | semantic |
+| `--color-text-inverse` | `#fcfcfc` | semantic |
 | `--color-text-muted` | `#7c7c7c` | semantic |
 | `--color-text-primary` | `#3d3d3d` | semantic |
 | `--font-sans` | `"IBM Plex Sans", sans-serif` | primitive |
 | `--font-weight-medium` | `500` | primitive |
 | `--form-height-md` | `40px` | component |
 | `--form-height-xs` | `28px` | component |
+| `--icon-button-bg-hover` | `color-mix(in srgb, currentColor 14%, transparent)` | component |
 | `--icon-link-font-size-md` | `1rem` | component |
 | `--icon-link-font-size-sm` | `.875rem` | component |
 | `--icon-link-gap` | `.375rem` | component |
+| `--icon-size-md` | `20px` | primitive |
 | `--icon-size-medium` | `20px` | component |
+| `--icon-size-sm` | `16px` | primitive |
 | `--icon-size-small` | `16px` | component |
+| `--icon-size-xs` | `14px` | primitive |
 | `--link-column-heading-font-size` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | component |
 | `--link-column-item-font-size` | `clamp(.6875rem, .61rem + .38vw, .875rem)` | component |
 | `--link-column-rule-color` | `color-mix(in srgb, currentColor 40%, transparent)` | component |
@@ -476,6 +481,7 @@ summary.esa-icon-link {
 | `--spacing-400` | `1rem` | primitive |
 | `--spacing-600` | `2rem` | primitive |
 | `--spacing-650` | `2.5rem` | primitive |
+| `--transition-fast` | `.15s ease` | primitive |
 | `--type-size-150` | `clamp(.6875rem, .61rem + .38vw, .875rem)` | primitive |
 | `--type-size-200` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | primitive |
 

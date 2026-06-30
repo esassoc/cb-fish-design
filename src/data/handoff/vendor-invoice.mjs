@@ -1,40 +1,28 @@
 // Handoff spec for the /vendor-invoice prototype — curated sections for the
-// three-step invoice submission wizard. Consumed only by scripts/gen-handoff.mjs.
+// invoice submission wizard. Consumed only by scripts/gen-handoff.mjs.
+//
+// Flow today: a PDF-gated, two-step wizard (Details → Review) plus a modal
+// confirmation variant. There is NO post-submit success page — submitting shows a
+// toast and resets to a blank form. The old left rail/stepper was removed.
 
 /** @type {{ sections: import('./search.mjs').HandoffSection[] }} */
 export default {
   sections: [
     {
-      label: 'Invoice rail',
-      selector: '.cbf-invoice-rail',
-      intent:
-        'Left sidebar (260px) that holds the vertical step indicator and a read-only vendor identity card. The rail shows where the user is in the wizard and who is submitting the invoice.',
-      decisions: [
-        'Stepper marks the active step with .is-active and completed steps with .is-done — classes are toggled by invoice-wizard.client.ts, not Astro.',
-        'Vendor card is read-only (company, contact, email); it never accepts input.',
-        'Rail becomes a horizontal top bar below 960px; vendor card is hidden entirely below 600px.',
-      ],
-      gotchas: [
-        'Connector lines between stepper circles are colored by JS on each goTo() call — do not try to color them with CSS alone.',
-        'Step labels in the rail must match the STEPS array in vendor-invoice.astro exactly.',
-      ],
-      js: ['src/components/vendor-invoice/invoice-wizard.client.ts'],
-    },
-    {
       label: 'PDF upload',
       selector: '[data-pdf-panel]',
       intent:
-        'Two-state PDF panel: (1) idle dropzone — drag-and-drop prompt with a browse button; (2) loaded viewer — iframe displaying the uploaded PDF with a toolbar showing the filename and a remove button. Uploading a PDF unlocks the entire details form.',
+        'Two-state PDF panel that gates the whole form. Idle: a drag-and-drop zone with a browse button. Loaded: an inline iframe preview with a toolbar (filename + remove). Uploading a PDF is what unlocks the details form — nothing else can be entered until a PDF is present.',
       decisions: [
-        'Desktop upload: drag-drop onto [data-upload-zone] or click [data-upload-browse].',
-        'Mobile upload: a separate [data-mobile-upload-btn] in the form body triggers [data-mobile-upload-input] because the panel is not visible at narrow widths.',
-        'Only PDF MIME type is accepted; the wizard validates type on drop and on file input change.',
-        'Removing the PDF (via remove button or "Replace" in review) calls clearFile() and resets the viewer to the idle state.',
+        'Desktop: drag-drop onto [data-upload-zone] or click [data-upload-browse].',
+        'Mobile (≤600px): the idle drop zone is hidden entirely — the panel uses CSS `:has([data-upload-idle]:not([hidden]))` to collapse to display:none while idle. Upload happens via the full-width primary "Upload Invoice" button ([data-mobile-upload-btn]) in the form body; the panel reappears only to preview a loaded PDF.',
+        'PDF only, max 25 MB — validated on drop and on file-input change. A rejection (wrong type / too big) shows an inline esa-alert-box right in the drop zone ([data-upload-inline-error]), capped at 360px, not at the bottom of the form.',
+        'Removing the PDF (viewer remove button, or Remove in the review summary) calls clearFile(), resets to the idle state, and revokes the Blob URL.',
       ],
       gotchas: [
-        'Panel stacks to full-width below 1100px with a fixed height of 420px — the CSS switches from sidebar to block layout at that breakpoint.',
-        'syncFormLock() is called on every file change — ALL [data-field] elements remain disabled until pdfEverLoaded is true.',
-        'The iframe src is a Blob object URL — it is revoked on remove to avoid memory leaks.',
+        'Panel stacks full-width below 1100px at a fixed 420px height; below 600px it is display:none while idle — do not assume it is always on screen.',
+        'syncFormLock() runs on every file change — ALL [data-field] controls stay disabled until pdfEverLoaded is true.',
+        'The iframe src is a Blob object URL — it is revoked on remove to avoid leaks.',
       ],
       js: ['src/components/vendor-invoice/invoice-wizard.client.ts'],
     },
@@ -42,18 +30,21 @@ export default {
       label: 'Details form',
       selector: '[data-step="0"]',
       intent:
-        'Step 0 — the main data-entry form. Sections: contract/project selectors, invoice metadata (number, dates, performance period), a dynamic line items table, supporting document attachments, and a notes textarea. The entire form is disabled (locked) until a PDF is uploaded.',
+        'Step 0 — the main data-entry form: contract reference, an auto-populated read-only project, invoice metadata (number, invoice date, performance start + end), the total amount with contract-balance validation, a final-invoice flag, supporting documents, and notes. The entire form is locked until a PDF is uploaded.',
       decisions: [
-        'Contract and project are esa-combobox (not esa-select) — they support free-text search over a list of options passed via data-combobox-options JSON.',
-        'Dates use bcn-date-picker, a spoke-level custom component built on esa-text-field.',
-        'Line item rows are JS-rendered (no Astro scope) — their CSS lives in a <style is:global> block.',
-        'The locked-state overlay ([data-form-lock-notice]) is shown when pdfEverLoaded is false, prompting the user to upload a PDF first.',
+        'Contract is an esa-combobox (autocomplete over data-combobox-options JSON). Project is a DISABLED esa-text-field auto-populated from the selected contract (data-contract-projects) — it is read-only by design and must never be user-selectable.',
+        'Dates use bcn-date-picker (a spoke component built on esa-text-field). The performance period is two separate fields — "Performance period — Start" and "— End" ([data-field="perf-start"]/[data-field="perf-end"]).',
+        'Total amount ([data-field="total-amount"]) is validated against the contract’s remaining balance (data-contract-amounts). Exceeding it shows [data-step-error="total-exceeds"] with the remaining figure interpolated; an empty total shows [data-step-error="total"].',
+        'Final invoice is a deliberate callout esa-checkbox ([data-final-invoice]). On Review, if the invoice looks final and the box is not set, the wizard opens the esa-confirm-dialog ([data-final-invoice-dialog]) to confirm before continuing.',
+        'The line-items table is intentionally DORMANT — it is wrapped in a `<div hidden>`; the line-item breakdown lives in the uploaded PDF, not in the form. The markup is retained but never shown.',
+        'Lock notice ([data-form-lock-notice]) shows until pdfEverLoaded. Supporting docs are deduplicated by filename before being added to supportingDocs[].',
       ],
       gotchas: [
-        'All [data-field="*"] controls are disabled until pdfEverLoaded — attempting to interact before upload will have no effect.',
-        'The "Add line item" button ([data-add-line-item]) is also disabled while locked.',
-        'Line items table has no Astro-scoped styles — any style changes need to target the global .cbf-line-item class.',
-        'Supporting docs are deduplicated by filename before being added to the supportingDocs array.',
+        'All [data-field="*"] controls are disabled until a PDF is uploaded — interacting before upload does nothing.',
+        'The Project field is disabled on purpose — do not "fix" it to be editable; it is driven entirely by the chosen contract.',
+        'The line items section is hidden — do not surface it without deliberately removing the `<div hidden>` wrapper and its global .cbf-line-item styles.',
+        'Dates are parsed as yyyy-mm-dd (not via Date()) to avoid a UTC off-by-one day.',
+        'esa-combobox / bcn-date-picker are web components — adding a NEW @esa/ecology import to this page requires clearing node_modules/.vite and restarting astro dev, or the fields render empty (504 Outdated Optimize Dep).',
       ],
       js: ['src/components/vendor-invoice/invoice-wizard.client.ts'],
     },
@@ -61,31 +52,35 @@ export default {
       label: 'Review step',
       selector: '[data-step="1"]',
       intent:
-        'Step 1 — read-only summary of everything entered in step 0. The step shell is a static empty container; all content is JS-generated into [data-review-content] by populateReview() when goTo(1) is called. Shows: uploaded file info, invoice details, line items table, supporting docs list, and notes.',
+        'Step 1 — a read-only review of everything entered in step 0, plus the Submit action. The step is a shell (title + info alert + actions); the body is the shared CbfInvoiceReviewSummary, composed of real esa-card legos and filled by the wizard from form state. Back sits left, "Submit invoice" is right-aligned.',
       decisions: [
-        'Review content is entirely client-side — populateReview() reads all [data-field] values, combobox labels, lineItems[], and supportingDocs[] at navigation time.',
-        'Combobox display labels are resolved via comboboxLabel(selector) which reads el.options to find the matching label for the stored value.',
-        'PDF actions (Replace / Remove) in the review card navigate back to step 0 or clear the file.',
+        'The summary markup lives in ONE place — cbf-invoice-review-summary.astro — shared by this page step AND the modal confirmation variant, so the two can never drift.',
+        'It is built from real esa-card legos with [data-review="…"] placeholders that fillReviewSummary() populates at navigation time (not SSR).',
+        'The invoice card is the shared CbfInvoiceCard with variant="summary": label-left rows (invoice date, performance start, performance end, contract, project) with the total amount aligned on the same vertical value column so the eye scans straight down.',
+        'The uploaded-invoice card carries inline Replace/Remove file actions; the supporting-docs and notes cards are conditional ([data-review="docs-card"]/[data-review="notes-card"], hidden until populated).',
       ],
       gotchas: [
-        'The review card ([data-review-content]) is empty in SSR output — do not expect Astro-rendered content here.',
-        'If the user goes back and changes form data, the review is re-populated fresh on the next goTo(1) call.',
+        'The [data-review] placeholders are EMPTY in SSR output — the content is filled client-side; do not expect Astro-rendered values.',
+        'Going back, editing form data, and returning re-fills the summary fresh on the next navigation.',
+        'CbfInvoiceCard has two variants: the dashboard uses variant="stat" (quick scanning), the review uses variant="summary" (structured, label-left). They serve different needs — do not unify them.',
       ],
       js: ['src/components/vendor-invoice/invoice-wizard.client.ts'],
     },
     {
-      label: 'Confirmation',
-      selector: '[data-step="2"]',
+      label: 'Submit & confirmation',
+      selector: '[data-confirm-modal]',
       intent:
-        'Step 2 — success screen shown after submitInvoice() completes. Contains a checkmark icon, a success message, a generated reference number (INV-YYYY-NNNNN format written into [data-confirm-ref]), and two action links: "Return to dashboard" and "Submit another invoice".',
+        'Submission and its confirmation. A dev toggle ([data-confirm-mode]) switches between two modes that share the SAME review summary: "page" (the Review step above) and "modal" (this esa-dialog "Review & submit", [data-confirm-modal]). There is NO post-submit success page in either mode — submitting shows a success toast and resets the wizard to a fresh blank form.',
       decisions: [
-        'submitInvoice() simulates a 1.5 s network delay, then calls goTo(2) — the confirmation is shown only after the fake submission resolves.',
-        'Reference number is generated client-side as INV-<year>-<5-digit-random> and is for prototype demonstration only.',
-        'Submit button shows a loading spinner (.esa-button--loading) during the delay.',
+        'The modal wraps the shared CbfInvoiceReviewSummary with a Back/Submit footer; populateModalReview() fills it the same way the page step is filled.',
+        'submitInvoice() simulates ~1.5s (spinner on the Submit button), then: restores the button, closes the modal if open, resets the wizard, and fires an esa-snackbar success toast — "Invoice <ref> submitted. The form has been cleared for your next one." (duration 6s). The toast REPLACES the former "Invoice submitted" confirmation screen entirely.',
+        'On narrow viewports (≤600px) esa-dialog and esa-confirm-dialog render as bottom sheets (hub edit) rather than centered dialogs.',
+        'The reference number is generated client-side as INV-<year>-<5-digit> — prototype demonstration only.',
       ],
       gotchas: [
-        'Step 2 is hidden by default (hidden attribute) — the capture will see the collapsed DOM unless the apply recipe drives through the wizard.',
-        'The two action links are plain <a> elements, not esa-button — they are styled with utility classes (.cbf-confirm__link).',
+        'There is no [data-step="2"] / success screen — do not look for one in the DOM. Confirmation is the toast (esa-snackbar-container [data-snackbar], which must be present on the page) plus an in-place reset.',
+        'esa-dialog renders empty while closed — the captured region is the collapsed shell; the behavior is what matters.',
+        'The "Confirmation mode" bar ([data-confirm-mode-bar]) and "Autofill → Review" ([data-dev-autofill]) are prototype-only dev tools and must NOT ship to production.',
       ],
       js: ['src/components/vendor-invoice/invoice-wizard.client.ts'],
     },

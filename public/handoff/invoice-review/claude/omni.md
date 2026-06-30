@@ -106,6 +106,10 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
 
 ## Styles (only what this section uses; tokens resolved for the theme)
 ```css
+.cbf-search-field .cbf-icon {
+  color: var(--color-text-muted);
+  display: inline-flex;
+}
 .cbf-omni-trigger {
   display: flex;
   align-items: center;
@@ -166,10 +170,6 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
 }
 .cbf-omni[hidden] {
   display: none;
-}
-.cbf-search-field .cbf-icon {
-  color: var(--color-text-muted);
-  display: inline-flex;
 }
 ```
 

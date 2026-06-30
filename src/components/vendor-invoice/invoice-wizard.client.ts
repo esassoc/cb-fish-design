@@ -3,8 +3,9 @@
 // add/remove/total, review-panel population, and submit confirmation.
 
 export function initInvoiceWizard(): void {
-  const wizard = document.querySelector<HTMLElement>('[data-invoice-wizard]');
-  if (!wizard) return;
+  const root = document.querySelector<HTMLElement>('[data-invoice-wizard]');
+  if (!root) return;
+  const wizard: HTMLElement = root;
 
   const stepper = wizard.querySelector<HTMLElement>('[data-stepper]');
   const stepperItems = Array.from(
@@ -21,7 +22,6 @@ export function initInvoiceWizard(): void {
   const pdfFrame = wizard.querySelector<HTMLIFrameElement>('[data-pdf-frame]');
   const pdfFilenameEl = wizard.querySelector<HTMLElement>('[data-pdf-filename]');
   const cardBody = wizard.querySelector<HTMLElement>('.cbf-invoice-workspace');
-  const partiesBar = wizard.querySelector<HTMLElement>('[data-parties-bar]');
 
   function setStepVisibility(step: number, visible: boolean): void {
     wizard.querySelectorAll<HTMLElement>(`[data-step="${step}"]`).forEach((el) => {
@@ -59,23 +59,8 @@ export function initInvoiceWizard(): void {
   function openModalAtReview(): void {
     const modal = wizard.querySelector<any>('[data-confirm-modal]');
     if (!modal) return;
-    // Reset to page 1 (review) in case the modal was previously on page 2 (success).
-    wizard.querySelector<HTMLElement>('[data-modal-page="review"]')?.removeAttribute('hidden');
-    wizard.querySelector<HTMLElement>('[data-modal-page="success"]')?.setAttribute('hidden', '');
-    wizard.querySelector<HTMLElement>('[data-modal-footer="review"]')?.removeAttribute('hidden');
-    wizard.querySelector<HTMLElement>('[data-modal-footer="success"]')?.setAttribute('hidden', '');
-    modal.heading = 'Review & submit';
     populateModalReview();
     modal.show();
-  }
-
-  function transitionModalToSuccess(): void {
-    wizard.querySelector<HTMLElement>('[data-modal-page="review"]')?.setAttribute('hidden', '');
-    wizard.querySelector<HTMLElement>('[data-modal-page="success"]')?.removeAttribute('hidden');
-    wizard.querySelector<HTMLElement>('[data-modal-footer="review"]')?.setAttribute('hidden', '');
-    wizard.querySelector<HTMLElement>('[data-modal-footer="success"]')?.removeAttribute('hidden');
-    const modal = wizard.querySelector<any>('[data-confirm-modal]');
-    if (modal) modal.heading = 'Invoice submitted';
   }
 
   function updateStepper(): void {
@@ -114,6 +99,38 @@ export function initInvoiceWizard(): void {
     return activeConfirmMode;
   }
 
+  // ---- Dev: autofill valid demo data and jump straight to the review step. ----
+  // Prototype-only testing helper so the review/confirmation screens can be reached
+  // without hand-filling the form. Wired to the dev-bar "Autofill → Review" button
+  // and exposed on window for console use (vendorInvoiceAutofill()).
+  function devAutofill(): void {
+    // A placeholder PDF unlocks the form (pdfEverLoaded) and shows the panel.
+    if (!uploadedFile) {
+      const demo = new File(['%PDF-1.4\n% demo invoice for testing\n'], 'demo-invoice.pdf', {
+        type: 'application/pdf',
+      });
+      showFile(demo);
+    }
+    const fill = (selector: string, value: string): void => {
+      const el = wizard.querySelector<any>(selector);
+      if (!el) return;
+      el.value = value;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    // CON-2025-0112 has a large remaining balance, so the total stays well clear of
+    // the over-balance and "final invoice?" prompts. Contract change auto-fills Project.
+    fill('[data-field="contract"]', 'CON-2025-0112');
+    fill('[data-field="invoice-number"]', 'INV-2026-0042');
+    fill('[data-field="invoice-date"]', '2026-06-29');
+    fill('[data-field="perf-start"]', '2026-01-01');
+    fill('[data-field="perf-end"]', '2026-03-31');
+    fill('[data-field="total-amount"]', '4850.00');
+    fill('[data-field="notes"]', 'Autofilled demo invoice (testing).');
+    goTo(1);
+  }
+  (window as unknown as { vendorInvoiceAutofill?: () => void }).vendorInvoiceAutofill = devAutofill;
+
   wizard.addEventListener('click', (e) => {
     const t = e.target as HTMLElement;
     if (t.closest('[data-wizard-next]')) goTo(current + 1);
@@ -129,6 +146,7 @@ export function initInvoiceWizard(): void {
     if (t.closest('[data-wizard-submit]')) submitInvoice();
     if (t.closest('[data-modal-submit]')) submitInvoice();
     if (t.closest('[data-modal-back]')) wizard.querySelector<any>('[data-confirm-modal]')?.close();
+    if (t.closest('[data-dev-autofill]')) devAutofill();
   });
 
   // Show panel immediately on load (step 0)
@@ -147,7 +165,6 @@ export function initInvoiceWizard(): void {
     const show = current === 0;
     pdfPanel?.toggleAttribute('hidden', !show);
     cardBody?.classList.toggle('has-pdf', show);
-    partiesBar?.toggleAttribute('hidden', !show);
   }
 
   // ---- Validation ----
@@ -252,7 +269,35 @@ export function initInvoiceWizard(): void {
 
   let pdfObjectUrl: string | null = null;
 
+  // Upload size cap — mirrors the "Max 25 MB" hint shown on the drop zones.
+  const MAX_FILE_BYTES = 25 * 1024 * 1024;
+
+  // Size/type rejections show INLINE in the drop zone (right at the input), not in
+  // the bottom "no file" validation alert which is far from where the user dropped.
+  function setUploadError(msg: string): void {
+    const slot = wizard.querySelector<HTMLElement>('[data-upload-inline-error]');
+    const msgEl = wizard.querySelector<HTMLElement>('[data-upload-inline-error-msg]');
+    if (msgEl) msgEl.textContent = msg;
+    slot?.removeAttribute('hidden');
+  }
+  function clearUploadError(): void {
+    wizard.querySelector<HTMLElement>('[data-upload-inline-error]')?.setAttribute('hidden', '');
+  }
+
+  // Returns an error message if the main invoice file is invalid, else null.
+  function validateMainFile(file: File): string | null {
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) return 'That file isn’t a PDF. Please upload a PDF invoice.';
+    if (file.size > MAX_FILE_BYTES) {
+      return `This file is ${formatBytes(file.size)} — the maximum is 25 MB. Please upload a smaller PDF.`;
+    }
+    return null;
+  }
+
   function showFile(file: File): void {
+    const fileError = validateMainFile(file);
+    if (fileError) { setUploadError(fileError); return; }
+    clearUploadError();
     uploadedFile = file;
     uploadIdle?.setAttribute('hidden', '');
     pdfViewer?.removeAttribute('hidden');
@@ -304,11 +349,34 @@ export function initInvoiceWizard(): void {
 
   wizard.querySelector('[data-docs-add]')?.addEventListener('click', () => docsInput?.click());
 
+  function setDocsError(msg: string): void {
+    const slot = wizard.querySelector<HTMLElement>('[data-docs-error]');
+    const msgEl = wizard.querySelector<HTMLElement>('[data-docs-error-msg]');
+    if (msg) {
+      if (msgEl) msgEl.textContent = msg;
+      slot?.removeAttribute('hidden');
+    } else {
+      slot?.setAttribute('hidden', '');
+    }
+  }
+
   docsInput?.addEventListener('change', () => {
     const incoming = Array.from(docsInput.files ?? []);
+    const oversize = incoming.filter((f) => f.size > MAX_FILE_BYTES);
     const existingNames = new Set(supportingDocs.map((f) => f.name));
-    supportingDocs.push(...incoming.filter((f) => !existingNames.has(f.name)));
+    supportingDocs.push(
+      ...incoming.filter((f) => f.size <= MAX_FILE_BYTES && !existingNames.has(f.name)),
+    );
     docsInput.value = '';
+    if (oversize.length) {
+      const names = oversize.map((f) => f.name).join(', ');
+      setDocsError(
+        `${names} ${oversize.length > 1 ? 'each exceed' : 'exceeds'} the 25 MB limit and ` +
+        `${oversize.length > 1 ? 'were' : 'was'} not added.`,
+      );
+    } else {
+      setDocsError('');
+    }
     renderDocs();
   });
 
@@ -343,12 +411,23 @@ export function initInvoiceWizard(): void {
     e.preventDefault();
     uploadZone.classList.remove('is-over');
     const file = e.dataTransfer?.files?.[0];
-    if (file && file.type === 'application/pdf') showFile(file);
+    // showFile validates type + size and surfaces the error (no silent drop).
+    if (file) showFile(file);
   });
 
   function formatBytes(bytes: number): string {
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  // Render an ISO date (yyyy-mm-dd from the date inputs) as a human, self-evident
+  // date — "June 29, 2026". Parse y/m/d parts to avoid UTC-vs-local off-by-one.
+  function formatDate(value: string): string {
+    if (!value) return '—';
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(value);
+    if (Number.isNaN(d.getTime())) return value;
+    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   }
 
   // ---- Line items ----
@@ -559,8 +638,11 @@ export function initInvoiceWizard(): void {
       `The remaining balance on ${contractName} is within 5% of this invoice's total, ` +
       `which usually means it's the last one. Marking it final closes out the contract — ` +
       `should we flag this as the final invoice?`;
-    const handler = (e: CustomEvent<{ confirmed: boolean }>): void => {
+    const handler = (e: CustomEvent<{ confirmed: boolean; dismissed?: boolean }>): void => {
       finalDialog.removeEventListener('resolved', handler);
+      // Backdrop/Esc dismiss isn't an answer — it cancels the process. Stay on the
+      // current step and re-prompt next time (don't mark finalDecided).
+      if (e.detail?.dismissed) return;
       finalDecided = true;
       if (e.detail?.confirmed) {
         finalCheckbox.checked = true;
@@ -591,76 +673,66 @@ export function initInvoiceWizard(): void {
     return match?.label ?? val;
   }
 
-  function buildReviewHTML(): string {
-    const invoiceNum = fieldVal('[data-field="invoice-number"]');
+  // The summary markup is the CbfInvoiceReviewSummary component (esa-card legos);
+  // here we only fill its [data-review="…"] placeholders from form state. Two
+  // instances exist (page step + modal), so fill is scoped to one root container.
+  const fileRowSvg =
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+
+  function fillReviewSummary(root: HTMLElement | null): void {
+    if (!root) return;
+    const set = (key: string, value: string): void => {
+      const el = root.querySelector<HTMLElement>(`[data-review="${key}"]`);
+      if (el) el.textContent = value;
+    };
+
+    set('file-name', uploadedFile?.name ?? '(no file)');
+    set('file-size', uploadedFile ? formatBytes(uploadedFile.size) : '');
+
+    set('invoice-number', fieldVal('[data-field="invoice-number"]') || 'No invoice number');
+    // Label-left review layout: show the full contract / project identifiers as values.
+    set('contract', comboboxLabel('[data-field="contract"]') || '—');
+    set('project', fieldVal('[data-field="project"]') || '—');
+
     const invoiceDate = fieldVal('[data-field="invoice-date"]');
-    const perfStart = fieldVal('[data-field="perf-start"]');
-    const perfEnd = fieldVal('[data-field="perf-end"]');
-    const contract = comboboxLabel('[data-field="contract"]');
-    const project = comboboxLabel('[data-field="project"]');
-    const notes = fieldVal('[data-field="notes"]');
-    const total = invoiceTotal();
-    return `
-      <div class="cbf-review-section">
-        <h3 class="cbf-review-section__title">Uploaded invoice</h3>
+    set('issued', invoiceDate ? formatDate(invoiceDate) : 'Not set');
+    // Performance period is split into separate start / end rows on the review card.
+    const ps = fieldVal('[data-field="perf-start"]');
+    const pe = fieldVal('[data-field="perf-end"]');
+    set('perf-start', ps ? formatDate(ps) : 'Not set');
+    set('perf-end', pe ? formatDate(pe) : 'Not set');
+
+    set('total', fmtCurrency(invoiceTotal()));
+
+    root.querySelector<HTMLElement>('[data-review="final-flag"]')
+      ?.toggleAttribute('hidden', !finalCheckbox?.checked);
+
+    // Supporting documents — rows are plain data (not legos); toggle the card.
+    const docsList = root.querySelector<HTMLElement>('[data-review="docs-list"]');
+    if (docsList) {
+      docsList.innerHTML = supportingDocs.map((f) => `
         <div class="cbf-review-row">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span>${escHtml(uploadedFile?.name ?? '(no file)')}</span>
-          <span class="cbf-review-meta">${uploadedFile ? formatBytes(uploadedFile.size) : ''}</span>
-          <div class="cbf-review-file-actions">
-            <button type="button" class="cbf-review-file-btn" data-invoice-replace>Replace</button>
-            <button type="button" class="cbf-review-file-btn cbf-review-file-btn--danger" data-invoice-remove>Remove</button>
-          </div>
-        </div>
-      </div>
+          ${fileRowSvg}
+          <span>${escHtml(f.name)}</span>
+          <span class="cbf-review-meta">${formatBytes(f.size)}</span>
+        </div>`).join('');
+    }
+    root.querySelector<HTMLElement>('[data-review="docs-card"]')
+      ?.toggleAttribute('hidden', supportingDocs.length === 0);
 
-      <div class="cbf-review-section">
-        <h3 class="cbf-review-section__title">Invoice details</h3>
-        <dl class="cbf-review-dl">
-          <div class="cbf-review-dl__row"><dt>Invoice number</dt><dd>${escHtml(invoiceNum) || '—'}</dd></div>
-          <div class="cbf-review-dl__row"><dt>Invoice date</dt><dd>${escHtml(invoiceDate) || '—'}</dd></div>
-          <div class="cbf-review-dl__row"><dt>Performance period</dt><dd>${escHtml(perfStart) || '—'} – ${escHtml(perfEnd) || '—'}</dd></div>
-          <div class="cbf-review-dl__row"><dt>Contract</dt><dd>${escHtml(contract) || '—'}</dd></div>
-          <div class="cbf-review-dl__row"><dt>Project</dt><dd>${escHtml(project) || '—'}</dd></div>
-          <div class="cbf-review-dl__row"><dt>Final invoice</dt><dd>${finalCheckbox?.checked ? 'Yes' : 'No'}</dd></div>
-        </dl>
-      </div>
-
-      <div class="cbf-review-section">
-        <h3 class="cbf-review-section__title">Invoice total</h3>
-        <dl class="cbf-review-dl">
-          <div class="cbf-review-dl__row cbf-review-dl__row--total"><dt>Total amount</dt><dd>${fmtCurrency(total)}</dd></div>
-        </dl>
-      </div>
-
-      ${supportingDocs.length ? `
-      <div class="cbf-review-section">
-        <h3 class="cbf-review-section__title">Supporting documents</h3>
-        ${supportingDocs.map(f => `
-          <div class="cbf-review-row">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <span>${escHtml(f.name)}</span>
-            <span class="cbf-review-meta">${formatBytes(f.size)}</span>
-          </div>
-        `).join('')}
-      </div>` : ''}
-
-      ${notes ? `
-      <div class="cbf-review-section">
-        <h3 class="cbf-review-section__title">Notes</h3>
-        <p class="cbf-review-notes">${escHtml(notes)}</p>
-      </div>` : ''}
-    `;
+    // Notes — toggle the card when empty.
+    const notes = fieldVal('[data-field="notes"]');
+    set('notes', notes);
+    root.querySelector<HTMLElement>('[data-review="notes-card"]')
+      ?.toggleAttribute('hidden', !notes);
   }
 
   function populateReview(): void {
-    const container = wizard.querySelector<HTMLElement>('[data-review-content]');
-    if (container) container.innerHTML = buildReviewHTML();
+    fillReviewSummary(wizard.querySelector<HTMLElement>('[data-review-content]'));
   }
 
   function populateModalReview(): void {
-    const container = wizard.querySelector<HTMLElement>('[data-modal-review-content]');
-    if (container) container.innerHTML = buildReviewHTML();
+    fillReviewSummary(wizard.querySelector<HTMLElement>('[data-modal-review-content]'));
   }
 
   // ---- Submit ----
@@ -685,13 +757,48 @@ export function initInvoiceWizard(): void {
 
     setTimeout(() => {
       const ref = `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 90000) + 10000)}`;
-      wizard.querySelectorAll<HTMLElement>('[data-confirm-ref]').forEach(el => { el.textContent = ref; });
-
-      if (isModal) {
-        transitionModalToSuccess();
-      } else {
-        goTo(2);
-      }
+      // Both modes: the "Invoice submitted" page/success page is replaced by a success
+      // toast. Close the modal if open, reset to a blank form (in place, no reload),
+      // and let the vendor file another invoice.
+      restoreSubmitButton(btn);
+      if (isModal) wizard.querySelector<any>('[data-confirm-modal]')?.close();
+      resetWizard();
+      const snackbar = document.querySelector<any>('[data-snackbar]');
+      snackbar?.success?.(`Invoice ${ref} submitted. The form has been cleared for your next one.`, { duration: 6000 });
     }, 1500);
+  }
+
+  function restoreSubmitButton(btn: HTMLButtonElement | null): void {
+    if (!btn) return;
+    btn.classList.remove('esa-button--loading');
+    btn.disabled = false;
+    btn.removeAttribute('aria-busy');
+    btn.querySelector('.esa-button__spinner')?.remove();
+    btn.querySelector('.esa-button__label')?.classList.remove('esa-button__label--hidden');
+  }
+
+  // Reset the wizard back to a blank step-0 form (used after a modal-mode submit so
+  // the vendor can file another invoice without a page reload).
+  function resetWizard(): void {
+    clearFile();
+    supportingDocs = [];
+    renderDocs();
+    wizard.querySelectorAll<any>('[data-field]').forEach((el) => {
+      if (typeof el.checked === 'boolean') el.checked = false;
+      el.value = '';
+      el.removeAttribute?.('error-text');
+    });
+    wizard.querySelectorAll<HTMLElement>('[data-step-error]').forEach((el) => el.setAttribute('hidden', ''));
+    finalDecided = false;
+    if (finalCheckbox) finalCheckbox.checked = false;
+    syncFinalCallout();
+    pdfEverLoaded = false;
+    syncFormLock();
+    setStepVisibility(current, false);
+    current = 0;
+    setStepVisibility(0, true);
+    updateStepper();
+    syncPdfPanel();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }

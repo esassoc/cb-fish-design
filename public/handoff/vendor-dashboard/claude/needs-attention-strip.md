@@ -72,48 +72,6 @@ Hoists invoices blocked ON THE VENDOR (Needs revision) out of the table into one
 
 ## Styles
 ```css
-.repel {
-  --gap: var(--spacing-400, 1rem);
-  --align: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--gap);
-  align-items: var(--align);
-  justify-content: space-between;
-}
-.type-body {
-  font-size: var(--type-size-200);
-  font-weight: var(--font-weight-regular);
-  line-height: var(--line-height-relaxed);
-  letter-spacing: var(--letter-spacing-normal);
-}
-.esa-icon {
-  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--_icon-size);
-  height: var(--_icon-size);
-  line-height: 1;
-  color: inherit;
-}
-.esa-icon--xs {
-  --_icon-size: var(--icon-size-xs, 14px);
-}
-.esa-icon svg {
-  display: block;
-  width: var(--_icon-size);
-  height: var(--_icon-size);
-}
-.esa-icon--sm {
-  --_icon-size: var(--icon-size-sm, var(--icon-size-small, 16px));
-}
-.esa-icon--lg {
-  --_icon-size: var(--icon-size-lg, var(--icon-size-large, 24px));
-}
-.esa-icon--md {
-  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
-}
 .esa-icon-link {
   --_il-font: var(--icon-link-font-size-md, 1rem);
   display: inline-flex;
@@ -144,6 +102,51 @@ Hoists invoices blocked ON THE VENDOR (Needs revision) out of the table into one
 summary.esa-icon-link {
   list-style: none;
 }
+.type-body {
+  font-size: var(--type-size-200);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-relaxed);
+  letter-spacing: var(--letter-spacing-normal);
+}
+.esa-alert-box {
+  --_alert-bg: var(--alert-box-bg, var(--color-info-subtle, #eff6ff));
+  --_alert-border: var(--alert-box-border-color, var(--color-info-border, #bfdbfe));
+  --_alert-icon-color: var(--color-info-strong, #0d74ce);
+  --_alert-title-color: var(--alert-box-title-color, var(--color-text-primary, #171717));
+  --_alert-text-color: var(--alert-box-text-color, var(--color-text-secondary, #525252));
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-300, 0.75rem);
+  padding: var(--alert-box-padding, var(--spacing-300, 0.75rem) var(--spacing-400, 1rem));
+  border: 1px solid var(--_alert-border);
+  border-radius: var(--alert-box-radius, var(--radius-200, 0.5rem));
+  background: var(--_alert-bg);
+  font-size: var(--type-size-150, 0.875rem);
+  line-height: 1.5;
+}
+.esa-alert-box--warning {
+  --_alert-bg: var(--color-warning-subtle, #fffbeb);
+  --_alert-border: var(--color-warning-border, #fde68a);
+  --_alert-icon-color: var(--color-warning-strong, #915930);
+}
+.esa-alert-box__icon {
+  flex-shrink: 0;
+  color: var(--_alert-icon-color);
+  padding-top: 1px;
+}
+.esa-alert-box__body {
+  flex: 1;
+  min-width: 0;
+}
+.esa-alert-box__title {
+  display: block;
+  font-weight: 600;
+  color: var(--_alert-title-color);
+  margin-bottom: var(--spacing-050, 0.125rem);
+}
+.esa-alert-box__message {
+  color: var(--_alert-text-color);
+}
 .cbf-vendor-attention__body {
   align-items: center;
   gap: var(--spacing-400);
@@ -154,9 +157,12 @@ summary.esa-icon-link {
   --_btn-padding-x: var(--form-padding-x-md, 16px);
   --_btn-font-size: var(--form-font-size-md, 14px);
   --_btn-radius: var(--form-radius-md, 6px);
-  --_accent: var(--color-primary, #43608a);
-  --_accent-hover: var(--color-primary-hover, #39506f);
+  --_accent: var(--color-primary, #46a758);
+  --_accent-hover: var(--color-primary-hover, #3e9b4f);
   --_on: var(--color-text-inverse, #ffffff);
+  --_accent-text: var(--_accent);
+  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);
+  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);
   display: inline-block;
 }
 .esa-button--lg {
@@ -164,6 +170,9 @@ summary.esa-icon-link {
   --_btn-padding-x: var(--form-padding-x-lg, 20px);
   --_btn-font-size: var(--form-font-size-lg, 16px);
   --_btn-radius: var(--form-radius-lg, 8px);
+}
+.esa-button--color-primary {
+  --_accent-text: var(--color-primary-strong);
 }
 .esa-button__native {
   display: inline-flex;
@@ -202,56 +211,54 @@ summary.esa-icon-link {
   --_btn-radius: var(--form-radius-sm, 4px);
 }
 .esa-button--color-secondary {
-  --_accent: var(--color-secondary, #5787b9);
-  --_accent-hover: var(--color-secondary-hover, #43608a);
+  --_accent: var(--color-secondary);
+  --_accent-hover: var(--color-secondary-hover);
+  --_accent-text: var(--color-secondary-strong);
 }
 .esa-button--appearance-outline .esa-button__native,
 .esa-button--appearance-dashed .esa-button__native {
   background: transparent;
-  color: var(--_accent);
+  color: var(--_accent-text);
   border-color: var(--_accent);
+}
+.esa-icon {
+  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+  line-height: 1;
+  color: inherit;
+}
+.esa-icon--xs {
+  --_icon-size: var(--icon-size-xs, 14px);
+}
+.esa-icon svg {
+  display: block;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+}
+.esa-icon--sm {
+  --_icon-size: var(--icon-size-sm, var(--icon-size-small, 16px));
+}
+.esa-icon--lg {
+  --_icon-size: var(--icon-size-lg, var(--icon-size-large, 24px));
+}
+.esa-icon--md {
+  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
+}
+.repel {
+  --gap: var(--spacing-400, 1rem);
+  --align: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  align-items: var(--align);
+  justify-content: space-between;
 }
 .esa-nav-dropdown .esa-icon-link > .esa-icon:last-child {
   transition: transform 0.15s ease;
-}
-.esa-alert-box {
-  --_alert-bg: var(--alert-box-bg, var(--color-info-subtle, #eff6ff));
-  --_alert-border: var(--alert-box-border-color, var(--color-info-border, #bfdbfe));
-  --_alert-icon-color: var(--color-info, #3b82f6);
-  --_alert-title-color: var(--alert-box-title-color, var(--color-text-primary, #171717));
-  --_alert-text-color: var(--alert-box-text-color, var(--color-text-secondary, #525252));
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-300, 0.75rem);
-  padding: var(--alert-box-padding, var(--spacing-300, 0.75rem) var(--spacing-400, 1rem));
-  border: 1px solid var(--_alert-border);
-  border-radius: var(--alert-box-radius, var(--radius-200, 0.5rem));
-  background: var(--_alert-bg);
-  font-size: var(--type-size-150, 0.875rem);
-  line-height: 1.5;
-}
-.esa-alert-box--warning {
-  --_alert-bg: var(--color-warning-subtle, #fffbeb);
-  --_alert-border: var(--color-warning-border, #fde68a);
-  --_alert-icon-color: var(--color-warning, #f59e0b);
-}
-.esa-alert-box__icon {
-  flex-shrink: 0;
-  color: var(--_alert-icon-color);
-  padding-top: 1px;
-}
-.esa-alert-box__body {
-  flex: 1;
-  min-width: 0;
-}
-.esa-alert-box__title {
-  display: block;
-  font-weight: 600;
-  color: var(--_alert-title-color);
-  margin-bottom: var(--spacing-050, 0.125rem);
-}
-.esa-alert-box__message {
-  color: var(--_alert-text-color);
 }
 ```
 
@@ -262,19 +269,21 @@ summary.esa-icon-link {
 - `--alert-box-radius`: .5rem _(component)_
 - `--alert-box-text-color`: #525252 _(component)_
 - `--alert-box-title-color`: #3d3d3d _(component)_
-- `--color-info`: #2770b2 _(semantic)_
 - `--color-info-border`: #c6dcf1 _(semantic)_
+- `--color-info-strong`: #0d74ce _(semantic)_
 - `--color-info-subtle`: #f3f7fc _(semantic)_
 - `--color-primary`: #1e5386 _(semantic)_
 - `--color-primary-hover`: #1a4570 _(semantic)_
+- `--color-primary-strong`: #2a7e3b _(semantic)_
 - `--color-secondary`: #2770b2 _(semantic)_
 - `--color-secondary-hover`: #1e5386 _(semantic)_
-- `--color-text-inverse`: #ffffff _(semantic)_
+- `--color-secondary-strong`: #2a7e3b _(semantic)_
+- `--color-text-inverse`: #fcfcfc _(semantic)_
 - `--color-text-primary`: #3d3d3d _(semantic)_
 - `--color-text-secondary`: #525252 _(semantic)_
-- `--color-warning`: #f59e0b _(semantic)_
-- `--color-warning-border`: #fde68a _(semantic)_
-- `--color-warning-subtle`: #fffbeb _(semantic)_
+- `--color-warning-border`: #f3d673 _(semantic)_
+- `--color-warning-strong`: #ab6400 _(semantic)_
+- `--color-warning-subtle`: #fefbe9 _(semantic)_
 - `--font-sans`: "IBM Plex Sans", sans-serif _(primitive)_
 - `--font-weight-medium`: 500 _(primitive)_
 - `--font-weight-regular`: 400 _(primitive)_
@@ -294,13 +303,20 @@ summary.esa-icon-link {
 - `--icon-link-font-size-sm`: .875rem _(component)_
 - `--icon-link-gap`: .375rem _(component)_
 - `--icon-size-large`: 24px _(component)_
+- `--icon-size-lg`: 24px _(primitive)_
+- `--icon-size-md`: 20px _(primitive)_
 - `--icon-size-medium`: 20px _(component)_
+- `--icon-size-sm`: 16px _(primitive)_
 - `--icon-size-small`: 16px _(component)_
+- `--icon-size-xs`: 14px _(primitive)_
+- `--letter-spacing-normal`: .01em _(primitive)_
+- `--line-height-relaxed`: 1.8 _(primitive)_
 - `--radius-200`: .5rem _(primitive)_
 - `--spacing-050`: .125rem _(primitive)_
 - `--spacing-150`: .375rem _(primitive)_
 - `--spacing-200`: .5rem _(primitive)_
 - `--spacing-300`: .75rem _(primitive)_
 - `--spacing-400`: 1rem _(primitive)_
+- `--transition-fast`: .15s ease _(primitive)_
 - `--type-size-150`: clamp(.6875rem, .61rem + .38vw, .875rem) _(primitive)_
 - `--type-size-200`: clamp(.75rem, .66rem + .44vw, .9375rem) _(primitive)_

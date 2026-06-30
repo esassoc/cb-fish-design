@@ -38,14 +38,6 @@ const vendor = {
   taxId: '91-1234567',
   email: 'maria.garcia@pacificenv.com',
 };
-
-// Mock buyer context — in production this comes from the contract/project lookup.
-const buyer = {
-  company: 'Columbia Basin Fish & Wildlife Program',
-  contact: 'James Whitfield',
-  address: '700 NE Multnomah St, Suite 1200, Portland, OR 97232',
-  email: 'j.whitfield@cbfwp.org',
-};
 ---
 <!-- manifest:
   layout: cbf-app-card
@@ -70,23 +62,6 @@ const buyer = {
         <div class="cbf-app-card__body">
           <div class="cbf-invoice-content">
 
-            <!-- Parties bar: full-width above the workspace, only on step 0 -->
-            <div class="cbf-parties-bar" data-parties-bar hidden>
-              <div class="cbf-party-card">
-                <p class="cbf-party-card__eyebrow">Supplier</p>
-                <p class="cbf-party-card__name">{vendor.company}</p>
-                <p class="cbf-party-card__meta">{vendor.contact} &middot; {vendor.email}</p>
-                <p class="cbf-party-card__meta">{vendor.address}</p>
-              </div>
-              <div class="cbf-parties-bar__divider" aria-hidden="true"></div>
-              <div class="cbf-party-card">
-                <p class="cbf-party-card__eyebrow">Buyer</p>
-                <p class="cbf-party-card__name">{buyer.company}</p>
-                <p class="cbf-party-card__meta">{buyer.contact} &middot; {buyer.email}</p>
-                <p class="cbf-party-card__meta">{buyer.address}</p>
-              </div>
-            </div>
-
             <!-- Form + PDF panel workspace -->
             <div class="cbf-invoice-workspace">
               <CbfInvoicePdfPanel />
@@ -94,11 +69,7 @@ const buyer = {
               <section class="cbf-invoice-main">
                 <CbfInvoiceStepDetails vendor={vendor} />
                 <CbfInvoiceStepReview />
-                <CbfInvoiceConfirm
-                  vendorEmail={vendor.email}
-                  homeHref={withBase('/home')}
-                  resubmitHref={withBase('/vendor-invoice')}
-                />
+                <CbfInvoiceConfirm />
 
                 <!-- Dev toggle: prototype-only, not shown in production -->
                 <div class="cbf-dev-bar" data-confirm-mode-bar aria-label="Dev tools">
@@ -110,6 +81,7 @@ const buyer = {
                     <button type="button" class="cbf-dev-bar__opt is-active" data-confirm-mode="page">Page</button>
                     <button type="button" class="cbf-dev-bar__opt" data-confirm-mode="modal">Modal</button>
                   </div>
+                  <button type="button" class="cbf-dev-bar__opt cbf-dev-bar__autofill" data-dev-autofill>Autofill &rarr; Review</button>
                 </div>
               </section>
             </div>
@@ -121,7 +93,11 @@ const buyer = {
     </EsaContainer>
   </main>
 
+  <!-- Toast stack: success message after submit (replaces the confirmation page). -->
+  <esa-snackbar-container data-snackbar></esa-snackbar-container>
+
   <script>
+    import '@esa/ecology/esa-snackbar-container';
     import '@esa/ecology/esa-text-field';
     import '@esa/ecology/esa-select';
     import '@esa/ecology/esa-combobox';
@@ -166,60 +142,12 @@ const buyer = {
     align-items: stretch;
   }
 
-  /* ---- Content column (parties bar + workspace) ---- */
+  /* ---- Content column (workspace) ---- */
   .cbf-invoice-content {
     flex: 1;
     min-width: 0;
     display: flex;
     flex-direction: column;
-  }
-
-  /* ---- Parties bar ---- */
-  .cbf-parties-bar {
-    display: flex;
-    align-items: stretch;
-    gap: 0;
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-surface-sunken, #f8f9fb);
-    padding: var(--spacing-400) var(--spacing-600);
-    gap: var(--spacing-600);
-  }
-  .cbf-parties-bar[hidden] { display: none; }
-
-  .cbf-parties-bar__divider {
-    width: 1px;
-    background: var(--color-border);
-    flex: none;
-  }
-
-  .cbf-party-card {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-050);
-  }
-  .cbf-party-card__eyebrow {
-    margin: 0;
-    font-size: 11px;
-    font-weight: var(--font-weight-semibold);
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: var(--color-text-muted);
-  }
-  .cbf-party-card__name {
-    margin: 0;
-    font-size: 14px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
-  }
-  .cbf-party-card__meta {
-    margin: 0;
-    font-size: 12px;
-    color: var(--color-text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   /* ---- Workspace (form + PDF panel) ---- */
@@ -274,26 +202,15 @@ const buyer = {
       padding: var(--spacing-500);
       max-width: none;
     }
-    .cbf-parties-bar {
-      gap: var(--spacing-400);
-      padding: var(--spacing-400);
-    }
   }
 
-  /* Below 600px: stack parties bar, tighten page padding */
+  /* Below 600px: tighten page padding */
   @media (max-width: 600px) {
     .cbf-app-page {
       padding-block: var(--spacing-300) var(--spacing-500);
     }
     .cbf-invoice-main {
       padding: var(--spacing-400);
-    }
-    .cbf-parties-bar {
-      flex-direction: column;
-      gap: var(--spacing-300);
-    }
-    .cbf-parties-bar__divider {
-      display: none;
     }
   }
 
@@ -342,5 +259,17 @@ const buyer = {
   .cbf-dev-bar__opt.is-active {
     background: var(--color-primary);
     color: var(--color-surface);
+  }
+  /* Standalone autofill button (outside the segmented toggle). */
+  .cbf-dev-bar__autofill {
+    margin-left: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    background: var(--color-surface);
+  }
+  .cbf-dev-bar__autofill:hover {
+    background: var(--color-primary-subtle);
+    border-color: var(--color-primary-border);
+    color: var(--color-secondary);
   }
 </style>

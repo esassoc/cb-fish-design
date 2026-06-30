@@ -18,13 +18,15 @@
 // detail drawer uses esa-side-dialog, and the no-results state uses
 // esa-empty-state.
 import CbfSearchField from '../search/cbf-search-field.astro';
+import CbfInvoiceCard from '../shared/cbf-invoice-card.astro';
 import EsaBadge from '@esa/ecology/esa-badge.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
 import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import '@esa/tokens/layouts.css'; // .grid auto-fit primitive for the card view
 import { invoices as defaultInvoices, fmtExact } from '../../data/vendor-dashboard-invoices.mjs';
 
-type Stage = 'Submitted' | 'In review' | 'Approved' | 'Paid' | 'Needs revision';
+type Stage = 'In review' | 'Paid' | 'Needs revision';
 
 interface LineItem {
   description: string;
@@ -56,10 +58,8 @@ interface Props {
 
 // esa-badge variant per pipeline stage — color conveys data/state, not decoration.
 const stageVariant: Record<Stage, 'info' | 'warning' | 'success' | 'secondary' | 'danger'> = {
-  Submitted: 'info',
   'In review': 'warning',
-  Approved: 'success',
-  Paid: 'secondary',
+  Paid: 'success',
   'Needs revision': 'danger',
 };
 const stages = Object.keys(stageVariant) as Stage[];
@@ -68,9 +68,7 @@ const stages = Object.keys(stageVariant) as Stage[];
 // gets the amber tone so the blocked-on-vendor stage stands out in the control.
 const stageFilters = [
   { value: '', label: 'All' },
-  { value: 'Submitted', label: 'Submitted' },
   { value: 'In review', label: 'In review' },
-  { value: 'Approved', label: 'Approved' },
   { value: 'Paid', label: 'Paid' },
   { value: 'Needs revision', label: 'Needs revision', tone: 'amber' },
 ];
@@ -78,6 +76,23 @@ const groupOptions = [
   { value: 'none', label: 'No grouping' },
   { value: 'contract', label: 'Contract' },
   { value: 'project', label: 'Project' },
+];
+
+// Grid ⇄ cards view switch. The grid stays mounted in both modes as the
+// filter/search/sort engine; the toggle only swaps which surface is shown.
+const viewOptions = [
+  {
+    value: 'grid',
+    label: 'Grid',
+    ariaLabel: 'Grid view',
+    icon: '<line x1="3" x2="21" y1="9" y2="9"/><line x1="3" x2="21" y1="15" y2="15"/><line x1="9" x2="9" y1="3" y2="21"/><rect width="18" height="18" x="3" y="3" rx="2"/>',
+  },
+  {
+    value: 'cards',
+    label: 'Cards',
+    ariaLabel: 'Card view',
+    icon: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+  },
 ];
 
 const { invoices = defaultInvoices } = Astro.props;
@@ -103,21 +118,71 @@ const { invoices = defaultInvoices } = Astro.props;
       value=""
       options={JSON.stringify(stageFilters)}
     ></esa-chip-group>
-    <label class="cbf-vendor-dashboard-invoices__group">
-      <span class="type-caption">Group by</span>
-      <esa-chip-group
-        data-invoice-group
-        size="sm"
-        label="Group invoices by"
-        value="none"
-        options={JSON.stringify(groupOptions)}
-      ></esa-chip-group>
-    </label>
+    <div class="cbf-vendor-dashboard-invoices__right cluster" data-gap="md">
+      <label class="cbf-vendor-dashboard-invoices__group">
+        <span class="type-caption">Group by</span>
+        <esa-chip-group
+          data-invoice-group
+          size="sm"
+          label="Group invoices by"
+          value="none"
+          options={JSON.stringify(groupOptions)}
+        ></esa-chip-group>
+      </label>
+      <label class="cbf-vendor-dashboard-invoices__view">
+        <span class="type-caption">View</span>
+        <esa-button-toggle
+          data-invoice-view
+          size="sm"
+          label="Choose invoice layout"
+          value="grid"
+          options={JSON.stringify(viewOptions)}
+        ></esa-button-toggle>
+      </label>
+    </div>
   </div>
 
   <!-- AG Grid mounts here. Sized by its container; auto-height grows with rows
-       so the page (not an inner pane) owns vertical scroll. -->
+       so the page (not an inner pane) owns vertical scroll. Hidden when the
+       card view is active, but stays mounted as the filter/sort engine. -->
   <div class="cbf-vendor-dashboard-invoices__grid" data-invoice-grid></div>
+
+  <!-- Card view: the same invoices as a responsive card grid (the .grid auto-fit
+       primitive). Each card is the SHARED CbfInvoiceCard — the very same card the
+       /vendor-invoice Review & submit step uses — server-rendered once per
+       invoice with the pipeline esa-badge passed into its status slot. The client
+       only shows/hides and reorders the cards to mirror the grid's filtered +
+       sorted display order, so search, status chips, and group-by behave
+       identically across both views. Clicking a card opens the same
+       esa-side-dialog detail drawer. -->
+  <div class="cbf-vendor-dashboard-invoices__cards grid" data-invoice-cards hidden>
+    {invoices.map((inv) => (
+      <div class="cbf-invoice-card-link" data-card={inv.number}>
+        <!-- Stretched-overlay open button: keeps the WHOLE card a single click /
+             keyboard target for the detail drawer, while the contract/project
+             links inside the card stay independently clickable (they sit above
+             this via z-index). Nesting links inside a <button> would be invalid;
+             this is the accessible card-with-nested-links pattern. -->
+        <button type="button" class="cbf-invoice-card-link__open" data-card-open aria-label={`View invoice ${inv.number}`}></button>
+        <CbfInvoiceCard
+          variant="stat"
+          number={inv.number}
+          contract={inv.contract}
+          contractNumber={inv.contractNumber}
+          contractHref="#"
+          project={inv.project}
+          projectNumber={inv.projectNumber}
+          projectHref="#"
+          invoiceDate={inv.invoiceDate}
+          period={`${inv.perfStart} – ${inv.perfEnd}`}
+          total={fmtExact(inv.amount)}
+          totalLabel="Amount billed"
+        >
+          <EsaBadge slot="status" value={inv.stage} variant={stageVariant[inv.stage]} size="sm" />
+        </CbfInvoiceCard>
+      </div>
+    ))}
+  </div>
 
   <div class="cbf-vendor-dashboard-invoices__empty" data-invoice-empty hidden>
     <EsaEmptyState
@@ -177,7 +242,7 @@ const { invoices = defaultInvoices } = Astro.props;
           <div class="cbf-invoice-detail__status" data-detail-status></div>
         </div>
 
-        <!-- Status pipeline: where the invoice sits in the Submitted → Paid flow,
+        <!-- Status pipeline: where the invoice sits in the In review → Paid flow,
              so the vendor can see progress at a glance. Steps injected by JS. -->
         <ol class="cbf-invoice-pipeline" data-detail-pipeline aria-label="Invoice status"></ol>
 
@@ -197,10 +262,6 @@ const { invoices = defaultInvoices } = Astro.props;
           <div class="cbf-invoice-detail__row">
             <dt class="cbf-invoice-detail__label">Performance</dt>
             <dd class="cbf-invoice-detail__value" data-detail-perf></dd>
-          </div>
-          <div class="cbf-invoice-detail__row">
-            <dt class="cbf-invoice-detail__label">Submitted</dt>
-            <dd class="cbf-invoice-detail__value" data-detail-submitted></dd>
           </div>
         </dl>
 
@@ -264,14 +325,66 @@ const { invoices = defaultInvoices } = Astro.props;
     gap: var(--spacing-400);
     flex-wrap: wrap;
   }
-  .cbf-vendor-dashboard-invoices__group {
+  .cbf-vendor-dashboard-invoices__right { align-items: center; }
+  .cbf-vendor-dashboard-invoices__group,
+  .cbf-vendor-dashboard-invoices__view {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-200);
   }
-  .cbf-vendor-dashboard-invoices__group .type-caption {
+  .cbf-vendor-dashboard-invoices__group .type-caption,
+  .cbf-vendor-dashboard-invoices__view .type-caption {
     color: var(--color-text-muted);
     white-space: nowrap;
+  }
+
+  /* ---- Card view -------------------------------------------------------- */
+  /* The auto-fit .grid primitive's per-card floor. */
+  /* Invoice cards should READ like invoices, not condense into a dense tile
+     wall: each card is at least half the container on wide screens (so ≤ 2 per
+     row), with a 26rem floor so it collapses to a single full-width column on
+     narrow screens. The .grid primitive caps this at 100% via min(--grid-min,
+     100%), so it never overflows. (--gap is the .grid track gap.) */
+  .cbf-vendor-dashboard-invoices__cards { --grid-min: max(26rem, calc(50% - var(--gap))); }
+  /* .grid sets display:grid, which beats the UA [hidden] rule — so re-assert
+     it here (attribute + class out-specifies .grid) or the cards leak into the
+     grid view. */
+  .cbf-vendor-dashboard-invoices__cards[hidden] { display: none; }
+
+  /* Card-with-nested-links: the wrapper holds a stretched-overlay open button
+     (the whole-card click target → detail drawer) plus the CbfInvoiceCard, whose
+     contract/project links sit above the overlay. The esa-card owns the box. */
+  .cbf-invoice-card-link {
+    position: relative;
+    display: block;
+    border-radius: var(--radius-200);
+  }
+  .cbf-invoice-card-link > :global(.esa-card) {
+    height: 100%;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+  }
+  /* The stretched overlay: invisible, covers the whole card, opens the drawer. */
+  .cbf-invoice-card-link__open {
+    all: unset;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    cursor: pointer;
+    border-radius: inherit;
+  }
+  .cbf-invoice-card-link:hover > :global(.esa-card) {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-200, 0 2px 8px -2px rgba(19, 39, 62, 0.12));
+  }
+  .cbf-invoice-card-link:focus-within {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-200);
+  }
+  /* The ref-links carry their own focus ring; don't double up the card outline
+     when the focus is on a nested link. */
+  .cbf-invoice-card-link:has(.cbf-invoice-card__ref-link:focus-visible) {
+    outline: none;
   }
 
   /* The grid wrapper owns the framed surface; AG Grid's own border is disabled
@@ -423,6 +536,34 @@ const { invoices = defaultInvoices } = Astro.props;
 </style>
 
 <style is:global>
+  /* Card-view group headers (JS-created, so styled globally — no Astro scope
+     hash). A full-width grid item that forces a new row and labels the cluster
+     beneath it: group name left, count + subtotal right. Extra top space on
+     every header after the first visually separates one group from the next. */
+  .cbf-vendor-dashboard-invoices__cards .cbf-invoice-group-header {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--spacing-100) var(--spacing-400);
+    padding-bottom: var(--spacing-200);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-vendor-dashboard-invoices__cards .cbf-invoice-group-header:not(:first-child) {
+    margin-top: var(--spacing-400);
+  }
+  .cbf-invoice-group-header__label {
+    font-size: 16px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-invoice-group-header__meta {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
   /* AG Grid status cell: the cloned esa-badge sits in a flex cell so it centers
      vertically without disturbing the lego's own box. */
   .cbf-vendor-dashboard-invoices__grid .cbf-grid-status {
@@ -675,13 +816,15 @@ const { invoices = defaultInvoices } = Astro.props;
 
 <script>
   import { createGrid, ModuleRegistry, AllCommunityModule, themeQuartz } from 'ag-grid-community';
+  import type { GridApi } from 'ag-grid-community';
   import '@esa/ecology/esa-chip-group';
+  import '@esa/ecology/esa-button-toggle';
   import '@esa/ecology/esa-side-dialog';
 
   ModuleRegistry.registerModules([AllCommunityModule]);
 
   type Dir = 1 | -1;
-  type Stage = 'Submitted' | 'In review' | 'Approved' | 'Paid' | 'Needs revision';
+  type Stage = 'In review' | 'Paid' | 'Needs revision';
   type LineItem = { description: string; qty: number; unitPrice: number };
   type Invoice = {
     number: string; contractNumber: string; contract: string;
@@ -729,12 +872,10 @@ const { invoices = defaultInvoices } = Astro.props;
   }
 
   // Plain-language state line per pipeline stage (the vendor's "where is it").
-  const PIPELINE: Stage[] = ['Submitted', 'In review', 'Approved', 'Paid'];
+  const PIPELINE: Stage[] = ['In review', 'Paid'];
   function stateLine(inv: Invoice): { text: string; alert: boolean } {
     switch (inv.stage) {
-      case 'Submitted': return { text: 'Awaiting BPA review', alert: false };
       case 'In review': return { text: 'Under review by BPA', alert: false };
-      case 'Approved': return { text: 'Approved — scheduled for payment', alert: false };
       case 'Paid': return { text: inv.paidDate ? `Paid on ${inv.paidDate}` : 'Paid', alert: false };
       case 'Needs revision': return { text: 'Needs revision — action required', alert: true };
       default: return { text: '', alert: false };
@@ -774,12 +915,24 @@ const { invoices = defaultInvoices } = Astro.props;
 
     const data: Invoice[] = JSON.parse(dataEl.textContent ?? '[]');
     const total = data.length;
+    const byNumber = new Map(data.map((inv) => [inv.number, inv]));
 
     const search = root.querySelector<HTMLInputElement>('[data-invoice-search]');
     const stageFilter = root.querySelector<HTMLElement & { value: string }>('[data-invoice-stage-filter]');
     const groupControl = root.querySelector<HTMLElement & { value: string }>('[data-invoice-group]');
+    const viewControl = root.querySelector<HTMLElement & { value: string }>('[data-invoice-view]');
+    const cardsHost = root.querySelector<HTMLElement>('[data-invoice-cards]');
     const empty = root.querySelector<HTMLElement>('[data-invoice-empty]');
     const count = root.querySelector<HTMLElement>('[data-invoice-count]');
+
+    // number → server-rendered card button, for show/hide + reorder.
+    const cardByNumber = new Map<string, HTMLElement>();
+    cardsHost?.querySelectorAll<HTMLElement>('[data-card]').forEach((el) => {
+      cardByNumber.set(el.dataset.card ?? '', el);
+    });
+
+    let view: 'grid' | 'cards' = (viewControl?.value as 'grid' | 'cards') || 'grid';
+    let groupKey = groupControl?.value ?? 'none';
 
     // Pre-clone the real esa-badge markup per stage (server-rendered with the
     // design-system scope hash) so grid cells reuse the lego verbatim.
@@ -821,11 +974,11 @@ const { invoices = defaultInvoices } = Astro.props;
           // Date column: parse the display string to a Date so sort/filter are
           // chronological (a string column sorts "Apr"<"Jun"<"May"). The
           // valueFormatter renders it back to the original "Jun 20, 2026" form.
-          headerName: 'Submitted', field: 'submitted', colId: 'submitted', minWidth: 130,
+          headerName: 'Invoice date', field: 'invoiceDate', colId: 'invoiceDate', minWidth: 130,
           cellDataType: 'date',
-          valueGetter: (p) => asDate(p.data?.submitted),
+          valueGetter: (p) => asDate(p.data?.invoiceDate),
           valueFormatter: (p) => (p.value instanceof Date ? dateFmt.format(p.value) : ''),
-          getQuickFilterText: (p) => p.data?.submitted ?? '',
+          getQuickFilterText: (p) => p.data?.invoiceDate ?? '',
         },
         {
           headerName: 'Amount', field: 'amount', colId: 'amount',
@@ -840,14 +993,75 @@ const { invoices = defaultInvoices } = Astro.props;
       ],
       isExternalFilterPresent: () => stageValue !== '',
       doesExternalFilterPass: (node) => node.data.stage === stageValue,
-      onModelUpdated: () => {
-        const shown = gridApi.getDisplayedRowCount();
-        if (count) count.textContent = `Showing ${shown} of ${total} invoices`;
-        if (empty) empty.hidden = shown !== 0;
-        gridHost.hidden = shown === 0;
-      },
+      onModelUpdated: () => syncView(),
       onRowClicked: (e) => { if (e.data) openDetail(e.data as Invoice); },
     });
+
+    // The displayed rows in filter + sort order — the shared source of truth for
+    // the count, the empty state, and (in card view) which cards show and in what
+    // order. Both views read the same AG Grid model, so the controls behave
+    // identically regardless of which surface is on screen.
+    const usdGroup = new Intl.NumberFormat('en-US', {
+      style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+    });
+    const groupValue = (inv: Invoice): string => (groupKey === 'project' ? inv.project : inv.contract);
+    const makeGroupHeader = (label: string, c: { count: number; sum: number }): HTMLElement => {
+      const el = document.createElement('div');
+      el.className = 'cbf-invoice-group-header';
+      el.setAttribute('data-card-group-header', '');
+      el.innerHTML = '<span class="cbf-invoice-group-header__label"></span><span class="cbf-invoice-group-header__meta"></span>';
+      el.querySelector('.cbf-invoice-group-header__label')!.textContent = label;
+      const noun = c.count === 1 ? 'invoice' : 'invoices';
+      el.querySelector('.cbf-invoice-group-header__meta')!.textContent = `${c.count} ${noun} · ${usdGroup.format(c.sum)}`;
+      return el;
+    };
+
+    function syncView() {
+      // Clear any group headers from a prior pass so reordering is over cards only.
+      cardsHost?.querySelectorAll('[data-card-group-header]').forEach((h) => h.remove());
+
+      const order: string[] = [];
+      gridApi.forEachNodeAfterFilterAndSort((n) => { if (n.data) order.push((n.data as Invoice).number); });
+      const shown = order.length;
+
+      if (count) count.textContent = `Showing ${shown} of ${total} invoices`;
+      if (empty) empty.hidden = shown !== 0;
+      gridHost.hidden = view !== 'grid' || shown === 0;
+      if (cardsHost) cardsHost.hidden = view !== 'cards' || shown === 0;
+
+      if (view !== 'cards' || !cardsHost) return;
+      // Reorder visible cards to match the grid, then hide the filtered-out ones.
+      const visible = new Set(order);
+      order.forEach((num) => {
+        const card = cardByNumber.get(num);
+        if (card) { card.hidden = false; cardsHost.appendChild(card); }
+      });
+      cardByNumber.forEach((card, num) => { if (!visible.has(num)) card.hidden = true; });
+
+      // Grouped: insert a full-width header before each group's first card so the
+      // clusters read as labelled sections, not an unbroken wall. AG Grid already
+      // sorted the rows by the grouped field, so groups are contiguous in `order`.
+      if (groupKey === 'none') return;
+      const totals = new Map<string, { count: number; sum: number }>();
+      order.forEach((num) => {
+        const inv = byNumber.get(num);
+        if (!inv) return;
+        const g = groupValue(inv);
+        const t = totals.get(g) ?? { count: 0, sum: 0 };
+        t.count += 1; t.sum += inv.amount; totals.set(g, t);
+      });
+      let prevGroup: string | null = null;
+      order.forEach((num) => {
+        const inv = byNumber.get(num);
+        const card = cardByNumber.get(num);
+        if (!inv || !card) return;
+        const g = groupValue(inv);
+        if (g !== prevGroup) {
+          cardsHost.insertBefore(makeGroupHeader(g, totals.get(g)!), card);
+          prevGroup = g;
+        }
+      });
+    }
 
     // Search → AG Grid quick filter (matches across all columns + project).
     search?.addEventListener('input', () => {
@@ -863,20 +1077,45 @@ const { invoices = defaultInvoices } = Astro.props;
     // Group by → Community has no native row grouping (Enterprise only), so the
     // control clusters rows by sorting on the chosen field; 'none' clears it.
     groupControl?.addEventListener('change', () => {
-      const key = groupControl.value ?? 'none';
+      groupKey = groupControl.value ?? 'none';
+      // applyColumnState fires onModelUpdated → syncView, which (re)builds the
+      // group headers from the freshly sorted order.
       gridApi.applyColumnState({
-        state: key === 'none' ? [] : [{ colId: key, sort: 'asc' }],
+        state: groupKey === 'none' ? [] : [{ colId: groupKey, sort: 'asc' }],
         defaultState: { sort: null },
       });
     });
 
+    // Grid ⇄ cards. Both surfaces read the same AG Grid model; the toggle just
+    // swaps which one is visible (and triggers a card reorder when switching in).
+    viewControl?.addEventListener('change', () => {
+      view = (viewControl.value as 'grid' | 'cards') || 'grid';
+      syncView();
+    });
+
+    // Card click → the same detail drawer the grid rows open. Contract/project
+    // links are independent: they sit above the overlay and route on their own,
+    // so a click on one must NOT also open the drawer. (Hrefs are placeholders
+    // until contract/project detail routes exist — intercept to avoid the jump.)
+    cardsHost?.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-ref-link]')) {
+        e.preventDefault();
+        return; // TODO: route to contract/project detail when those pages exist
+      }
+      const card = target.closest<HTMLElement>('[data-card]');
+      const inv = card && byNumber.get(card.dataset.card ?? '');
+      if (inv) openDetail(inv);
+    });
+
     openDetail = bindDetail(root, gridApi, badgeHTML);
+    syncView();
   }
 
   // Bind the drawer once; returns an opener that populates + shows it for a row.
   function bindDetail(
     root: HTMLElement,
-    gridApi: ReturnType<typeof createGrid>,
+    gridApi: GridApi<Invoice>,
     badgeHTML: Map<string, string>,
   ): (inv: Invoice) => void {
     const dialog = root.querySelector<HTMLElement & { heading: string; show(): void }>('[data-invoice-dialog]');
@@ -887,7 +1126,6 @@ const { invoices = defaultInvoices } = Astro.props;
     const fProject = dialog?.querySelector<HTMLElement>('[data-detail-project]') ?? null;
     const fInvoiceDate = dialog?.querySelector<HTMLElement>('[data-detail-invoice-date]') ?? null;
     const fPerf = dialog?.querySelector<HTMLElement>('[data-detail-perf]') ?? null;
-    const fSubmitted = dialog?.querySelector<HTMLElement>('[data-detail-submitted]') ?? null;
     const fAmount = dialog?.querySelector<HTMLElement>('[data-detail-amount]') ?? null;
     const docSheet = dialog?.querySelector<HTMLElement>('[data-detail-doc]') ?? null;
     const attachList = dialog?.querySelector<HTMLElement>('[data-detail-attachments]') ?? null;
@@ -933,7 +1171,6 @@ const { invoices = defaultInvoices } = Astro.props;
       if (fProject) fProject.textContent = inv.project ?? '';
       if (fInvoiceDate) fInvoiceDate.textContent = inv.invoiceDate ?? '';
       if (fPerf) fPerf.textContent = inv.perfStart && inv.perfEnd ? `${inv.perfStart} – ${inv.perfEnd}` : '';
-      if (fSubmitted) fSubmitted.textContent = inv.submitted ?? '';
       if (fAmount) fAmount.textContent = usd.format(inv.amount ?? 0);
 
       // State line.
@@ -943,14 +1180,14 @@ const { invoices = defaultInvoices } = Astro.props;
         fState.classList.toggle('cbf-invoice-detail__state--alert', st.alert);
       }
 
-      // Status pipeline: Submitted → In review → Approved → Paid. A
-      // Needs-revision invoice is shown returned at the review step.
+      // Status pipeline: In review → Paid. A Needs-revision invoice is shown
+      // returned at the review step.
       if (pipeline) {
         const needsRevision = inv.stage === 'Needs revision';
-        const activeIdx = needsRevision ? 1 : PIPELINE.indexOf(inv.stage);
+        const activeIdx = needsRevision ? 0 : PIPELINE.indexOf(inv.stage);
         pipeline.innerHTML = PIPELINE.map((label, i) => {
           let state: string;
-          if (needsRevision && i === 1) state = 'returned';
+          if (needsRevision && i === 0) state = 'returned';
           else if (i < activeIdx) state = 'done';
           else if (i === activeIdx) state = 'active';
           else state = 'todo';
