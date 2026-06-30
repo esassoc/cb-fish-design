@@ -3131,19 +3131,24 @@ function commitLineEdit() {
 // ── Channel Habitat Units (CHU) ───────────────────────────────────────────
 
 function getCHUChannelPts(we) {
-  // Returns the flat latlng array for the area_ch polygon (user or buffer)
+  // Prefer primary channel buffer (pc-area); fall back to pre-project area_ch
+  var sl = we.sowLayers && we.sowLayers['pc-area'];
+  if (sl && sl.layer) {
+    var lls = sl.layer.getLatLngs();
+    return (lls.length && Array.isArray(lls[0])) ? lls[0] : lls;
+  }
   var d = we.ppData['area_ch'];
   if (!d) return null;
   var layer = d.userDrawn ? d.layer : d.bufferLayer;
   if (!layer) return null;
-  var lls = layer.getLatLngs();
-  return (lls.length && Array.isArray(lls[0])) ? lls[0] : lls;
+  var lls2 = layer.getLatLngs();
+  return (lls2.length && Array.isArray(lls2[0])) ? lls2[0] : lls2;
 }
 
 function startCHUSplit() {
   var we = getActiveWE(); if (!we) return;
   if (!getCHUChannelPts(we)) {
-    setMapHint('No Area of Channel polygon — draw or estimate it first in Pre-Project tab.');
+    setMapHint('No primary channel area — complete steps 8 & 9 (draw channel and enter width) first.');
     setTimeout(function(){setMapHint('');}, 3000);
     return;
   }
@@ -3168,9 +3173,11 @@ function cancelCHUSplit() {
 // Build a perpendicular split line across the channel polygon at latlng,
 // based on the nearest reach segment direction
 function chuPerpendicularLine(latlng, we) {
-  var reachD = we.ppData['reach_len'];
-  if (!reachD || !reachD.layer) return null;
-  var reachPts = reachD.layer.getLatLngs();
+  // Use primary channel for cut direction; fall back to pre-project reach
+  var pcSL = we.sowLayers && we.sowLayers['pc-reach'];
+  var reachLayer = (pcSL && pcSL.layer) ? pcSL.layer : (we.ppData['reach_len'] && we.ppData['reach_len'].layer);
+  if (!reachLayer) return null;
+  var reachPts = reachLayer.getLatLngs();
   if (reachPts.length && Array.isArray(reachPts[0])) reachPts = reachPts[0];
   if (reachPts.length < 2) return null;
 
@@ -3198,9 +3205,11 @@ function chuPerpendicularLine(latlng, we) {
   var perpLat = -dLng / len;
   var perpLng =  dLat / len / cosLat;
 
-  // Extension: 3x the channel buffer width
-  var chAvgWidthM = ppMultiAvgM(we, 'ch_width');
-  var chD2 = we.ppData['area_ch'];
+  // Extension: use primary channel width if available, else pre-project ch_width
+  var chAvgWidthM = (we.inputVals && we.inputVals['pc-width'] > 0)
+    ? we.inputVals['pc-width'] / 3.28084
+    : ppMultiAvgM(we, 'ch_width');
+  var chD2 = (we.sowLayers && we.sowLayers['pc-area']) || we.ppData['area_ch'];
   var chHalfWidthDeg = 0.001; // fallback ~100m
   if (chAvgWidthM) {
     var toRad2 = function(x){return x*Math.PI/180;};
@@ -6127,9 +6136,9 @@ function wizardStepBody(we, step, idx) {
 
     case 'chu_split':
       h += '<div class="wz-step-desc">Draw perpendicular cut lines across the channel to divide it into riffles and pools. Add as many splits as needed, then click Next.</div>';
-      var chuSplitReady = we && we.ppData['area_ch'] && (we.ppData['area_ch'].layer || we.ppData['area_ch'].bufferLayer);
+      var chuSplitReady = we && getCHUChannelPts(we);
       if (!chuSplitReady) {
-        h += '<div class="wz-status warning">&#9888; Complete pre-project steps first to generate the Area of Channel polygon.</div>';
+        h += '<div class="wz-status warning">&#9888; Draw the primary channel and enter a width first (steps 8 &amp; 9) to generate the channel area.</div>';
       } else {
         var splitCount = we.chuUnits ? we.chuUnits.length : 0;
         h += '<div class="wz-status '+(splitCount>1?'done':'pending')+'">';
