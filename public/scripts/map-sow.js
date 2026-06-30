@@ -1139,6 +1139,20 @@ function clipPtsToPerimeter(we, pts, geo) {
   }
 }
 
+// Re-clip the primary channel (pc-reach SOW layer) to the current perimeter.
+function reClipPCReach(we) {
+  var sl = we && we.sowLayers && we.sowLayers['pc-reach'];
+  if (!sl || !sl.layer) return;
+  var pts = sl.layer.getLatLngs();
+  if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+  var clipped = clipPtsToPerimeter(we, pts, 'line');
+  if (!clipped || clipped.length < 2) return;
+  sl.layer.setLatLngs(clipped);
+  sl.valueM = geoLen(clipped);
+  updatePCBuffer(we);
+  updateSOWCalcs();
+}
+
 // Re-clip the reach line to the current perimeter.
 // Called after perimeter is drawn or edited so an existing reach snaps to the new boundary.
 function reClipReachToPerimeter(we) {
@@ -1813,7 +1827,7 @@ function finishPPDraw() {
   updateAreaChBuffer(getWE(we.id));
   updateAreaFpBuffer(getWE(we.id));
   if(m.id==='reach_len') addReachArrow(getWE(we.id));
-  if(m.id==='perimeter') reClipReachToPerimeter(getWE(we.id));
+  if(m.id==='perimeter') { reClipReachToPerimeter(getWE(we.id)); reClipPCReach(getWE(we.id)); }
   if(m.id==='reach_len') {
     updateWELabel(getWE(we.id), true);
     setTimeout(function(){ fetchElevationProfile(getWE(we.id)); }, 300);
@@ -2120,12 +2134,56 @@ function finishSOWDraw() {
   var btn=document.getElementById('dbtn-'+d.id);if(btn)btn.classList.remove('active');
   sowDrawing=null;document.getElementById('mapwrap').classList.remove('drawing');setMapHint('');
   updateSOWCalcs();renderLegend();
-  if(d.id==='pc-reach') setTimeout(function(){ fetchSOWElevationProfile(getWE(d.weId)); }, 300);
+  if(d.id==='pc-reach') { updatePCBuffer(getWE(d.weId)); setTimeout(function(){ fetchSOWElevationProfile(getWE(d.weId)); }, 300); if(wizardMode) wizardRefreshIfActive(); }
+}
+
+// Build / rebuild the primary channel area buffer polygon.
+// Works without the expert-panel DOM — called from setPCWidth and when pc-reach is drawn.
+function updatePCBuffer(we) {
+  if (!we) return;
+  var reachSL = we.sowLayers['pc-reach'];
+  if (!reachSL || !reachSL.layer) return;
+  // Width priority: manually entered ft → measured pcw1/2/3 average
+  var halfWM = 0;
+  if (we.inputVals && we.inputVals['pc-width'] > 0) {
+    halfWM = (we.inputVals['pc-width'] / 3.28084) / 2;
+  } else {
+    var measW = avgWidths(we, ['pcw1','pcw2','pcw3']);
+    if (measW) halfWM = measW / 2;
+  }
+  if (!halfWM) return;
+  var pts = reachSL.layer.getLatLngs();
+  if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+  pts = extendReachPts(pts);
+  var ring = buildBufferPoly(pts, halfWM);
+  if (!ring) return;
+  // Remove old auto layer
+  var old = we.sowLayers['pc-area'];
+  if (old && old._auto && old.layer) { map.removeLayer(old.layer); }
+  var bufLayer = L.polygon(ring, {
+    color:'#2a7a5c', fillColor:'#2a7a5c', fillOpacity:0.15,
+    weight:2, dashArray:'6,4', interactive:false
+  }).bindTooltip('Area of Restored Channel (estimated)').addTo(map);
+  var areaM2 = geoAreaM2(ring);
+  we.sowLayers['pc-area'] = {layer:bufLayer, valueM:areaM2, acres:areaM2*0.000247105, geo:'polygon', label:'Area of Restored Channel', _auto:true};
+  renderLegend();
+}
+
+function setPCWidth(val) {
+  var we = getActiveWE(); if (!we) return;
+  if (!we.inputVals) we.inputVals = {};
+  var n = parseFloat(val);
+  we.inputVals['pc-width'] = (n > 0) ? n : null;
+  updatePCBuffer(we);
+  updateSOWCalcs();
+  if (wizardMode) wizardRefreshIfActive();
 }
 
 function updateSOWCalcs() {
   var we=getActiveWE();if(!we)return;
+  // Use measured cross-sections if available; otherwise fall back to manually entered width
   var avgW=avgWidths(we,['pcw1','pcw2','pcw3']);
+  if(!avgW && we.inputVals && we.inputVals['pc-width']) avgW = we.inputVals['pc-width'] / 3.28084;
   var cw=document.getElementById('calc-pc-width');if(cw)cw.textContent=avgW?Math.round(avgW)+' ft':'—';
   var pcwAvg=document.getElementById('pcw-avg');
   if(pcwAvg)pcwAvg.textContent=avgW?'Avg: '+Math.round(avgW)+' ft':'';
@@ -2998,7 +3056,7 @@ function commitLineEdit() {
     updateAreaChBuffer(we);
     updateAreaFpBuffer(we);
     if (id === 'reach_len') { addReachArrow(we); setTimeout(function(){ fetchElevationProfile(getWE(activeWEId)); }, 300); }
-    if (id === 'perimeter') reClipReachToPerimeter(we);
+    if (id === 'perimeter') { reClipReachToPerimeter(we); reClipPCReach(we); }
   } else if (type === 'cr-poly') {
     var crWe = getWE(lineEditing.weId);
     if (crWe) {
@@ -5602,8 +5660,10 @@ var WIZARD_STEPS = [
   { id:'substrate',  label:'Substrate',       title:'Enter Reach-Averaged Substrate', phase:'pp' },
   { id:'fp_poly',    label:'Floodplain',      title:'Draw Floodplain Boundary',       phase:'pp' },
   { id:'buffers',    label:'Review Areas',    title:'Review Floodplain Areas',        phase:'pp' },
-  { id:'pp_done',    label:'Pre-Project Done',title:'Pre-Project Complete!',          phase:'pp' },
-  { id:'chu_split',   label:'Channel Splits',  title:'Split Channel into Units',       phase:'work', types:['pc'] },
+  { id:'pp_done',    label:'Pre-Project Done',  title:'Pre-Project Complete!',          phase:'pp' },
+  { id:'pc_reach',   label:'Primary Channel',  title:'Draw Primary Channel',           phase:'work', types:['pc'] },
+  { id:'pc_width',   label:'Channel Width',    title:'Enter Primary Channel Width',    phase:'work', types:['pc'] },
+  { id:'chu_split',  label:'Channel Splits',   title:'Split Channel into Units',       phase:'work', types:['pc'] },
   { id:'chu_details', label:'Channel Details', title:'Assign Unit Types & Depths',     phase:'work', types:['pc'] },
   { id:'structures', label:'Structures',      title:'Wood Structures',                phase:'work', types:['pc'] },
   { id:'fp_work',    label:'Floodplain Work', title:'Floodplain Work Elements',       phase:'work', types:['fp'] },
@@ -5668,6 +5728,8 @@ function wizardStepStatus(we, stepId) {
       var corePP = ['perimeter','reach','ch_width','fp_poly'];
       return corePP.every(function(id){ return wizardStepStatus(we, id) === 'done'; }) ? 'done' : 'pending';
     }
+    case 'pc_reach':   return (we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) ? 'done' : 'pending';
+    case 'pc_width':   { var pcw=we.inputVals&&we.inputVals['pc-width']; return (pcw&&pcw>0)?'done':'pending'; }
     case 'chu_split':  return (we.chuUnits && we.chuUnits.length > 1) ? 'done' : 'pending';
     case 'chu_details': {
       if (!we.chuUnits || we.chuUnits.length < 2) return 'pending';
@@ -6011,15 +6073,19 @@ function wizardStepBody(we, step, idx) {
       h += '<div class="wz-step-desc">Pre-project conditions are complete. Now move on to entering your habitat work details.</div>';
       h += '<div class="wz-status done" style="font-size:13px;padding:14px">&#10003; <b>Pre-project entry complete!</b></div>';
       if (we) {
+        var bhVal = (function(){ var bh=ppCalc(we,'bank_ht'); return bh!==null?bh.toFixed(1)+' ft':null; })();
+        var fpPolyAc = (we.ppData['fp_poly'] && we.ppData['fp_poly'].valueM) ? (we.ppData['fp_poly'].valueM*0.000247105).toFixed(2)+' ac (net)' : null;
+        var fpLAc   = ppAcres(we,'fp_left')  ? ppAcres(we,'fp_left').toFixed(2)+' ac'  : null;
+        var fpRAc   = ppAcres(we,'fp_right') ? ppAcres(we,'fp_right').toFixed(2)+' ac' : null;
         var ppMetrics = [
-          ['Reach Length', ppLenFt(we,'reach_len') ? Math.round(ppLenFt(we,'reach_len')).toLocaleString()+' ft' : null],
-          ['Channel Width (avg)', ppMultiAvgFt(we,'ch_width') ? Math.round(ppMultiAvgFt(we,'ch_width'))+' ft' : null],
-          ['Bank Height (avg)', (function(){ var bh=ppCalc(we,'bank_ht'); return bh!==null?bh.toFixed(1)+' ft':null; })()],
-          ['Substrate', we.ppData['substrate'] && we.ppData['substrate'].value ? we.ppData['substrate'].value : null],
-          ['Area of Channel', ppAcres(we,'area_ch') ? ppAcres(we,'area_ch').toFixed(2)+' ac' : null],
-          ['Left Floodplain', ppAcres(we,'fp_left') ? ppAcres(we,'fp_left').toFixed(2)+' ac' : null],
-          ['Right Floodplain', ppAcres(we,'fp_right') ? ppAcres(we,'fp_right').toFixed(2)+' ac' : null]
+          ['Reach Length',       ppLenFt(we,'reach_len') ? Math.round(ppLenFt(we,'reach_len')).toLocaleString()+' ft' : null],
+          ['Channel Width (avg)',ppMultiAvgFt(we,'ch_width') ? Math.round(ppMultiAvgFt(we,'ch_width'))+' ft' : null],
+          ['Substrate',          we.ppData['substrate'] && we.ppData['substrate'].value ? we.ppData['substrate'].value : null],
+          ['Area of Channel',    ppAcres(we,'area_ch') ? ppAcres(we,'area_ch').toFixed(2)+' ac' : null],
+          ['Floodplain Area',    fpPolyAc || (fpLAc||fpRAc ? (fpLAc||'—')+' L / '+(fpRAc||'—')+' R' : null)]
         ];
+        // Only include bank height row if a value has been entered
+        if (bhVal) ppMetrics.splice(2, 0, ['Bank Height (avg)', bhVal]);
         ppMetrics.forEach(function(m) {
           h += '<div class="wz-metric-row"><span class="wz-metric-label">'+m[0]+'</span>';
           h += '<span class="wz-metric-val '+(m[1]?'':'missing')+'">'+( m[1] || 'not entered')+'</span></div>';
@@ -6027,6 +6093,37 @@ function wizardStepBody(we, step, idx) {
       }
       h += '<div class="wz-tip">Click Next to begin entering habitat work details.</div>';
       break;
+
+    case 'pc_reach': {
+      var pcSL = we && we.sowLayers && we.sowLayers['pc-reach'];
+      var pcDone = pcSL && pcSL.layer;
+      h += '<div class="wz-step-desc">Draw the centerline of the proposed (designed) primary channel. This represents the planned channel alignment after habitat work, and will be used to delineate channel units in the next step.</div>';
+      if (pcDone) {
+        h += '<div class="wz-status done">&#10003; Primary channel: <b>'+Math.round(pcSL.valueM*3.28084).toLocaleString()+' ft</b></div>';
+        h += '<button class="wz-action-btn secondary" onclick="startSOWDraw(\'pc-reach\',\'line\',\'Primary Channel\');renderWizardStep()">&#128207; Redraw</button>';
+        h += '<button class="wz-action-btn secondary" onclick="startLineEdit(\'sow\',\'pc-reach\');renderWizardStep()">&#9998; Edit Vertices</button>';
+      } else {
+        h += '<button class="wz-action-btn" onclick="startSOWDraw(\'pc-reach\',\'line\',\'Primary Channel\');renderWizardStep()">&#128207; Draw Primary Channel</button>';
+        h += '<div class="wz-tip">Draw the designed channel centerline — this is different from the existing reach and represents where the channel will be after restoration.</div>';
+      }
+      break;
+    }
+
+    case 'pc_width': {
+      var pcwVal = we && we.inputVals && we.inputVals['pc-width'];
+      h += '<div class="wz-step-desc">Enter the designed width of the primary channel. This value will be used to estimate the area of restored channel.</div>';
+      h += '<div style="display:flex;align-items:center;gap:8px;margin:8px 0">';
+      h += '<label style="font-size:12px;color:var(--color-text-secondary);white-space:nowrap">Channel width (ft):</label>';
+      h += '<input id="wz-pc-width-input" type="number" min="0" step="1" placeholder="e.g. 30" value="'+(pcwVal||'')+'"';
+      h += ' style="width:90px;border:1px solid var(--color-border);border-radius:4px;padding:4px 8px;font-size:13px;font-family:var(--font-sans)"';
+      h += ' onchange="setPCWidth(this.value)">';
+      h += '<span style="font-size:12px;color:var(--color-text-muted)">ft</span>';
+      h += '</div>';
+      if (pcwVal > 0) {
+        h += '<div class="wz-status done">&#10003; Primary channel width: <b>'+Math.round(pcwVal)+' ft</b></div>';
+      }
+      break;
+    }
 
     case 'chu_split':
       h += '<div class="wz-step-desc">Draw perpendicular cut lines across the channel to divide it into riffles and pools. Add as many splits as needed, then click Next.</div>';
@@ -6263,6 +6360,9 @@ function wizardAutoActivate() {
       break;
     case 'ch_width': case 'fp_left': case 'fp_right': case 'fp_poly':
       if (we && we.ppData['reach_len'] && we.ppData['reach_len'].layer) map.fitBounds(we.ppData['reach_len'].layer.getBounds(), {padding:[60,60]});
+      break;
+    case 'pc_reach':
+      if (we && we.ppData['reach_len'] && we.ppData['reach_len'].layer) map.fitBounds(we.ppData['reach_len'].layer.getBounds(), {padding:[40,40]});
       break;
     case 'buffers':
       if (we) { updateAreaChBuffer(we); updateAreaFpBuffer(we); setTimeout(function(){ renderWizardStep(); }, 150); }
