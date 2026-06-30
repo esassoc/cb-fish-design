@@ -5717,7 +5717,7 @@ var WIZARD_STEPS = [
   { id:'pc_reach',   label:'Primary Channel',  title:'Draw Primary Channel',           phase:'work', types:['pc'] },
   { id:'pc_width',   label:'Channel Width',    title:'Enter Primary Channel Width',    phase:'work', types:['pc'] },
   { id:'chu_split',  label:'Identify Pools',   title:'Identify Pool Locations',        phase:'work', types:['pc'] },
-  { id:'chu_details', label:'Channel Details', title:'Assign Unit Types & Depths',     phase:'work', types:['pc'] },
+  { id:'chu_details', label:'Pool & Riffle Details', title:'Pool and Riffle Details', phase:'work', types:['pc'] },
   { id:'structures', label:'Structures',      title:'Wood Structures',                phase:'work', types:['pc'] },
   { id:'fp_work',    label:'Floodplain Work', title:'Floodplain Work Elements',       phase:'work', types:['fp'] },
   { id:'rr_work',    label:'Riparian Work',   title:'Riparian Work Elements',         phase:'work', types:['rr'] },
@@ -6235,9 +6235,8 @@ function wizardStepBody(we, step, idx) {
           var ac = u.areaM2 ? (u.areaM2*0.000247105).toFixed(3)+' ac' : '—';
           var ft = u.lengthM ? Math.round(u.lengthM*3.28084)+' ft' : '—';
           h += '<div style="background:#fff;border:2px solid '+col+'33;border-radius:6px;padding:10px;margin-bottom:8px">';
-          h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
-          h += '<span style="font-size:12px;font-weight:700;color:#3d3d3d">Unit '+(i+1)+'</span>';
-          h += '<span style="font-size:10px;font-weight:700;color:'+col+';padding:2px 8px;border-radius:10px;background:'+col+'18">'+typeLabel+'</span>';
+          h += '<div style="display:flex;align-items:center;margin-bottom:8px">';
+          h += '<span style="font-size:12px;font-weight:700;color:'+col+'">'+typeLabel+'</span>';
           h += '</div>';
           if (isPool) {
             h += '<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#525252">';
