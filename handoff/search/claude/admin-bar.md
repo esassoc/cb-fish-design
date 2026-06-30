@@ -202,7 +202,7 @@ The dark system tray. New in CBF-8117: global search moved OUT of the blue heade
               <span class="esa-link-column__head">Help</span>
               <hr class="esa-link-column__rule" />
               <ul class="esa-link-column__list">
-                <li>Help Center</li>
+                <li>Help center</li>
                 <li>Data dictionary</li>
                 <li>EF&amp;W Program documents</li>
                 <li>Request support</li>
@@ -219,6 +219,103 @@ The dark system tray. New in CBF-8117: global search moved OUT of the blue heade
 
 ## Styles
 ```css
+.cbf-app-bar--admin {
+  --app-bar-gap: var(--spacing-650);
+}
+.esa-app-bar {
+  --_bar-gap: var(--app-bar-gap, var(--spacing-600, 32px));
+  --_bar-pad-x: var(--app-bar-pad-x, var(--spacing-600, 32px));
+  --_bar-pad-y: var(--app-bar-pad-y, var(--spacing-400, 16px));
+  display: block;
+  width: 100%;
+  background: var(--app-bar-bg, var(--color-surface, #fff));
+  color: var(--app-bar-text, var(--color-text-primary, #171717));
+}
+.esa-app-bar--brand-strong {
+  background: var(--app-bar-brand-strong-bg, var(--color-surface-inverse, #171717));
+  color: var(--app-bar-brand-strong-text, var(--color-text-inverse, #fff));
+}
+.esa-app-bar__row {
+  display: flex;
+  align-items: center;
+  gap: var(--_bar-gap);
+  padding: var(--_bar-pad-y) var(--_bar-pad-x);
+}
+.esa-app-bar__start,
+.esa-app-bar__main,
+.esa-app-bar__end {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--_bar-gap);
+}
+.esa-app-bar__start {
+  flex: none;
+}
+.esa-icon-link {
+  --_il-font: var(--icon-link-font-size-md, 1rem);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--icon-link-gap, var(--spacing-150, 6px));
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: var(--_il-font);
+  font-weight: var(--font-weight-medium, 500);
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.esa-icon-link--sm {
+  --_il-font: var(--icon-link-font-size-sm, 0.875rem);
+}
+.esa-icon-link--medium {
+  font-weight: var(--font-weight-medium, 500);
+}
+.esa-icon {
+  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+  line-height: 1;
+  color: inherit;
+}
+.esa-icon--xs {
+  --_icon-size: var(--icon-size-xs, 14px);
+}
+.esa-icon svg {
+  display: block;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+}
+.esa-icon-link__label {
+  display: inline-block;
+}
+.esa-app-bar__main {
+  flex: 1 1 auto;
+}
+.esa-app-bar__end {
+  flex: none;
+  margin-left: auto;
+}
+summary.esa-icon-link {
+  list-style: none;
+}
+.esa-app-bar--brand {
+  background: var(--app-bar-brand-bg, var(--color-primary, #43608a));
+  color: var(--app-bar-brand-text, var(--color-text-inverse, #fff));
+}
+.esa-icon--sm {
+  --_icon-size: var(--icon-size-sm, var(--icon-size-small, 16px));
+}
+.cbf-search-surface .cbf-facet .cbf-icon {
+  color: var(--color-secondary);
+}
 .cbf-app-bar--admin {
   --app-bar-pad-y: var(--spacing-300);
 }
@@ -339,120 +436,23 @@ The dark system tray. New in CBF-8117: global search moved OUT of the blue heade
   color: var(--color-text-muted);
   display: inline-flex;
 }
-.esa-app-bar {
-  --_bar-gap: var(--app-bar-gap, var(--spacing-600, 32px));
-  --_bar-pad-x: var(--app-bar-pad-x, var(--spacing-600, 32px));
-  --_bar-pad-y: var(--app-bar-pad-y, var(--spacing-400, 16px));
-  display: block;
-  width: 100%;
-  background: var(--app-bar-bg, var(--color-surface, #fff));
-  color: var(--app-bar-text, var(--color-text-primary, #171717));
-}
-.esa-app-bar--brand-strong {
-  background: var(--app-bar-brand-strong-bg, var(--color-surface-inverse, #171717));
-  color: var(--app-bar-brand-strong-text, var(--color-text-inverse, #fff));
-}
-.esa-app-bar__row {
-  display: flex;
-  align-items: center;
-  gap: var(--_bar-gap);
-  padding: var(--_bar-pad-y) var(--_bar-pad-x);
-}
-.esa-app-bar__start,
-.esa-app-bar__main,
-.esa-app-bar__end {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--_bar-gap);
-}
-.esa-app-bar__start {
-  flex: none;
-}
-.esa-icon-link {
-  --_il-font: var(--icon-link-font-size-md, 1rem);
-  display: inline-flex;
-  align-items: center;
-  gap: var(--icon-link-gap, var(--spacing-150, 6px));
-  padding: 0;
-  margin: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font-family: var(--font-sans, system-ui, sans-serif);
-  font-size: var(--_il-font);
-  font-weight: var(--font-weight-medium, 500);
-  line-height: 1;
-  text-decoration: none;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.esa-icon-link--sm {
-  --_il-font: var(--icon-link-font-size-sm, 0.875rem);
-}
-.esa-icon-link--medium {
-  font-weight: var(--font-weight-medium, 500);
-}
-.esa-icon-link__label {
-  display: inline-block;
-}
-.esa-app-bar__main {
-  flex: 1 1 auto;
-}
-.esa-app-bar__end {
-  flex: none;
-  margin-left: auto;
-}
-summary.esa-icon-link {
-  list-style: none;
-}
-.esa-app-bar--brand {
-  background: var(--app-bar-brand-bg, var(--color-primary, #43608a));
-  color: var(--app-bar-brand-text, var(--color-text-inverse, #fff));
-}
-.cbf-app-bar--admin {
-  --app-bar-gap: var(--spacing-650);
-}
-.esa-icon {
-  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--_icon-size);
-  height: var(--_icon-size);
-  line-height: 1;
-  color: inherit;
-}
-.esa-icon--xs {
-  --_icon-size: var(--icon-size-xs, 14px);
-}
-.esa-icon svg {
-  display: block;
-  width: var(--_icon-size);
-  height: var(--_icon-size);
-}
-.esa-icon--sm {
-  --_icon-size: var(--icon-size-sm, var(--icon-size-small, 16px));
-}
-.cbf-search-surface .cbf-facet .cbf-icon {
-  color: var(--color-secondary);
-}
 ```
 
 ## Tokens
-- `--app-bar-bg`: #ffffff _(component)_
+- `--app-bar-bg`: #fcfcfc _(component)_
 - `--app-bar-brand-bg`: #1e5386 _(component)_
 - `--app-bar-brand-strong-bg`: #13273e _(component)_
-- `--app-bar-brand-strong-text`: #ffffff _(component)_
-- `--app-bar-brand-text`: #ffffff _(component)_
+- `--app-bar-brand-strong-text`: #fcfcfc _(component)_
+- `--app-bar-brand-text`: #fcfcfc _(component)_
 - `--app-bar-gap`: 2.5rem _(component)_
 - `--app-bar-pad-x`: 2rem _(component)_
 - `--app-bar-pad-y`: .75rem _(component)_
 - `--app-bar-text`: #3d3d3d _(component)_
 - `--color-primary`: #1e5386 _(semantic)_
 - `--color-secondary`: #2770b2 _(semantic)_
-- `--color-surface`: #ffffff _(semantic)_
+- `--color-surface`: #fcfcfc _(semantic)_
 - `--color-surface-inverse`: #13273e _(semantic)_
-- `--color-text-inverse`: #ffffff _(semantic)_
+- `--color-text-inverse`: #fcfcfc _(semantic)_
 - `--color-text-muted`: #7c7c7c _(semantic)_
 - `--color-text-primary`: #3d3d3d _(semantic)_
 - `--font-sans`: "IBM Plex Sans", sans-serif _(primitive)_
@@ -460,8 +460,11 @@ summary.esa-icon-link {
 - `--icon-link-font-size-md`: 1rem _(component)_
 - `--icon-link-font-size-sm`: .875rem _(component)_
 - `--icon-link-gap`: .375rem _(component)_
+- `--icon-size-md`: 20px _(primitive)_
 - `--icon-size-medium`: 20px _(component)_
+- `--icon-size-sm`: 16px _(primitive)_
 - `--icon-size-small`: 16px _(component)_
+- `--icon-size-xs`: 14px _(primitive)_
 - `--link-column-heading-font-size`: clamp(.75rem, .66rem + .44vw, .9375rem) _(component)_
 - `--link-column-item-font-size`: clamp(.6875rem, .61rem + .38vw, .875rem) _(component)_
 - `--link-column-rule-color`: color-mix(in srgb, currentColor 40%, transparent) _(component)_
@@ -760,7 +763,7 @@ export function renderResults(
       btn.innerHTML = `
         <div class="cbf-result__body">
           <div class="cbf-result__title">${n} Publication result${n === 1 ? '' : 's'}</div>
-          <div class="cbf-result__sub">Open in Publications Search</div>
+          <div class="cbf-result__sub">Open in Publications search</div>
         </div>
         <span class="cbf-result__chevron cbf-icon">${svg('chevron-right', 18)}</span>`;
       btn.addEventListener('click', () => opts.onPublicationsAll!(n));

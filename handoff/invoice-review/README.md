@@ -12,4 +12,4 @@ snapshot of one page for a developer (or an AI agent) to re-implement on any sta
 - **`manifest.json`** — per-section data powering the live dev-mode overlay.
 
 Source URL: http://localhost:4321/cb-fish-design/invoice-review/
-Rules shipped: 457 · Tokens referenced: 789
+Rules shipped: 458 · Tokens referenced: 796

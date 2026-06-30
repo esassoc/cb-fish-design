@@ -22,32 +22,25 @@ The headline money rollup — total contracted, expended-to-date, remaining, awa
   <header class="cbf-vendor-financial-outlook__head repel">
     <h2 class="type-section-title">Financial outlook</h2>
     <span class="type-caption cbf-vendor-financial-outlook__caption"
-      >Across 9 active contracts · as of Jun 21, 2026</span
+      >Across 9 active contracts</span
     >
   </header>
   <div class="cbf-vendor-financial-outlook__stats cluster" data-gap="xl">
     <div class="esa-stat">
       <div class="esa-stat__value">$1.84M</div>
-      <div class="esa-stat__label">Total contracted</div>
+      <div class="esa-stat__label">Total active contract value</div>
     </div>
     <div class="esa-stat">
       <div class="esa-stat__value">$1.21M</div>
-      <div class="esa-stat__label">Expended to date</div>
-      <div class="esa-stat__sub">as of Jun 21, 2026</div>
+      <div class="esa-stat__label">Invoiced to date</div>
+      <div class="esa-stat__sub">
+        as of Jun 21, 2026 · includes all submitted invoices
+      </div>
     </div>
     <div class="esa-stat">
       <div class="esa-stat__value">$630K</div>
-      <div class="esa-stat__label">Remaining</div>
-    </div>
-    <div class="esa-stat esa-stat--accent">
-      <div class="esa-stat__value">$12,370.00</div>
-      <div class="esa-stat__label">Awaiting approval</div>
-      <div class="esa-stat__sub">3 invoices</div>
-    </div>
-    <div class="esa-stat">
-      <div class="esa-stat__value">$3,975.00</div>
-      <div class="esa-stat__label">Approved, unpaid</div>
-      <div class="esa-stat__sub">1 invoice</div>
+      <div class="esa-stat__label">Uninvoiced balance</div>
+      <div class="esa-stat__sub">as of Jun 21, 2026</div>
     </div>
   </div>
 </section>
@@ -69,19 +62,6 @@ The headline money rollup — total contracted, expended-to-date, remaining, awa
   gap: var(--gap);
   align-items: var(--align);
   justify-content: space-between;
-}
-.type-section-title {
-  font-family: var(--font-display, var(--font-sans));
-  font-size: var(--type-size-500);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--line-height-tight);
-  letter-spacing: var(--letter-spacing-tight);
-}
-.type-caption {
-  font-size: var(--type-size-100);
-  font-weight: var(--font-weight-regular);
-  line-height: var(--line-height-normal);
-  letter-spacing: var(--letter-spacing-normal);
 }
 .cluster {
   --gap: var(--spacing-300, 0.75rem);
@@ -109,9 +89,23 @@ The headline money rollup — total contracted, expended-to-date, remaining, awa
   --align: flex-start;
   row-gap: var(--spacing-500);
 }
-.cbf-vendor-dashboard-invoices__group .type-caption {
+.cbf-vendor-dashboard-invoices__group .type-caption,
+.cbf-vendor-dashboard-invoices__view .type-caption {
   color: var(--color-text-muted);
   white-space: nowrap;
+}
+.type-section-title {
+  font-family: var(--font-display, var(--font-sans));
+  font-size: var(--type-size-500);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+}
+.type-caption {
+  font-size: var(--type-size-100);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-normal);
+  letter-spacing: var(--letter-spacing-normal);
 }
 .esa-stat {
   --_stat-value-color: var(--stat-value-color, var(--color-text-primary, #171717));
@@ -126,7 +120,7 @@ The headline money rollup — total contracted, expended-to-date, remaining, awa
   --_stat-label-weight: var(--stat-label-weight, var(--font-weight-medium, 450));
   --_stat-sub-color: var(--stat-sub-color, var(--color-text-muted, #737373));
   --_stat-sub-size: var(--stat-sub-size, var(--type-size-150, 0.875rem));
-  --_stat-accent-color: var(--stat-accent-color, var(--color-secondary, #5787b9));
+  --_stat-accent-color: var(--stat-accent-color, var(--color-secondary-strong, #3a7c59));
   --_stat-gap: var(--stat-gap, var(--spacing-050, 0.125rem));
   display: flex;
   flex-direction: column;
@@ -153,14 +147,11 @@ The headline money rollup — total contracted, expended-to-date, remaining, awa
   line-height: var(--line-height-normal, 1.6);
   color: var(--_stat-sub-color);
 }
-.esa-stat--accent .esa-stat__value {
-  color: var(--_stat-accent-color);
-}
 ```
 
 ## Tokens
 - `--color-border`: #dcdcdc _(semantic)_
-- `--color-secondary`: #2770b2 _(semantic)_
+- `--color-secondary-strong`: #2a7e3b _(semantic)_
 - `--color-text-muted`: #7c7c7c _(semantic)_
 - `--color-text-primary`: #3d3d3d _(semantic)_
 - `--color-text-secondary`: #525252 _(semantic)_
@@ -171,6 +162,10 @@ The headline money rollup — total contracted, expended-to-date, remaining, awa
 - `--font-weight-regular`: 400 _(primitive)_
 - `--font-weight-semibold`: 600 _(primitive)_
 - `--gap`: .75rem _(component)_
+- `--letter-spacing-normal`: .01em _(primitive)_
+- `--letter-spacing-tight`: -.01em _(primitive)_
+- `--line-height-normal`: 1.6 _(primitive)_
+- `--line-height-tight`: 1.3 _(primitive)_
 - `--spacing-050`: .125rem _(primitive)_
 - `--spacing-300`: .75rem _(primitive)_
 - `--spacing-400`: 1rem _(primitive)_

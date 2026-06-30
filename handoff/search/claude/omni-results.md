@@ -628,6 +628,33 @@ The palette mid-query — grouped results across types with scope pills, matched
 
 ## Styles
 ```css
+.cbf-search-surface .cbf-facet {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-250);
+  width: 100%;
+  padding: var(--spacing-200) var(--spacing-300);
+  border-radius: var(--radius-100);
+  color: var(--color-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: var(--font-weight-regular);
+  text-align: left;
+}
+.cbf-search-surface .cbf-facet.is-active {
+  background: var(--color-primary-subtle);
+  font-weight: var(--font-weight-semibold);
+}
+.cbf-search-surface .cbf-facet .cbf-icon {
+  color: var(--color-secondary);
+}
+.cbf-search-surface .cbf-facet__label {
+  flex: 1;
+}
+.cbf-search-field .cbf-icon {
+  color: var(--color-text-muted);
+  display: inline-flex;
+}
 .cbf-omni-trigger {
   display: flex;
   align-items: center;
@@ -689,10 +716,6 @@ The palette mid-query — grouped results across types with scope pills, matched
 .cbf-omni[hidden] {
   display: none;
 }
-.cbf-omni-trigger:hover {
-  background: #ffffff29;
-  border-color: #ffffff59;
-}
 .cbf-search-surface .cbf-icon {
   display: inline-flex;
   align-items: center;
@@ -702,6 +725,10 @@ The palette mid-query — grouped results across types with scope pills, matched
   text-align: center;
   color: var(--color-text-muted);
   font-size: 15px;
+}
+.cbf-omni-trigger:hover {
+  background: #ffffff29;
+  border-color: #ffffff59;
 }
 .cbf-omni__scrim {
   position: absolute;
@@ -959,33 +986,6 @@ The palette mid-query — grouped results across types with scope pills, matched
 .cbf-search-surface .cbf-result.is-active .cbf-result__chevron {
   opacity: 1;
 }
-.cbf-search-field .cbf-icon {
-  color: var(--color-text-muted);
-  display: inline-flex;
-}
-.cbf-search-surface .cbf-facet {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-250);
-  width: 100%;
-  padding: var(--spacing-200) var(--spacing-300);
-  border-radius: var(--radius-100);
-  color: var(--color-primary);
-  font-family: var(--font-sans);
-  font-size: 16px;
-  font-weight: var(--font-weight-regular);
-  text-align: left;
-}
-.cbf-search-surface .cbf-facet.is-active {
-  background: var(--color-primary-subtle);
-  font-weight: var(--font-weight-semibold);
-}
-.cbf-search-surface .cbf-facet .cbf-icon {
-  color: var(--color-secondary);
-}
-.cbf-search-surface .cbf-facet__label {
-  flex: 1;
-}
 ```
 
 ## Tokens
@@ -995,9 +995,9 @@ The palette mid-query — grouped results across types with scope pills, matched
 - `--color-primary`: #1e5386 _(semantic)_
 - `--color-primary-subtle`: #f3f7fc _(semantic)_
 - `--color-secondary`: #2770b2 _(semantic)_
-- `--color-surface`: #ffffff _(semantic)_
+- `--color-surface`: #fcfcfc _(semantic)_
 - `--color-surface-sunken`: #f3f7fc _(semantic)_
-- `--color-text-inverse`: #ffffff _(semantic)_
+- `--color-text-inverse`: #fcfcfc _(semantic)_
 - `--color-text-muted`: #7c7c7c _(semantic)_
 - `--color-text-primary`: #3d3d3d _(semantic)_
 - `--font-display`: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif _(primitive)_
@@ -1005,7 +1005,7 @@ The palette mid-query — grouped results across types with scope pills, matched
 - `--font-weight-medium`: 500 _(primitive)_
 - `--font-weight-regular`: 400 _(primitive)_
 - `--font-weight-semibold`: 600 _(primitive)_
-- `--kbd-bg`: #ffffff _(component)_
+- `--kbd-bg`: #fcfcfc _(component)_
 - `--kbd-border-color`: #dcdcdc _(component)_
 - `--kbd-color`: #7c7c7c _(component)_
 - `--kbd-radius`: 4px _(component)_
@@ -1304,7 +1304,7 @@ export function renderResults(
       btn.innerHTML = `
         <div class="cbf-result__body">
           <div class="cbf-result__title">${n} Publication result${n === 1 ? '' : 's'}</div>
-          <div class="cbf-result__sub">Open in Publications Search</div>
+          <div class="cbf-result__sub">Open in Publications search</div>
         </div>
         <span class="cbf-result__chevron cbf-icon">${svg('chevron-right', 18)}</span>`;
       btn.addEventListener('click', () => opts.onPublicationsAll!(n));

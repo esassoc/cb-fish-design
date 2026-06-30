@@ -19,16 +19,16 @@ The default, no-query state — a first-class prompt, not a blank container. Wha
 
 ## Styles
 ```css
-.cbf-search-results {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-400);
-}
 .cbf-search-surface .cbf-result-empty {
   padding: var(--spacing-600) var(--spacing-500);
   text-align: center;
   color: var(--color-text-muted);
   font-size: 15px;
+}
+.cbf-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-400);
 }
 ```
 
@@ -323,7 +323,7 @@ export function renderResults(
       btn.innerHTML = `
         <div class="cbf-result__body">
           <div class="cbf-result__title">${n} Publication result${n === 1 ? '' : 's'}</div>
-          <div class="cbf-result__sub">Open in Publications Search</div>
+          <div class="cbf-result__sub">Open in Publications search</div>
         </div>
         <span class="cbf-result__chevron cbf-icon">${svg('chevron-right', 18)}</span>`;
       btn.addEventListener('click', () => opts.onPublicationsAll!(n));

@@ -1,0 +1,1710 @@
+{
+  "name": "project-budgets",
+  "url": "http://localhost:4321/cb-fish-design/project-budgets/",
+  "theme": "cb-fish",
+  "stats": {
+    "rulesMatched": 109,
+    "originalBytes": 81099,
+    "tokensReferenced": 107
+  },
+  "tokens": [
+    {
+      "name": "--app-bar-bg",
+      "value": "#fcfcfc",
+      "tier": "component"
+    },
+    {
+      "name": "--app-bar-brand-bg",
+      "value": "#1e5386",
+      "tier": "component"
+    },
+    {
+      "name": "--app-bar-brand-strong-bg",
+      "value": "#13273e",
+      "tier": "component"
+    },
+    {
+      "name": "--app-bar-brand-strong-text",
+      "value": "#fcfcfc",
+      "tier": "component"
+    },
+    {
+      "name": "--app-bar-brand-text",
+      "value": "#fcfcfc",
+      "tier": "component"
+    },
+    {
+      "name": "--app-bar-gap",
+      "value": "2rem",
+      "tier": "component"
+    },
+    {
+      "name": "--app-bar-pad-x",
+      "value": "2rem",
+      "tier": "component"
+    },
+    {
+      "name": "--app-bar-pad-y",
+      "value": "1rem",
+      "tier": "component"
+    },
+    {
+      "name": "--app-bar-text",
+      "value": "#3d3d3d",
+      "tier": "component"
+    },
+    {
+      "name": "--breadcrumbs-link-color",
+      "value": "#525252",
+      "tier": "component"
+    },
+    {
+      "name": "--breadcrumbs-link-hover",
+      "value": "#3d3d3d",
+      "tier": "component"
+    },
+    {
+      "name": "--breadcrumbs-separator-color",
+      "value": "#bbbbbb",
+      "tier": "component"
+    },
+    {
+      "name": "--card-bg",
+      "value": "#fcfcfc",
+      "tier": "component"
+    },
+    {
+      "name": "--card-border-color",
+      "value": "#dcdcdc",
+      "tier": "component"
+    },
+    {
+      "name": "--card-footer-bg",
+      "value": "#f3f7fc",
+      "tier": "component"
+    },
+    {
+      "name": "--card-header-bg",
+      "value": "transparent",
+      "tier": "component"
+    },
+    {
+      "name": "--card-header-border-color",
+      "value": "#efefef",
+      "tier": "component"
+    },
+    {
+      "name": "--card-header-color",
+      "value": "#3d3d3d",
+      "tier": "component"
+    },
+    {
+      "name": "--card-padding",
+      "value": "1.5rem",
+      "tier": "component"
+    },
+    {
+      "name": "--card-radius",
+      "value": ".5rem",
+      "tier": "component"
+    },
+    {
+      "name": "--color-border",
+      "value": "#dcdcdc",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-border-light",
+      "value": "#efefef",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-primary",
+      "value": "#1e5386",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-primary-hover",
+      "value": "#1a4570",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-primary-strong",
+      "value": "#2a7e3b",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-surface",
+      "value": "#fcfcfc",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-surface-inverse",
+      "value": "#13273e",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-surface-sunken",
+      "value": "#f3f7fc",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-text-inverse",
+      "value": "#fcfcfc",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-text-link",
+      "value": "#1e5386",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-text-primary",
+      "value": "#3d3d3d",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-text-secondary",
+      "value": "#525252",
+      "tier": "semantic"
+    },
+    {
+      "name": "--container-gutter",
+      "value": "2rem",
+      "tier": "component"
+    },
+    {
+      "name": "--font-display",
+      "value": "\"IBM Plex Sans Condensed\", \"IBM Plex Sans\", sans-serif",
+      "tier": "primitive"
+    },
+    {
+      "name": "--font-sans",
+      "value": "\"IBM Plex Sans\", sans-serif",
+      "tier": "primitive"
+    },
+    {
+      "name": "--font-weight-medium",
+      "value": "500",
+      "tier": "primitive"
+    },
+    {
+      "name": "--font-weight-semibold",
+      "value": "600",
+      "tier": "primitive"
+    },
+    {
+      "name": "--form-font-size-md",
+      "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+      "tier": "component"
+    },
+    {
+      "name": "--form-font-size-sm",
+      "value": "clamp(.625rem, .56rem + .32vw, .75rem)",
+      "tier": "component"
+    },
+    {
+      "name": "--form-height-md",
+      "value": "40px",
+      "tier": "component"
+    },
+    {
+      "name": "--form-height-sm",
+      "value": "32px",
+      "tier": "component"
+    },
+    {
+      "name": "--form-padding-x-md",
+      "value": ".75rem",
+      "tier": "component"
+    },
+    {
+      "name": "--form-padding-x-sm",
+      "value": ".625rem",
+      "tier": "component"
+    },
+    {
+      "name": "--form-radius-md",
+      "value": ".5rem",
+      "tier": "component"
+    },
+    {
+      "name": "--form-radius-sm",
+      "value": ".25rem",
+      "tier": "component"
+    },
+    {
+      "name": "--icon-link-font-size-md",
+      "value": "1rem",
+      "tier": "component"
+    },
+    {
+      "name": "--icon-link-font-size-sm",
+      "value": ".875rem",
+      "tier": "component"
+    },
+    {
+      "name": "--icon-link-gap",
+      "value": ".375rem",
+      "tier": "component"
+    },
+    {
+      "name": "--icon-size-md",
+      "value": "20px",
+      "tier": "primitive"
+    },
+    {
+      "name": "--icon-size-medium",
+      "value": "20px",
+      "tier": "component"
+    },
+    {
+      "name": "--icon-size-sm",
+      "value": "16px",
+      "tier": "primitive"
+    },
+    {
+      "name": "--icon-size-small",
+      "value": "16px",
+      "tier": "component"
+    },
+    {
+      "name": "--icon-size-xs",
+      "value": "14px",
+      "tier": "primitive"
+    },
+    {
+      "name": "--letter-spacing-tight",
+      "value": "-.01em",
+      "tier": "primitive"
+    },
+    {
+      "name": "--line-height-tight",
+      "value": "1.3",
+      "tier": "primitive"
+    },
+    {
+      "name": "--link-column-heading-font-size",
+      "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+      "tier": "component"
+    },
+    {
+      "name": "--link-column-item-font-size",
+      "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+      "tier": "component"
+    },
+    {
+      "name": "--link-column-rule-color",
+      "value": "color-mix(in srgb, currentColor 40%, transparent)",
+      "tier": "component"
+    },
+    {
+      "name": "--radius-100",
+      "value": ".25rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--radius-200",
+      "value": ".5rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--radius-300",
+      "value": ".5rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--side-dialog-width",
+      "value": "400px",
+      "tier": "component"
+    },
+    {
+      "name": "--side-dialog-width-sm",
+      "value": "320px",
+      "tier": "component"
+    },
+    {
+      "name": "--spacing-050",
+      "value": ".125rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-100",
+      "value": ".25rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-150",
+      "value": ".375rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-200",
+      "value": ".5rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-300",
+      "value": ".75rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-400",
+      "value": "1rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-500",
+      "value": "1.5rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-600",
+      "value": "2rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-650",
+      "value": "2.5rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-700",
+      "value": "3rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-800",
+      "value": "4rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--transition-fast",
+      "value": ".15s ease",
+      "tier": "primitive"
+    },
+    {
+      "name": "--type-size-150",
+      "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+      "tier": "primitive"
+    },
+    {
+      "name": "--type-size-200",
+      "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+      "tier": "primitive"
+    },
+    {
+      "name": "--type-size-250",
+      "value": "clamp(.8125rem, .71rem + .5vw, 1.0625rem)",
+      "tier": "primitive"
+    },
+    {
+      "name": "--type-size-500",
+      "value": "clamp(1.125rem, .98rem + .72vw, 1.5rem)",
+      "tier": "primitive"
+    }
+  ],
+  "components": [
+    {
+      "component": "cbf-app-bar",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-app-panel",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/shared/cbf-app-panel.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-icon",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/search/cbf-icon.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-logo",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/shared/cbf-logo.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-nav-actions",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-nav-burger",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-nav-collapsible",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-nav-drawer",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-nav-link",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-omni",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-omni-trigger",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/search/cbf-omni-trigger.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-page",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-page-heading",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/shared/cbf-page-heading.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-related-items",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/project-budgets/cbf-related-items.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-report-intro",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/project-budgets/cbf-report-intro.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-report-tabs",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/project-budgets/cbf-report-tabs.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-search-surface",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "esa-app-bar",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-app-bar.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-breadcrumbs",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-breadcrumbs.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-button",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-button.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-card",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-card.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-container",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-container.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-icon",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-icon.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-icon-button",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-icon-button.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-icon-link",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-icon-link.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-kbd",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-kbd.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-link-column",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-link-column.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-nav-dropdown",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-nav-dropdown.astro",
+      "origin": "hub"
+    }
+  ],
+  "sections": [
+    {
+      "index": 0,
+      "label": "Nav",
+      "tag": "nav",
+      "html": "<nav class=\"esa-app-bar esa-app-bar--brand-strong cbf-app-bar--admin\">\n  <div class=\"esa-app-bar__row\">\n    <div class=\"esa-app-bar__start\">\n      <div class=\"cbf-nav-collapsible\">\n        <button class=\"esa-icon-link esa-icon-link--sm esa-icon-link--medium\" type=\"button\">\n          <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n            <svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <ellipse cx=\"12\" cy=\"5\" rx=\"9\" ry=\"3\"></ellipse>\n              <path d=\"M3 5V19A9 3 0 0 0 21 19V5\"></path>\n              <path d=\"M3 12A9 3 0 0 0 21 12\"></path>\n            </svg>\n          </span>\n          <span class=\"esa-icon-link__label\">Data management</span>\n          <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n            <svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path>\n            </svg>\n          </span>\n        </button>\n        <button class=\"esa-icon-link esa-icon-link--sm esa-icon-link--medium\" type=\"button\">\n          <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n            <svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path\n                d=\"M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2\"\n              ></path>\n            </svg>\n          </span>\n          <span class=\"esa-icon-link__label\">System status</span>\n          <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n            <svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path>\n            </svg>\n          </span>\n        </button>\n        <button class=\"esa-icon-link esa-icon-link--sm esa-icon-link--medium\" type=\"button\">\n          <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n            <svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path\n                d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\"\n              ></path>\n              <circle cx=\"12\" cy=\"12\" r=\"3\"></circle>\n            </svg>\n          </span>\n          <span class=\"esa-icon-link__label\">System configuration</span>\n          <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n            <svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path>\n            </svg>\n          </span>\n        </button>\n      </div>\n    </div>\n    <div class=\"esa-app-bar__main\">\n      <button class=\"cbf-omni-trigger\" type=\"button\" data-omni-open=\"\" aria-label=\"Search\">\n        <span class=\"cbf-icon\"\n          ><svg\n            width=\"14\"\n            height=\"14\"\n            viewBox=\"0 0 24 24\"\n            fill=\"none\"\n            stroke=\"currentColor\"\n            stroke-width=\"2\"\n            stroke-linecap=\"round\"\n            stroke-linejoin=\"round\"\n            aria-hidden=\"true\"\n          >\n            <circle cx=\"11\" cy=\"11\" r=\"8\"></circle>\n            <path d=\"m21 21-4.3-4.3\"></path></svg\n        ></span>\n        <span class=\"cbf-omni-trigger__ph\">Search projects, contracts, people…</span>\n        <kbd class=\"cbf-omni-trigger__kbd\">/</kbd>\n      </button>\n    </div>\n    <div class=\"esa-app-bar__end\">\n      <div class=\"cbf-nav-collapsible\">\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--end\">\n          <summary class=\"esa-icon-link esa-icon-link--sm esa-icon-link--medium\">\n            <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n              <svg\n                width=\"14\"\n                height=\"14\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n                <path d=\"M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3\"></path>\n                <path d=\"M12 17h.01\"></path>\n              </svg>\n            </span>\n            <span class=\"esa-icon-link__label\">Help</span>\n            <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n              <svg\n                width=\"14\"\n                height=\"14\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head\">Help</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li>Help center</li>\n                <li>Data dictionary</li>\n                <li>EF&amp;W Program documents</li>\n                <li>Request support</li>\n                <li>Send feedback</li>\n              </ul>\n            </div>\n          </div>\n        </details>\n      </div>\n    </div>\n  </div>\n</nav>\n",
+      "css": ".cbf-app-bar--admin {\n  --app-bar-pad-y: var(--spacing-300);\n}\n.cbf-app-bar--admin .esa-app-bar__row {\n  display: grid;\n  grid-template-columns: 1fr minmax(0, 380px) 1fr;\n}\n.cbf-app-bar--admin .esa-app-bar__start {\n  justify-self: start;\n}\n.cbf-nav-collapsible {\n  display: contents;\n}\n.cbf-app-bar--admin .esa-app-bar__main {\n  justify-content: center;\n}\n.cbf-omni-trigger {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-200);\n  width: 380px;\n  max-width: 100%;\n  padding: 5px var(--spacing-200) 5px var(--spacing-300);\n  background: #ffffff1a;\n  border: 1px solid rgba(255, 255, 255, 0.22);\n  border-radius: 999px;\n  color: #ffffffbf;\n  transition:\n    background 0.12s,\n    border-color 0.12s;\n}\n.cbf-app-bar--admin .cbf-omni-trigger {\n  min-width: 0;\n}\n.cbf-icon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: inherit;\n}\n.cbf-omni-trigger__ph {\n  flex: 1;\n  min-width: 0;\n  text-align: left;\n  font-size: 13px;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.cbf-omni-trigger__kbd {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 18px;\n  height: 18px;\n  padding: 0 5px;\n  font-family: var(--font-sans);\n  font-size: 13px;\n  font-weight: var(--font-weight-medium);\n  color: #ffffffd9;\n  background: #ffffff1f;\n  border: 1px solid rgba(255, 255, 255, 0.25);\n  border-radius: 4px;\n}\n.cbf-app-bar--admin .esa-app-bar__end {\n  justify-self: end;\n}\n.esa-nav-dropdown {\n  position: relative;\n}\n.esa-nav-dropdown .esa-icon-link > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.cbf-nav-link .cbf-icon {\n  display: inline-flex;\n  align-items: center;\n}\n.esa-link-column {\n  color: inherit;\n}\n.esa-link-column__head {\n  display: block;\n  margin: 0 0 var(--spacing-100, 4px);\n  font-size: var(--link-column-heading-font-size, var(--type-size-200, 1rem));\n  font-weight: var(--font-weight-medium, 500);\n  color: inherit;\n  text-decoration: none;\n}\n.esa-link-column__rule {\n  height: 1px;\n  border: 0;\n  margin: 0 0 var(--spacing-200, 8px);\n  background: var(--link-column-rule-color, color-mix(in srgb, currentColor 40%, transparent));\n}\n.esa-link-column__list {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n.esa-link-column__list li {\n  font-size: var(--link-column-item-font-size, var(--type-size-150, 0.875rem));\n  line-height: 22px;\n  margin-bottom: var(--spacing-100, 4px);\n}\n.esa-link-column__list a {\n  color: inherit;\n  text-decoration: none;\n}\n.cbf-app-bar--admin {\n  --app-bar-gap: var(--spacing-650);\n}\n.esa-app-bar {\n  --_bar-gap: var(--app-bar-gap, var(--spacing-600, 32px));\n  --_bar-pad-x: var(--app-bar-pad-x, var(--spacing-600, 32px));\n  --_bar-pad-y: var(--app-bar-pad-y, var(--spacing-400, 16px));\n  display: block;\n  width: 100%;\n  background: var(--app-bar-bg, var(--color-surface, #fff));\n  color: var(--app-bar-text, var(--color-text-primary, #171717));\n}\n.esa-app-bar--brand-strong {\n  background: var(--app-bar-brand-strong-bg, var(--color-surface-inverse, #171717));\n  color: var(--app-bar-brand-strong-text, var(--color-text-inverse, #fff));\n}\n.esa-app-bar__row {\n  display: flex;\n  align-items: center;\n  gap: var(--_bar-gap);\n  padding: var(--_bar-pad-y) var(--_bar-pad-x);\n}\n.esa-app-bar__start,\n.esa-app-bar__main,\n.esa-app-bar__end {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--_bar-gap);\n}\n.esa-app-bar__start {\n  flex: none;\n}\n.esa-icon-link {\n  --_il-font: var(--icon-link-font-size-md, 1rem);\n  display: inline-flex;\n  align-items: center;\n  gap: var(--icon-link-gap, var(--spacing-150, 6px));\n  padding: 0;\n  margin: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font-family: var(--font-sans, system-ui, sans-serif);\n  font-size: var(--_il-font);\n  font-weight: var(--font-weight-medium, 500);\n  line-height: 1;\n  text-decoration: none;\n  cursor: pointer;\n  white-space: nowrap;\n}\n.esa-icon-link--sm {\n  --_il-font: var(--icon-link-font-size-sm, 0.875rem);\n}\n.esa-icon-link--medium {\n  font-weight: var(--font-weight-medium, 500);\n}\n.esa-icon-link__label {\n  display: inline-block;\n}\n.esa-app-bar__main {\n  flex: 1 1 auto;\n}\n.esa-app-bar__end {\n  flex: none;\n  margin-left: auto;\n}\nsummary.esa-icon-link {\n  list-style: none;\n}\n.esa-app-bar--brand {\n  background: var(--app-bar-brand-bg, var(--color-primary, #43608a));\n  color: var(--app-bar-brand-text, var(--color-text-inverse, #fff));\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  line-height: 1;\n  color: inherit;\n}\n.esa-icon--xs {\n  --_icon-size: var(--icon-size-xs, 14px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-icon--sm {\n  --_icon-size: var(--icon-size-sm, var(--icon-size-small, 16px));\n}\n",
+      "tokens": [
+        {
+          "name": "--app-bar-bg",
+          "value": "#fcfcfc",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-brand-bg",
+          "value": "#1e5386",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-brand-strong-bg",
+          "value": "#13273e",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-brand-strong-text",
+          "value": "#fcfcfc",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-brand-text",
+          "value": "#fcfcfc",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-gap",
+          "value": "2.5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-pad-x",
+          "value": "2rem",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-pad-y",
+          "value": ".75rem",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-text",
+          "value": "#3d3d3d",
+          "tier": "component"
+        },
+        {
+          "name": "--color-primary",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-surface",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-surface-inverse",
+          "value": "#13273e",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-text-inverse",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-text-primary",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--font-sans",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-weight-medium",
+          "value": "500",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-link-font-size-md",
+          "value": "1rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-link-font-size-sm",
+          "value": ".875rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-link-gap",
+          "value": ".375rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-md",
+          "value": "20px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-medium",
+          "value": "20px",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-sm",
+          "value": "16px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-small",
+          "value": "16px",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-xs",
+          "value": "14px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--link-column-heading-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "component"
+        },
+        {
+          "name": "--link-column-item-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "component"
+        },
+        {
+          "name": "--link-column-rule-color",
+          "value": "color-mix(in srgb, currentColor 40%, transparent)",
+          "tier": "component"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-150",
+          "value": ".375rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-600",
+          "value": "2rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-650",
+          "value": "2.5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-150",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-200",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "primitive"
+        }
+      ],
+      "claudePath": "claude/nav.md",
+      "repoPath": "public/handoff/project-budgets/claude/nav.md"
+    },
+    {
+      "index": 1,
+      "label": "Header",
+      "tag": "header",
+      "html": "<header class=\"esa-app-bar esa-app-bar--brand cbf-app-bar--header\">\n  <div class=\"esa-app-bar__row\">\n    <div class=\"esa-app-bar__start\">\n      <span class=\"cbf-nav-burger\" data-nav-toggle=\"\">\n        <button\n          class=\"esa-icon-button esa-icon-button--md\"\n          type=\"button\"\n          aria-label=\"Open menu\"\n          title=\"Open menu\"\n        >\n          <span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n            <svg\n              width=\"20\"\n              height=\"20\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <line x1=\"4\" x2=\"20\" y1=\"6\" y2=\"6\"></line>\n              <line x1=\"4\" x2=\"20\" y1=\"12\" y2=\"12\"></line>\n              <line x1=\"4\" x2=\"20\" y1=\"18\" y2=\"18\"></line>\n            </svg>\n          </span>\n        </button>\n      </span>\n      <a\n        class=\"cbf-logo\"\n        href=\"/cb-fish-design/home\"\n        title=\"Columbia Basin Fish &amp; Wildlife Program\"\n      >\n        <img class=\"cbf-logo__mark\" src=\"/cb-fish-design/logo-mark.svg\" alt=\"\" />\n        <img\n          class=\"cbf-logo__type\"\n          src=\"/cb-fish-design/logo-type.svg\"\n          alt=\"Columbia Basin Fish &amp; Wildlife Program\"\n        />\n      </a>\n    </div>\n    <div class=\"esa-app-bar__main\">\n      <div class=\"cbf-nav-collapsible cbf-nav-collapsible--inline\">\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n          <summary class=\"esa-icon-link esa-icon-link--md esa-icon-link--medium\">\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z\"></path>\n                <path d=\"M7 16v6\"></path>\n                <path d=\"M13 19v3\"></path>\n                <path\n                  d=\"M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5\"\n                ></path>\n              </svg>\n            </span>\n            <span class=\"esa-icon-link__label\">Mitigation work</span>\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head\">Mitigation work</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li>Projects</li>\n                <li>Contracts</li>\n                <li>Portfolios</li>\n                <li>Work elements</li>\n                <li>Estuary program</li>\n                <li>Tributary habitat</li>\n                <li>Land acquisitions</li>\n              </ul>\n            </div>\n          </div>\n        </details>\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n          <summary class=\"esa-icon-link esa-icon-link--md esa-icon-link--medium\">\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"M16 7h6v6\"></path>\n                <path d=\"m22 7-8.5 8.5-5-5L2 17\"></path>\n              </svg>\n            </span>\n            <span class=\"esa-icon-link__label\">Reporting</span>\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head\">Reporting</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li>Report Center</li>\n                <li>Maps</li>\n                <li>Publications</li>\n              </ul>\n            </div>\n          </div>\n        </details>\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n          <summary class=\"esa-icon-link esa-icon-link--md esa-icon-link--medium\">\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <rect width=\"20\" height=\"14\" x=\"2\" y=\"5\" rx=\"2\"></rect>\n                <line x1=\"2\" x2=\"22\" y1=\"10\" y2=\"10\"></line>\n              </svg>\n            </span>\n            <span class=\"esa-icon-link__label\">Funding</span>\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head\">Funding</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li>Funds</li>\n                <li>Fund budgets summary</li>\n                <li>Long-term funding agreements</li>\n                <li>Start-of-year (SOY) budgets</li>\n                <li>Working budgets</li>\n                <li>Budget change requests</li>\n                <li>Expenditures</li>\n                <li>Accruals</li>\n              </ul>\n            </div>\n          </div>\n        </details>\n      </div>\n    </div>\n    <div class=\"esa-app-bar__end\">\n      <div class=\"cbf-nav-actions\">\n        <button class=\"cbf-nav-link cbf-nav-link--collapse\" type=\"button\">\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path>\n              <path d=\"M3 3v5h5\"></path>\n              <path d=\"M12 7v5l4 2\"></path></svg\n          ></span>\n          Recent\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path></svg\n          ></span>\n        </button>\n        <a class=\"cbf-nav-link cbf-nav-link--collapse\" href=\"#\">\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <rect width=\"7\" height=\"9\" x=\"3\" y=\"3\" rx=\"1\"></rect>\n              <rect width=\"7\" height=\"5\" x=\"14\" y=\"3\" rx=\"1\"></rect>\n              <rect width=\"7\" height=\"9\" x=\"14\" y=\"12\" rx=\"1\"></rect>\n              <rect width=\"7\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\"></rect></svg\n          ></span>\n          Dashboard\n        </a>\n        <button class=\"cbf-nav-link cbf-nav-link--user\" type=\"button\" data-omni-user=\"\">\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n              <path d=\"M18 20a6 6 0 0 0-12 0\"></path>\n              <circle cx=\"12\" cy=\"10\" r=\"4\"></circle></svg\n          ></span>\n          Angela Zhao\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path></svg\n          ></span>\n        </button>\n      </div>\n    </div>\n  </div>\n</header>\n",
+      "css": ".cbf-app-bar--admin .esa-app-bar__row {\n  display: grid;\n  grid-template-columns: 1fr minmax(0, 380px) 1fr;\n}\n.cbf-app-bar--admin .esa-app-bar__start {\n  justify-self: start;\n}\n.cbf-nav-collapsible {\n  display: contents;\n}\n.cbf-app-bar--admin .esa-app-bar__main {\n  justify-content: center;\n}\n.cbf-icon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: inherit;\n}\n.cbf-app-bar--admin .esa-app-bar__end {\n  justify-self: end;\n}\n.esa-nav-dropdown {\n  position: relative;\n}\n.esa-nav-dropdown .esa-icon-link > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.cbf-nav-burger {\n  display: none;\n}\n.cbf-logo {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-300, 12px);\n  flex: none;\n  color: inherit;\n  text-decoration: none;\n}\n.cbf-logo__mark {\n  width: 48px;\n  height: 48px;\n  flex: none;\n}\n.cbf-logo__type {\n  height: 40px;\n  width: auto;\n}\n.cbf-nav-actions {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-600);\n}\n.cbf-nav-link {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  color: inherit;\n  background: none;\n  border: 0;\n  font-size: 16px;\n  font-weight: var(--font-weight-medium);\n  white-space: nowrap;\n}\n.cbf-nav-link .cbf-icon {\n  display: inline-flex;\n  align-items: center;\n}\n.cbf-nav-link--user {\n  position: relative;\n  padding-left: var(--spacing-500);\n}\n.cbf-nav-link--user:before {\n  content: \"\";\n  position: absolute;\n  left: 0;\n  top: 50%;\n  transform: translateY(-50%);\n  width: 1px;\n  height: 1.1em;\n  background: #ffffff40;\n}\n.esa-link-column {\n  color: inherit;\n}\n.esa-link-column__head {\n  display: block;\n  margin: 0 0 var(--spacing-100, 4px);\n  font-size: var(--link-column-heading-font-size, var(--type-size-200, 1rem));\n  font-weight: var(--font-weight-medium, 500);\n  color: inherit;\n  text-decoration: none;\n}\n.esa-link-column__rule {\n  height: 1px;\n  border: 0;\n  margin: 0 0 var(--spacing-200, 8px);\n  background: var(--link-column-rule-color, color-mix(in srgb, currentColor 40%, transparent));\n}\n.esa-link-column__list {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n.esa-link-column__list li {\n  font-size: var(--link-column-item-font-size, var(--type-size-150, 0.875rem));\n  line-height: 22px;\n  margin-bottom: var(--spacing-100, 4px);\n}\n.esa-link-column__list a {\n  color: inherit;\n  text-decoration: none;\n}\n.esa-app-bar {\n  --_bar-gap: var(--app-bar-gap, var(--spacing-600, 32px));\n  --_bar-pad-x: var(--app-bar-pad-x, var(--spacing-600, 32px));\n  --_bar-pad-y: var(--app-bar-pad-y, var(--spacing-400, 16px));\n  display: block;\n  width: 100%;\n  background: var(--app-bar-bg, var(--color-surface, #fff));\n  color: var(--app-bar-text, var(--color-text-primary, #171717));\n}\n.esa-app-bar--brand-strong {\n  background: var(--app-bar-brand-strong-bg, var(--color-surface-inverse, #171717));\n  color: var(--app-bar-brand-strong-text, var(--color-text-inverse, #fff));\n}\n.esa-app-bar__row {\n  display: flex;\n  align-items: center;\n  gap: var(--_bar-gap);\n  padding: var(--_bar-pad-y) var(--_bar-pad-x);\n}\n.esa-app-bar__start,\n.esa-app-bar__main,\n.esa-app-bar__end {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--_bar-gap);\n}\n.esa-app-bar__start {\n  flex: none;\n}\n.esa-icon-link {\n  --_il-font: var(--icon-link-font-size-md, 1rem);\n  display: inline-flex;\n  align-items: center;\n  gap: var(--icon-link-gap, var(--spacing-150, 6px));\n  padding: 0;\n  margin: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font-family: var(--font-sans, system-ui, sans-serif);\n  font-size: var(--_il-font);\n  font-weight: var(--font-weight-medium, 500);\n  line-height: 1;\n  text-decoration: none;\n  cursor: pointer;\n  white-space: nowrap;\n}\n.esa-icon-link--sm {\n  --_il-font: var(--icon-link-font-size-sm, 0.875rem);\n}\n.esa-icon-link--medium {\n  font-weight: var(--font-weight-medium, 500);\n}\n.esa-icon-link__label {\n  display: inline-block;\n}\n.esa-app-bar__main {\n  flex: 1 1 auto;\n}\n.esa-app-bar__end {\n  flex: none;\n  margin-left: auto;\n}\nsummary.esa-icon-link {\n  list-style: none;\n}\n.cbf-app-bar--header {\n  --app-bar-gap: var(--spacing-800);\n}\n.esa-app-bar--brand {\n  background: var(--app-bar-brand-bg, var(--color-primary, #43608a));\n  color: var(--app-bar-brand-text, var(--color-text-inverse, #fff));\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  line-height: 1;\n  color: inherit;\n}\n.esa-icon--xs {\n  --_icon-size: var(--icon-size-xs, 14px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-icon--sm {\n  --_icon-size: var(--icon-size-sm, var(--icon-size-small, 16px));\n}\n",
+      "tokens": [
+        {
+          "name": "--app-bar-bg",
+          "value": "#fcfcfc",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-brand-bg",
+          "value": "#1e5386",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-brand-strong-bg",
+          "value": "#13273e",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-brand-strong-text",
+          "value": "#fcfcfc",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-brand-text",
+          "value": "#fcfcfc",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-gap",
+          "value": "4rem",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-pad-x",
+          "value": "2rem",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-pad-y",
+          "value": "1rem",
+          "tier": "component"
+        },
+        {
+          "name": "--app-bar-text",
+          "value": "#3d3d3d",
+          "tier": "component"
+        },
+        {
+          "name": "--color-primary",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-surface",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-surface-inverse",
+          "value": "#13273e",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-text-inverse",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-text-primary",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--font-sans",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-weight-medium",
+          "value": "500",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-link-font-size-md",
+          "value": "1rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-link-font-size-sm",
+          "value": ".875rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-link-gap",
+          "value": ".375rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-md",
+          "value": "20px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-medium",
+          "value": "20px",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-sm",
+          "value": "16px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-small",
+          "value": "16px",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-xs",
+          "value": "14px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--link-column-heading-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "component"
+        },
+        {
+          "name": "--link-column-item-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "component"
+        },
+        {
+          "name": "--link-column-rule-color",
+          "value": "color-mix(in srgb, currentColor 40%, transparent)",
+          "tier": "component"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-150",
+          "value": ".375rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-500",
+          "value": "1.5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-600",
+          "value": "2rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-800",
+          "value": "4rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-150",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-200",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "primitive"
+        }
+      ],
+      "claudePath": "claude/header.md",
+      "repoPath": "public/handoff/project-budgets/claude/header.md"
+    },
+    {
+      "index": 2,
+      "label": "Omni",
+      "tag": "div",
+      "html": "<div class=\"cbf-omni\" data-omni=\"\" hidden=\"\">\n  <div class=\"cbf-omni__scrim\" data-omni-close=\"\"></div>\n  <div\n    class=\"cbf-omni__panel cbf-search-surface\"\n    role=\"dialog\"\n    aria-modal=\"true\"\n    aria-label=\"Search\"\n  >\n    <div class=\"cbf-omni__searchrow\">\n      <span class=\"cbf-icon cbf-omni__searchicon\"\n        ><svg\n          width=\"20\"\n          height=\"20\"\n          viewBox=\"0 0 24 24\"\n          fill=\"none\"\n          stroke=\"currentColor\"\n          stroke-width=\"2\"\n          stroke-linecap=\"round\"\n          stroke-linejoin=\"round\"\n          aria-hidden=\"true\"\n        >\n          <circle cx=\"11\" cy=\"11\" r=\"8\"></circle>\n          <path d=\"m21 21-4.3-4.3\"></path></svg\n      ></span>\n      <input\n        class=\"cbf-omni__input\"\n        data-omni-input=\"\"\n        type=\"text\"\n        placeholder=\"Search projects, contracts, people, publications…\"\n        autocomplete=\"off\"\n      />\n      <button class=\"cbf-omni__clear\" data-omni-clear=\"\" type=\"button\" aria-label=\"Clear\">\n        <span class=\"cbf-icon\"\n          ><svg\n            width=\"15\"\n            height=\"15\"\n            viewBox=\"0 0 24 24\"\n            fill=\"none\"\n            stroke=\"currentColor\"\n            stroke-width=\"2\"\n            stroke-linecap=\"round\"\n            stroke-linejoin=\"round\"\n            aria-hidden=\"true\"\n          >\n            <path d=\"M18 6 6 18\"></path>\n            <path d=\"m6 6 12 12\"></path></svg\n        ></span>\n      </button>\n    </div>\n    <div class=\"cbf-omni__scopes\" data-omni-scopes=\"\"></div>\n    <div class=\"cbf-omni__body\">\n      <!-- default view: brand illustration + search note (Recent lives in the nav) -->\n      <div class=\"cbf-omni__empty\" data-omni-empty=\"\">\n        <div class=\"cbf-omni__hero\">\n          <img class=\"cbf-omni__art\" src=\"/cb-fish-design/dam-illustration.jpg\" alt=\"\" />\n          <p class=\"cbf-omni__hero-title\">Search the Program</p>\n          <p class=\"cbf-omni__hero-note\">\n            Find projects, contracts, people, and publications across the Columbia Basin. Start\n            typing, or press <kbd class=\"esa-kbd\">Tab</kbd> to choose a scope.\n          </p>\n        </div>\n      </div>\n      <!-- query view: grouped results (injected) -->\n      <div class=\"cbf-omni__results\" data-omni-results=\"\" hidden=\"\"></div>\n    </div>\n    <button class=\"cbf-omni__showall\" data-omni-showall=\"\" type=\"button\" hidden=\"\">\n      <span data-omni-showall-label=\"\">Show all results</span>\n      <span class=\"cbf-icon\"\n        ><svg\n          width=\"18\"\n          height=\"18\"\n          viewBox=\"0 0 24 24\"\n          fill=\"none\"\n          stroke=\"currentColor\"\n          stroke-width=\"2\"\n          stroke-linecap=\"round\"\n          stroke-linejoin=\"round\"\n          aria-hidden=\"true\"\n        >\n          <path d=\"m9 18 6-6-6-6\"></path></svg\n      ></span>\n    </button>\n    <div class=\"cbf-omni__footer\">\n      <div class=\"cbf-omni__hints\">\n        <span><kbd class=\"esa-kbd\">↑</kbd> <kbd class=\"esa-kbd\">↓</kbd> Navigate</span>\n        <span><kbd class=\"esa-kbd\">↵</kbd> Select</span>\n        <span><kbd class=\"esa-kbd\">Tab</kbd> Scope</span>\n        <span><kbd class=\"esa-kbd\">Esc</kbd> Close</span>\n      </div>\n    </div>\n  </div>\n</div>\n",
+      "css": ".cbf-omni-trigger {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-200);\n  width: 380px;\n  max-width: 100%;\n  padding: 5px var(--spacing-200) 5px var(--spacing-300);\n  background: #ffffff1a;\n  border: 1px solid rgba(255, 255, 255, 0.22);\n  border-radius: 999px;\n  color: #ffffffbf;\n  transition:\n    background 0.12s,\n    border-color 0.12s;\n}\n.cbf-app-bar--admin .cbf-omni-trigger {\n  min-width: 0;\n}\n.cbf-icon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: inherit;\n}\n.cbf-omni-trigger__ph {\n  flex: 1;\n  min-width: 0;\n  text-align: left;\n  font-size: 13px;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.cbf-omni-trigger__kbd {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 18px;\n  height: 18px;\n  padding: 0 5px;\n  font-family: var(--font-sans);\n  font-size: 13px;\n  font-weight: var(--font-weight-medium);\n  color: #ffffffd9;\n  background: #ffffff1f;\n  border: 1px solid rgba(255, 255, 255, 0.25);\n  border-radius: 4px;\n}\n.cbf-nav-link .cbf-icon {\n  display: inline-flex;\n  align-items: center;\n}\n.cbf-omni {\n  position: fixed;\n  inset: 0;\n  z-index: 80;\n}\n.cbf-omni[hidden] {\n  display: none;\n}\n",
+      "tokens": [
+        {
+          "name": "--font-sans",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-weight-medium",
+          "value": "500",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        }
+      ],
+      "claudePath": "claude/omni.md",
+      "repoPath": "public/handoff/project-budgets/claude/omni.md"
+    },
+    {
+      "index": 3,
+      "label": "Nav drawer",
+      "tag": "esa-side-dialog",
+      "html": "<esa-side-dialog\n  position=\"left\"\n  heading=\"Menu\"\n  size=\"sm\"\n  class=\"cbf-nav-drawer\"\n  data-nav-drawer=\"true\"\n>\n  <nav class=\"stack\" data-gap=\"lg\" aria-label=\"Site navigation\">\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head\">Mitigation work</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li>Projects</li>\n        <li>Contracts</li>\n        <li>Portfolios</li>\n        <li>Work elements</li>\n        <li>Estuary program</li>\n        <li>Tributary habitat</li>\n        <li>Land acquisitions</li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head\">Reporting</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li>Report Center</li>\n        <li>Maps</li>\n        <li>Publications</li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head\">Funding</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li>Funds</li>\n        <li>Fund budgets summary</li>\n        <li>Long-term funding agreements</li>\n        <li>Start-of-year (SOY) budgets</li>\n        <li>Working budgets</li>\n        <li>Budget change requests</li>\n        <li>Expenditures</li>\n        <li>Accruals</li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head\">Quick links</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li><a href=\"#\">Recent</a></li>\n        <li><a href=\"#\">Dashboard</a></li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head\">System</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li>Data management</li>\n        <li>System status</li>\n        <li>System configuration</li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head\">Help</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li>Help center</li>\n        <li>Data dictionary</li>\n        <li>EF&amp;W Program documents</li>\n        <li>Request support</li>\n        <li>Send feedback</li>\n      </ul>\n    </div>\n  </nav>\n</esa-side-dialog>\n",
+      "css": ".esa-link-column {\n  color: inherit;\n}\n.esa-link-column__head {\n  display: block;\n  margin: 0 0 var(--spacing-100, 4px);\n  font-size: var(--link-column-heading-font-size, var(--type-size-200, 1rem));\n  font-weight: var(--font-weight-medium, 500);\n  color: inherit;\n  text-decoration: none;\n}\n.esa-link-column__rule {\n  height: 1px;\n  border: 0;\n  margin: 0 0 var(--spacing-200, 8px);\n  background: var(--link-column-rule-color, color-mix(in srgb, currentColor 40%, transparent));\n}\n.esa-link-column__list {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n.esa-link-column__list li {\n  font-size: var(--link-column-item-font-size, var(--type-size-150, 0.875rem));\n  line-height: 22px;\n  margin-bottom: var(--spacing-100, 4px);\n}\n.esa-link-column__list a {\n  color: inherit;\n  text-decoration: none;\n}\n.stack {\n  --gap: var(--spacing-400, 1rem);\n  display: flex;\n  flex-direction: column;\n  gap: var(--gap);\n}\n",
+      "tokens": [
+        {
+          "name": "--font-weight-medium",
+          "value": "500",
+          "tier": "primitive"
+        },
+        {
+          "name": "--link-column-heading-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "component"
+        },
+        {
+          "name": "--link-column-item-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "component"
+        },
+        {
+          "name": "--link-column-rule-color",
+          "value": "color-mix(in srgb, currentColor 40%, transparent)",
+          "tier": "component"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-150",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-200",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "primitive"
+        }
+      ],
+      "claudePath": "claude/nav-drawer.md",
+      "repoPath": "public/handoff/project-budgets/claude/nav-drawer.md"
+    },
+    {
+      "index": 4,
+      "label": "Main",
+      "tag": "main",
+      "html": "<main class=\"cbf-page\">\n  <div class=\"esa-container\" style=\"--_container-max: 1920px\">\n    <section class=\"cbf-app-panel\">\n      <div class=\"cbf-app-panel__crumb\">\n        <nav class=\"esa-breadcrumbs esa-breadcrumbs--md\" aria-label=\"Breadcrumb\">\n          <ol class=\"esa-breadcrumbs__list\">\n            <li class=\"esa-breadcrumbs__item\">\n              <a href=\"/cb-fish-design/home\" class=\"esa-breadcrumbs__link\">\n                <span class=\"esa-breadcrumbs__icon\"\n                  ><svg\n                    width=\"14\"\n                    height=\"14\"\n                    viewBox=\"0 0 24 24\"\n                    fill=\"none\"\n                    stroke=\"currentColor\"\n                    stroke-width=\"2\"\n                    stroke-linecap=\"round\"\n                    stroke-linejoin=\"round\"\n                    aria-hidden=\"true\"\n                  >\n                    <path d=\"m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"></path>\n                    <path d=\"M9 22V12h6v10\"></path></svg\n                ></span>\n                Home\n              </a>\n              <svg\n                class=\"esa-breadcrumbs__separator\"\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                aria-hidden=\"true\"\n              >\n                <path d=\"m9 18 6-6-6-6\"></path>\n              </svg>\n            </li>\n            <li class=\"esa-breadcrumbs__item\">\n              <span class=\"esa-breadcrumbs__current\"> Funding </span>\n              <svg\n                class=\"esa-breadcrumbs__separator\"\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                aria-hidden=\"true\"\n              >\n                <path d=\"m9 18 6-6-6-6\"></path>\n              </svg>\n            </li>\n            <li class=\"esa-breadcrumbs__item\" aria-current=\"page\">\n              <span class=\"esa-breadcrumbs__current\"> Project budgets </span>\n            </li>\n          </ol>\n        </nav>\n      </div>\n      <div class=\"cbf-app-panel__body\">\n        <div class=\"cbf-app-panel__content\">\n          <h1 class=\"cbf-page-heading\">Project budgets: Summary</h1>\n          <nav class=\"cbf-report-tabs\" aria-label=\"Project budget sections\">\n            <a class=\"cbf-report-tabs__tab is-active\" href=\"#\" aria-current=\"page\">Summary</a\n            ><a class=\"cbf-report-tabs__tab\" href=\"#\">Baselines</a\n            ><a class=\"cbf-report-tabs__tab\" href=\"#\">Start-of-year (SOY)</a\n            ><a class=\"cbf-report-tabs__tab\" href=\"#\">Decisions</a\n            ><a class=\"cbf-report-tabs__tab\" href=\"#\">Change requests (BOG)</a>\n            <details class=\"cbf-report-tabs__related\">\n              <summary class=\"cbf-report-tabs__tab cbf-report-tabs__related-trigger\">\n                Related items<span class=\"cbf-report-tabs__chev\"\n                  ><svg\n                    width=\"14\"\n                    height=\"14\"\n                    viewBox=\"0 0 24 24\"\n                    fill=\"none\"\n                    stroke=\"currentColor\"\n                    stroke-width=\"2\"\n                    stroke-linecap=\"round\"\n                    stroke-linejoin=\"round\"\n                    aria-hidden=\"true\"\n                  >\n                    <path d=\"m6 9 6 6 6-6\"></path></svg\n                ></span>\n              </summary>\n              <div class=\"cbf-report-tabs__menu\" role=\"menu\">\n                <a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\">Reviews</a\n                ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\">Featured reviews</a>\n              </div>\n            </details>\n          </nav>\n          <section class=\"cbf-report-intro\">\n            <figure class=\"cbf-report-intro__media\">\n              <img\n                src=\"/cb-fish-design/project-budgets-hero.jpg\"\n                alt=\"A Columbia River Gorge stream in autumn\"\n                loading=\"lazy\"\n              />\n            </figure>\n            <div class=\"cbf-report-intro__copy\">\n              <p class=\"cbf-report-intro__lede\">\n                BPA financial analysts manage budgets at a project level by fiscal year and fund.\n              </p>\n              <p class=\"cbf-report-intro__body\">\n                Every year, project budgets are set for the majority of the F&amp;W Program through\n                the start-of-year (SOY) process, in which financial analysts and project managers\n                discuss project budget needs and finalize budgets for the fiscal year. Throughout\n                the year, budget decisions and transfers are documented to track funding changes to\n                project working budgets.\n              </p>\n            </div>\n          </section>\n          <section class=\"cbf-related-items\" id=\"related-items\" aria-label=\"Related items\">\n            <h2 class=\"cbf-related-items__head type-section-title\">Related items</h2>\n            <div class=\"cbf-related-items__grid grid\">\n              <div class=\"esa-card esa-card--outlined\">\n                <div class=\"esa-card__header\">\n                  <div class=\"esa-card__header-content\">\n                    <div class=\"esa-card__titles\"><h3 class=\"esa-card__title\">Reviews</h3></div>\n                  </div>\n                </div>\n                <div class=\"esa-card__body\">\n                  <div class=\"cbf-related-items__card\">\n                    <p class=\"cbf-related-items__overview\">\n                      <strong>Overview:</strong> Review project budgets across fiscal years and\n                      funds — open a working budget to inspect its baseline, start-of-year amount,\n                      and the decisions and transfers applied through the year.\n                    </p>\n                  </div>\n                </div>\n                <div class=\"esa-card__footer\">\n                  <div class=\"cbf-related-items__foot\">\n                    <span\n                      class=\"esa-button esa-button--color-primary esa-button--appearance-fill esa-button--sm\"\n                    >\n                      <a class=\"esa-button__native\" href=\"#\" role=\"button\">\n                        <span class=\"esa-button__label\"> View page </span>\n                      </a>\n                    </span>\n                  </div>\n                </div>\n              </div>\n              <div class=\"esa-card esa-card--outlined\">\n                <div class=\"esa-card__header\">\n                  <div class=\"esa-card__header-content\">\n                    <div class=\"esa-card__titles\">\n                      <h3 class=\"esa-card__title\">Featured reviews</h3>\n                    </div>\n                  </div>\n                </div>\n                <div class=\"esa-card__body\">\n                  <div class=\"cbf-related-items__card\">\n                    <p class=\"cbf-related-items__overview\">\n                      <strong>Overview:</strong> Curated budget reviews highlighted for quick access\n                      — the project budget views financial analysts and project managers return to\n                      most often.\n                    </p>\n                  </div>\n                </div>\n                <div class=\"esa-card__footer\">\n                  <div class=\"cbf-related-items__foot\">\n                    <span\n                      class=\"esa-button esa-button--color-primary esa-button--appearance-fill esa-button--sm\"\n                    >\n                      <a class=\"esa-button__native\" href=\"#\" role=\"button\">\n                        <span class=\"esa-button__label\"> View page </span>\n                      </a>\n                    </span>\n                  </div>\n                </div>\n              </div>\n            </div>\n          </section>\n        </div>\n      </div>\n    </section>\n  </div>\n</main>\n",
+      "css": ".cbf-page {\n  padding-block: var(--spacing-600) var(--spacing-800);\n}\n.cbf-report-tabs {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: var(--spacing-100);\n  padding: var(--spacing-150);\n  border: 1px solid var(--color-border);\n  border-radius: var(--radius-200, 8px);\n  background: var(--color-gray-50, #f4f5f7);\n}\n.cbf-report-tabs__tab {\n  padding: var(--spacing-200) var(--spacing-300);\n  border-radius: var(--radius-100);\n  color: var(--color-primary);\n  font-size: 16px;\n  font-weight: var(--font-weight-medium);\n  white-space: nowrap;\n}\n.cbf-report-tabs__tab.is-active {\n  background: var(--color-surface, #fff);\n  color: var(--color-surface-inverse);\n  font-weight: var(--font-weight-semibold);\n  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-surface-inverse) 12%, transparent);\n}\n.cbf-report-tabs__related {\n  position: relative;\n  margin-left: auto;\n}\n.cbf-report-tabs__related-trigger {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-150);\n  list-style: none;\n  cursor: pointer;\n}\n.cbf-report-tabs__chev {\n  display: inline-flex;\n  transition: transform 0.12s ease;\n}\n.cbf-report-intro {\n  display: grid;\n  grid-template-columns: minmax(280px, 38%) 1fr;\n  gap: var(--spacing-700, 2.5rem);\n  align-items: stretch;\n}\n.cbf-report-intro__media {\n  margin: 0;\n  align-self: start;\n  aspect-ratio: 3 / 2;\n  border-radius: var(--radius-100);\n  overflow: hidden;\n  background: var(--color-surface-sunken);\n}\n.cbf-report-intro__media img {\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  object-position: center bottom;\n}\n.cbf-report-intro__copy {\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-400);\n  justify-content: center;\n  min-width: 0;\n}\n.cbf-report-intro__lede {\n  margin: 0;\n  font-size: 24px;\n  line-height: 1.4;\n  font-weight: var(--font-weight-semibold);\n  color: var(--color-text-primary);\n}\n.cbf-report-intro__body {\n  margin: 0;\n  font-size: 18px;\n  line-height: 1.6;\n  color: var(--color-text-secondary);\n}\n.cbf-related-items {\n  padding-top: var(--spacing-600);\n  border-top: 1px solid var(--color-border);\n}\n.cbf-related-items__head {\n  margin: 0 0 var(--spacing-400);\n}\n.cbf-related-items__grid {\n  --grid-min: 20rem;\n}\n.cbf-related-items__card {\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-300);\n}\n.cbf-related-items__overview {\n  margin: 0;\n  font-size: 16px;\n  line-height: 1.5;\n  color: var(--color-text-secondary);\n}\n.cbf-related-items__overview strong,\n.cbf-related-items__meta strong {\n  color: var(--color-text-primary);\n}\n.cbf-related-items__foot {\n  display: flex;\n  justify-content: flex-end;\n}\n.esa-button {\n  --_btn-height: var(--form-height-md, 40px);\n  --_btn-padding-x: var(--form-padding-x-md, 16px);\n  --_btn-font-size: var(--form-font-size-md, 14px);\n  --_btn-radius: var(--form-radius-md, 6px);\n  --_accent: var(--color-primary, #46a758);\n  --_accent-hover: var(--color-primary-hover, #3e9b4f);\n  --_on: var(--color-text-inverse, #ffffff);\n  --_accent-text: var(--_accent);\n  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);\n  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);\n  display: inline-block;\n}\n.esa-button--sm {\n  --_btn-height: var(--form-height-sm, 32px);\n  --_btn-padding-x: var(--form-padding-x-sm, 12px);\n  --_btn-font-size: var(--form-font-size-sm, 12px);\n  --_btn-radius: var(--form-radius-sm, 4px);\n}\n.esa-button--color-primary {\n  --_accent-text: var(--color-primary-strong);\n}\n.esa-button__native {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: var(--spacing-200, 8px);\n  width: 100%;\n  height: var(--_btn-height);\n  padding-inline: var(--_btn-padding-x);\n  border: 1px solid transparent;\n  border-radius: var(--_btn-radius);\n  font-size: var(--_btn-font-size);\n  font-family: var(--font-sans, system-ui, sans-serif);\n  font-weight: var(--font-weight-medium, 500);\n  line-height: 1;\n  text-decoration: none;\n  cursor: pointer;\n  transition:\n    background var(--transition-fast, 0.15s ease),\n    border-color var(--transition-fast, 0.15s ease);\n  -webkit-appearance: none;\n  appearance: none;\n}\n.esa-button--appearance-fill .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: transparent;\n}\n.esa-button__label {\n  white-space: nowrap;\n}\n.esa-container {\n  width: 100%;\n  max-width: var(--_container-max, 1556px);\n  margin-inline: auto;\n  padding-inline: var(--container-gutter, var(--spacing-600, 2rem));\n}\n.type-section-title {\n  font-family: var(--font-display, var(--font-sans));\n  font-size: var(--type-size-500);\n  font-weight: var(--font-weight-semibold);\n  line-height: var(--line-height-tight);\n  letter-spacing: var(--letter-spacing-tight);\n}\n.esa-card {\n  --_card-bg: var(--card-bg, var(--color-surface, #ffffff));\n  --_card-border: var(--card-border-color, var(--color-border, #e5e5e5));\n  --_card-radius: var(--card-radius, var(--radius-300, 0.5rem));\n  --_card-padding: var(--card-padding, var(--spacing-500, 1.5rem));\n  --_card-header-bg: var(--card-header-bg, transparent);\n  --_card-header-color: var(--card-header-color, var(--color-text-primary, #171717));\n  --_card-header-border: var(--card-header-border-color, var(--color-border-light, #efefef));\n  display: block;\n  background: var(--_card-bg);\n  border: 1px solid var(--_card-border);\n  border-radius: var(--_card-radius);\n  overflow: hidden;\n}\n.esa-card--outlined {\n  --_card-border: var(--color-border, #e5e5e5);\n}\n.esa-card__header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: var(--spacing-400, 1rem) var(--_card-padding);\n  background: var(--_card-header-bg);\n  color: var(--_card-header-color);\n  border-bottom: 1px solid var(--_card-header-border);\n  min-height: 56px;\n}\n.esa-card__header-content {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-300, 0.75rem);\n}\n.esa-card__titles {\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-050, 0.125rem);\n}\n.esa-card__title {\n  font-size: var(--type-size-250, 1.0625rem);\n  font-weight: 600;\n  margin: 0;\n  color: inherit;\n  font-family: var(--font-sans, \"DM Sans\", sans-serif);\n}\n.esa-card__body {\n  padding: var(--_card-padding);\n}\n.esa-card__footer {\n  padding: var(--spacing-300, 0.75rem) var(--_card-padding);\n  border-top: 1px solid var(--_card-header-border);\n  background: var(--card-footer-bg, var(--color-surface-sunken, #efefef));\n}\n.grid {\n  --gap: var(--spacing-400, 1rem);\n  --grid-min: 16rem;\n  display: grid;\n  gap: var(--gap);\n  grid-template-columns: repeat(auto-fit, minmax(min(var(--grid-min), 100%), 1fr));\n}\n.cbf-app-panel {\n  display: flex;\n  flex-direction: column;\n  min-height: 80vh;\n  border: 1px solid var(--color-border);\n  border-radius: var(--radius-100);\n  overflow: hidden;\n  background: var(--color-surface);\n  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-surface-inverse) 8%, transparent);\n}\n.cbf-app-panel__crumb {\n  background: var(--color-gold-50);\n  border-bottom: 1px solid var(--color-border);\n  padding: var(--spacing-400) var(--spacing-600);\n}\n.esa-breadcrumbs {\n  --_crumb-font-size: var(--type-size-200, 0.875rem);\n  --_crumb-link-color: var(--breadcrumbs-link-color, #43608a);\n  --_crumb-link-hover: var(--breadcrumbs-link-hover, #39506f);\n  --_crumb-current-color: var(--color-text-primary, #171717);\n  --_crumb-separator-color: var(--breadcrumbs-separator-color, #737373);\n  --_crumb-gap: var(--spacing-200, 8px);\n  display: block;\n}\n.cbf-app-panel__crumb .esa-breadcrumbs {\n  --breadcrumbs-link-color: var(--color-text-secondary);\n  --breadcrumbs-link-hover: var(--color-primary);\n}\n.esa-breadcrumbs__list {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: var(--_crumb-gap);\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  font-size: var(--_crumb-font-size);\n}\n.esa-breadcrumbs__item {\n  display: flex;\n  align-items: center;\n  gap: var(--_crumb-gap);\n}\n.esa-breadcrumbs__link {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-100, 4px);\n  color: var(--_crumb-link-color);\n  text-decoration: none;\n}\n.esa-breadcrumbs__icon {\n  display: inline-flex;\n  align-items: center;\n}\n.esa-breadcrumbs__separator {\n  flex-shrink: 0;\n  color: var(--_crumb-separator-color);\n}\n.esa-breadcrumbs__current {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-100, 4px);\n  color: var(--_crumb-current-color);\n  font-weight: var(--font-weight-medium, 500);\n}\n.cbf-app-panel__body {\n  flex: 1;\n}\n.cbf-app-panel__content {\n  flex: 1;\n  min-width: 0;\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-400);\n  padding: var(--spacing-600);\n}\n.cbf-page-heading {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: var(--spacing-300, 12px);\n  margin: 0;\n  font-family: var(--font-display);\n  font-weight: var(--font-weight-medium);\n  font-size: 40px;\n  line-height: 40px;\n  letter-spacing: -1px;\n  color: var(--color-surface-inverse);\n}\n",
+      "tokens": [
+        {
+          "name": "--breadcrumbs-link-color",
+          "value": "#525252",
+          "tier": "component"
+        },
+        {
+          "name": "--breadcrumbs-link-hover",
+          "value": "#3d3d3d",
+          "tier": "component"
+        },
+        {
+          "name": "--breadcrumbs-separator-color",
+          "value": "#bbbbbb",
+          "tier": "component"
+        },
+        {
+          "name": "--card-bg",
+          "value": "#fcfcfc",
+          "tier": "component"
+        },
+        {
+          "name": "--card-border-color",
+          "value": "#dcdcdc",
+          "tier": "component"
+        },
+        {
+          "name": "--card-footer-bg",
+          "value": "#f3f7fc",
+          "tier": "component"
+        },
+        {
+          "name": "--card-header-bg",
+          "value": "transparent",
+          "tier": "component"
+        },
+        {
+          "name": "--card-header-border-color",
+          "value": "#efefef",
+          "tier": "component"
+        },
+        {
+          "name": "--card-header-color",
+          "value": "#3d3d3d",
+          "tier": "component"
+        },
+        {
+          "name": "--card-padding",
+          "value": "1.5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--card-radius",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--color-border",
+          "value": "#dcdcdc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-light",
+          "value": "#efefef",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-primary",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-primary-hover",
+          "value": "#1a4570",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-primary-strong",
+          "value": "#2a7e3b",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-surface",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-surface-inverse",
+          "value": "#13273e",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-surface-sunken",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-text-inverse",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-text-primary",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-text-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--container-gutter",
+          "value": "2rem",
+          "tier": "component"
+        },
+        {
+          "name": "--font-display",
+          "value": "\"IBM Plex Sans Condensed\", \"IBM Plex Sans\", sans-serif",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-sans",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-weight-medium",
+          "value": "500",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-weight-semibold",
+          "value": "600",
+          "tier": "primitive"
+        },
+        {
+          "name": "--form-font-size-md",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "component"
+        },
+        {
+          "name": "--form-font-size-sm",
+          "value": "clamp(.625rem, .56rem + .32vw, .75rem)",
+          "tier": "component"
+        },
+        {
+          "name": "--form-height-md",
+          "value": "40px",
+          "tier": "component"
+        },
+        {
+          "name": "--form-height-sm",
+          "value": "32px",
+          "tier": "component"
+        },
+        {
+          "name": "--form-padding-x-md",
+          "value": ".75rem",
+          "tier": "component"
+        },
+        {
+          "name": "--form-padding-x-sm",
+          "value": ".625rem",
+          "tier": "component"
+        },
+        {
+          "name": "--form-radius-md",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--form-radius-sm",
+          "value": ".25rem",
+          "tier": "component"
+        },
+        {
+          "name": "--letter-spacing-tight",
+          "value": "-.01em",
+          "tier": "primitive"
+        },
+        {
+          "name": "--line-height-tight",
+          "value": "1.3",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-300",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-050",
+          "value": ".125rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-150",
+          "value": ".375rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-500",
+          "value": "1.5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-600",
+          "value": "2rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-700",
+          "value": "3rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-800",
+          "value": "4rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--transition-fast",
+          "value": ".15s ease",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-200",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-250",
+          "value": "clamp(.8125rem, .71rem + .5vw, 1.0625rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--type-size-500",
+          "value": "clamp(1.125rem, .98rem + .72vw, 1.5rem)",
+          "tier": "primitive"
+        }
+      ],
+      "claudePath": "claude/main.md",
+      "repoPath": "public/handoff/project-budgets/claude/main.md"
+    }
+  ],
+  "full": {
+    "label": "Full page",
+    "html": "<nav class=\"esa-app-bar esa-app-bar--brand-strong cbf-app-bar--admin\">\n  <div class=\"esa-app-bar__row\">\n    <div class=\"esa-app-bar__start\">\n      <div class=\"cbf-nav-collapsible\">\n        <button class=\"esa-icon-link esa-icon-link--sm esa-icon-link--medium\" type=\"button\">\n          <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n            <svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <ellipse cx=\"12\" cy=\"5\" rx=\"9\" ry=\"3\"></ellipse>\n              <path d=\"M3 5V19A9 3 0 0 0 21 19V5\"></path>\n              <path d=\"M3 12A9 3 0 0 0 21 12\"></path>\n            </svg>\n          </span>\n          <span class=\"esa-icon-link__label\">Data management</span>\n          <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n            <svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path>\n            </svg>\n          </span>\n        </button>\n        <button class=\"esa-icon-link esa-icon-link--sm esa-icon-link--medium\" type=\"button\">\n          <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n            <svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path\n                d=\"M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2\"\n              ></path>\n            </svg>\n          </span>\n          <span class=\"esa-icon-link__label\">System status</span>\n          <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n            <svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path>\n            </svg>\n          </span>\n        </button>\n        <button class=\"esa-icon-link esa-icon-link--sm esa-icon-link--medium\" type=\"button\">\n          <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n            <svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path\n                d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\"\n              ></path>\n              <circle cx=\"12\" cy=\"12\" r=\"3\"></circle>\n            </svg>\n          </span>\n          <span class=\"esa-icon-link__label\">System configuration</span>\n          <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n            <svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path>\n            </svg>\n          </span>\n        </button>\n      </div>\n    </div>\n    <div class=\"esa-app-bar__main\">\n      <button class=\"cbf-omni-trigger\" type=\"button\" data-omni-open=\"\" aria-label=\"Search\">\n        <span class=\"cbf-icon\"\n          ><svg\n            width=\"14\"\n            height=\"14\"\n            viewBox=\"0 0 24 24\"\n            fill=\"none\"\n            stroke=\"currentColor\"\n            stroke-width=\"2\"\n            stroke-linecap=\"round\"\n            stroke-linejoin=\"round\"\n            aria-hidden=\"true\"\n          >\n            <circle cx=\"11\" cy=\"11\" r=\"8\"></circle>\n            <path d=\"m21 21-4.3-4.3\"></path></svg\n        ></span>\n        <span class=\"cbf-omni-trigger__ph\">Search projects, contracts, people…</span>\n        <kbd class=\"cbf-omni-trigger__kbd\">/</kbd>\n      </button>\n    </div>\n    <div class=\"esa-app-bar__end\">\n      <div class=\"cbf-nav-collapsible\">\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--end\">\n          <summary class=\"esa-icon-link esa-icon-link--sm esa-icon-link--medium\">\n            <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n              <svg\n                width=\"14\"\n                height=\"14\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n                <path d=\"M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3\"></path>\n                <path d=\"M12 17h.01\"></path>\n              </svg>\n            </span>\n            <span class=\"esa-icon-link__label\">Help</span>\n            <span class=\"esa-icon esa-icon--xs\" aria-hidden=\"true\">\n              <svg\n                width=\"14\"\n                height=\"14\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head\">Help</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li>Help center</li>\n                <li>Data dictionary</li>\n                <li>EF&amp;W Program documents</li>\n                <li>Request support</li>\n                <li>Send feedback</li>\n              </ul>\n            </div>\n          </div>\n        </details>\n      </div>\n    </div>\n  </div>\n</nav>\n<header class=\"esa-app-bar esa-app-bar--brand cbf-app-bar--header\">\n  <div class=\"esa-app-bar__row\">\n    <div class=\"esa-app-bar__start\">\n      <span class=\"cbf-nav-burger\" data-nav-toggle=\"\">\n        <button\n          class=\"esa-icon-button esa-icon-button--md\"\n          type=\"button\"\n          aria-label=\"Open menu\"\n          title=\"Open menu\"\n        >\n          <span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n            <svg\n              width=\"20\"\n              height=\"20\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <line x1=\"4\" x2=\"20\" y1=\"6\" y2=\"6\"></line>\n              <line x1=\"4\" x2=\"20\" y1=\"12\" y2=\"12\"></line>\n              <line x1=\"4\" x2=\"20\" y1=\"18\" y2=\"18\"></line>\n            </svg>\n          </span>\n        </button>\n      </span>\n      <a\n        class=\"cbf-logo\"\n        href=\"/cb-fish-design/home\"\n        title=\"Columbia Basin Fish &amp; Wildlife Program\"\n      >\n        <img class=\"cbf-logo__mark\" src=\"/cb-fish-design/logo-mark.svg\" alt=\"\" />\n        <img\n          class=\"cbf-logo__type\"\n          src=\"/cb-fish-design/logo-type.svg\"\n          alt=\"Columbia Basin Fish &amp; Wildlife Program\"\n        />\n      </a>\n    </div>\n    <div class=\"esa-app-bar__main\">\n      <div class=\"cbf-nav-collapsible cbf-nav-collapsible--inline\">\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n          <summary class=\"esa-icon-link esa-icon-link--md esa-icon-link--medium\">\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z\"></path>\n                <path d=\"M7 16v6\"></path>\n                <path d=\"M13 19v3\"></path>\n                <path\n                  d=\"M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5\"\n                ></path>\n              </svg>\n            </span>\n            <span class=\"esa-icon-link__label\">Mitigation work</span>\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head\">Mitigation work</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li>Projects</li>\n                <li>Contracts</li>\n                <li>Portfolios</li>\n                <li>Work elements</li>\n                <li>Estuary program</li>\n                <li>Tributary habitat</li>\n                <li>Land acquisitions</li>\n              </ul>\n            </div>\n          </div>\n        </details>\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n          <summary class=\"esa-icon-link esa-icon-link--md esa-icon-link--medium\">\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"M16 7h6v6\"></path>\n                <path d=\"m22 7-8.5 8.5-5-5L2 17\"></path>\n              </svg>\n            </span>\n            <span class=\"esa-icon-link__label\">Reporting</span>\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head\">Reporting</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li>Report Center</li>\n                <li>Maps</li>\n                <li>Publications</li>\n              </ul>\n            </div>\n          </div>\n        </details>\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n          <summary class=\"esa-icon-link esa-icon-link--md esa-icon-link--medium\">\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <rect width=\"20\" height=\"14\" x=\"2\" y=\"5\" rx=\"2\"></rect>\n                <line x1=\"2\" x2=\"22\" y1=\"10\" y2=\"10\"></line>\n              </svg>\n            </span>\n            <span class=\"esa-icon-link__label\">Funding</span>\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head\">Funding</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li>Funds</li>\n                <li>Fund budgets summary</li>\n                <li>Long-term funding agreements</li>\n                <li>Start-of-year (SOY) budgets</li>\n                <li>Working budgets</li>\n                <li>Budget change requests</li>\n                <li>Expenditures</li>\n                <li>Accruals</li>\n              </ul>\n            </div>\n          </div>\n        </details>\n      </div>\n    </div>\n    <div class=\"esa-app-bar__end\">\n      <div class=\"cbf-nav-actions\">\n        <button class=\"cbf-nav-link cbf-nav-link--collapse\" type=\"button\">\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path>\n              <path d=\"M3 3v5h5\"></path>\n              <path d=\"M12 7v5l4 2\"></path></svg\n          ></span>\n          Recent\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path></svg\n          ></span>\n        </button>\n        <a class=\"cbf-nav-link cbf-nav-link--collapse\" href=\"#\">\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <rect width=\"7\" height=\"9\" x=\"3\" y=\"3\" rx=\"1\"></rect>\n              <rect width=\"7\" height=\"5\" x=\"14\" y=\"3\" rx=\"1\"></rect>\n              <rect width=\"7\" height=\"9\" x=\"14\" y=\"12\" rx=\"1\"></rect>\n              <rect width=\"7\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\"></rect></svg\n          ></span>\n          Dashboard\n        </a>\n        <button class=\"cbf-nav-link cbf-nav-link--user\" type=\"button\" data-omni-user=\"\">\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n              <path d=\"M18 20a6 6 0 0 0-12 0\"></path>\n              <circle cx=\"12\" cy=\"10\" r=\"4\"></circle></svg\n          ></span>\n          Angela Zhao\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path></svg\n          ></span>\n        </button>\n      </div>\n    </div>\n  </div>\n</header>\n<div class=\"cbf-omni\" data-omni=\"\" hidden=\"\">\n  <div class=\"cbf-omni__scrim\" data-omni-close=\"\"></div>\n  <div\n    class=\"cbf-omni__panel cbf-search-surface\"\n    role=\"dialog\"\n    aria-modal=\"true\"\n    aria-label=\"Search\"\n  >\n    <div class=\"cbf-omni__searchrow\">\n      <span class=\"cbf-icon cbf-omni__searchicon\"\n        ><svg\n          width=\"20\"\n          height=\"20\"\n          viewBox=\"0 0 24 24\"\n          fill=\"none\"\n          stroke=\"currentColor\"\n          stroke-width=\"2\"\n          stroke-linecap=\"round\"\n          stroke-linejoin=\"round\"\n          aria-hidden=\"true\"\n        >\n          <circle cx=\"11\" cy=\"11\" r=\"8\"></circle>\n          <path d=\"m21 21-4.3-4.3\"></path></svg\n      ></span>\n      <input\n        class=\"cbf-omni__input\"\n        data-omni-input=\"\"\n        type=\"text\"\n        placeholder=\"Search projects, contracts, people, publications…\"\n        autocomplete=\"off\"\n      />\n      <button class=\"cbf-omni__clear\" data-omni-clear=\"\" type=\"button\" aria-label=\"Clear\">\n        <span class=\"cbf-icon\"\n          ><svg\n            width=\"15\"\n            height=\"15\"\n            viewBox=\"0 0 24 24\"\n            fill=\"none\"\n            stroke=\"currentColor\"\n            stroke-width=\"2\"\n            stroke-linecap=\"round\"\n            stroke-linejoin=\"round\"\n            aria-hidden=\"true\"\n          >\n            <path d=\"M18 6 6 18\"></path>\n            <path d=\"m6 6 12 12\"></path></svg\n        ></span>\n      </button>\n    </div>\n    <div class=\"cbf-omni__scopes\" data-omni-scopes=\"\"></div>\n    <div class=\"cbf-omni__body\">\n      <!-- default view: brand illustration + search note (Recent lives in the nav) -->\n      <div class=\"cbf-omni__empty\" data-omni-empty=\"\">\n        <div class=\"cbf-omni__hero\">\n          <img class=\"cbf-omni__art\" src=\"/cb-fish-design/dam-illustration.jpg\" alt=\"\" />\n          <p class=\"cbf-omni__hero-title\">Search the Program</p>\n          <p class=\"cbf-omni__hero-note\">\n            Find projects, contracts, people, and publications across the Columbia Basin. Start\n            typing, or press <kbd class=\"esa-kbd\">Tab</kbd> to choose a scope.\n          </p>\n        </div>\n      </div>\n      <!-- query view: grouped results (injected) -->\n      <div class=\"cbf-omni__results\" data-omni-results=\"\" hidden=\"\"></div>\n    </div>\n    <button class=\"cbf-omni__showall\" data-omni-showall=\"\" type=\"button\" hidden=\"\">\n      <span data-omni-showall-label=\"\">Show all results</span>\n      <span class=\"cbf-icon\"\n        ><svg\n          width=\"18\"\n          height=\"18\"\n          viewBox=\"0 0 24 24\"\n          fill=\"none\"\n          stroke=\"currentColor\"\n          stroke-width=\"2\"\n          stroke-linecap=\"round\"\n          stroke-linejoin=\"round\"\n          aria-hidden=\"true\"\n        >\n          <path d=\"m9 18 6-6-6-6\"></path></svg\n      ></span>\n    </button>\n    <div class=\"cbf-omni__footer\">\n      <div class=\"cbf-omni__hints\">\n        <span><kbd class=\"esa-kbd\">↑</kbd> <kbd class=\"esa-kbd\">↓</kbd> Navigate</span>\n        <span><kbd class=\"esa-kbd\">↵</kbd> Select</span>\n        <span><kbd class=\"esa-kbd\">Tab</kbd> Scope</span>\n        <span><kbd class=\"esa-kbd\">Esc</kbd> Close</span>\n      </div>\n    </div>\n  </div>\n</div>\n<esa-side-dialog\n  position=\"left\"\n  heading=\"Menu\"\n  size=\"sm\"\n  class=\"cbf-nav-drawer\"\n  data-nav-drawer=\"true\"\n>\n  <nav class=\"stack\" data-gap=\"lg\" aria-label=\"Site navigation\">\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head\">Mitigation work</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li>Projects</li>\n        <li>Contracts</li>\n        <li>Portfolios</li>\n        <li>Work elements</li>\n        <li>Estuary program</li>\n        <li>Tributary habitat</li>\n        <li>Land acquisitions</li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head\">Reporting</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li>Report Center</li>\n        <li>Maps</li>\n        <li>Publications</li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head\">Funding</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li>Funds</li>\n        <li>Fund budgets summary</li>\n        <li>Long-term funding agreements</li>\n        <li>Start-of-year (SOY) budgets</li>\n        <li>Working budgets</li>\n        <li>Budget change requests</li>\n        <li>Expenditures</li>\n        <li>Accruals</li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head\">Quick links</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li><a href=\"#\">Recent</a></li>\n        <li><a href=\"#\">Dashboard</a></li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head\">System</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li>Data management</li>\n        <li>System status</li>\n        <li>System configuration</li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head\">Help</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li>Help center</li>\n        <li>Data dictionary</li>\n        <li>EF&amp;W Program documents</li>\n        <li>Request support</li>\n        <li>Send feedback</li>\n      </ul>\n    </div>\n  </nav>\n</esa-side-dialog>\n<main class=\"cbf-page\">\n  <div class=\"esa-container\" style=\"--_container-max: 1920px\">\n    <section class=\"cbf-app-panel\">\n      <div class=\"cbf-app-panel__crumb\">\n        <nav class=\"esa-breadcrumbs esa-breadcrumbs--md\" aria-label=\"Breadcrumb\">\n          <ol class=\"esa-breadcrumbs__list\">\n            <li class=\"esa-breadcrumbs__item\">\n              <a href=\"/cb-fish-design/home\" class=\"esa-breadcrumbs__link\">\n                <span class=\"esa-breadcrumbs__icon\"\n                  ><svg\n                    width=\"14\"\n                    height=\"14\"\n                    viewBox=\"0 0 24 24\"\n                    fill=\"none\"\n                    stroke=\"currentColor\"\n                    stroke-width=\"2\"\n                    stroke-linecap=\"round\"\n                    stroke-linejoin=\"round\"\n                    aria-hidden=\"true\"\n                  >\n                    <path d=\"m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"></path>\n                    <path d=\"M9 22V12h6v10\"></path></svg\n                ></span>\n                Home\n              </a>\n              <svg\n                class=\"esa-breadcrumbs__separator\"\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                aria-hidden=\"true\"\n              >\n                <path d=\"m9 18 6-6-6-6\"></path>\n              </svg>\n            </li>\n            <li class=\"esa-breadcrumbs__item\">\n              <span class=\"esa-breadcrumbs__current\"> Funding </span>\n              <svg\n                class=\"esa-breadcrumbs__separator\"\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                aria-hidden=\"true\"\n              >\n                <path d=\"m9 18 6-6-6-6\"></path>\n              </svg>\n            </li>\n            <li class=\"esa-breadcrumbs__item\" aria-current=\"page\">\n              <span class=\"esa-breadcrumbs__current\"> Project budgets </span>\n            </li>\n          </ol>\n        </nav>\n      </div>\n      <div class=\"cbf-app-panel__body\">\n        <div class=\"cbf-app-panel__content\">\n          <h1 class=\"cbf-page-heading\">Project budgets: Summary</h1>\n          <nav class=\"cbf-report-tabs\" aria-label=\"Project budget sections\">\n            <a class=\"cbf-report-tabs__tab is-active\" href=\"#\" aria-current=\"page\">Summary</a\n            ><a class=\"cbf-report-tabs__tab\" href=\"#\">Baselines</a\n            ><a class=\"cbf-report-tabs__tab\" href=\"#\">Start-of-year (SOY)</a\n            ><a class=\"cbf-report-tabs__tab\" href=\"#\">Decisions</a\n            ><a class=\"cbf-report-tabs__tab\" href=\"#\">Change requests (BOG)</a>\n            <details class=\"cbf-report-tabs__related\">\n              <summary class=\"cbf-report-tabs__tab cbf-report-tabs__related-trigger\">\n                Related items<span class=\"cbf-report-tabs__chev\"\n                  ><svg\n                    width=\"14\"\n                    height=\"14\"\n                    viewBox=\"0 0 24 24\"\n                    fill=\"none\"\n                    stroke=\"currentColor\"\n                    stroke-width=\"2\"\n                    stroke-linecap=\"round\"\n                    stroke-linejoin=\"round\"\n                    aria-hidden=\"true\"\n                  >\n                    <path d=\"m6 9 6 6 6-6\"></path></svg\n                ></span>\n              </summary>\n              <div class=\"cbf-report-tabs__menu\" role=\"menu\">\n                <a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\">Reviews</a\n                ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\">Featured reviews</a>\n              </div>\n            </details>\n          </nav>\n          <section class=\"cbf-report-intro\">\n            <figure class=\"cbf-report-intro__media\">\n              <img\n                src=\"/cb-fish-design/project-budgets-hero.jpg\"\n                alt=\"A Columbia River Gorge stream in autumn\"\n                loading=\"lazy\"\n              />\n            </figure>\n            <div class=\"cbf-report-intro__copy\">\n              <p class=\"cbf-report-intro__lede\">\n                BPA financial analysts manage budgets at a project level by fiscal year and fund.\n              </p>\n              <p class=\"cbf-report-intro__body\">\n                Every year, project budgets are set for the majority of the F&amp;W Program through\n                the start-of-year (SOY) process, in which financial analysts and project managers\n                discuss project budget needs and finalize budgets for the fiscal year. Throughout\n                the year, budget decisions and transfers are documented to track funding changes to\n                project working budgets.\n              </p>\n            </div>\n          </section>\n          <section class=\"cbf-related-items\" id=\"related-items\" aria-label=\"Related items\">\n            <h2 class=\"cbf-related-items__head type-section-title\">Related items</h2>\n            <div class=\"cbf-related-items__grid grid\">\n              <div class=\"esa-card esa-card--outlined\">\n                <div class=\"esa-card__header\">\n                  <div class=\"esa-card__header-content\">\n                    <div class=\"esa-card__titles\"><h3 class=\"esa-card__title\">Reviews</h3></div>\n                  </div>\n                </div>\n                <div class=\"esa-card__body\">\n                  <div class=\"cbf-related-items__card\">\n                    <p class=\"cbf-related-items__overview\">\n                      <strong>Overview:</strong> Review project budgets across fiscal years and\n                      funds — open a working budget to inspect its baseline, start-of-year amount,\n                      and the decisions and transfers applied through the year.\n                    </p>\n                  </div>\n                </div>\n                <div class=\"esa-card__footer\">\n                  <div class=\"cbf-related-items__foot\">\n                    <span\n                      class=\"esa-button esa-button--color-primary esa-button--appearance-fill esa-button--sm\"\n                    >\n                      <a class=\"esa-button__native\" href=\"#\" role=\"button\">\n                        <span class=\"esa-button__label\"> View page </span>\n                      </a>\n                    </span>\n                  </div>\n                </div>\n              </div>\n              <div class=\"esa-card esa-card--outlined\">\n                <div class=\"esa-card__header\">\n                  <div class=\"esa-card__header-content\">\n                    <div class=\"esa-card__titles\">\n                      <h3 class=\"esa-card__title\">Featured reviews</h3>\n                    </div>\n                  </div>\n                </div>\n                <div class=\"esa-card__body\">\n                  <div class=\"cbf-related-items__card\">\n                    <p class=\"cbf-related-items__overview\">\n                      <strong>Overview:</strong> Curated budget reviews highlighted for quick access\n                      — the project budget views financial analysts and project managers return to\n                      most often.\n                    </p>\n                  </div>\n                </div>\n                <div class=\"esa-card__footer\">\n                  <div class=\"cbf-related-items__foot\">\n                    <span\n                      class=\"esa-button esa-button--color-primary esa-button--appearance-fill esa-button--sm\"\n                    >\n                      <a class=\"esa-button__native\" href=\"#\" role=\"button\">\n                        <span class=\"esa-button__label\"> View page </span>\n                      </a>\n                    </span>\n                  </div>\n                </div>\n              </div>\n            </div>\n          </section>\n        </div>\n      </div>\n    </section>\n  </div>\n</main>\n",
+    "css": ":root,\n[data-theme=\"cb-fish\"] {\n  --app-bar-bg: #fcfcfc;\n  --app-bar-brand-bg: #1e5386;\n  --app-bar-brand-strong-bg: #13273e;\n  --app-bar-brand-strong-text: #fcfcfc;\n  --app-bar-brand-text: #fcfcfc;\n  --app-bar-gap: 2rem;\n  --app-bar-pad-x: 2rem;\n  --app-bar-pad-y: 1rem;\n  --app-bar-text: #3d3d3d;\n  --breadcrumbs-link-color: #525252;\n  --breadcrumbs-link-hover: #3d3d3d;\n  --breadcrumbs-separator-color: #bbbbbb;\n  --card-bg: #fcfcfc;\n  --card-border-color: #dcdcdc;\n  --card-footer-bg: #f3f7fc;\n  --card-header-bg: transparent;\n  --card-header-border-color: #efefef;\n  --card-header-color: #3d3d3d;\n  --card-padding: 1.5rem;\n  --card-radius: 0.5rem;\n  --color-border: #dcdcdc;\n  --color-border-light: #efefef;\n  --color-primary: #1e5386;\n  --color-primary-hover: #1a4570;\n  --color-primary-strong: #2a7e3b;\n  --color-surface: #fcfcfc;\n  --color-surface-inverse: #13273e;\n  --color-surface-sunken: #f3f7fc;\n  --color-text-inverse: #fcfcfc;\n  --color-text-link: #1e5386;\n  --color-text-primary: #3d3d3d;\n  --color-text-secondary: #525252;\n  --container-gutter: 2rem;\n  --font-display: \"IBM Plex Sans Condensed\", \"IBM Plex Sans\", sans-serif;\n  --font-sans: \"IBM Plex Sans\", sans-serif;\n  --font-weight-medium: 500;\n  --font-weight-semibold: 600;\n  --form-font-size-md: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);\n  --form-font-size-sm: clamp(0.625rem, 0.56rem + 0.32vw, 0.75rem);\n  --form-height-md: 40px;\n  --form-height-sm: 32px;\n  --form-padding-x-md: 0.75rem;\n  --form-padding-x-sm: 0.625rem;\n  --form-radius-md: 0.5rem;\n  --form-radius-sm: 0.25rem;\n  --icon-link-font-size-md: 1rem;\n  --icon-link-font-size-sm: 0.875rem;\n  --icon-link-gap: 0.375rem;\n  --icon-size-md: 20px;\n  --icon-size-medium: 20px;\n  --icon-size-sm: 16px;\n  --icon-size-small: 16px;\n  --icon-size-xs: 14px;\n  --letter-spacing-tight: -0.01em;\n  --line-height-tight: 1.3;\n  --link-column-heading-font-size: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);\n  --link-column-item-font-size: clamp(0.6875rem, 0.61rem + 0.38vw, 0.875rem);\n  --link-column-rule-color: color-mix(in srgb, currentColor 40%, transparent);\n  --radius-100: 0.25rem;\n  --radius-200: 0.5rem;\n  --radius-300: 0.5rem;\n  --side-dialog-width: 400px;\n  --side-dialog-width-sm: 320px;\n  --spacing-050: 0.125rem;\n  --spacing-100: 0.25rem;\n  --spacing-150: 0.375rem;\n  --spacing-200: 0.5rem;\n  --spacing-300: 0.75rem;\n  --spacing-400: 1rem;\n  --spacing-500: 1.5rem;\n  --spacing-600: 2rem;\n  --spacing-650: 2.5rem;\n  --spacing-700: 3rem;\n  --spacing-800: 4rem;\n  --transition-fast: 0.15s ease;\n  --type-size-150: clamp(0.6875rem, 0.61rem + 0.38vw, 0.875rem);\n  --type-size-200: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);\n  --type-size-250: clamp(0.8125rem, 0.71rem + 0.5vw, 1.0625rem);\n  --type-size-500: clamp(1.125rem, 0.98rem + 0.72vw, 1.5rem);\n}\n\n.cbf-page {\n  padding-block: var(--spacing-600) var(--spacing-800);\n}\n.cbf-report-tabs {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: var(--spacing-100);\n  padding: var(--spacing-150);\n  border: 1px solid var(--color-border);\n  border-radius: var(--radius-200, 8px);\n  background: var(--color-gray-50, #f4f5f7);\n}\n.cbf-report-tabs__tab {\n  padding: var(--spacing-200) var(--spacing-300);\n  border-radius: var(--radius-100);\n  color: var(--color-primary);\n  font-size: 16px;\n  font-weight: var(--font-weight-medium);\n  white-space: nowrap;\n}\n.cbf-report-tabs__tab.is-active {\n  background: var(--color-surface, #fff);\n  color: var(--color-surface-inverse);\n  font-weight: var(--font-weight-semibold);\n  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-surface-inverse) 12%, transparent);\n}\n.cbf-report-tabs__related {\n  position: relative;\n  margin-left: auto;\n}\n.cbf-report-tabs__related-trigger {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-150);\n  list-style: none;\n  cursor: pointer;\n}\n.cbf-report-tabs__chev {\n  display: inline-flex;\n  transition: transform 0.12s ease;\n}\n.cbf-report-intro {\n  display: grid;\n  grid-template-columns: minmax(280px, 38%) 1fr;\n  gap: var(--spacing-700, 2.5rem);\n  align-items: stretch;\n}\n.cbf-report-intro__media {\n  margin: 0;\n  align-self: start;\n  aspect-ratio: 3 / 2;\n  border-radius: var(--radius-100);\n  overflow: hidden;\n  background: var(--color-surface-sunken);\n}\n.cbf-report-intro__media img {\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  object-position: center bottom;\n}\n.cbf-report-intro__copy {\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-400);\n  justify-content: center;\n  min-width: 0;\n}\n.cbf-report-intro__lede {\n  margin: 0;\n  font-size: 24px;\n  line-height: 1.4;\n  font-weight: var(--font-weight-semibold);\n  color: var(--color-text-primary);\n}\n.cbf-report-intro__body {\n  margin: 0;\n  font-size: 18px;\n  line-height: 1.6;\n  color: var(--color-text-secondary);\n}\n.cbf-related-items {\n  padding-top: var(--spacing-600);\n  border-top: 1px solid var(--color-border);\n}\n.cbf-related-items__head {\n  margin: 0 0 var(--spacing-400);\n}\n.cbf-related-items__grid {\n  --grid-min: 20rem;\n}\n.cbf-related-items__card {\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-300);\n}\n.cbf-related-items__overview {\n  margin: 0;\n  font-size: 16px;\n  line-height: 1.5;\n  color: var(--color-text-secondary);\n}\n.cbf-related-items__overview strong,\n.cbf-related-items__meta strong {\n  color: var(--color-text-primary);\n}\n.cbf-related-items__foot {\n  display: flex;\n  justify-content: flex-end;\n}\n.esa-button {\n  --_btn-height: var(--form-height-md, 40px);\n  --_btn-padding-x: var(--form-padding-x-md, 16px);\n  --_btn-font-size: var(--form-font-size-md, 14px);\n  --_btn-radius: var(--form-radius-md, 6px);\n  --_accent: var(--color-primary, #46a758);\n  --_accent-hover: var(--color-primary-hover, #3e9b4f);\n  --_on: var(--color-text-inverse, #ffffff);\n  --_accent-text: var(--_accent);\n  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);\n  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);\n  display: inline-block;\n}\n.esa-button--sm {\n  --_btn-height: var(--form-height-sm, 32px);\n  --_btn-padding-x: var(--form-padding-x-sm, 12px);\n  --_btn-font-size: var(--form-font-size-sm, 12px);\n  --_btn-radius: var(--form-radius-sm, 4px);\n}\n.esa-button--color-primary {\n  --_accent-text: var(--color-primary-strong);\n}\n.esa-button__native {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: var(--spacing-200, 8px);\n  width: 100%;\n  height: var(--_btn-height);\n  padding-inline: var(--_btn-padding-x);\n  border: 1px solid transparent;\n  border-radius: var(--_btn-radius);\n  font-size: var(--_btn-font-size);\n  font-family: var(--font-sans, system-ui, sans-serif);\n  font-weight: var(--font-weight-medium, 500);\n  line-height: 1;\n  text-decoration: none;\n  cursor: pointer;\n  transition:\n    background var(--transition-fast, 0.15s ease),\n    border-color var(--transition-fast, 0.15s ease);\n  -webkit-appearance: none;\n  appearance: none;\n}\n.esa-button--appearance-fill .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: transparent;\n}\n.esa-button__label {\n  white-space: nowrap;\n}\n.cbf-app-bar--admin {\n  --app-bar-pad-y: var(--spacing-300);\n}\n.cbf-app-bar--admin .esa-app-bar__row {\n  display: grid;\n  grid-template-columns: 1fr minmax(0, 380px) 1fr;\n}\n.cbf-app-bar--admin .esa-app-bar__start {\n  justify-self: start;\n}\n.cbf-nav-collapsible {\n  display: contents;\n}\n.cbf-app-bar--admin .esa-app-bar__main {\n  justify-content: center;\n}\n.cbf-omni-trigger {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-200);\n  width: 380px;\n  max-width: 100%;\n  padding: 5px var(--spacing-200) 5px var(--spacing-300);\n  background: #ffffff1a;\n  border: 1px solid rgba(255, 255, 255, 0.22);\n  border-radius: 999px;\n  color: #ffffffbf;\n  transition:\n    background 0.12s,\n    border-color 0.12s;\n}\n.cbf-app-bar--admin .cbf-omni-trigger {\n  min-width: 0;\n}\n.cbf-icon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: inherit;\n}\n.cbf-omni-trigger__ph {\n  flex: 1;\n  min-width: 0;\n  text-align: left;\n  font-size: 13px;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.cbf-omni-trigger__kbd {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 18px;\n  height: 18px;\n  padding: 0 5px;\n  font-family: var(--font-sans);\n  font-size: 13px;\n  font-weight: var(--font-weight-medium);\n  color: #ffffffd9;\n  background: #ffffff1f;\n  border: 1px solid rgba(255, 255, 255, 0.25);\n  border-radius: 4px;\n}\n.cbf-app-bar--admin .esa-app-bar__end {\n  justify-self: end;\n}\n.esa-nav-dropdown {\n  position: relative;\n}\n.esa-nav-dropdown .esa-icon-link > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.cbf-nav-burger {\n  display: none;\n}\n.cbf-logo {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-300, 12px);\n  flex: none;\n  color: inherit;\n  text-decoration: none;\n}\n.cbf-logo__mark {\n  width: 48px;\n  height: 48px;\n  flex: none;\n}\n.cbf-logo__type {\n  height: 40px;\n  width: auto;\n}\n.cbf-nav-actions {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-600);\n}\n.cbf-nav-link {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  color: inherit;\n  background: none;\n  border: 0;\n  font-size: 16px;\n  font-weight: var(--font-weight-medium);\n  white-space: nowrap;\n}\n.cbf-nav-link .cbf-icon {\n  display: inline-flex;\n  align-items: center;\n}\n.cbf-nav-link--user {\n  position: relative;\n  padding-left: var(--spacing-500);\n}\n.cbf-nav-link--user:before {\n  content: \"\";\n  position: absolute;\n  left: 0;\n  top: 50%;\n  transform: translateY(-50%);\n  width: 1px;\n  height: 1.1em;\n  background: #ffffff40;\n}\n.cbf-omni {\n  position: fixed;\n  inset: 0;\n  z-index: 80;\n}\n.cbf-omni[hidden] {\n  display: none;\n}\n.esa-link-column {\n  color: inherit;\n}\n.esa-link-column__head {\n  display: block;\n  margin: 0 0 var(--spacing-100, 4px);\n  font-size: var(--link-column-heading-font-size, var(--type-size-200, 1rem));\n  font-weight: var(--font-weight-medium, 500);\n  color: inherit;\n  text-decoration: none;\n}\n.esa-link-column__rule {\n  height: 1px;\n  border: 0;\n  margin: 0 0 var(--spacing-200, 8px);\n  background: var(--link-column-rule-color, color-mix(in srgb, currentColor 40%, transparent));\n}\n.esa-link-column__list {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n.esa-link-column__list li {\n  font-size: var(--link-column-item-font-size, var(--type-size-150, 0.875rem));\n  line-height: 22px;\n  margin-bottom: var(--spacing-100, 4px);\n}\n.esa-link-column__list a {\n  color: inherit;\n  text-decoration: none;\n}\n.esa-container {\n  width: 100%;\n  max-width: var(--_container-max, 1556px);\n  margin-inline: auto;\n  padding-inline: var(--container-gutter, var(--spacing-600, 2rem));\n}\n.type-section-title {\n  font-family: var(--font-display, var(--font-sans));\n  font-size: var(--type-size-500);\n  font-weight: var(--font-weight-semibold);\n  line-height: var(--line-height-tight);\n  letter-spacing: var(--letter-spacing-tight);\n}\n.esa-card {\n  --_card-bg: var(--card-bg, var(--color-surface, #ffffff));\n  --_card-border: var(--card-border-color, var(--color-border, #e5e5e5));\n  --_card-radius: var(--card-radius, var(--radius-300, 0.5rem));\n  --_card-padding: var(--card-padding, var(--spacing-500, 1.5rem));\n  --_card-header-bg: var(--card-header-bg, transparent);\n  --_card-header-color: var(--card-header-color, var(--color-text-primary, #171717));\n  --_card-header-border: var(--card-header-border-color, var(--color-border-light, #efefef));\n  display: block;\n  background: var(--_card-bg);\n  border: 1px solid var(--_card-border);\n  border-radius: var(--_card-radius);\n  overflow: hidden;\n}\n.esa-card--outlined {\n  --_card-border: var(--color-border, #e5e5e5);\n}\n.esa-card__header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: var(--spacing-400, 1rem) var(--_card-padding);\n  background: var(--_card-header-bg);\n  color: var(--_card-header-color);\n  border-bottom: 1px solid var(--_card-header-border);\n  min-height: 56px;\n}\n.esa-card__header-content {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-300, 0.75rem);\n}\n.esa-card__titles {\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-050, 0.125rem);\n}\n.esa-card__title {\n  font-size: var(--type-size-250, 1.0625rem);\n  font-weight: 600;\n  margin: 0;\n  color: inherit;\n  font-family: var(--font-sans, \"DM Sans\", sans-serif);\n}\n.esa-card__body {\n  padding: var(--_card-padding);\n}\n.esa-card__footer {\n  padding: var(--spacing-300, 0.75rem) var(--_card-padding);\n  border-top: 1px solid var(--_card-header-border);\n  background: var(--card-footer-bg, var(--color-surface-sunken, #efefef));\n}\n*,\n*:before,\n*:after {\n  box-sizing: border-box;\n}\nbody {\n  margin: 0;\n  font-family: var(--font-sans, system-ui, sans-serif);\n  color: var(--color-text-primary, #171717);\n  background: var(--color-surface, #fff);\n  -webkit-font-smoothing: antialiased;\n}\nbutton {\n  font-family: inherit;\n  cursor: pointer;\n  background: none;\n  border: 0;\n}\na {\n  color: var(--color-text-link, #1e5386);\n  text-decoration: none;\n}\nimg {\n  display: block;\n  max-width: 100%;\n}\n.stack {\n  --gap: var(--spacing-400, 1rem);\n  display: flex;\n  flex-direction: column;\n  gap: var(--gap);\n}\n[data-gap=\"lg\"] {\n  --gap: var(--spacing-500, 1.5rem);\n}\n:where(h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd, ul, ol, pre) {\n  margin: 0;\n}\n.grid {\n  --gap: var(--spacing-400, 1rem);\n  --grid-min: 16rem;\n  display: grid;\n  gap: var(--gap);\n  grid-template-columns: repeat(auto-fit, minmax(min(var(--grid-min), 100%), 1fr));\n}\n.cbf-app-bar--admin {\n  --app-bar-gap: var(--spacing-650);\n}\n.esa-app-bar {\n  --_bar-gap: var(--app-bar-gap, var(--spacing-600, 32px));\n  --_bar-pad-x: var(--app-bar-pad-x, var(--spacing-600, 32px));\n  --_bar-pad-y: var(--app-bar-pad-y, var(--spacing-400, 16px));\n  display: block;\n  width: 100%;\n  background: var(--app-bar-bg, var(--color-surface, #fff));\n  color: var(--app-bar-text, var(--color-text-primary, #171717));\n}\n.esa-app-bar--brand-strong {\n  background: var(--app-bar-brand-strong-bg, var(--color-surface-inverse, #171717));\n  color: var(--app-bar-brand-strong-text, var(--color-text-inverse, #fff));\n}\n.esa-app-bar__row {\n  display: flex;\n  align-items: center;\n  gap: var(--_bar-gap);\n  padding: var(--_bar-pad-y) var(--_bar-pad-x);\n}\n.esa-app-bar__start,\n.esa-app-bar__main,\n.esa-app-bar__end {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--_bar-gap);\n}\n.esa-app-bar__start {\n  flex: none;\n}\n.esa-icon-link {\n  --_il-font: var(--icon-link-font-size-md, 1rem);\n  display: inline-flex;\n  align-items: center;\n  gap: var(--icon-link-gap, var(--spacing-150, 6px));\n  padding: 0;\n  margin: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font-family: var(--font-sans, system-ui, sans-serif);\n  font-size: var(--_il-font);\n  font-weight: var(--font-weight-medium, 500);\n  line-height: 1;\n  text-decoration: none;\n  cursor: pointer;\n  white-space: nowrap;\n}\n.esa-icon-link--sm {\n  --_il-font: var(--icon-link-font-size-sm, 0.875rem);\n}\n.esa-icon-link--medium {\n  font-weight: var(--font-weight-medium, 500);\n}\n.esa-icon-link__label {\n  display: inline-block;\n}\n.esa-app-bar__main {\n  flex: 1 1 auto;\n}\n.esa-app-bar__end {\n  flex: none;\n  margin-left: auto;\n}\nsummary.esa-icon-link {\n  list-style: none;\n}\n.cbf-app-bar--header {\n  --app-bar-gap: var(--spacing-800);\n}\n.esa-app-bar--brand {\n  background: var(--app-bar-brand-bg, var(--color-primary, #43608a));\n  color: var(--app-bar-brand-text, var(--color-text-inverse, #fff));\n}\n.cbf-app-panel {\n  display: flex;\n  flex-direction: column;\n  min-height: 80vh;\n  border: 1px solid var(--color-border);\n  border-radius: var(--radius-100);\n  overflow: hidden;\n  background: var(--color-surface);\n  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-surface-inverse) 8%, transparent);\n}\n.cbf-app-panel__crumb {\n  background: var(--color-gold-50);\n  border-bottom: 1px solid var(--color-border);\n  padding: var(--spacing-400) var(--spacing-600);\n}\n.esa-breadcrumbs {\n  --_crumb-font-size: var(--type-size-200, 0.875rem);\n  --_crumb-link-color: var(--breadcrumbs-link-color, #43608a);\n  --_crumb-link-hover: var(--breadcrumbs-link-hover, #39506f);\n  --_crumb-current-color: var(--color-text-primary, #171717);\n  --_crumb-separator-color: var(--breadcrumbs-separator-color, #737373);\n  --_crumb-gap: var(--spacing-200, 8px);\n  display: block;\n}\n.cbf-app-panel__crumb .esa-breadcrumbs {\n  --breadcrumbs-link-color: var(--color-text-secondary);\n  --breadcrumbs-link-hover: var(--color-primary);\n}\n.esa-breadcrumbs__list {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: var(--_crumb-gap);\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  font-size: var(--_crumb-font-size);\n}\n.esa-breadcrumbs__item {\n  display: flex;\n  align-items: center;\n  gap: var(--_crumb-gap);\n}\n.esa-breadcrumbs__link {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-100, 4px);\n  color: var(--_crumb-link-color);\n  text-decoration: none;\n}\n.esa-breadcrumbs__icon {\n  display: inline-flex;\n  align-items: center;\n}\n.esa-breadcrumbs__separator {\n  flex-shrink: 0;\n  color: var(--_crumb-separator-color);\n}\n.esa-breadcrumbs__current {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-100, 4px);\n  color: var(--_crumb-current-color);\n  font-weight: var(--font-weight-medium, 500);\n}\n.cbf-app-panel__body {\n  flex: 1;\n}\n.cbf-app-panel__content {\n  flex: 1;\n  min-width: 0;\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-400);\n  padding: var(--spacing-600);\n}\n.cbf-page-heading {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: var(--spacing-300, 12px);\n  margin: 0;\n  font-family: var(--font-display);\n  font-weight: var(--font-weight-medium);\n  font-size: 40px;\n  line-height: 40px;\n  letter-spacing: -1px;\n  color: var(--color-surface-inverse);\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  line-height: 1;\n  color: inherit;\n}\n.esa-icon--xs {\n  --_icon-size: var(--icon-size-xs, 14px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-icon--sm {\n  --_icon-size: var(--icon-size-sm, var(--icon-size-small, 16px));\n}\n:host {\n  --_width: var(--side-dialog-width, 400px);\n}\n:host([size=\"sm\"]) {\n  --_width: var(--side-dialog-width-sm, 320px);\n}\n",
+    "tokens": [
+      {
+        "name": "--app-bar-bg",
+        "value": "#fcfcfc",
+        "tier": "component"
+      },
+      {
+        "name": "--app-bar-brand-bg",
+        "value": "#1e5386",
+        "tier": "component"
+      },
+      {
+        "name": "--app-bar-brand-strong-bg",
+        "value": "#13273e",
+        "tier": "component"
+      },
+      {
+        "name": "--app-bar-brand-strong-text",
+        "value": "#fcfcfc",
+        "tier": "component"
+      },
+      {
+        "name": "--app-bar-brand-text",
+        "value": "#fcfcfc",
+        "tier": "component"
+      },
+      {
+        "name": "--app-bar-gap",
+        "value": "2rem",
+        "tier": "component"
+      },
+      {
+        "name": "--app-bar-pad-x",
+        "value": "2rem",
+        "tier": "component"
+      },
+      {
+        "name": "--app-bar-pad-y",
+        "value": "1rem",
+        "tier": "component"
+      },
+      {
+        "name": "--app-bar-text",
+        "value": "#3d3d3d",
+        "tier": "component"
+      },
+      {
+        "name": "--breadcrumbs-link-color",
+        "value": "#525252",
+        "tier": "component"
+      },
+      {
+        "name": "--breadcrumbs-link-hover",
+        "value": "#3d3d3d",
+        "tier": "component"
+      },
+      {
+        "name": "--breadcrumbs-separator-color",
+        "value": "#bbbbbb",
+        "tier": "component"
+      },
+      {
+        "name": "--card-bg",
+        "value": "#fcfcfc",
+        "tier": "component"
+      },
+      {
+        "name": "--card-border-color",
+        "value": "#dcdcdc",
+        "tier": "component"
+      },
+      {
+        "name": "--card-footer-bg",
+        "value": "#f3f7fc",
+        "tier": "component"
+      },
+      {
+        "name": "--card-header-bg",
+        "value": "transparent",
+        "tier": "component"
+      },
+      {
+        "name": "--card-header-border-color",
+        "value": "#efefef",
+        "tier": "component"
+      },
+      {
+        "name": "--card-header-color",
+        "value": "#3d3d3d",
+        "tier": "component"
+      },
+      {
+        "name": "--card-padding",
+        "value": "1.5rem",
+        "tier": "component"
+      },
+      {
+        "name": "--card-radius",
+        "value": ".5rem",
+        "tier": "component"
+      },
+      {
+        "name": "--color-border",
+        "value": "#dcdcdc",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-border-light",
+        "value": "#efefef",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-primary",
+        "value": "#1e5386",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-primary-hover",
+        "value": "#1a4570",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-primary-strong",
+        "value": "#2a7e3b",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-surface",
+        "value": "#fcfcfc",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-surface-inverse",
+        "value": "#13273e",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-surface-sunken",
+        "value": "#f3f7fc",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-text-inverse",
+        "value": "#fcfcfc",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-text-link",
+        "value": "#1e5386",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-text-primary",
+        "value": "#3d3d3d",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-text-secondary",
+        "value": "#525252",
+        "tier": "semantic"
+      },
+      {
+        "name": "--container-gutter",
+        "value": "2rem",
+        "tier": "component"
+      },
+      {
+        "name": "--font-display",
+        "value": "\"IBM Plex Sans Condensed\", \"IBM Plex Sans\", sans-serif",
+        "tier": "primitive"
+      },
+      {
+        "name": "--font-sans",
+        "value": "\"IBM Plex Sans\", sans-serif",
+        "tier": "primitive"
+      },
+      {
+        "name": "--font-weight-medium",
+        "value": "500",
+        "tier": "primitive"
+      },
+      {
+        "name": "--font-weight-semibold",
+        "value": "600",
+        "tier": "primitive"
+      },
+      {
+        "name": "--form-font-size-md",
+        "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+        "tier": "component"
+      },
+      {
+        "name": "--form-font-size-sm",
+        "value": "clamp(.625rem, .56rem + .32vw, .75rem)",
+        "tier": "component"
+      },
+      {
+        "name": "--form-height-md",
+        "value": "40px",
+        "tier": "component"
+      },
+      {
+        "name": "--form-height-sm",
+        "value": "32px",
+        "tier": "component"
+      },
+      {
+        "name": "--form-padding-x-md",
+        "value": ".75rem",
+        "tier": "component"
+      },
+      {
+        "name": "--form-padding-x-sm",
+        "value": ".625rem",
+        "tier": "component"
+      },
+      {
+        "name": "--form-radius-md",
+        "value": ".5rem",
+        "tier": "component"
+      },
+      {
+        "name": "--form-radius-sm",
+        "value": ".25rem",
+        "tier": "component"
+      },
+      {
+        "name": "--icon-link-font-size-md",
+        "value": "1rem",
+        "tier": "component"
+      },
+      {
+        "name": "--icon-link-font-size-sm",
+        "value": ".875rem",
+        "tier": "component"
+      },
+      {
+        "name": "--icon-link-gap",
+        "value": ".375rem",
+        "tier": "component"
+      },
+      {
+        "name": "--icon-size-md",
+        "value": "20px",
+        "tier": "primitive"
+      },
+      {
+        "name": "--icon-size-medium",
+        "value": "20px",
+        "tier": "component"
+      },
+      {
+        "name": "--icon-size-sm",
+        "value": "16px",
+        "tier": "primitive"
+      },
+      {
+        "name": "--icon-size-small",
+        "value": "16px",
+        "tier": "component"
+      },
+      {
+        "name": "--icon-size-xs",
+        "value": "14px",
+        "tier": "primitive"
+      },
+      {
+        "name": "--letter-spacing-tight",
+        "value": "-.01em",
+        "tier": "primitive"
+      },
+      {
+        "name": "--line-height-tight",
+        "value": "1.3",
+        "tier": "primitive"
+      },
+      {
+        "name": "--link-column-heading-font-size",
+        "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+        "tier": "component"
+      },
+      {
+        "name": "--link-column-item-font-size",
+        "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+        "tier": "component"
+      },
+      {
+        "name": "--link-column-rule-color",
+        "value": "color-mix(in srgb, currentColor 40%, transparent)",
+        "tier": "component"
+      },
+      {
+        "name": "--radius-100",
+        "value": ".25rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--radius-200",
+        "value": ".5rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--radius-300",
+        "value": ".5rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--side-dialog-width",
+        "value": "400px",
+        "tier": "component"
+      },
+      {
+        "name": "--side-dialog-width-sm",
+        "value": "320px",
+        "tier": "component"
+      },
+      {
+        "name": "--spacing-050",
+        "value": ".125rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-100",
+        "value": ".25rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-150",
+        "value": ".375rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-200",
+        "value": ".5rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-300",
+        "value": ".75rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-400",
+        "value": "1rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-500",
+        "value": "1.5rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-600",
+        "value": "2rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-650",
+        "value": "2.5rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-700",
+        "value": "3rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-800",
+        "value": "4rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--transition-fast",
+        "value": ".15s ease",
+        "tier": "primitive"
+      },
+      {
+        "name": "--type-size-150",
+        "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+        "tier": "primitive"
+      },
+      {
+        "name": "--type-size-200",
+        "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+        "tier": "primitive"
+      },
+      {
+        "name": "--type-size-250",
+        "value": "clamp(.8125rem, .71rem + .5vw, 1.0625rem)",
+        "tier": "primitive"
+      },
+      {
+        "name": "--type-size-500",
+        "value": "clamp(1.125rem, .98rem + .72vw, 1.5rem)",
+        "tier": "primitive"
+      }
+    ],
+    "claudePath": "claude/full-page.md",
+    "repoPath": "public/handoff/project-budgets/claude/full-page.md"
+  }
+}

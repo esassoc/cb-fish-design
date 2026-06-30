@@ -1,6 +1,6 @@
 # Token contract — invoice-review
 
-The 90 design tokens this page actually uses, resolved to their final values for the `cb-fish` theme. Component CSS still references them by name (`var(--color-primary)`), so the names carry the intent; the values below are what they currently resolve to.
+The 106 design tokens this page actually uses, resolved to their final values for the `cb-fish` theme. Component CSS still references them by name (`var(--color-primary)`), so the names carry the intent; the values below are what they currently resolve to.
 
 ## Brand
 
@@ -15,22 +15,28 @@ The 90 design tokens this page actually uses, resolved to their final values for
 | `--color-border` | `#dcdcdc` |
 | `--color-border-light` | `#efefef` |
 | `--color-border-strong` | `#bdbdbd` |
-| `--color-danger` | `#ef4444` |
+| `--color-danger` | `#e5484d` |
+| `--color-danger-hover` | `#dc3e42` |
+| `--color-danger-strong` | `#ce2c31` |
 | `--color-primary` | `#1e5386` |
 | `--color-primary-hover` | `#1a4570` |
+| `--color-primary-strong` | `#2a7e3b` |
 | `--color-primary-subtle` | `#f3f7fc` |
 | `--color-secondary` | `#2770b2` |
 | `--color-secondary-hover` | `#1e5386` |
-| `--color-surface` | `#ffffff` |
+| `--color-secondary-strong` | `#2a7e3b` |
+| `--color-surface` | `#fcfcfc` |
 | `--color-surface-inverse` | `#13273e` |
 | `--color-surface-sunken` | `#f3f7fc` |
-| `--color-text-inverse` | `#ffffff` |
+| `--color-text-inverse` | `#fcfcfc` |
 | `--color-text-link` | `#1e5386` |
 | `--color-text-muted` | `#7c7c7c` |
 | `--color-text-primary` | `#3d3d3d` |
 | `--color-text-secondary` | `#525252` |
 | `--color-text-tertiary` | `#656565` |
-| `--color-warning` | `#f59e0b` |
+| `--color-warning` | `#ffc53d` |
+| `--color-warning-on-fill` | `#4f3422` |
+| `--sidebar-width` | `280px` |
 
 ## Component
 
@@ -38,23 +44,23 @@ The 90 design tokens this page actually uses, resolved to their final values for
 |---|---|
 | `--ag-internal-hover-color` | `rgba(0, 0, 0, 0)` |
 | `--ag-internal-moving-color` | `rgba(0, 0, 0, 0)` |
-| `--app-bar-bg` | `#ffffff` |
+| `--app-bar-bg` | `#fcfcfc` |
 | `--app-bar-brand-bg` | `#1e5386` |
 | `--app-bar-brand-strong-bg` | `#13273e` |
-| `--app-bar-brand-strong-text` | `#ffffff` |
-| `--app-bar-brand-text` | `#ffffff` |
+| `--app-bar-brand-strong-text` | `#fcfcfc` |
+| `--app-bar-brand-text` | `#fcfcfc` |
 | `--app-bar-gap` | `2rem` |
 | `--app-bar-pad-x` | `2rem` |
 | `--app-bar-pad-y` | `1rem` |
 | `--app-bar-text` | `#3d3d3d` |
 | `--badge-bg` | `#1e5386` |
-| `--badge-height-lg` | `24px` |
-| `--badge-height-md` | `20px` |
+| `--badge-height-lg` | `34px` |
+| `--badge-height-md` | `28px` |
 | `--badge-radius` | `.25rem` |
-| `--badge-text-color` | `#ffffff` |
+| `--badge-text-color` | `#fcfcfc` |
 | `--breadcrumbs-link-color` | `#525252` |
 | `--breadcrumbs-link-hover` | `#3d3d3d` |
-| `--breadcrumbs-separator-color` | `#a3a3a3` |
+| `--breadcrumbs-separator-color` | `#bbbbbb` |
 | `--container-gutter` | `2rem` |
 | `--form-font-size-md` | `clamp(.75rem, .66rem + .44vw, .9375rem)` |
 | `--form-font-size-sm` | `clamp(.625rem, .56rem + .32vw, .75rem)` |
@@ -65,6 +71,7 @@ The 90 design tokens this page actually uses, resolved to their final values for
 | `--form-padding-x-sm` | `.625rem` |
 | `--form-radius-md` | `.5rem` |
 | `--form-radius-sm` | `.25rem` |
+| `--icon-button-bg-hover` | `color-mix(in srgb, currentColor 14%, transparent)` |
 | `--icon-link-font-size-md` | `1rem` |
 | `--icon-link-font-size-sm` | `.875rem` |
 | `--icon-link-gap` | `.375rem` |
@@ -87,6 +94,14 @@ The 90 design tokens this page actually uses, resolved to their final values for
 | `--font-weight-medium` | `500` |
 | `--font-weight-regular` | `400` |
 | `--font-weight-semibold` | `600` |
+| `--icon-size-md` | `20px` |
+| `--icon-size-sm` | `16px` |
+| `--icon-size-xs` | `14px` |
+| `--letter-spacing-normal` | `.01em` |
+| `--letter-spacing-tight` | `-.01em` |
+| `--line-height-normal` | `1.6` |
+| `--line-height-relaxed` | `1.8` |
+| `--line-height-tight` | `1.3` |
 | `--radius-100` | `.25rem` |
 | `--radius-200` | `.5rem` |
 | `--spacing-050` | `.125rem` |
@@ -101,6 +116,7 @@ The 90 design tokens this page actually uses, resolved to their final values for
 | `--spacing-650` | `2.5rem` |
 | `--spacing-700` | `3rem` |
 | `--spacing-800` | `4rem` |
+| `--transition-fast` | `.15s ease` |
 | `--type-size-050` | `clamp(.5rem, .44rem + .3vw, .625rem)` |
 | `--type-size-100` | `clamp(.625rem, .56rem + .32vw, .75rem)` |
 | `--type-size-150` | `clamp(.6875rem, .61rem + .38vw, .875rem)` |
@@ -727,15 +743,7 @@ Defined per-component (not at `:root`); see the component's own rule in `styles.
 - `--color-gold-50`
 - `--color-surface-subtle`
 - `--gap`
-- `--icon-size-md`
-- `--icon-size-sm`
-- `--icon-size-xs`
 - `--justify`
-- `--letter-spacing-normal`
-- `--letter-spacing-tight`
-- `--line-height-normal`
-- `--line-height-relaxed`
-- `--line-height-tight`
 - `--page-header-bar-gap`
 - `--page-header-breadcrumbs-gap`
 - `--page-header-eyebrow-color`
@@ -748,7 +756,6 @@ Defined per-component (not at `:root`); see the component's own rule in `styles.
 - `--page-header-title-size`
 - `--page-header-title-weight`
 - `--sidebar-content-min`
-- `--sidebar-width`
 - `--spacing-50`
 - `--stat-accent-color`
 - `--stat-gap`
@@ -761,4 +768,3 @@ Defined per-component (not at `:root`); see the component's own rule in `styles.
 - `--stat-value-font`
 - `--stat-value-size`
 - `--stat-value-weight`
-- `--transition-fast`
