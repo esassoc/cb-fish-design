@@ -41,7 +41,7 @@ jobs:
         with:
           path: cb-fish-design
 
-      - name: Checkout ecology hub (sibling — provides the @esa/* file: deps)
+      - name: Checkout ecology hub (sibling checkout that provides the @esa/* deps)
         uses: actions/checkout@v4
         with:
           repository: esassoc/ecology
