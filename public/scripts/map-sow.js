@@ -20,7 +20,7 @@ var TYPE_COLORS = {pc:'#1a7abf', fp:'#7b4fbf', rr:'#2a7a5c'};
 var TYPE_LABELS = {pc:'Primary Channel', fp:'Floodplain & Side Channels', rr:'Riparian Restoration'};
 var PP_COLOR = {polygon:'#7b4fbf', line:'#c07820', buffer:'#1a7abf', bufferFp:'#2a7a5c'};
 var SOW_COLOR = {line:'#1a7abf', polygon:'#2a7a5c', segment:'#e07b28'};
-var CHU_COLOR = {riffle:'#7b4fbf', pool:'#1a7abf', glide:'#2a8a6a', run:'#c07820', unassigned:'#e07b28'};
+var CHU_COLOR = {riffle:'#c07820', pool:'#1a7abf', glide:'#2a8a6a', run:'#7b4fbf', unassigned:'#e07b28'};
 var CHU_CYCLE = ['riffle','pool','glide','run'];
 var STRUCT_COLOR = {cms:'#e07b28', mcs:'#1a7abf', css:'#c44a4a', fps:'#7b4fbf', scs:'#2a7a5c'};
 var STRUCT_LABEL = {cms:'Channel Margin', mcs:'Mid Channel', css:'Channel Spanning', fps:'Floodplain', scs:'Side Channel'};
@@ -36,6 +36,9 @@ var legCollapsed = false;
 var weModalEditId = null; // null = new, else id of WE being edited
 var lineEditing = null; // {type:'pp'|'sow', metricId or sowId, weId}
 var chuDrawing = false; // whether we're drawing a CHU split line
+var chuPoolMode  = false;  // true while drawing a pool boundary pair
+var chuPoolPhase = 0;      // 1 = drew pool start, waiting for pool end
+var chuPendingPoolIdx = -1;// chuUnits index of the pending pool unit
 var chuDrawPts = [];    // pts being drawn for current split line
 var chuSnapDist = 15;   // px snap distance to area_ch boundary
 
@@ -3145,6 +3148,35 @@ function getCHUChannelPts(we) {
   return (lls2.length && Array.isArray(lls2[0])) ? lls2[0] : lls2;
 }
 
+// Initialise the channel as a single riffle unit (called when entering the Identify Pools step).
+function initCHUUnits(we) {
+  if (!we || we.chuUnits.length > 0) return;
+  var chPts = getCHUChannelPts(we); if (!chPts) return;
+  we.chuUnits = [{id:'chu-0', type:'riffle', pts:chPts.map(function(p){return L.latLng(p.lat,p.lng);}), layer:null, areaM2:0, lengthM:0}];
+  renderCHUUnits(we);
+}
+
+// Toggle a unit between riffle and pool.
+function toggleCHUPool(unitId) {
+  var we = getActiveWE(); if (!we) return;
+  var u = we.chuUnits.filter(function(u){ return u.id===unitId; })[0]; if (!u) return;
+  u.type = (u.type === 'pool') ? 'riffle' : 'pool';
+  renderCHUUnits(we);
+  wizardRefreshIfActive();
+}
+
+function startCHUPoolDraw() {
+  var we = getActiveWE(); if (!we) return;
+  if (!getCHUChannelPts(we)) {
+    setMapHint('No primary channel area — complete steps 8 &amp; 9 first.');
+    setTimeout(function(){setMapHint('');}, 3000); return;
+  }
+  initCHUUnits(we);
+  chuPoolMode = true; chuPoolPhase = 1; chuPendingPoolIdx = -1;
+  startCHUSplit();
+  setMapHint('Draw the <b>upstream boundary</b> of the pool — click across the channel');
+}
+
 function startCHUSplit() {
   var we = getActiveWE(); if (!we) return;
   if (!getCHUChannelPts(we)) {
@@ -3334,7 +3366,7 @@ function commitCHUSplit(we, line) {
   if (we.chuUnits.length === 0) {
     var chPts = getCHUChannelPts(we);
     if (!chPts) return;
-    we.chuUnits = [{id:'chu-0', type:null, pts:chPts.map(function(p){return L.latLng(p.lat,p.lng);}), layer:null, areaM2:0, lengthM:0}];
+    we.chuUnits = [{id:'chu-0', type:'riffle', pts:chPts.map(function(p){return L.latLng(p.lat,p.lng);}), layer:null, areaM2:0, lengthM:0}];
   }
 
   // Extend the split line beyond the polygon in both directions so the user
@@ -3401,22 +3433,25 @@ function commitCHUSplit(we, line) {
   }
   we.chuUnits.splice(splitIdx, 1, newUnits[0], newUnits[1]);
 
-  // If any units already have types, re-apply alternating pattern from first typed unit
-  var anyTyped = we.chuUnits.some(function(u){ return !!u.type; });
-  if (anyTyped) {
-    var anchorIdx = -1, anchorType = null;
-    we.chuUnits.forEach(function(u, i){
-      if (anchorIdx === -1 && u.type) { anchorIdx = i; anchorType = u.type; }
-    });
-    if (anchorIdx >= 0) {
-      var cycleIdx = CHU_CYCLE.indexOf(anchorType);
-      we.chuUnits.forEach(function(u, i){
-        var offset = ((i - anchorIdx) % CHU_CYCLE.length + CHU_CYCLE.length) % CHU_CYCLE.length;
-        u.type = CHU_CYCLE[(cycleIdx + offset) % CHU_CYCLE.length];
-      });
+  if (chuPoolMode) {
+    if (chuPoolPhase === 1) {
+      // First boundary: downstream piece is the pool candidate
+      chuPendingPoolIdx = we.chuUnits.indexOf(newUnits[1]);
+      chuPoolPhase = 2;
+      // Stay in drawing mode for second boundary
+      chuDrawing = true; chuDrawPts = [];
+      document.getElementById('mapwrap').classList.add('drawing');
+      setMapHint('Now draw the <b>downstream boundary</b> of the pool — click across the channel');
+      renderCHUUnits(we); wizardRefreshIfActive();
+      return;
+    } else if (chuPoolPhase === 2) {
+      // Second boundary: upstream piece of this split = pool
+      if (splitIdx === chuPendingPoolIdx) {
+        newUnits[0].type = 'pool';
+      }
+      chuPoolMode = false; chuPoolPhase = 0; chuPendingPoolIdx = -1;
     }
   }
-
   renderCHUUnits(we);
   wizardRefreshIfActive();
 }
@@ -3514,24 +3549,33 @@ function chuCentroid(pts) {
 }
 
 function renderCHUUnits(we) {
+  var poolNum = 0, riffleNum = 0;
   we.chuUnits.forEach(function(u) {
     var col = CHU_COLOR[u.type || 'unassigned'];
     if (u.layer) map.removeLayer(u.layer);
     if (u.labelMarker) { map.removeLayer(u.labelMarker); u.labelMarker = null; }
     u.areaM2 = geoAreaM2(u.pts);
     u.lengthM = chuBBoxLength(u.pts);
+    var typeLabel;
+    if (u.type === 'pool') { poolNum++; typeLabel = 'Pool ' + poolNum; }
+    else { riffleNum++; typeLabel = 'Riffle ' + riffleNum; }
+    u._displayLabel = typeLabel;
     u.layer = L.polygon(u.pts, {color:col, fillColor:col, fillOpacity:0.25, weight:2, interactive:false})
-      .bindTooltip((u.type ? (u.type.charAt(0).toUpperCase()+u.type.slice(1)) : 'Unassigned') + ' — ' + (u.areaM2*0.000247105).toFixed(3)+' ac')
+      .bindTooltip(typeLabel + ' — ' + (u.areaM2*0.000247105).toFixed(3)+' ac')
       .addTo(map);
-    // label at centroid
-    var labelFull = 'Unit ' + (we.chuUnits.indexOf(u) + 1);
     var icon = L.divIcon({
       className: '',
       iconSize: null,
       iconAnchor: null,
-      html: '<div style="background:'+col+';color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.6);white-space:nowrap;box-shadow:0 1px 5px rgba(0,0,0,.5);pointer-events:none;transform:translate(-50%,-50%)">'+labelFull+'</div>'
+      html: '<div style="background:'+col+';color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.6);white-space:nowrap;box-shadow:0 1px 5px rgba(0,0,0,.5);pointer-events:none;transform:translate(-50%,-50%)">'+typeLabel+'</div>'
     });
-    u.labelMarker = L.marker(chuCentroid(u.pts), {icon:icon, interactive:false, zIndexOffset:100}).addTo(map);
+    // During pool identification, only show labels for pool units — riffle labels add noise
+    var identifyingPools = wizardMode && (function(){
+      var vis = getVisibleSteps(); var s = vis[wizardStep]; return s && s.id === 'chu_split';
+    })();
+    if (!identifyingPools || u.type === 'pool') {
+      u.labelMarker = L.marker(chuCentroid(u.pts), {icon:icon, interactive:false, zIndexOffset:100}).addTo(map);
+    }
   });
   var el = document.getElementById('chu-units-list'); if (!el) return;
   if (we.chuUnits.length === 0) { el.innerHTML = '<div style="font-size:11px;color:#556;font-style:italic">No splits yet — draw a split line to begin.</div>'; updateCHUSummary(we); return; }
@@ -5672,7 +5716,7 @@ var WIZARD_STEPS = [
   { id:'pp_done',    label:'Pre-Project Done',  title:'Pre-Project Complete!',          phase:'pp' },
   { id:'pc_reach',   label:'Primary Channel',  title:'Draw Primary Channel',           phase:'work', types:['pc'] },
   { id:'pc_width',   label:'Channel Width',    title:'Enter Primary Channel Width',    phase:'work', types:['pc'] },
-  { id:'chu_split',  label:'Channel Splits',   title:'Split Channel into Units',       phase:'work', types:['pc'] },
+  { id:'chu_split',  label:'Identify Pools',   title:'Identify Pool Locations',        phase:'work', types:['pc'] },
   { id:'chu_details', label:'Channel Details', title:'Assign Unit Types & Depths',     phase:'work', types:['pc'] },
   { id:'structures', label:'Structures',      title:'Wood Structures',                phase:'work', types:['pc'] },
   { id:'fp_work',    label:'Floodplain Work', title:'Floodplain Work Elements',       phase:'work', types:['fp'] },
@@ -5739,11 +5783,14 @@ function wizardStepStatus(we, stepId) {
     }
     case 'pc_reach':   return (we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) ? 'done' : 'pending';
     case 'pc_width':   { var pcw=we.inputVals&&we.inputVals['pc-width']; return (pcw&&pcw>0)?'done':'pending'; }
-    case 'chu_split':  return (we.chuUnits && we.chuUnits.length > 1) ? 'done' : 'pending';
+    case 'chu_split':  return (we.chuUnits && we.chuUnits.length >= 1) ? 'done' : 'pending';
     case 'chu_details': {
-      if (!we.chuUnits || we.chuUnits.length < 2) return 'pending';
-      var allTyped = we.chuUnits.every(function(u){ return !!u.type; });
-      return allTyped ? 'done' : 'pending';
+      if (!we.chuUnits || we.chuUnits.length < 1) return 'pending';
+      var allMeasured = we.chuUnits.every(function(u){
+        if (u.type==='pool') return !!(u.avgDepth>0);
+        return !!(u.boulderCount>=0 && u.boulderCount!==undefined && u.boulderCount!==null);
+      });
+      return allMeasured ? 'done' : 'pending';
     }
     case 'structures':{
       var hasSt = false;
@@ -6134,76 +6181,84 @@ function wizardStepBody(we, step, idx) {
       break;
     }
 
-    case 'chu_split':
-      h += '<div class="wz-step-desc">Draw perpendicular cut lines across the channel to divide it into riffles and pools. Add as many splits as needed, then click Next.</div>';
+    case 'chu_split': {
+      h += '<div class="wz-step-desc">Draw the upstream and downstream boundaries of each pool. Everything outside a pool boundary is treated as riffle.</div>';
       var chuSplitReady = we && getCHUChannelPts(we);
       if (!chuSplitReady) {
         h += '<div class="wz-status warning">&#9888; Draw the primary channel and enter a width first (steps 8 &amp; 9) to generate the channel area.</div>';
       } else {
-        var splitCount = we.chuUnits ? we.chuUnits.length : 0;
-        h += '<div class="wz-status '+(splitCount>1?'done':'pending')+'">';
-        h += splitCount > 1 ? '&#10003; '+splitCount+' units created.' : '&#9654; No splits yet — channel is one unit.';
-        h += '</div>';
-        h += '<button class="wz-action-btn'+(splitCount>1?' secondary':'')+'" onclick="showInnerTab(\'work\');startCHUSplit()">&#9135; '+(splitCount>1?'Add Another Split':'Draw First Split Line')+'</button>';
-        if (splitCount > 1) {
-          we.chuUnits.forEach(function(u, i) {
-            h += '<div class="wz-metric-row"><span class="wz-metric-label">Unit '+(i+1)+'</span><span class="wz-metric-val">'+(u.areaM2?((u.areaM2*0.000247105).toFixed(3)+' ac'):'—')+'</span></div>';
+        var units = we.chuUnits || [];
+        var pools = units.filter(function(u){return u.type==='pool';});
+        var inPoolDraw = chuPoolMode;
+        if (inPoolDraw && chuPoolPhase === 1) {
+          h += '<div class="wz-status pending">&#9654; Draw the <b>upstream boundary</b> of the pool on the map…</div>';
+        } else if (inPoolDraw && chuPoolPhase === 2) {
+          h += '<div class="wz-status pending">&#9654; Draw the <b>downstream boundary</b> of the pool on the map…</div>';
+        } else {
+          h += '<button class="wz-action-btn" onclick="showInnerTab(\'work\');startCHUPoolDraw()">&#43; Add Pool</button>';
+          if (units.length > 1) {
+            h += '<button class="wz-action-btn secondary" onclick="undoCHUSplit();renderWizardStep()" style="margin-top:4px">&#8592; Undo Last Split</button>';
+          }
+        }
+        if (pools.length > 0) {
+          h += '<div style="margin-top:10px">';
+          var pIdx = 0;
+          units.forEach(function(u) {
+            if (u.type !== 'pool') return;
+            pIdx++;
+            var ac = u.areaM2 ? (u.areaM2*0.000247105).toFixed(3)+' ac' : '—';
+            h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;margin-bottom:4px;';
+            h += 'background:#1a7abf18;border:2px solid #1a7abf55;border-radius:5px">';
+            h += '<span style="font-size:12px;font-weight:600;color:#1a7abf">Pool '+pIdx+'</span>';
+            h += '<span style="font-size:11px;color:#555">'+ac+'</span>';
+            h += '</div>';
           });
+          h += '</div>';
+          h += '<div class="wz-status done" style="margin-top:6px">&#10003; '+pools.length+' pool'+(pools.length>1?'s':'')+' identified.</div>';
+        } else if (!inPoolDraw && units.length >= 1) {
+          h += '<div class="wz-tip" style="margin-top:8px">No pools yet — click <b>Add Pool</b> and draw two boundary lines to mark a pool. Leave blank for all-riffle.</div>';
         }
       }
       break;
+    }
 
-    case 'chu_details':
-      h += '<div class="wz-step-desc">For each channel unit, assign a type (riffle or pool) and enter the measurements below.</div>';
-      var units = (we && we.chuUnits) ? we.chuUnits : [];
-      if (units.length < 2) {
-        h += '<div class="wz-status warning">&#9888; Go back and draw at least one split line first.</div>';
+    case 'chu_details': {
+      h += '<div class="wz-step-desc">Enter measurements for each channel unit.</div>';
+      var detUnits = (we && we.chuUnits) ? we.chuUnits : [];
+      if (detUnits.length < 1) {
+        h += '<div class="wz-status warning">&#9888; Go back and identify pool locations first.</div>';
       } else {
-        var allTyped = units.every(function(u){ return !!u.type; });
-        h += '<div class="wz-status '+(allTyped?'done':'warning')+'">';
-        h += allTyped ? '&#10003; All units assigned.' : '&#9888; '+units.filter(function(u){return !u.type;}).length+' unit(s) still need a type.';
-        h += '</div>';
-        units.forEach(function(u, i) {
-          var typeLabel = u.type ? u.type.charAt(0).toUpperCase()+u.type.slice(1) : 'Unassigned';
-          var typeColor = u.type==='riffle'?'#1a7abf':u.type==='pool'?'#7b4fbf':u.type==='glide'?'#2a8a6a':u.type==='run'?'#c07820':'#7c7c7c';
-          h += '<div style="background:#fff;border:1px solid #dcdcdc;border-radius:6px;padding:10px;margin-bottom:8px">';
+        detUnits.forEach(function(u, i) {
+          var isPool = u.type === 'pool';
+          var col = CHU_COLOR[u.type || 'unassigned'];
+          var typeLabel = u._displayLabel || (isPool ? 'Pool' : 'Riffle');
+          var ac = u.areaM2 ? (u.areaM2*0.000247105).toFixed(3)+' ac' : '—';
+          var ft = u.lengthM ? Math.round(u.lengthM*3.28084)+' ft' : '—';
+          h += '<div style="background:#fff;border:2px solid '+col+'33;border-radius:6px;padding:10px;margin-bottom:8px">';
           h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
           h += '<span style="font-size:12px;font-weight:700;color:#3d3d3d">Unit '+(i+1)+'</span>';
-          h += '<span style="font-size:10px;font-weight:700;color:'+typeColor+';background:#f3f7fc;padding:2px 8px;border-radius:10px;border:1px solid #dcdcdc">'+typeLabel+'</span>';
+          h += '<span style="font-size:10px;font-weight:700;color:'+col+';padding:2px 8px;border-radius:10px;background:'+col+'18">'+typeLabel+'</span>';
           h += '</div>';
-          h += '<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">';
-          h += '<button class="chu-type-btn'+(u.type==='riffle'?' active-riffle':'')+'" style="flex:1;min-width:60px;padding:6px" ';
-          h += 'onclick="wizardSetCHUType(&apos;'+u.id+'&apos;,&apos;riffle&apos;)">Riffle</button>';
-          h += '<button class="chu-type-btn'+(u.type==='pool'?' active-pool':'')+'" style="flex:1;min-width:60px;padding:6px" ';
-          h += 'onclick="wizardSetCHUType(&apos;'+u.id+'&apos;,&apos;pool&apos;)">Pool</button>';
-          h += '<button class="chu-type-btn'+(u.type==='glide'?' active-glide':'')+'" style="flex:1;min-width:60px;padding:6px" ';
-          h += 'onclick="wizardSetCHUType(&apos;'+u.id+'&apos;,&apos;glide&apos;)">Glide</button>';
-          h += '<button class="chu-type-btn'+(u.type==='run'?' active-run':'')+'" style="flex:1;min-width:60px;padding:6px" ';
-          h += 'onclick="wizardSetCHUType(&apos;'+u.id+'&apos;,&apos;run&apos;)">Run</button>';
-          h += '</div>';
-          if (u.type === 'riffle') {
-            h += '<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#525252">';
-            h += '<label style="flex:1">Boulder count</label>';
-            h += '<input type="number" min="0" style="width:70px;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" ';
-            h += 'value="'+(u.boulderCount||'')+'" placeholder="0" onchange="wizardSetCHUBoulders(&apos;'+u.id+'&apos;,this.value)">';
-            h += '</div>';
-          }
-          if (u.type === 'pool') {
+          if (isPool) {
             h += '<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#525252">';
             h += '<label style="flex:1">Avg depth at low flow (ft)</label>';
             h += '<input type="number" min="0" step="0.1" style="width:70px;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" ';
             h += 'value="'+(u.avgDepth||'')+'" placeholder="0.0" onchange="wizardSetCHUDepth(&apos;'+u.id+'&apos;,this.value)">';
             h += '</div>';
+          } else {
+            h += '<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#525252">';
+            h += '<label style="flex:1">Boulder count</label>';
+            h += '<input type="number" min="0" style="width:70px;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" ';
+            h += 'value="'+(u.boulderCount!==undefined&&u.boulderCount!==null?u.boulderCount:'')+'" placeholder="0" onchange="wizardSetCHUBoulders(&apos;'+u.id+'&apos;,this.value)">';
+            h += '</div>';
           }
-          // Length and area shown for all types
-          h += '<div style="display:flex;gap:8px;margin-top:4px;font-size:10px;color:#7c7c7c">';
-          h += '<span>'+( u.areaM2 ? (u.areaM2*0.000247105).toFixed(3)+' ac' : '—' )+'</span>';
-          h += '<span>'+( u.lengthM ? Math.round(u.lengthM*3.28084)+' ft' : '—' )+'</span>';
-          h += '</div>';
-          h += '</div>';
+          h += '<div style="display:flex;gap:8px;margin-top:6px;font-size:10px;color:#7c7c7c">';
+          h += '<span>'+ac+'</span><span>'+ft+'</span>';
+          h += '</div></div>';
         });
       }
       break;
+    }
 
     case 'structures':
       h += '<div class="wz-step-desc">Add wood structure placements — channel margin, mid-channel, and channel spanning. Click a structure type to add it, then place it on the map.</div>';
@@ -6369,6 +6424,10 @@ function wizardAutoActivate() {
       break;
     case 'ch_width': case 'fp_left': case 'fp_right': case 'fp_poly':
       if (we && we.ppData['reach_len'] && we.ppData['reach_len'].layer) map.fitBounds(we.ppData['reach_len'].layer.getBounds(), {padding:[60,60]});
+      break;
+    case 'chu_split':
+      if (we) { initCHUUnits(we); }
+      if (we && we.sowLayers['pc-area'] && we.sowLayers['pc-area'].layer) map.fitBounds(we.sowLayers['pc-area'].layer.getBounds(), {padding:[40,40]});
       break;
     case 'pc_reach':
       if (we && we.ppData['reach_len'] && we.ppData['reach_len'].layer) map.fitBounds(we.ppData['reach_len'].layer.getBounds(), {padding:[40,40]});
