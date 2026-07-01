@@ -156,6 +156,8 @@ window.onload = function() {
       container.style.position = 'relative';
       container.innerHTML =
         '<button class="zoom-we-btn" style="margin-top:0;margin-right:4px" onclick="zoomToActiveWE()">&#8982; Zoom to WE</button>' +
+        '<button class="zoom-we-btn" style="margin-top:0;margin-right:4px" id="pp-layer-toggle-btn" onclick="togglePPLayers()">Hide Pre-Project</button>' +
+        '<button class="zoom-we-btn" style="margin-top:0;margin-right:4px" id="label-toggle-btn" onclick="toggleLabels()">Hide Labels</button>' +
         '<button class="layer-control-btn" aria-haspopup="true" aria-expanded="false" id="layer-toggle-btn">&#9864; Layers</button>' +
         '<div class="layer-control-panel" id="layer-panel" style="display:none;position:absolute;right:0;top:32px;z-index:1000;min-width:170px"></div>';
       container.style.display = 'flex';
@@ -245,7 +247,8 @@ function newWEData() {
     structs: [],
     channelReaches: [], // flat ordered list for channel structures (cms/mcs/css)
     inputVals: {},
-    chuUnits: []   // [{id, type:'riffle'|'pool'|null, pts:[], layer, areaM2, lengthM}]
+    chuUnits: [],   // [{id, type:'riffle'|'pool'|null, pts:[], layer, areaM2, lengthM}]
+    scReaches: []   // [{id, layer, bufferLayer, valueM, pts}] secondary channel lines
   };
 }
 
@@ -401,6 +404,62 @@ function dimAllLayers() {
   });
 }
 
+var ppLayersVisible = true;
+
+function setPPLayersVisible(show) {
+  ppLayersVisible = show;
+  var btn = document.getElementById('pp-layer-toggle-btn');
+  if (btn) btn.textContent = show ? 'Hide Pre-Project' : 'Show Pre-Project';
+  var we = getActiveWE(); if (!we) return;
+  PP_DEFS.forEach(function(m) {
+    if (m.id === 'perimeter') {
+      // Always keep project boundary visible and correctly styled
+      var pd = we.ppData['perimeter'];
+      if (pd && pd.layer) {
+        if (!map.hasLayer(pd.layer)) map.addLayer(pd.layer);
+        pd.layer.setStyle({opacity:1, fillOpacity:0, weight:2, dashArray:'8 5'});
+      }
+      return;
+    }
+    var d = we.ppData[m.id]; if (!d) return;
+    function tog(layer) {
+      if (!layer) return;
+      if (show && !map.hasLayer(layer)) map.addLayer(layer);
+      else if (!show && map.hasLayer(layer)) map.removeLayer(layer);
+    }
+    tog(d.layer); tog(d.bufferLayer);
+    if (d._arrowMarkers) d._arrowMarkers.forEach(tog);
+    if (d.lines) d.lines.forEach(function(l){ if(l) tog(l.layer); });
+  });
+}
+
+function togglePPLayers() { setPPLayersVisible(!ppLayersVisible); }
+
+var labelsVisible = true;
+
+function setLabelsVisible(show) {
+  labelsVisible = show;
+  var btn = document.getElementById('label-toggle-btn');
+  if (btn) btn.textContent = show ? 'Hide Labels' : 'Show Labels';
+  workElements.forEach(function(we) {
+    function tog(layer) {
+      if (!layer) return;
+      if (show && !map.hasLayer(layer)) map.addLayer(layer);
+      else if (!show && map.hasLayer(layer)) map.removeLayer(layer);
+    }
+    tog(we._labelMarker);
+    if (we.chuUnits) we.chuUnits.forEach(function(u){ tog(u.labelMarker); });
+    // Structure pins
+    Object.keys(we.structures||{}).forEach(function(t){
+      (we.structures[t]||[]).forEach(function(s){ tog(s.marker); });
+    });
+  });
+}
+
+function toggleLabels() {
+  setLabelsVisible(!labelsVisible);
+}
+
 function zoomToActiveWE() {
   var we = getActiveWE(); if (!we) return;
   // Prefer zooming to the drawn project boundary
@@ -471,7 +530,8 @@ function updateWELabel(w, isActive) {
     iconAnchor: null,
     html: '<div style="background:'+bg+';color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;border:2px solid rgba(255,255,255,0.7);white-space:nowrap;box-shadow:0 1px 5px rgba(0,0,0,.5);pointer-events:none;transform:translate(-50%,-50%);opacity:'+opacity+'">'+labelText+'</div>'
   });
-  w._labelMarker = L.marker(pos, {icon:icon, interactive:false, zIndexOffset:200}).addTo(map);
+  w._labelMarker = L.marker(pos, {icon:icon, interactive:false, zIndexOffset:200});
+  if (labelsVisible) w._labelMarker.addTo(map);
 }
 
 function allWELayers(we) {
@@ -480,6 +540,7 @@ function allWELayers(we) {
   PP_DEFS.forEach(function(m){ var d=we.ppData[m.id]; if(!d)return; if(d.layer)out.push(d.layer); if(d.bufferLayer)out.push(d.bufferLayer); if(d.labelMarker)out.push(d.labelMarker); if(d.lines)d.lines.forEach(function(l){if(l&&l.layer)out.push(l.layer);}); });
   Object.keys(we.structures).forEach(function(t){ we.structures[t].forEach(function(s){if(s.marker)out.push(s.marker);}); });
   if (we.chuUnits) we.chuUnits.forEach(function(u){ if(u.layer)out.push(u.layer); if(u.labelMarker)out.push(u.labelMarker); });
+  if (we.scReaches) we.scReaches.forEach(function(r){ if(r.layer)out.push(r.layer); if(r.bufferLayer)out.push(r.bufferLayer); });
   return out;
 }
 
@@ -513,8 +574,8 @@ function showInnerTab(t) {
 function setPPLayerVisibility(we, show) {
   PP_DEFS.forEach(function(m) {
     var d = we.ppData[m.id]; if (!d) return;
-    var keepVisible = (m.id === 'area_ch') && (we.id === activeWEId);
-    // Perimeter shows dotted outline at rest, fill only on hover
+    var keepVisible = ((m.id === 'area_ch') && (we.id === activeWEId)) || (m.id === 'perimeter');
+    // Perimeter always shows dotted outline regardless of tab
     var opacity     = (show || keepVisible) ? 1 : 0;
     var fillOpacity = (m.id==='perimeter') ? 0 : show ? 0.18 : keepVisible ? 0.1 : 0;
     function applyLayer(l) {
@@ -1203,6 +1264,8 @@ function updateAreaChBuffer(we) {
     color: PP_COLOR.buffer, fillColor: PP_COLOR.buffer,
     fillOpacity: 0.15, weight: 2, dashArray: '6,4', interactive: false
   }).bindTooltip('Area of Channel (estimated)').addTo(map);
+  // Respect the pre-project visibility toggle
+  if (!ppLayersVisible && map.hasLayer(d.bufferLayer)) map.removeLayer(d.bufferLayer);
   d.valueM = geoAreaM2(ring);
   // re-render the row if visible
   var m = PP_DEFS.filter(function(x){return x.id==='area_ch';})[0];
@@ -2201,6 +2264,21 @@ function finishSOWDraw() {
   var pts=drawPts.slice();drawPts=[];clearPreview();
   var NO_CLIP_SOW = {pcw1:1,pcw2:1,pcw3:1};
   if(!NO_CLIP_SOW[d.id]) pts=clipPtsToPerimeter(we,pts,d.geo);
+  // Secondary channel draw: append to scReaches array and return early
+  if (d.id === 'sc-reach-new') {
+    if (!we.scReaches) we.scReaches = [];
+    var scId = 'scr-'+Date.now();
+    var scLayer = L.polyline(pts, {color:SC_COLOR, weight:2.5, interactive:false})
+      .bindTooltip('Secondary Channel '+(we.scReaches.length+1)).addTo(map);
+    we.scReaches.push({id:scId, layer:scLayer, bufferLayer:null, valueM:geoLen(pts), pts:pts});
+    updateSCBuffers(we);
+    sowDrawing = null;
+    document.getElementById('mapwrap').classList.remove('drawing');
+    setMapHint('');
+    renderLegend();
+    if (wizardMode) wizardRefreshIfActive();
+    return;
+  }
   var layer,valueM=0,acres=0;
   var NO_DISPLAY_IDS = {pcw1:1,pcw2:1,pcw3:1};
   if(d.geo==='segment'||d.geo==='line'){
@@ -3295,6 +3373,63 @@ function toggleCHUPool(unitId) {
   wizardRefreshIfActive();
 }
 
+// ── Secondary Channels ────────────────────────────────────────────────────
+var SC_COLOR = '#2a6a9c';
+
+function startSCReachDraw() {
+  var we = getActiveWE(); if (!we) return;
+  if (!we.scReaches) we.scReaches = [];
+  startSOWDraw('sc-reach-new', 'line', 'Secondary Channel '+(we.scReaches.length+1));
+}
+
+function deleteSCReach(id) {
+  var we = getActiveWE(); if (!we) return;
+  if (!we.scReaches) return;
+  var r = we.scReaches.filter(function(r){return r.id===id;})[0];
+  if (r) { if(r.layer) map.removeLayer(r.layer); if(r.bufferLayer) map.removeLayer(r.bufferLayer); }
+  we.scReaches = we.scReaches.filter(function(r){return r.id!==id;});
+  updateSCBuffers(we);
+  if (wizardMode) wizardRefreshIfActive();
+}
+
+function setSCReachWidth(id, val) {
+  var we = getActiveWE(); if (!we) return;
+  var r = we.scReaches && we.scReaches.filter(function(r){return r.id===id;})[0];
+  if (!r) return;
+  var n = parseFloat(val);
+  r.width = (n > 0) ? n : null;
+  updateSCBuffer(we, r);
+  if (wizardMode) wizardRefreshIfActive();
+}
+
+function setSCWood(field, val) {
+  var we = getActiveWE(); if (!we) return;
+  if (!we.inputVals) we.inputVals = {};
+  var n = parseInt(val) || 0;
+  we.inputVals[field] = n;
+  if (wizardMode) wizardRefreshIfActive();
+}
+
+function updateSCBuffer(we, r) {
+  if (!r || !r.layer) return;
+  if (r.bufferLayer) { map.removeLayer(r.bufferLayer); r.bufferLayer = null; }
+  if (!r.width) return;
+  var halfWM = (r.width / 3.28084) / 2;
+  var pts = r.layer.getLatLngs();
+  if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+  pts = extendReachPts(pts);
+  var ring = buildBufferPoly(pts, halfWM);
+  if (!ring) return;
+  r.bufferLayer = L.polygon(ring, {
+    color:SC_COLOR, fillColor:SC_COLOR, fillOpacity:0.15, weight:1.5, dashArray:'6,4', interactive:false
+  }).bindTooltip('Secondary Channel (estimated)').addTo(map);
+}
+
+function updateSCBuffers(we) {
+  if (!we || !we.scReaches) return;
+  we.scReaches.forEach(function(r){ updateSCBuffer(we, r); });
+}
+
 function startCHUPoolDraw() {
   var we = getActiveWE(); if (!we) return;
   if (!getCHUChannelPts(we)) {
@@ -3712,7 +3847,8 @@ function renderCHUUnits(we) {
       var vis = getVisibleSteps(); var s = vis[wizardStep]; return s && s.id === 'chu_split';
     })();
     if (!identifyingPools || u.type === 'pool') {
-      u.labelMarker = L.marker(chuCentroid(u.pts), {icon:icon, interactive:false, zIndexOffset:100}).addTo(map);
+      u.labelMarker = L.marker(chuCentroid(u.pts), {icon:icon, interactive:false, zIndexOffset:100});
+      if (labelsVisible) u.labelMarker.addTo(map);
     }
   });
   var el = document.getElementById('chu-units-list'); if (!el) return;
@@ -5860,6 +5996,8 @@ var WIZARD_STEPS = [
   { id:'chu_split',  label:'Identify Pools',   title:'Identify Pool Locations',        phase:'work', types:['pc'] },
   { id:'chu_details', label:'Pool & Riffle Details', title:'Pool and Riffle Details', phase:'work', types:['pc'] },
   { id:'structures', label:'Structures',      title:'Wood Structures',                phase:'work', types:['pc'] },
+  { id:'sc_draw',  label:'Secondary Channels', title:'Draw Secondary Channels',   phase:'work', types:['pc'], section:'sc' },
+  { id:'sc_wood',  label:'Wood Counts',         title:'Secondary Channel Wood',    phase:'work', types:['pc'], section:'sc' },
   { id:'fp_work',    label:'Floodplain Work', title:'Floodplain Work Elements',       phase:'work', types:['fp'] },
   { id:'rr_work',    label:'Riparian Work',   title:'Riparian Work Elements',         phase:'work', types:['rr'] },
   { id:'done',       label:'Complete',        title:'Work Element Complete!',         phase:'work' }
@@ -5939,6 +6077,8 @@ function wizardStepStatus(we, stepId) {
       ['cms','mcs','css'].forEach(function(t){ if(we.structures&&we.structures[t]&&we.structures[t].length) hasSt=true; });
       return hasSt ? 'done' : 'pending';
     }
+    case 'sc_draw':  return (we.scReaches && we.scReaches.length > 0 && we.scReaches.every(function(r){return r.width>0;})) ? 'done' : 'pending';
+    case 'sc_wood':  { var scL=we.inputVals&&we.inputVals['sc-large-wood'], scS=we.inputVals&&we.inputVals['sc-small-wood']; return (scL>=0&&scS>=0&&(scL>0||scS>0))?'done':'pending'; }
     case 'fp_work': {
       var fpSow = we.sowLayers && Object.keys(we.sowLayers).some(function(k){ return k.indexOf('fp')===0 && we.sowLayers[k] && we.sowLayers[k].valueM; });
       return fpSow ? 'done' : 'pending';
@@ -5971,7 +6111,7 @@ function renderWizardStep() {
   if (!step) return;
 
   // ── Vertical stepper (vendor-invoice pattern) ──────────────────────────
-  var workSectionLabels = {pc: 'Primary Channel', fp: 'Floodplain & Side Channels', rr: 'Riparian Restoration'};
+  var workSectionLabels = {pc: 'Primary Channel', sc: 'Secondary Channels', fp: 'Floodplain & Side Channels', rr: 'Riparian Restoration'};
   var stepsHtml = '<div class="wz-v-steps">';
   var prevPhase = null, prevWorkSection = null;
   visSteps.forEach(function(s, i) {
@@ -5989,7 +6129,7 @@ function renderWizardStep() {
 
     // Work type headers replace the "Habitat Work" label (same style as Pre-Project)
     if (s.phase === 'work' && s.types && s.types.length) {
-      var sectionKey = s.types[0];
+      var sectionKey = s.section || s.types[0];
       if (sectionKey !== prevWorkSection) {
         stepsHtml += '<div class="wz-v-phase-head">' + (workSectionLabels[sectionKey] || sectionKey) + '</div>';
         prevWorkSection = sectionKey;
@@ -6123,7 +6263,7 @@ function wizardStepBody(we, step, idx) {
           h += '<span style="font-size:11px;color:var(--color-text-muted);white-space:nowrap">Bank height (ft):</span>';
           h += '<input type="number" min="0" step="0.1" value="'+(ln.bankHt||'')+'" placeholder="0.0" ';
           h += 'style="width:80px;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px;font-family:var(--font-sans)" ';
-          h += 'oninput="ppSetBankHt('+i+',this.value)">';
+          h += 'onchange="ppSetBankHt('+i+',this.value)">';
           h += '</div>';
         }
       }
@@ -6507,8 +6647,66 @@ function wizardStepBody(we, step, idx) {
         h += '</div>';
       }
 
-      
+
       break;
+
+    case 'sc_draw': {
+      var scReaches = we.scReaches || [];
+      h += '<div class="wz-step-desc">Draw each secondary channel and enter its width. The area buffer will appear automatically once a width is entered.</div>';
+      h += '<button class="wz-action-btn'+(scReaches.length>0?' secondary':'')+'" onclick="showInnerTab(\'work\');startSCReachDraw()">&#128207; '+(scReaches.length>0?'Add Another':'Draw Secondary Channel')+'</button>';
+      if (scReaches.length > 0) {
+        scReaches.forEach(function(r, i) {
+          var ft = r.valueM ? Math.round(r.valueM*3.28084).toLocaleString()+' ft' : '—';
+          var areaAc = (r.width && r.valueM) ? ((r.valueM * (r.width/3.28084)) * 0.000247105).toFixed(3)+' ac' : null;
+          h += '<div style="background:#2a6a9c0d;border:2px solid #2a6a9c55;border-radius:6px;padding:8px 10px;margin-top:8px">';
+          h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
+          h += '<span style="font-size:12px;font-weight:600;color:#2a6a9c">Channel '+(i+1)+'</span>';
+          h += '<span style="font-size:11px;color:#555">'+ft+'</span>';
+          h += '<button onclick="deleteSCReach(\''+r.id+'\');renderWizardStep()" title="Remove" style="background:transparent;border:none;color:#c44a4a;font-size:14px;cursor:pointer;padding:0 4px;line-height:1">&#10005;</button>';
+          h += '</div>';
+          h += '<div style="display:flex;align-items:center;gap:8px">';
+          h += '<label style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap">Width (ft):</label>';
+          h += '<input type="number" min="0" step="1" placeholder="e.g. 15" value="'+(r.width||'')+'"';
+          h += ' style="width:80px;border:1px solid var(--color-border);border-radius:4px;padding:3px 7px;font-size:12px;font-family:var(--font-sans)"';
+          h += ' onchange="setSCReachWidth(\''+r.id+'\',this.value)">';
+          if (areaAc) h += '<span style="font-size:11px;color:var(--color-text-muted)">~ '+areaAc+'</span>';
+          h += '</div>';
+          h += '</div>';
+        });
+        var allHaveWidth = scReaches.every(function(r){return r.width>0;});
+        if (allHaveWidth && scReaches.length > 0) {
+          var totalAc = scReaches.reduce(function(a,r){return a+(r.valueM*(r.width/3.28084)*0.000247105);},0).toFixed(3);
+          h += '<div class="wz-status done" style="margin-top:8px">&#10003; '+scReaches.length+' channel'+(scReaches.length>1?'s':'')+' · '+totalAc+' ac total</div>';
+        } else if (scReaches.length > 0) {
+          h += '<div class="wz-tip" style="margin-top:8px">Enter a width for each channel to estimate area.</div>';
+        }
+      }
+      break;
+    }
+
+    case 'sc_wood': {
+      var scLarge = (we && we.inputVals && we.inputVals['sc-large-wood'] !== undefined) ? we.inputVals['sc-large-wood'] : '';
+      var scSmall = (we && we.inputVals && we.inputVals['sc-small-wood'] !== undefined) ? we.inputVals['sc-small-wood'] : '';
+      h += '<div class="wz-step-desc">Enter the total number of wood pieces placed across all secondary channels.</div>';
+      h += '<div style="display:flex;flex-direction:column;gap:8px;margin:8px 0">';
+      h += '<div style="display:flex;align-items:center;gap:8px">';
+      h += '<label style="font-size:12px;color:var(--color-text-secondary);min-width:110px">Large wood (≥12&quot;):</label>';
+      h += '<input type="number" min="0" step="1" placeholder="0" value="'+scLarge+'"';
+      h += ' style="width:80px;border:1px solid var(--color-border);border-radius:4px;padding:4px 8px;font-size:13px;font-family:var(--font-sans)"';
+      h += ' onchange="setSCWood(\'sc-large-wood\',this.value)">';
+      h += '</div>';
+      h += '<div style="display:flex;align-items:center;gap:8px">';
+      h += '<label style="font-size:12px;color:var(--color-text-secondary);min-width:110px">Small wood (&lt;12&quot;):</label>';
+      h += '<input type="number" min="0" step="1" placeholder="0" value="'+scSmall+'"';
+      h += ' style="width:80px;border:1px solid var(--color-border);border-radius:4px;padding:4px 8px;font-size:13px;font-family:var(--font-sans)"';
+      h += ' onchange="setSCWood(\'sc-small-wood\',this.value)">';
+      h += '</div>';
+      h += '</div>';
+      if (scLarge > 0 || scSmall > 0) {
+        h += '<div class="wz-status done">&#10003; Large: <b>'+(scLarge||0)+'</b> · Small: <b>'+(scSmall||0)+'</b></div>';
+      }
+      break;
+    }
 
     case 'fp_work':
       h += '<div class="wz-step-desc">Draw floodplain work features — floodplain structures, side channel improvements, and other floodplain enhancements.</div>';
@@ -6606,6 +6804,9 @@ function wizardAutoActivate() {
   if (!step) return;
   var we = getActiveWE();
   if (ppDrawing) { ppDrawing = null; drawPts = []; clearPreview(); document.getElementById('mapwrap').classList.remove('drawing'); setMapHint(''); }
+  // Auto-manage pre-project layer visibility based on phase
+  if (step.phase === 'pp') { setPPLayersVisible(true); }
+  else if (step.phase === 'work') { setPPLayersVisible(false); }
   switch(step.id) {
     case 'perimeter':
       setMapHint('Draw your project boundary polygon on the map');
@@ -6618,11 +6819,40 @@ function wizardAutoActivate() {
       break;
     case 'chu_split':
       if (we) { initCHUUnits(we); }
-      if (we && we.sowLayers['pc-area'] && we.sowLayers['pc-area'].layer) map.fitBounds(we.sowLayers['pc-area'].layer.getBounds(), {padding:[40,40]});
+      { var chuPerim = we && we.ppData['perimeter'] && we.ppData['perimeter'].layer;
+        if (chuPerim) {
+          // Perimeter must always be visible in this step regardless of toggle state
+          if (!map.hasLayer(chuPerim)) map.addLayer(chuPerim);
+          chuPerim.setStyle({opacity:1, weight:2, dashArray:'8 5', fillOpacity:0});
+          map.fitBounds(chuPerim.getBounds(), {padding:[30,30]});
+        } else if (we && we.sowLayers['pc-area'] && we.sowLayers['pc-area'].layer) {
+          map.fitBounds(we.sowLayers['pc-area'].layer.getBounds(), {padding:[40,40]});
+        }
+      }
       break;
     case 'pc_fp':
       if (we && we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) map.fitBounds(we.sowLayers['pc-reach'].layer.getBounds(), {padding:[40,40]});
       break;
+    case 'sc_draw': case 'sc_width': case 'sc_wood': {
+      // Hide labels to reduce clutter while drawing secondary channels
+      setLabelsVisible(false);
+      // Ensure primary channel reach + area are visible as reference while drawing secondary channels
+      if (we) {
+        var pcRL = we.sowLayers && we.sowLayers['pc-reach'];
+        if (pcRL && pcRL.layer && !map.hasLayer(pcRL.layer)) map.addLayer(pcRL.layer);
+        var pcAL = we.sowLayers && we.sowLayers['pc-area'];
+        if (pcAL && pcAL.layer && !map.hasLayer(pcAL.layer)) map.addLayer(pcAL.layer);
+      }
+      // Zoom to perimeter so the full project boundary is visible while drawing
+      var scPerimL = we && we.ppData['perimeter'] && we.ppData['perimeter'].layer;
+      if (scPerimL) {
+        scPerimL.setStyle({opacity:1, weight:2, dashArray:'8 5'});
+        map.fitBounds(scPerimL.getBounds(), {padding:[30,30]});
+      } else if (we && we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) {
+        map.fitBounds(we.sowLayers['pc-reach'].layer.getBounds(), {padding:[40,40]});
+      }
+      break;
+    }
     case 'pc_reach':
       if (we && we.ppData['reach_len'] && we.ppData['reach_len'].layer) map.fitBounds(we.ppData['reach_len'].layer.getBounds(), {padding:[40,40]});
       break;
