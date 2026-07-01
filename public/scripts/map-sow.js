@@ -13,6 +13,7 @@ var PP_DEFS = [
   {id:'fp_width',  label:'Average Width of Floodplain', geo:'line',    method:'calc',     multi:0, segment:false, desc:'Auto-calculated: Total floodplain area ÷ reach length.'},
   {id:'area_fp',   label:'Total Active Floodplain Area',geo:null,      method:'calc',     multi:0, segment:false, desc:'Auto-calculated: Left + Right floodplain areas.'},
   {id:'fp_poly',   label:'Floodplain Area',             geo:'polygon', method:'measured', multi:0, segment:false, desc:'Draw the floodplain extent — the stream channel is subtracted automatically to give net floodplain area.'},
+  {id:'pc_fp',     label:'New Floodplain',              geo:'polygon', method:'measured', multi:0, segment:false, desc:'Draw the designed floodplain extent — the primary channel area is subtracted automatically.'},
   {id:'substrate', label:'Reach-Averaged Substrate',    geo:null,      method:'entered',  multi:0, segment:false, desc:'Prioritization substrate data layer.', inputLabel:'Dominant substrate', inputType:'select', opts:['','Silt','Sand','Gravel','Cobble','Boulders','Bedrock']}
 ];
 
@@ -1357,6 +1358,50 @@ function commitFpPoly(we, pts) {
   if (m) renderPMRow(m);
 }
 
+function commitPCFP(we, pts) {
+  if (!we || !pts || pts.length < 3) return;
+  var perimD = we.ppData['perimeter'];
+  if (perimD && perimD.layer) {
+    var pp = perimD.layer.getLatLngs();
+    if (pp.length && Array.isArray(pp[0])) pp = pp[0];
+    if (isConvexPolygon(pp)) {
+      var clipped = clipPolygonToPolygon(pts, pp);
+      if (clipped && clipped.length >= 3) pts = clipped;
+    }
+  }
+  var d = we.ppData['pc_fp'] || {};
+  we.ppData['pc_fp'] = d;
+  if (d.layer) { map.removeLayer(d.layer); d.layer = null; }
+  d._pts = pts;
+  var perimD2 = we.ppData['perimeter'];
+  if (perimD2 && perimD2.layer) {
+    var pp2 = perimD2.layer.getLatLngs();
+    if (pp2.length && Array.isArray(pp2[0])) pp2 = pp2[0];
+    d._outsidePerim = pp2.length>=3 && pts.some(function(p){ return !ptInsidePoly(p, pp2); });
+  } else { d._outsidePerim = false; }
+  var grossAreaM2 = geoAreaM2(pts);
+  var pcAD = we.sowLayers && we.sowLayers['pc-area'];
+  var chRing = null;
+  if (pcAD && pcAD.layer) {
+    var lls = pcAD.layer.getLatLngs();
+    chRing = (lls.length && Array.isArray(lls[0])) ? lls[0] : lls;
+  }
+  var col = '#1a7a6c';
+  if (chRing && chRing.length >= 3) {
+    d.layer = L.polygon([pts, chRing.slice().reverse()], {
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:false
+    }).bindTooltip('New Floodplain').addTo(map);
+    d.valueM = Math.max(0, grossAreaM2 - geoAreaM2(chRing));
+  } else {
+    d.layer = L.polygon(pts, {
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:false
+    }).bindTooltip('New Floodplain').addTo(map);
+    d.valueM = grossAreaM2;
+  }
+  var m = PP_DEFS.filter(function(x){return x.id==='pc_fp';})[0];
+  if (m) renderPMRow(m);
+}
+
 function commitFpSide(we, id, poly, side) {
   var colLeft = '#2a7a5c', colRight = '#5c2a7a';
   // Respect the user's explicit choice (left or right button).
@@ -1671,6 +1716,35 @@ function drawElevChart(canvasId, elevs) {
   });
 }
 
+// Build elevation profile HTML for the primary channel (we.sowElev).
+// Uses a wz-scoped canvas ID so it coexists with the expert-panel chart.
+function buildSOWElevChartHTML(we) {
+  if (!we) return '';
+  var sd = we.sowElev || {};
+  var canvasId = 'sow-elev-chart-wz-' + we.id;
+  var h = '<div class="elev-panel">';
+  h += '<div class="elev-title">&#9650; Elevation Profile';
+  if (sd._loading) {
+    h += ' <span class="elev-loading">Querying USGS…</span></div>';
+  } else if (sd._error) {
+    h += '</div><div style="font-size:10px;color:var(--msow-error-soft,#c05050);padding:4px 0">'+sd._error+'</div>';
+    h += '<button class="wz-action-btn secondary" style="margin-top:4px" onclick="fetchSOWElevationProfile(getActiveWE())">&#8635; Retry</button>';
+  } else if (sd._profile) {
+    h += '</div>';
+    h += '<canvas id="'+canvasId+'" class="elev-chart" style="width:100%;height:90px;display:block"></canvas>';
+    h += '<div class="elev-stats">';
+    h += '<div class="elev-stat"><div class="elev-stat-label">Upstream</div><div class="elev-stat-val">'+Math.round((sd._upstreamElev||0)*3.28084)+' ft</div></div>';
+    h += '<div class="elev-stat"><div class="elev-stat-label">Downstream</div><div class="elev-stat-val">'+Math.round((sd._downstreamElev||0)*3.28084)+' ft</div></div>';
+    h += '<div class="elev-stat"><div class="elev-stat-label">Drop</div><div class="elev-stat-val">'+Math.round(Math.abs(sd._elevChangeM||0)*3.28084)+' ft</div></div>';
+    h += '<div class="elev-stat"><div class="elev-stat-label">Slope</div><div class="elev-stat-val">'+(sd._slopeDeg||0).toFixed(2)+'° / '+(sd._slopePct||0).toFixed(2)+'%</div></div>';
+    h += '</div>';
+  } else {
+    h += '</div><div class="elev-loading">Fetching elevation profile…</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
 function buildElevChartHTML(weId) {
   var we = getWE(weId); if (!we) return '';
   var sd = we.ppData['avg_slope'] || {};
@@ -1781,6 +1855,16 @@ function finishPPDraw() {
       setMapHint('');
       clearPreview();
       commitFpPoly(we, pts);
+      rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
+      if (wizardMode) wizardRefreshIfActive();
+      return;
+    }
+    if (m.id === 'pc_fp') {
+      ppDrawing=null;
+      document.getElementById('mapwrap').classList.remove('drawing');
+      setMapHint('');
+      clearPreview();
+      commitPCFP(we, pts);
       rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
       if (wizardMode) wizardRefreshIfActive();
       return;
@@ -2661,6 +2745,21 @@ function startPolyEdit(id) {
     return;
   }
 
+  // pc_fp: same approach — edit the outer boundary, rebuild donut on commit
+  if (id === 'pc_fp' && d._pts) {
+    if (d.layer) { map.removeLayer(d.layer); d.layer = null; }
+    d.layer = L.polygon(d._pts.slice(), {
+      color:'#1a7a6c', fillColor:'#1a7a6c', fillOpacity:0.18, weight:2, interactive:false
+    }).bindTooltip('New Floodplain (editing)').addTo(map);
+    d._editingBoundary = true;
+    lineEditing = {type:'pp-poly', id:id, weId:activeWEId, layer:d.layer};
+    showEditHandles(d.layer, 'polygon');
+    document.getElementById('edit-done-bar').style.display='flex';
+    document.getElementById('mapwrap').classList.add('editing');
+    if (wizardMode) renderWizardStep();
+    return;
+  }
+
   // Special handling for area_fp: edit the boundary polygon, not the donut
   if (id === 'area_fp' && d._fpBoundaryDrawn && d._fpBoundaryPts) {
     // Create a temporary editable polygon from boundary pts
@@ -2711,7 +2810,7 @@ function buildPolyEditHandles(layer, ring) {
       document.body.style.userSelect = 'none';
       var onMove = function(domEvt) {
         var latlng = map.mouseEventToLatLng(domEvt);
-        if (lineEditing && lineEditing.id === 'fp_poly') {
+        if (lineEditing && (lineEditing.id === 'fp_poly' || lineEditing.id === 'pc_fp')) {
           latlng = snapToPerimeter(getActiveWE(), latlng);
         }
         var lls = h._editLayer.getLatLngs();
@@ -3084,6 +3183,15 @@ function commitLineEdit() {
       we.ppData[id]._editingBoundary = false;
       if (we.ppData[id].layer) { map.removeLayer(we.ppData[id].layer); we.ppData[id].layer = null; }
       commitFpPoly(we, ring2.slice());
+      if (wizardMode) wizardRefreshIfActive();
+      return;
+    }
+
+    // If editing pc_fp boundary, rebuild the donut from the new ring
+    if (id === 'pc_fp' && we.ppData[id]._editingBoundary) {
+      we.ppData[id]._editingBoundary = false;
+      if (we.ppData[id].layer) { map.removeLayer(we.ppData[id].layer); we.ppData[id].layer = null; }
+      commitPCFP(we, ring2.slice());
       if (wizardMode) wizardRefreshIfActive();
       return;
     }
@@ -4418,11 +4526,13 @@ function fetchSOWElevationProfile(we) {
       if (!we.sowLayers['pc-slope']) we.sowLayers['pc-slope'] = {};
       we.sowLayers['pc-slope'].value = we.sowElev._slopeDeg.toFixed(3);
       updateSOWSlopePanel(we);
+      if (wizardMode) wizardRefreshIfActive();
     })
     .catch(function() {
       we.sowElev._loading = false;
       we.sowElev._error = 'Could not reach USGS elevation service.';
       updateSOWSlopePanel(we);
+      if (wizardMode) wizardRefreshIfActive();
     });
 }
 
@@ -5599,7 +5709,7 @@ function mapClick(e) {
   }
   if(ppDrawing){
     var m=PP_DEFS.filter(function(x){return x.id===ppDrawing.metricId;})[0];
-    var clickPt = (m&&m.id==='fp_poly') ? snapToPerimeter(getActiveWE(), e.latlng) : e.latlng;
+    var clickPt = (m&&(m.id==='fp_poly'||m.id==='pc_fp')) ? snapToPerimeter(getActiveWE(), e.latlng) : e.latlng;
     drawPts.push(clickPt);redraw();
     if((m.multi>0||m.segment)&&drawPts.length===2)finishPPDraw();
     return;
@@ -5716,6 +5826,7 @@ var WIZARD_STEPS = [
   { id:'pp_done',    label:'Pre-Project Done',  title:'Pre-Project Complete!',          phase:'pp' },
   { id:'pc_reach',   label:'Primary Channel',  title:'Draw Primary Channel',           phase:'work', types:['pc'] },
   { id:'pc_width',   label:'Channel Width',    title:'Enter Primary Channel Width',    phase:'work', types:['pc'] },
+  { id:'pc_fp',      label:'New Floodplain',   title:'Draw New Floodplain',            phase:'work', types:['pc'] },
   { id:'chu_split',  label:'Identify Pools',   title:'Identify Pool Locations',        phase:'work', types:['pc'] },
   { id:'chu_details', label:'Pool & Riffle Details', title:'Pool and Riffle Details', phase:'work', types:['pc'] },
   { id:'structures', label:'Structures',      title:'Wood Structures',                phase:'work', types:['pc'] },
@@ -5781,6 +5892,7 @@ function wizardStepStatus(we, stepId) {
       var corePP = ['perimeter','reach','ch_width','fp_poly'];
       return corePP.every(function(id){ return wizardStepStatus(we, id) === 'done'; }) ? 'done' : 'pending';
     }
+    case 'pc_fp':      return (we.ppData['pc_fp'] && we.ppData['pc_fp'].layer) ? 'done' : 'pending';
     case 'pc_reach':   return (we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) ? 'done' : 'pending';
     case 'pc_width':   { var pcw=we.inputVals&&we.inputVals['pc-width']; return (pcw&&pcw>0)?'done':'pending'; }
     case 'chu_split':  return (we.chuUnits && we.chuUnits.length >= 1) ? 'done' : 'pending';
@@ -5854,7 +5966,7 @@ function renderWizardStep() {
       }
     }
 
-    stepsHtml += '<div class="wz-v-item">';
+    stepsHtml += '<div class="wz-v-item wz-v-item--nav" onclick="wizardGoToStep('+i+')" title="Go to: '+s.label+'">';
     stepsHtml += '<div class="wz-v-left">';
     stepsHtml += '<div class="wz-v-circle' + (isDone && isActive ? ' done active' : isDone ? ' done' : isActive ? ' active' : '') + '">';
     stepsHtml += isDone ? '&#10003;' : (i + 1);
@@ -5886,6 +5998,13 @@ function renderWizardStep() {
       var _sd = we.ppData['avg_slope'] || {};
       if (_sd._elevProfile) {
         setTimeout(function(){ drawElevChart('elev-chart-' + we.id, _sd._elevProfile); }, 0);
+      }
+    }
+    // Draw SOW elevation chart canvas for primary channel step
+    if (step.id === 'pc_reach' && we) {
+      var _sowSd = we.sowElev || {};
+      if (_sowSd._profile) {
+        setTimeout(function(){ drawElevChart('sow-elev-chart-wz-' + we.id, _sowSd._profile); }, 0);
       }
     }
   }
@@ -6150,13 +6269,49 @@ function wizardStepBody(we, step, idx) {
       h += '<div class="wz-tip">Click Next to begin entering habitat work details.</div>';
       break;
 
+    case 'pc_fp': {
+      var dPCFP = we && we.ppData['pc_fp'];
+      var pcFPDone = dPCFP && dPCFP.layer;
+      var isEditingPCFP = lineEditing && lineEditing.type==='pp-poly' && lineEditing.id==='pc_fp';
+      h += '<div class="wz-step-desc">Draw a polygon covering the new designed floodplain on both sides of the primary channel. The channel area will be automatically subtracted to give the net new floodplain area.</div>';
+      if (pcFPDone) {
+        h += '<div class="wz-status done">&#10003; New floodplain: <b>'+((dPCFP.valueM||0)*0.000247105).toFixed(2)+' ac (net)</b></div>';
+        if (dPCFP._outsidePerim) {
+          h += '<div class="wz-status warning">&#9888; Some vertices are outside the project boundary — edit or redraw to correct.</div>';
+        }
+        h += '<button class="wz-action-btn secondary" onclick="startPolyEdit(\'pc_fp\');renderWizardStep()">'+(isEditingPCFP?'&#9998; Editing…':'&#9998; Edit Vertices')+'</button>';
+        h += '<button class="wz-action-btn secondary" onclick="clearPPGeom(\'pc_fp\');startPPDraw(\'pc_fp\',0);renderWizardStep()">&#128207; Redraw</button>';
+      } else {
+        h += '<button class="wz-action-btn" onclick="startPPDraw(\'pc_fp\',0);renderWizardStep()">&#128207; Draw New Floodplain</button>';
+        h += '<div class="wz-tip">Draw the outer boundary of the new designed floodplain — include both banks. Clicks outside the project boundary snap to the nearest boundary point.</div>';
+      }
+      break;
+    }
+
     case 'pc_reach': {
       var pcSL = we && we.sowLayers && we.sowLayers['pc-reach'];
       var pcDone = pcSL && pcSL.layer;
       h += '<div class="wz-step-desc">Draw the centerline of the proposed (designed) primary channel. This represents the planned channel alignment after habitat work, and will be used to delineate channel units in the next step.</div>';
       if (pcDone) {
-        h += '<div class="wz-status done">&#10003; Primary channel: <b>'+Math.round(pcSL.valueM*3.28084).toLocaleString()+' ft</b></div>';
-        h += '<button class="wz-action-btn secondary" onclick="startSOWDraw(\'pc-reach\',\'line\',\'Primary Channel\');renderWizardStep()">&#128207; Redraw</button>';
+        // Calculate valley length and sinuosity from pc-reach endpoints
+        var pcRL = pcSL.valueM;
+        var pcVlM = 0;
+        var pcPts = pcSL.layer.getLatLngs();
+        if (pcPts.length && Array.isArray(pcPts[0])) pcPts = pcPts[0];
+        if (pcPts && pcPts.length >= 2) {
+          var _toRad=function(d){return d*Math.PI/180;}, _R=6378137;
+          var _p1=pcPts[0], _p2=pcPts[pcPts.length-1];
+          var _dLat=_toRad(_p2.lat-_p1.lat), _dLng=_toRad(_p2.lng-_p1.lng);
+          var _a=Math.sin(_dLat/2)*Math.sin(_dLat/2)+Math.cos(_toRad(_p1.lat))*Math.cos(_toRad(_p2.lat))*Math.sin(_dLng/2)*Math.sin(_dLng/2);
+          pcVlM = _R*2*Math.atan2(Math.sqrt(_a),Math.sqrt(1-_a));
+        }
+        var pcValleyFt = pcVlM ? Math.round(pcVlM*3.28084).toLocaleString()+' ft' : null;
+        var pcSinuosity = (pcRL && pcVlM) ? (pcRL/pcVlM).toFixed(2) : null;
+        h += '<div class="wz-status done">&#10003; Primary channel: <b>'+Math.round(pcRL*3.28084).toLocaleString()+' ft</b></div>';
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Valley Length</span><span class="wz-metric-val '+(pcValleyFt?'':'missing')+'">'+(pcValleyFt||'calculating…')+'</span></div>';
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Sinuosity</span><span class="wz-metric-val '+(pcSinuosity?'':'missing')+'">'+(pcSinuosity||'calculating…')+'</span></div>';
+        h += buildSOWElevChartHTML(we);
+        h += '<button class="wz-action-btn secondary" style="margin-top:8px" onclick="startSOWDraw(\'pc-reach\',\'line\',\'Primary Channel\');renderWizardStep()">&#128207; Redraw</button>';
         h += '<button class="wz-action-btn secondary" onclick="startLineEdit(\'sow\',\'pc-reach\');renderWizardStep()">&#9998; Edit Vertices</button>';
       } else {
         h += '<button class="wz-action-btn" onclick="startSOWDraw(\'pc-reach\',\'line\',\'Primary Channel\');renderWizardStep()">&#128207; Draw Primary Channel</button>';
@@ -6403,6 +6558,14 @@ function wizardBack() {
   if (wizardStep > 0) { wizardStep--; renderWizardStep(); wizardAutoActivate(); }
 }
 
+function wizardGoToStep(idx) {
+  var vis = getVisibleSteps();
+  if (idx < 0 || idx >= vis.length) return;
+  wizardStep = idx;
+  renderWizardStep();
+  wizardAutoActivate();
+}
+
 function wizardSkip() {
   var vis = getVisibleSteps();
   if (wizardStep < vis.length - 1) { wizardStep++; renderWizardStep(); wizardAutoActivate(); }
@@ -6427,6 +6590,9 @@ function wizardAutoActivate() {
     case 'chu_split':
       if (we) { initCHUUnits(we); }
       if (we && we.sowLayers['pc-area'] && we.sowLayers['pc-area'].layer) map.fitBounds(we.sowLayers['pc-area'].layer.getBounds(), {padding:[40,40]});
+      break;
+    case 'pc_fp':
+      if (we && we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) map.fitBounds(we.sowLayers['pc-reach'].layer.getBounds(), {padding:[40,40]});
       break;
     case 'pc_reach':
       if (we && we.ppData['reach_len'] && we.ppData['reach_len'].layer) map.fitBounds(we.ppData['reach_len'].layer.getBounds(), {padding:[40,40]});

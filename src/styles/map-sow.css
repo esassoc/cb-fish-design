@@ -566,6 +566,8 @@
 
 /* Step item row — circle on left, label on right */
 .wz-v-item { display: flex; gap: var(--spacing-300); align-items: flex-start; }
+.wz-v-item--nav { cursor: pointer; border-radius: var(--radius-50, 4px); margin-inline: -4px; padding-inline: 4px; transition: background 120ms ease; }
+.wz-v-item--nav:hover { background: color-mix(in srgb, var(--color-surface-inverse) 6%, transparent); }
 .wz-v-left { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; padding-top: 2px; }
 
 /* Step circle — vendor-invoice style */
