@@ -952,6 +952,78 @@ function ppCalc(we,id) {
 
 function ppCalcFt(we,id){var v=ppCalc(we,id);return v?v*3.28084:null;}
 
+// Core cross-sectional width calculation: given a reach layer and polygon points, returns
+// the width (metres) of the polygon perpendicular to the reach at arc-length parameter t.
+function calcCrossWidthCore(reachLayer, fpPts, t) {
+  var rPts = reachLayer.getLatLngs();
+  if (rPts.length && Array.isArray(rPts[0])) rPts = rPts[0];
+  if (!rPts || rPts.length < 2) return null;
+  var totalLen = 0, segLens = [];
+  for (var i = 0; i < rPts.length - 1; i++) { var sl = geoLen([rPts[i],rPts[i+1]]); segLens.push(sl); totalLen += sl; }
+  if (totalLen === 0) return null;
+  var target = totalLen * t, cum = 0, pt = null, segA = null, segB = null;
+  for (var j = 0; j < segLens.length; j++) {
+    if (cum + segLens[j] >= target || j === segLens.length - 1) {
+      var frac = segLens[j] > 0 ? Math.min(1, (target - cum) / segLens[j]) : 0;
+      pt = {lat: rPts[j].lat + frac*(rPts[j+1].lat-rPts[j].lat), lng: rPts[j].lng + frac*(rPts[j+1].lng-rPts[j].lng)};
+      segA = rPts[j]; segB = rPts[j+1]; break;
+    }
+    cum += segLens[j];
+  }
+  if (!pt) return null;
+  var midLat = (segA.lat+segB.lat)/2;
+  var cosLat = Math.cos(midLat*Math.PI/180);
+  var dLat = segB.lat-segA.lat, dLng = (segB.lng-segA.lng)*cosLat;
+  var sLen = Math.sqrt(dLat*dLat+dLng*dLng); if (sLen < 1e-10) return null;
+  var pLat = -dLng/sLen, pLng = dLat/sLen/cosLat;
+  var hits = [];
+  var n = fpPts.length;
+  for (var k = 0; k < n; k++) {
+    var A = fpPts[k], B = fpPts[(k+1)%n];
+    var edgeLat = B.lat-A.lat, edgeLng = B.lng-A.lng;
+    var cross = pLat*edgeLng - pLng*edgeLat;
+    if (Math.abs(cross) < 1e-14) continue;
+    var s = ((A.lat-pt.lat)*edgeLng - (A.lng-pt.lng)*edgeLat) / cross;
+    var u = ((A.lat-pt.lat)*pLng    - (A.lng-pt.lng)*pLat)    / cross;
+    if (u >= 0 && u <= 1) hits.push(s);
+  }
+  if (hits.length < 2) return null;
+  hits.sort(function(a,b){return a-b;});
+  var neg = null, pos = null;
+  for (var h = 0; h < hits.length; h++) {
+    if (hits[h] <= 0 && (neg === null || hits[h] > neg)) neg = hits[h];
+    if (hits[h] >= 0 && (pos === null || hits[h] < pos)) pos = hits[h];
+  }
+  if (neg === null || pos === null) { neg = hits[0]; pos = hits[hits.length-1]; }
+  return Math.abs(pos - neg) * 111320;
+}
+
+// Cross-sectional floodplain width perpendicular to the reach at arc-length parameter t (0–1).
+// Finds all crossings of a perpendicular ray with the fp_poly outer boundary and returns the
+// distance between the two crossings that bracket the reach centre-line.
+function calcFpCrossWidth(we, t) {
+  var reachD = we.ppData['reach_len']; if (!reachD || !reachD.layer) return null;
+  var fpD = we.ppData['fp_poly']; if (!fpD) return null;
+  var fpPts = null;
+  if (fpD.layer) { var ll = fpD.layer.getLatLngs(); fpPts = (ll.length && Array.isArray(ll[0])) ? ll[0] : ll; }
+  if (!fpPts || fpPts.length < 3) fpPts = fpD._pts;
+  if (!fpPts || fpPts.length < 3) return null;
+  return calcCrossWidthCore(reachD.layer, fpPts, t);
+}
+function calcFpCrossWidthFt(we, t) { var v = calcFpCrossWidth(we, t); return v ? Math.round(v*3.28084) : null; }
+
+// Same calculation for the new (designed) floodplain against the primary channel.
+function calcPCFPCrossWidth(we, t) {
+  var pcReach = we.sowLayers && we.sowLayers['pc-reach']; if (!pcReach || !pcReach.layer) return null;
+  var fpD = we.ppData['pc_fp']; if (!fpD) return null;
+  var fpPts = null;
+  if (fpD.layer) { var ll2 = fpD.layer.getLatLngs(); fpPts = (ll2.length && Array.isArray(ll2[0])) ? ll2[0] : ll2; }
+  if (!fpPts || fpPts.length < 3) fpPts = fpD._pts;
+  if (!fpPts || fpPts.length < 3) return null;
+  return calcCrossWidthCore(pcReach.layer, fpPts, t);
+}
+function calcPCFPCrossWidthFt(we, t) { var v = calcPCFPCrossWidth(we, t); return v ? Math.round(v*3.28084) : null; }
+
 function ppLenFt(we,id){var d=we.ppData[id];return(d&&d.valueM)?d.valueM*3.28084:null;}
 function ppAcres(we,id){var d=we.ppData[id];return(d&&d.valueM)?d.valueM*0.000247105:null;}
 function ppMultiAvgFt(we,id){var d=we.ppData[id];if(!d||!d.lines)return null;var lines=d.lines.filter(function(l){return l&&l.lengthM;});return lines.length?lines.reduce(function(a,l){return a+l.lengthM;},0)/lines.length*3.28084:null;}
@@ -6351,6 +6423,16 @@ function wizardStepBody(we, step, idx) {
         if (dFp._outsidePerim) {
           h += '<div class="wz-status warning">&#9888; Some vertices are outside the project boundary — edit or redraw to correct.</div>';
         }
+        // Cross-sectional widths at start, middle, end of reach
+        var fpWS = calcFpCrossWidthFt(we, 0.05);
+        var fpWM = calcFpCrossWidthFt(we, 0.5);
+        var fpWE = calcFpCrossWidthFt(we, 0.95);
+        if (fpWS !== null || fpWM !== null || fpWE !== null) {
+          h += '<div style="margin:8px 0 4px;font-size:11px;font-weight:600;color:var(--color-text-secondary)">Cross-sectional widths</div>';
+          h += '<div class="wz-metric-row"><span class="wz-metric-label">At reach start</span><span class="wz-metric-val '+(fpWS?'':'missing')+'">'+(fpWS ? fpWS.toLocaleString()+' ft' : '—')+'</span></div>';
+          h += '<div class="wz-metric-row"><span class="wz-metric-label">At mid-reach</span><span class="wz-metric-val '+(fpWM?'':'missing')+'">'+(fpWM ? fpWM.toLocaleString()+' ft' : '—')+'</span></div>';
+          h += '<div class="wz-metric-row"><span class="wz-metric-label">At reach end</span><span class="wz-metric-val '+(fpWE?'':'missing')+'">'+(fpWE ? fpWE.toLocaleString()+' ft' : '—')+'</span></div>';
+        }
         h += '<button class="wz-action-btn secondary" onclick="startPolyEdit(\'fp_poly\');renderWizardStep()">'+(isEditingFpPoly?'&#9998; Editing…':'&#9998; Edit Vertices')+'</button>';
         h += '<button class="wz-action-btn secondary" onclick="clearPPGeom(\'fp_poly\');startPPDraw(\'fp_poly\',0);renderWizardStep()">&#128207; Redraw</button>';
       } else {
@@ -6430,7 +6512,10 @@ function wizardStepBody(we, step, idx) {
           ['Channel Width (avg)',ppMultiAvgFt(we,'ch_width') ? Math.round(ppMultiAvgFt(we,'ch_width'))+' ft' : null],
           ['Substrate',          we.ppData['substrate'] && we.ppData['substrate'].value ? we.ppData['substrate'].value : null],
           ['Area of Channel',    ppAcres(we,'area_ch') ? ppAcres(we,'area_ch').toFixed(2)+' ac' : null],
-          ['Floodplain Area',    fpPolyAc || (fpLAc||fpRAc ? (fpLAc||'—')+' L / '+(fpRAc||'—')+' R' : null)]
+          ['Floodplain Area',    fpPolyAc || (fpLAc||fpRAc ? (fpLAc||'—')+' L / '+(fpRAc||'—')+' R' : null)],
+          ['FP Width — Start',  (function(){ var v=calcFpCrossWidthFt(we,0.05); return v?v.toLocaleString()+' ft':null; })()],
+          ['FP Width — Middle', (function(){ var v=calcFpCrossWidthFt(we,0.5);  return v?v.toLocaleString()+' ft':null; })()],
+          ['FP Width — End',    (function(){ var v=calcFpCrossWidthFt(we,0.95); return v?v.toLocaleString()+' ft':null; })()]
         ];
         // Only include bank height row if a value has been entered
         if (bhVal) ppMetrics.splice(2, 0, ['Bank Height (avg)', bhVal]);
@@ -6451,6 +6536,15 @@ function wizardStepBody(we, step, idx) {
         h += '<div class="wz-status done">&#10003; New floodplain: <b>'+((dPCFP.valueM||0)*0.000247105).toFixed(2)+' ac (net)</b></div>';
         if (dPCFP._outsidePerim) {
           h += '<div class="wz-status warning">&#9888; Some vertices are outside the project boundary — edit or redraw to correct.</div>';
+        }
+        var pcfpWS = calcPCFPCrossWidthFt(we, 0.05);
+        var pcfpWM = calcPCFPCrossWidthFt(we, 0.5);
+        var pcfpWE = calcPCFPCrossWidthFt(we, 0.95);
+        if (pcfpWS !== null || pcfpWM !== null || pcfpWE !== null) {
+          h += '<div style="margin:8px 0 4px;font-size:11px;font-weight:600;color:var(--color-text-secondary)">Cross-sectional widths</div>';
+          h += '<div class="wz-metric-row"><span class="wz-metric-label">At channel start</span><span class="wz-metric-val '+(pcfpWS?'':'missing')+'">'+(pcfpWS ? pcfpWS.toLocaleString()+' ft' : '—')+'</span></div>';
+          h += '<div class="wz-metric-row"><span class="wz-metric-label">At mid-channel</span><span class="wz-metric-val '+(pcfpWM?'':'missing')+'">'+(pcfpWM ? pcfpWM.toLocaleString()+' ft' : '—')+'</span></div>';
+          h += '<div class="wz-metric-row"><span class="wz-metric-label">At channel end</span><span class="wz-metric-val '+(pcfpWE?'':'missing')+'">'+(pcfpWE ? pcfpWE.toLocaleString()+' ft' : '—')+'</span></div>';
         }
         h += '<button class="wz-action-btn secondary" onclick="startPolyEdit(\'pc_fp\');renderWizardStep()">'+(isEditingPCFP?'&#9998; Editing…':'&#9998; Edit Vertices')+'</button>';
         h += '<button class="wz-action-btn secondary" onclick="clearPPGeom(\'pc_fp\');startPPDraw(\'pc_fp\',0);renderWizardStep()">&#128207; Redraw</button>';
