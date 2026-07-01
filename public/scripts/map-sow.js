@@ -411,13 +411,15 @@ function setPPLayersVisible(show) {
   var btn = document.getElementById('pp-layer-toggle-btn');
   if (btn) btn.textContent = show ? 'Hide Pre-Project' : 'Show Pre-Project';
   var we = getActiveWE(); if (!we) return;
+  var ALWAYS_VISIBLE_PP = {perimeter:1, fp_poly:1, pc_fp:1};
   PP_DEFS.forEach(function(m) {
-    if (m.id === 'perimeter') {
-      // Always keep project boundary visible and correctly styled
-      var pd = we.ppData['perimeter'];
+    if (ALWAYS_VISIBLE_PP[m.id]) {
+      // Always keep these layers visible regardless of pre-project toggle
+      var pd = we.ppData[m.id];
       if (pd && pd.layer) {
         if (!map.hasLayer(pd.layer)) map.addLayer(pd.layer);
-        pd.layer.setStyle({opacity:1, fillOpacity:0, weight:2, dashArray:'8 5'});
+        if (m.id === 'perimeter') pd.layer.setStyle({opacity:1, fillOpacity:0, weight:2, dashArray:'8 5'});
+        else pd.layer.setStyle({opacity:1});
       }
       return;
     }
@@ -574,10 +576,11 @@ function showInnerTab(t) {
 function setPPLayerVisibility(we, show) {
   PP_DEFS.forEach(function(m) {
     var d = we.ppData[m.id]; if (!d) return;
-    var keepVisible = ((m.id === 'area_ch') && (we.id === activeWEId)) || (m.id === 'perimeter');
-    // Perimeter always shows dotted outline regardless of tab
+    var keepVisible = ((m.id === 'area_ch') && (we.id === activeWEId))
+      || m.id === 'perimeter' || m.id === 'fp_poly' || m.id === 'pc_fp';
+    // Perimeter always shows dotted outline; floodplain polygons stay visible as design reference
     var opacity     = (show || keepVisible) ? 1 : 0;
-    var fillOpacity = (m.id==='perimeter') ? 0 : show ? 0.18 : keepVisible ? 0.1 : 0;
+    var fillOpacity = (m.id==='perimeter') ? 0 : show ? 0.18 : keepVisible ? 0.15 : 0;
     function applyLayer(l) {
       if (!l) return;
       if (l.setStyle) l.setStyle({opacity: opacity, fillOpacity: fillOpacity});
