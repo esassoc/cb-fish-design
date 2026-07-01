@@ -38,8 +38,9 @@ var weModalEditId = null; // null = new, else id of WE being edited
 var lineEditing = null; // {type:'pp'|'sow', metricId or sowId, weId}
 var chuDrawing = false; // whether we're drawing a CHU split line
 var chuPoolMode  = false;  // true while drawing a pool boundary pair
-var chuPoolPhase = 0;      // 1 = drew pool start, waiting for pool end
-var chuPendingPoolIdx = -1;// chuUnits index of the pending pool unit
+var chuPoolPhase = 0;      // 1 = drew first boundary, waiting for second
+var chuPendingPoolUpId   = null; // ID of upstream piece from first split
+var chuPendingPoolDownId = null; // ID of downstream piece from first split
 var chuDrawPts = [];    // pts being drawn for current split line
 var chuSnapDist = 15;   // px snap distance to area_ch boundary
 
@@ -2390,12 +2391,19 @@ function globalStructNum(we, type, id) {
   return 1;
 }
 
+// Generate a default description for a new structure: "Mid Channel 1", "Mid Channel 2", etc.
+// Call BEFORE pushing the structure onto the array so the count is correct.
+function structDefaultDesc(we, type) {
+  var existing = (we.structures[type] || []).length;
+  return (STRUCT_LABEL[type] || type) + ' ' + (existing + 1);
+}
+
 function addStructure(type, label) {
   var we = getActiveWE(); if (!we) return;
   // Primary channel structures use the flat we.structs path
   if (!we.structs) we.structs = [];
   var structType = type || 'cms';
-  var s = {id:'s-'+Date.now(), structType:structType, desc:'', large:0, small:0, latlng:null, marker:null};
+  var s = {id:'s-'+Date.now(), structType:structType, desc:structDefaultDesc(we, structType), large:0, small:0, latlng:null, marker:null};
   we.structs.push(s);
   we.structures[structType].push(s);
   renderAllStructures();
@@ -2403,7 +2411,7 @@ function addStructure(type, label) {
 
 function addFPStructure() {
   var we = getActiveWE(); if (!we) return;
-  var s = {id:'s-'+Date.now(), structType:'fps', desc:'', large:0, small:0, latlng:null, marker:null};
+  var s = {id:'s-'+Date.now(), structType:'fps', desc:structDefaultDesc(we, 'fps'), large:0, small:0, latlng:null, marker:null};
   we.structures['fps'].push(s);
   if (!we.fpStructs) we.fpStructs = [];
   we.fpStructs.push(s);
@@ -2461,6 +2469,7 @@ function changeFPStructType(id, newType) {
   if (!s || oldType === newType) return;
   // Move between typed arrays
   we.structures[oldType] = we.structures[oldType].filter(function(x){return x.id!==id;});
+  s.desc = structDefaultDesc(we, newType);
   s.structType = newType;
   we.structures[newType].push(s);
   // fpStructs keeps the same object reference — just update structType on s (already done)
@@ -2468,6 +2477,7 @@ function changeFPStructType(id, newType) {
     s.marker.setStyle({color: STRUCT_COLOR[newType]||'#2a7a5c', fillColor: STRUCT_COLOR[newType]||'#2a7a5c'});
   }
   renderFPStructures();
+  if (wizardMode) wizardRefreshIfActive();
 }
 
 function updateFPStructure(id, field, val) {
@@ -2589,7 +2599,9 @@ function changeStructType(oldType, id, newType) {
   }
   if (!s) return;
   var prevType = s.structType || oldType || 'cms';
-  // Update marker color
+  // Set new desc before updating tooltip and syncing arrays
+  s.desc = structDefaultDesc(we, newType);
+  // Update marker color and tooltip with new desc
   if (s.marker) {
     var col = STRUCT_COLOR[newType];
     var num = we.structs ? we.structs.indexOf(s) + 1 : 1;
@@ -2605,6 +2617,7 @@ function changeStructType(oldType, id, newType) {
   if (!we.structures[newType].some(function(x){return x.id===id;})) we.structures[newType].push(s);
   renderAllStructures();
   updateLogTotals();
+  if (wizardMode) wizardRefreshIfActive();
 }
 
 function renderStructures(type) {
@@ -3264,6 +3277,15 @@ function initCHUUnits(we) {
   renderCHUUnits(we);
 }
 
+// Remove a pool (convert it back to riffle). The split lines remain.
+function removeCHUPool(unitId) {
+  var we = getActiveWE(); if (!we) return;
+  var u = we.chuUnits.filter(function(u){ return u.id===unitId; })[0]; if (!u) return;
+  u.type = 'riffle';
+  renderCHUUnits(we);
+  wizardRefreshIfActive();
+}
+
 // Toggle a unit between riffle and pool.
 function toggleCHUPool(unitId) {
   var we = getActiveWE(); if (!we) return;
@@ -3280,7 +3302,7 @@ function startCHUPoolDraw() {
     setTimeout(function(){setMapHint('');}, 3000); return;
   }
   initCHUUnits(we);
-  chuPoolMode = true; chuPoolPhase = 1; chuPendingPoolIdx = -1;
+  chuPoolMode = true; chuPoolPhase = 1; chuPendingPoolUpId = null; chuPendingPoolDownId = null;
   startCHUSplit();
   setMapHint('Draw the <b>upstream boundary</b> of the pool — click across the channel');
 }
@@ -3539,25 +3561,33 @@ function commitCHUSplit(we, line) {
   } else {
     if (c0.lng > c1.lng) newUnits.reverse(); // c1 is further left, should be first
   }
+  // Capture ID before splice (indices shift after)
+  var splitUnitId = we.chuUnits[splitIdx] ? we.chuUnits[splitIdx].id : null;
   we.chuUnits.splice(splitIdx, 1, newUnits[0], newUnits[1]);
 
   if (chuPoolMode) {
     if (chuPoolPhase === 1) {
-      // First boundary: downstream piece is the pool candidate
-      chuPendingPoolIdx = we.chuUnits.indexOf(newUnits[1]);
+      // First boundary drawn — store both piece IDs; user may draw second in either direction
+      chuPendingPoolUpId   = newUnits[0].id;
+      chuPendingPoolDownId = newUnits[1].id;
       chuPoolPhase = 2;
       // Stay in drawing mode for second boundary
       chuDrawing = true; chuDrawPts = [];
       document.getElementById('mapwrap').classList.add('drawing');
-      setMapHint('Now draw the <b>downstream boundary</b> of the pool — click across the channel');
+      setMapHint('Now draw the <b>other end</b> of the pool — click across the channel');
       renderCHUUnits(we); wizardRefreshIfActive();
       return;
     } else if (chuPoolPhase === 2) {
-      // Second boundary: upstream piece of this split = pool
-      if (splitIdx === chuPendingPoolIdx) {
+      // Second boundary splits one of the two candidates.
+      // The pool is the piece between the two split lines:
+      //   • if the downstream candidate was split → pool = upstream piece of that split (newUnits[0])
+      //   • if the upstream candidate was split   → pool = downstream piece of that split (newUnits[1])
+      if (splitUnitId === chuPendingPoolDownId) {
         newUnits[0].type = 'pool';
+      } else if (splitUnitId === chuPendingPoolUpId) {
+        newUnits[1].type = 'pool';
       }
-      chuPoolMode = false; chuPoolPhase = 0; chuPendingPoolIdx = -1;
+      chuPoolMode = false; chuPoolPhase = 0; chuPendingPoolUpId = null; chuPendingPoolDownId = null;
     }
   }
   renderCHUUnits(we);
@@ -6351,9 +6381,6 @@ function wizardStepBody(we, step, idx) {
           h += '<div class="wz-status pending">&#9654; Draw the <b>downstream boundary</b> of the pool on the map…</div>';
         } else {
           h += '<button class="wz-action-btn" onclick="showInnerTab(\'work\');startCHUPoolDraw()">&#43; Add Pool</button>';
-          if (units.length > 1) {
-            h += '<button class="wz-action-btn secondary" onclick="undoCHUSplit();renderWizardStep()" style="margin-top:4px">&#8592; Undo Last Split</button>';
-          }
         }
         if (pools.length > 0) {
           h += '<div style="margin-top:10px">';
@@ -6366,6 +6393,8 @@ function wizardStepBody(we, step, idx) {
             h += 'background:#1a7abf18;border:2px solid #1a7abf55;border-radius:5px">';
             h += '<span style="font-size:12px;font-weight:600;color:#1a7abf">Pool '+pIdx+'</span>';
             h += '<span style="font-size:11px;color:#555">'+ac+'</span>';
+            h += '<button onclick="removeCHUPool(\''+u.id+'\');renderWizardStep()" title="Remove pool" ';
+            h += 'style="background:transparent;border:none;color:#c44a4a;font-size:14px;cursor:pointer;padding:0 4px;line-height:1">&#10005;</button>';
             h += '</div>';
           });
           h += '</div>';
@@ -6685,7 +6714,7 @@ function wizardSkipCHU() {
 
 function wizardAddStructure(type, label) {
   var we = getActiveWE(); if (!we) return;
-  var s = {id:type+'-'+Date.now(), structType:type, label:label, desc:'', large:0, small:0, latlng:null, marker:null};
+  var s = {id:type+'-'+Date.now(), structType:type, label:label, desc:structDefaultDesc(we, type), large:0, small:0, latlng:null, marker:null};
   // Write to both arrays so the expert panel's renderAllStructures() picks it up
   if (!we.structs) we.structs = [];
   we.structs.push(s);
