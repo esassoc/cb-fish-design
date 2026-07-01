@@ -411,7 +411,7 @@ function setPPLayersVisible(show) {
   var btn = document.getElementById('pp-layer-toggle-btn');
   if (btn) btn.textContent = show ? 'Hide Pre-Project' : 'Show Pre-Project';
   var we = getActiveWE(); if (!we) return;
-  var ALWAYS_VISIBLE_PP = {perimeter:1, fp_poly:1, pc_fp:1};
+  var ALWAYS_VISIBLE_PP = {perimeter:1, pc_fp:1};
   PP_DEFS.forEach(function(m) {
     if (ALWAYS_VISIBLE_PP[m.id]) {
       // Always keep these layers visible regardless of pre-project toggle
@@ -577,7 +577,7 @@ function setPPLayerVisibility(we, show) {
   PP_DEFS.forEach(function(m) {
     var d = we.ppData[m.id]; if (!d) return;
     var keepVisible = ((m.id === 'area_ch') && (we.id === activeWEId))
-      || m.id === 'perimeter' || m.id === 'fp_poly' || m.id === 'pc_fp';
+      || m.id === 'perimeter' || m.id === 'pc_fp';
     // Perimeter always shows dotted outline; floodplain polygons stay visible as design reference
     var opacity     = (show || keepVisible) ? 1 : 0;
     var fillOpacity = (m.id==='perimeter') ? 0 : show ? 0.18 : keepVisible ? 0.15 : 0;
