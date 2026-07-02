@@ -263,3 +263,34 @@ Switched to the same pattern every other esa-* component uses — `declare priva
 
 **Change made:**
 Added a `@media (max-width: 600px)` rule to both `esa-dialog` and `esa-confirm-dialog`: the panel aligns to the bottom (`align-items: flex-end`), the surface goes full-width with only the top corners rounded, and it slides up on open (`translateY(100%) → 0`). Desktop (>600px) is unchanged — still centered.
+
+---
+
+## `@esa/tokens` — semantic color ramps
+
+### `--color-*-strong` (step 11) doesn't follow when a theme overrides the base ramp — silent color drift on outline buttons
+
+**Status:** Open — needs upstream change. Worked around locally in `theme-cb-fish.css`.
+**Affects:** Any theme that re-points a semantic color ramp (`--color-secondary`, and by the same mechanism `--color-primary`, `-success`, etc.) without also overriding every derived step. Surfaces as wrong text color on `esa-button appearance="outline"/"dashed"`, `esa-pill`, and anything else reading a `-strong`/`-subtle`/`-border` step.
+
+**Problem:**
+`esa-button color="secondary"` sets its outline **text** color to `--_accent-text: var(--color-secondary-strong)` (step 11 of the ramp). The spoke theme re-pointed the secondary ramp to blue by overriding only `--color-secondary` and `--color-secondary-hover` — the obvious two. But `--color-secondary-strong` was left at the hub default (`var(--color-grass-11)`, GREEN). Result: secondary outline buttons rendered a **blue border with green text**, and the same green leaked into every secondary outline/dashed button in the spoke (drawer Download-all / Previous / Next, wizard Save-as-draft / Edit). The `tokens.css` comment does warn ("Step 11 = colored text on outline buttons. Override in your theme when changing the secondary ramp."), but a comment inside a token file is an easy-to-miss contract for the single most common theming action (re-skinning a brand color), and the failure is silent — no error, just an off-brand color that only shows on one appearance of one component.
+
+**Requested change:**
+Make the derived steps follow the base by default so overriding `--color-secondary` cascades, e.g. derive step 11 from the base ramp rather than pinning it to a foreign primitive ramp:
+
+```css
+/* @esa/tokens — instead of: --color-secondary-strong: var(--color-grass-11); */
+--color-secondary-strong: color-mix(in oklch, var(--color-secondary) 72%, black);
+/* (same treatment for -subtle/-border/-hover across primary/secondary/success/… ) */
+```
+
+Themes that want a hand-tuned step 11 can still override it explicitly; the point is that the *default* should track the base color, not a foreign primitive ramp. At minimum, ship a theming checklist enumerating every derived step a ramp override must also set.
+
+**Local workaround (CBFish):**
+Added the missing step to the theme block:
+
+```css
+/* theme-cb-fish.css */
+--color-secondary-strong: #1c4a76; /* step 11 — else the hub's grass-11 (green) leaks onto secondary outline button text */
+```

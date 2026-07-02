@@ -21,10 +21,6 @@ import CbfInvoiceCard from '../shared/cbf-invoice-card.astro';
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       <span data-review="file-name"></span>
       <span class="cbf-review-meta" data-review="file-size"></span>
-      <div class="cbf-review-file-actions">
-        <button type="button" class="cbf-review-file-btn" data-invoice-replace>Replace</button>
-        <button type="button" class="cbf-review-file-btn cbf-review-file-btn--danger" data-invoice-remove>Remove</button>
-      </div>
     </div>
   </EsaCard>
 
@@ -65,26 +61,6 @@ import CbfInvoiceCard from '../shared/cbf-invoice-card.astro';
   .cbf-review-row svg { color: var(--color-secondary); flex: none; }
   .cbf-review-row + .cbf-review-row { margin-top: var(--spacing-300); }
   .cbf-review-meta { color: var(--color-text-muted); font-size: 13px; }
-
-  .cbf-review-file-actions {
-    display: flex;
-    gap: var(--spacing-200);
-    margin-left: auto;
-    flex: none;
-  }
-  .cbf-review-file-btn {
-    font-size: 13px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-secondary);
-    padding: var(--spacing-100) var(--spacing-300);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-100);
-    background: var(--color-surface);
-    transition: background 0.12s ease, border-color 0.12s ease;
-  }
-  .cbf-review-file-btn:hover { background: var(--color-primary-subtle); border-color: var(--color-primary-border); }
-  .cbf-review-file-btn--danger { color: var(--color-danger, #dc2626); }
-  .cbf-review-file-btn--danger:hover { background: var(--color-danger-subtle, #fef2f2); border-color: var(--color-danger, #dc2626); }
 
   /* The invoice card itself is now the shared CbfInvoiceCard component. */
 

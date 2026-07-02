@@ -26,7 +26,12 @@ import CbfInvoiceReviewSummary from './cbf-invoice-review-summary.astro';
   </div>
 
   <div class="cbf-step-actions">
-    <button type="button" class="cbf-btn-ghost" data-wizard-back>Back</button>
+    <span data-wizard-cancel>
+      <EsaButton color="danger" appearance="outline" size="md">Cancel</EsaButton>
+    </span>
+    <span data-wizard-back>
+      <EsaButton color="secondary" appearance="outline" size="md">Edit</EsaButton>
+    </span>
     <span data-wizard-submit>
       <EsaButton color="primary" size="md">Submit invoice</EsaButton>
     </span>
@@ -63,25 +68,6 @@ import CbfInvoiceReviewSummary from './cbf-invoice-review-summary.astro';
     padding-top: var(--spacing-500);
     border-top: 1px solid var(--color-border);
   }
-  /* Back stays left; primary CTA (Submit) pushes to the right edge. */
-  .cbf-step-actions [data-wizard-submit] { margin-left: auto; }
-  .cbf-btn-ghost {
-    display: inline-flex;
-    align-items: center;
-    height: 40px;
-    padding: 0 var(--spacing-400);
-    border-radius: var(--radius-100);
-    font-family: var(--font-sans);
-    font-size: 15px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-secondary);
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
-    transition: background 0.12s ease, border-color 0.12s ease;
-  }
-  .cbf-btn-ghost:hover {
-    background: var(--color-surface-sunken, #f8f9fb);
-    border-color: var(--color-primary-border);
-    color: var(--color-text-primary);
-  }
+  /* Cancel stays left; Edit + Submit are grouped at the right edge. */
+  .cbf-step-actions [data-wizard-back] { margin-left: auto; }
 </style>

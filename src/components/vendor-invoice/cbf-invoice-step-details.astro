@@ -178,17 +178,18 @@ const contractProjects: Record<string, string> = {
 
     <div class="cbf-support-docs-group">
       <p class="cbf-support-docs-group__label">
-        Supporting documents <span class="cbf-optional">(optional)</span>
+        Backup documents <span class="cbf-optional">(optional)</span>
       </p>
-      <p class="cbf-support-docs-group__desc">Attach timesheets, receipts, reports, or any other supporting files.</p>
-      <div class="cbf-support-docs">
+      <p class="cbf-support-docs-group__desc">Timesheets, receipts, reports, or other supporting files.</p>
+      <div class="cbf-support-docs" data-docs-zone>
         <div class="cbf-support-docs__list" data-docs-list></div>
         <button type="button" class="cbf-support-docs__add" data-docs-add>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
           </svg>
-          Add documents
+          <span class="cbf-support-docs__add-text"><strong>Drag documents here</strong> or click to browse</span>
         </button>
       </div>
       <input
@@ -219,6 +220,12 @@ const contractProjects: Record<string, string> = {
   </div>
 
   <div class="cbf-step-actions">
+    <span data-wizard-cancel>
+      <EsaButton color="danger" appearance="outline" size="md">Cancel</EsaButton>
+    </span>
+    <span data-wizard-save-draft>
+      <EsaButton color="secondary" appearance="outline" size="md">Save as draft</EsaButton>
+    </span>
     <span data-wizard-next>
       <EsaButton color="primary" size="md">Review &amp; submit</EsaButton>
     </span>
@@ -451,11 +458,19 @@ const contractProjects: Record<string, string> = {
     box-shadow: 0 0 0 1px var(--color-primary-border, var(--color-primary));
   }
 
-  /* ---- Supporting documents ---- */
+  /* ---- Backup documents ---- */
+  /* The whole surface is a drop target (data-docs-zone); the button beneath the
+     file list doubles as the browse affordance and the drop-hint. */
   .cbf-support-docs {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-100);
     overflow: hidden;
+    transition: border-color 0.12s ease, background 0.12s ease;
+  }
+  /* Drag-over state: mirror the PDF dropzone so the whole area reads as active. */
+  .cbf-support-docs.is-over {
+    border-color: var(--color-primary);
+    background: var(--color-primary-subtle);
   }
 
   .cbf-support-docs__list:not(:empty) {
@@ -463,17 +478,24 @@ const contractProjects: Record<string, string> = {
   }
 
   .cbf-support-docs__add {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: var(--spacing-150);
+    justify-content: center;
+    gap: var(--spacing-200);
     font-size: 14px;
+    color: var(--color-text-secondary);
+    padding: var(--spacing-400);
+    width: 100%;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  .cbf-support-docs__add svg { flex: none; color: var(--color-secondary); }
+  .cbf-support-docs__add-text strong {
     font-weight: var(--font-weight-semibold);
     color: var(--color-secondary);
-    padding: var(--spacing-300) var(--spacing-400);
-    width: 100%;
-    transition: background 0.12s ease;
   }
   .cbf-support-docs__add:hover { background: var(--color-primary-subtle); }
+  /* Ignore pointer events while dragging so dragleave doesn't flicker on the button. */
+  .cbf-support-docs.is-over .cbf-support-docs__add { pointer-events: none; }
   .cbf-support-docs__add:disabled { opacity: 0.4; cursor: not-allowed; }
 
   .cbf-docs-input {
@@ -491,31 +513,13 @@ const contractProjects: Record<string, string> = {
   .cbf-step-actions {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
     gap: var(--spacing-300);
     margin-top: var(--spacing-700);
     padding-top: var(--spacing-500);
     border-top: 1px solid var(--color-border);
   }
-  .cbf-btn-ghost {
-    display: inline-flex;
-    align-items: center;
-    height: 40px;
-    padding: 0 var(--spacing-400);
-    border-radius: var(--radius-100);
-    font-family: var(--font-sans);
-    font-size: 15px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-secondary);
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
-    transition: background 0.12s ease, border-color 0.12s ease;
-  }
-  .cbf-btn-ghost:hover {
-    background: var(--color-surface-sunken, #f8f9fb);
-    border-color: var(--color-primary-border);
-    color: var(--color-text-primary);
-  }
+  /* Cancel stays left; Save as draft + Review & submit are grouped at the right. */
+  .cbf-step-actions [data-wizard-save-draft] { margin-left: auto; }
 </style>
 
 <style is:global>

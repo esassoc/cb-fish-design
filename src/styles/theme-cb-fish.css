@@ -26,6 +26,10 @@
   --color-primary-active:  #163758;
   --color-secondary:       #2770b2;
   --color-secondary-hover: #1e5386;
+  /* Step 11 — colored TEXT for secondary outline/dashed buttons. Without this the
+     hub default (--color-grass-11, GREEN) leaks through and secondary outline
+     buttons render blue-bordered but green-texted. Re-point to the blue ramp. */
+  --color-secondary-strong: #1c4a76;
 
   /* Blue-tinted sunken surface — stat tiles, control pill */
   --color-surface-sunken:  #f3f7fc;

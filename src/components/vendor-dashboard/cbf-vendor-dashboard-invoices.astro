@@ -2,7 +2,7 @@
 // cbf-vendor-dashboard-invoices — the invoices table for the vendor dashboard's
 // financial-outlook view. A searchable, status-filterable, group-able, sortable
 // tracking grid of every submitted invoice across the vendor's contracts, with
-// an esa-badge status column, a click-a-row detail drawer, a live record-count
+// an esa-pill status column, a click-a-row detail drawer, a live record-count
 // footer, and an esa-empty-state when nothing matches.
 //
 // bcn-lego-checked: ecology has NO table/grid/data-grid lego (checked the full
@@ -11,7 +11,7 @@
 // this machine. The tabular surface is AG Grid Community (ag-grid-community), an
 // explicit dependency chosen for sort/filter/quick-search over a hand-rolled
 // <table>; this bcn- component is its reusable home. Every other control is a
-// lego: the status cell + drawer status reuse the real esa-badge markup (server-
+// lego: the status cell + drawer status reuse the real esa-pill markup (server-
 // rendered into hidden templates, cloned into grid cells so the design-system
 // styling is identical — never reinvented), the search input reuses
 // cbf-search-field, the status + group-by controls use esa-chip-group, the
@@ -19,14 +19,15 @@
 // esa-empty-state.
 import CbfSearchField from '../search/cbf-search-field.astro';
 import CbfInvoiceCard from '../shared/cbf-invoice-card.astro';
-import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaPill from '@esa/ecology/esa-pill.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
 import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 import '@esa/tokens/layouts.css'; // .grid auto-fit primitive for the card view
 import { invoices as defaultInvoices, fmtExact } from '../../data/vendor-dashboard-invoices.mjs';
 
-type Stage = 'In review' | 'Paid' | 'Needs revision';
+type Stage = 'Draft' | 'In review' | 'Paid' | 'Needs revision';
 
 interface LineItem {
   description: string;
@@ -36,6 +37,7 @@ interface LineItem {
 
 interface Invoice {
   number: string;
+  lastEdited?: string;
   contractNumber: string;
   contract: string;
   projectNumber: string;
@@ -50,14 +52,22 @@ interface Invoice {
   lineItems: LineItem[];
   notes?: string;
   pdfName: string;
+  revisionNote?: string;
+  returnedBy?: string;
+  returnedOn?: string;
 }
 
 interface Props {
   invoices?: Invoice[];
 }
 
-// esa-badge variant per pipeline stage — color conveys data/state, not decoration.
-const stageVariant: Record<Stage, 'info' | 'warning' | 'success' | 'secondary' | 'danger'> = {
+// esa-pill variant per pipeline stage — a soft tinted status chip (subtle bg +
+// colored text), color conveys data/state, not decoration. Draft uses the neutral
+// info (blue) tone: it's the vendor's own unsent work, not yet a live pipeline
+// stage, and blue keeps it distinct from In review (amber), Paid (green), and
+// Needs revision (red).
+const stageVariant: Record<Stage, 'info' | 'warning' | 'success' | 'danger'> = {
+  Draft: 'info',
   'In review': 'warning',
   Paid: 'success',
   'Needs revision': 'danger',
@@ -68,6 +78,7 @@ const stages = Object.keys(stageVariant) as Stage[];
 // gets the amber tone so the blocked-on-vendor stage stands out in the control.
 const stageFilters = [
   { value: '', label: 'All' },
+  { value: 'Draft', label: 'Draft' },
   { value: 'In review', label: 'In review' },
   { value: 'Paid', label: 'Paid' },
   { value: 'Needs revision', label: 'Needs revision', tone: 'amber' },
@@ -150,7 +161,7 @@ const { invoices = defaultInvoices } = Astro.props;
   <!-- Card view: the same invoices as a responsive card grid (the .grid auto-fit
        primitive). Each card is the SHARED CbfInvoiceCard — the very same card the
        /vendor-invoice Review & submit step uses — server-rendered once per
-       invoice with the pipeline esa-badge passed into its status slot. The client
+       invoice with the pipeline esa-pill passed into its status slot. The client
        only shows/hides and reorders the cards to mirror the grid's filtered +
        sorted display order, so search, status chips, and group-by behave
        identically across both views. Clicking a card opens the same
@@ -178,7 +189,7 @@ const { invoices = defaultInvoices } = Astro.props;
           total={fmtExact(inv.amount)}
           totalLabel="Amount billed"
         >
-          <EsaBadge slot="status" value={inv.stage} variant={stageVariant[inv.stage]} size="sm" />
+          <EsaPill slot="status" label={inv.stage} variant={stageVariant[inv.stage]} size="sm" removable={false} />
         </CbfInvoiceCard>
       </div>
     ))}
@@ -198,13 +209,13 @@ const { invoices = defaultInvoices } = Astro.props;
     </span>
   </footer>
 
-  <!-- The real esa-badge lego, server-rendered once per stage with the design-
-       system scope hash intact. The grid's status cell renderer clones the
-       matching template's markup — so grid badges are byte-identical to the
-       lego, never a hand-rolled copy. -->
+  <!-- The real esa-pill lego, server-rendered once per stage with the design-
+       system scope hash intact. The grid's status cell renderer and the drawer
+       hero clone the matching template's markup — so those status chips are
+       byte-identical to the lego, never a hand-rolled copy. -->
   <div class="cbf-vendor-dashboard-invoices__badge-templates" data-badge-templates hidden aria-hidden="true">
     {stages.map((s) => (
-      <span data-stage={s}><EsaBadge value={s} variant={stageVariant[s]} size="lg" /></span>
+      <span data-stage={s}><EsaPill label={s} variant={stageVariant[s]} size="md" removable={false} /></span>
     ))}
   </div>
 
@@ -276,9 +287,56 @@ const { invoices = defaultInvoices } = Astro.props;
             </span>
           </div>
           <ul class="cbf-invoice-attach-list" data-detail-attachments></ul>
+
+          <!-- Add backup documents — shown by JS only while the invoice is In
+               review. Lets a vendor supply extra documentation the COR asks for
+               without the invoice being returned or its status changed. -->
+          <div class="cbf-invoice-detail__add-docs" data-detail-add-docs hidden>
+            <button type="button" class="cbf-invoice-detail__add-zone" data-detail-docs-zone data-detail-docs-add>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <span class="cbf-invoice-detail__add-text"><strong>Add backup documents</strong> — drag files here or click to browse</span>
+            </button>
+            <p class="cbf-invoice-detail__add-hint">Provide additional documentation your contract officer requested — no need to change this invoice's status.</p>
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+              class="cbf-invoice-detail__docs-input"
+              data-detail-docs-input
+              tabindex="-1"
+              aria-hidden="true"
+            />
+          </div>
         </section>
         <div data-detail-dl-template hidden aria-hidden="true">
           <EsaIconButton icon="download" label="Download file" size="sm" />
+        </div>
+
+        <!-- Vendor-action unit (Draft / Needs revision) — kept in the invoice's own
+             tracking column (not the detached dialog footer) and pinned to the
+             bottom. For a returned invoice the COR's reason sits directly above the
+             action it drives (cause → fix). esa-alert-box is JS-filled; the primary
+             control escalates to the wizard ("Continue editing" / "Edit & resubmit");
+             Discard is drafts-only and sits far-left, away from the primary. -->
+        <div class="cbf-invoice-detail__vendor" data-detail-vendor hidden>
+          <div class="cbf-invoice-detail__revision" data-detail-revision hidden>
+            <EsaAlertBox variant="warning" title="Returned for revision">
+              <span data-detail-revision-note></span>
+              <span class="cbf-invoice-detail__revision-by" data-detail-revision-by></span>
+            </EsaAlertBox>
+          </div>
+          <div class="cbf-invoice-detail__actions" data-detail-vendor-actions hidden>
+            <span data-detail-discard>
+              <EsaButton color="danger" appearance="outline" size="md">Discard</EsaButton>
+            </span>
+            <span data-detail-continue>
+              <EsaButton color="primary" size="md">Continue editing</EsaButton>
+            </span>
+          </div>
         </div>
       </div>
 
@@ -482,6 +540,40 @@ const { invoices = defaultInvoices } = Astro.props;
     font-weight: var(--font-weight-medium);
   }
 
+  /* Vendor-action unit (Draft / Needs revision): lives in the tracking column,
+     pinned to the bottom and separated by a rule like a mini in-column footer, so
+     the action clearly belongs to this invoice (not the detached dialog footer).
+     For a returned invoice it holds the COR's reason directly above the buttons. */
+  .cbf-invoice-detail__vendor {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-400);
+    padding-top: var(--spacing-400);
+    border-top: 1px solid var(--color-border);
+  }
+  .cbf-invoice-detail__vendor[hidden] { display: none; }
+  .cbf-invoice-detail__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--spacing-300);
+  }
+  .cbf-invoice-detail__actions[hidden] { display: none; }
+  /* Destructive action sits at the far left, away from the primary CTA (which
+     stays pinned right). When Discard is hidden, the primary stays right. */
+  .cbf-invoice-detail__actions [data-detail-discard] { margin-right: auto; }
+
+  /* COR return reason (Needs revision only). */
+  .cbf-invoice-detail__revision[hidden] { display: none; }
+  .cbf-invoice-detail__revision-by {
+    display: block;
+    margin-top: var(--spacing-100);
+    font-size: var(--type-size-100, 0.75rem);
+    color: var(--color-text-muted);
+  }
+
   /* Section header (Attachments): readable, primary, modest weight — not the
      uppercase micro-label pattern. */
   .cbf-invoice-detail__section-title {
@@ -524,6 +616,51 @@ const { invoices = defaultInvoices } = Astro.props;
     color: var(--color-text-primary);
   }
 
+  /* Add backup documents (In review only). The zone is a full-width drop target
+     that doubles as the browse button; the hint below explains the why. */
+  .cbf-invoice-detail__add-docs { margin-top: var(--spacing-300); }
+  .cbf-invoice-detail__add-docs[hidden] { display: none; }
+  .cbf-invoice-detail__add-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-200);
+    width: 100%;
+    padding: var(--spacing-400);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-200);
+    background: var(--color-surface);
+    font-size: var(--type-size-150);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease;
+  }
+  .cbf-invoice-detail__add-zone svg { flex: none; color: var(--color-secondary); }
+  .cbf-invoice-detail__add-text strong {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-secondary);
+  }
+  .cbf-invoice-detail__add-zone:hover { background: var(--color-primary-subtle); }
+  .cbf-invoice-detail__add-zone.is-over {
+    border-color: var(--color-primary);
+    border-style: solid;
+    background: var(--color-primary-subtle);
+  }
+  .cbf-invoice-detail__add-zone.is-over * { pointer-events: none; }
+  .cbf-invoice-detail__add-hint {
+    margin: var(--spacing-200) 0 0;
+    font-size: var(--type-size-100, 0.75rem);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+  .cbf-invoice-detail__docs-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
   .cbf-invoice-detail__position {
     font-size: var(--type-size-150);
     color: var(--color-text-muted);
@@ -564,7 +701,7 @@ const { invoices = defaultInvoices } = Astro.props;
     font-variant-numeric: tabular-nums;
   }
 
-  /* AG Grid status cell: the cloned esa-badge sits in a flex cell so it centers
+  /* AG Grid status cell: the cloned esa-pill sits in a flex cell so it centers
      vertically without disturbing the lego's own box. */
   .cbf-vendor-dashboard-invoices__grid .cbf-grid-status {
     display: inline-flex;
@@ -824,14 +961,15 @@ const { invoices = defaultInvoices } = Astro.props;
   ModuleRegistry.registerModules([AllCommunityModule]);
 
   type Dir = 1 | -1;
-  type Stage = 'In review' | 'Paid' | 'Needs revision';
+  type Stage = 'Draft' | 'In review' | 'Paid' | 'Needs revision';
   type LineItem = { description: string; qty: number; unitPrice: number };
   type Invoice = {
     number: string; contractNumber: string; contract: string;
     projectNumber: string; project: string; submitted: string;
     amount: number; stage: Stage; invoiceDate: string; issued: string;
     perfStart: string; perfEnd: string; lineItems: LineItem[]; notes?: string; pdfName: string;
-    supportingDocs: string[]; paidDate?: string;
+    supportingDocs: string[]; paidDate?: string; lastEdited?: string;
+    revisionNote?: string; returnedBy?: string; returnedOn?: string;
   };
 
   const usd = new Intl.NumberFormat('en-US', {
@@ -875,6 +1013,7 @@ const { invoices = defaultInvoices } = Astro.props;
   const PIPELINE: Stage[] = ['In review', 'Paid'];
   function stateLine(inv: Invoice): { text: string; alert: boolean } {
     switch (inv.stage) {
+      case 'Draft': return { text: inv.lastEdited ? `Draft · last edited ${inv.lastEdited}` : 'Draft — not yet submitted', alert: false };
       case 'In review': return { text: 'Under review by BPA', alert: false };
       case 'Paid': return { text: inv.paidDate ? `Paid on ${inv.paidDate}` : 'Paid', alert: false };
       case 'Needs revision': return { text: 'Needs revision — action required', alert: true };
@@ -934,7 +1073,7 @@ const { invoices = defaultInvoices } = Astro.props;
     let view: 'grid' | 'cards' = (viewControl?.value as 'grid' | 'cards') || 'grid';
     let groupKey = groupControl?.value ?? 'none';
 
-    // Pre-clone the real esa-badge markup per stage (server-rendered with the
+    // Pre-clone the real esa-pill markup per stage (server-rendered with the
     // design-system scope hash) so grid cells reuse the lego verbatim.
     const badgeHTML = new Map<string, string>();
     root.querySelectorAll<HTMLElement>('[data-badge-templates] [data-stage]').forEach((el) => {
@@ -1132,7 +1271,25 @@ const { invoices = defaultInvoices } = Astro.props;
     const attachTitle = dialog?.querySelector<HTMLElement>('[data-detail-attach-title]') ?? null;
     const dlBtnHTML = dialog?.querySelector('[data-detail-dl-template] button')?.outerHTML ?? '';
     const position = dialog?.querySelector<HTMLElement>('[data-detail-position]') ?? null;
+    const addDocsBox = dialog?.querySelector<HTMLElement>('[data-detail-add-docs]') ?? null;
+    const docsInput = dialog?.querySelector<HTMLInputElement>('[data-detail-docs-input]') ?? null;
+    const docsZone = dialog?.querySelector<HTMLElement>('[data-detail-docs-zone]') ?? null;
+    const vendorBox = dialog?.querySelector<HTMLElement>('[data-detail-vendor]') ?? null;
+    const vendorActions = dialog?.querySelector<HTMLElement>('[data-detail-vendor-actions]') ?? null;
+    const continueWrap = dialog?.querySelector<HTMLElement>('[data-detail-continue]') ?? null;
+    const continueLabel = dialog?.querySelector<HTMLElement>('[data-detail-continue] .esa-button__label') ?? null;
+    const discardWrap = dialog?.querySelector<HTMLElement>('[data-detail-discard]') ?? null;
+    const attachSection = dialog?.querySelector<HTMLElement>('.cbf-invoice-detail__attach') ?? null;
+    const addDocsHint = dialog?.querySelector<HTMLElement>('.cbf-invoice-detail__add-hint') ?? null;
+    const revisionBox = dialog?.querySelector<HTMLElement>('[data-detail-revision]') ?? null;
+    const revisionNoteEl = dialog?.querySelector<HTMLElement>('[data-detail-revision-note]') ?? null;
+    const revisionByEl = dialog?.querySelector<HTMLElement>('[data-detail-revision-by]') ?? null;
     let currentFiles: string[] = [];
+    // Backup docs the vendor adds from this drawer while an invoice is In review,
+    // keyed by invoice number so they persist as prev/next walks the list
+    // (prototype: client-only, names only — no upload backend).
+    const extraDocs = new Map<string, string[]>();
+    let currentInv: Invoice | null = null;
     const prevWrap = dialog?.querySelector<HTMLElement>('[data-detail-prev]') ?? null;
     const nextWrap = dialog?.querySelector<HTMLElement>('[data-detail-next]') ?? null;
     const prev = prevWrap?.querySelector('button') ?? null;
@@ -1161,17 +1318,62 @@ const { invoices = defaultInvoices } = Astro.props;
 
     let current = -1;
 
+    // Render the attachment rows: invoice PDF, the vendor's submitted supporting
+    // files, then any backup docs added from this drawer (tagged "Added"). Kept
+    // separate from populate() so adding a doc can re-render in place.
+    const renderAttachments = (inv: Invoice) => {
+      // Drops empty names — a draft may not have uploaded its invoice PDF yet.
+      const base = [inv.pdfName, ...(inv.supportingDocs ?? [])].filter(Boolean);
+      const added = extraDocs.get(inv.number) ?? [];
+      currentFiles = [...base, ...added];
+      // Hide the whole Attachments section when there's nothing to show (empty draft).
+      if (attachSection) attachSection.hidden = currentFiles.length === 0;
+      if (attachTitle) attachTitle.textContent = `Attachments (${currentFiles.length})`;
+      if (!attachList) return;
+      attachList.innerHTML = currentFiles
+        .map((name, i) => {
+          const role = i === 0 ? 'Invoice' : i >= base.length ? 'Added' : '';
+          return `<li class="cbf-invoice-attach" data-primary="${i === 0}">
+            <span class="cbf-invoice-attach__name" title="${esc(name)}">${esc(name)}</span>
+            ${role ? `<span class="cbf-invoice-attach__role">${role}</span>` : ''}
+            <span class="cbf-invoice-attach__dl" data-attach-dl data-file="${esc(name)}">${dlBtnHTML}</span>
+          </li>`;
+        })
+        .join('');
+      attachList.querySelectorAll<HTMLElement>('[data-attach-dl]').forEach((slot) => {
+        const file = slot.dataset.file ?? '';
+        const btn = slot.querySelector('button');
+        if (btn) { btn.setAttribute('aria-label', `Download ${file}`); btn.setAttribute('title', `Download ${file}`); }
+      });
+    };
+
+    // Add dropped/picked files (names only) to the current invoice's backup docs,
+    // skipping any that already exist, then re-render the list in place.
+    const addBackupDocs = (names: string[]) => {
+      if (!currentInv || !names.length) return;
+      const existing = new Set(currentFiles);
+      const fresh = names.filter((n) => n && !existing.has(n));
+      if (!fresh.length) return;
+      const list = extraDocs.get(currentInv.number) ?? [];
+      list.push(...fresh);
+      extraDocs.set(currentInv.number, list);
+      renderAttachments(currentInv);
+    };
+
     const populate = (inv: Invoice) => {
       if (!dialog) return;
       const list = displayed();
       current = list.findIndex((d) => d.number === inv.number);
+      const isDraft = inv.stage === 'Draft';
+      const needsRevision = inv.stage === 'Needs revision';
       dialog.heading = inv.number ?? 'Invoice';
       if (statusBox) statusBox.innerHTML = `<span class="cbf-grid-status">${badgeHTML.get(inv.stage) ?? inv.stage}</span>`;
       if (fContract) fContract.textContent = inv.contract ?? '';
       if (fProject) fProject.textContent = inv.project ?? '';
       if (fInvoiceDate) fInvoiceDate.textContent = inv.invoiceDate ?? '';
       if (fPerf) fPerf.textContent = inv.perfStart && inv.perfEnd ? `${inv.perfStart} – ${inv.perfEnd}` : '';
-      if (fAmount) fAmount.textContent = usd.format(inv.amount ?? 0);
+      // A barely-started draft may have no total yet — show an em dash, not $0.00.
+      if (fAmount) fAmount.textContent = inv.stage === 'Draft' && !inv.amount ? '—' : usd.format(inv.amount ?? 0);
 
       // State line.
       if (fState) {
@@ -1181,9 +1383,17 @@ const { invoices = defaultInvoices } = Astro.props;
       }
 
       // Status pipeline: In review → Paid. A Needs-revision invoice is shown
-      // returned at the review step.
-      if (pipeline) {
-        const needsRevision = inv.stage === 'Needs revision';
+      // returned at the review step; a Draft sits at a pre-submission step.
+      if (pipeline && isDraft) {
+        const steps = ['Draft', 'In review', 'Paid'];
+        pipeline.innerHTML = steps.map((label, i) => {
+          const state = i === 0 ? 'active' : 'todo';
+          return `<li class="cbf-invoice-pipeline__step" data-state="${state}">
+            <span class="cbf-invoice-pipeline__dot"></span>
+            <span class="cbf-invoice-pipeline__label">${label}</span>
+          </li>`;
+        }).join('');
+      } else if (pipeline) {
         const activeIdx = needsRevision ? 0 : PIPELINE.indexOf(inv.stage);
         pipeline.innerHTML = PIPELINE.map((label, i) => {
           let state: string;
@@ -1198,22 +1408,42 @@ const { invoices = defaultInvoices } = Astro.props;
         }).join('');
       }
 
-      // Attachments: invoice document first, then the vendor's supporting files.
-      currentFiles = [inv.pdfName, ...(inv.supportingDocs ?? [])];
-      if (attachTitle) attachTitle.textContent = `Attachments (${currentFiles.length})`;
-      if (attachList) {
-        attachList.innerHTML = currentFiles
-          .map((name, i) => `<li class="cbf-invoice-attach" data-primary="${i === 0}">
-            <span class="cbf-invoice-attach__name" title="${esc(name)}">${esc(name)}</span>
-            ${i === 0 ? '<span class="cbf-invoice-attach__role">Invoice</span>' : ''}
-            <span class="cbf-invoice-attach__dl" data-attach-dl data-file="${esc(name)}">${dlBtnHTML}</span>
-          </li>`)
-          .join('');
-        attachList.querySelectorAll<HTMLElement>('[data-attach-dl]').forEach((slot) => {
-          const file = slot.dataset.file ?? '';
-          const btn = slot.querySelector('button');
-          if (btn) { btn.setAttribute('aria-label', `Download ${file}`); btn.setAttribute('title', `Download ${file}`); }
-        });
+      // Attachments: invoice document, submitted supporting files, and any backup
+      // docs added here. Adding is offered only while the invoice is In review —
+      // so a vendor can answer a COR's request for more documentation without the
+      // invoice being returned or its status changed.
+      currentInv = inv;
+      renderAttachments(inv);
+
+      // Add backup docs: offered whenever the ball is in the vendor's court —
+      // In review (COR asked for more) or Needs revision (fix + attach). The hint
+      // reflects which case it is.
+      if (addDocsBox) addDocsBox.hidden = !(inv.stage === 'In review' || needsRevision);
+      if (addDocsHint) {
+        addDocsHint.textContent = needsRevision
+          ? 'Attach the documentation your contract officer asked for, then use Edit & resubmit to send it back.'
+          : 'Provide additional documentation your contract officer requested — no need to change this invoice’s status.';
+      }
+
+      // Vendor-action unit (Draft or Needs revision): the primary control escalates
+      // to the wizard; its label depends on the state. Discard is drafts-only.
+      if (vendorBox) vendorBox.hidden = !(isDraft || needsRevision);
+      if (vendorActions) vendorActions.hidden = !(isDraft || needsRevision);
+      if (continueLabel) continueLabel.textContent = isDraft ? 'Continue editing' : 'Edit & resubmit';
+      if (discardWrap) discardWrap.hidden = !isDraft;
+
+      // COR return reason (Needs revision only): why it came back + who returned it.
+      if (revisionBox) revisionBox.hidden = !needsRevision;
+      if (needsRevision) {
+        if (revisionNoteEl) {
+          revisionNoteEl.textContent =
+            inv.revisionNote ?? 'This invoice needs changes before it can be approved.';
+        }
+        if (revisionByEl) {
+          revisionByEl.textContent = inv.returnedBy
+            ? `— ${inv.returnedBy}${inv.returnedOn ? ` · ${inv.returnedOn}` : ''}`
+            : '';
+        }
       }
 
       // The document "sheet": the printed invoice the vendor submitted.
@@ -1304,6 +1534,44 @@ const { invoices = defaultInvoices } = Astro.props;
     });
     dialog?.querySelector('[data-detail-download-all]')?.addEventListener('click', () => {
       currentFiles.forEach((file, i) => setTimeout(() => downloadFile(file, dialog?.heading ?? ''), i * 250));
+    });
+
+    // Add backup documents (In review only): click to browse or drag files onto
+    // the zone. Multiple files land in one drop.
+    docsZone?.addEventListener('click', () => docsInput?.click());
+    docsInput?.addEventListener('change', () => {
+      addBackupDocs(Array.from(docsInput.files ?? []).map((f) => f.name));
+      docsInput.value = '';
+    });
+    docsZone?.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      docsZone.classList.add('is-over');
+    });
+    docsZone?.addEventListener('dragleave', (e) => {
+      if (!docsZone.contains(e.relatedTarget as Node)) docsZone.classList.remove('is-over');
+    });
+    docsZone?.addEventListener('drop', (e) => {
+      e.preventDefault();
+      docsZone.classList.remove('is-over');
+      addBackupDocs(Array.from(e.dataTransfer?.files ?? []).map((f) => f.name));
+    });
+
+    // Draft: Continue editing escalates to the full-page wizard (authoring needs
+    // the room); the draft number rides along so a real backend could rehydrate it.
+    continueWrap?.addEventListener('click', () => {
+      if (!currentInv) return;
+      const base = import.meta.env.BASE_URL;
+      window.location.href = `${base}vendor-invoice?invoice=${encodeURIComponent(currentInv.number)}`;
+    });
+
+    // Draft: Discard removes it from the vendor's list (prototype: client-only).
+    discardWrap?.addEventListener('click', () => {
+      if (!currentInv) return;
+      if (!window.confirm(`Discard draft ${currentInv.number}? This can’t be undone.`)) return;
+      const gone = currentInv;
+      gridApi.applyTransaction({ remove: [gone] });          // drops the grid row → syncView refreshes count/cards
+      root.querySelector<HTMLElement>(`[data-card="${gone.number}"]`)?.remove();
+      (dialog as unknown as { close(): void })?.close?.();
     });
 
     return (inv: Invoice) => { populate(inv); dialog?.show(); };

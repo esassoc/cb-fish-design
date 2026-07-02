@@ -141,11 +141,14 @@ export function initInvoiceWizard(): void {
       updateStepper();
       syncPdfPanel();
     }
-    if (t.closest('[data-invoice-replace]')) uploadInput.click();
-    if (t.closest('[data-invoice-remove]')) { clearFile(); goTo(0); }
+    if (t.closest('[data-wizard-save-draft]')) saveDraft();
     if (t.closest('[data-wizard-submit]')) submitInvoice();
     if (t.closest('[data-modal-submit]')) submitInvoice();
     if (t.closest('[data-modal-back]')) wizard.querySelector<any>('[data-confirm-modal]')?.close();
+    if (t.closest('[data-wizard-cancel]')) {
+      wizard.querySelector<any>('[data-confirm-modal]')?.close();
+      window.location.href = import.meta.env.BASE_URL + 'vendor-dashboard';
+    }
     if (t.closest('[data-dev-autofill]')) devAutofill();
   });
 
@@ -360,14 +363,15 @@ export function initInvoiceWizard(): void {
     }
   }
 
-  docsInput?.addEventListener('change', () => {
-    const incoming = Array.from(docsInput.files ?? []);
+  // Accept a batch of files (from the picker or a drag-drop), skipping oversize
+  // and duplicate-name files and surfacing a single error for any rejected ones.
+  function addDocs(incoming: File[]): void {
+    if (!incoming.length) return;
     const oversize = incoming.filter((f) => f.size > MAX_FILE_BYTES);
     const existingNames = new Set(supportingDocs.map((f) => f.name));
     supportingDocs.push(
       ...incoming.filter((f) => f.size <= MAX_FILE_BYTES && !existingNames.has(f.name)),
     );
-    docsInput.value = '';
     if (oversize.length) {
       const names = oversize.map((f) => f.name).join(', ');
       setDocsError(
@@ -378,6 +382,27 @@ export function initInvoiceWizard(): void {
       setDocsError('');
     }
     renderDocs();
+  }
+
+  docsInput?.addEventListener('change', () => {
+    addDocs(Array.from(docsInput.files ?? []));
+    docsInput.value = '';
+  });
+
+  // Drag & drop onto the whole backup-documents surface — multiple files at once.
+  const docsZone = wizard.querySelector<HTMLElement>('[data-docs-zone]');
+  docsZone?.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    docsZone.classList.add('is-over');
+  });
+  docsZone?.addEventListener('dragleave', (e) => {
+    // Only clear when the pointer actually leaves the zone, not its children.
+    if (!docsZone.contains(e.relatedTarget as Node)) docsZone.classList.remove('is-over');
+  });
+  docsZone?.addEventListener('drop', (e) => {
+    e.preventDefault();
+    docsZone.classList.remove('is-over');
+    addDocs(Array.from(e.dataTransfer?.files ?? []));
   });
 
   docsList?.addEventListener('click', (e) => {
@@ -735,6 +760,18 @@ export function initInvoiceWizard(): void {
     fillReviewSummary(wizard.querySelector<HTMLElement>('[data-modal-review-content]'));
   }
 
+  // ---- Save as draft ----
+  // A draft keeps whatever's been entered so far — no validation, no submission.
+  // Prototype: there's no persistence layer, so we confirm with a toast and return
+  // the vendor to the dashboard, where drafts are listed with a "Draft" status.
+  function saveDraft(): void {
+    const snackbar = document.querySelector<any>('[data-snackbar]');
+    snackbar?.success?.('Draft saved.', { duration: 3000 });
+    setTimeout(() => {
+      window.location.href = import.meta.env.BASE_URL + 'vendor-dashboard';
+    }, 700);
+  }
+
   // ---- Submit ----
 
   function submitInvoice(): void {
@@ -764,7 +801,7 @@ export function initInvoiceWizard(): void {
       if (isModal) wizard.querySelector<any>('[data-confirm-modal]')?.close();
       resetWizard();
       const snackbar = document.querySelector<any>('[data-snackbar]');
-      snackbar?.success?.(`Invoice ${ref} submitted. The form has been cleared for your next one.`, { duration: 6000 });
+      snackbar?.success?.(`Invoice ${ref} submitted.`, { duration: 4000 });
     }, 1500);
   }
 

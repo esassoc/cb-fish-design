@@ -6,18 +6,21 @@
 // names are invented, NOT derived from any client document.
 
 /**
- * @typedef {'In review' | 'Paid' | 'Needs revision'} Stage
+ * @typedef {'Draft' | 'In review' | 'Paid' | 'Needs revision'} Stage
  * @typedef {{ description: string; qty: number; unitPrice: number }} LineItem
  * @typedef {{
  *   number: string; contract: string; project: string; submitted: string;
  *   amount: number; stage: Stage;
  *   invoiceDate: string; issued: string; perfStart: string; perfEnd: string;
  *   lineItems: LineItem[]; notes?: string; pdfName: string;
- *   supportingDocs: string[]; paidDate?: string;
+ *   supportingDocs: string[]; paidDate?: string; lastEdited?: string;
  * }} Invoice
  *
  * `pdfName` is the invoice document; `supportingDocs` are the extra files the
  * vendor uploaded. `paidDate` is set only once an invoice reaches the Paid stage.
+ * `Draft` invoices are started-but-not-submitted: they live only in the vendor's
+ * own view (never in the COR review queue), carry a `lastEdited` stamp instead of
+ * a `submitted` date, and may have incomplete fields.
  */
 
 /** As-of stamp for the expenditure rollup (nightly PeopleSoft feed in production). */
@@ -41,6 +44,29 @@ export const portfolio = {
 // consistent so the drawer's line-item math always reconciles.
 /** @type {Invoice[]} */
 export const invoices = [
+  {
+    // A nearly-complete draft: PDF + most fields in, still being finalized.
+    number: 'DRAFT-0002', contractNumber: 'C-2024-042', contract: 'Salmon Habitat Restoration — Wenatchee',
+    projectNumber: 'PRJ-2024-112', project: 'Wenatchee Subbasin',
+    submitted: '', lastEdited: 'Jun 24, 2026', amount: 6120, stage: 'Draft',
+    invoiceDate: 'Jun 22, 2026', issued: 'Jun 22, 2026', perfStart: 'Jun 16, 2026', perfEnd: 'Jun 30, 2026',
+    pdfName: 'INV-draft-june-b.pdf', supportingDocs: ['timesheet-jun-b-2026.pdf'],
+    notes: 'Second-half June survey window — still confirming mileage totals before submitting.',
+    lineItems: [
+      { description: 'Field biologist labor', qty: 52, unitPrice: 95 },
+      { description: 'Habitat survey equipment rental', qty: 1, unitPrice: 650 },
+      { description: 'Field mileage', qty: 960, unitPrice: 0.5 },
+    ],
+  },
+  {
+    // A barely-started draft: contract picked, nothing else filled in yet.
+    number: 'DRAFT-0001', contractNumber: 'C-2024-058', contract: 'Water Quality Sampling — Okanogan',
+    projectNumber: 'PRJ-2024-143', project: 'Okanogan Subbasin',
+    submitted: '', lastEdited: 'Jun 12, 2026', amount: 0, stage: 'Draft',
+    invoiceDate: '', issued: '', perfStart: '', perfEnd: '',
+    pdfName: '', supportingDocs: [],
+    lineItems: [],
+  },
   {
     number: 'INV-2026-0045', contractNumber: 'C-2024-042', contract: 'Salmon Habitat Restoration — Wenatchee',
     projectNumber: 'PRJ-2024-112', project: 'Wenatchee Subbasin',
@@ -107,6 +133,9 @@ export const invoices = [
     invoiceDate: 'Apr 20, 2026', issued: 'Apr 20, 2026', perfStart: 'Mar 1, 2026', perfEnd: 'Mar 31, 2026',
     pdfName: 'INV-2026-0028-PacificEnv.pdf', supportingDocs: ['sample-chain-of-custody.pdf'],
     notes: 'Returned for revision — lab analysis line item needs a supporting receipt.',
+    revisionNote: 'The "Lab analysis" line item ($575) is missing its supporting receipt, and the sampling dates in the PDF don’t match the March performance period. Please attach the lab invoice and correct the dates, then resubmit.',
+    returnedBy: 'D. Reyes, Contracting Officer’s Representative',
+    returnedOn: 'May 6, 2026',
     lineItems: [
       { description: 'Water sample collection', qty: 10, unitPrice: 85 },
       { description: 'Lab analysis', qty: 5, unitPrice: 115 },
