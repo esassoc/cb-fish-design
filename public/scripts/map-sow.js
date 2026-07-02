@@ -3506,6 +3506,14 @@ function deleteSCReach(id) {
   if (wizardMode) wizardRefreshIfActive();
 }
 
+function setSCReachFlowType(id, val) {
+  var we = getActiveWE(); if (!we) return;
+  var r = we.scReaches && we.scReaches.filter(function(r){return r.id===id;})[0];
+  if (!r) return;
+  r.flowType = val || null;
+  if (wizardMode) wizardRefreshIfActive();
+}
+
 function setSCReachWidth(id, val) {
   var we = getActiveWE(); if (!we) return;
   var r = we.scReaches && we.scReaches.filter(function(r){return r.id===id;})[0];
@@ -6191,7 +6199,7 @@ function wizardStepStatus(we, stepId) {
       ['cms','mcs','css'].forEach(function(t){ if(we.structures&&we.structures[t]&&we.structures[t].length) hasSt=true; });
       return hasSt ? 'done' : 'pending';
     }
-    case 'sc_draw':  return (we.scReaches && we.scReaches.length > 0 && we.scReaches.every(function(r){return r.width>0;})) ? 'done' : 'pending';
+    case 'sc_draw':  return (we.scReaches && we.scReaches.length > 0 && we.scReaches.every(function(r){return r.width>0 && r.flowType;})) ? 'done' : 'pending';
     case 'sc_wood':  { var scL=we.inputVals&&we.inputVals['sc-large-wood'], scS=we.inputVals&&we.inputVals['sc-small-wood']; return (scL>=0&&scS>=0&&(scL>0||scS>0))?'done':'pending'; }
     case 'fp_work': {
       var fpSow = we.sowLayers && Object.keys(we.sowLayers).some(function(k){ return k.indexOf('fp')===0 && we.sowLayers[k] && we.sowLayers[k].valueM; });
@@ -6800,21 +6808,31 @@ function wizardStepBody(we, step, idx) {
           h += '<span style="font-size:11px;color:#555">'+ft+'</span>';
           h += '<button onclick="deleteSCReach(\''+r.id+'\');renderWizardStep()" title="Remove" style="background:transparent;border:none;color:#c44a4a;font-size:14px;cursor:pointer;padding:0 4px;line-height:1">&#10005;</button>';
           h += '</div>';
+          h += '<div style="display:flex;flex-direction:column;gap:6px">';
           h += '<div style="display:flex;align-items:center;gap:8px">';
-          h += '<label style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap">Width (ft):</label>';
+          h += '<label style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap;min-width:70px">Width (ft):</label>';
           h += '<input type="number" min="0" step="1" placeholder="e.g. 15" value="'+(r.width||'')+'"';
           h += ' style="width:80px;border:1px solid var(--color-border);border-radius:4px;padding:3px 7px;font-size:12px;font-family:var(--font-sans)"';
           h += ' onchange="setSCReachWidth(\''+r.id+'\',this.value)">';
           if (areaAc) h += '<span style="font-size:11px;color:var(--color-text-muted)">~ '+areaAc+'</span>';
           h += '</div>';
+          h += '<div style="display:flex;align-items:center;gap:8px">';
+          h += '<label style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap;min-width:70px">Flow type:</label>';
+          h += '<select onchange="setSCReachFlowType(\''+r.id+'\',this.value)" style="border:1px solid var(--color-border);border-radius:4px;padding:3px 7px;font-size:12px;font-family:var(--font-sans);background:var(--color-surface)">';
+          h += '<option value="">— Select —</option>';
+          h += '<option value="Perennial"'+(r.flowType==='Perennial'?' selected':'')+'>Perennial</option>';
+          h += '<option value="Seasonal"'+(r.flowType==='Seasonal'?' selected':'')+'>Seasonal</option>';
+          h += '</select>';
+          h += '</div>';
+          h += '</div>';
           h += '</div>';
         });
-        var allHaveWidth = scReaches.every(function(r){return r.width>0;});
-        if (allHaveWidth && scReaches.length > 0) {
+        var allComplete = scReaches.every(function(r){return r.width>0 && r.flowType;});
+        if (allComplete && scReaches.length > 0) {
           var totalAc = scReaches.reduce(function(a,r){return a+(r.valueM*(r.width/3.28084)*0.000247105);},0).toFixed(3);
           h += '<div class="wz-status done" style="margin-top:8px">&#10003; '+scReaches.length+' channel'+(scReaches.length>1?'s':'')+' · '+totalAc+' ac total</div>';
         } else if (scReaches.length > 0) {
-          h += '<div class="wz-tip" style="margin-top:8px">Enter a width for each channel to estimate area.</div>';
+          h += '<div class="wz-tip" style="margin-top:8px">Enter a width and flow type for each channel.</div>';
         }
       }
       break;
