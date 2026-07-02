@@ -538,7 +538,11 @@ function updateWELabel(w, isActive) {
 
 function allWELayers(we) {
   var out = [];
-  Object.keys(we.sowLayers).forEach(function(k){ if(we.sowLayers[k]&&we.sowLayers[k].layer) out.push(we.sowLayers[k].layer); });
+  Object.keys(we.sowLayers).forEach(function(k){
+    var sl = we.sowLayers[k]; if (!sl) return;
+    if (sl.layer) out.push(sl.layer);
+    if (sl._arrowMarkers) sl._arrowMarkers.forEach(function(m){ if(m) out.push(m); });
+  });
   PP_DEFS.forEach(function(m){ var d=we.ppData[m.id]; if(!d)return; if(d.layer)out.push(d.layer); if(d.bufferLayer)out.push(d.bufferLayer); if(d.labelMarker)out.push(d.labelMarker); if(d.lines)d.lines.forEach(function(l){if(l&&l.layer)out.push(l.layer);}); });
   Object.keys(we.structures).forEach(function(t){ we.structures[t].forEach(function(s){if(s.marker)out.push(s.marker);}); });
   if (we.chuUnits) we.chuUnits.forEach(function(u){ if(u.layer)out.push(u.layer); if(u.labelMarker)out.push(u.labelMarker); });
@@ -1290,6 +1294,7 @@ function reClipPCReach(we) {
   if (!clipped || clipped.length < 2) return;
   sl.layer.setLatLngs(clipped);
   sl.valueM = geoLen(clipped);
+  addPCReachArrow(we);
   updatePCBuffer(we);
   updateSOWCalcs();
 }
@@ -2115,6 +2120,38 @@ function addReachArrow(we) {
   rd._arrowMarker = markers[1]; // keep reference to middle arrow for legacy code
 }
 
+function addPCReachArrow(we) {
+  var sl = we && we.sowLayers && we.sowLayers['pc-reach'];
+  if (sl && sl._arrowMarkers) { sl._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); sl._arrowMarkers = null; }
+  if (!sl || !sl.layer) return;
+  var pts = sl.layer.getLatLngs();
+  if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+  if (!pts || pts.length < 2) return;
+  var cumLen = [0];
+  for (var i = 1; i < pts.length; i++) {
+    var dlat = pts[i].lat - pts[i-1].lat, dlng = pts[i].lng - pts[i-1].lng;
+    cumLen.push(cumLen[i-1] + Math.sqrt(dlat*dlat + dlng*dlng));
+  }
+  var total = cumLen[cumLen.length - 1];
+  function makeArrow(frac) {
+    var target = total * frac, seg = 0;
+    for (var k = 1; k < cumLen.length; k++) { if (cumLen[k] >= target) { seg = k-1; break; } }
+    var segLen = cumLen[seg+1] - cumLen[seg];
+    var t = segLen > 0 ? (target - cumLen[seg]) / segLen : 0;
+    var pos = L.latLng(pts[seg].lat + t*(pts[seg+1].lat-pts[seg].lat), pts[seg].lng + t*(pts[seg+1].lng-pts[seg].lng));
+    var p1 = pts[seg], p2 = pts[seg+1];
+    var lat1 = p1.lat*Math.PI/180, lat2 = p2.lat*Math.PI/180, dLng = (p2.lng-p1.lng)*Math.PI/180;
+    var y = Math.sin(dLng)*Math.cos(lat2);
+    var x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLng);
+    var brg = Math.atan2(y,x)*180/Math.PI;
+    var html = '<div style="transform:rotate('+brg+'deg);width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin-left:-11px;margin-top:-11px">' +
+      '<svg width="18" height="18" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="#2a7a5c" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></div>';
+    var icon = L.divIcon({className:'', html:html, iconSize:[0,0], iconAnchor:[0,0]});
+    return L.marker([pos.lat,pos.lng], {icon:icon, interactive:false}).addTo(map);
+  }
+  sl._arrowMarkers = [makeArrow(0.25), makeArrow(0.5), makeArrow(0.75)];
+}
+
 function clearPPGeom(id) {
   var we=getActiveWE();if(!we)return;var d=we.ppData[id];if(!d)return;
   if(id==='reach_len' && d.layer && !confirmReachChange(we)) return;
@@ -2375,7 +2412,7 @@ function finishSOWDraw() {
   var btn=document.getElementById('dbtn-'+d.id);if(btn)btn.classList.remove('active');
   sowDrawing=null;document.getElementById('mapwrap').classList.remove('drawing');setMapHint('');
   updateSOWCalcs();renderLegend();
-  if(d.id==='pc-reach') { updatePCBuffer(getWE(d.weId)); setTimeout(function(){ fetchSOWElevationProfile(getWE(d.weId)); }, 300); if(wizardMode) wizardRefreshIfActive(); }
+  if(d.id==='pc-reach') { addPCReachArrow(getWE(d.weId)); updatePCBuffer(getWE(d.weId)); setTimeout(function(){ fetchSOWElevationProfile(getWE(d.weId)); }, 300); if(wizardMode) wizardRefreshIfActive(); }
 }
 
 // Build / rebuild the primary channel area buffer polygon.
@@ -3083,6 +3120,7 @@ function startLineEdit(type, id) {
   var ddb = document.getElementById('draw-done-btn'); if (ddb) ddb.style.display = 'none';
   // Hide reach arrows during editing — recalculated on commit
   if (id === 'reach_len') { var _weE=getWE(activeWEId); var _rdE=_weE&&_weE.ppData['reach_len']; if(_rdE&&_rdE._arrowMarkers) _rdE._arrowMarkers.forEach(function(a){if(a)a.setOpacity(0);}); }
+  if (id === 'pc-reach') { var _wePC=getWE(activeWEId); var _slPC=_wePC&&_wePC.sowLayers&&_wePC.sowLayers['pc-reach']; if(_slPC&&_slPC._arrowMarkers) _slPC._arrowMarkers.forEach(function(a){if(a)a.setOpacity(0);}); }
   // reflect editing state in sidebar
   if (type === 'pp') {
     var m = PP_DEFS.filter(function(x){return x.id===id;})[0];
@@ -3401,6 +3439,7 @@ function commitLineEdit() {
         '<span class="drawn-redo" onclick="startLineEdit(\'sow\',\''+id+'\')">edit</span> ' +
         '<span class="drawn-redo" onclick="startSOWDraw(\''+id+'\',\''+(sl.geo||'line')+'\',\''+sl.label+'\')">redo</span>';
     }
+    if (id === 'pc-reach') addPCReachArrow(we);
     updateSOWCalcs(); renderLegend();
   }
 }
@@ -7055,8 +7094,18 @@ function wizardDelStructure(type, id) {
   renderWizardStep();
 }
 
+var _wizardRefreshTimer = null;
 function wizardRefreshIfActive() {
-  if (wizardMode) setTimeout(renderWizardStep, 50);
+  if (!wizardMode) return;
+  clearTimeout(_wizardRefreshTimer);
+  _wizardRefreshTimer = setTimeout(function() {
+    // Skip re-render if user is actively focused on an input inside the wizard body
+    var active = document.activeElement;
+    var bp = document.getElementById('wizard-body-panel');
+    if (active && bp && bp.contains(active) &&
+        (active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT')) return;
+    renderWizardStep();
+  }, 80);
 }
 
 function clearAll() {
