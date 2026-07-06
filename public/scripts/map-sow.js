@@ -911,7 +911,10 @@ function ppSetBankHt(idx, val) {
   var line = we.ppData['ch_width'].lines[idx]; if (!line) return;
   line.bankHt = parseFloat(val) || null;
   rerenderCalcs();
-  if (wizardMode) wizardRefreshIfActive();
+  // No wizardRefreshIfActive() here: nothing in the ch_width wizard step's markup
+  // depends on bankHt, and the debounced refresh it schedules can land mid-mousedown
+  // on whatever the user clicks next (e.g. the following measurement's "draw" button),
+  // detaching that button before mouseup fires and swallowing the click.
 }
 
 function ppCalc(we,id) {
