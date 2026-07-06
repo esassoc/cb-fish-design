@@ -650,6 +650,10 @@
 .wz-status.warning { background: #fff8ee; border-left: 3px solid var(--cbf-amber-attention); color: #7a4a00; }
 .wz-tip { font-size: 10px; color: var(--color-text-muted); font-style: italic; margin-top: 8px; line-height: 1.5; }
 
+/* Group subheaders — divide a step's body into labeled sections */
+.wz-group-head { font-size: 11px; font-weight: var(--font-weight-bold); color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+.wz-group-head.divided { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--color-border-light); }
+
 /* Metric rows */
 .wz-metric-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; background: var(--color-surface); border: 1px solid var(--color-border-light); border-radius: 4px; margin-bottom: 6px; }
 .wz-metric-label { font-size: 11px; color: var(--color-text-muted); }
