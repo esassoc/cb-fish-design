@@ -248,7 +248,8 @@ function newWEData() {
     channelReaches: [], // flat ordered list for channel structures (cms/mcs/css)
     inputVals: {},
     chuUnits: [],   // [{id, type:'riffle'|'pool'|null, pts:[], layer, areaM2, lengthM}]
-    scReaches: []   // [{id, layer, bufferLayer, valueM, pts}] secondary channel lines
+    scReaches: [],  // [{id, layer, bufferLayer, valueM, pts}] secondary channel lines
+    fpMulti: {grade:[], road:[], berm:[], revet:[], tailings:[], wetland:[]} // [{id, vol}] — id keys into sowLayers for the drawn geometry
   };
 }
 
@@ -2559,6 +2560,24 @@ function startPolyEditSOW(id) {
 function avgWidths(we,ids) {
   var vals=ids.map(function(id){return we.sowLayers[id]?we.sowLayers[id].valueM*3.28084:null;}).filter(function(v){return v!==null;});
   return vals.length?vals.reduce(function(a,b){return a+b;},0)/vals.length:null;
+}
+
+// fp_grading/fp_road/fp_berm/fp_revetment/fp_tailings/fp_wetland store N drawn
+// instances in we.fpMulti[key] (each keying its geometry into we.sowLayers).
+function fpMultiHasAny(we, key) {
+  var items = we.fpMulti && we.fpMulti[key];
+  if (!items || !items.length) return false;
+  return items.some(function(item){ var d = we.sowLayers[item.id]; return d && d.valueM; });
+}
+function fpMultiSum(we, key) {
+  var items = (we.fpMulti && we.fpMulti[key]) || [];
+  var valueM = 0, acres = 0, vol = 0, hasVol = false;
+  items.forEach(function(item) {
+    var d = we.sowLayers[item.id];
+    if (d && d.valueM) { valueM += d.valueM; acres += (d.acres||0); }
+    if (item.vol !== '' && item.vol !== undefined && item.vol !== null) { vol += (parseFloat(item.vol)||0); hasVol = true; }
+  });
+  return {valueM: valueM, acres: acres, vol: vol, hasVol: hasVol, count: items.length};
 }
 
 // ── SOW highlight/zoom ────────────────────────────────────────────────────
@@ -6251,24 +6270,24 @@ function wizardStepStatus(we, stepId) {
       var anyRW = ['fp-conn-reach','fpw1','fpw2','fpw3'].some(function(k){ return we.sowLayers[k] && we.sowLayers[k].valueM; });
       return anyRW ? 'done' : 'pending';
     }
-    case 'fp_grading': return (we.sowLayers['fp-grade'] && we.sowLayers['fp-grade'].valueM) ? 'done' : 'pending';
+    case 'fp_grading': return (fpMultiHasAny(we,'grade') || (we.sowLayers['fp-grade'] && we.sowLayers['fp-grade'].valueM)) ? 'done' : 'pending';
     case 'fp_road': {
-      var rd = we.sowLayers['fp-road'], rdV = we.sowLayers['fp-road-vol'];
-      return ((rd && rd.valueM) || (rdV && rdV.value)) ? 'done' : 'pending';
+      var rdV = we.sowLayers['fp-road-vol'];
+      return (fpMultiHasAny(we,'road') || (we.sowLayers['fp-road'] && we.sowLayers['fp-road'].valueM) || (rdV && rdV.value)) ? 'done' : 'pending';
     }
     case 'fp_berm': {
-      var bd = we.sowLayers['fp-berm'], bdV = we.sowLayers['fp-berm-vol'];
-      return ((bd && bd.valueM) || (bdV && bdV.value)) ? 'done' : 'pending';
+      var bdV = we.sowLayers['fp-berm-vol'];
+      return (fpMultiHasAny(we,'berm') || (we.sowLayers['fp-berm'] && we.sowLayers['fp-berm'].valueM) || (bdV && bdV.value)) ? 'done' : 'pending';
     }
     case 'fp_revetment': {
-      var vd = we.sowLayers['fp-revet'], vdV = we.sowLayers['fp-revet-vol'];
-      return ((vd && vd.valueM) || (vdV && vdV.value)) ? 'done' : 'pending';
+      var vdV = we.sowLayers['fp-revet-vol'];
+      return (fpMultiHasAny(we,'revet') || (we.sowLayers['fp-revet'] && we.sowLayers['fp-revet'].valueM) || (vdV && vdV.value)) ? 'done' : 'pending';
     }
     case 'fp_tailings': {
-      var td = we.sowLayers['fp-tailings'], tdV = we.sowLayers['fp-tailings-vol'];
-      return ((td && td.valueM) || (tdV && tdV.value)) ? 'done' : 'pending';
+      var tdV = we.sowLayers['fp-tailings-vol'];
+      return (fpMultiHasAny(we,'tailings') || (we.sowLayers['fp-tailings'] && we.sowLayers['fp-tailings'].valueM) || (tdV && tdV.value)) ? 'done' : 'pending';
     }
-    case 'fp_wetland': return (we.sowLayers['fp-wetland'] && we.sowLayers['fp-wetland'].valueM) ? 'done' : 'pending';
+    case 'fp_wetland': return (fpMultiHasAny(we,'wetland') || (we.sowLayers['fp-wetland'] && we.sowLayers['fp-wetland'].valueM)) ? 'done' : 'pending';
     case 'rr_work': {
       var rrSow = we.sowLayers && Object.keys(we.sowLayers).some(function(k){ return k.indexOf('rr')===0 && we.sowLayers[k] && we.sowLayers[k].valueM; });
       return rrSow ? 'done' : 'pending';
@@ -7012,37 +7031,33 @@ function wizardStepBody(we, step, idx) {
       break;
 
     case 'fp_grading':
-      h += '<div class="wz-step-desc">Draw the area of floodplain grading (cut).</div>';
-      h += wzFPDrawRow(we, 'fp-grade', 'polygon', 'Floodplain grading area (cut)');
+      h += '<div class="wz-step-desc">Draw each area of floodplain grading (cut). Add as many as needed.</div>';
+      h += wzFPMultiSection(we, 'grade', 'polygon', 'Grading area', false);
       break;
 
     case 'fp_road':
-      h += '<div class="wz-step-desc">Draw any road removed or set back within the floodplain.</div>';
-      h += wzFPDrawRow(we, 'fp-road', 'line', 'Road removed/setback in FP');
-      h += wzFPInputRow(we, 'fp-road-vol', 'Volume removed (CY)');
+      h += '<div class="wz-step-desc">Draw each road segment removed or set back within the floodplain. Add as many as needed.</div>';
+      h += wzFPMultiSection(we, 'road', 'line', 'Road removal', true);
       break;
 
     case 'fp_berm':
-      h += '<div class="wz-step-desc">Draw any berm or levee removed.</div>';
-      h += wzFPDrawRow(we, 'fp-berm', 'line', 'Berm/levee removed');
-      h += wzFPInputRow(we, 'fp-berm-vol', 'Volume removed (CY)');
+      h += '<div class="wz-step-desc">Draw each berm or levee segment removed. Add as many as needed.</div>';
+      h += wzFPMultiSection(we, 'berm', 'line', 'Berm/levee removal', true);
       break;
 
     case 'fp_revetment':
-      h += '<div class="wz-step-desc">Draw any revetment removed.</div>';
-      h += wzFPDrawRow(we, 'fp-revet', 'line', 'Revetment removed');
-      h += wzFPInputRow(we, 'fp-revet-vol', 'Volume removed (CY)');
+      h += '<div class="wz-step-desc">Draw each revetment segment removed. Add as many as needed.</div>';
+      h += wzFPMultiSection(we, 'revet', 'line', 'Revetment removal', true);
       break;
 
     case 'fp_tailings':
-      h += '<div class="wz-step-desc">Draw the area of mine tailings removed.</div>';
-      h += wzFPDrawRow(we, 'fp-tailings', 'polygon', 'Mine tailings removal area');
-      h += wzFPInputRow(we, 'fp-tailings-vol', 'Volume removed (CY)');
+      h += '<div class="wz-step-desc">Draw each area of mine tailings removed. Add as many as needed.</div>';
+      h += wzFPMultiSection(we, 'tailings', 'polygon', 'Tailings removal area', true);
       break;
 
     case 'fp_wetland':
-      h += '<div class="wz-step-desc">Draw the area of wetland constructed, restored, or enhanced.</div>';
-      h += wzFPDrawRow(we, 'fp-wetland', 'polygon', 'Wetland restored/enhanced');
+      h += '<div class="wz-step-desc">Draw each area of wetland constructed, restored, or enhanced. Add as many as needed.</div>';
+      h += wzFPMultiSection(we, 'wetland', 'polygon', 'Wetland area', false);
       break;
 
     case 'rr_work':
@@ -7351,6 +7366,70 @@ function wzFPInputRow(we, id, label) {
   return h;
 }
 
+function wizardAddFPMultiItem(key, geo, label) {
+  var we = getActiveWE(); if (!we) return;
+  if (!we.fpMulti) we.fpMulti = {grade:[], road:[], berm:[], revet:[], tailings:[], wetland:[]};
+  if (!we.fpMulti[key]) we.fpMulti[key] = [];
+  var n = we.fpMulti[key].length + 1;
+  var id = 'fp-' + key + '-' + Date.now();
+  we.fpMulti[key].push({id: id, vol: ''});
+  renderWizardStep();
+  startSOWDraw(id, geo, label + ' ' + n);
+}
+
+function wizardDelFPMultiItem(key, id) {
+  var we = getActiveWE(); if (!we) return;
+  if (!we.fpMulti || !we.fpMulti[key]) return;
+  var sl = we.sowLayers[id];
+  if (sl && sl.layer) map.removeLayer(sl.layer);
+  delete we.sowLayers[id];
+  we.fpMulti[key] = we.fpMulti[key].filter(function(x){ return x.id !== id; });
+  renderWizardStep();
+}
+
+function wizardSetFPMultiVol(key, id, val) {
+  var we = getActiveWE(); if (!we) return;
+  var item = we.fpMulti && we.fpMulti[key] && we.fpMulti[key].filter(function(x){ return x.id===id; })[0];
+  if (item) item.vol = val;
+}
+
+// Wizard-styled multi-entry section — draw N instances of a metric, each its own
+// we.sowLayers entry keyed by a generated id and tracked in we.fpMulti[key].
+function wzFPMultiSection(we, key, geo, label, hasVolume) {
+  var items = (we && we.fpMulti && we.fpMulti[key]) || [];
+  var h = '<div style="margin:2px 0 10px">';
+  h += '<button class="pm-draw-btn" onclick="wizardAddFPMultiItem(\'' + key + '\',\'' + geo + '\',\'' + label + '\')">&#43; Add ' + label + '</button>';
+  h += '</div>';
+  if (!items.length) {
+    h += '<div class="wz-status pending">&#9654; None added yet.</div>';
+  }
+  items.forEach(function(item, i) {
+    var d = we.sowLayers[item.id];
+    var hasVal = d && (geo === 'polygon' ? d.acres : d.valueM);
+    var displayVal = null;
+    if (hasVal) {
+      displayVal = geo === 'polygon' ? d.acres.toFixed(2) + ' ac' : (d.valueM * 0.000621371).toFixed(3) + ' mi';
+    }
+    var itemLabel = label + ' ' + (i + 1);
+    h += '<div class="wz-metric-row">';
+    h += '<span class="wz-metric-label">' + itemLabel + '</span>';
+    h += '<span class="wz-metric-val' + (displayVal ? '' : ' missing') + '">' + (displayVal || 'not drawn') + '</span>';
+    h += '<button style="background:' + (displayVal ? '#f3f7fc' : '#1e5386') + ';color:' + (displayVal ? '#3d3d3d' : '#fff') + ';border:1px solid ' + (displayVal ? '#dcdcdc' : 'transparent') + ';padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:8px" ';
+    h += 'onclick="startSOWDraw(&apos;' + item.id + '&apos;,&apos;' + geo + '&apos;,&apos;' + itemLabel + '&apos;)">' + (displayVal ? 'redo' : 'draw') + '</button>';
+    h += '<span style="cursor:pointer;color:#ef4444;font-size:12px;margin-left:6px" onclick="wizardDelFPMultiItem(\'' + key + '\',\'' + item.id + '\')">&#10005;</span>';
+    h += '</div>';
+    if (hasVolume) {
+      h += '<div style="display:flex;align-items:center;gap:8px;padding:2px 0 10px 0">';
+      h += '<label style="flex:1;font-size:11px;color:var(--color-text-muted)">Volume removed (CY)</label>';
+      h += '<input type="number" min="0" step="1" value="' + (item.vol || '') + '" placeholder="0" ';
+      h += 'style="width:80px;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px;font-family:var(--font-sans)" ';
+      h += 'oninput="wizardSetFPMultiVol(\'' + key + '\',\'' + item.id + '\',this.value)">';
+      h += '</div>';
+    }
+  });
+  return h;
+}
+
 var _wizardRefreshTimer = null;
 function wizardRefreshIfActive() {
   if (!wizardMode) return;
@@ -7557,6 +7636,10 @@ function openSOW() {
       function wAc2(id){var l=sl[id];return l?l.acres.toFixed(2)+' acres':'—';}
       function wAvg2(ids){var v=ids.map(function(id){return sl[id]?sl[id].valueM*3.28084:null;}).filter(function(x){return x!==null;});return v.length?Math.round(v.reduce(function(a,b){return a+b;},0)/v.length)+' ft':'—';}
       function wVal2(id){var l=sl[id];return (l&&l.value!==undefined&&l.value!=='')?l.value:'—';}
+      // Grading/road/berm/revetment/tailings/wetland support multiple drawn instances
+      // via we.fpMulti[key]; fall back to the single legacy sowLayers id from expert mode.
+      function fpMultiDisplay(key,geo,legacyId){var sum=fpMultiSum(we,key);if(sum.count>0)return geo==='polygon'?sum.acres.toFixed(2)+' acres':(sum.valueM*0.000621371).toFixed(3)+' mi';return geo==='polygon'?wAc2(legacyId):wMi2(legacyId);}
+      function fpMultiVolDisplay(key,legacyVolId){var sum=fpMultiSum(we,key);if(sum.count>0)return sum.hasVol?sum.vol+' CY':'—';var v=wVal2(legacyVolId);return v!=='—'?v+' CY':'—';}
       h+='<h3>Floodplain &amp; Side Channels</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
       h+='<tr><td>FP large log placement area</td><td>'+wAc2('fp-logs-area')+'</td></tr>';
       h+='<tr><td># Large logs placed</td><td>'+wVal2('fp-large-logs')+'</td></tr>';
@@ -7565,15 +7648,15 @@ function openSOW() {
       h+='<tr><td>Avg floodplain width</td><td>'+wAvg2(['fpw1','fpw2','fpw3'])+'</td></tr>';
       h+='<tr><td>Left floodplain area</td><td>'+(ppAcres(we,'fp_left')?ppAcres(we,'fp_left').toFixed(2)+' acres':'—')+'</td></tr>';
       h+='<tr><td>Right floodplain area</td><td>'+(ppAcres(we,'fp_right')?ppAcres(we,'fp_right').toFixed(2)+' acres':'—')+'</td></tr>';
-      h+='<tr><td>FP grading area</td><td>'+wAc2('fp-grade')+'</td></tr>';
-      h+='<tr><td>Road removed in FP</td><td>'+wMi2('fp-road')+'</td></tr>';
-      h+='<tr><td>Road removal volume</td><td>'+(wVal2('fp-road-vol')!=='—'?wVal2('fp-road-vol')+' CY':'—')+'</td></tr>';
-      h+='<tr><td>Berm/levee removed</td><td>'+wMi2('fp-berm')+'</td></tr>';
-      h+='<tr><td>Berm/levee removal volume</td><td>'+(wVal2('fp-berm-vol')!=='—'?wVal2('fp-berm-vol')+' CY':'—')+'</td></tr>';
-      h+='<tr><td>Revetment removed</td><td>'+wMi2('fp-revet')+'</td></tr>';
-      h+='<tr><td>Revetment removal volume</td><td>'+(wVal2('fp-revet-vol')!=='—'?wVal2('fp-revet-vol')+' CY':'—')+'</td></tr>';
-      h+='<tr><td>Mine tailings removed</td><td>'+wAc2('fp-tailings')+'</td></tr>';
-      h+='<tr><td>Mine tailings removal volume</td><td>'+(wVal2('fp-tailings-vol')!=='—'?wVal2('fp-tailings-vol')+' CY':'—')+'</td></tr>';
+      h+='<tr><td>FP grading area</td><td>'+fpMultiDisplay('grade','polygon','fp-grade')+'</td></tr>';
+      h+='<tr><td>Road removed in FP</td><td>'+fpMultiDisplay('road','line','fp-road')+'</td></tr>';
+      h+='<tr><td>Road removal volume</td><td>'+fpMultiVolDisplay('road','fp-road-vol')+'</td></tr>';
+      h+='<tr><td>Berm/levee removed</td><td>'+fpMultiDisplay('berm','line','fp-berm')+'</td></tr>';
+      h+='<tr><td>Berm/levee removal volume</td><td>'+fpMultiVolDisplay('berm','fp-berm-vol')+'</td></tr>';
+      h+='<tr><td>Revetment removed</td><td>'+fpMultiDisplay('revet','line','fp-revet')+'</td></tr>';
+      h+='<tr><td>Revetment removal volume</td><td>'+fpMultiVolDisplay('revet','fp-revet-vol')+'</td></tr>';
+      h+='<tr><td>Mine tailings removed</td><td>'+fpMultiDisplay('tailings','polygon','fp-tailings')+'</td></tr>';
+      h+='<tr><td>Mine tailings removal volume</td><td>'+fpMultiVolDisplay('tailings','fp-tailings-vol')+'</td></tr>';
       // Sum secondary channel lengths by flow type; fall back to SOW layers if no scReaches
       var scP = (we.scReaches||[]).filter(function(r){return r.flowType==='Perennial';});
       var scS = (we.scReaches||[]).filter(function(r){return r.flowType==='Seasonal';});
@@ -7581,7 +7664,7 @@ function openSOW() {
       var scSMi = scS.length ? (scS.reduce(function(a,r){return a+r.valueM;},0)*0.000621371).toFixed(3)+' mi' : wMi2('fp-ephsc');
       h+='<tr><td>Perennial side channel</td><td>'+scPMi+'</td></tr>';
       h+='<tr><td>Seasonal side channel</td><td>'+scSMi+'</td></tr>';
-      h+='<tr><td>Wetland restored/enhanced</td><td>'+wAc2('fp-wetland')+'</td></tr>';
+      h+='<tr><td>Wetland restored/enhanced</td><td>'+fpMultiDisplay('wetland','polygon','fp-wetland')+'</td></tr>';
       h+='</tbody></table>';
       // ── Secondary Channels ─────────────────────────────────────────────────
       if (we.scReaches && we.scReaches.length > 0) {
