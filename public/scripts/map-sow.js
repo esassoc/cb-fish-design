@@ -6153,7 +6153,14 @@ var WIZARD_STEPS = [
   { id:'structures', label:'Structures',      title:'Wood Structures',                phase:'work', types:['pc'] },
   { id:'sc_draw',  label:'Secondary Channels', title:'Draw Secondary Channels',   phase:'work', types:['fp'], section:'sc' },
   { id:'sc_wood',  label:'Wood Counts',         title:'Secondary Channel Wood',    phase:'work', types:['fp'], section:'sc' },
-  { id:'fp_work',    label:'Floodplain Work', title:'Floodplain Work Elements',       phase:'work', types:['fp'] },
+  { id:'fp_structures',  label:'Structures',      title:'Floodplain Structures',        phase:'work', types:['fp'] },
+  { id:'fp_reach_width', label:'Reach & Width',   title:'FP Connectivity Reach & Width', phase:'work', types:['fp'] },
+  { id:'fp_grading',     label:'Grading',         title:'Floodplain Grading',           phase:'work', types:['fp'] },
+  { id:'fp_road',        label:'Road Removal',    title:'Road Removed/Setback',         phase:'work', types:['fp'] },
+  { id:'fp_berm',        label:'Berm Removal',    title:'Berm/Levee Removed',           phase:'work', types:['fp'] },
+  { id:'fp_revetment',   label:'Revetment Removal', title:'Revetment Removed',          phase:'work', types:['fp'] },
+  { id:'fp_tailings',    label:'Mine Tailings',   title:'Mine Tailings Removed',        phase:'work', types:['fp'] },
+  { id:'fp_wetland',     label:'Wetland',         title:'Wetland Restoration',          phase:'work', types:['fp'] },
   { id:'rr_work',    label:'Riparian Work',   title:'Riparian Work Elements',         phase:'work', types:['rr'] },
   { id:'done',       label:'Complete',        title:'Work Element Complete!',         phase:'work' }
 ];
@@ -6235,10 +6242,33 @@ function wizardStepStatus(we, stepId) {
     }
     case 'sc_draw':  return (we.scReaches && we.scReaches.length > 0 && we.scReaches.every(function(r){return r.width>0 && r.flowType;})) ? 'done' : 'pending';
     case 'sc_wood':  { var scL=we.inputVals&&we.inputVals['sc-large-wood'], scS=we.inputVals&&we.inputVals['sc-small-wood']; return (scL>=0&&scS>=0&&(scL>0||scS>0))?'done':'pending'; }
-    case 'fp_work': {
-      var fpSow = we.sowLayers && Object.keys(we.sowLayers).some(function(k){ return k.indexOf('fp')===0 && we.sowLayers[k] && we.sowLayers[k].valueM; });
-      return fpSow ? 'done' : 'pending';
+    case 'fp_structures': {
+      var logsDrawn = we.sowLayers['fp-logs-area'] && we.sowLayers['fp-logs-area'].valueM;
+      var logsCount = we.sowLayers['fp-large-logs'] && we.sowLayers['fp-large-logs'].value;
+      return (logsDrawn || logsCount || (we.fpStructs && we.fpStructs.length > 0)) ? 'done' : 'pending';
     }
+    case 'fp_reach_width': {
+      var anyRW = ['fp-conn-reach','fpw1','fpw2','fpw3'].some(function(k){ return we.sowLayers[k] && we.sowLayers[k].valueM; });
+      return anyRW ? 'done' : 'pending';
+    }
+    case 'fp_grading': return (we.sowLayers['fp-grade'] && we.sowLayers['fp-grade'].valueM) ? 'done' : 'pending';
+    case 'fp_road': {
+      var rd = we.sowLayers['fp-road'], rdV = we.sowLayers['fp-road-vol'];
+      return ((rd && rd.valueM) || (rdV && rdV.value)) ? 'done' : 'pending';
+    }
+    case 'fp_berm': {
+      var bd = we.sowLayers['fp-berm'], bdV = we.sowLayers['fp-berm-vol'];
+      return ((bd && bd.valueM) || (bdV && bdV.value)) ? 'done' : 'pending';
+    }
+    case 'fp_revetment': {
+      var vd = we.sowLayers['fp-revet'], vdV = we.sowLayers['fp-revet-vol'];
+      return ((vd && vd.valueM) || (vdV && vdV.value)) ? 'done' : 'pending';
+    }
+    case 'fp_tailings': {
+      var td = we.sowLayers['fp-tailings'], tdV = we.sowLayers['fp-tailings-vol'];
+      return ((td && td.valueM) || (tdV && tdV.value)) ? 'done' : 'pending';
+    }
+    case 'fp_wetland': return (we.sowLayers['fp-wetland'] && we.sowLayers['fp-wetland'].valueM) ? 'done' : 'pending';
     case 'rr_work': {
       var rrSow = we.sowLayers && Object.keys(we.sowLayers).some(function(k){ return k.indexOf('rr')===0 && we.sowLayers[k] && we.sowLayers[k].valueM; });
       return rrSow ? 'done' : 'pending';
@@ -6934,10 +6964,8 @@ function wizardStepBody(we, step, idx) {
       break;
     }
 
-    case 'fp_work': {
-      h += '<div class="wz-step-desc">Draw floodplain work features — large-log placement, floodplain grading, connectivity, and wetland restoration.</div>';
-
-      h += '<div class="wz-group-head">Wood Placement</div>';
+    case 'fp_structures': {
+      h += '<div class="wz-step-desc">Draw large-log placement and add any floodplain or side-channel structures.</div>';
       h += wzFPDrawRow(we, 'fp-logs-area', 'polygon', 'Large-log placement area');
       h += wzFPInputRow(we, 'fp-large-logs', '# Large logs placed');
 
@@ -6970,26 +6998,52 @@ function wizardStepBody(we, step, idx) {
         h += '<div style="flex:1"><div style="font-size:11px;color:#7c7c7c;margin-bottom:2px">Small pieces (&lt;12")</div><input type="number" min="0" value="'+(s.small||0)+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" oninput="updateFPStructure(\''+s.id+'\',\'small\',+this.value)"></div>';
         h += '</div></div>';
       });
+      break;
+    }
 
-      h += '<div class="wz-group-head divided">Connectivity Metrics</div>';
+    case 'fp_reach_width':
+      h += '<div class="wz-step-desc">Draw the reach of improved floodplain connectivity and measure floodplain width at 3 points.</div>';
       h += wzFPDrawRow(we, 'fp-conn-reach', 'line', 'FP connectivity reach');
       h += wzFPDrawRow(we, 'fpw1', 'segment', 'Width measurement 1');
       h += wzFPDrawRow(we, 'fpw2', 'segment', 'Width measurement 2');
       h += wzFPDrawRow(we, 'fpw3', 'segment', 'Width measurement 3');
       var avgFW = avgWidths(we, ['fpw1','fpw2','fpw3']);
       h += '<div class="wz-tip">Avg floodplain width: <b>'+(avgFW?Math.round(avgFW)+' ft':'—')+'</b></div>';
+      break;
+
+    case 'fp_grading':
+      h += '<div class="wz-step-desc">Draw the area of floodplain grading (cut).</div>';
       h += wzFPDrawRow(we, 'fp-grade', 'polygon', 'Floodplain grading area (cut)');
+      break;
+
+    case 'fp_road':
+      h += '<div class="wz-step-desc">Draw any road removed or set back within the floodplain.</div>';
       h += wzFPDrawRow(we, 'fp-road', 'line', 'Road removed/setback in FP');
       h += wzFPInputRow(we, 'fp-road-vol', 'Volume removed (CY)');
+      break;
+
+    case 'fp_berm':
+      h += '<div class="wz-step-desc">Draw any berm or levee removed.</div>';
       h += wzFPDrawRow(we, 'fp-berm', 'line', 'Berm/levee removed');
       h += wzFPInputRow(we, 'fp-berm-vol', 'Volume removed (CY)');
+      break;
+
+    case 'fp_revetment':
+      h += '<div class="wz-step-desc">Draw any revetment removed.</div>';
       h += wzFPDrawRow(we, 'fp-revet', 'line', 'Revetment removed');
       h += wzFPInputRow(we, 'fp-revet-vol', 'Volume removed (CY)');
+      break;
+
+    case 'fp_tailings':
+      h += '<div class="wz-step-desc">Draw the area of mine tailings removed.</div>';
       h += wzFPDrawRow(we, 'fp-tailings', 'polygon', 'Mine tailings removal area');
       h += wzFPInputRow(we, 'fp-tailings-vol', 'Volume removed (CY)');
+      break;
+
+    case 'fp_wetland':
+      h += '<div class="wz-step-desc">Draw the area of wetland constructed, restored, or enhanced.</div>';
       h += wzFPDrawRow(we, 'fp-wetland', 'polygon', 'Wetland restored/enhanced');
       break;
-    }
 
     case 'rr_work':
       h += '<div class="wz-step-desc">Draw riparian work features — fencing lines, planting areas, and invasive species removal areas.</div>';
@@ -7028,7 +7082,9 @@ function wizardStepFooter(we, step, idx) {
   // Steps that must be completed before advancing
   var required  = ['perimeter', 'reach', 'ch_width', 'fp_left', 'fp_right'];
   // Steps where "Skip ›" shows when empty, "Next ›" when something is entered
-  var skippable = ['bank_ht', 'substrate', 'chu_split', 'structures', 'fp_work', 'rr_work'];
+  var skippable = ['bank_ht', 'substrate', 'chu_split', 'structures',
+    'fp_structures', 'fp_reach_width', 'fp_grading', 'fp_road', 'fp_berm', 'fp_revetment', 'fp_tailings', 'fp_wetland',
+    'rr_work'];
 
   var nextLabel, nextCls, nextDisabled;
   if (isLast) {
@@ -7164,7 +7220,14 @@ function wizardAutoActivate() {
     case 'chu_split':
     case 'chu_details':
     case 'structures':
-    case 'fp_work':
+    case 'fp_structures':
+    case 'fp_reach_width':
+    case 'fp_grading':
+    case 'fp_road':
+    case 'fp_berm':
+    case 'fp_revetment':
+    case 'fp_tailings':
+    case 'fp_wetland':
     case 'rr_work':
       showInnerTab('work');
       break;
