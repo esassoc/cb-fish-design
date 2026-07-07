@@ -2363,6 +2363,7 @@ function startSOWDraw(id,geo,label) {
   var we=getActiveWE();if(!we)return;
   if(lineEditing){cancelLineEdit();}
   if(we.sowLayers[id]&&we.sowLayers[id].layer)map.removeLayer(we.sowLayers[id].layer);
+  if(we.sowLayers[id]&&we.sowLayers[id]._labelMarker)map.removeLayer(we.sowLayers[id]._labelMarker);
   sowDrawing={id:id,geo:geo,label:label,weId:activeWEId};
   ppDrawing=null;pendingStructPoint=null;drawPts=[];clearPreview();
   document.getElementById('mapwrap').classList.add('drawing');
@@ -2406,6 +2407,12 @@ function finishSOWDraw() {
   }
   else{layer=L.polygon(pts,{color:col,fillColor:col,fillOpacity:.2,weight:2,interactive:false}).bindTooltip(d.label).addTo(map);acres=geoArea(pts);valueM=geoAreaM2(pts);}
   we.sowLayers[d.id]={layer:layer,valueM:valueM,acres:acres,geo:d.geo,label:d.label,_pts:NO_DISPLAY_IDS[d.id]?pts:null};
+  // Multi-entry FP items (grading/road/berm/revetment/tailings/wetland) get a numbered
+  // map label so the list row and the drawn feature are identifiable at a glance.
+  var fpRef = findFPMultiRef(we, d.id);
+  if (fpRef && layer) {
+    we.sowLayers[d.id]._labelMarker = addFPMultiLabelMarker(layer, fpRef.idx + 1, col);
+  }
   var el=document.getElementById('dr-'+d.id);
   if(el){
     var val=d.geo==='polygon'?acres.toFixed(2)+' acres':Math.round(valueM*3.28084).toLocaleString()+' ft';
@@ -2578,6 +2585,47 @@ function fpMultiSum(we, key) {
     if (item.vol !== '' && item.vol !== undefined && item.vol !== null) { vol += (parseFloat(item.vol)||0); hasVol = true; }
   });
   return {valueM: valueM, acres: acres, vol: vol, hasVol: hasVol, count: items.length};
+}
+
+// Which we.fpMulti[key] array (if any) a sowLayers id belongs to, and at what index.
+function findFPMultiRef(we, id) {
+  if (!we.fpMulti) return null;
+  var keys = Object.keys(we.fpMulti);
+  for (var i = 0; i < keys.length; i++) {
+    var items = we.fpMulti[keys[i]];
+    for (var j = 0; j < items.length; j++) {
+      if (items[j].id === id) return {key: keys[i], idx: j, item: items[j]};
+    }
+  }
+  return null;
+}
+
+function fpMultiLabelIcon(num, color) {
+  return L.divIcon({
+    className: '', iconSize: [18,18], iconAnchor: [9,9],
+    html: '<div style="width:18px;height:18px;border-radius:50%;background:'+color+';border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;">'+num+'</div>'
+  });
+}
+
+// Small numbered badge dropped at a drawn line/polygon's midpoint so a multi-entry
+// step's map features stay identifiable against their list rows.
+function addFPMultiLabelMarker(layer, num, color) {
+  var pos = layer.getCenter ? layer.getCenter() : (layer.getBounds && layer.getBounds().isValid() ? layer.getBounds().getCenter() : null);
+  if (!pos) return null;
+  var m = L.marker(pos, {icon: fpMultiLabelIcon(num, color), interactive:false}).addTo(map);
+  m._fpLabelColor = color;
+  return m;
+}
+
+// Deleting an item shifts everyone after it down one — keep map badges matching.
+function renumberFPMultiLabels(we, key) {
+  var items = (we.fpMulti && we.fpMulti[key]) || [];
+  items.forEach(function(item, i) {
+    var sl = we.sowLayers[item.id];
+    if (sl && sl._labelMarker) {
+      sl._labelMarker.setIcon(fpMultiLabelIcon(i + 1, sl._labelMarker._fpLabelColor));
+    }
+  });
 }
 
 // ── SOW highlight/zoom ────────────────────────────────────────────────────
@@ -7382,8 +7430,10 @@ function wizardDelFPMultiItem(key, id) {
   if (!we.fpMulti || !we.fpMulti[key]) return;
   var sl = we.sowLayers[id];
   if (sl && sl.layer) map.removeLayer(sl.layer);
+  if (sl && sl._labelMarker) map.removeLayer(sl._labelMarker);
   delete we.sowLayers[id];
   we.fpMulti[key] = we.fpMulti[key].filter(function(x){ return x.id !== id; });
+  renumberFPMultiLabels(we, key);
   renderWizardStep();
 }
 
@@ -7411,12 +7461,18 @@ function wzFPMultiSection(we, key, geo, label, hasVolume) {
       displayVal = geo === 'polygon' ? d.acres.toFixed(2) + ' ac' : (d.valueM * 0.000621371).toFixed(3) + ' mi';
     }
     var itemLabel = label + ' ' + (i + 1);
-    h += '<div class="wz-metric-row">';
+    var hoverAttrs = displayVal
+      ? ' onmouseenter="highlightSOW(&apos;' + item.id + '&apos;)" onmouseleave="unhighlightSOW()" style="cursor:pointer"'
+      : '';
+    h += '<div class="wz-metric-row"' + hoverAttrs + '>';
     h += '<span class="wz-metric-label">' + itemLabel + '</span>';
     h += '<span class="wz-metric-val' + (displayVal ? '' : ' missing') + '">' + (displayVal || 'not drawn') + '</span>';
     h += '<button style="background:' + (displayVal ? '#f3f7fc' : '#1e5386') + ';color:' + (displayVal ? '#3d3d3d' : '#fff') + ';border:1px solid ' + (displayVal ? '#dcdcdc' : 'transparent') + ';padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:8px" ';
-    h += 'onclick="startSOWDraw(&apos;' + item.id + '&apos;,&apos;' + geo + '&apos;,&apos;' + itemLabel + '&apos;)">' + (displayVal ? 'redo' : 'draw') + '</button>';
-    h += '<span style="cursor:pointer;color:#ef4444;font-size:12px;margin-left:6px" onclick="wizardDelFPMultiItem(\'' + key + '\',\'' + item.id + '\')">&#10005;</span>';
+    h += 'onclick="event.stopPropagation();startSOWDraw(&apos;' + item.id + '&apos;,&apos;' + geo + '&apos;,&apos;' + itemLabel + '&apos;)">' + (displayVal ? 'redo' : 'draw') + '</button>';
+    if (displayVal) {
+      h += '<span style="cursor:pointer;color:#1e5386;font-size:11px;margin-left:6px;text-decoration:underline" onclick="event.stopPropagation();zoomToSOW(&apos;' + item.id + '&apos;)" title="Zoom to this feature">&#128269;</span>';
+    }
+    h += '<span style="cursor:pointer;color:#ef4444;font-size:12px;margin-left:6px" onclick="event.stopPropagation();wizardDelFPMultiItem(\'' + key + '\',\'' + item.id + '\')">&#10005;</span>';
     h += '</div>';
     if (hasVolume) {
       h += '<div style="display:flex;align-items:center;gap:8px;padding:2px 0 10px 0">';
