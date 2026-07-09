@@ -31,7 +31,7 @@ var map;
 var workElements = [];  // [{id, name, types[], ppData{}, sowLayers{}, structures{}, inputVals{}}]
 var activeWEId = null;
 var activeInnerTab = 'pp';
-var ppDrawing = null, sowDrawing = null, pendingStructPoint = null;
+var ppDrawing = null, sowDrawing = null, pendingStructPoint = null, pendingGravelPoint = null;
 var drawPts = [], previewPL = null, previewPG = null;
 var legCollapsed = false;
 var weModalEditId = null; // null = new, else id of WE being edited
@@ -249,7 +249,8 @@ function newWEData() {
     inputVals: {},
     chuUnits: [],   // [{id, type:'riffle'|'pool'|null, pts:[], layer, areaM2, lengthM}]
     scReaches: [],  // [{id, layer, bufferLayer, valueM, pts}] secondary channel lines
-    fpMulti: {grade:[], road:[], berm:[], revet:[], tailings:[], wetland:[]} // [{id, vol}] — id keys into sowLayers for the drawn geometry
+    fpMulti: {grade:[], road:[], berm:[], revet:[], tailings:[], wetland:[]}, // [{id, vol}] — id keys into sowLayers for the drawn geometry
+    gravelPlacements: [] // [{id, latlng, marker, length, depth}] — wizard gravel placement step
   };
 }
 
@@ -3590,18 +3591,75 @@ function setPCExcavVol(val) {
   we.inputVals['pc-excavation-vol'] = (n > 0) ? n : null;
   if (wizardMode) wizardRefreshIfActive();
 }
-function setPCGravelLength(val) {
+// ── Gravel placement (pc_gravel wizard step) ──────────────────────────────
+// Channel width used to estimate gravel placement volume: measured cross-sections
+// win over the manually entered width, matching the primary-channel-area buffer logic.
+function pcChannelWidthFt(we) {
+  var w = avgWidths(we, ['pcw1','pcw2','pcw3']);
+  if (w) return w;
+  if (we.inputVals && we.inputVals['pc-width']) return we.inputVals['pc-width'];
+  return null;
+}
+
+function wizardAddGravelPlacement() {
   var we = getActiveWE(); if (!we) return;
-  if (!we.inputVals) we.inputVals = {};
-  var n = parseFloat(val);
-  we.inputVals['pc-gravel-length'] = (n > 0) ? n : null;
+  if (!we.gravelPlacements) we.gravelPlacements = [];
+  var p = {id: 'gp-'+Date.now(), latlng: null, marker: null, length: '', depth: ''};
+  we.gravelPlacements.push(p);
+  renderWizardStep();
+  startGravelPoint(p.id);
+}
+
+function wizardDelGravelPlacement(placementId) {
+  var we = getActiveWE(); if (!we) return;
+  var p = we.gravelPlacements.filter(function(x){return x.id===placementId;})[0];
+  if (p && p.marker) map.removeLayer(p.marker);
+  we.gravelPlacements = we.gravelPlacements.filter(function(x){return x.id!==placementId;});
+  if (pendingGravelPoint && pendingGravelPoint.placementId === placementId) {
+    pendingGravelPoint = null;
+    document.getElementById('mapwrap').classList.remove('drawing');
+    setMapHint('');
+  }
+  renumberGravelPlacements(we);
+  renderWizardStep();
+}
+
+// Deleting a placement shifts the rest down one — keep map badges matching the list.
+function renumberGravelPlacements(we) {
+  we.gravelPlacements.forEach(function(p, i) {
+    if (p.marker) p.marker.setIcon(fpMultiLabelIcon(i+1, '#c07820'));
+  });
+}
+
+function wizardSetGravelField(placementId, field, val) {
+  var we = getActiveWE(); if (!we) return;
+  var p = we.gravelPlacements.filter(function(x){return x.id===placementId;})[0];
+  if (!p) return;
+  p[field] = val;
   if (wizardMode) wizardRefreshIfActive();
 }
-function setPCGravelDepth(val) {
-  var we = getActiveWE(); if (!we) return;
-  if (!we.inputVals) we.inputVals = {};
-  var n = parseFloat(val);
-  we.inputVals['pc-gravel-depth'] = (n > 0) ? n : null;
+
+function startGravelPoint(placementId) {
+  pendingGravelPoint = {placementId: placementId, weId: activeWEId};
+  sowDrawing = null; ppDrawing = null; pendingStructPoint = null; drawPts = []; clearPreview();
+  document.getElementById('mapwrap').classList.add('drawing');
+  setMapHint('Click map to place gravel placement location');
+  if (wizardMode) wizardRefreshIfActive();
+}
+
+function placeGravelPoint(latlng) {
+  if (!pendingGravelPoint) return;
+  var we = getWE(pendingGravelPoint.weId); if (!we) return;
+  var p = we.gravelPlacements.filter(function(x){return x.id===pendingGravelPoint.placementId;})[0];
+  pendingGravelPoint = null;
+  document.getElementById('mapwrap').classList.remove('drawing');
+  setMapHint('');
+  if (!p) return;
+  if (p.marker) map.removeLayer(p.marker);
+  var num = we.gravelPlacements.indexOf(p) + 1;
+  p.marker = L.marker(latlng, {icon: fpMultiLabelIcon(num, '#c07820'), interactive:false})
+    .bindTooltip('Gravel Placement ' + num).addTo(map);
+  p.latlng = latlng;
   if (wizardMode) wizardRefreshIfActive();
 }
 
@@ -6058,6 +6116,7 @@ document.addEventListener('keydown', function(e) {
 // ── Map events ────────────────────────────────────────────────────────────
 function mapClick(e) {
   if(pendingStructPoint){placeStructPoint(e.latlng);return;}
+  if(pendingGravelPoint){placeGravelPoint(e.latlng);return;}
   if(reachTrimming){reachTrimClick(e.latlng);return;}
   if(preReachExtend){preTrimExtendClick(e.latlng);return;}
   if(reachExtending){reachExtendClick(e.latlng);return;}
@@ -6214,6 +6273,7 @@ var WIZARD_STEPS = [
   { id:'pc_reach',   label:'Primary Channel',  title:'Draw Primary Channel',           phase:'work', types:['pc'] },
   { id:'pc_width',   label:'Channel Width',    title:'Enter Primary Channel Width',    phase:'work', types:['pc'] },
   { id:'pc_metrics', label:'Complexity Metrics', title:'Primary Channel Complexity',    phase:'work', types:['pc'] },
+  { id:'pc_gravel',  label:'Gravel Placement', title:'Gravel Placement',               phase:'work', types:['pc'] },
   { id:'pc_fp',      label:'New Floodplain',   title:'Draw New Floodplain',            phase:'work', types:['pc'] },
   { id:'chu_split',  label:'Identify Pools',   title:'Identify Pool Locations',        phase:'work', types:['pc'] },
   { id:'chu_details', label:'Pool & Riffle Details', title:'Pool and Riffle Details', phase:'work', types:['pc'] },
@@ -6290,6 +6350,10 @@ function wizardStepStatus(we, stepId) {
       return corePP.every(function(id){ return wizardStepStatus(we, id) === 'done'; }) ? 'done' : 'pending';
     }
     case 'pc_metrics': return (we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) ? 'done' : 'pending';
+    case 'pc_gravel': {
+      var anyGravelPlaced = (we.gravelPlacements||[]).some(function(p){ return !!p.latlng; });
+      return anyGravelPlaced ? 'done' : 'pending';
+    }
     case 'pc_fp':      return (we.ppData['pc_fp'] && we.ppData['pc_fp'].layer) ? 'done' : 'pending';
     case 'pc_reach':   return (we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) ? 'done' : 'pending';
     case 'pc_width':   { var pcw=we.inputVals&&we.inputVals['pc-width']; return (pcw&&pcw>0)?'done':'pending'; }
@@ -6706,28 +6770,52 @@ function wizardStepBody(we, step, idx) {
       break;
 
     case 'pc_metrics': {
-      var pcmW  = we && we.inputVals && we.inputVals['pc-width'];
       var pcmEV = we && we.inputVals && we.inputVals['pc-excavation-vol'];
-      var pcmGL = we && we.inputVals && we.inputVals['pc-gravel-length'];
-      var pcmGD = we && we.inputVals && we.inputVals['pc-gravel-depth'];
-      var pcmGV = (pcmGL && pcmW && pcmGD) ? Math.round(pcmGL * (pcmW/3.28084) * (pcmGD/3.28084) * 0.037037) : null; // CY
       var inputStyle = 'width:100%;box-sizing:border-box;border:1px solid var(--color-border);border-radius:4px;padding:4px 8px;font-size:13px;font-family:var(--font-sans)';
       var labelStyle = 'display:block;font-size:11px;color:var(--color-text-secondary);margin-bottom:3px';
       h += '<div class="wz-step-desc">Enter additional complexity metrics for the primary channel.</div>';
       h += '<div style="margin-bottom:8px"><label style="'+labelStyle+'">Excavation volume (CY)</label>';
       h += '<input type="number" min="0" step="1" placeholder="e.g. 500" value="'+(pcmEV||'')+'"';
       h += ' style="'+inputStyle+'" onchange="setPCExcavVol(this.value)"></div>';
-      h += '<div style="margin:12px 0 6px;font-size:11px;font-weight:600;color:var(--color-text-secondary)">Gravel placement / channel fill</div>';
-      h += '<div style="margin-bottom:8px"><label style="'+labelStyle+'">Length (ft)</label>';
-      h += '<input type="number" min="0" step="1" placeholder="e.g. 200" value="'+(pcmGL||'')+'"';
-      h += ' style="'+inputStyle+'" onchange="setPCGravelLength(this.value)"></div>';
-      h += '<div style="margin-bottom:8px"><label style="'+labelStyle+'">Avg depth (ft)</label>';
-      h += '<input type="number" min="0" step="0.1" placeholder="e.g. 1.5" value="'+(pcmGD||'')+'"';
-      h += ' style="'+inputStyle+'" onchange="setPCGravelDepth(this.value)"></div>';
-      if (pcmGV !== null) {
-        h += '<div class="wz-metric-row" style="margin-top:6px"><span class="wz-metric-label">Estimated volume</span><span class="wz-metric-val"><b>'+pcmGV.toLocaleString()+' CY</b></span></div>';
-      } else if (pcmGL || pcmGD) {
-        h += '<div class="wz-tip" style="margin-top:6px">Enter length, channel width (step 9), and depth to calculate volume.</div>';
+      break;
+    }
+
+    case 'pc_gravel': {
+      h += '<div class="wz-step-desc">Drop a pin for each gravel placement, then enter its length and depth.</div>';
+      var gPlacements = we.gravelPlacements || [];
+      h += '<div style="margin:2px 0 10px"><button class="pm-draw-btn" onclick="wizardAddGravelPlacement()">&#43; Add Gravel Placement</button></div>';
+      if (!gPlacements.length) {
+        h += '<div class="wz-status pending">&#9654; No placements yet.</div>';
+      }
+      var pcWidthFt = pcChannelWidthFt(we);
+      var gravelTotalCY = 0, gravelAny = false;
+      gPlacements.forEach(function(p, pi) {
+        var isWaiting = pendingGravelPoint && pendingGravelPoint.placementId === p.id;
+        var vol = (pcWidthFt && p.length && p.depth) ? (parseFloat(p.length) * parseFloat(p.depth) * pcWidthFt / 27) : null;
+        if (vol !== null) { gravelTotalCY += vol; gravelAny = true; }
+        h += '<div style="background:#fff;border:1px solid #dcdcdc;border-radius:5px;padding:8px;margin-bottom:6px">';
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
+        h += '<span style="font-size:11px;font-weight:600;color:#c07820">Placement '+(pi+1)+'</span>';
+        h += '<span style="cursor:pointer;color:#ef4444;font-size:12px" onclick="wizardDelGravelPlacement(\''+p.id+'\')">&#10005;</span>';
+        h += '</div>';
+        if (p.latlng) {
+          h += '<div style="font-size:11px;color:#0f6849;margin-bottom:6px">&#10003; Placed on map</div>';
+        } else {
+          h += '<button class="pm-draw-btn'+(isWaiting?' active':'')+'" style="width:100%;height:auto;padding:5px;margin-bottom:6px" onclick="startGravelPoint(\''+p.id+'\')">&#9679; '+(isWaiting?'Click map to place…':'Place on map')+'</button>';
+        }
+        h += '<div style="display:flex;gap:8px">';
+        h += '<div style="flex:1"><div style="font-size:10px;color:#7c7c7c;margin-bottom:2px">Length (ft)</div><input type="number" min="0" step="1" value="'+(p.length||'')+'" placeholder="0" style="width:100%;box-sizing:border-box;border:1px solid #dcdcdc;border-radius:3px;padding:3px 6px;font-size:11px;font-family:var(--font-sans)" onchange="wizardSetGravelField(\''+p.id+'\',\'length\',this.value)"></div>';
+        h += '<div style="flex:1"><div style="font-size:10px;color:#7c7c7c;margin-bottom:2px">Depth (ft)</div><input type="number" min="0" step="0.1" value="'+(p.depth||'')+'" placeholder="0" style="width:100%;box-sizing:border-box;border:1px solid #dcdcdc;border-radius:3px;padding:3px 6px;font-size:11px;font-family:var(--font-sans)" onchange="wizardSetGravelField(\''+p.id+'\',\'depth\',this.value)"></div>';
+        h += '</div>';
+        if (vol !== null) {
+          h += '<div style="font-size:10px;color:#7c7c7c;margin-top:4px">~ '+vol.toFixed(1)+' CY</div>';
+        } else if (!pcWidthFt) {
+          h += '<div style="font-size:10px;color:#7c7c7c;margin-top:4px;font-style:italic">Enter channel width (step 9) to estimate volume</div>';
+        }
+        h += '</div>';
+      });
+      if (gravelAny) {
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Total gravel volume</span><span class="wz-metric-val"><b>'+gravelTotalCY.toFixed(1)+' CY</b></span></div>';
       }
       break;
     }
@@ -7145,7 +7233,7 @@ function wizardStepFooter(we, step, idx) {
   // Steps that must be completed before advancing
   var required  = ['perimeter', 'reach', 'ch_width', 'fp_left', 'fp_right'];
   // Steps where "Skip ›" shows when empty, "Next ›" when something is entered
-  var skippable = ['bank_ht', 'substrate', 'chu_split', 'structures',
+  var skippable = ['bank_ht', 'substrate', 'chu_split', 'structures', 'pc_gravel',
     'fp_structures', 'fp_reach_width', 'fp_grading', 'fp_road', 'fp_berm', 'fp_revetment', 'fp_tailings', 'fp_wetland',
     'rr_work'];
 
@@ -7232,6 +7320,9 @@ function wizardAutoActivate() {
       }
       break;
     case 'pc_metrics':
+      if (we && we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) map.fitBounds(we.sowLayers['pc-reach'].layer.getBounds(), {padding:[40,40]});
+      break;
+    case 'pc_gravel':
       if (we && we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) map.fitBounds(we.sowLayers['pc-reach'].layer.getBounds(), {padding:[40,40]});
       break;
     case 'pc_fp':
@@ -7663,14 +7754,13 @@ function openSOW() {
       var pcAreaSL2 = we.sowLayers && we.sowLayers['pc-area'];
       var pcAreaAc2 = pcAreaSL2 && pcAreaSL2.valueM ? (pcAreaSL2.valueM*0.000247105).toFixed(3)+' acres' : '—';
       var pcExcav2  = we.inputVals&&we.inputVals['pc-excavation-vol'] ? we.inputVals['pc-excavation-vol'].toLocaleString()+' CY' : '—';
-      var pcGLen2   = we.inputVals&&we.inputVals['pc-gravel-length'];
-      var pcGDep2   = we.inputVals&&we.inputVals['pc-gravel-depth'];
-      var pcGLenFt2 = pcGLen2 ? Math.round(pcGLen2).toLocaleString()+' ft' : '—';
-      var pcGDepFt2 = pcGDep2 ? pcGDep2+' ft' : '—';
-      var pcGVol2   = null;
-      if (pcGLen2 && we.inputVals['pc-width'] && pcGDep2) {
-        pcGVol2 = Math.round(pcGLen2 * (we.inputVals['pc-width']/3.28084) * (pcGDep2/3.28084) * 0.037037);
-      }
+      // Gravel placement — point placements, each with its own length/depth.
+      var pcGravelWFt = pcChannelWidthFt(we);
+      var pcGravelPlaced2 = (we.gravelPlacements||[]).filter(function(p){return p.latlng;});
+      var pcGravelTotalCY2 = 0;
+      pcGravelPlaced2.forEach(function(p){
+        if (pcGravelWFt && p.length && p.depth) pcGravelTotalCY2 += parseFloat(p.length)*parseFloat(p.depth)*pcGravelWFt/27;
+      });
       h += '<tr><td>Reach length</td><td>'+pcRchFt2+'</td></tr>';
       h += '<tr><td>Valley length</td><td>'+pcVlFt2+'</td></tr>';
       h += '<tr><td>Sinuosity</td><td>'+pcSin2+'</td></tr>';
@@ -7679,9 +7769,8 @@ function openSOW() {
       h += '<tr><td>Average bank height (at riffle)</td><td>'+pcBHFt2+'</td></tr>';
       h += '<tr><td>Area of restored channel</td><td>'+pcAreaAc2+'</td></tr>';
       h += '<tr><td>Primary channel excavation volume</td><td>'+pcExcav2+'</td></tr>';
-      h += '<tr><td>Length of gravel placement or channel fill</td><td>'+pcGLenFt2+'</td></tr>';
-      h += '<tr><td>Average depth of gravel placement</td><td>'+pcGDepFt2+'</td></tr>';
-      h += '<tr><td>Channel fill or gravel placement volume</td><td>'+(pcGVol2!==null?pcGVol2.toLocaleString()+' CY':'—')+'</td></tr>';
+      h += '<tr><td># Gravel placements</td><td>'+(pcGravelPlaced2.length||'—')+'</td></tr>';
+      h += '<tr><td>Gravel placement volume</td><td>'+(pcGravelTotalCY2>0?pcGravelTotalCY2.toFixed(1)+' CY':'—')+'</td></tr>';
       h+='</tbody></table>';
     }
 
