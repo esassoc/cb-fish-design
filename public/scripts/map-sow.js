@@ -6501,7 +6501,10 @@ function wizardStepStatus(we, stepId) {
       ['cms','mcs','css'].forEach(function(t){ if(pcSt.structures&&pcSt.structures[t]&&pcSt.structures[t].length) hasSt=true; });
       return hasSt ? 'done' : 'pending';
     }
-    case 'pc_channel_done': return 'done';
+    case 'pc_channel_done': {
+      var pcCheck = getActivePC(we);
+      return (pcCheck.sowLayers['pc-reach'] && pcCheck.sowLayers['pc-reach'].layer) ? 'done' : 'pending';
+    }
     case 'sc_draw':  return (we.scReaches && we.scReaches.length > 0 && we.scReaches.every(function(r){return r.width>0 && r.flowType;})) ? 'done' : 'pending';
     case 'sc_wood':  { var scL=we.inputVals&&we.inputVals['sc-large-wood'], scS=we.inputVals&&we.inputVals['sc-small-wood']; return (scL>=0&&scS>=0&&(scL>0||scS>0))?'done':'pending'; }
     case 'fp_structures': {
@@ -7219,8 +7222,13 @@ function wizardStepBody(we, step, idx) {
 
     case 'pc_channel_done': {
       var pcDone = getActivePC(we);
+      var pcDoneReachDrawn = !!(pcDone.sowLayers['pc-reach'] && pcDone.sowLayers['pc-reach'].layer);
       h += '<div class="wz-step-desc">This primary channel is complete. Add another primary channel if this work element has more than one — otherwise continue.</div>';
-      h += '<div class="wz-status done" style="font-size:13px;padding:14px">&#10003; <b>'+pcDone.name+' complete!</b></div>';
+      if (pcDoneReachDrawn) {
+        h += '<div class="wz-status done" style="font-size:13px;padding:14px">&#10003; <b>'+pcDone.name+' complete!</b></div>';
+      } else {
+        h += '<div class="wz-status warning" style="font-size:13px;padding:14px">&#9888; <b>'+pcDone.name+'</b> has no reach drawn yet — go back and draw it before continuing.</div>';
+      }
       var pcDoneMetrics = [
         ['Reach Length', (pcDone.sowLayers['pc-reach']&&pcDone.sowLayers['pc-reach'].valueM) ? Math.round(pcDone.sowLayers['pc-reach'].valueM*3.28084).toLocaleString()+' ft' : null],
         ['Channel Width', pcDone.inputVals['pc-width'] ? Math.round(pcDone.inputVals['pc-width'])+' ft' : null],
