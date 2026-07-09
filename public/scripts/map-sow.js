@@ -6367,14 +6367,15 @@ var WIZARD_STEPS = [
   { id:'fp_poly',    label:'Floodplain',      title:'Draw Floodplain Boundary',       phase:'pp' },
   { id:'buffers',    label:'Review Areas',    title:'Review Floodplain Areas',        phase:'pp' },
   { id:'pp_done',    label:'Pre-Project Done',  title:'Pre-Project Complete!',          phase:'pp' },
-  { id:'pc_reach',   label:'Primary Channel',  title:'Draw Primary Channel',           phase:'work', types:['pc'] },
-  { id:'pc_width',   label:'Channel Width',    title:'Enter Primary Channel Width',    phase:'work', types:['pc'] },
-  { id:'pc_metrics', label:'Complexity Metrics', title:'Primary Channel Complexity',    phase:'work', types:['pc'] },
-  { id:'pc_gravel',  label:'Gravel Placement', title:'Gravel Placement',               phase:'work', types:['pc'] },
-  { id:'pc_fp',      label:'New Floodplain',   title:'Draw New Floodplain',            phase:'work', types:['pc'] },
-  { id:'chu_split',  label:'Identify Pools',   title:'Identify Pool Locations',        phase:'work', types:['pc'] },
-  { id:'chu_details', label:'Pool & Riffle Details', title:'Pool and Riffle Details', phase:'work', types:['pc'] },
-  { id:'structures', label:'Structures',      title:'Wood Structures',                phase:'work', types:['pc'] },
+  { id:'pc_reach',   label:'Primary Channel',  title:'Draw Primary Channel',           phase:'work', types:['pc'], repeat:'pc' },
+  { id:'pc_width',   label:'Channel Width',    title:'Enter Primary Channel Width',    phase:'work', types:['pc'], repeat:'pc' },
+  { id:'pc_metrics', label:'Complexity Metrics', title:'Primary Channel Complexity',    phase:'work', types:['pc'], repeat:'pc' },
+  { id:'pc_gravel',  label:'Gravel Placement', title:'Gravel Placement',               phase:'work', types:['pc'], repeat:'pc' },
+  { id:'pc_fp',      label:'New Floodplain',   title:'Draw New Floodplain',            phase:'work', types:['pc'], repeat:'pc' },
+  { id:'chu_split',  label:'Identify Pools',   title:'Identify Pool Locations',        phase:'work', types:['pc'], repeat:'pc' },
+  { id:'chu_details', label:'Pool & Riffle Details', title:'Pool and Riffle Details', phase:'work', types:['pc'], repeat:'pc' },
+  { id:'structures', label:'Structures',      title:'Wood Structures',                phase:'work', types:['pc'], repeat:'pc' },
+  { id:'pc_channel_done', label:'Channel Complete', title:'Primary Channel Complete!', phase:'work', types:['pc'], repeat:'pc' },
   { id:'sc_draw',  label:'Secondary Channels', title:'Draw Secondary Channels',   phase:'work', types:['fp'], section:'sc' },
   { id:'sc_wood',  label:'Wood Counts',         title:'Secondary Channel Wood',    phase:'work', types:['fp'], section:'sc' },
   { id:'fp_structures',  label:'Structures',      title:'Floodplain Structures',        phase:'work', types:['fp'] },
@@ -6469,6 +6470,7 @@ function wizardStepStatus(we, stepId) {
       ['cms','mcs','css'].forEach(function(t){ if(pcSt.structures&&pcSt.structures[t]&&pcSt.structures[t].length) hasSt=true; });
       return hasSt ? 'done' : 'pending';
     }
+    case 'pc_channel_done': return 'done';
     case 'sc_draw':  return (we.scReaches && we.scReaches.length > 0 && we.scReaches.every(function(r){return r.width>0 && r.flowType;})) ? 'done' : 'pending';
     case 'sc_wood':  { var scL=we.inputVals&&we.inputVals['sc-large-wood'], scS=we.inputVals&&we.inputVals['sc-small-wood']; return (scL>=0&&scS>=0&&(scL>0||scS>0))?'done':'pending'; }
     case 'fp_structures': {
@@ -6507,13 +6509,41 @@ function wizardStepStatus(we, stepId) {
   return 'pending';
 }
 
+// Steps flagged repeat:'pc' appear once per we.primaryChannels entry — each virtual
+// step instance is tagged with pcId/pcIndex so status/body/autoActivate can resolve
+// the right channel (via we.activePCId, synced by the nav functions below).
 function getVisibleSteps() {
   var we = getActiveWE();
   var types = we ? we.types : [];
-  return WIZARD_STEPS.filter(function(s) {
+  var filtered = WIZARD_STEPS.filter(function(s) {
     if (!s.types) return true; // no type restriction
     return s.types.some(function(t){ return types.indexOf(t) >= 0; });
   });
+  if (!we) return filtered;
+  // Repeat steps are a contiguous run in WIZARD_STEPS — expand the WHOLE run per
+  // channel (channel 1's full run, then channel 2's, ...), not step-by-step across
+  // channels, so each channel's steps stay grouped together in the stepper.
+  var expanded = [];
+  var i = 0;
+  while (i < filtered.length) {
+    var s = filtered[i];
+    if (s.repeat === 'pc') {
+      var runStart = i;
+      while (i < filtered.length && filtered[i].repeat === 'pc') i++;
+      var run = filtered.slice(runStart, i);
+      (we.primaryChannels||[]).forEach(function(pc, ci) {
+        run.forEach(function(rs) {
+          var copy = {}; for (var k in rs) copy[k] = rs[k];
+          copy.pcId = pc.id; copy.pcIndex = ci;
+          expanded.push(copy);
+        });
+      });
+    } else {
+      expanded.push(s);
+      i++;
+    }
+  }
+  return expanded;
 }
 
 function renderWizardStep() {
@@ -6529,8 +6559,13 @@ function renderWizardStep() {
   var workSectionLabels = {pc: 'Primary Channel', sc: 'Secondary Channels', fp: 'Floodplain & Side Channels', rr: 'Riparian Restoration'};
   var stepsHtml = '<div class="wz-v-steps">';
   var prevPhase = null, prevWorkSection = null;
+  var savedActivePCId = we ? we.activePCId : null;
   visSteps.forEach(function(s, i) {
+    // Steps repeated per primary channel must resolve status against THEIR channel,
+    // not whichever one the user currently has active — swap it in for this check only.
+    if (we && s.pcId) we.activePCId = s.pcId;
     var st = wizardStepStatus(we, s.id);
+    if (we && s.pcId) we.activePCId = savedActivePCId;
     var isActive = (i === wizardStep);
     var isDone = st === 'done';
     var isLast = (i === visSteps.length - 1);
@@ -6544,9 +6579,10 @@ function renderWizardStep() {
 
     // Work type headers replace the "Habitat Work" label (same style as Pre-Project)
     if (s.phase === 'work' && s.types && s.types.length) {
-      var sectionKey = s.section || s.types[0];
+      var sectionKey = s.repeat === 'pc' ? ('pc-' + s.pcIndex) : (s.section || s.types[0]);
       if (sectionKey !== prevWorkSection) {
-        stepsHtml += '<div class="wz-v-phase-head">' + (workSectionLabels[sectionKey] || sectionKey) + '</div>';
+        var sectionLabel = s.repeat === 'pc' ? ('Primary Channel ' + (s.pcIndex + 1)) : (workSectionLabels[sectionKey] || sectionKey);
+        stepsHtml += '<div class="wz-v-phase-head">' + sectionLabel + '</div>';
         prevWorkSection = sectionKey;
       }
     }
@@ -7150,6 +7186,24 @@ function wizardStepBody(we, step, idx) {
 
       break;
 
+    case 'pc_channel_done': {
+      var pcDone = getActivePC(we);
+      h += '<div class="wz-step-desc">This primary channel is complete. Add another primary channel if this work element has more than one — otherwise continue.</div>';
+      h += '<div class="wz-status done" style="font-size:13px;padding:14px">&#10003; <b>'+pcDone.name+' complete!</b></div>';
+      var pcDoneMetrics = [
+        ['Reach Length', (pcDone.sowLayers['pc-reach']&&pcDone.sowLayers['pc-reach'].valueM) ? Math.round(pcDone.sowLayers['pc-reach'].valueM*3.28084).toLocaleString()+' ft' : null],
+        ['Channel Width', pcDone.inputVals['pc-width'] ? Math.round(pcDone.inputVals['pc-width'])+' ft' : null],
+        ['CHUs', pcDone.chuUnits && pcDone.chuUnits.length > 0 ? pcDone.chuUnits.length+' units' : null],
+        ['Gravel Placements', pcDone.gravelPlacements && pcDone.gravelPlacements.length > 0 ? pcDone.gravelPlacements.length : null]
+      ];
+      pcDoneMetrics.forEach(function(m) {
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">'+m[0]+'</span>';
+        h += '<span class="wz-metric-val '+(m[1]?'':'missing')+'">'+( m[1] || 'not entered')+'</span></div>';
+      });
+      h += '<button class="wz-action-btn" style="margin-top:16px" onclick="wizardAddPrimaryChannel()">&#43; Add Another Primary Channel</button>';
+      break;
+    }
+
     case 'sc_draw': {
       var scReaches = we.scReaches || [];
       h += '<div class="wz-step-desc">Draw each secondary channel and enter its width. The area buffer will appear automatically once a width is entered.</div>';
@@ -7355,30 +7409,54 @@ function wizardStepFooter(we, step, idx) {
          '<button class="wz-btn-next '+nextCls+'" '+nextDisabled+' onclick="wizardNext()">'+nextLabel+'</button>';
 }
 
+// Steps repeated per primary channel carry a pcId — landing on one makes that
+// channel the active one so status/body/draw functions resolve it via getActivePC().
+function syncActivePCForStep(idx) {
+  var we = getActiveWE(); if (!we) return;
+  var step = getVisibleSteps()[idx];
+  if (step && step.pcId) we.activePCId = step.pcId;
+}
+
+// Adds another primary channel and jumps straight to its first step (Draw Primary Channel).
+function wizardAddPrimaryChannel() {
+  var we = getActiveWE(); if (!we) return;
+  var pc = newPrimaryChannel(we.primaryChannels.length + 1);
+  we.primaryChannels.push(pc);
+  we.activePCId = pc.id;
+  var vis = getVisibleSteps();
+  var idx = -1;
+  vis.forEach(function(s, i){ if (s.pcId === pc.id && s.id === 'pc_reach') idx = i; });
+  if (idx >= 0) wizardStep = idx;
+  renderWizardStep();
+  wizardAutoActivate();
+}
+
 function wizardNext() {
   var vis = getVisibleSteps();
   if (wizardStep < vis.length - 1) {
     wizardStep++;
+    syncActivePCForStep(wizardStep);
     renderWizardStep();
     wizardAutoActivate();
   }
 }
 
 function wizardBack() {
-  if (wizardStep > 0) { wizardStep--; renderWizardStep(); wizardAutoActivate(); }
+  if (wizardStep > 0) { wizardStep--; syncActivePCForStep(wizardStep); renderWizardStep(); wizardAutoActivate(); }
 }
 
 function wizardGoToStep(idx) {
   var vis = getVisibleSteps();
   if (idx < 0 || idx >= vis.length) return;
   wizardStep = idx;
+  syncActivePCForStep(wizardStep);
   renderWizardStep();
   wizardAutoActivate();
 }
 
 function wizardSkip() {
   var vis = getVisibleSteps();
-  if (wizardStep < vis.length - 1) { wizardStep++; renderWizardStep(); wizardAutoActivate(); }
+  if (wizardStep < vis.length - 1) { wizardStep++; syncActivePCForStep(wizardStep); renderWizardStep(); wizardAutoActivate(); }
 }
 
 function wizardAutoActivate() {
@@ -7473,6 +7551,7 @@ function wizardAutoActivate() {
     case 'chu_split':
     case 'chu_details':
     case 'structures':
+    case 'pc_channel_done':
     case 'fp_structures':
     case 'fp_reach_width':
     case 'fp_grading':
@@ -7533,12 +7612,14 @@ function wizardSetCHUDepth(unitId, val) {
 }
 
 function wizardSkipCHU() {
-  // Skip both chu_split and chu_details
+  // Skip both chu_split and chu_details for the channel currently being stepped through
   var vis = getVisibleSteps();
+  var curPcId = vis[wizardStep] && vis[wizardStep].pcId;
   var detailsIdx = -1;
-  vis.forEach(function(s, i){ if (s.id === 'chu_details') detailsIdx = i; });
+  vis.forEach(function(s, i){ if (s.id === 'chu_details' && s.pcId === curPcId) detailsIdx = i; });
   if (detailsIdx >= 0) wizardStep = detailsIdx + 1;
   else wizardStep = Math.min(wizardStep + 2, vis.length - 1);
+  syncActivePCForStep(wizardStep);
   renderWizardStep();
   wizardAutoActivate();
 }
