@@ -9,15 +9,19 @@
 // background + base bar are component-internal layout/chrome; esa-link-column
 // inherits the band's text color via currentColor, so no brand values are baked in.
 import EsaLinkColumn from '@esa/ecology/esa-link-column.astro';
-import { mitigation, reporting, funding, help } from '../../data/app-nav';
+import { mitigation, reporting, funding, help, type NavLink } from '../../data/app-nav';
+import { withBase } from '../../lib/base';
+// app-nav hrefs are root-relative and base-less — prefix internal ones here.
+const based = (links: NavLink[]): NavLink[] =>
+  links.map((l) => (l.href?.startsWith('/') ? { ...l, href: withBase(l.href) } : l));
 ---
 <footer class="cbf-app-footer">
   <div class="cbf-app-footer__inner">
     <div class="cbf-app-footer__cols grid">
-      <EsaLinkColumn heading="Mitigation work" links={mitigation} />
-      <EsaLinkColumn heading="Reporting" links={reporting} />
-      <EsaLinkColumn heading="Funding" links={funding} />
-      <EsaLinkColumn heading="Help" links={help} />
+      <EsaLinkColumn heading="Mitigation work" links={based(mitigation)} />
+      <EsaLinkColumn heading="Reporting" links={based(reporting)} />
+      <EsaLinkColumn heading="Funding" links={based(funding)} />
+      <EsaLinkColumn heading="Help" links={based(help)} />
     </div>
     <div class="cbf-app-footer__base">
       <span class="cbf-app-footer__org">
