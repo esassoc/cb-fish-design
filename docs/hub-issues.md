@@ -44,6 +44,28 @@ Give `esa-app-bar` a built-in overflow strategy so spokes get graceful small-vie
 
 ---
 
+## esa-file-upload
+
+### Never renders — private reactive state shadowed by native class fields
+
+**Status:** Open — needs upstream change. Worked around locally in `cbf-baselines-upload.astro`.
+**Affects:** Every `<esa-file-upload>` instance (dev mode: blank element; prod: renders once but never re-renders on drag/file-list changes).
+
+**Problem:**
+The component's internal state props (`_isDragging`, `_files`, `_error`) are declared as plain private class fields (`private _isDragging: boolean;`) instead of `declare`-only. Compiled with `useDefineForClassFields`, they become own instance properties that shadow the reactive accessors Lit installs on the prototype. Lit's dev build detects this and **rejects the first update** ("class-field-shadowing"), so the shadow root stays empty — the dropzone simply never appears. This is the exact trap the hub already fixed in `esa-snackbar-container` (see its header comment: "Reactive state must be `declare` + constructor-init … otherwise toasts never appeared. See lit.dev/msg/class-field-shadowing").
+
+**Requested change:**
+Apply the snackbar pattern to `esa-file-upload`'s three state fields (and audit other `.ts` legos for the same slip):
+
+```ts
+declare private _isDragging: boolean;  // was: private _isDragging: boolean;
+```
+
+**Local workaround (CBFish):**
+`cbf-baselines-upload.astro`'s client script deletes the shadowing own properties on the instance (re-exposing the prototype accessors) and forces the missed first update via `performUpdate()`. Remove once the hub lands the `declare` fix.
+
+---
+
 ## esa-combobox
 
 ### Click on already-focused input does not reopen dropdown (`autocomplete` mode)

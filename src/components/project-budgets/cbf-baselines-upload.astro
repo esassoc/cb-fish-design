@@ -1,0 +1,377 @@
+---
+// cbf-baselines-upload — the CBF-8142 bulk-upload surface: a FundManager
+// downloads the FY28 template, enters baseline budgets in bulk, uploads the
+// sheet, reviews validation errors, and re-uploads until clean — then applies
+// all updates at once. Errors block the ENTIRE upload (no partial writes), the
+// core guard the ticket asks for after the FY27 scripting incidents.
+//
+// The prototype simulates the pipeline client-side: the FIRST upload returns
+// the error set from project-baselines.mjs (the real CBF-8112 / CBF-8047
+// failure modes), any LATER upload validates clean and can be applied. Apply
+// confirms via esa-confirm-dialog, toasts via the page snackbar, and back-fills
+// the two Missing rows in cbf-baselines-table.
+//
+// bcn-lego-checked: every control is a lego — download/apply/report are
+// esa-button, the dropzone is esa-file-upload, validation states are
+// esa-alert-box, the spinner is esa-loading-spinner, role marker is esa-pill,
+// the rules list is esa-collapsible, confirm is esa-confirm-dialog. Bespoke
+// markup is layout only (steps row, issues table — no esa- table lego exists,
+// same finding as cbf-baselines-table) plus this reusable card's chrome.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaPill from '@esa/ecology/esa-pill.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
+import EsaLoadingSpinner from '@esa/ecology/esa-loading-spinner.astro';
+import { uploadIssues, cleanSummary, FY } from '../../data/project-baselines.mjs';
+import { withBase } from '../../lib/base';
+
+const errorCount = uploadIssues.filter((i) => i.severity === 'Error').length;
+const warningCount = uploadIssues.filter((i) => i.severity === 'Warning').length;
+---
+<section class="cbf-baselines-upload" aria-label="Bulk upload baseline budgets">
+  <header class="cbf-baselines-upload__header">
+    <div class="repel">
+      <h2 class="type-section-title">Bulk upload baseline budgets</h2>
+      <EsaPill label="FundManager" variant="info" removable={false} />
+    </div>
+    <p class="cbf-baselines-upload__lede">
+      Set {FY.current} baseline budgets across every project in one pass — download the
+      template, enter budgets in bulk, and upload the sheet. Every row is validated before
+      anything is written; errors stop the whole upload, so no partial updates ever land.
+    </p>
+  </header>
+
+  <!-- Result of the last applied upload — hidden until Apply succeeds. -->
+  <div data-state="applied" hidden>
+    <EsaAlertBox variant="success" title="Baselines applied">
+      <span data-applied-text></span>
+    </EsaAlertBox>
+  </div>
+
+  <ol class="cbf-baselines-upload__steps">
+    <li>
+      <span class="cbf-baselines-upload__step-title">Download the template</span>
+      <p>Prefilled with every active {FY.current} project, its fund, and its {FY.prior} baseline.</p>
+      {/* esa-button forwards no extra attrs (data hooks, download) — they live on wrapper spans */}
+      <span data-template-download>
+        <EsaButton color="primary" appearance="outline" icon="download" size="sm"
+          href={withBase('/project-baselines-template.csv')}>Download template</EsaButton>
+      </span>
+    </li>
+    <li>
+      <span class="cbf-baselines-upload__step-title">Enter baseline budgets</span>
+      <p>Fill in COLA % and the {FY.current} baseline for each project. Leave other columns as they are.</p>
+    </li>
+    <li>
+      <span class="cbf-baselines-upload__step-title">Upload for validation</span>
+      <p>Every row is checked before any update is applied. Fix what's flagged and re-upload.</p>
+    </li>
+  </ol>
+
+  <esa-file-upload
+    data-baselines-file
+    label="Upload your completed template"
+    accept=".csv,.xlsx"
+    max-size-mb="10"
+  ></esa-file-upload>
+
+  <div class="cbf-baselines-upload__validating" data-state="validating" hidden>
+    <EsaLoadingSpinner size="sm" />
+    <span>Validating {cleanSummary.rows} rows…</span>
+  </div>
+
+  <!-- First-upload outcome: errors block everything. -->
+  <div class="stack" data-gap="md" data-state="errors" hidden>
+    <EsaAlertBox variant="danger" title={`${errorCount} errors found — no changes were applied`}>
+      Errors block the entire upload. Fix the rows below in your sheet and upload it again;
+      {warningCount === 1 ? 'the warning is' : 'warnings are'} advisory and won't block a clean file.
+    </EsaAlertBox>
+
+    <div class="cbf-baselines-upload__scroll">
+      <table class="cbf-baselines-upload__issues">
+        <thead>
+          <tr>
+            <th scope="col">Severity</th>
+            <th scope="col">Row</th>
+            <th scope="col">Project</th>
+            <th scope="col">Issue</th>
+          </tr>
+        </thead>
+        <tbody>
+          {uploadIssues.map((i) => (
+            <tr>
+              <td>
+                {i.severity === 'Error'
+                  ? <EsaBadge value="Error" variant="danger" size="lg" />
+                  : <EsaBadge value="Warning" variant="warning" size="lg" />}
+              </td>
+              <td class="cbf-num">{i.row}</td>
+              <td class="cbf-num">{i.project}</td>
+              <td class="cbf-baselines-upload__issue-text">{i.issue}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cluster" data-gap="sm">
+      <span data-error-report>
+        <EsaButton color="primary" appearance="outline" icon="download" size="sm">
+          Download error report
+        </EsaButton>
+      </span>
+      <span class="type-caption">Then fix your sheet and upload it again above.</span>
+    </div>
+  </div>
+
+  <!-- Clean-upload outcome: review the batch, then apply all-or-nothing. -->
+  <div class="stack" data-gap="md" data-state="clean" hidden>
+    <EsaAlertBox variant="success" title={`${cleanSummary.rows} rows validated — no errors`}>
+      {cleanSummary.updated} existing baselines will be updated and {cleanSummary.added} missing
+      baselines added, for a {FY.current} program total of {cleanSummary.total}. Nothing is
+      written until you apply.
+    </EsaAlertBox>
+    <div class="cluster" data-gap="sm">
+      <span data-apply>
+        <EsaButton color="primary" icon="check">Apply {cleanSummary.rows} updates</EsaButton>
+      </span>
+      <span class="type-caption">Applies every row in one transaction.</span>
+    </div>
+  </div>
+
+  <EsaCollapsible title="What gets validated" icon="shield-check">
+    <ul class="cbf-baselines-upload__rules">
+      <li>Project numbers must exist in CBFish and be active in the {FY.current} SOY cycle.</li>
+      <li>COLA % must be between 0 and 15 — a value like 228 is flagged, not applied.</li>
+      <li>Baseline amounts must be numeric and non-negative.</li>
+      <li>The workbook may contain only the baseline budgets tab — stray SOY tabs are rejected.</li>
+      <li>A baseline changing more than 25% versus {FY.prior} raises an advisory warning.</li>
+    </ul>
+  </EsaCollapsible>
+
+  <esa-confirm-dialog
+    data-apply-confirm
+    heading={`Apply ${cleanSummary.rows} baseline updates?`}
+    message={`${FY.current} baseline budgets will be written for ${cleanSummary.rows} projects in one transaction. This replaces each project's current ${FY.current} baseline.`}
+    variant="warning"
+    confirm-label="Apply updates"
+    cancel-label="Keep reviewing"
+  ></esa-confirm-dialog>
+</section>
+
+<script>
+  import '@esa/ecology/esa-file-upload';
+  import '@esa/ecology/esa-confirm-dialog';
+  import { appliedValues, cleanSummary, stats } from '../../data/project-baselines.mjs';
+
+  const root = document.querySelector('.cbf-baselines-upload');
+  if (root) {
+    const state = (name: string) => root.querySelector<HTMLElement>(`[data-state="${name}"]`);
+    const uploader = root.querySelector<HTMLElement>('[data-baselines-file]');
+
+    // Hub bug workaround (docs/hub-issues.md → esa-file-upload): the lego's
+    // private reactive state compiles to native class fields that shadow Lit's
+    // accessors, so dev-mode Lit rejects the first update and the dropzone
+    // never renders. Un-shadow the instance fields and run the missed update.
+    // Remove once the hub applies the `declare` fix (snackbar pattern).
+    customElements.whenDefined('esa-file-upload').then(() => {
+      const el = uploader as any;
+      if (!el || el.hasUpdated) return;
+      for (const k of ['_isDragging', '_files', '_error']) {
+        const v = el[k];
+        delete el[k];
+        el[k] = v;
+      }
+      el.performUpdate?.();
+    });
+    const confirmDialog = root.querySelector<HTMLElement & { open: boolean }>('[data-apply-confirm]');
+    let uploads = 0;
+    let applied = false;
+
+    const show = (name: string | null) => {
+      for (const s of ['validating', 'errors', 'clean'] as const) {
+        state(s)!.hidden = s !== name;
+      }
+    };
+
+    // Upload → brief simulated validation → first pass errors, later passes clean.
+    uploader?.addEventListener('change', (e) => {
+      const files = (e as CustomEvent).detail?.files ?? [];
+      if (!files.length || applied) return;
+      uploads += 1;
+      show('validating');
+      setTimeout(() => show(uploads === 1 ? 'errors' : 'clean'), 1200);
+    });
+
+    // Template download — the wrapped esa-button renders an <a> without a
+    // download attr (the lego doesn't forward it), so intercept and re-anchor.
+    root.querySelector('[data-template-download]')?.addEventListener('click', (e) => {
+      const href = root.querySelector<HTMLAnchorElement>('[data-template-download] a')?.href;
+      if (!href) return;
+      e.preventDefault();
+      const a = Object.assign(document.createElement('a'), { href, download: 'project-baselines-template.csv' });
+      a.click();
+    });
+
+    // Error report — assembled from the on-screen issues table, downloaded as CSV.
+    root.querySelector('[data-error-report]')?.addEventListener('click', () => {
+      const rows = [...root.querySelectorAll('[data-state="errors"] tbody tr')].map((tr) =>
+        [...tr.querySelectorAll('td')].map((td) => `"${td.textContent!.trim().replace(/"/g, '""')}"`).join(',')
+      );
+      const csv = ['Severity,Row,Project,Issue', ...rows].join('\n');
+      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+      const a = Object.assign(document.createElement('a'), { href: url, download: 'baseline-upload-errors.csv' });
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    root.querySelector('[data-apply]')?.addEventListener('click', () => {
+      if (confirmDialog) confirmDialog.open = true;
+    });
+
+    confirmDialog?.addEventListener('confirm', () => {
+      applied = true;
+      show(null);
+
+      // Banner inside this card.
+      const appliedBox = state('applied')!;
+      const time = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      appliedBox.querySelector('[data-applied-text]')!.textContent =
+        `${cleanSummary.rows} FY28 baselines applied today at ${time} by Angela Zhao — ` +
+        `${cleanSummary.updated} updated, ${cleanSummary.added} added.`;
+      appliedBox.hidden = false;
+
+      // Toast via the page-level snackbar container.
+      const snackbar = document.querySelector<any>('[data-snackbar]');
+      snackbar?.success?.(`${cleanSummary.rows} FY28 baselines applied.`, { duration: 5000 });
+
+      // Reconcile the baselines table: fill the Missing rows and refresh the stats.
+      const badgeTemplate = document.querySelector('[data-badge-template-set]');
+      for (const [project, v] of Object.entries(appliedValues)) {
+        const row = document.querySelector(`tr[data-project="${project}"]`);
+        if (!row) continue;
+        row.querySelector('[data-cell="cola"]')!.textContent = v.cola.toFixed(2);
+        row.querySelector('[data-cell="fy28"]')!.textContent =
+          v.fy28.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+        const status = row.querySelector('[data-cell="status"]')!;
+        if (badgeTemplate) status.innerHTML = badgeTemplate.innerHTML;
+        row.classList.add('is-updated');
+      }
+      const setStat = (hook: string, value: string) => {
+        document.querySelector(`[${hook}] .esa-stat__value`)!.textContent = value;
+      };
+      setStat('data-stat-set', String(stats.activeProjects));
+      setStat('data-stat-missing', '0');
+      setStat('data-stat-total', stats.totalBaselineApplied);
+    });
+  }
+</script>
+
+<style>
+  /* State sections toggle via the hidden attribute; display-setting classes on
+     the same elements (flex/stack) must not override it. */
+  .cbf-baselines-upload [hidden] { display: none !important; }
+
+  /* The card — one bordered surface so the whole CBF-8142 flow reads as a unit. */
+  .cbf-baselines-upload {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-500);
+    padding: var(--spacing-500);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200, 8px);
+    background: var(--color-surface);
+  }
+  .cbf-baselines-upload__header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-200);
+  }
+  .cbf-baselines-upload__lede {
+    margin: 0;
+    max-width: 72ch;
+    color: var(--color-text-muted);
+  }
+
+  /* Numbered steps row — layout only, every control inside is a lego. */
+  .cbf-baselines-upload__steps {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--spacing-500);
+    margin: 0;
+    padding: 0;
+    counter-reset: step;
+    list-style: none;
+  }
+  .cbf-baselines-upload__steps li {
+    counter-increment: step;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-200);
+    align-items: flex-start;
+  }
+  .cbf-baselines-upload__steps li::before {
+    content: counter(step);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+  .cbf-baselines-upload__step-title { font-weight: var(--font-weight-semibold); }
+  .cbf-baselines-upload__steps p {
+    margin: 0;
+    font-size: 15px;
+    color: var(--color-text-muted);
+  }
+  @media (max-width: 800px) {
+    .cbf-baselines-upload__steps { grid-template-columns: 1fr; }
+  }
+
+  .cbf-baselines-upload__validating {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300);
+    color: var(--color-text-muted);
+  }
+
+  .cbf-baselines-upload__scroll {
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200, 8px);
+  }
+  .cbf-baselines-upload__issues {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  .cbf-baselines-upload__issues th,
+  .cbf-baselines-upload__issues td {
+    padding: var(--spacing-250) var(--spacing-300);
+    text-align: left;
+    vertical-align: top;
+    white-space: nowrap;
+  }
+  .cbf-baselines-upload__issues thead th {
+    background: var(--color-gray-50, #f4f5f7);
+    border-bottom: 1px solid var(--color-border);
+    font-weight: var(--font-weight-semibold);
+  }
+  .cbf-baselines-upload__issues tbody tr + tr td { border-top: 1px solid var(--color-border); }
+  .cbf-baselines-upload__issue-text { white-space: normal; min-width: 320px; }
+
+  .cbf-baselines-upload__rules {
+    margin: 0;
+    padding-left: var(--spacing-500);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-150);
+    font-size: 15px;
+    color: var(--color-text-primary);
+  }
+</style>
