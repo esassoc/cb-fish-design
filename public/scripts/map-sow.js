@@ -267,6 +267,15 @@ function ppOwner(we, id) {
   return id === 'pc_fp' ? getActivePC(we) : we;
 }
 
+// Distinct colors per primary channel so multiple channels stay visually
+// distinguishable on the map when a work element has more than one.
+var PC_CHANNEL_COLORS = ['#1a7abf', '#c0392b', '#8e44ad', '#16a085', '#d68910'];
+function pcChannelColor(we, pcId) {
+  var idx = 0;
+  (we.primaryChannels||[]).forEach(function(pc, i){ if (pc.id === pcId) idx = i; });
+  return PC_CHANNEL_COLORS[idx % PC_CHANNEL_COLORS.length];
+}
+
 function newWEData() {
   var pc1 = newPrimaryChannel(1);
   return {
@@ -2442,6 +2451,8 @@ function finishSOWDraw() {
   if(!sowDrawing)return;
   var we=getWE(sowDrawing.weId);if(!we)return;
   var d=sowDrawing,col=SOW_COLOR[d.geo]||'#1a3a5c';
+  // Color primary-channel geometry per channel so multiple channels stay distinguishable
+  if (d.id && d.id.substring(0,2)==='pc') col = pcChannelColor(we, we.activePCId);
   var pts=drawPts.slice();drawPts=[];clearPreview();
   var NO_CLIP_SOW = {pcw1:1,pcw2:1,pcw3:1};
   if(!NO_CLIP_SOW[d.id]) pts=clipPtsToPerimeter(we,pts,d.geo);
@@ -2462,15 +2473,20 @@ function finishSOWDraw() {
   }
   var layer,valueM=0,acres=0;
   var NO_DISPLAY_IDS = {pcw1:1,pcw2:1,pcw3:1};
+  // Disambiguate tooltips when a work element has more than one primary channel
+  var tipLabel = d.label;
+  if (d.id && d.id.substring(0,2)==='pc' && we.primaryChannels.length > 1) {
+    tipLabel = d.label + ' (' + getActivePC(we).name + ')';
+  }
   if(d.geo==='segment'||d.geo==='line'){
     if(NO_DISPLAY_IDS[d.id]){
       layer=null; // store geometry but don't add to map
     } else {
-      layer=L.polyline(pts,{color:col,weight:2.5,interactive:false}).bindTooltip(d.label).addTo(map);
+      layer=L.polyline(pts,{color:col,weight:2.5,interactive:false}).bindTooltip(tipLabel).addTo(map);
     }
     valueM=geoLen(pts);
   }
-  else{layer=L.polygon(pts,{color:col,fillColor:col,fillOpacity:.2,weight:2,interactive:false}).bindTooltip(d.label).addTo(map);acres=geoArea(pts);valueM=geoAreaM2(pts);}
+  else{layer=L.polygon(pts,{color:col,fillColor:col,fillOpacity:.2,weight:2,interactive:false}).bindTooltip(tipLabel).addTo(map);acres=geoArea(pts);valueM=geoAreaM2(pts);}
   var owner=sowOwner(we,d.id);
   owner.sowLayers[d.id]={layer:layer,valueM:valueM,acres:acres,geo:d.geo,label:d.label,_pts:NO_DISPLAY_IDS[d.id]?pts:null};
   // Multi-entry FP items (grading/road/berm/revetment/tailings/wetland) get a numbered
@@ -2515,10 +2531,12 @@ function updatePCBuffer(we) {
   // Remove old auto layer
   var old = getActivePC(we).sowLayers['pc-area'];
   if (old && old._auto && old.layer) { map.removeLayer(old.layer); }
+  var areaCol = pcChannelColor(we, we.activePCId);
+  var areaTip = we.primaryChannels.length > 1 ? 'Area of Restored Channel (estimated) — '+getActivePC(we).name : 'Area of Restored Channel (estimated)';
   var bufLayer = L.polygon(ring, {
-    color:'#2a7a5c', fillColor:'#2a7a5c', fillOpacity:0.15,
+    color:areaCol, fillColor:areaCol, fillOpacity:0.15,
     weight:2, dashArray:'6,4', interactive:false
-  }).bindTooltip('Area of Restored Channel (estimated)').addTo(map);
+  }).bindTooltip(areaTip).addTo(map);
   var areaM2 = geoAreaM2(ring);
   getActivePC(we).sowLayers['pc-area'] = {layer:bufLayer, valueM:areaM2, acres:areaM2*0.000247105, geo:'polygon', label:'Area of Restored Channel', _auto:true};
   renderLegend();
@@ -2587,10 +2605,12 @@ function updateSOWCalcs() {
       if (ring) {
         // Remove old auto layer if exists
         if (getActivePC(we)._pcAreaAutoLayer) { map.removeLayer(getActivePC(we)._pcAreaAutoLayer); }
+        var autoAreaCol = pcChannelColor(we, we.activePCId);
+        var autoAreaTip = we.primaryChannels.length > 1 ? 'Area of Restored Channel (estimated) — '+getActivePC(we).name : 'Area of Restored Channel (estimated)';
         var bufLayer = L.polygon(ring, {
-          color: '#1a7abf', fillColor: '#1a7abf', fillOpacity: 0.15,
+          color: autoAreaCol, fillColor: autoAreaCol, fillOpacity: 0.15,
           weight: 2, dashArray: '6,4', interactive: false
-        }).bindTooltip('Area of Restored Channel (estimated)').addTo(map);
+        }).bindTooltip(autoAreaTip).addTo(map);
         getActivePC(we)._pcAreaAutoLayer = bufLayer;
         var areaM2 = geoAreaM2(ring);
         var acresAuto = (areaM2 * 0.000247105).toFixed(3);
@@ -3721,8 +3741,9 @@ function wizardDelGravelPlacement(placementId) {
 
 // Deleting a placement shifts the rest down one — keep map badges matching the list.
 function renumberGravelPlacements(we) {
+  var col = pcChannelColor(we, we.activePCId);
   getActivePC(we).gravelPlacements.forEach(function(p, i) {
-    if (p.marker) p.marker.setIcon(fpMultiLabelIcon(i+1, '#c07820'));
+    if (p.marker) p.marker.setIcon(fpMultiLabelIcon(i+1, col));
   });
 }
 
@@ -3752,8 +3773,9 @@ function placeGravelPoint(latlng) {
   if (!p) return;
   if (p.marker) map.removeLayer(p.marker);
   var num = getActivePC(we).gravelPlacements.indexOf(p) + 1;
-  p.marker = L.marker(latlng, {icon: fpMultiLabelIcon(num, '#c07820'), interactive:false})
-    .bindTooltip('Gravel Placement ' + num).addTo(map);
+  var gravelTip = we.primaryChannels.length > 1 ? 'Gravel Placement ' + num + ' (' + getActivePC(we).name + ')' : 'Gravel Placement ' + num;
+  p.marker = L.marker(latlng, {icon: fpMultiLabelIcon(num, pcChannelColor(we, we.activePCId)), interactive:false})
+    .bindTooltip(gravelTip).addTo(map);
   p.latlng = latlng;
   if (wizardMode) wizardRefreshIfActive();
 }
@@ -6343,6 +6365,15 @@ function renderLegend() {
     workElements.forEach(function(we,i){h+='<div class="leg-row"><span style="font-size:10px;font-weight:700;color:#1a3a5c;margin-right:2px">WE'+(i+1)+'</span>'+we.name+'</div>';});
     h+='</div>';
   }
+  // Only worth calling out when a work element actually has more than one primary channel
+  var activeWEForLeg = getActiveWE();
+  if (activeWEForLeg && activeWEForLeg.primaryChannels && activeWEForLeg.primaryChannels.length > 1) {
+    h+='<div class="leg-section"><div class="leg-sec-title">Primary Channels</div>';
+    activeWEForLeg.primaryChannels.forEach(function(pc,i){
+      h+='<div class="leg-row"><span class="leg-line" style="background:'+PC_CHANNEL_COLORS[i % PC_CHANNEL_COLORS.length]+'"></span>'+pc.name+'</div>';
+    });
+    h+='</div>';
+  }
   el.innerHTML=h;if(legCollapsed)el.classList.add('collapsed');
 }
 
@@ -7864,95 +7895,103 @@ function openSOW() {
     // We'll use we.sowLayers directly for layer values
 
     if(we.types.indexOf('pc')>=0) {
-      h+='<h3>Primary Channel — Wood Structures</h3><table><thead><tr><th>Type</th><th>Description</th><th># Large</th><th># Small</th></tr></thead><tbody>';
-      var anyS=false;
-      ['cms','mcs','css'].forEach(function(t){we.structures[t].forEach(function(s){anyS=true;h+='<tr><td>'+STRUCT_LABEL[t]+'</td><td>'+s.desc+'</td><td>'+(s.large||0)+'</td><td>'+(s.small||0)+'</td></tr>';});});
-      if(!anyS)h+='<tr><td colspan="4" style="color:#aab8c8;font-style:italic">None entered</td></tr>';
-      h+='</tbody></table>';
-      // ── Channel Habitat Units ──────────────────────────────────────────────
-      var chuR=getActivePC(we).chuUnits?getActivePC(we).chuUnits.filter(function(u){return u.type==='riffle';}):[];
-      var chuP=getActivePC(we).chuUnits?getActivePC(we).chuUnits.filter(function(u){return u.type==='pool';}):[];
-      var chuRArea=(chuR.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105);
-      var chuPArea=(chuP.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105);
-      var chuRLen=chuR.reduce(function(a,u){return a+u.lengthM;},0)*3.28084;
-      var chuPLen=chuP.reduce(function(a,u){return a+u.lengthM;},0)*3.28084;
-      var chuTotalBoulders = chuR.reduce(function(a,u){return a+(u.boulders||u.boulderCount||0);},0);
-      var chuPDepths = chuP.filter(function(u){return u.poolDepth||u.avgDepth;}).map(function(u){return u.poolDepth||u.avgDepth;});
-      var chuAvgDepth = chuPDepths.length?(chuPDepths.reduce(function(a,v){return a+v;},0)/chuPDepths.length).toFixed(1)+' ft':null;
-      if (chuR.length||chuP.length) {
-        h+='<h3 class="sow-section-title">Primary Channel — Habitat Units</h3>';
-        h+='<table class="sow-table"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
-        h+='<tr><td># Riffles</td><td>'+(chuR.length||'—')+'</td></tr>';
-        h+='<tr><td>Total boulders</td><td>'+(chuR.length?(chuTotalBoulders||'0'):'—')+'</td></tr>';
-        h+='<tr><td>Riffle area</td><td>'+(chuR.length?chuRArea.toFixed(3)+' acres':'—')+'</td></tr>';
-        h+='<tr><td>Riffle length (approx)</td><td>'+(chuR.length?'~'+Math.round(chuRLen).toLocaleString()+' ft':'—')+'</td></tr>';
-        h+='<tr><td># Pools</td><td>'+(chuP.length||'—')+'</td></tr>';
-        h+='<tr><td>Pool area</td><td>'+(chuP.length?chuPArea.toFixed(3)+' acres':'—')+'</td></tr>';
-        h+='<tr><td>Pool length (approx)</td><td>'+(chuP.length?'~'+Math.round(chuPLen).toLocaleString()+' ft':'—')+'</td></tr>';
-        h+='<tr><td>Avg pool depth at low flow</td><td>'+(chuAvgDepth||'—')+'</td></tr>';
+      var savedActivePCIdForExport = we.activePCId;
+      we.primaryChannels.forEach(function(pc, pcIdx) {
+        we.activePCId = pc.id; // so pcChannelWidthFt()/avgWidths() resolve this channel
+        var pcHeading = we.primaryChannels.length > 1 ? ' — ' + pc.name : '';
+        h+='<h3>Primary Channel'+pcHeading+' — Wood Structures</h3><table><thead><tr><th>Type</th><th>Description</th><th># Large</th><th># Small</th></tr></thead><tbody>';
+        var anyS=false;
+        ['cms','mcs','css'].forEach(function(t){pc.structures[t].forEach(function(s){anyS=true;h+='<tr><td>'+STRUCT_LABEL[t]+'</td><td>'+s.desc+'</td><td>'+(s.large||0)+'</td><td>'+(s.small||0)+'</td></tr>';});});
+        if(!anyS)h+='<tr><td colspan="4" style="color:#aab8c8;font-style:italic">None entered</td></tr>';
         h+='</tbody></table>';
-      }
-      // Pie charts — only if we have typed units
-      var hasTypes = chuR.length||chuP.length;
-      if (hasTypes) {
-        var chartId1 = 'chu-pie-ac-'+we.id, chartId2 = 'chu-pie-ft-'+we.id;
-        h += '<div style="display:flex;gap:24px;margin:16px 0;flex-wrap:wrap">';
-        h += '<div style="flex:1;min-width:200px;text-align:center"><div style="font-size:11px;font-weight:700;color:#2c4a6a;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">By Area (acres)</div><canvas id="'+chartId1+'" width="180" height="180"></canvas><div id="'+chartId1+'-leg" style="margin-top:8px;font-size:10px;text-align:left;display:inline-block"></div></div>';
-        h += '<div style="flex:1;min-width:200px;text-align:center"><div style="font-size:11px;font-weight:700;color:#2c4a6a;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">By Length (ft)</div><canvas id="'+chartId2+'" width="180" height="180"></canvas><div id="'+chartId2+'-leg" style="margin-top:8px;font-size:10px;text-align:left;display:inline-block"></div></div>';
-        h += '</div>';
-        // Draw after DOM is ready
-        setTimeout(function() {
-          var acData  = [{label:'Riffle',val:chuRArea,color:'#c07820'},{label:'Pool',val:chuPArea,color:'#1a7abf'}].filter(function(d){return d.val>0;});
-          var ftData  = [{label:'Riffle',val:chuRLen,color:'#c07820'},{label:'Pool',val:chuPLen,color:'#1a7abf'}].filter(function(d){return d.val>0;});
-          drawCHUPie(chartId1, acData, function(v){return v.toFixed(2)+' ac'});
-          drawCHUPie(chartId2, ftData, function(v){return Math.round(v).toLocaleString()+' ft'});
-        }, 100);
-      }
-
-      // ── Complexity Metrics — wizard inputVals primary, channelReaches fallback ──
-      h+='<h3>Primary Channel — Complexity Metrics</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
-      var pcRchSL = getActivePC(we).sowLayers['pc-reach'];
-      var pcRchFt2 = pcRchSL && pcRchSL.valueM ? Math.round(pcRchSL.valueM*3.28084).toLocaleString()+' ft' : '—';
-      // Valley length from pc-reach endpoints
-      var pcVlM2 = 0;
-      if (pcRchSL && pcRchSL.layer) {
-        var pcPts2 = pcRchSL.layer.getLatLngs();
-        if (pcPts2.length && Array.isArray(pcPts2[0])) pcPts2 = pcPts2[0];
-        if (pcPts2 && pcPts2.length >= 2) {
-          var _R2=6378137,_tr2=function(d){return d*Math.PI/180;};
-          var _p1=pcPts2[0],_p2=pcPts2[pcPts2.length-1];
-          var _dl=_tr2(_p2.lat-_p1.lat),_dlg=_tr2(_p2.lng-_p1.lng);
-          var _a=Math.sin(_dl/2)*Math.sin(_dl/2)+Math.cos(_tr2(_p1.lat))*Math.cos(_tr2(_p2.lat))*Math.sin(_dlg/2)*Math.sin(_dlg/2);
-          pcVlM2=_R2*2*Math.atan2(Math.sqrt(_a),Math.sqrt(1-_a));
+        // ── Channel Habitat Units ──────────────────────────────────────────────
+        var chuR=pc.chuUnits?pc.chuUnits.filter(function(u){return u.type==='riffle';}):[];
+        var chuP=pc.chuUnits?pc.chuUnits.filter(function(u){return u.type==='pool';}):[];
+        var chuRArea=(chuR.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105);
+        var chuPArea=(chuP.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105);
+        var chuRLen=chuR.reduce(function(a,u){return a+u.lengthM;},0)*3.28084;
+        var chuPLen=chuP.reduce(function(a,u){return a+u.lengthM;},0)*3.28084;
+        var chuTotalBoulders = chuR.reduce(function(a,u){return a+(u.boulders||u.boulderCount||0);},0);
+        var chuPDepths = chuP.filter(function(u){return u.poolDepth||u.avgDepth;}).map(function(u){return u.poolDepth||u.avgDepth;});
+        var chuAvgDepth = chuPDepths.length?(chuPDepths.reduce(function(a,v){return a+v;},0)/chuPDepths.length).toFixed(1)+' ft':null;
+        if (chuR.length||chuP.length) {
+          h+='<h3 class="sow-section-title">Primary Channel'+pcHeading+' — Habitat Units</h3>';
+          h+='<table class="sow-table"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
+          h+='<tr><td># Riffles</td><td>'+(chuR.length||'—')+'</td></tr>';
+          h+='<tr><td>Total boulders</td><td>'+(chuR.length?(chuTotalBoulders||'0'):'—')+'</td></tr>';
+          h+='<tr><td>Riffle area</td><td>'+(chuR.length?chuRArea.toFixed(3)+' acres':'—')+'</td></tr>';
+          h+='<tr><td>Riffle length (approx)</td><td>'+(chuR.length?'~'+Math.round(chuRLen).toLocaleString()+' ft':'—')+'</td></tr>';
+          h+='<tr><td># Pools</td><td>'+(chuP.length||'—')+'</td></tr>';
+          h+='<tr><td>Pool area</td><td>'+(chuP.length?chuPArea.toFixed(3)+' acres':'—')+'</td></tr>';
+          h+='<tr><td>Pool length (approx)</td><td>'+(chuP.length?'~'+Math.round(chuPLen).toLocaleString()+' ft':'—')+'</td></tr>';
+          h+='<tr><td>Avg pool depth at low flow</td><td>'+(chuAvgDepth||'—')+'</td></tr>';
+          h+='</tbody></table>';
         }
-      }
-      var pcVlFt2 = pcVlM2 ? Math.round(pcVlM2*3.28084).toLocaleString()+' ft' : '—';
-      var pcSin2  = (pcRchSL && pcRchSL.valueM && pcVlM2) ? (pcRchSL.valueM/pcVlM2).toFixed(2) : '—';
-      var pcSd2   = we.sowElev || {};
-      var pcSlope2 = pcSd2._slopeDeg!==undefined ? pcSd2._slopeDeg.toFixed(2)+'° / '+pcSd2._slopePct.toFixed(2)+'%' : '—';
-      var pcWidFt2  = getActivePC(we).inputVals['pc-width'] ? Math.round(getActivePC(we).inputVals['pc-width'])+' ft' : '—';
-      var pcBHFt2   = getActivePC(we).inputVals['pc-bank-height'] ? getActivePC(we).inputVals['pc-bank-height']+' ft' : '—';
-      var pcAreaSL2 = getActivePC(we).sowLayers['pc-area'];
-      var pcAreaAc2 = pcAreaSL2 && pcAreaSL2.valueM ? (pcAreaSL2.valueM*0.000247105).toFixed(3)+' acres' : '—';
-      var pcExcav2  = getActivePC(we).inputVals['pc-excavation-vol'] ? getActivePC(we).inputVals['pc-excavation-vol'].toLocaleString()+' CY' : '—';
-      // Gravel placement — point placements, each with its own length/depth.
-      var pcGravelWFt = pcChannelWidthFt(we);
-      var pcGravelPlaced2 = (getActivePC(we).gravelPlacements||[]).filter(function(p){return p.latlng;});
-      var pcGravelTotalCY2 = 0;
-      pcGravelPlaced2.forEach(function(p){
-        if (pcGravelWFt && p.length && p.depth) pcGravelTotalCY2 += parseFloat(p.length)*parseFloat(p.depth)*pcGravelWFt/27;
+        // Pie charts — only if we have typed units
+        var hasTypes = chuR.length||chuP.length;
+        if (hasTypes) {
+          var chartId1 = 'chu-pie-ac-'+we.id+'-'+pcIdx, chartId2 = 'chu-pie-ft-'+we.id+'-'+pcIdx;
+          h += '<div style="display:flex;gap:24px;margin:16px 0;flex-wrap:wrap">';
+          h += '<div style="flex:1;min-width:200px;text-align:center"><div style="font-size:11px;font-weight:700;color:#2c4a6a;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">By Area (acres)</div><canvas id="'+chartId1+'" width="180" height="180"></canvas><div id="'+chartId1+'-leg" style="margin-top:8px;font-size:10px;text-align:left;display:inline-block"></div></div>';
+          h += '<div style="flex:1;min-width:200px;text-align:center"><div style="font-size:11px;font-weight:700;color:#2c4a6a;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">By Length (ft)</div><canvas id="'+chartId2+'" width="180" height="180"></canvas><div id="'+chartId2+'-leg" style="margin-top:8px;font-size:10px;text-align:left;display:inline-block"></div></div>';
+          h += '</div>';
+          // Draw after DOM is ready — capture per-channel values via closure
+          (function(chartId1, chartId2, chuRArea, chuPArea, chuRLen, chuPLen) {
+            setTimeout(function() {
+              var acData  = [{label:'Riffle',val:chuRArea,color:'#c07820'},{label:'Pool',val:chuPArea,color:'#1a7abf'}].filter(function(d){return d.val>0;});
+              var ftData  = [{label:'Riffle',val:chuRLen,color:'#c07820'},{label:'Pool',val:chuPLen,color:'#1a7abf'}].filter(function(d){return d.val>0;});
+              drawCHUPie(chartId1, acData, function(v){return v.toFixed(2)+' ac'});
+              drawCHUPie(chartId2, ftData, function(v){return Math.round(v).toLocaleString()+' ft'});
+            }, 100);
+          })(chartId1, chartId2, chuRArea, chuPArea, chuRLen, chuPLen);
+        }
+
+        // ── Complexity Metrics ──
+        h+='<h3>Primary Channel'+pcHeading+' — Complexity Metrics</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
+        var pcRchSL = pc.sowLayers['pc-reach'];
+        var pcRchFt2 = pcRchSL && pcRchSL.valueM ? Math.round(pcRchSL.valueM*3.28084).toLocaleString()+' ft' : '—';
+        // Valley length from pc-reach endpoints
+        var pcVlM2 = 0;
+        if (pcRchSL && pcRchSL.layer) {
+          var pcPts2 = pcRchSL.layer.getLatLngs();
+          if (pcPts2.length && Array.isArray(pcPts2[0])) pcPts2 = pcPts2[0];
+          if (pcPts2 && pcPts2.length >= 2) {
+            var _R2=6378137,_tr2=function(d){return d*Math.PI/180;};
+            var _p1=pcPts2[0],_p2=pcPts2[pcPts2.length-1];
+            var _dl=_tr2(_p2.lat-_p1.lat),_dlg=_tr2(_p2.lng-_p1.lng);
+            var _a=Math.sin(_dl/2)*Math.sin(_dl/2)+Math.cos(_tr2(_p1.lat))*Math.cos(_tr2(_p2.lat))*Math.sin(_dlg/2)*Math.sin(_dlg/2);
+            pcVlM2=_R2*2*Math.atan2(Math.sqrt(_a),Math.sqrt(1-_a));
+          }
+        }
+        var pcVlFt2 = pcVlM2 ? Math.round(pcVlM2*3.28084).toLocaleString()+' ft' : '—';
+        var pcSin2  = (pcRchSL && pcRchSL.valueM && pcVlM2) ? (pcRchSL.valueM/pcVlM2).toFixed(2) : '—';
+        var pcSd2   = pc.sowElev || {};
+        var pcSlope2 = pcSd2._slopeDeg!==undefined ? pcSd2._slopeDeg.toFixed(2)+'° / '+pcSd2._slopePct.toFixed(2)+'%' : '—';
+        var pcWidFt2  = pc.inputVals['pc-width'] ? Math.round(pc.inputVals['pc-width'])+' ft' : '—';
+        var pcBHFt2   = pc.inputVals['pc-bank-height'] ? pc.inputVals['pc-bank-height']+' ft' : '—';
+        var pcAreaSL2 = pc.sowLayers['pc-area'];
+        var pcAreaAc2 = pcAreaSL2 && pcAreaSL2.valueM ? (pcAreaSL2.valueM*0.000247105).toFixed(3)+' acres' : '—';
+        var pcExcav2  = pc.inputVals['pc-excavation-vol'] ? pc.inputVals['pc-excavation-vol'].toLocaleString()+' CY' : '—';
+        // Gravel placement — point placements, each with its own length/depth.
+        var pcGravelWFt = pcChannelWidthFt(we);
+        var pcGravelPlaced2 = (pc.gravelPlacements||[]).filter(function(p){return p.latlng;});
+        var pcGravelTotalCY2 = 0;
+        pcGravelPlaced2.forEach(function(p){
+          if (pcGravelWFt && p.length && p.depth) pcGravelTotalCY2 += parseFloat(p.length)*parseFloat(p.depth)*pcGravelWFt/27;
+        });
+        h += '<tr><td>Reach length</td><td>'+pcRchFt2+'</td></tr>';
+        h += '<tr><td>Valley length</td><td>'+pcVlFt2+'</td></tr>';
+        h += '<tr><td>Sinuosity</td><td>'+pcSin2+'</td></tr>';
+        h += '<tr><td>Average reach slope</td><td>'+pcSlope2+'</td></tr>';
+        h += '<tr><td>Average channel width (at riffle)</td><td>'+pcWidFt2+'</td></tr>';
+        h += '<tr><td>Average bank height (at riffle)</td><td>'+pcBHFt2+'</td></tr>';
+        h += '<tr><td>Area of restored channel</td><td>'+pcAreaAc2+'</td></tr>';
+        h += '<tr><td>Primary channel excavation volume</td><td>'+pcExcav2+'</td></tr>';
+        h += '<tr><td># Gravel placements</td><td>'+(pcGravelPlaced2.length||'—')+'</td></tr>';
+        h += '<tr><td>Gravel placement volume</td><td>'+(pcGravelTotalCY2>0?pcGravelTotalCY2.toFixed(1)+' CY':'—')+'</td></tr>';
+        h+='</tbody></table>';
       });
-      h += '<tr><td>Reach length</td><td>'+pcRchFt2+'</td></tr>';
-      h += '<tr><td>Valley length</td><td>'+pcVlFt2+'</td></tr>';
-      h += '<tr><td>Sinuosity</td><td>'+pcSin2+'</td></tr>';
-      h += '<tr><td>Average reach slope</td><td>'+pcSlope2+'</td></tr>';
-      h += '<tr><td>Average channel width (at riffle)</td><td>'+pcWidFt2+'</td></tr>';
-      h += '<tr><td>Average bank height (at riffle)</td><td>'+pcBHFt2+'</td></tr>';
-      h += '<tr><td>Area of restored channel</td><td>'+pcAreaAc2+'</td></tr>';
-      h += '<tr><td>Primary channel excavation volume</td><td>'+pcExcav2+'</td></tr>';
-      h += '<tr><td># Gravel placements</td><td>'+(pcGravelPlaced2.length||'—')+'</td></tr>';
-      h += '<tr><td>Gravel placement volume</td><td>'+(pcGravelTotalCY2>0?pcGravelTotalCY2.toFixed(1)+' CY':'—')+'</td></tr>';
-      h+='</tbody></table>';
+      we.activePCId = savedActivePCIdForExport;
     }
 
     if(we.types.indexOf('fp')>=0) {
