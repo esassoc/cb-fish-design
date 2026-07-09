@@ -236,21 +236,53 @@ window.onload = function() {
 function getWE(id) { for(var i=0;i<workElements.length;i++) if(workElements[i].id===id) return workElements[i]; return null; }
 function getActiveWE() { return getWE(activeWEId); }
 
+// A work element can have multiple primary channels (uncommon, but supported).
+// Each channel gets its own copy of everything the pc_reach..structures wizard
+// steps touch; getActivePC() resolves whichever one the wizard is currently on.
+function newPrimaryChannel(n) {
+  return {
+    id: 'pc-'+Date.now()+'-'+n,
+    name: 'Primary Channel '+n,
+    sowLayers: {},                     // 'pc-reach','pc-area','pcw1/2/3','pc-bankht'
+    inputVals: {},                     // 'pc-width','pc-bank-height','pc-excavation-vol'
+    chuUnits: [],
+    structures: {cms:[], mcs:[], css:[]},
+    structs: [],
+    gravelPlacements: [],
+    ppData: {},                        // holds 'pc_fp' only
+    sowElev: null
+  };
+}
+function getActivePC(we) {
+  return we.primaryChannels && we.primaryChannels.filter(function(c){return c.id===we.activePCId;})[0];
+}
+// pc-*/pcw1-3 sowLayers ids live on the active primary channel; every other id
+// (fp-*/rr-*, including generated fpMulti draw ids) stays on the work element directly.
+function sowOwner(we, id) {
+  return (id && id.substring(0,2) === 'pc') ? getActivePC(we) : we;
+}
+// pc_fp (the "new floodplain" PP_DEFS entry) lives on the active primary channel;
+// every other PP_DEFS id (perimeter, reach_len, fp_poly, ...) stays on the work element.
+function ppOwner(we, id) {
+  return id === 'pc_fp' ? getActivePC(we) : we;
+}
+
 function newWEData() {
+  var pc1 = newPrimaryChannel(1);
   return {
     id: 'we-'+Date.now(),
     name: '',
     types: [],
     ppData: {},
     sowLayers: {},
-    structures: {cms:[],mcs:[],css:[],fps:[],scs:[]},
-    structs: [],
+    structures: {fps:[],scs:[]},
     channelReaches: [], // flat ordered list for channel structures (cms/mcs/css)
     inputVals: {},
-    chuUnits: [],   // [{id, type:'riffle'|'pool'|null, pts:[], layer, areaM2, lengthM}]
     scReaches: [],  // [{id, layer, bufferLayer, valueM, pts}] secondary channel lines
     fpMulti: {grade:[], road:[], berm:[], revet:[], tailings:[], wetland:[]}, // [{id, vol}] — id keys into sowLayers for the drawn geometry
-    gravelPlacements: [] // [{id, latlng, marker, length, depth}] — wizard gravel placement step
+    fpStructs: [],
+    primaryChannels: [pc1], // [{id, name, sowLayers, inputVals, chuUnits, structures, structs, gravelPlacements, ppData, sowElev}]
+    activePCId: pc1.id
   };
 }
 
@@ -417,7 +449,7 @@ function setPPLayersVisible(show) {
   PP_DEFS.forEach(function(m) {
     if (ALWAYS_VISIBLE_PP[m.id]) {
       // Always keep these layers visible regardless of pre-project toggle
-      var pd = we.ppData[m.id];
+      var pd = ppOwner(we,m.id).ppData[m.id];
       if (pd && pd.layer) {
         if (!map.hasLayer(pd.layer)) map.addLayer(pd.layer);
         if (m.id === 'perimeter') pd.layer.setStyle({opacity:1, fillOpacity:0, weight:2, dashArray:'8 5'});
@@ -425,7 +457,7 @@ function setPPLayersVisible(show) {
       }
       return;
     }
-    var d = we.ppData[m.id]; if (!d) return;
+    var d = ppOwner(we,m.id).ppData[m.id]; if (!d) return;
     function tog(layer) {
       if (!layer) return;
       if (show && !map.hasLayer(layer)) map.addLayer(layer);
@@ -452,10 +484,16 @@ function setLabelsVisible(show) {
       else if (!show && map.hasLayer(layer)) map.removeLayer(layer);
     }
     tog(we._labelMarker);
-    if (we.chuUnits) we.chuUnits.forEach(function(u){ tog(u.labelMarker); });
-    // Structure pins
+    // Structure pins (floodplain/side-channel types live on the work element directly)
     Object.keys(we.structures||{}).forEach(function(t){
       (we.structures[t]||[]).forEach(function(s){ tog(s.marker); });
+    });
+    // Primary-channel CHU labels + structure pins (per channel)
+    (we.primaryChannels||[]).forEach(function(pc){
+      if (pc.chuUnits) pc.chuUnits.forEach(function(u){ tog(u.labelMarker); });
+      Object.keys(pc.structures||{}).forEach(function(t){
+        (pc.structures[t]||[]).forEach(function(s){ tog(s.marker); });
+      });
     });
   });
 }
@@ -474,8 +512,12 @@ function zoomToActiveWE() {
   // Fall back to bounding box of all drawn features
   var bounds = null;
   function eb(layer) { try { var b=layer&&layer.getBounds&&layer.getBounds(); if(b&&b.isValid()) bounds=bounds?bounds.extend(b):b; } catch(e){} }
-  PP_DEFS.forEach(function(m){ var d=we.ppData[m.id];if(!d)return; eb(d.layer); eb(d.bufferLayer); });
+  PP_DEFS.forEach(function(m){ var d=ppOwner(we,m.id).ppData[m.id];if(!d)return; eb(d.layer); eb(d.bufferLayer); });
   Object.keys(we.sowLayers||{}).forEach(function(k){ if(we.sowLayers[k]&&we.sowLayers[k].layer) eb(we.sowLayers[k].layer); });
+  (we.primaryChannels||[]).forEach(function(pc){
+    Object.keys(pc.sowLayers||{}).forEach(function(k){ if(pc.sowLayers[k]&&pc.sowLayers[k].layer) eb(pc.sowLayers[k].layer); });
+    if (pc.ppData['pc_fp']) eb(pc.ppData['pc_fp'].layer);
+  });
   if (bounds && bounds.isValid()) map.fitBounds(bounds, {padding:[30,30]});
 }
 
@@ -510,7 +552,7 @@ function updateWELabel(w, isActive) {
     } catch(e) {}
   }
   PP_DEFS.forEach(function(m) {
-    var d = w.ppData[m.id]; if (!d) return;
+    var d = ppOwner(w,m.id).ppData[m.id]; if (!d) return;
     if (d.layer) expandBounds(d.layer);
     if (d.bufferLayer) expandBounds(d.bufferLayer);
     if (d.lines) d.lines.forEach(function(l){
@@ -520,6 +562,10 @@ function updateWELabel(w, isActive) {
     });
   });
   Object.keys(w.sowLayers||{}).forEach(function(k){ if(w.sowLayers[k]&&w.sowLayers[k].layer) expandBounds(w.sowLayers[k].layer); });
+  (w.primaryChannels||[]).forEach(function(pc){
+    Object.keys(pc.sowLayers||{}).forEach(function(k){ if(pc.sowLayers[k]&&pc.sowLayers[k].layer) expandBounds(pc.sowLayers[k].layer); });
+    if (pc.ppData['pc_fp'] && pc.ppData['pc_fp'].layer) expandBounds(pc.ppData['pc_fp'].layer);
+  });
 
   if (!bounds || !bounds.isValid()) return;
   var pos = bounds.getCenter();
@@ -543,12 +589,25 @@ function allWELayers(we) {
   Object.keys(we.sowLayers).forEach(function(k){
     var sl = we.sowLayers[k]; if (!sl) return;
     if (sl.layer) out.push(sl.layer);
+    if (sl._labelMarker) out.push(sl._labelMarker);
     if (sl._arrowMarkers) sl._arrowMarkers.forEach(function(m){ if(m) out.push(m); });
   });
-  PP_DEFS.forEach(function(m){ var d=we.ppData[m.id]; if(!d)return; if(d.layer)out.push(d.layer); if(d.bufferLayer)out.push(d.bufferLayer); if(d.labelMarker)out.push(d.labelMarker); if(d.lines)d.lines.forEach(function(l){if(l&&l.layer)out.push(l.layer);}); });
+  PP_DEFS.forEach(function(m){ var d=ppOwner(we,m.id).ppData[m.id]; if(!d)return; if(d.layer)out.push(d.layer); if(d.bufferLayer)out.push(d.bufferLayer); if(d.labelMarker)out.push(d.labelMarker); if(d.lines)d.lines.forEach(function(l){if(l&&l.layer)out.push(l.layer);}); });
   Object.keys(we.structures).forEach(function(t){ we.structures[t].forEach(function(s){if(s.marker)out.push(s.marker);}); });
-  if (we.chuUnits) we.chuUnits.forEach(function(u){ if(u.layer)out.push(u.layer); if(u.labelMarker)out.push(u.labelMarker); });
   if (we.scReaches) we.scReaches.forEach(function(r){ if(r.layer)out.push(r.layer); if(r.bufferLayer)out.push(r.bufferLayer); });
+  // Every primary channel's own reach/area/floodplain/structure/CHU/gravel layers.
+  (we.primaryChannels||[]).forEach(function(pc){
+    Object.keys(pc.sowLayers).forEach(function(k){
+      var sl = pc.sowLayers[k]; if (!sl) return;
+      if (sl.layer) out.push(sl.layer);
+      if (sl._labelMarker) out.push(sl._labelMarker);
+      if (sl._arrowMarkers) sl._arrowMarkers.forEach(function(m){ if(m) out.push(m); });
+    });
+    if (pc.ppData['pc_fp'] && pc.ppData['pc_fp'].layer) out.push(pc.ppData['pc_fp'].layer);
+    Object.keys(pc.structures).forEach(function(t){ pc.structures[t].forEach(function(s){if(s.marker)out.push(s.marker);}); });
+    if (pc.chuUnits) pc.chuUnits.forEach(function(u){ if(u.layer)out.push(u.layer); if(u.labelMarker)out.push(u.labelMarker); });
+    if (pc.gravelPlacements) pc.gravelPlacements.forEach(function(p){ if(p.marker)out.push(p.marker); });
+  });
   return out;
 }
 
@@ -581,7 +640,7 @@ function showInnerTab(t) {
 // Show or hide PP layers. When hiding, keep area_ch visible as map context.
 function setPPLayerVisibility(we, show) {
   PP_DEFS.forEach(function(m) {
-    var d = we.ppData[m.id]; if (!d) return;
+    var d = ppOwner(we,m.id).ppData[m.id]; if (!d) return;
     var keepVisible = ((m.id === 'area_ch') && (we.id === activeWEId))
       || m.id === 'perimeter' || m.id === 'pc_fp';
     // Perimeter always shows dotted outline; floodplain polygons stay visible as design reference
@@ -627,7 +686,7 @@ var PP_STEPS = [
     check: function(we){ return !!(we.ppData['area_fp']&&we.ppData['area_fp'].fpSplit); },
     hint: 'Split the floodplain into <b>Left / Right</b> using the button under Total Active Floodplain Area.' },
   { id:'chu', label:'CHUs',
-    check: function(we){ return !!(we.chuUnits&&we.chuUnits.length>1); },
+    check: function(we){ return !!(getActivePC(we).chuUnits&&getActivePC(we).chuUnits.length>1); },
     hint: 'Go to <b>Habitat Work</b> tab and split the channel into riffles, pools, glides, and runs using the split line tool.' }
 ];
 
@@ -696,7 +755,7 @@ function buildPPMetricsList() {
 function renderPMRow(m) {
   var row = document.getElementById('pm-row-'+m.id); if (!row) return;
   var we = getActiveWE(); if (!we) return;
-  var d = we.ppData[m.id] || {};
+  var d = ppOwner(we,m.id).ppData[m.id] || {};
   var isDrawing = ppDrawing && ppDrawing.metricId===m.id && ppDrawing.weId===activeWEId;
   var isDone = pmIsDone(we, m);
   row.className = 'pm-row'+(isDrawing?' active-draw':isDone?' complete':'');
@@ -890,14 +949,14 @@ function renderPMRow(m) {
 }
 
 function pmIsDone(we,m) {
-  var d=we.ppData[m.id]||{};
+  var d=ppOwner(we,m.id).ppData[m.id]||{};
   if(m.method==='entered'){
     // select fields always have a valid value — check if user has interacted or if it's a select type
     if(m.inputType==='select') return !!d.value;
     return !!d.value;
   }
   if(m.method==='calc')return ppCalc(we,m.id)!==null;
-  if(m.method==='auto'){var da=we.ppData[m.id]||{};return !!(da.valueM&&da.layer);}
+  if(m.method==='auto'){var da=ppOwner(we,m.id).ppData[m.id]||{};return !!(da.valueM&&da.layer);}
   if(m.method==='measured'){
     if(m.id==='area_ch'){var d2=we.ppData[m.id]||{};return !!(d2.userDrawn&&d2.layer)||(!!d2.bufferLayer&&!!d2.valueM);}
     if(m.id==='area_fp'){return ppCalc(we,'area_fp')!==null;}
@@ -1023,8 +1082,8 @@ function calcFpCrossWidthFt(we, t) { var v = calcFpCrossWidth(we, t); return v ?
 
 // Same calculation for the new (designed) floodplain against the primary channel.
 function calcPCFPCrossWidth(we, t) {
-  var pcReach = we.sowLayers && we.sowLayers['pc-reach']; if (!pcReach || !pcReach.layer) return null;
-  var fpD = we.ppData['pc_fp']; if (!fpD) return null;
+  var pcReach = getActivePC(we).sowLayers['pc-reach']; if (!pcReach || !pcReach.layer) return null;
+  var fpD = getActivePC(we).ppData['pc_fp']; if (!fpD) return null;
   var fpPts = null;
   if (fpD.layer) { var ll2 = fpD.layer.getLatLngs(); fpPts = (ll2.length && Array.isArray(ll2[0])) ? ll2[0] : ll2; }
   if (!fpPts || fpPts.length < 3) fpPts = fpD._pts;
@@ -1150,13 +1209,13 @@ function extendReachPts(arr) {
 
 function clearReachDependents(we) {
   // Clear CHU splits
-  if (we.chuUnits && we.chuUnits.length) {
-    we.chuUnits.forEach(function(u){
+  if (getActivePC(we).chuUnits && getActivePC(we).chuUnits.length) {
+    getActivePC(we).chuUnits.forEach(function(u){
       if(u.layer) map.removeLayer(u.layer);
       if(u.labelMarker) map.removeLayer(u.labelMarker);
     });
-    we.chuUnits = [];
-    we._chuUndo = null;
+    getActivePC(we).chuUnits = [];
+    getActivePC(we)._chuUndo = null;
     var chuEl = document.getElementById('chu-units-list');
     if (chuEl) chuEl.innerHTML = '';
     var chuSum = document.getElementById('chu-summary');
@@ -1168,11 +1227,11 @@ function clearReachDependents(we) {
 
 function confirmReachChange(we) {
   // Returns true if safe to proceed (no dependents, or user confirmed)
-  var hasCHU = we.chuUnits && we.chuUnits.length > 0;
+  var hasCHU = getActivePC(we).chuUnits && getActivePC(we).chuUnits.length > 0;
   var hasFpSplit = we.ppData['area_fp'] && we.ppData['area_fp'].fpSplit;
   if (!hasCHU && !hasFpSplit) return true;
   var msg = 'Changing the reach line will clear:\n';
-  if (hasCHU) msg += '  • Channel Habitat Unit splits (' + we.chuUnits.length + ' units)\n';
+  if (hasCHU) msg += '  • Channel Habitat Unit splits (' + getActivePC(we).chuUnits.length + ' units)\n';
   if (hasFpSplit) msg += '  • Left/Right Floodplain split\n';
   msg += '\nContinue?';
   if (confirm(msg)) { clearReachDependents(we); return true; }
@@ -1291,7 +1350,7 @@ function clipPtsToPerimeter(we, pts, geo) {
 
 // Re-clip the primary channel (pc-reach SOW layer) to the current perimeter.
 function reClipPCReach(we) {
-  var sl = we && we.sowLayers && we.sowLayers['pc-reach'];
+  var sl = we && getActivePC(we).sowLayers['pc-reach'];
   if (!sl || !sl.layer) return;
   var pts = sl.layer.getLatLngs();
   if (pts.length && Array.isArray(pts[0])) pts = pts[0];
@@ -1518,8 +1577,9 @@ function commitPCFP(we, pts) {
       if (clipped && clipped.length >= 3) pts = clipped;
     }
   }
-  var d = we.ppData['pc_fp'] || {};
-  we.ppData['pc_fp'] = d;
+  var pcFpOwner = getActivePC(we);
+  var d = pcFpOwner.ppData['pc_fp'] || {};
+  pcFpOwner.ppData['pc_fp'] = d;
   if (d.layer) { map.removeLayer(d.layer); d.layer = null; }
   d._pts = pts;
   var perimD2 = we.ppData['perimeter'];
@@ -1529,7 +1589,7 @@ function commitPCFP(we, pts) {
     d._outsidePerim = pp2.length>=3 && pts.some(function(p){ return !ptInsidePoly(p, pp2); });
   } else { d._outsidePerim = false; }
   var grossAreaM2 = geoAreaM2(pts);
-  var pcAD = we.sowLayers && we.sowLayers['pc-area'];
+  var pcAD = getActivePC(we).sowLayers['pc-area'];
   var chRing = null;
   if (pcAD && pcAD.layer) {
     var lls = pcAD.layer.getLatLngs();
@@ -1869,7 +1929,7 @@ function drawElevChart(canvasId, elevs) {
 // Uses a wz-scoped canvas ID so it coexists with the expert-panel chart.
 function buildSOWElevChartHTML(we) {
   if (!we) return '';
-  var sd = we.sowElev || {};
+  var sd = getActivePC(we).sowElev || {};
   var canvasId = 'sow-elev-chart-wz-' + we.id;
   var h = '<div class="elev-panel">';
   h += '<div class="elev-title">&#9650; Elevation Profile';
@@ -1986,7 +2046,29 @@ function finishPPDraw() {
   var col=PP_COLOR[m.geo]||'#c07820';
   if(m.id==='fp_left') col='#2a7a5c';
   if(m.id==='fp_right') col='#5c2a7a';
-  if(!we.ppData[m.id])we.ppData[m.id]={};
+  if(!ppOwner(we,m.id).ppData[m.id])ppOwner(we,m.id).ppData[m.id]={};
+  // fp_poly/pc_fp are geo:'polygon' but need their own channel-subtraction commit path
+  // rather than the generic polygon handling below — check them before the geo branch.
+  if (m.id === 'fp_poly') {
+    ppDrawing=null;
+    document.getElementById('mapwrap').classList.remove('drawing');
+    setMapHint('');
+    clearPreview();
+    commitFpPoly(we, pts);
+    rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
+    if (wizardMode) wizardRefreshIfActive();
+    return;
+  }
+  if (m.id === 'pc_fp') {
+    ppDrawing=null;
+    document.getElementById('mapwrap').classList.remove('drawing');
+    setMapHint('');
+    clearPreview();
+    commitPCFP(we, pts);
+    rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
+    if (wizardMode) wizardRefreshIfActive();
+    return;
+  }
   if(m.multi>0) {
     if(!we.ppData[m.id].lines)we.ppData[m.id].lines=[];
     // Remove old layer if it exists
@@ -1997,26 +2079,6 @@ function finishPPDraw() {
   } else if(m.geo==='line') {
     if(m.id==='reach_len' && we.ppData[m.id] && we.ppData[m.id].layer && !confirmReachChange(we)) {
       ppDrawing=null; document.getElementById('mapwrap').classList.remove('drawing'); setMapHint(''); return;
-    }
-    if (m.id === 'fp_poly') {
-      ppDrawing=null;
-      document.getElementById('mapwrap').classList.remove('drawing');
-      setMapHint('');
-      clearPreview();
-      commitFpPoly(we, pts);
-      rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
-      if (wizardMode) wizardRefreshIfActive();
-      return;
-    }
-    if (m.id === 'pc_fp') {
-      ppDrawing=null;
-      document.getElementById('mapwrap').classList.remove('drawing');
-      setMapHint('');
-      clearPreview();
-      commitPCFP(we, pts);
-      rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
-      if (wizardMode) wizardRefreshIfActive();
-      return;
     }
     // fp_left / fp_right: build closed polygon from outer line + channel buffer arc
     if (m.id === 'fp_left' || m.id === 'fp_right') {
@@ -2126,7 +2188,7 @@ function addReachArrow(we) {
 }
 
 function addPCReachArrow(we) {
-  var sl = we && we.sowLayers && we.sowLayers['pc-reach'];
+  var sl = we && getActivePC(we).sowLayers['pc-reach'];
   if (sl && sl._arrowMarkers) { sl._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); sl._arrowMarkers = null; }
   if (!sl || !sl.layer) return;
   var pts = sl.layer.getLatLngs();
@@ -2158,7 +2220,7 @@ function addPCReachArrow(we) {
 }
 
 function clearPPGeom(id) {
-  var we=getActiveWE();if(!we)return;var d=we.ppData[id];if(!d)return;
+  var we=getActiveWE();if(!we)return;var d=ppOwner(we,id).ppData[id];if(!d)return;
   if(id==='reach_len' && d.layer && !confirmReachChange(we)) return;
   if(d.layer){map.removeLayer(d.layer);d.layer=null;d.valueM=0;}
   if(id==='reach_len' && d._arrowMarkers){ d._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); d._arrowMarkers=null; d._arrowMarker=null; }
@@ -2185,7 +2247,7 @@ function clearPPLine(id,idx) {
 
 // ── PP highlight/zoom ─────────────────────────────────────────────────────
 function ppLayersFor(id) {
-  var we=getActiveWE();if(!we)return[];var d=we.ppData[id];if(!d)return[];
+  var we=getActiveWE();if(!we)return[];var d=ppOwner(we,id).ppData[id];if(!d)return[];
   var out=[];if(d.layer)out.push(d.layer);if(d.bufferLayer)out.push(d.bufferLayer);if(d.lines)d.lines.forEach(function(l){if(l&&l.layer)out.push(l.layer);});return out;
 }
 function highlightPP(id) {
@@ -2228,12 +2290,13 @@ function renderWorkSide() {
   ['cms','mcs','css'].forEach(function(t){renderStructures(t);});
   renderFPStructures();
   // Render CHU units if present
-  if (we.chuUnits && we.chuUnits.length) renderCHUUnits(we);
+  var pcForRender = getActivePC(we);
+  if (pcForRender.chuUnits && pcForRender.chuUnits.length) renderCHUUnits(we);
   updateSOWCalcs();
   restoreFInputValues(we);
   renderChannelReaches();
   // Restore elevation profile chart if already fetched
-  if (we.sowElev && we.sowElev._profile) {
+  if (pcForRender.sowElev && pcForRender.sowElev._profile) {
     setTimeout(function(){ updateSOWSlopePanel(we); }, 50);
   }
 }
@@ -2362,9 +2425,10 @@ function buildRRPanelHTML(we) {
 // ── SOW draw ──────────────────────────────────────────────────────────────
 function startSOWDraw(id,geo,label) {
   var we=getActiveWE();if(!we)return;
+  var owner=sowOwner(we,id);
   if(lineEditing){cancelLineEdit();}
-  if(we.sowLayers[id]&&we.sowLayers[id].layer)map.removeLayer(we.sowLayers[id].layer);
-  if(we.sowLayers[id]&&we.sowLayers[id]._labelMarker)map.removeLayer(we.sowLayers[id]._labelMarker);
+  if(owner.sowLayers[id]&&owner.sowLayers[id].layer)map.removeLayer(owner.sowLayers[id].layer);
+  if(owner.sowLayers[id]&&owner.sowLayers[id]._labelMarker)map.removeLayer(owner.sowLayers[id]._labelMarker);
   sowDrawing={id:id,geo:geo,label:label,weId:activeWEId};
   ppDrawing=null;pendingStructPoint=null;drawPts=[];clearPreview();
   document.getElementById('mapwrap').classList.add('drawing');
@@ -2407,12 +2471,13 @@ function finishSOWDraw() {
     valueM=geoLen(pts);
   }
   else{layer=L.polygon(pts,{color:col,fillColor:col,fillOpacity:.2,weight:2,interactive:false}).bindTooltip(d.label).addTo(map);acres=geoArea(pts);valueM=geoAreaM2(pts);}
-  we.sowLayers[d.id]={layer:layer,valueM:valueM,acres:acres,geo:d.geo,label:d.label,_pts:NO_DISPLAY_IDS[d.id]?pts:null};
+  var owner=sowOwner(we,d.id);
+  owner.sowLayers[d.id]={layer:layer,valueM:valueM,acres:acres,geo:d.geo,label:d.label,_pts:NO_DISPLAY_IDS[d.id]?pts:null};
   // Multi-entry FP items (grading/road/berm/revetment/tailings/wetland) get a numbered
   // map label so the list row and the drawn feature are identifiable at a glance.
   var fpRef = findFPMultiRef(we, d.id);
   if (fpRef && layer) {
-    we.sowLayers[d.id]._labelMarker = addFPMultiLabelMarker(layer, fpRef.idx + 1, col);
+    owner.sowLayers[d.id]._labelMarker = addFPMultiLabelMarker(layer, fpRef.idx + 1, col);
   }
   var el=document.getElementById('dr-'+d.id);
   if(el){
@@ -2431,12 +2496,12 @@ function finishSOWDraw() {
 // Works without the expert-panel DOM — called from setPCWidth and when pc-reach is drawn.
 function updatePCBuffer(we) {
   if (!we) return;
-  var reachSL = we.sowLayers['pc-reach'];
+  var reachSL = getActivePC(we).sowLayers['pc-reach'];
   if (!reachSL || !reachSL.layer) return;
   // Width priority: manually entered ft → measured pcw1/2/3 average
   var halfWM = 0;
-  if (we.inputVals && we.inputVals['pc-width'] > 0) {
-    halfWM = (we.inputVals['pc-width'] / 3.28084) / 2;
+  if (getActivePC(we).inputVals['pc-width'] > 0) {
+    halfWM = (getActivePC(we).inputVals['pc-width'] / 3.28084) / 2;
   } else {
     var measW = avgWidths(we, ['pcw1','pcw2','pcw3']);
     if (measW) halfWM = measW / 2;
@@ -2448,14 +2513,14 @@ function updatePCBuffer(we) {
   var ring = buildBufferPoly(pts, halfWM);
   if (!ring) return;
   // Remove old auto layer
-  var old = we.sowLayers['pc-area'];
+  var old = getActivePC(we).sowLayers['pc-area'];
   if (old && old._auto && old.layer) { map.removeLayer(old.layer); }
   var bufLayer = L.polygon(ring, {
     color:'#2a7a5c', fillColor:'#2a7a5c', fillOpacity:0.15,
     weight:2, dashArray:'6,4', interactive:false
   }).bindTooltip('Area of Restored Channel (estimated)').addTo(map);
   var areaM2 = geoAreaM2(ring);
-  we.sowLayers['pc-area'] = {layer:bufLayer, valueM:areaM2, acres:areaM2*0.000247105, geo:'polygon', label:'Area of Restored Channel', _auto:true};
+  getActivePC(we).sowLayers['pc-area'] = {layer:bufLayer, valueM:areaM2, acres:areaM2*0.000247105, geo:'polygon', label:'Area of Restored Channel', _auto:true};
   renderLegend();
 }
 
@@ -2463,7 +2528,7 @@ function setPCWidth(val) {
   var we = getActiveWE(); if (!we) return;
   if (!we.inputVals) we.inputVals = {};
   var n = parseFloat(val);
-  we.inputVals['pc-width'] = (n > 0) ? n : null;
+  getActivePC(we).inputVals['pc-width'] = (n > 0) ? n : null;
   updatePCBuffer(we);
   updateSOWCalcs();
   if (wizardMode) wizardRefreshIfActive();
@@ -2473,14 +2538,14 @@ function updateSOWCalcs() {
   var we=getActiveWE();if(!we)return;
   // Use measured cross-sections if available; otherwise fall back to manually entered width
   var avgW=avgWidths(we,['pcw1','pcw2','pcw3']);
-  if(!avgW && we.inputVals && we.inputVals['pc-width']) avgW = we.inputVals['pc-width'] / 3.28084;
+  if(!avgW && getActivePC(we).inputVals['pc-width']) avgW = getActivePC(we).inputVals['pc-width'] / 3.28084;
   var cw=document.getElementById('calc-pc-width');if(cw)cw.textContent=avgW?Math.round(avgW)+' ft':'—';
   var pcwAvg=document.getElementById('pcw-avg');
   if(pcwAvg)pcwAvg.textContent=avgW?'Avg: '+Math.round(avgW)+' ft':'';
   // Valley length = straight-line distance between pc-reach endpoints
-  var rl = we.sowLayers['pc-reach'] ? we.sowLayers['pc-reach'].valueM : 0;
+  var rl = getActivePC(we).sowLayers['pc-reach'] ? getActivePC(we).sowLayers['pc-reach'].valueM : 0;
   var vlM = 0;
-  var reachLayer = we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer;
+  var reachLayer = getActivePC(we).sowLayers['pc-reach'] && getActivePC(we).sowLayers['pc-reach'].layer;
   if (reachLayer) {
     var rPts = reachLayer.getLatLngs();
     if (rPts.length && Array.isArray(rPts[0])) rPts = rPts[0];
@@ -2498,8 +2563,8 @@ function updateSOWCalcs() {
   // ── Area of Restored Channel: auto-buffer from reach + avg channel width ──
   var pcAreaWrap = document.getElementById('dr-pc-area-wrap');
   if (pcAreaWrap) {
-    var sl = we.sowLayers['pc-area'];
-    var reachSL = we.sowLayers['pc-reach'];
+    var sl = getActivePC(we).sowLayers['pc-area'];
+    var reachSL = getActivePC(we).sowLayers['pc-reach'];
     var avgW = avgWidths(we, ['pcw1','pcw2','pcw3']);
 
     if (sl && sl.layer && !sl._auto) {
@@ -2513,7 +2578,7 @@ function updateSOWCalcs() {
         '<span class="drawn-redo" onclick="startSOWDraw(\'pc-area\',\'polygon\',\'Area of Restored Channel\')">draw from scratch</span>';
     } else if (reachSL && reachSL.layer && avgW) {
       // Remove stale auto layer if it exists
-      if (sl && sl._auto && sl.layer) { map.removeLayer(sl.layer); we.sowLayers['pc-area'] = null; sl = null; }
+      if (sl && sl._auto && sl.layer) { map.removeLayer(sl.layer); getActivePC(we).sowLayers['pc-area'] = null; sl = null; }
       // Auto-generate buffer
       var reachPts = reachSL.layer.getLatLngs();
       if (reachPts.length && Array.isArray(reachPts[0])) reachPts = reachPts[0];
@@ -2521,15 +2586,15 @@ function updateSOWCalcs() {
       var ring = buildBufferPoly(reachPts, halfW);
       if (ring) {
         // Remove old auto layer if exists
-        if (we._pcAreaAutoLayer) { map.removeLayer(we._pcAreaAutoLayer); }
+        if (getActivePC(we)._pcAreaAutoLayer) { map.removeLayer(getActivePC(we)._pcAreaAutoLayer); }
         var bufLayer = L.polygon(ring, {
           color: '#1a7abf', fillColor: '#1a7abf', fillOpacity: 0.15,
           weight: 2, dashArray: '6,4', interactive: false
         }).bindTooltip('Area of Restored Channel (estimated)').addTo(map);
-        we._pcAreaAutoLayer = bufLayer;
+        getActivePC(we)._pcAreaAutoLayer = bufLayer;
         var areaM2 = geoAreaM2(ring);
         var acresAuto = (areaM2 * 0.000247105).toFixed(3);
-        we.sowLayers['pc-area'] = {layer: bufLayer, valueM: areaM2 * 0.000247105, acres: parseFloat(acresAuto), geo: 'polygon', label: 'Area of Restored Channel', _auto: true};
+        getActivePC(we).sowLayers['pc-area'] = {layer: bufLayer, valueM: areaM2 * 0.000247105, acres: parseFloat(acresAuto), geo: 'polygon', label: 'Area of Restored Channel', _auto: true};
         pcAreaWrap.innerHTML =
           '<span class="drawn-result">~ '+acresAuto+' acres</span> <span style="font-size:10px;color:var(--msow-desc-text,#5a7a9a)">(estimated)</span> ' +
           '<span class="drawn-redo" onclick="startPolyEditSOW(\'pc-area\')">edit</span> ' +
@@ -2545,28 +2610,28 @@ function updateSOWCalcs() {
   var cf=document.getElementById('calc-fp-width');if(cf)cf.textContent=avgFW?Math.round(avgFW)+' ft':'—';
 
   // ── Channel excavation volume ─────────────────────────────────────────────
-  var reachFt = we.sowLayers['pc-reach'] ? we.sowLayers['pc-reach'].valueM * 3.28084 : 0;
+  var reachFt = getActivePC(we).sowLayers['pc-reach'] ? getActivePC(we).sowLayers['pc-reach'].valueM * 3.28084 : 0;
   var widthFt = avgW || 0; // avg channel width from pcw1/2/3
-  var bankHtSL = we.sowLayers['pc-bankht'];
+  var bankHtSL = getActivePC(we).sowLayers['pc-bankht'];
   var bankHtFt = bankHtSL && bankHtSL.value ? parseFloat(bankHtSL.value) : 0;
   var excavCY = (reachFt && widthFt && bankHtFt) ? Math.round(reachFt * widthFt * bankHtFt / 27) : null;
   var ce = document.getElementById('calc-pc-excav');
   if (ce) ce.textContent = excavCY !== null ? excavCY.toLocaleString() + ' CY' : (reachFt && widthFt ? 'Enter bank height to calculate' : '—');
   // Store for SOW export
-  if (!we.sowLayers['pc-excav']) we.sowLayers['pc-excav'] = {};
-  we.sowLayers['pc-excav'].value = excavCY;
+  if (!getActivePC(we).sowLayers['pc-excav']) getActivePC(we).sowLayers['pc-excav'] = {};
+  getActivePC(we).sowLayers['pc-excav'].value = excavCY;
   var cl=document.getElementById('calc-large-logs');var cs2=document.getElementById('calc-small-logs');
   if(cl||cs2)updateLogTotals();
 }
 
 function startPolyEditSOW(id) {
   var we = getActiveWE(); if (!we) return;
-  var sl = we.sowLayers[id]; if (!sl || !sl.layer) return;
+  var sl = sowOwner(we,id).sowLayers[id]; if (!sl || !sl.layer) return;
   startLineEdit('sow', id);
 }
 
 function avgWidths(we,ids) {
-  var vals=ids.map(function(id){return we.sowLayers[id]?we.sowLayers[id].valueM*3.28084:null;}).filter(function(v){return v!==null;});
+  var vals=ids.map(function(id){var sl=sowOwner(we,id).sowLayers[id];return sl?sl.valueM*3.28084:null;}).filter(function(v){return v!==null;});
   return vals.length?vals.reduce(function(a,b){return a+b;},0)/vals.length:null;
 }
 
@@ -2630,24 +2695,40 @@ function renumberFPMultiLabels(we, key) {
 }
 
 // ── SOW highlight/zoom ────────────────────────────────────────────────────
+// Flattens we.sowLayers plus every primary channel's own sowLayers, since pc-*
+// layers now live per-channel rather than directly on the work element.
 function highlightSOW(id) {
   var we=getActiveWE();if(!we)return;
-  Object.keys(we.sowLayers).forEach(function(k){var l=we.sowLayers[k];if(!l||!l.layer||!l.layer.setStyle)return;var active=k===id;if(l.geo==='polygon')l.layer.setStyle({weight:active?3:1,fillOpacity:active?.4:.2,opacity:active?1:.3});else l.layer.setStyle({weight:active?4:1.5,opacity:active?1:.3});});
+  function apply(dict){
+    Object.keys(dict).forEach(function(k){var l=dict[k];if(!l||!l.layer||!l.layer.setStyle)return;var active=k===id;if(l.geo==='polygon')l.layer.setStyle({weight:active?3:1,fillOpacity:active?.4:.2,opacity:active?1:.3});else l.layer.setStyle({weight:active?4:1.5,opacity:active?1:.3});});
+  }
+  apply(we.sowLayers);
+  (we.primaryChannels||[]).forEach(function(pc){ apply(pc.sowLayers); });
 }
 function unhighlightSOW() {
   var we=getActiveWE();if(!we)return;
-  Object.keys(we.sowLayers).forEach(function(k){var l=we.sowLayers[k];if(!l||!l.layer||!l.layer.setStyle)return;if(l.geo==='polygon')l.layer.setStyle({weight:2,fillOpacity:.2,opacity:1});else l.layer.setStyle({weight:2.5,opacity:1});});
+  function apply(dict){
+    Object.keys(dict).forEach(function(k){var l=dict[k];if(!l||!l.layer||!l.layer.setStyle)return;if(l.geo==='polygon')l.layer.setStyle({weight:2,fillOpacity:.2,opacity:1});else l.layer.setStyle({weight:2.5,opacity:1});});
+  }
+  apply(we.sowLayers);
+  (we.primaryChannels||[]).forEach(function(pc){ apply(pc.sowLayers); });
 }
 function zoomToSOW(id) {
-  var we=getActiveWE();if(!we)return;var l=we.sowLayers[id];if(!l||!l.layer)return;
+  var we=getActiveWE();if(!we)return;var l=sowOwner(we,id).sowLayers[id];if(!l||!l.layer)return;
   try{var b=l.layer.getBounds?l.layer.getBounds():null;if(b&&b.isValid())map.fitBounds(b,{padding:[50,50]});}catch(e){}
 }
 
 // ── Structures ────────────────────────────────────────────────────────────
+// we.structures/we.structs hold only floodplain/side-channel types (fps/scs);
+// primary-channel types (cms/mcs/css) live on the active primary channel instead.
+function structOwner(we, type) {
+  return (type === 'fps' || type === 'scs') ? we : getActivePC(we);
+}
 function globalStructNum(we, type, id) {
-  if (!we.structs) return 1;
-  for (var i = 0; i < we.structs.length; i++) {
-    if (we.structs[i].id === id) return i + 1;
+  var owner = structOwner(we, type);
+  if (!owner.structs) return 1;
+  for (var i = 0; i < owner.structs.length; i++) {
+    if (owner.structs[i].id === id) return i + 1;
   }
   return 1;
 }
@@ -2655,18 +2736,19 @@ function globalStructNum(we, type, id) {
 // Generate a default description for a new structure: "Mid Channel 1", "Mid Channel 2", etc.
 // Call BEFORE pushing the structure onto the array so the count is correct.
 function structDefaultDesc(we, type) {
-  var existing = (we.structures[type] || []).length;
+  var existing = (structOwner(we,type).structures[type] || []).length;
   return (STRUCT_LABEL[type] || type) + ' ' + (existing + 1);
 }
 
 function addStructure(type, label) {
   var we = getActiveWE(); if (!we) return;
-  // Primary channel structures use the flat we.structs path
-  if (!we.structs) we.structs = [];
+  // Primary channel structures use the flat structs path on the active channel
+  var pc = getActivePC(we);
+  if (!pc.structs) pc.structs = [];
   var structType = type || 'cms';
   var s = {id:'s-'+Date.now(), structType:structType, desc:structDefaultDesc(we, structType), large:0, small:0, latlng:null, marker:null};
-  we.structs.push(s);
-  we.structures[structType].push(s);
+  pc.structs.push(s);
+  pc.structures[structType].push(s);
   renderAllStructures();
 }
 
@@ -2796,9 +2878,10 @@ function renderAllStructures() {
     return;
   }
   var we = getActiveWE(); if (!we) return;
-  if (!we.structs) we.structs = [];
+  var pc = getActivePC(we);
+  if (!pc.structs) pc.structs = [];
   el.innerHTML = '';
-  we.structs.forEach(function(s, i) {
+  pc.structs.forEach(function(s, i) {
     var type = s.structType || 'cms';
     var col = STRUCT_COLOR[type];
     var isWaiting = pendingStructPoint && pendingStructPoint.id === s.id;
@@ -2828,35 +2911,38 @@ function renderAllStructures() {
 }
 
 function updateStructFlat(id, field, val) {
-  var we = getActiveWE(); if (!we || !we.structs) return;
-  var s = we.structs.filter(function(x){return x.id===id;})[0]; if (!s) return;
+  var we = getActiveWE(); if (!we) return;
+  var pc = getActivePC(we); if (!pc.structs) return;
+  var s = pc.structs.filter(function(x){return x.id===id;})[0]; if (!s) return;
   s[field] = val;
   if (field === 'desc' && s.marker) {
-    var num = we.structs.indexOf(s) + 1;
+    var num = pc.structs.indexOf(s) + 1;
     s.marker.setTooltipContent(STRUCT_LABEL[s.structType||'cms']+' '+num+(val?' – '+val:''));
   }
   updateLogTotals();
 }
 
 function delStructFlat(id) {
-  var we = getActiveWE(); if (!we || !we.structs) return;
-  var s = we.structs.filter(function(x){return x.id===id;})[0]; if (!s) return;
+  var we = getActiveWE(); if (!we) return;
+  var pc = getActivePC(we); if (!pc.structs) return;
+  var s = pc.structs.filter(function(x){return x.id===id;})[0]; if (!s) return;
   if (s.marker) map.removeLayer(s.marker);
-  we.structs = we.structs.filter(function(x){return x.id!==id;});
+  pc.structs = pc.structs.filter(function(x){return x.id!==id;});
   // sync legacy arrays
   ['cms','mcs','css'].forEach(function(t){
-    we.structures[t] = we.structures[t].filter(function(x){return x.id!==id;});
+    pc.structures[t] = pc.structures[t].filter(function(x){return x.id!==id;});
   });
   renderAllStructures();
 }
 
 function changeStructType(oldType, id, newType) {
   var we = getActiveWE(); if (!we) return;
+  var pc = getActivePC(we);
   // Find in flat array
-  var s = we.structs && we.structs.filter(function(x){return x.id===id;})[0];
+  var s = pc.structs && pc.structs.filter(function(x){return x.id===id;})[0];
   if (!s) {
     // fallback: find in typed array
-    if (oldType) s = we.structures[oldType].filter(function(x){return x.id===id;})[0];
+    if (oldType) s = pc.structures[oldType].filter(function(x){return x.id===id;})[0];
   }
   if (!s) return;
   var prevType = s.structType || oldType || 'cms';
@@ -2865,7 +2951,7 @@ function changeStructType(oldType, id, newType) {
   // Update marker color and tooltip with new desc
   if (s.marker) {
     var col = STRUCT_COLOR[newType];
-    var num = we.structs ? we.structs.indexOf(s) + 1 : 1;
+    var num = pc.structs ? pc.structs.indexOf(s) + 1 : 1;
     var icon = L.divIcon({className:'',iconSize:[20,20],iconAnchor:[10,10],
       html:'<div style="width:20px;height:20px;border-radius:50%;background:'+col+';border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">'+num+'</div>'});
     s.marker.setIcon(icon);
@@ -2873,9 +2959,9 @@ function changeStructType(oldType, id, newType) {
   }
   s.structType = newType;
   // Sync legacy arrays
-  we.structures[prevType] = (we.structures[prevType]||[]).filter(function(x){return x.id!==id;});
-  if (!we.structures[newType]) we.structures[newType] = [];
-  if (!we.structures[newType].some(function(x){return x.id===id;})) we.structures[newType].push(s);
+  pc.structures[prevType] = (pc.structures[prevType]||[]).filter(function(x){return x.id!==id;});
+  if (!pc.structures[newType]) pc.structures[newType] = [];
+  if (!pc.structures[newType].some(function(x){return x.id===id;})) pc.structures[newType].push(s);
   renderAllStructures();
   updateLogTotals();
   if (wizardMode) wizardRefreshIfActive();
@@ -2884,16 +2970,17 @@ function changeStructType(oldType, id, newType) {
 function renderStructures(type) {
   var el=document.getElementById(type+'-list');if(!el)return;
   var we=getActiveWE();if(!we)return;
+  var pc=getActivePC(we);
   el.innerHTML='';
   var col=STRUCT_COLOR[type];
 
   // Count total structures across all types for sequential numbering
   var allStructs = [];
   ['cms','mcs','css'].forEach(function(t){
-    we.structures[t].forEach(function(s){ allStructs.push({type:t, s:s}); });
+    pc.structures[t].forEach(function(s){ allStructs.push({type:t, s:s}); });
   });
 
-  we.structures[type].forEach(function(s, i){
+  pc.structures[type].forEach(function(s, i){
     var globalNum = allStructs.findIndex ? allStructs.findIndex(function(x){return x.s.id===s.id;}) + 1 : i + 1;
     if (globalNum === 0) globalNum = i + 1; // fallback
     var div=document.createElement('div');div.className='multi-entry';
@@ -2917,11 +3004,12 @@ function renderStructures(type) {
 
 function updateStructure(type,id,field,val) {
   var we=getActiveWE();if(!we)return;
-  var s=(we.structs&&we.structs.filter(function(x){return x.id===id;})[0])||we.structures[type].filter(function(x){return x.id===id;})[0];if(!s)return;
+  var pc=getActivePC(we);
+  var s=(pc.structs&&pc.structs.filter(function(x){return x.id===id;})[0])||pc.structures[type].filter(function(x){return x.id===id;})[0];if(!s)return;
   s[field]=val;
   if(field==='desc'&&s.marker){
     var t2=s.structType||type;
-    var num2=(we.structs&&we.structs.indexOf(s)>=0)?we.structs.indexOf(s)+1:globalStructNum(we,t2,id);
+    var num2=(pc.structs&&pc.structs.indexOf(s)>=0)?pc.structs.indexOf(s)+1:globalStructNum(we,t2,id);
     s.marker.setTooltipContent(STRUCT_LABEL[t2]+' '+num2+(val?' – '+val:''));
   }
   updateLogTotals();
@@ -2929,28 +3017,32 @@ function updateStructure(type,id,field,val) {
 
 function cloneStructure(type,id) {
   var we=getActiveWE();if(!we)return;
-  var s=(we.structs&&we.structs.filter(function(x){return x.id===id;})[0])||we.structures[type].filter(function(x){return x.id===id;})[0];if(!s)return;
+  var pc=getActivePC(we);
+  var s=(pc.structs&&pc.structs.filter(function(x){return x.id===id;})[0])||pc.structures[type].filter(function(x){return x.id===id;})[0];if(!s)return;
   var clone={id:'s-'+Date.now(),structType:s.structType||type,desc:s.desc,large:s.large,small:s.small,latlng:null,marker:null};
-  if (!we.structs) we.structs = [];
-  we.structs.push(clone);
-  we.structures[clone.structType||type].push(clone);
+  if (!pc.structs) pc.structs = [];
+  pc.structs.push(clone);
+  pc.structures[clone.structType||type].push(clone);
   renderAllStructures();
   startStructPoint(clone.structType||type,clone.id);
 }
 
 function delStructure(type,id) {
   var we=getActiveWE();if(!we)return;
-  var s=(we.structs&&we.structs.filter(function(x){return x.id===id;})[0])||we.structures[type].filter(function(x){return x.id===id;})[0];
+  var pc=getActivePC(we);
+  var s=(pc.structs&&pc.structs.filter(function(x){return x.id===id;})[0])||pc.structures[type].filter(function(x){return x.id===id;})[0];
   if(s&&s.marker)map.removeLayer(s.marker);
-  if(we.structs)we.structs=we.structs.filter(function(x){return x.id!==id;});
-  ['cms','mcs','css'].forEach(function(t){we.structures[t]=we.structures[t].filter(function(x){return x.id!==id;});});
+  if(pc.structs)pc.structs=pc.structs.filter(function(x){return x.id!==id;});
+  ['cms','mcs','css'].forEach(function(t){pc.structures[t]=pc.structures[t].filter(function(x){return x.id!==id;});});
   if(pendingStructPoint&&pendingStructPoint.id===id){pendingStructPoint=null;document.getElementById('mapwrap').classList.remove('drawing');setMapHint('');}
   renderAllStructures();
 }
 
 function updateLogTotals() {
   var we=getActiveWE();if(!we)return;var tL=0,tS=0;
-  ['cms','mcs','css','fps','scs'].forEach(function(t){we.structures[t].forEach(function(s){tL+=+s.large||0;tS+=+s.small||0;});});
+  var pc=getActivePC(we);
+  ['cms','mcs','css'].forEach(function(t){pc.structures[t].forEach(function(s){tL+=+s.large||0;tS+=+s.small||0;});});
+  ['fps','scs'].forEach(function(t){we.structures[t].forEach(function(s){tL+=+s.large||0;tS+=+s.small||0;});});
   var cl=document.getElementById('calc-large-logs');if(cl)cl.textContent=tL||'—';
   var cs=document.getElementById('calc-small-logs');if(cs)cs.textContent=tS||'—';
   // Also update wizard totals if visible
@@ -2965,24 +3057,25 @@ function startStructPoint(type,id) {
   else renderStructures(type);
 }
 function replaceStructPoint(type,id) {
-  var we=getActiveWE();if(!we)return;var s=we.structures[type].filter(function(x){return x.id===id;})[0];if(!s)return;
+  var we=getActiveWE();if(!we)return;var s=structOwner(we,type).structures[type].filter(function(x){return x.id===id;})[0];if(!s)return;
   if(s.marker){map.removeLayer(s.marker);s.marker=null;}s.latlng=null;startStructPoint(type,id);
 }
 function placeStructPoint(latlng) {
   if(!pendingStructPoint)return;
   var we=getWE(pendingStructPoint.weId);if(!we)return;
   var type=pendingStructPoint.type,id=pendingStructPoint.id;
-  var s = (we.structs && we.structs.filter(function(x){return x.id===id;})[0])
-       || we.structures[type].filter(function(x){return x.id===id;})[0];
+  var owner=structOwner(we,type);
+  var s = (owner.structs && owner.structs.filter(function(x){return x.id===id;})[0])
+       || owner.structures[type].filter(function(x){return x.id===id;})[0];
   if(!s){pendingStructPoint=null;return;}
   if(s.marker)map.removeLayer(s.marker);
   var col=STRUCT_COLOR[type];
   var num;
   if ((type==='fps'||type==='scs') && we.fpStructs) {
     num = we.fpStructs.indexOf(s) + 1;
-    if (num <= 0) num = we.structures[type].indexOf(s) + 1;
+    if (num <= 0) num = owner.structures[type].indexOf(s) + 1;
   } else {
-    num = (we.structs && we.structs.indexOf(s) >= 0) ? we.structs.indexOf(s) + 1 : globalStructNum(we,type,id);
+    num = (owner.structs && owner.structs.indexOf(s) >= 0) ? owner.structs.indexOf(s) + 1 : globalStructNum(we,type,id);
   }
   var icon=L.divIcon({className:'',iconSize:[20,20],iconAnchor:[10,10],html:'<div style="width:20px;height:20px;border-radius:50%;background:'+col+';border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">'+num+'</div>'});
   s.marker=L.marker(latlng,{icon:icon}).bindTooltip(STRUCT_LABEL[type]+' '+num+(s.desc?' – '+s.desc:'')).addTo(map);
@@ -2999,7 +3092,7 @@ var editHandles = [];   // L.circleMarker handles currently shown
 // ── Polygon vertex editing (for any PP polygon) ───────────────────────────
 function startPolyEdit(id) {
   var we = getActiveWE(); if (!we) return;
-  var d = we.ppData[id]; if (!d) return;
+  var d = ppOwner(we,id).ppData[id]; if (!d) return;
   var col = id === 'area_fp' ? PP_COLOR.bufferFp : PP_COLOR.polygon;
   var m = PP_DEFS.filter(function(x){return x.id===id;})[0];
   var tipLabel = m ? m.label : id;
@@ -3176,7 +3269,7 @@ function startLineEdit(type, id) {
     if (!d.layer) return;
     layer = d.layer;
   } else {
-    var d2 = we.sowLayers[id]; if (!d2 || !d2.layer) return;
+    var d2 = sowOwner(we,id).sowLayers[id]; if (!d2 || !d2.layer) return;
     layer = d2.layer;
   }
   // cancel any active drawing or prior edit
@@ -3191,7 +3284,7 @@ function startLineEdit(type, id) {
   var ddb = document.getElementById('draw-done-btn'); if (ddb) ddb.style.display = 'none';
   // Hide reach arrows during editing — recalculated on commit
   if (id === 'reach_len') { var _weE=getWE(activeWEId); var _rdE=_weE&&_weE.ppData['reach_len']; if(_rdE&&_rdE._arrowMarkers) _rdE._arrowMarkers.forEach(function(a){if(a)a.setOpacity(0);}); }
-  if (id === 'pc-reach') { var _wePC=getWE(activeWEId); var _slPC=_wePC&&_wePC.sowLayers&&_wePC.sowLayers['pc-reach']; if(_slPC&&_slPC._arrowMarkers) _slPC._arrowMarkers.forEach(function(a){if(a)a.setOpacity(0);}); }
+  if (id === 'pc-reach') { var _wePC=getWE(activeWEId); var _slPC=_wePC&&getActivePC(_wePC).sowLayers['pc-reach']; if(_slPC&&_slPC._arrowMarkers) _slPC._arrowMarkers.forEach(function(a){if(a)a.setOpacity(0);}); }
   // reflect editing state in sidebar
   if (type === 'pp') {
     var m = PP_DEFS.filter(function(x){return x.id===id;})[0];
@@ -3450,8 +3543,9 @@ function commitLineEdit() {
     // recalculate area from polygon ring
     var ring2 = layer.getLatLngs();
     if (ring2.length && Array.isArray(ring2[0])) ring2 = ring2[0];
-    we.ppData[id].valueM = geoAreaM2(ring2);
-    we.ppData[id].userDrawn = true;
+    var ppPolyOwner = ppOwner(we,id);
+    ppPolyOwner.ppData[id].valueM = geoAreaM2(ring2);
+    ppPolyOwner.ppData[id].userDrawn = true;
 
     // If editing fp_poly boundary, rebuild the donut from the new ring
     if (id === 'fp_poly' && we.ppData[id]._editingBoundary) {
@@ -3463,9 +3557,9 @@ function commitLineEdit() {
     }
 
     // If editing pc_fp boundary, rebuild the donut from the new ring
-    if (id === 'pc_fp' && we.ppData[id]._editingBoundary) {
-      we.ppData[id]._editingBoundary = false;
-      if (we.ppData[id].layer) { map.removeLayer(we.ppData[id].layer); we.ppData[id].layer = null; }
+    if (id === 'pc_fp' && ppPolyOwner.ppData[id]._editingBoundary) {
+      ppPolyOwner.ppData[id]._editingBoundary = false;
+      if (ppPolyOwner.ppData[id].layer) { map.removeLayer(ppPolyOwner.ppData[id].layer); ppPolyOwner.ppData[id].layer = null; }
       commitPCFP(we, ring2.slice());
       if (wizardMode) wizardRefreshIfActive();
       return;
@@ -3501,9 +3595,10 @@ function commitLineEdit() {
     if (id === 'perimeter') { updateAreaChBuffer(we); updateAreaFpBuffer(we); }
     wizardRefreshIfActive();
   } else {
-    we.sowLayers[id].valueM = newLen;
+    var lineEditOwner = sowOwner(we,id);
+    lineEditOwner.sowLayers[id].valueM = newLen;
     var el = document.getElementById('dr-'+id);
-    var sl = we.sowLayers[id];
+    var sl = lineEditOwner.sowLayers[id];
     if (el && sl) {
       var val = Math.round(sl.valueM * 3.28084).toLocaleString() + ' ft';
       el.innerHTML = '<span class="drawn-result">&#10003; ' + val + '</span> ' +
@@ -3519,7 +3614,7 @@ function commitLineEdit() {
 
 function getCHUChannelPts(we) {
   // Prefer primary channel buffer (pc-area); fall back to pre-project area_ch
-  var sl = we.sowLayers && we.sowLayers['pc-area'];
+  var sl = getActivePC(we).sowLayers['pc-area'];
   if (sl && sl.layer) {
     var lls = sl.layer.getLatLngs();
     return (lls.length && Array.isArray(lls[0])) ? lls[0] : lls;
@@ -3534,16 +3629,16 @@ function getCHUChannelPts(we) {
 
 // Initialise the channel as a single riffle unit (called when entering the Identify Pools step).
 function initCHUUnits(we) {
-  if (!we || we.chuUnits.length > 0) return;
+  if (!we || getActivePC(we).chuUnits.length > 0) return;
   var chPts = getCHUChannelPts(we); if (!chPts) return;
-  we.chuUnits = [{id:'chu-0', type:'riffle', pts:chPts.map(function(p){return L.latLng(p.lat,p.lng);}), layer:null, areaM2:0, lengthM:0}];
+  getActivePC(we).chuUnits = [{id:'chu-0', type:'riffle', pts:chPts.map(function(p){return L.latLng(p.lat,p.lng);}), layer:null, areaM2:0, lengthM:0}];
   renderCHUUnits(we);
 }
 
 // Remove a pool (convert it back to riffle). The split lines remain.
 function removeCHUPool(unitId) {
   var we = getActiveWE(); if (!we) return;
-  var u = we.chuUnits.filter(function(u){ return u.id===unitId; })[0]; if (!u) return;
+  var u = getActivePC(we).chuUnits.filter(function(u){ return u.id===unitId; })[0]; if (!u) return;
   u.type = 'riffle';
   renderCHUUnits(we);
   wizardRefreshIfActive();
@@ -3552,7 +3647,7 @@ function removeCHUPool(unitId) {
 // Toggle a unit between riffle and pool.
 function toggleCHUPool(unitId) {
   var we = getActiveWE(); if (!we) return;
-  var u = we.chuUnits.filter(function(u){ return u.id===unitId; })[0]; if (!u) return;
+  var u = getActivePC(we).chuUnits.filter(function(u){ return u.id===unitId; })[0]; if (!u) return;
   u.type = (u.type === 'pool') ? 'riffle' : 'pool';
   renderCHUUnits(we);
   wizardRefreshIfActive();
@@ -3581,14 +3676,14 @@ function setPCBankHeight(val) {
   var we = getActiveWE(); if (!we) return;
   if (!we.inputVals) we.inputVals = {};
   var n = parseFloat(val);
-  we.inputVals['pc-bank-height'] = (n > 0) ? n : null;
+  getActivePC(we).inputVals['pc-bank-height'] = (n > 0) ? n : null;
   if (wizardMode) wizardRefreshIfActive();
 }
 function setPCExcavVol(val) {
   var we = getActiveWE(); if (!we) return;
   if (!we.inputVals) we.inputVals = {};
   var n = parseFloat(val);
-  we.inputVals['pc-excavation-vol'] = (n > 0) ? n : null;
+  getActivePC(we).inputVals['pc-excavation-vol'] = (n > 0) ? n : null;
   if (wizardMode) wizardRefreshIfActive();
 }
 // ── Gravel placement (pc_gravel wizard step) ──────────────────────────────
@@ -3597,24 +3692,24 @@ function setPCExcavVol(val) {
 function pcChannelWidthFt(we) {
   var w = avgWidths(we, ['pcw1','pcw2','pcw3']);
   if (w) return w;
-  if (we.inputVals && we.inputVals['pc-width']) return we.inputVals['pc-width'];
+  if (getActivePC(we).inputVals['pc-width']) return getActivePC(we).inputVals['pc-width'];
   return null;
 }
 
 function wizardAddGravelPlacement() {
   var we = getActiveWE(); if (!we) return;
-  if (!we.gravelPlacements) we.gravelPlacements = [];
+  if (!getActivePC(we).gravelPlacements) getActivePC(we).gravelPlacements = [];
   var p = {id: 'gp-'+Date.now(), latlng: null, marker: null, length: '', depth: ''};
-  we.gravelPlacements.push(p);
+  getActivePC(we).gravelPlacements.push(p);
   renderWizardStep();
   startGravelPoint(p.id);
 }
 
 function wizardDelGravelPlacement(placementId) {
   var we = getActiveWE(); if (!we) return;
-  var p = we.gravelPlacements.filter(function(x){return x.id===placementId;})[0];
+  var p = getActivePC(we).gravelPlacements.filter(function(x){return x.id===placementId;})[0];
   if (p && p.marker) map.removeLayer(p.marker);
-  we.gravelPlacements = we.gravelPlacements.filter(function(x){return x.id!==placementId;});
+  getActivePC(we).gravelPlacements = getActivePC(we).gravelPlacements.filter(function(x){return x.id!==placementId;});
   if (pendingGravelPoint && pendingGravelPoint.placementId === placementId) {
     pendingGravelPoint = null;
     document.getElementById('mapwrap').classList.remove('drawing');
@@ -3626,14 +3721,14 @@ function wizardDelGravelPlacement(placementId) {
 
 // Deleting a placement shifts the rest down one — keep map badges matching the list.
 function renumberGravelPlacements(we) {
-  we.gravelPlacements.forEach(function(p, i) {
+  getActivePC(we).gravelPlacements.forEach(function(p, i) {
     if (p.marker) p.marker.setIcon(fpMultiLabelIcon(i+1, '#c07820'));
   });
 }
 
 function wizardSetGravelField(placementId, field, val) {
   var we = getActiveWE(); if (!we) return;
-  var p = we.gravelPlacements.filter(function(x){return x.id===placementId;})[0];
+  var p = getActivePC(we).gravelPlacements.filter(function(x){return x.id===placementId;})[0];
   if (!p) return;
   p[field] = val;
   if (wizardMode) wizardRefreshIfActive();
@@ -3650,13 +3745,13 @@ function startGravelPoint(placementId) {
 function placeGravelPoint(latlng) {
   if (!pendingGravelPoint) return;
   var we = getWE(pendingGravelPoint.weId); if (!we) return;
-  var p = we.gravelPlacements.filter(function(x){return x.id===pendingGravelPoint.placementId;})[0];
+  var p = getActivePC(we).gravelPlacements.filter(function(x){return x.id===pendingGravelPoint.placementId;})[0];
   pendingGravelPoint = null;
   document.getElementById('mapwrap').classList.remove('drawing');
   setMapHint('');
   if (!p) return;
   if (p.marker) map.removeLayer(p.marker);
-  var num = we.gravelPlacements.indexOf(p) + 1;
+  var num = getActivePC(we).gravelPlacements.indexOf(p) + 1;
   p.marker = L.marker(latlng, {icon: fpMultiLabelIcon(num, '#c07820'), interactive:false})
     .bindTooltip('Gravel Placement ' + num).addTo(map);
   p.latlng = latlng;
@@ -3750,7 +3845,7 @@ function cancelCHUSplit() {
 // based on the nearest reach segment direction
 function chuPerpendicularLine(latlng, we) {
   // Use primary channel for cut direction; fall back to pre-project reach
-  var pcSL = we.sowLayers && we.sowLayers['pc-reach'];
+  var pcSL = getActivePC(we).sowLayers['pc-reach'];
   var reachLayer = (pcSL && pcSL.layer) ? pcSL.layer : (we.ppData['reach_len'] && we.ppData['reach_len'].layer);
   if (!reachLayer) return null;
   var reachPts = reachLayer.getLatLngs();
@@ -3782,10 +3877,10 @@ function chuPerpendicularLine(latlng, we) {
   var perpLng =  dLat / len / cosLat;
 
   // Extension: use primary channel width if available, else pre-project ch_width
-  var chAvgWidthM = (we.inputVals && we.inputVals['pc-width'] > 0)
-    ? we.inputVals['pc-width'] / 3.28084
+  var chAvgWidthM = (getActivePC(we).inputVals['pc-width'] > 0)
+    ? getActivePC(we).inputVals['pc-width'] / 3.28084
     : ppMultiAvgM(we, 'ch_width');
-  var chD2 = (we.sowLayers && we.sowLayers['pc-area']) || we.ppData['area_ch'];
+  var chD2 = (getActivePC(we).sowLayers['pc-area']) || we.ppData['area_ch'];
   var chHalfWidthDeg = 0.001; // fallback ~100m
   if (chAvgWidthM) {
     var toRad2 = function(x){return x*Math.PI/180;};
@@ -3907,10 +4002,10 @@ function splitPolyWithLine(poly, line) {
 function commitCHUSplit(we, line) {
   cancelCHUSplit();
   if (!line || line.length < 2) return;
-  if (we.chuUnits.length === 0) {
+  if (getActivePC(we).chuUnits.length === 0) {
     var chPts = getCHUChannelPts(we);
     if (!chPts) return;
-    we.chuUnits = [{id:'chu-0', type:'riffle', pts:chPts.map(function(p){return L.latLng(p.lat,p.lng);}), layer:null, areaM2:0, lengthM:0}];
+    getActivePC(we).chuUnits = [{id:'chu-0', type:'riffle', pts:chPts.map(function(p){return L.latLng(p.lat,p.lng);}), layer:null, areaM2:0, lengthM:0}];
   }
 
   // Extend the split line beyond the polygon in both directions so the user
@@ -3921,7 +4016,7 @@ function commitCHUSplit(we, line) {
     var last = pts[pts.length-1], prev = pts[pts.length-2];
     // Compute bbox of all chuUnits to determine extension amount
     var allLats = [], allLngs = [];
-    we.chuUnits.forEach(function(u){ u.pts.forEach(function(p){ allLats.push(p.lat); allLngs.push(p.lng); }); });
+    getActivePC(we).chuUnits.forEach(function(u){ u.pts.forEach(function(p){ allLats.push(p.lat); allLngs.push(p.lng); }); });
     var ext = Math.max(
       Math.max.apply(null,allLats) - Math.min.apply(null,allLats),
       Math.max.apply(null,allLngs) - Math.min.apply(null,allLngs)
@@ -3940,8 +4035,8 @@ function commitCHUSplit(we, line) {
   var extLine = extendLine(line);
   // find unit whose polygon the line intersects
   var splitIdx = -1, splitResult = null;
-  for (var i = 0; i < we.chuUnits.length; i++) {
-    var res = splitPolyWithLine(we.chuUnits[i].pts, extLine);
+  for (var i = 0; i < getActivePC(we).chuUnits.length; i++) {
+    var res = splitPolyWithLine(getActivePC(we).chuUnits[i].pts, extLine);
     if (res) { splitIdx = i; splitResult = res; break; }
   }
   if (splitIdx === -1) {
@@ -3950,14 +4045,14 @@ function commitCHUSplit(we, line) {
     return;
   }
   // save undo state
-  we._chuUndo = we.chuUnits.map(function(u){ return {id:u.id,type:u.type,pts:u.pts.slice(),layer:u.layer,areaM2:u.areaM2,lengthM:u.lengthM}; });
+  getActivePC(we)._chuUndo = getActivePC(we).chuUnits.map(function(u){ return {id:u.id,type:u.type,pts:u.pts.slice(),layer:u.layer,areaM2:u.areaM2,lengthM:u.lengthM}; });
   // remove old unit layer and label
-  if (we.chuUnits[splitIdx].layer) map.removeLayer(we.chuUnits[splitIdx].layer);
-  if (we.chuUnits[splitIdx].labelMarker) map.removeLayer(we.chuUnits[splitIdx].labelMarker);
+  if (getActivePC(we).chuUnits[splitIdx].layer) map.removeLayer(getActivePC(we).chuUnits[splitIdx].layer);
+  if (getActivePC(we).chuUnits[splitIdx].labelMarker) map.removeLayer(getActivePC(we).chuUnits[splitIdx].labelMarker);
   var ts = Date.now();
   var newUnits = [
-    {id:'chu-'+ts+'a', type: we.chuUnits[splitIdx].type, pts: splitResult[0], layer:null, labelMarker:null, areaM2:0, lengthM:0},
-    {id:'chu-'+ts+'b', type: we.chuUnits[splitIdx].type, pts: splitResult[1], layer:null, labelMarker:null, areaM2:0, lengthM:0}
+    {id:'chu-'+ts+'a', type: getActivePC(we).chuUnits[splitIdx].type, pts: splitResult[0], layer:null, labelMarker:null, areaM2:0, lengthM:0},
+    {id:'chu-'+ts+'b', type: getActivePC(we).chuUnits[splitIdx].type, pts: splitResult[1], layer:null, labelMarker:null, areaM2:0, lengthM:0}
   ];
   // Sort so the topmost (highest lat) or leftmost (lowest lng) piece comes first
   function polyCenter(pts) {
@@ -3976,8 +4071,8 @@ function commitCHUSplit(we, line) {
     if (c0.lng > c1.lng) newUnits.reverse(); // c1 is further left, should be first
   }
   // Capture ID before splice (indices shift after)
-  var splitUnitId = we.chuUnits[splitIdx] ? we.chuUnits[splitIdx].id : null;
-  we.chuUnits.splice(splitIdx, 1, newUnits[0], newUnits[1]);
+  var splitUnitId = getActivePC(we).chuUnits[splitIdx] ? getActivePC(we).chuUnits[splitIdx].id : null;
+  getActivePC(we).chuUnits.splice(splitIdx, 1, newUnits[0], newUnits[1]);
 
   if (chuPoolMode) {
     if (chuPoolPhase === 1) {
@@ -4009,39 +4104,39 @@ function commitCHUSplit(we, line) {
 }
 
 function undoCHUSplit() {
-  var we = getActiveWE(); if (!we || !we._chuUndo) return;
-  we.chuUnits.forEach(function(u){ if(u.layer) map.removeLayer(u.layer); if(u.labelMarker) map.removeLayer(u.labelMarker); });
-  we.chuUnits = we._chuUndo;
-  we._chuUndo = null;
-  we.chuUnits.forEach(function(u){ u.layer = null; u.labelMarker = null; });
+  var we = getActiveWE(); if (!we || !getActivePC(we)._chuUndo) return;
+  getActivePC(we).chuUnits.forEach(function(u){ if(u.layer) map.removeLayer(u.layer); if(u.labelMarker) map.removeLayer(u.labelMarker); });
+  getActivePC(we).chuUnits = getActivePC(we)._chuUndo;
+  getActivePC(we)._chuUndo = null;
+  getActivePC(we).chuUnits.forEach(function(u){ u.layer = null; u.labelMarker = null; });
   renderCHUUnits(we);
 }
 
 function resetCHU() {
   var we = getActiveWE(); if (!we) return;
-  we.chuUnits.forEach(function(u){ if(u.layer) map.removeLayer(u.layer); if(u.labelMarker) map.removeLayer(u.labelMarker); });
-  we.chuUnits = [];
-  we._chuUndo = null;
+  getActivePC(we).chuUnits.forEach(function(u){ if(u.layer) map.removeLayer(u.layer); if(u.labelMarker) map.removeLayer(u.labelMarker); });
+  getActivePC(we).chuUnits = [];
+  getActivePC(we)._chuUndo = null;
   renderCHUUnits(we);
 }
 
 function setCHUBoulders(id, val) {
   var we = getActiveWE(); if (!we) return;
-  var u = we.chuUnits.filter(function(x){ return x.id === id; })[0]; if (!u) return;
+  var u = getActivePC(we).chuUnits.filter(function(x){ return x.id === id; })[0]; if (!u) return;
   u.boulders = parseInt(val, 10) || 0;
   updateCHUSummary(we);
 }
 
 function setCHUPoolDepth(id, val) {
   var we = getActiveWE(); if (!we) return;
-  var u = we.chuUnits.filter(function(x){ return x.id === id; })[0]; if (!u) return;
+  var u = getActivePC(we).chuUnits.filter(function(x){ return x.id === id; })[0]; if (!u) return;
   u.poolDepth = parseFloat(val) || 0;
   updateCHUSummary(we);
 }
 
 function setCHUType(id, type) {
   var we = getActiveWE(); if (!we) return;
-  var units = we.chuUnits;
+  var units = getActivePC(we).chuUnits;
   var idx = -1;
   units.forEach(function(u, i){ if (u.id === id) idx = i; });
   if (idx < 0) return;
@@ -4102,7 +4197,7 @@ function chuCentroid(pts) {
 
 function renderCHUUnits(we) {
   var poolNum = 0, riffleNum = 0;
-  we.chuUnits.forEach(function(u) {
+  getActivePC(we).chuUnits.forEach(function(u) {
     var col = CHU_COLOR[u.type || 'unassigned'];
     if (u.layer) map.removeLayer(u.layer);
     if (u.labelMarker) { map.removeLayer(u.labelMarker); u.labelMarker = null; }
@@ -4131,9 +4226,9 @@ function renderCHUUnits(we) {
     }
   });
   var el = document.getElementById('chu-units-list'); if (!el) return;
-  if (we.chuUnits.length === 0) { el.innerHTML = '<div style="font-size:11px;color:#556;font-style:italic">No splits yet — draw a split line to begin.</div>'; updateCHUSummary(we); return; }
+  if (getActivePC(we).chuUnits.length === 0) { el.innerHTML = '<div style="font-size:11px;color:#556;font-style:italic">No splits yet — draw a split line to begin.</div>'; updateCHUSummary(we); return; }
   el.innerHTML = '';
-  we.chuUnits.forEach(function(u, i) {
+  getActivePC(we).chuUnits.forEach(function(u, i) {
     var typeClass = u.type || 'unassigned';
     var areaAc = (u.areaM2*0.000247105).toFixed(3);
     var lenFt = Math.round(u.lengthM * 3.28084).toLocaleString();
@@ -4160,12 +4255,12 @@ function renderCHUUnits(we) {
 
 function updateCHUSummary(we) {
   var el = document.getElementById('chu-summary'); if (!el) return;
-  var riffles    = we.chuUnits.filter(function(u){return u.type==='riffle';});
-  var pools      = we.chuUnits.filter(function(u){return u.type==='pool';});
-  var glides     = we.chuUnits.filter(function(u){return u.type==='glide';});
-  var runs       = we.chuUnits.filter(function(u){return u.type==='run';});
-  var unassigned = we.chuUnits.filter(function(u){return !u.type;});
-  if (!we.chuUnits.length) { el.innerHTML=''; return; }
+  var riffles    = getActivePC(we).chuUnits.filter(function(u){return u.type==='riffle';});
+  var pools      = getActivePC(we).chuUnits.filter(function(u){return u.type==='pool';});
+  var glides     = getActivePC(we).chuUnits.filter(function(u){return u.type==='glide';});
+  var runs       = getActivePC(we).chuUnits.filter(function(u){return u.type==='run';});
+  var unassigned = getActivePC(we).chuUnits.filter(function(u){return !u.type;});
+  if (!getActivePC(we).chuUnits.length) { el.innerHTML=''; return; }
   var rArea = riffles.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105;
   var pArea = pools.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105;
   var rLen  = riffles.reduce(function(a,u){return a+u.lengthM;},0)*3.28084;
@@ -4936,21 +5031,22 @@ function reachExtendClick(latlng) {
 }
 
 function fetchSOWElevationProfile(we) {
-  var reachSL = we && we.sowLayers && we.sowLayers['pc-reach'];
+  var pc = getActivePC(we);
+  var reachSL = pc && pc.sowLayers && pc.sowLayers['pc-reach'];
   if (!reachSL || !reachSL.layer) return;
   var pts = reachSL.layer.getLatLngs();
   if (pts.length && Array.isArray(pts[0])) pts = pts[0];
   if (!pts || pts.length < 2) return;
-  if (!we.sowElev) we.sowElev = {};
-  we.sowElev._loading = true;
-  we.sowElev._profile = null;
-  we.sowElev._error = null;
+  if (!pc.sowElev) pc.sowElev = {};
+  pc.sowElev._loading = true;
+  pc.sowElev._profile = null;
+  pc.sowElev._error = null;
   updateSOWSlopePanel(we);
   var samples = sampleReachPts(pts, ELEV_SAMPLES);
   Promise.all(samples.map(function(p){ return fetchElevation(p.lat, p.lng); }))
     .then(function(elevs) {
       var valid = elevs.filter(function(e){ return e !== null && !isNaN(e) && e > -100; });
-      if (valid.length < 2) { we.sowElev._loading=false; we.sowElev._error='No elevation data — outside USGS coverage?'; updateSOWSlopePanel(we); return; }
+      if (valid.length < 2) { pc.sowElev._loading=false; pc.sowElev._error='No elevation data — outside USGS coverage?'; updateSOWSlopePanel(we); return; }
       var upElev = elevs[0] !== null ? elevs[0] : valid[0];
       var dnElev = elevs[elevs.length-1] !== null ? elevs[elevs.length-1] : valid[valid.length-1];
       // Auto-orient: if downstream is higher, reverse
@@ -4960,22 +5056,22 @@ function fetchSOWElevationProfile(we) {
       }
       var lenM = reachSL.valueM || 1;
       var changeM = upElev - dnElev;
-      we.sowElev._loading = false;
-      we.sowElev._profile = elevs;
-      we.sowElev._upstreamElev = upElev;
-      we.sowElev._downstreamElev = dnElev;
-      we.sowElev._elevChangeM = changeM;
-      we.sowElev._slopePct = (changeM / lenM) * 100;
-      we.sowElev._slopeDeg = Math.atan(changeM / lenM) * (180 / Math.PI);
+      pc.sowElev._loading = false;
+      pc.sowElev._profile = elevs;
+      pc.sowElev._upstreamElev = upElev;
+      pc.sowElev._downstreamElev = dnElev;
+      pc.sowElev._elevChangeM = changeM;
+      pc.sowElev._slopePct = (changeM / lenM) * 100;
+      pc.sowElev._slopeDeg = Math.atan(changeM / lenM) * (180 / Math.PI);
       // Store in sowLayers for SOW export
-      if (!we.sowLayers['pc-slope']) we.sowLayers['pc-slope'] = {};
-      we.sowLayers['pc-slope'].value = we.sowElev._slopeDeg.toFixed(3);
+      if (!pc.sowLayers['pc-slope']) pc.sowLayers['pc-slope'] = {};
+      pc.sowLayers['pc-slope'].value = pc.sowElev._slopeDeg.toFixed(3);
       updateSOWSlopePanel(we);
       if (wizardMode) wizardRefreshIfActive();
     })
     .catch(function() {
-      we.sowElev._loading = false;
-      we.sowElev._error = 'Could not reach USGS elevation service.';
+      pc.sowElev._loading = false;
+      pc.sowElev._error = 'Could not reach USGS elevation service.';
       updateSOWSlopePanel(we);
       if (wizardMode) wizardRefreshIfActive();
     });
@@ -4984,7 +5080,7 @@ function fetchSOWElevationProfile(we) {
 function updateSOWSlopePanel(we) {
   var wrap = document.getElementById('dr-pc-slope-wrap');
   if (!wrap || !we) return;
-  var sd = we.sowElev || {};
+  var sd = getActivePC(we).sowElev || {};
   var canvasId = 'sow-elev-chart-'+we.id;
   if (sd._loading) {
     wrap.innerHTML = '<span class="pm-waiting" style="font-size:10px">Querying USGS elevation service…</span>';
@@ -5016,8 +5112,9 @@ function updateSOWSlopePanel(we) {
 
 function onFInputChange(id, val) {
   var we = getActiveWE(); if (!we) return;
-  if (!we.sowLayers[id]) we.sowLayers[id] = {};
-  we.sowLayers[id].value = val;
+  var owner = sowOwner(we,id);
+  if (!owner.sowLayers[id]) owner.sowLayers[id] = {};
+  owner.sowLayers[id].value = val;
   updateSOWCalcs();
 }
 
@@ -6349,18 +6446,18 @@ function wizardStepStatus(we, stepId) {
       var corePP = ['perimeter','reach','ch_width','fp_poly'];
       return corePP.every(function(id){ return wizardStepStatus(we, id) === 'done'; }) ? 'done' : 'pending';
     }
-    case 'pc_metrics': return (we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) ? 'done' : 'pending';
+    case 'pc_metrics': return (getActivePC(we).sowLayers['pc-reach'] && getActivePC(we).sowLayers['pc-reach'].layer) ? 'done' : 'pending';
     case 'pc_gravel': {
-      var anyGravelPlaced = (we.gravelPlacements||[]).some(function(p){ return !!p.latlng; });
+      var anyGravelPlaced = (getActivePC(we).gravelPlacements||[]).some(function(p){ return !!p.latlng; });
       return anyGravelPlaced ? 'done' : 'pending';
     }
-    case 'pc_fp':      return (we.ppData['pc_fp'] && we.ppData['pc_fp'].layer) ? 'done' : 'pending';
-    case 'pc_reach':   return (we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) ? 'done' : 'pending';
-    case 'pc_width':   { var pcw=we.inputVals&&we.inputVals['pc-width']; return (pcw&&pcw>0)?'done':'pending'; }
-    case 'chu_split':  return (we.chuUnits && we.chuUnits.length >= 1) ? 'done' : 'pending';
+    case 'pc_fp':      return (getActivePC(we).ppData['pc_fp'] && getActivePC(we).ppData['pc_fp'].layer) ? 'done' : 'pending';
+    case 'pc_reach':   return (getActivePC(we).sowLayers['pc-reach'] && getActivePC(we).sowLayers['pc-reach'].layer) ? 'done' : 'pending';
+    case 'pc_width':   { var pcw=getActivePC(we).inputVals['pc-width']; return (pcw&&pcw>0)?'done':'pending'; }
+    case 'chu_split':  return (getActivePC(we).chuUnits && getActivePC(we).chuUnits.length >= 1) ? 'done' : 'pending';
     case 'chu_details': {
-      if (!we.chuUnits || we.chuUnits.length < 1) return 'pending';
-      var allMeasured = we.chuUnits.every(function(u){
+      if (!getActivePC(we).chuUnits || getActivePC(we).chuUnits.length < 1) return 'pending';
+      var allMeasured = getActivePC(we).chuUnits.every(function(u){
         if (u.type==='pool') return !!(u.avgDepth>0);
         return !!(u.boulderCount>=0 && u.boulderCount!==undefined && u.boulderCount!==null);
       });
@@ -6368,7 +6465,8 @@ function wizardStepStatus(we, stepId) {
     }
     case 'structures':{
       var hasSt = false;
-      ['cms','mcs','css'].forEach(function(t){ if(we.structures&&we.structures[t]&&we.structures[t].length) hasSt=true; });
+      var pcSt = getActivePC(we);
+      ['cms','mcs','css'].forEach(function(t){ if(pcSt.structures&&pcSt.structures[t]&&pcSt.structures[t].length) hasSt=true; });
       return hasSt ? 'done' : 'pending';
     }
     case 'sc_draw':  return (we.scReaches && we.scReaches.length > 0 && we.scReaches.every(function(r){return r.width>0 && r.flowType;})) ? 'done' : 'pending';
@@ -6489,7 +6587,7 @@ function renderWizardStep() {
     }
     // Draw SOW elevation chart canvas for primary channel step
     if (step.id === 'pc_reach' && we) {
-      var _sowSd = we.sowElev || {};
+      var _sowSd = getActivePC(we).sowElev || {};
       if (_sowSd._profile) {
         setTimeout(function(){ drawElevChart('sow-elev-chart-wz-' + we.id, _sowSd._profile); }, 0);
       }
@@ -6770,7 +6868,7 @@ function wizardStepBody(we, step, idx) {
       break;
 
     case 'pc_metrics': {
-      var pcmEV = we && we.inputVals && we.inputVals['pc-excavation-vol'];
+      var pcmEV = we && getActivePC(we).inputVals['pc-excavation-vol'];
       var inputStyle = 'width:100%;box-sizing:border-box;border:1px solid var(--color-border);border-radius:4px;padding:4px 8px;font-size:13px;font-family:var(--font-sans)';
       var labelStyle = 'display:block;font-size:11px;color:var(--color-text-secondary);margin-bottom:3px';
       h += '<div class="wz-step-desc">Enter additional complexity metrics for the primary channel.</div>';
@@ -6782,7 +6880,7 @@ function wizardStepBody(we, step, idx) {
 
     case 'pc_gravel': {
       h += '<div class="wz-step-desc">Drop a pin for each gravel placement, then enter its length and depth.</div>';
-      var gPlacements = we.gravelPlacements || [];
+      var gPlacements = getActivePC(we).gravelPlacements || [];
       h += '<div style="margin:2px 0 10px"><button class="pm-draw-btn" onclick="wizardAddGravelPlacement()">&#43; Add Gravel Placement</button></div>';
       if (!gPlacements.length) {
         h += '<div class="wz-status pending">&#9654; No placements yet.</div>';
@@ -6821,7 +6919,7 @@ function wizardStepBody(we, step, idx) {
     }
 
     case 'pc_fp': {
-      var dPCFP = we && we.ppData['pc_fp'];
+      var dPCFP = we && getActivePC(we).ppData['pc_fp'];
       var pcFPDone = dPCFP && dPCFP.layer;
       var isEditingPCFP = lineEditing && lineEditing.type==='pp-poly' && lineEditing.id==='pc_fp';
       h += '<div class="wz-step-desc">Draw a polygon covering the new designed floodplain on both sides of the primary channel. The channel area will be automatically subtracted to give the net new floodplain area.</div>';
@@ -6849,7 +6947,7 @@ function wizardStepBody(we, step, idx) {
     }
 
     case 'pc_reach': {
-      var pcSL = we && we.sowLayers && we.sowLayers['pc-reach'];
+      var pcSL = we && getActivePC(we).sowLayers['pc-reach'];
       var pcDone = pcSL && pcSL.layer;
       h += '<div class="wz-step-desc">Draw the centerline of the proposed (designed) primary channel. This represents the planned channel alignment after habitat work, and will be used to delineate channel units in the next step.</div>';
       if (pcDone) {
@@ -6881,7 +6979,7 @@ function wizardStepBody(we, step, idx) {
     }
 
     case 'pc_width': {
-      var pcwVal = we && we.inputVals && we.inputVals['pc-width'];
+      var pcwVal = we && getActivePC(we).inputVals['pc-width'];
       h += '<div class="wz-step-desc">Enter the designed width of the primary channel. This value will be used to estimate the area of restored channel.</div>';
       h += '<div style="display:flex;align-items:center;gap:8px;margin:8px 0">';
       h += '<label style="font-size:12px;color:var(--color-text-secondary);white-space:nowrap">Channel width (ft):</label>';
@@ -6893,7 +6991,7 @@ function wizardStepBody(we, step, idx) {
       if (pcwVal > 0) {
         h += '<div class="wz-status done">&#10003; Primary channel width: <b>'+Math.round(pcwVal)+' ft</b></div>';
       }
-      var pcBH = we && we.inputVals && we.inputVals['pc-bank-height'];
+      var pcBH = we && getActivePC(we).inputVals['pc-bank-height'];
       h += '<div style="display:flex;align-items:center;gap:8px;margin:8px 0">';
       h += '<label style="font-size:12px;color:var(--color-text-secondary);white-space:nowrap">Bank height (ft):</label>';
       h += '<input id="wz-pc-bh-input" type="number" min="0" step="0.1" placeholder="e.g. 3.5" value="'+(pcBH||'')+'"';
@@ -6913,7 +7011,7 @@ function wizardStepBody(we, step, idx) {
       if (!chuSplitReady) {
         h += '<div class="wz-status warning">&#9888; Draw the primary channel and enter a width first (steps 8 &amp; 9) to generate the channel area.</div>';
       } else {
-        var units = we.chuUnits || [];
+        var units = getActivePC(we).chuUnits || [];
         var pools = units.filter(function(u){return u.type==='pool';});
         var inPoolDraw = chuPoolMode;
         if (inPoolDraw && chuPoolPhase === 1) {
@@ -6949,7 +7047,7 @@ function wizardStepBody(we, step, idx) {
 
     case 'chu_details': {
       h += '<div class="wz-step-desc">Enter measurements for each channel unit.</div>';
-      var detUnits = (we && we.chuUnits) ? we.chuUnits : [];
+      var detUnits = (we && getActivePC(we).chuUnits) ? getActivePC(we).chuUnits : [];
       if (detUnits.length < 1) {
         h += '<div class="wz-status warning">&#9888; Go back and identify pool locations first.</div>';
       } else {
@@ -6992,8 +7090,9 @@ function wizardStepBody(we, step, idx) {
         {key:'mcs', label:'Mid Channel'},
         {key:'css', label:'Channel Spanning'}
       ];
+      var pcForStructs = we && getActivePC(we);
       structTypes.forEach(function(st){
-        var list = (we && we.structures && we.structures[st.key]) || [];
+        var list = (pcForStructs && pcForStructs.structures && pcForStructs.structures[st.key]) || [];
         structCount += list.length;
       });
 
@@ -7004,7 +7103,7 @@ function wizardStepBody(we, step, idx) {
       h += '</div>';
 
       // Flat structure list — same source as expert mode renderAllStructures()
-      var structs = (we && we.structs) || [];
+      var structs = (pcForStructs && pcForStructs.structs) || [];
       if (!structs.length) {
         h += '<div class="wz-status pending">&#9654; No structures added yet.</div>';
       }
@@ -7211,7 +7310,7 @@ function wizardStepBody(we, step, idx) {
           ['Area of Channel', ppAcres(we,'area_ch') ? ppAcres(we,'area_ch').toFixed(2)+' ac' : null],
           ['Left Floodplain', ppAcres(we,'fp_left') ? ppAcres(we,'fp_left').toFixed(2)+' ac' : null],
           ['Right Floodplain', ppAcres(we,'fp_right') ? ppAcres(we,'fp_right').toFixed(2)+' ac' : null],
-          ['CHUs', we.chuUnits && we.chuUnits.length > 0 ? we.chuUnits.length+' units' : null]
+          ['CHUs', getActivePC(we).chuUnits && getActivePC(we).chuUnits.length > 0 ? getActivePC(we).chuUnits.length+' units' : null]
         ];
         doneMetrics.forEach(function(m) {
           h += '<div class="wz-metric-row"><span class="wz-metric-label">'+m[0]+'</span>';
@@ -7303,8 +7402,8 @@ function wizardAutoActivate() {
       break;
     case 'chu_details':
       // Re-render units so riffle labels appear (they're suppressed in chu_split step)
-      if (we && we.chuUnits) { setLabelsVisible(true); renderCHUUnits(we); }
-      if (we && we.sowLayers['pc-area'] && we.sowLayers['pc-area'].layer) map.fitBounds(we.sowLayers['pc-area'].layer.getBounds(), {padding:[40,40]});
+      if (we && getActivePC(we).chuUnits) { setLabelsVisible(true); renderCHUUnits(we); }
+      if (we && getActivePC(we).sowLayers['pc-area'] && getActivePC(we).sowLayers['pc-area'].layer) map.fitBounds(getActivePC(we).sowLayers['pc-area'].layer.getBounds(), {padding:[40,40]});
       break;
     case 'chu_split':
       if (we) { initCHUUnits(we); }
@@ -7314,28 +7413,28 @@ function wizardAutoActivate() {
           if (!map.hasLayer(chuPerim)) map.addLayer(chuPerim);
           chuPerim.setStyle({opacity:1, weight:2, dashArray:'8 5', fillOpacity:0});
           map.fitBounds(chuPerim.getBounds(), {padding:[30,30]});
-        } else if (we && we.sowLayers['pc-area'] && we.sowLayers['pc-area'].layer) {
-          map.fitBounds(we.sowLayers['pc-area'].layer.getBounds(), {padding:[40,40]});
+        } else if (we && getActivePC(we).sowLayers['pc-area'] && getActivePC(we).sowLayers['pc-area'].layer) {
+          map.fitBounds(getActivePC(we).sowLayers['pc-area'].layer.getBounds(), {padding:[40,40]});
         }
       }
       break;
     case 'pc_metrics':
-      if (we && we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) map.fitBounds(we.sowLayers['pc-reach'].layer.getBounds(), {padding:[40,40]});
+      if (we && getActivePC(we).sowLayers['pc-reach'] && getActivePC(we).sowLayers['pc-reach'].layer) map.fitBounds(getActivePC(we).sowLayers['pc-reach'].layer.getBounds(), {padding:[40,40]});
       break;
     case 'pc_gravel':
-      if (we && we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) map.fitBounds(we.sowLayers['pc-reach'].layer.getBounds(), {padding:[40,40]});
+      if (we && getActivePC(we).sowLayers['pc-reach'] && getActivePC(we).sowLayers['pc-reach'].layer) map.fitBounds(getActivePC(we).sowLayers['pc-reach'].layer.getBounds(), {padding:[40,40]});
       break;
     case 'pc_fp':
-      if (we && we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) map.fitBounds(we.sowLayers['pc-reach'].layer.getBounds(), {padding:[40,40]});
+      if (we && getActivePC(we).sowLayers['pc-reach'] && getActivePC(we).sowLayers['pc-reach'].layer) map.fitBounds(getActivePC(we).sowLayers['pc-reach'].layer.getBounds(), {padding:[40,40]});
       break;
     case 'sc_draw': case 'sc_width': case 'sc_wood': {
       // Hide labels to reduce clutter while drawing secondary channels
       setLabelsVisible(false);
       // Ensure primary channel reach + area are visible as reference while drawing secondary channels
       if (we) {
-        var pcRL = we.sowLayers && we.sowLayers['pc-reach'];
+        var pcRL = getActivePC(we).sowLayers['pc-reach'];
         if (pcRL && pcRL.layer && !map.hasLayer(pcRL.layer)) map.addLayer(pcRL.layer);
-        var pcAL = we.sowLayers && we.sowLayers['pc-area'];
+        var pcAL = getActivePC(we).sowLayers['pc-area'];
         if (pcAL && pcAL.layer && !map.hasLayer(pcAL.layer)) map.addLayer(pcAL.layer);
       }
       // Zoom to perimeter so the full project boundary is visible while drawing
@@ -7343,8 +7442,8 @@ function wizardAutoActivate() {
       if (scPerimL) {
         scPerimL.setStyle({opacity:1, weight:2, dashArray:'8 5'});
         map.fitBounds(scPerimL.getBounds(), {padding:[30,30]});
-      } else if (we && we.sowLayers && we.sowLayers['pc-reach'] && we.sowLayers['pc-reach'].layer) {
-        map.fitBounds(we.sowLayers['pc-reach'].layer.getBounds(), {padding:[40,40]});
+      } else if (we && getActivePC(we).sowLayers['pc-reach'] && getActivePC(we).sowLayers['pc-reach'].layer) {
+        map.fitBounds(getActivePC(we).sowLayers['pc-reach'].layer.getBounds(), {padding:[40,40]});
       }
       break;
     }
@@ -7405,7 +7504,7 @@ function wizardRedraw(metricId) {
 // Wizard refresh hook — called at end of updatePPProgress
 function wizardSetCHUType(unitId, type) {
   var we = getActiveWE(); if (!we) return;
-  var units = we.chuUnits;
+  var units = getActivePC(we).chuUnits;
   var idx = -1;
   units.forEach(function(u, i){ if (u.id === unitId) idx = i; });
   if (idx < 0) return;
@@ -7423,13 +7522,13 @@ function wizardSetCHUType(unitId, type) {
 
 function wizardSetCHUBoulders(unitId, val) {
   var we = getActiveWE(); if (!we) return;
-  var u = we.chuUnits && we.chuUnits.filter(function(u){ return u.id===unitId; })[0];
+  var u = getActivePC(we).chuUnits && getActivePC(we).chuUnits.filter(function(u){ return u.id===unitId; })[0];
   if (u) { u.boulderCount = parseInt(val)||0; }
 }
 
 function wizardSetCHUDepth(unitId, val) {
   var we = getActiveWE(); if (!we) return;
-  var u = we.chuUnits && we.chuUnits.filter(function(u){ return u.id===unitId; })[0];
+  var u = getActivePC(we).chuUnits && getActivePC(we).chuUnits.filter(function(u){ return u.id===unitId; })[0];
   if (u) { u.avgDepth = parseFloat(val)||0; }
 }
 
@@ -7446,11 +7545,12 @@ function wizardSkipCHU() {
 
 function wizardAddStructure(type, label) {
   var we = getActiveWE(); if (!we) return;
+  var pc = getActivePC(we);
   var s = {id:type+'-'+Date.now(), structType:type, label:label, desc:structDefaultDesc(we, type), large:0, small:0, latlng:null, marker:null};
   // Write to both arrays so the expert panel's renderAllStructures() picks it up
-  if (!we.structs) we.structs = [];
-  we.structs.push(s);
-  we.structures[type].push(s);
+  if (!pc.structs) pc.structs = [];
+  pc.structs.push(s);
+  pc.structures[type].push(s);
   renderWizardStep();
   startStructPoint(type, s.id);
 }
@@ -7689,8 +7789,8 @@ function openSOW() {
       if(!anyS)h+='<tr><td colspan="4" style="color:#aab8c8;font-style:italic">None entered</td></tr>';
       h+='</tbody></table>';
       // ── Channel Habitat Units ──────────────────────────────────────────────
-      var chuR=we.chuUnits?we.chuUnits.filter(function(u){return u.type==='riffle';}):[];
-      var chuP=we.chuUnits?we.chuUnits.filter(function(u){return u.type==='pool';}):[];
+      var chuR=getActivePC(we).chuUnits?getActivePC(we).chuUnits.filter(function(u){return u.type==='riffle';}):[];
+      var chuP=getActivePC(we).chuUnits?getActivePC(we).chuUnits.filter(function(u){return u.type==='pool';}):[];
       var chuRArea=(chuR.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105);
       var chuPArea=(chuP.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105);
       var chuRLen=chuR.reduce(function(a,u){return a+u.lengthM;},0)*3.28084;
@@ -7730,7 +7830,7 @@ function openSOW() {
 
       // ── Complexity Metrics — wizard inputVals primary, channelReaches fallback ──
       h+='<h3>Primary Channel — Complexity Metrics</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
-      var pcRchSL = we.sowLayers && we.sowLayers['pc-reach'];
+      var pcRchSL = getActivePC(we).sowLayers['pc-reach'];
       var pcRchFt2 = pcRchSL && pcRchSL.valueM ? Math.round(pcRchSL.valueM*3.28084).toLocaleString()+' ft' : '—';
       // Valley length from pc-reach endpoints
       var pcVlM2 = 0;
@@ -7749,14 +7849,14 @@ function openSOW() {
       var pcSin2  = (pcRchSL && pcRchSL.valueM && pcVlM2) ? (pcRchSL.valueM/pcVlM2).toFixed(2) : '—';
       var pcSd2   = we.sowElev || {};
       var pcSlope2 = pcSd2._slopeDeg!==undefined ? pcSd2._slopeDeg.toFixed(2)+'° / '+pcSd2._slopePct.toFixed(2)+'%' : '—';
-      var pcWidFt2  = we.inputVals&&we.inputVals['pc-width'] ? Math.round(we.inputVals['pc-width'])+' ft' : '—';
-      var pcBHFt2   = we.inputVals&&we.inputVals['pc-bank-height'] ? we.inputVals['pc-bank-height']+' ft' : '—';
-      var pcAreaSL2 = we.sowLayers && we.sowLayers['pc-area'];
+      var pcWidFt2  = getActivePC(we).inputVals['pc-width'] ? Math.round(getActivePC(we).inputVals['pc-width'])+' ft' : '—';
+      var pcBHFt2   = getActivePC(we).inputVals['pc-bank-height'] ? getActivePC(we).inputVals['pc-bank-height']+' ft' : '—';
+      var pcAreaSL2 = getActivePC(we).sowLayers['pc-area'];
       var pcAreaAc2 = pcAreaSL2 && pcAreaSL2.valueM ? (pcAreaSL2.valueM*0.000247105).toFixed(3)+' acres' : '—';
-      var pcExcav2  = we.inputVals&&we.inputVals['pc-excavation-vol'] ? we.inputVals['pc-excavation-vol'].toLocaleString()+' CY' : '—';
+      var pcExcav2  = getActivePC(we).inputVals['pc-excavation-vol'] ? getActivePC(we).inputVals['pc-excavation-vol'].toLocaleString()+' CY' : '—';
       // Gravel placement — point placements, each with its own length/depth.
       var pcGravelWFt = pcChannelWidthFt(we);
-      var pcGravelPlaced2 = (we.gravelPlacements||[]).filter(function(p){return p.latlng;});
+      var pcGravelPlaced2 = (getActivePC(we).gravelPlacements||[]).filter(function(p){return p.latlng;});
       var pcGravelTotalCY2 = 0;
       pcGravelPlaced2.forEach(function(p){
         if (pcGravelWFt && p.length && p.depth) pcGravelTotalCY2 += parseFloat(p.length)*parseFloat(p.depth)*pcGravelWFt/27;
