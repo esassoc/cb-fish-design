@@ -24,11 +24,11 @@ const crumbs = [
   { label: 'Project budgets' },
 ];
 
-// Sub-nav: Summary is the landing (active); the rest are the area's detail
-// pages, not yet built (href='#').
+// Sub-nav: Summary is the landing (active); Baselines is built (CBF-8142);
+// the remaining detail pages aren't yet (href='#').
 const tabs = [
   { label: 'Summary', active: true },
-  { label: 'Baselines' },
+  { label: 'Baselines', href: withBase('/project-budgets/baselines') },
   { label: 'Start-of-year (SOY)' },
   { label: 'Decisions' },
   { label: 'Change requests (BOG)' },

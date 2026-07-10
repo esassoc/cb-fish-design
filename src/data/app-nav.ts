@@ -1,7 +1,8 @@
 // Shared CBFish top-level navigation data — the single source of truth for both
 // the public nav chrome (cbf-public-nav) and the homepage footer sitemap
 // (cbf-app-footer), so the two never drift. Labels mirror cbfish.org; hrefs are
-// stubs in the prototype (omitted = not yet wired).
+// stubs in the prototype (omitted = not yet wired). Internal hrefs are
+// root-relative and base-less — consumers wrap them with withBase() at render.
 export interface NavLink {
   label: string;
   href?: string;
@@ -23,7 +24,7 @@ export const reporting: NavLink[] = [
 
 export const funding: NavLink[] = [
   { label: 'Funds' }, { label: 'Fund budgets summary' }, { label: 'Long-term funding agreements' },
-  { label: 'Start-of-year (SOY) budgets' }, { label: 'Working budgets' }, { label: 'Budget change requests' },
+  { label: 'Project budgets', href: '/project-budgets' }, { label: 'Working budgets' },
   { label: 'Expenditures' }, { label: 'Accruals' },
 ];
 

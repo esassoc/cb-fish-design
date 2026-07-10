@@ -30,7 +30,11 @@ import CbfOmniSearch from '../search/cbf-omni-search.astro';
 // Menu data is shared with the homepage footer (cbf-app-footer) via app-nav.ts so
 // the nav and the sitemap can never drift. `system`/`quick` are the admin-tray
 // dropdowns + header shortcuts that collapse into the drawer below --cbf-nav-collapse.
-import { help, mitigation, reporting, funding, system, quick } from '../../data/app-nav';
+import { help, mitigation, reporting, funding, system, quick, type NavLink } from '../../data/app-nav';
+import { withBase } from '../../lib/base';
+// app-nav hrefs are root-relative and base-less — prefix internal ones here.
+const based = (links: NavLink[]): NavLink[] =>
+  links.map((l) => (l.href?.startsWith('/') ? { ...l, href: withBase(l.href) } : l));
 ---
 <EsaAppBar tone="brand-strong" as="nav" class="cbf-app-bar--admin">
   <div class="cbf-nav-collapsible" slot="start">
@@ -41,7 +45,7 @@ import { help, mitigation, reporting, funding, system, quick } from '../../data/
   <CbfOmniTrigger />
   <div class="cbf-nav-collapsible" slot="end">
     <EsaNavDropdown size="sm" align="end" icon="circle-question-mark" label="Help">
-      <EsaLinkColumn heading="Help" links={help} />
+      <EsaLinkColumn heading="Help" links={based(help)} />
     </EsaNavDropdown>
   </div>
 </EsaAppBar>
@@ -55,13 +59,13 @@ import { help, mitigation, reporting, funding, system, quick } from '../../data/
   </Fragment>
   <div class="cbf-nav-collapsible cbf-nav-collapsible--inline">
     <EsaNavDropdown icon="trees" label="Mitigation work">
-      <EsaLinkColumn heading="Mitigation work" links={mitigation} />
+      <EsaLinkColumn heading="Mitigation work" links={based(mitigation)} />
     </EsaNavDropdown>
     <EsaNavDropdown icon="trending-up" label="Reporting">
-      <EsaLinkColumn heading="Reporting" links={reporting} />
+      <EsaLinkColumn heading="Reporting" links={based(reporting)} />
     </EsaNavDropdown>
     <EsaNavDropdown icon="credit-card" label="Funding">
-      <EsaLinkColumn heading="Funding" links={funding} />
+      <EsaLinkColumn heading="Funding" links={based(funding)} />
     </EsaNavDropdown>
   </div>
 
@@ -92,12 +96,12 @@ import { help, mitigation, reporting, funding, system, quick } from '../../data/
     currentColor. Opened by the header hamburger (esa-icon-button). */}
 <esa-side-dialog position="left" heading="Menu" size="sm" class="cbf-nav-drawer" data-nav-drawer>
   <nav class="stack" data-gap="lg" aria-label="Site navigation">
-    <EsaLinkColumn heading="Mitigation work" links={mitigation} />
-    <EsaLinkColumn heading="Reporting" links={reporting} />
-    <EsaLinkColumn heading="Funding" links={funding} />
+    <EsaLinkColumn heading="Mitigation work" links={based(mitigation)} />
+    <EsaLinkColumn heading="Reporting" links={based(reporting)} />
+    <EsaLinkColumn heading="Funding" links={based(funding)} />
     <EsaLinkColumn heading="Quick links" links={quick} />
-    <EsaLinkColumn heading="System" links={system} />
-    <EsaLinkColumn heading="Help" links={help} />
+    <EsaLinkColumn heading="System" links={based(system)} />
+    <EsaLinkColumn heading="Help" links={based(help)} />
   </nav>
 </esa-side-dialog>
 
