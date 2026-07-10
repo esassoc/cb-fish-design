@@ -350,6 +350,19 @@ function saveWEModal() {
   closeWEModal();
 }
 
+// Skips the WE settings modal entirely — auto-creates a single work element with
+// all 3 types on and a placeholder name, since the WE selector/settings UI is
+// hidden for now (see the commented-out toolbar block and this call site).
+function createDefaultWE() {
+  var we = newWEData();
+  we.name = 'Work Element 1';
+  we.types = ['pc','fp','rr'];
+  workElements.push(we);
+  wizardStep = 0;
+  renderWEList();
+  setActiveWE(we.id);
+}
+
 // ── WE list ───────────────────────────────────────────────────────────────
 function renderWEList() {
   var el = document.getElementById('we-list');
