@@ -23,6 +23,11 @@ var PP_COLOR = {polygon:'#7b4fbf', line:'#c07820', buffer:'#1a7abf', bufferFp:'#
 var SOW_COLOR = {line:'#1a7abf', polygon:'#2a7a5c', segment:'#e07b28'};
 var CHU_COLOR = {riffle:'#c07820', pool:'#1a7abf', glide:'#2a8a6a', run:'#7b4fbf', unassigned:'#e07b28'};
 var CHU_CYCLE = ['riffle','pool','glide','run'];
+// Wetlands get their own dedicated colors rather than the generic pre-project
+// purple / habitat-work green — Existing Wetland Areas commonly sits under the
+// Floodplain polygon (also purple) and Wetland Enhancement sits ON TOP of an
+// Existing Wetland Area, so both need to read as distinct from what they overlap.
+var WETLAND_COLOR = {existing:'#0c8599', enhance:'#c2185b'};
 var STRUCT_COLOR = {cms:'#e07b28', mcs:'#1a7abf', css:'#c44a4a', fps:'#7b4fbf', scs:'#2a7a5c'};
 var STRUCT_LABEL = {cms:'Channel Margin', mcs:'Mid Channel', css:'Channel Spanning', fps:'Floodplain', scs:'Side Channel'};
 
@@ -33,7 +38,7 @@ var activeWEId = null;
 var activeInnerTab = 'pp';
 var ppDrawing = null, sowDrawing = null, pendingStructPoint = null, pendingGravelPoint = null;
 var drawPts = [], previewPL = null, previewPG = null;
-var legCollapsed = false;
+var legCollapsed = true;
 var weModalEditId = null; // null = new, else id of WE being edited
 var lineEditing = null; // {type:'pp'|'sow', metricId or sowId, weId}
 var chuDrawing = false; // whether we're drawing a CHU split line
@@ -2656,13 +2661,17 @@ function finishSOWDraw() {
   var d=sowDrawing,col=SOW_COLOR[d.geo]||'#1a3a5c';
   // Color primary-channel geometry per channel so multiple channels stay distinguishable
   if (d.id && d.id.substring(0,2)==='pc') col = pcChannelColor(we, we.activePCId);
+  // Wetlands get their own dedicated colors (see WETLAND_COLOR) rather than the
+  // generic pre-project/habitat-work colors.
+  var enhRef = findFPMultiRef(we, d.id);
+  if (enhRef && enhRef.key === 'pp_wetland') col = WETLAND_COLOR.existing;
+  else if (enhRef && enhRef.key === 'fp_wetland_enhance') col = WETLAND_COLOR.enhance;
   var pts=drawPts.slice();drawPts=[];clearPreview();
   var NO_CLIP_SOW = {pcw1:1,pcw2:1,pcw3:1};
   if(!NO_CLIP_SOW[d.id]) pts=clipPtsToPerimeter(we,pts,d.geo);
 
   // Wetland Enhancement polygons get clipped to existing wetland extent instead of
   // being committed as a plain drawn polygon — handle that here and return early.
-  var enhRef = findFPMultiRef(we, d.id);
   if (enhRef && enhRef.key === 'fp_wetland_enhance' && d.geo === 'polygon') {
     var pieces = clipDrawnPolygonToExistingWetlands(we, pts);
     var totalAcres = 0, totalValueM = 0;
@@ -5070,7 +5079,7 @@ function wetlandAutoClickFeature(ring, previewLyr) {
   var id = 'fp-pp_wetland-' + Date.now();
   we.fpMulti['pp_wetland'].push({id: id, vol: ''});
 
-  var col = SOW_COLOR.polygon || '#2a7a5c';
+  var col = WETLAND_COLOR.existing;
   var layer = L.polygon(pts, {color:col, fillColor:col, fillOpacity:.2, weight:2, interactive:false})
     .bindTooltip('Wetland area ' + n).addTo(map);
   var acres = geoArea(pts), valueM = geoAreaM2(pts);
@@ -6742,11 +6751,20 @@ function renderLegend() {
   h+='<div class="leg-row"><span class="leg-poly" style="background:#2a7a5c"></span>Polygons</div>';
   h+='<div class="leg-row"><span class="leg-line" style="background:#1a7abf"></span>Lines</div>';
   h+='<div class="leg-row"><span class="leg-line" style="background:#e07b28"></span>Width segments</div></div>';
-  if(workElements.length){
-    h+='<div class="leg-section"><div class="leg-sec-title">Work Elements</div>';
-    workElements.forEach(function(we,i){h+='<div class="leg-row"><span style="font-size:10px;font-weight:700;color:#1a3a5c;margin-right:2px">WE'+(i+1)+'</span>'+we.name+'</div>';});
-    h+='</div>';
-  }
+  h+='<div class="leg-section"><div class="leg-sec-title">Channel Habitat Units</div>';
+  h+='<div class="leg-row"><span class="leg-poly" style="background:'+CHU_COLOR.riffle+'"></span>Riffle</div>';
+  h+='<div class="leg-row"><span class="leg-poly" style="background:'+CHU_COLOR.pool+'"></span>Pool</div></div>';
+  h+='<div class="leg-section"><div class="leg-sec-title">Secondary Channels</div>';
+  h+='<div class="leg-row"><span class="leg-line" style="background:'+SC_COLOR+'"></span>Secondary channel</div></div>';
+  h+='<div class="leg-section"><div class="leg-sec-title">Wetlands</div>';
+  h+='<div class="leg-row"><span class="leg-poly" style="background:'+WETLAND_COLOR.existing+'"></span>Existing Wetland Area</div>';
+  h+='<div class="leg-row"><span class="leg-poly" style="background:'+WETLAND_COLOR.enhance+'"></span>Wetland Enhancement</div></div>';
+  // Work Elements section hidden for now — per request, kept for easy restore.
+  // if(workElements.length){
+  //   h+='<div class="leg-section"><div class="leg-sec-title">Work Elements</div>';
+  //   workElements.forEach(function(we,i){h+='<div class="leg-row"><span style="font-size:10px;font-weight:700;color:#1a3a5c;margin-right:2px">WE'+(i+1)+'</span>'+we.name+'</div>';});
+  //   h+='</div>';
+  // }
   // Only worth calling out when a work element actually has more than one primary channel
   var activeWEForLeg = getActiveWE();
   if (activeWEForLeg && activeWEForLeg.primaryChannels && activeWEForLeg.primaryChannels.length > 1) {
@@ -6756,7 +6774,10 @@ function renderLegend() {
     });
     h+='</div>';
   }
-  el.innerHTML=h;if(legCollapsed)el.classList.add('collapsed');
+  el.innerHTML=h;
+  el.classList.toggle('collapsed', legCollapsed);
+  var toggleEl = document.getElementById('leg-toggle');
+  if (toggleEl) { toggleEl.textContent = legCollapsed ? '[+]' : '[–]'; toggleEl.setAttribute('aria-expanded', legCollapsed ? 'false' : 'true'); }
 }
 
 // ── Geometry ──────────────────────────────────────────────────────────────
