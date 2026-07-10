@@ -7945,8 +7945,8 @@ function openSOW() {
       var savedActivePCIdForExport = we.activePCId;
       we.primaryChannels.forEach(function(pc, pcIdx) {
         we.activePCId = pc.id; // so pcChannelWidthFt()/avgWidths() resolve this channel
-        var pcHeading = we.primaryChannels.length > 1 ? ' — ' + pc.name : '';
-        h+='<h3>Primary Channel'+pcHeading+' — Wood Structures</h3><table><thead><tr><th>Type</th><th>Description</th><th># Large</th><th># Small</th></tr></thead><tbody>';
+        var pcLabel = we.primaryChannels.length > 1 ? pc.name : 'Primary Channel';
+        h+='<h3>'+pcLabel+' — Wood Structures</h3><table><thead><tr><th>Type</th><th>Description</th><th># Large</th><th># Small</th></tr></thead><tbody>';
         var anyS=false, pcTotalLarge=0, pcTotalSmall=0;
         ['cms','mcs','css'].forEach(function(t){pc.structures[t].forEach(function(s){anyS=true;pcTotalLarge+=+s.large||0;pcTotalSmall+=+s.small||0;h+='<tr><td>'+STRUCT_LABEL[t]+'</td><td>'+s.desc+'</td><td>'+(s.large||0)+'</td><td>'+(s.small||0)+'</td></tr>';});});
         if(!anyS)h+='<tr><td colspan="4" style="color:#aab8c8;font-style:italic">None entered</td></tr>';
@@ -7968,7 +7968,7 @@ function openSOW() {
         var chuRPct = (pcTotalAreaAc && chuR.length) ? (chuRArea/pcTotalAreaAc*100) : null;
         var chuPPct = (pcTotalAreaAc && chuP.length) ? (chuPArea/pcTotalAreaAc*100) : null;
         if (chuR.length||chuP.length) {
-          h+='<h3 class="sow-section-title">Primary Channel'+pcHeading+' — Habitat Units</h3>';
+          h+='<h3 class="sow-section-title">'+pcLabel+' — Habitat Units</h3>';
           h+='<table class="sow-table"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
           h+='<tr><td># Riffles</td><td>'+(chuR.length||'—')+'</td></tr>';
           h+='<tr><td>Total boulders</td><td>'+(chuR.length?(chuTotalBoulders||'0'):'—')+'</td></tr>';
@@ -8002,7 +8002,7 @@ function openSOW() {
         }
 
         // ── Complexity Metrics ──
-        h+='<h3>Primary Channel'+pcHeading+' — Complexity Metrics</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
+        h+='<h3>'+pcLabel+' — Complexity Metrics</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
         var pcRchSL = pc.sowLayers['pc-reach'];
         var pcRchFt2 = pcRchSL && pcRchSL.valueM ? Math.round(pcRchSL.valueM*3.28084).toLocaleString()+' ft' : '—';
         // Valley length from pc-reach endpoints
