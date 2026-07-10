@@ -7764,7 +7764,11 @@ function wizardAutoActivate() {
   var step = vis[wizardStep];
   if (!step) return;
   var we = getActiveWE();
-  if (ppDrawing) { ppDrawing = null; drawPts = []; clearPreview(); document.getElementById('mapwrap').classList.remove('drawing'); setMapHint(''); }
+  if (ppDrawing) { ppDrawing = null; drawPts = []; clearPreview(); document.getElementById('mapwrap').classList.remove('drawing'); }
+  // Clear any hint left over from whichever step we were just on — only a couple of
+  // step cases below set their own hint, so without this it stays stuck on screen
+  // (e.g. leaving Stream Reach for another step used to leave its hint banner up).
+  setMapHint('');
   // Auto-manage pre-project layer visibility based on phase
   if (step.phase === 'pp') { setPPLayersVisible(true); }
   else if (step.phase === 'work') { setPPLayersVisible(false); }
