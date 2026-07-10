@@ -231,6 +231,7 @@ window.onload = function() {
   map.on('click', mapClick);
   map.on('mousemove', mapMove);
   map.on('dblclick', mapDbl);
+  map.on('zoomend', refreshAllFlowArrows);
   renderLegend();
 };
 
@@ -1600,6 +1601,7 @@ function updateAreaChBuffer(we) {
   // re-render the row if visible
   var m = PP_DEFS.filter(function(x){return x.id==='area_ch';})[0];
   renderPMRow(m); updatePPProgress();
+  addReachArrow(we); // channel width just changed — re-fan flow arrows if now wide enough
 }
 
 function swapFpLeftRight() {
@@ -2327,91 +2329,146 @@ function finishPPDraw() {
   }
 }
 
-// ── Reach direction arrow ─────────────────────────────────────────────────
+// ── Reach direction arrow(s) ──────────────────────────────────────────────
+// At each of 25/50/75% along the reach, place one arrow — or, if the channel/
+// buffer polygon there is wide enough on screen at the current zoom, a row of
+// evenly-spaced arrows fanned across that width instead (all same bearing).
+// Re-run on zoomend (see refreshAllFlowArrows) since "wide enough" is judged
+// in screen pixels, which changes with zoom even though the geometry doesn't.
+function widthPolyPts(d) {
+  if (!d) return null;
+  var layer = d.layer || d.bufferLayer;
+  if (!layer) return null;
+  var pts = layer.getLatLngs();
+  return (pts.length && Array.isArray(pts[0])) ? pts[0] : pts;
+}
+
+// Position + bearing + perpendicular unit vector + real-world width (meters) at
+// arc-length fraction t along reachPts, measured against widthPts if given.
+function flowArrowCrossSection(reachPts, widthPts, t) {
+  var cumLen = [0];
+  for (var i = 1; i < reachPts.length; i++) {
+    var dlat = reachPts[i].lat - reachPts[i-1].lat, dlng = reachPts[i].lng - reachPts[i-1].lng;
+    cumLen.push(cumLen[i-1] + Math.sqrt(dlat*dlat + dlng*dlng));
+  }
+  var total = cumLen[cumLen.length-1];
+  if (total === 0) return null;
+  var target = total * t, seg = 0;
+  for (var k = 1; k < cumLen.length; k++) { if (cumLen[k] >= target) { seg = k-1; break; } }
+  var segLen = cumLen[seg+1] - cumLen[seg];
+  var segT = segLen > 0 ? (target - cumLen[seg]) / segLen : 0;
+  var p1 = reachPts[seg], p2 = reachPts[seg+1];
+  var pos = {lat: p1.lat + segT*(p2.lat-p1.lat), lng: p1.lng + segT*(p2.lng-p1.lng)};
+
+  var lat1 = p1.lat*Math.PI/180, lat2 = p2.lat*Math.PI/180, dLngRad = (p2.lng-p1.lng)*Math.PI/180;
+  var y = Math.sin(dLngRad)*Math.cos(lat2);
+  var x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLngRad);
+  var brgDeg = Math.atan2(y,x)*180/Math.PI;
+
+  // Perpendicular unit vector (degree-equivalent space) + width via raycast
+  // against widthPts, mirroring calcCrossWidthCore's approach — kept separate
+  // from that function since it also needs the direction vector, not just width.
+  var widthM = null, pLat = 0, pLng = 0;
+  var midLat = (p1.lat+p2.lat)/2, cosLat = Math.cos(midLat*Math.PI/180);
+  var dLat = p2.lat-p1.lat, dLngC = (p2.lng-p1.lng)*cosLat;
+  var sLen = Math.sqrt(dLat*dLat+dLngC*dLngC);
+  if (sLen > 1e-10 && widthPts && widthPts.length >= 3) {
+    pLat = -dLngC/sLen; pLng = dLat/sLen/cosLat;
+    var hits = [], n = widthPts.length;
+    for (var wi = 0; wi < n; wi++) {
+      var A = widthPts[wi], B = widthPts[(wi+1)%n];
+      var edgeLat = B.lat-A.lat, edgeLng = B.lng-A.lng;
+      var cross = pLat*edgeLng - pLng*edgeLat;
+      if (Math.abs(cross) < 1e-14) continue;
+      var s = ((A.lat-pos.lat)*edgeLng - (A.lng-pos.lng)*edgeLat) / cross;
+      var u = ((A.lat-pos.lat)*pLng - (A.lng-pos.lng)*pLat) / cross;
+      if (u >= 0 && u <= 1) hits.push(s);
+    }
+    if (hits.length >= 2) {
+      hits.sort(function(a,b){return a-b;});
+      var neg=null, pos2=null;
+      for (var h=0; h<hits.length; h++) {
+        if (hits[h] <= 0 && (neg===null || hits[h] > neg)) neg = hits[h];
+        if (hits[h] >= 0 && (pos2===null || hits[h] < pos2)) pos2 = hits[h];
+      }
+      if (neg !== null && pos2 !== null) widthM = Math.abs(pos2-neg) * 111320;
+    }
+  }
+  return {pos:pos, brgDeg:brgDeg, pLat:pLat, pLng:pLng, widthM:widthM};
+}
+
+function makeFlowArrowIcon(brgDeg, colorHex) {
+  var html = '<div style="transform:rotate('+brgDeg+'deg);width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin-left:-11px;margin-top:-11px">' +
+    '<svg width="18" height="18" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="'+colorHex+'" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></div>';
+  return L.divIcon({ className: '', html: html, iconSize: [0, 0], iconAnchor: [0, 0] });
+}
+
+var FLOW_ARROW_SPACING_PX = 28;
+var FLOW_ARROW_MAX_COUNT = 5;
+var FLOW_ARROW_MIN_FAN_PX = 50; // below this on-screen width, just one centered arrow
+
+function buildFlowArrowMarkers(reachLayer, widthD, colorHex) {
+  if (!reachLayer) return [];
+  var reachPts = reachLayer.getLatLngs();
+  if (reachPts.length && Array.isArray(reachPts[0])) reachPts = reachPts[0];
+  if (!reachPts || reachPts.length < 2) return [];
+  var wPts = widthPolyPts(widthD);
+  var markers = [];
+  [0.25, 0.5, 0.75].forEach(function(t) {
+    var cs = flowArrowCrossSection(reachPts, wPts, t);
+    if (!cs) return;
+    var metersPerPixel = 156543.03392 * Math.cos(cs.pos.lat*Math.PI/180) / Math.pow(2, map.getZoom());
+    var pixelWidth = cs.widthM ? cs.widthM / metersPerPixel : 0;
+    var count = pixelWidth < FLOW_ARROW_MIN_FAN_PX ? 1 : Math.min(FLOW_ARROW_MAX_COUNT, Math.max(2, Math.floor(pixelWidth / FLOW_ARROW_SPACING_PX)));
+    if (count <= 1) {
+      markers.push(L.marker([cs.pos.lat, cs.pos.lng], {icon: makeFlowArrowIcon(cs.brgDeg, colorHex), interactive:false}).addTo(map));
+      return;
+    }
+    // Evenly space `count` arrows across [-widthM/2, +widthM/2] around the centerline point.
+    for (var i = 0; i < count; i++) {
+      var frac = (i / (count - 1)) - 0.5; // -0.5..0.5
+      var offsetM = frac * cs.widthM;
+      var offsetUnits = offsetM / 111320;
+      var lat = cs.pos.lat + cs.pLat * offsetUnits;
+      var lng = cs.pos.lng + cs.pLng * offsetUnits;
+      markers.push(L.marker([lat, lng], {icon: makeFlowArrowIcon(cs.brgDeg, colorHex), interactive:false}).addTo(map));
+    }
+  });
+  return markers;
+}
+
 function addReachArrow(we) {
   var rd = we && we.ppData['reach_len'];
-  // Remove existing arrow markers
   if(rd && rd._arrowMarkers) { rd._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); rd._arrowMarkers = null; }
   if(rd && rd._arrowMarker){ map.removeLayer(rd._arrowMarker); rd._arrowMarker = null; }
   if(!rd || !rd.layer) return;
-  var pts = rd.layer.getLatLngs();
-  if(pts.length && Array.isArray(pts[0])) pts = pts[0];
-  if(!pts || pts.length < 2) return;
-
-  // Build cumulative arc-length table
-  var cumLen = [0];
-  for (var i = 1; i < pts.length; i++) {
-    var dlat = pts[i].lat - pts[i-1].lat, dlng = pts[i].lng - pts[i-1].lng;
-    cumLen.push(cumLen[i-1] + Math.sqrt(dlat*dlat + dlng*dlng));
-  }
-  var total = cumLen[cumLen.length - 1];
-
-  function makeArrowAtFraction(frac) {
-    var target = total * frac;
-    // Find the segment containing this distance
-    var seg = 0;
-    for (var k = 1; k < cumLen.length; k++) {
-      if (cumLen[k] >= target) { seg = k - 1; break; }
-    }
-    var segLen = cumLen[seg+1] - cumLen[seg];
-    var t = segLen > 0 ? (target - cumLen[seg]) / segLen : 0;
-    var pos = L.latLng(
-      pts[seg].lat + t * (pts[seg+1].lat - pts[seg].lat),
-      pts[seg].lng + t * (pts[seg+1].lng - pts[seg].lng)
-    );
-    // Bearing from segment direction
-    var p1 = pts[seg], p2 = pts[seg+1];
-    var lat1 = p1.lat * Math.PI/180, lat2 = p2.lat * Math.PI/180;
-    var dLng = (p2.lng - p1.lng) * Math.PI/180;
-    var y = Math.sin(dLng) * Math.cos(lat2);
-    var x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLng);
-    var brg = Math.atan2(y, x) * 180 / Math.PI;
-    var html = '<div style="transform:rotate('+brg+'deg);width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin-left:-11px;margin-top:-11px">' +
-      '<svg width="18" height="18" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="#c07820" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></div>';
-    var icon = L.divIcon({ className: '', html: html, iconSize: [0, 0], iconAnchor: [0, 0] });
-    return L.marker([pos.lat, pos.lng], { icon: icon, interactive: false }).addTo(map);
-  }
-
-  // Place arrows at 25%, 50%, 75% of total arc length
-  var markers = [
-    makeArrowAtFraction(0.25),
-    makeArrowAtFraction(0.5),
-    makeArrowAtFraction(0.75)
-  ];
+  var markers = buildFlowArrowMarkers(rd.layer, we.ppData['area_ch'], '#c07820');
+  if (!markers.length) return;
   rd._arrowMarkers = markers;
-  rd._arrowMarker = markers[1]; // keep reference to middle arrow for legacy code
+  rd._arrowMarker = markers[Math.floor(markers.length/2)]; // keep reference for legacy code
 }
 
 function addPCReachArrow(we) {
   var sl = we && getActivePC(we).sowLayers['pc-reach'];
   if (sl && sl._arrowMarkers) { sl._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); sl._arrowMarkers = null; }
   if (!sl || !sl.layer) return;
-  var pts = sl.layer.getLatLngs();
-  if (pts.length && Array.isArray(pts[0])) pts = pts[0];
-  if (!pts || pts.length < 2) return;
-  var cumLen = [0];
-  for (var i = 1; i < pts.length; i++) {
-    var dlat = pts[i].lat - pts[i-1].lat, dlng = pts[i].lng - pts[i-1].lng;
-    cumLen.push(cumLen[i-1] + Math.sqrt(dlat*dlat + dlng*dlng));
-  }
-  var total = cumLen[cumLen.length - 1];
-  function makeArrow(frac) {
-    var target = total * frac, seg = 0;
-    for (var k = 1; k < cumLen.length; k++) { if (cumLen[k] >= target) { seg = k-1; break; } }
-    var segLen = cumLen[seg+1] - cumLen[seg];
-    var t = segLen > 0 ? (target - cumLen[seg]) / segLen : 0;
-    var pos = L.latLng(pts[seg].lat + t*(pts[seg+1].lat-pts[seg].lat), pts[seg].lng + t*(pts[seg+1].lng-pts[seg].lng));
-    var p1 = pts[seg], p2 = pts[seg+1];
-    var lat1 = p1.lat*Math.PI/180, lat2 = p2.lat*Math.PI/180, dLng = (p2.lng-p1.lng)*Math.PI/180;
-    var y = Math.sin(dLng)*Math.cos(lat2);
-    var x = Math.cos(lat1)*Math.sin(lat2) - Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLng);
-    var brg = Math.atan2(y,x)*180/Math.PI;
-    var html = '<div style="transform:rotate('+brg+'deg);width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin-left:-11px;margin-top:-11px">' +
-      '<svg width="18" height="18" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="#2a7a5c" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></div>';
-    var icon = L.divIcon({className:'', html:html, iconSize:[0,0], iconAnchor:[0,0]});
-    return L.marker([pos.lat,pos.lng], {icon:icon, interactive:false}).addTo(map);
-  }
-  sl._arrowMarkers = [makeArrow(0.25), makeArrow(0.5), makeArrow(0.75)];
+  sl._arrowMarkers = buildFlowArrowMarkers(sl.layer, getActivePC(we).sowLayers['pc-area'], '#2a7a5c');
+}
+
+// Pixel width depends on zoom even when the geometry hasn't changed — re-fan
+// every work element's/primary channel's flow arrows whenever the zoom changes.
+function refreshAllFlowArrows() {
+  workElements.forEach(function(w) {
+    if (w.ppData['reach_len'] && w.ppData['reach_len'].layer) addReachArrow(w);
+    (w.primaryChannels||[]).forEach(function(pc) {
+      if (pc.sowLayers['pc-reach'] && pc.sowLayers['pc-reach'].layer) {
+        var savedActivePCId = w.activePCId;
+        w.activePCId = pc.id;
+        addPCReachArrow(w);
+        w.activePCId = savedActivePCId;
+      }
+    });
+  });
 }
 
 function clearPPGeom(id) {
@@ -2774,6 +2831,7 @@ function updatePCBuffer(we) {
   var areaM2 = geoAreaM2(ring);
   getActivePC(we).sowLayers['pc-area'] = {layer:bufLayer, valueM:areaM2, acres:areaM2*0.000247105, geo:'polygon', label:'Area of Restored Channel', _auto:true};
   renderLegend();
+  addPCReachArrow(we); // channel width just changed — re-fan flow arrows if now wide enough
 }
 
 function setPCWidth(val) {
