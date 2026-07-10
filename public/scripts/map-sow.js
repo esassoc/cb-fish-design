@@ -3742,6 +3742,20 @@ function renumberGravelPlacements(we) {
   });
 }
 
+// Gravel pins are primary-channel work — keep them on the map while stepping through
+// any 'pc' step (across every channel), hide them once the wizard moves on to
+// Secondary Channels / Floodplain / Riparian steps where they're just clutter.
+function setGravelMarkersVisible(we, show) {
+  if (!we) return;
+  (we.primaryChannels||[]).forEach(function(pc){
+    (pc.gravelPlacements||[]).forEach(function(p){
+      if (!p.marker) return;
+      if (show) { if (!map.hasLayer(p.marker)) map.addLayer(p.marker); }
+      else if (map.hasLayer(p.marker)) map.removeLayer(p.marker);
+    });
+  });
+}
+
 function wizardSetGravelField(placementId, field, val) {
   var we = getActiveWE(); if (!we) return;
   var p = getActivePC(we).gravelPlacements.filter(function(x){return x.id===placementId;})[0];
@@ -7216,10 +7230,10 @@ function wizardStepBody(we, step, idx) {
         h += 'oninput="updateStructure(\''+t+'\',\''+s.id+'\',\'desc\',this.value)">';
         h += '<div style="display:flex;gap:8px">';
         h += '<div style="flex:1"><div style="font-size:11px;color:#7c7c7c;margin-bottom:2px">Large pieces (&gt;12")</div>';
-        h += '<input type="number" min="0" value="'+(s.large||0)+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" ';
+        h += '<input type="number" min="0" placeholder="0" value="'+(s.large||'')+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" ';
         h += 'oninput="updateStructure(\''+t+'\',\''+s.id+'\',\'large\',+this.value)"></div>';
         h += '<div style="flex:1"><div style="font-size:11px;color:#7c7c7c;margin-bottom:2px">Small pieces (&lt;12")</div>';
-        h += '<input type="number" min="0" value="'+(s.small||0)+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" ';
+        h += '<input type="number" min="0" placeholder="0" value="'+(s.small||'')+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" ';
         h += 'oninput="updateStructure(\''+t+'\',\''+s.id+'\',\'small\',+this.value)"></div>';
         h += '</div></div>';
       });
@@ -7356,8 +7370,8 @@ function wizardStepBody(we, step, idx) {
         }
         h += '<input type="text" placeholder="Description (e.g. Engineered log jam)" value="'+(s.desc||'')+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:4px 6px;border-radius:3px;font-size:11px;margin-bottom:4px" oninput="updateFPStructure(\''+s.id+'\',\'desc\',this.value)">';
         h += '<div style="display:flex;gap:8px">';
-        h += '<div style="flex:1"><div style="font-size:11px;color:#7c7c7c;margin-bottom:2px">Large pieces (&gt;12")</div><input type="number" min="0" value="'+(s.large||0)+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" oninput="updateFPStructure(\''+s.id+'\',\'large\',+this.value)"></div>';
-        h += '<div style="flex:1"><div style="font-size:11px;color:#7c7c7c;margin-bottom:2px">Small pieces (&lt;12")</div><input type="number" min="0" value="'+(s.small||0)+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" oninput="updateFPStructure(\''+s.id+'\',\'small\',+this.value)"></div>';
+        h += '<div style="flex:1"><div style="font-size:11px;color:#7c7c7c;margin-bottom:2px">Large pieces (&gt;12")</div><input type="number" min="0" placeholder="0" value="'+(s.large||'')+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" oninput="updateFPStructure(\''+s.id+'\',\'large\',+this.value)"></div>';
+        h += '<div style="flex:1"><div style="font-size:11px;color:#7c7c7c;margin-bottom:2px">Small pieces (&lt;12")</div><input type="number" min="0" placeholder="0" value="'+(s.small||'')+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" oninput="updateFPStructure(\''+s.id+'\',\'small\',+this.value)"></div>';
         h += '</div></div>';
       });
       break;
@@ -7539,6 +7553,7 @@ function wizardAutoActivate() {
   // Auto-manage pre-project layer visibility based on phase
   if (step.phase === 'pp') { setPPLayersVisible(true); }
   else if (step.phase === 'work') { setPPLayersVisible(false); }
+  setGravelMarkersVisible(we, !!(step.types && step.types.indexOf('pc') >= 0));
   switch(step.id) {
     case 'perimeter':
       setMapHint('Draw your project boundary polygon on the map');
@@ -7923,12 +7938,25 @@ function openSOW() {
     // Pre-project
     h+='<h3>Pre-Project Conditions</h3><table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
     PP_DEFS.forEach(function(m){
-      if (m.id==='fp_left' || m.id==='fp_right') return;
+      // fp_left/fp_right: superseded by the calc'd Average Width/Total Active Floodplain Area rows.
+      // pc_fp ("New Floodplain") is per-primary-channel data — it's reported in each channel's
+      // Complexity Metrics table below, not here.
+      if (m.id==='fp_left' || m.id==='fp_right' || m.id==='pc_fp') return;
       var d=we.ppData[m.id]||{},val='—';
       if(m.method==='entered'&&d.value)val=d.value;
       else if(m.method==='measured'&&!m.multi&&d.valueM)val=m.geo==='line'?Math.round(d.valueM*3.28084).toLocaleString()+' ft':(d.valueM*0.000247105).toFixed(2)+' acres';
       else if(m.method==='measured'&&m.multi){var avg=ppMultiAvgFt(we,m.id);if(avg!==null)val=Math.round(avg).toLocaleString()+' ft (avg)';}
-      else if(m.method==='calc'){var c=ppCalc(we,m.id);if(c!==null)val=c;}
+      else if(m.method==='calc'){
+        var c=ppCalc(we,m.id);
+        if(c!==null){
+          if(m.id==='sinuosity') val=c; // already a unitless ratio, formatted to 2 decimals
+          else if(m.id==='avg_slope'){var sd=we.ppData['avg_slope']||{};val=c.toFixed(2)+'°'+(sd._slopePct!==undefined?' / '+sd._slopePct.toFixed(2)+'%':'');}
+          else if(m.id==='bank_ht') val=c.toFixed(1)+' ft';
+          else if(m.id==='valley_len'||m.id==='fp_width') val=Math.round(c*3.28084).toLocaleString()+' ft';
+          else if(m.id==='area_fp') val=(c*0.000247105).toFixed(2)+' acres';
+          else val=c;
+        }
+      }
       h+='<tr><td>'+m.label+'</td><td>'+m.method+'</td><td>'+val+'</td></tr>';
     });
     h+='</tbody></table>';
@@ -8023,6 +8051,8 @@ function openSOW() {
         var pcAreaSL2 = pc.sowLayers['pc-area'];
         var pcAreaAc2 = pcAreaSL2 && pcAreaSL2.valueM ? (pcAreaSL2.valueM*0.000247105).toFixed(3)+' acres' : '—';
         var pcExcav2  = pc.inputVals['pc-excavation-vol'] ? pc.inputVals['pc-excavation-vol'].toLocaleString()+' CY' : '—';
+        var pcNewFpSL = pc.ppData['pc_fp'];
+        var pcNewFpAc = pcNewFpSL && pcNewFpSL.valueM ? (pcNewFpSL.valueM*0.000247105).toFixed(2)+' acres' : '—';
         // Gravel placement — point placements, each with its own length/depth.
         var pcGravelWFt = pcChannelWidthFt(we);
         var pcGravelPlaced2 = (pc.gravelPlacements||[]).filter(function(p){return p.latlng;});
@@ -8040,6 +8070,7 @@ function openSOW() {
         h += '<tr><td>Average channel width (at riffle)</td><td>'+pcWidFt2+'</td></tr>';
         h += '<tr><td>Average bank height (at riffle)</td><td>'+pcBHFt2+'</td></tr>';
         h += '<tr><td>Area of restored channel</td><td>'+pcAreaAc2+'</td></tr>';
+        h += '<tr><td>New floodplain area</td><td>'+pcNewFpAc+'</td></tr>';
         h += '<tr><td>Primary channel excavation volume</td><td>'+pcExcav2+'</td></tr>';
         h += '<tr><td># Gravel placements</td><td>'+(pcGravelPlaced2.length||'—')+'</td></tr>';
         h += '<tr><td>Length of gravel placement or channel fill</td><td>'+(pcGravelTotalLenFt>0?Math.round(pcGravelTotalLenFt).toLocaleString()+' ft':'—')+'</td></tr>';
