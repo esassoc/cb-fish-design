@@ -6956,7 +6956,9 @@ function wizardStepBody(we, step, idx) {
         h += '<div class="wz-status pending">&#9654; No placements yet.</div>';
       }
       var pcWidthFt = pcChannelWidthFt(we);
-      var gravelTotalCY = 0, gravelAny = false;
+      var gravelTotalCY = 0, gravelAny = false, gravelTotalLenFt = 0;
+      var gravelDepths = gPlacements.filter(function(p){return p.depth;}).map(function(p){return parseFloat(p.depth);});
+      gPlacements.forEach(function(p){ if (p.length) gravelTotalLenFt += parseFloat(p.length); });
       gPlacements.forEach(function(p, pi) {
         var isWaiting = pendingGravelPoint && pendingGravelPoint.placementId === p.id;
         var vol = (pcWidthFt && p.length && p.depth) ? (parseFloat(p.length) * parseFloat(p.depth) * pcWidthFt / 27) : null;
@@ -6982,6 +6984,11 @@ function wizardStepBody(we, step, idx) {
         }
         h += '</div>';
       });
+      if (gPlacements.length) {
+        var gravelAvgDepth = gravelDepths.length ? (gravelDepths.reduce(function(a,v){return a+v;},0)/gravelDepths.length) : null;
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Total gravel placement length</span><span class="wz-metric-val'+(gravelTotalLenFt?'':' missing')+'">'+(gravelTotalLenFt?Math.round(gravelTotalLenFt)+' ft':'not entered')+'</span></div>';
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Average gravel placement depth</span><span class="wz-metric-val'+(gravelAvgDepth!==null?'':' missing')+'">'+(gravelAvgDepth!==null?gravelAvgDepth.toFixed(1)+' ft':'not entered')+'</span></div>';
+      }
       if (gravelAny) {
         h += '<div class="wz-metric-row"><span class="wz-metric-label">Total gravel volume</span><span class="wz-metric-val"><b>'+gravelTotalCY.toFixed(1)+' CY</b></span></div>';
       }
@@ -7908,9 +7915,10 @@ function openSOW() {
         we.activePCId = pc.id; // so pcChannelWidthFt()/avgWidths() resolve this channel
         var pcHeading = we.primaryChannels.length > 1 ? ' — ' + pc.name : '';
         h+='<h3>Primary Channel'+pcHeading+' — Wood Structures</h3><table><thead><tr><th>Type</th><th>Description</th><th># Large</th><th># Small</th></tr></thead><tbody>';
-        var anyS=false;
-        ['cms','mcs','css'].forEach(function(t){pc.structures[t].forEach(function(s){anyS=true;h+='<tr><td>'+STRUCT_LABEL[t]+'</td><td>'+s.desc+'</td><td>'+(s.large||0)+'</td><td>'+(s.small||0)+'</td></tr>';});});
+        var anyS=false, pcTotalLarge=0, pcTotalSmall=0;
+        ['cms','mcs','css'].forEach(function(t){pc.structures[t].forEach(function(s){anyS=true;pcTotalLarge+=+s.large||0;pcTotalSmall+=+s.small||0;h+='<tr><td>'+STRUCT_LABEL[t]+'</td><td>'+s.desc+'</td><td>'+(s.large||0)+'</td><td>'+(s.small||0)+'</td></tr>';});});
         if(!anyS)h+='<tr><td colspan="4" style="color:#aab8c8;font-style:italic">None entered</td></tr>';
+        else h+='<tr style="font-weight:700"><td colspan="2">Total individual large/small logs</td><td>'+pcTotalLarge+'</td><td>'+pcTotalSmall+'</td></tr>';
         h+='</tbody></table>';
         // ── Channel Habitat Units ──────────────────────────────────────────────
         var chuR=pc.chuUnits?pc.chuUnits.filter(function(u){return u.type==='riffle';}):[];
@@ -7922,6 +7930,11 @@ function openSOW() {
         var chuTotalBoulders = chuR.reduce(function(a,u){return a+(u.boulders||u.boulderCount||0);},0);
         var chuPDepths = chuP.filter(function(u){return u.poolDepth||u.avgDepth;}).map(function(u){return u.poolDepth||u.avgDepth;});
         var chuAvgDepth = chuPDepths.length?(chuPDepths.reduce(function(a,v){return a+v;},0)/chuPDepths.length).toFixed(1)+' ft':null;
+        // % of reach — riffle/pool area relative to the total restored channel area
+        var pcTotalAreaSL = pc.sowLayers['pc-area'];
+        var pcTotalAreaAc = pcTotalAreaSL && pcTotalAreaSL.valueM ? pcTotalAreaSL.valueM*0.000247105 : null;
+        var chuRPct = (pcTotalAreaAc && chuR.length) ? (chuRArea/pcTotalAreaAc*100) : null;
+        var chuPPct = (pcTotalAreaAc && chuP.length) ? (chuPArea/pcTotalAreaAc*100) : null;
         if (chuR.length||chuP.length) {
           h+='<h3 class="sow-section-title">Primary Channel'+pcHeading+' — Habitat Units</h3>';
           h+='<table class="sow-table"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
@@ -7933,6 +7946,8 @@ function openSOW() {
           h+='<tr><td>Pool area</td><td>'+(chuP.length?chuPArea.toFixed(3)+' acres':'—')+'</td></tr>';
           h+='<tr><td>Pool length (approx)</td><td>'+(chuP.length?'~'+Math.round(chuPLen).toLocaleString()+' ft':'—')+'</td></tr>';
           h+='<tr><td>Avg pool depth at low flow</td><td>'+(chuAvgDepth||'—')+'</td></tr>';
+          h+='<tr><td>Total area of riffles in project reach</td><td>'+(chuRPct!==null?chuRPct.toFixed(1)+'%':'—')+'</td></tr>';
+          h+='<tr><td>Total area of pools in project reach</td><td>'+(chuPPct!==null?chuPPct.toFixed(1)+'%':'—')+'</td></tr>';
           h+='</tbody></table>';
         }
         // Pie charts — only if we have typed units
@@ -7983,10 +7998,13 @@ function openSOW() {
         // Gravel placement — point placements, each with its own length/depth.
         var pcGravelWFt = pcChannelWidthFt(we);
         var pcGravelPlaced2 = (pc.gravelPlacements||[]).filter(function(p){return p.latlng;});
-        var pcGravelTotalCY2 = 0;
+        var pcGravelTotalCY2 = 0, pcGravelTotalLenFt = 0;
+        var pcGravelDepths = pcGravelPlaced2.filter(function(p){return p.depth;}).map(function(p){return parseFloat(p.depth);});
         pcGravelPlaced2.forEach(function(p){
+          if (p.length) pcGravelTotalLenFt += parseFloat(p.length);
           if (pcGravelWFt && p.length && p.depth) pcGravelTotalCY2 += parseFloat(p.length)*parseFloat(p.depth)*pcGravelWFt/27;
         });
+        var pcGravelAvgDepth = pcGravelDepths.length ? (pcGravelDepths.reduce(function(a,v){return a+v;},0)/pcGravelDepths.length) : null;
         h += '<tr><td>Reach length</td><td>'+pcRchFt2+'</td></tr>';
         h += '<tr><td>Valley length</td><td>'+pcVlFt2+'</td></tr>';
         h += '<tr><td>Sinuosity</td><td>'+pcSin2+'</td></tr>';
@@ -7996,6 +8014,8 @@ function openSOW() {
         h += '<tr><td>Area of restored channel</td><td>'+pcAreaAc2+'</td></tr>';
         h += '<tr><td>Primary channel excavation volume</td><td>'+pcExcav2+'</td></tr>';
         h += '<tr><td># Gravel placements</td><td>'+(pcGravelPlaced2.length||'—')+'</td></tr>';
+        h += '<tr><td>Length of gravel placement or channel fill</td><td>'+(pcGravelTotalLenFt>0?Math.round(pcGravelTotalLenFt).toLocaleString()+' ft':'—')+'</td></tr>';
+        h += '<tr><td>Average depth of gravel placement</td><td>'+(pcGravelAvgDepth!==null?pcGravelAvgDepth.toFixed(1)+' ft':'—')+'</td></tr>';
         h += '<tr><td>Gravel placement volume</td><td>'+(pcGravelTotalCY2>0?pcGravelTotalCY2.toFixed(1)+' CY':'—')+'</td></tr>';
         h+='</tbody></table>';
       });
@@ -8016,7 +8036,11 @@ function openSOW() {
       h+='<h3>Floodplain &amp; Side Channels</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
       h+='<tr><td>FP large log placement area</td><td>'+wAc2('fp-logs-area')+'</td></tr>';
       h+='<tr><td># Large logs placed</td><td>'+wVal2('fp-large-logs')+'</td></tr>';
-      ['fps','scs'].forEach(function(t){we.structures[t].forEach(function(s,i){h+='<tr><td>'+STRUCT_LABEL[t]+' '+(i+1)+': '+s.desc+'</td><td>Large: '+(s.large||0)+', Small: '+(s.small||0)+'</td></tr>';});});
+      ['fps','scs'].forEach(function(t){
+        var tLarge=0, tSmall=0;
+        we.structures[t].forEach(function(s,i){ tLarge+=+s.large||0; tSmall+=+s.small||0; h+='<tr><td>'+STRUCT_LABEL[t]+' '+(i+1)+': '+s.desc+'</td><td>Large: '+(s.large||0)+', Small: '+(s.small||0)+'</td></tr>'; });
+        if (we.structures[t].length) h+='<tr style="font-weight:700"><td>Total '+STRUCT_LABEL[t]+' large/small pieces</td><td>Large: '+tLarge+', Small: '+tSmall+'</td></tr>';
+      });
       h+='<tr><td>FP connectivity reach</td><td>'+wMi2('fp-conn-reach')+'</td></tr>';
       h+='<tr><td>Avg floodplain width</td><td>'+wAvg2(['fpw1','fpw2','fpw3'])+'</td></tr>';
       h+='<tr><td>Left floodplain area</td><td>'+(ppAcres(we,'fp_left')?ppAcres(we,'fp_left').toFixed(2)+' acres':'—')+'</td></tr>';
@@ -8076,9 +8100,11 @@ function openSOW() {
       function wFt3(id){var l=sl[id];return l?Math.round(l.valueM*3.28084).toLocaleString()+' ft':'—';}
       function wMi3(id){var l=sl[id];return l?(l.valueM*0.000621371).toFixed(3)+' mi':'—';}
       function wAc3(id){var l=sl[id];return l?l.acres.toFixed(2)+' acres':'—';}
+      function wVal3(id){var l=sl[id];return (l&&l.value!==undefined&&l.value!=='')?l.value:'—';}
       h+='<h3>Riparian Restoration</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
       h+='<tr><td>Miles fence installed</td><td>'+wMi3('rr-fence')+'</td></tr>';
       h+='<tr><td>FP protected by fence</td><td>'+wAc3('rr-fence-area')+'</td></tr>';
+      h+='<tr><td># Plants installed</td><td>'+wVal3('rr-plants')+'</td></tr>';
       h+='<tr><td>Planted below bankfull</td><td>'+wAc3('rr-plant-bf')+'</td></tr>';
       h+='<tr><td>Planted above bankfull</td><td>'+wAc3('rr-plant-abf')+'</td></tr>';
       h+='<tr><td>Invasive species removed</td><td>'+wAc3('rr-invasive')+'</td></tr>';
