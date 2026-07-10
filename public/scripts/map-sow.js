@@ -7101,12 +7101,14 @@ function renderWizardStep() {
   var footerHtml = wizardStepFooter(we, step, wizardStep);
 
   // Left column: header + vertical stepper only
-  panel.innerHTML =
-    '<div class="wz-v-header">' +
-      '<div class="wz-v-mode-label">Work Element</div>' +
-      '<div class="wz-v-current-step">' + (we ? we.name : '—') + '</div>' +
-    '</div>' +
-    stepsHtml;
+  // WE header hidden for now — per request, kept commented out for easy restore.
+  // var weHeaderHtml =
+  //   '<div class="wz-v-header">' +
+  //     '<div class="wz-v-mode-label">Work Element</div>' +
+  //     '<div class="wz-v-current-step">' + (we ? we.name : '—') + '</div>' +
+  //   '</div>';
+  var weHeaderHtml = '';
+  panel.innerHTML = weHeaderHtml + stepsHtml;
 
   // Sidebar area: step body + footer (covers the expert panel)
   var bodyPanel = document.getElementById('wizard-body-panel');
