@@ -553,15 +553,29 @@
   min-height: 0;
 }
 .wz-v-phase-head {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-150, 6px);
   font-size: 10px;
   font-weight: var(--font-weight-bold);
   color: var(--color-text-muted);
-  text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: var(--spacing-300) 0 var(--spacing-150);
   margin-top: var(--spacing-100);
+  cursor: pointer;
+  user-select: none;
 }
-.wz-v-phase-head:first-child { margin-top: 0; padding-top: var(--spacing-100); }
+.wz-v-section:first-child .wz-v-phase-head { margin-top: 0; padding-top: var(--spacing-100); }
+.wz-v-phase-head:hover .wz-v-phase-label { color: var(--color-text-secondary); }
+.wz-v-phase-caret { font-size: 8px; flex-shrink: 0; width: 10px; text-align: center; }
+.wz-v-phase-label { flex: 1; text-transform: uppercase; }
+.wz-v-phase-count { font-size: 9px; font-weight: var(--font-weight-semibold); color: var(--color-text-tertiary); text-transform: none; letter-spacing: normal; }
+.wz-v-phase-count.done { color: var(--color-primary); }
+
+/* Collapsible section body — hidden unless its section is the open one.
+   No gap here: spacing between items already comes from .wz-v-line's min-height. */
+.wz-v-section-body { display: none; flex-direction: column; }
+.wz-v-section.open .wz-v-section-body { display: flex; }
 
 
 /* Step item row — circle on left, label on right */

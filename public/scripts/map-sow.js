@@ -6561,6 +6561,13 @@ function toggleSec(head){var body=head.nextElementSibling;var open=body.classLis
 // ── Wizard Mode ────────────────────────────────────────────────────────────
 var wizardMode = true; // Guided wizard is the only mode now; Expert mode is retired but left in place, unreachable.
 var wizardStep = 0;
+// Collapsible stepper sections: null = auto-follow the current step's section (the
+// normal behavior as you move through the wizard); a section key = that section is
+// force-open (user manually peeked at it); '__none__' = user collapsed everything.
+// Reset to null on every real navigation so the accordion snaps back to following
+// wherever you actually are.
+var wzOpenSection = null;
+var wzLastEffectiveSection = null;
 
 var WIZARD_STEPS = [
   { id:'perimeter',  label:'Project Boundary', title:'Draw Project Boundary',          phase:'pp' },
@@ -6818,11 +6825,14 @@ function renderWizardStep() {
   var step = visSteps[wizardStep] || visSteps[visSteps.length-1];
   if (!step) return;
 
-  // ── Vertical stepper (vendor-invoice pattern) ──────────────────────────
+  // ── Vertical stepper (vendor-invoice pattern), grouped into collapsible sections ──
   var workSectionLabels = {pc: 'Primary Channel', sc: 'Secondary Channels', fp: 'Floodplain & Side Channels', rr: 'Riparian Restoration'};
-  var stepsHtml = '<div class="wz-v-steps">';
-  var prevPhase = null, prevWorkSection = null;
   var savedActivePCId = we ? we.activePCId : null;
+
+  // Group steps into sections first (Pre-Project, each Primary Channel, Secondary
+  // Channels, Floodplain & Side Channels, Riparian) so each can be collapsed as a unit.
+  var sections = [];
+  var prevSectionKey = null;
   visSteps.forEach(function(s, i) {
     // Steps repeated per primary channel must resolve status against THEIR channel,
     // not whichever one the user currently has active — swap it in for this check only.
@@ -6833,32 +6843,56 @@ function renderWizardStep() {
     var isDone = st === 'done';
     var isLast = (i === visSteps.length - 1);
 
-    // Phase header — PP only; work phase uses type sub-sections instead
-    if (s.phase !== prevPhase) {
-      if (s.phase === 'pp') stepsHtml += '<div class="wz-v-phase-head">Pre-Project</div>';
-      prevPhase = s.phase;
-      prevWorkSection = null;
+    var sectionKey = null, sectionLabel = null;
+    if (s.phase === 'pp') {
+      sectionKey = 'pp'; sectionLabel = 'Pre-Project';
+    } else if (s.types && s.types.length) {
+      sectionKey = s.repeat === 'pc' ? ('pc-' + s.pcIndex) : (s.section || s.types[0]);
+      sectionLabel = s.repeat === 'pc' ? ('Primary Channel ' + (s.pcIndex + 1)) : (workSectionLabels[sectionKey] || sectionKey);
     }
-
-    // Work type headers replace the "Habitat Work" label (same style as Pre-Project)
-    if (s.phase === 'work' && s.types && s.types.length) {
-      var sectionKey = s.repeat === 'pc' ? ('pc-' + s.pcIndex) : (s.section || s.types[0]);
-      if (sectionKey !== prevWorkSection) {
-        var sectionLabel = s.repeat === 'pc' ? ('Primary Channel ' + (s.pcIndex + 1)) : (workSectionLabels[sectionKey] || sectionKey);
-        stepsHtml += '<div class="wz-v-phase-head">' + sectionLabel + '</div>';
-        prevWorkSection = sectionKey;
-      }
+    // Steps with no section info of their own (e.g. the final 'done' step) tack onto
+    // whichever section came last, same as the old flat rendering did.
+    if (sectionKey !== null && sectionKey !== prevSectionKey) {
+      sections.push({key: sectionKey, label: sectionLabel, items: []});
+      prevSectionKey = sectionKey;
     }
+    if (!sections.length) sections.push({key: 'main', label: '', items: []});
+    sections[sections.length - 1].items.push({s:s, i:i, isActive:isActive, isDone:isDone, isLast:isLast});
+  });
 
-    stepsHtml += '<div class="wz-v-item wz-v-item--nav" onclick="wizardGoToStep('+i+')" title="Go to: '+s.label+'">';
-    stepsHtml += '<div class="wz-v-left">';
-    stepsHtml += '<div class="wz-v-circle' + (isDone && isActive ? ' done active' : isDone ? ' done' : isActive ? ' active' : '') + '">';
-    stepsHtml += isDone ? '&#10003;' : (i + 1);
+  // Accordion state: current step's section auto-opens unless the user explicitly
+  // opened/closed a different one (wzOpenSection), which resets on real navigation.
+  var activeSectionKey = null;
+  sections.forEach(function(sec){ if (sec.items.some(function(it){ return it.isActive; })) activeSectionKey = sec.key; });
+  var effectiveOpenKey = (wzOpenSection !== null) ? wzOpenSection : activeSectionKey;
+  wzLastEffectiveSection = effectiveOpenKey;
+
+  var stepsHtml = '<div class="wz-v-steps">';
+  sections.forEach(function(sec) {
+    var isOpen = sec.key === effectiveOpenKey;
+    var doneCount = sec.items.filter(function(it){ return it.isDone; }).length;
+    var totalCount = sec.items.length;
+    stepsHtml += '<div class="wz-v-section' + (isOpen ? ' open' : '') + '">';
+    stepsHtml += '<div class="wz-v-phase-head" onclick="toggleWzSection(\''+sec.key+'\')">';
+    stepsHtml += '<span class="wz-v-phase-caret">' + (isOpen ? '&#9660;' : '&#9656;') + '</span>';
+    stepsHtml += '<span class="wz-v-phase-label">' + sec.label + '</span>';
+    stepsHtml += '<span class="wz-v-phase-count' + (doneCount===totalCount ? ' done' : '') + '">' + doneCount + '/' + totalCount + '</span>';
     stepsHtml += '</div>';
-    if (!isLast) stepsHtml += '<div class="wz-v-line' + (isDone ? ' done' : '') + '"></div>';
-    stepsHtml += '</div>';
-    stepsHtml += '<div class="wz-v-label' + (isActive ? ' active' : isDone ? ' done' : '') + '">' + s.label + '</div>';
-    stepsHtml += '</div>';
+    stepsHtml += '<div class="wz-v-section-body">';
+    sec.items.forEach(function(it) {
+      var s=it.s, i=it.i, isActive=it.isActive, isDone=it.isDone, isLast=it.isLast;
+      stepsHtml += '<div class="wz-v-item wz-v-item--nav" onclick="wizardGoToStep('+i+')" title="Go to: '+s.label+'">';
+      stepsHtml += '<div class="wz-v-left">';
+      stepsHtml += '<div class="wz-v-circle' + (isDone && isActive ? ' done active' : isDone ? ' done' : isActive ? ' active' : '') + '">';
+      stepsHtml += isDone ? '&#10003;' : (i + 1);
+      stepsHtml += '</div>';
+      if (!isLast) stepsHtml += '<div class="wz-v-line' + (isDone ? ' done' : '') + '"></div>';
+      stepsHtml += '</div>';
+      stepsHtml += '<div class="wz-v-label' + (isActive ? ' active' : isDone ? ' done' : '') + '">' + s.label + '</div>';
+      stepsHtml += '</div>';
+    });
+    stepsHtml += '</div>'; // wz-v-section-body
+    stepsHtml += '</div>'; // wz-v-section
   });
   stepsHtml += '</div>';
 
@@ -7718,7 +7752,15 @@ function syncActivePCForStep(idx) {
 }
 
 // Adds another primary channel and jumps straight to its first step (Draw Primary Channel).
+// Any real navigation snaps the stepper accordion back to auto-following wherever
+// the wizard actually is now, discarding any section the user had manually peeked at.
+function toggleWzSection(key) {
+  wzOpenSection = (wzLastEffectiveSection === key) ? '__none__' : key;
+  renderWizardStep();
+}
+
 function wizardAddPrimaryChannel() {
+  wzOpenSection = null;
   var we = getActiveWE(); if (!we) return;
   var pc = newPrimaryChannel(we.primaryChannels.length + 1);
   we.primaryChannels.push(pc);
@@ -7732,6 +7774,7 @@ function wizardAddPrimaryChannel() {
 }
 
 function wizardNext() {
+  wzOpenSection = null;
   var vis = getVisibleSteps();
   if (wizardStep < vis.length - 1) {
     wizardStep++;
@@ -7742,10 +7785,12 @@ function wizardNext() {
 }
 
 function wizardBack() {
+  wzOpenSection = null;
   if (wizardStep > 0) { wizardStep--; syncActivePCForStep(wizardStep); renderWizardStep(); wizardAutoActivate(); }
 }
 
 function wizardGoToStep(idx) {
+  wzOpenSection = null;
   var vis = getVisibleSteps();
   if (idx < 0 || idx >= vis.length) return;
   wizardStep = idx;
@@ -7755,6 +7800,7 @@ function wizardGoToStep(idx) {
 }
 
 function wizardSkip() {
+  wzOpenSection = null;
   var vis = getVisibleSteps();
   if (wizardStep < vis.length - 1) { wizardStep++; syncActivePCForStep(wizardStep); renderWizardStep(); wizardAutoActivate(); }
 }
@@ -7919,6 +7965,7 @@ function wizardSetCHUDepth(unitId, val) {
 }
 
 function wizardSkipCHU() {
+  wzOpenSection = null;
   // Skip both chu_split and chu_details for the channel currently being stepped through
   var vis = getVisibleSteps();
   var curPcId = vis[wizardStep] && vis[wizardStep].pcId;
