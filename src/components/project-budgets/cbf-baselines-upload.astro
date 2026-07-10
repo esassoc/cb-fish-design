@@ -52,7 +52,7 @@ const warningCount = uploadIssues.filter((i) => i.severity === 'Warning').length
   <ol class="cbf-baselines-upload__steps">
     <li>
       <span class="cbf-baselines-upload__step-title">Download the template</span>
-      <p>Prefilled with every active {FY.current} project, its fund, and its {FY.prior} baseline.</p>
+      <p>Prefilled with every active {FY.current} project, its cycle type, and its fiscal-year span.</p>
       {/* esa-button forwards no extra attrs (data hooks, download) — they live on wrapper spans */}
       <span data-template-download>
         <EsaButton color="primary" appearance="outline" icon="download" size="sm"
@@ -61,7 +61,7 @@ const warningCount = uploadIssues.filter((i) => i.severity === 'Warning').length
     </li>
     <li>
       <span class="cbf-baselines-upload__step-title">Enter baseline budgets</span>
-      <p>Fill in COLA % and the {FY.current} baseline for each project. Leave other columns as they are.</p>
+      <p>Fill in BaselineBudget, COLA (a decimal fraction — 0.0228 for 2.28%), and a comment per project. Leave the system columns empty.</p>
     </li>
     <li>
       <span class="cbf-baselines-upload__step-title">Upload for validation</span>
@@ -142,11 +142,13 @@ const warningCount = uploadIssues.filter((i) => i.severity === 'Warning').length
 
   <EsaCollapsible title="What gets validated" icon="shield-check">
     <ul class="cbf-baselines-upload__rules">
-      <li>Project numbers must exist in CBFish and be active in the {FY.current} SOY cycle.</li>
-      <li>COLA % must be between 0 and 15 — a value like 228 is flagged, not applied.</li>
-      <li>Baseline amounts must be numeric and non-negative.</li>
-      <li>The workbook may contain only the baseline budgets tab — stray SOY tabs are rejected.</li>
-      <li>A baseline changing more than 25% versus {FY.prior} raises an advisory warning.</li>
+      <li>Project# must exist in CBFish and be active in the {FY.current} SOY cycle.</li>
+      <li>COLA must be a decimal fraction between 0 and 0.15 — 0.0228 means 2.28%; a value like 2.28 reads as 228% and is flagged, not applied.</li>
+      <li>BaselineBudget must be numeric and non-negative. $0 is legitimate (e.g. baselines adjusted for multi-year contracting).</li>
+      <li>EndFiscalYear must be the start year or later, or “indefinite”.</li>
+      <li>Cycle-aware amounts: Two-year baselines cover both years (double + inflation) — a single-year amount on a Two-year cycle raises an advisory warning.</li>
+      <li>The workbook may contain only the Baseline Upload tab — stray SOY tabs are rejected.</li>
+      <li>The system columns (CreatePersonID, CreateDate, UpdatePersonID, UpdateDate, ProjectID, ProjectBaselineBudgetID) are ignored on upload — CBFish fills them.</li>
     </ul>
   </EsaCollapsible>
 
@@ -251,9 +253,10 @@ const warningCount = uploadIssues.filter((i) => i.severity === 'Warning').length
       for (const [project, v] of Object.entries(appliedValues)) {
         const row = document.querySelector(`tr[data-project="${project}"]`);
         if (!row) continue;
-        row.querySelector('[data-cell="cola"]')!.textContent = v.cola.toFixed(2);
-        row.querySelector('[data-cell="fy28"]')!.textContent =
-          v.fy28.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+        row.querySelector('[data-cell="cola"]')!.textContent = `${(v.cola * 100).toFixed(2)}%`;
+        row.querySelector('[data-cell="baseline"]')!.textContent =
+          v.baseline.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        row.querySelector('[data-cell="comment"]')!.textContent = v.comment;
         const status = row.querySelector('[data-cell="status"]')!;
         if (badgeTemplate) status.innerHTML = badgeTemplate.innerHTML;
         row.classList.add('is-updated');

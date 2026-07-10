@@ -1,52 +1,63 @@
-// Sample data for /project-budgets/baselines (CBF-8142 prototype).
-// FY28 baselines are FY27 × 1.0228 (the 2.28% COLA) so the arithmetic
-// reconciles on screen. Two projects are intentionally missing an FY28
-// baseline — the bulk-upload simulation fills them in on Apply.
+// Sample data for /project-budgets/baselines (CBF-8142 prototype), modeled on
+// the real FY27 bulk upload sheet ("Baseline budgets.xlsx", tab "Baseline
+// Upload"): one row per project per cycle, with StartFiscalYear/EndFiscalYear
+// (often "indefinite"), a One-year/Two-year Cycle Type, BaselineBudget in
+// dollars, COLA as a DECIMAL FRACTION (0.0228 = 2.28%), and a Comment. Two-year
+// baselines cover both years ("Double the prior baseline + inflation") and $0
+// baselines are legitimate ("adjusted for multi-year contracting"). System
+// columns (Create/UpdatePersonID, dates, ProjectID, ProjectBaselineBudgetID)
+// are CBFish-filled and ship empty in the upload.
+//
+// Titles are illustrative (the upload sheet carries no title column; the app
+// view joins them). Two projects ship without an FY28 baseline — the
+// bulk-upload simulation fills them in on Apply.
 
 export const FY = { current: 'FY28', prior: 'FY27' };
+export const COLA = 0.0228;
 
 export const stats = {
-  activeProjects: 216,
-  baselinesSet: 214,
+  activeProjects: 239,
+  baselinesSet: 237,
   missing: 2,
-  totalBaseline: '$318.6M',
-  totalBaselineApplied: '$321.0M',
+  totalBaseline: '$336.5M',
+  totalBaselineApplied: '$337.9M',
 };
 
 export const baselineRows = [
-  { project: '1988-115-25', title: 'Yakima Phase II fish screens', fund: 'Expense', fy27: 1240000, cola: 2.28, fy28: 1268272, status: 'Set' },
-  { project: '1992-061-00', title: 'Willamette bi-op habitat restoration', fund: 'Expense', fy27: 2310000, cola: 2.28, fy28: 2362668, status: 'Set' },
-  { project: '1994-026-00', title: 'Pacific lamprey research and restoration', fund: 'Expense', fy27: 875500, cola: 2.28, fy28: 895461, status: 'Set' },
-  { project: '1997-019-00', title: 'Snake River sockeye captive broodstock', fund: 'Capital', fy27: 3150000, cola: 2.28, fy28: 3221820, status: 'Set' },
-  { project: '2002-013-00', title: 'Coded-wire tag recovery, lower Columbia', fund: 'Expense', fy27: 458200, cola: 2.28, fy28: 468647, status: 'Set' },
-  { project: '2003-011-00', title: 'Klickitat subbasin monitoring and evaluation', fund: 'Expense', fy27: 692400, cola: 2.28, fy28: 708187, status: 'Set' },
-  { project: '2007-402-00', title: 'Estuary habitat memorandum of agreement', fund: 'Capital', fy27: 1865000, cola: 2.28, fy28: 1907522, status: 'Set' },
-  { project: '2008-471-00', title: 'Okanogan basin monitoring and evaluation', fund: 'Expense', fy27: 940000, cola: null, fy28: null, status: 'Missing' },
-  { project: '2010-030-00', title: 'Grande Ronde supplementation operations', fund: 'Expense', fy27: 524750, cola: 2.28, fy28: 536714, status: 'Set' },
-  { project: '2012-104-00', title: 'White sturgeon passage and enumeration', fund: 'Capital', fy27: 1378500, cola: null, fy28: null, status: 'Missing' },
+  { project: '1982-013-01', title: 'Yakima Phase II fish screens', cycle: 'One-year', startFY: '2028', endFY: '2028', baseline: 455521.15, cola: COLA, comment: 'FY27 Baseline + 2.28% Inflation', status: 'Set' },
+  { project: '1983-319-00', title: 'Willamette bi-op habitat restoration', cycle: 'One-year', startFY: '2028', endFY: '2028', baseline: 968061.77, cola: COLA, comment: 'FY27 Baseline + 2.28% Inflation', status: 'Set' },
+  { project: '1983-435-00', title: 'Pacific lamprey research and restoration', cycle: 'Two-year', startFY: '2028', endFY: 'indefinite', baseline: 1902317.26, cola: COLA, comment: 'Double the FY27 Baseline + 2.28% Inflation', status: 'Set' },
+  { project: '1984-021-00', title: 'Snake River sockeye captive broodstock', cycle: 'One-year', startFY: '2028', endFY: '2028', baseline: 622257.84, cola: COLA, comment: 'FY27 Baseline + 2.28% Inflation', status: 'Set' },
+  { project: '1986-050-00', title: 'Coded-wire tag recovery, lower Columbia', cycle: 'One-year', startFY: '2028', endFY: '2028', baseline: 1766233.90, cola: COLA, comment: 'FY27 Baseline + 2.28% Inflation', status: 'Set' },
+  { project: '1987-127-00', title: 'Klickitat subbasin monitoring and evaluation', cycle: 'Two-year', startFY: '2028', endFY: 'indefinite', baseline: 3621040.69, cola: COLA, comment: 'Double the FY27 Baseline + 2.28% Inflation', status: 'Set' },
+  { project: '1988-053-03', title: 'Estuary habitat memorandum of agreement', cycle: 'One-year', startFY: '2028', endFY: '2028', baseline: 524112.19, cola: COLA, comment: 'FY27 Baseline + 2.28% Inflation', status: 'Set' },
+  { project: '1988-053-08', title: 'Okanogan basin monitoring and evaluation', cycle: 'One-year', startFY: '2028', endFY: '2028', baseline: null, cola: null, comment: null, status: 'Missing' },
+  { project: '1988-108-04', title: 'Yakima screen shop operations and maintenance', cycle: 'Two-year', startFY: '2028', endFY: '2029', baseline: 0, cola: COLA, comment: 'Baseline adjusted for multi-year contracting', status: 'Set' },
+  { project: '1989-096-00', title: 'Grande Ronde supplementation operations', cycle: 'Two-year', startFY: '2028', endFY: 'indefinite', baseline: null, cola: null, comment: null, status: 'Missing' },
 ];
 
-// FY28 values the simulated clean upload supplies for the two Missing rows.
+// Values the simulated clean upload supplies for the two Missing rows.
 export const appliedValues = {
-  '2008-471-00': { cola: 2.28, fy28: 961432 },
-  '2012-104-00': { cola: 2.28, fy28: 1409930 },
+  '1988-053-08': { cola: COLA, baseline: 635371.39, comment: 'FY27 Baseline + 2.28% Inflation' },
+  '1989-096-00': { cola: COLA, baseline: 799391.08, comment: 'Double the FY27 Baseline + 2.28% Inflation' },
 };
 
 // First-upload validation results. The error rows mirror the real incidents
-// that motivated CBF-8142: a COLA typed as 228 instead of 2.28 (CBF-8112) and
-// a workbook that still carried a SOY tab alongside baselines (CBF-8047).
+// that motivated CBF-8142: a COLA entered as 2.28 where the model expects the
+// decimal fraction 0.0228 — i.e. 228% (CBF-8112) — and a workbook that still
+// carried a SOY tab alongside baselines (CBF-8047).
 export const uploadIssues = [
   {
     severity: 'Error',
     row: 'Workbook',
     project: '—',
-    issue: "Contains a 'SOY EWB Proposed' tab. This upload accepts baseline budgets only — remove all other tabs and re-upload.",
+    issue: "Contains a 'SOY EWB Proposed' tab. This upload accepts the Baseline Upload tab only — remove all other tabs and re-upload.",
   },
   {
     severity: 'Error',
-    row: '87',
-    project: '2008-471-00',
-    issue: 'COLA % is 228 — out of range (0–15). Did you mean 2.28?',
+    row: '89',
+    project: '1988-053-08',
+    issue: 'COLA is 2.28 — that reads as 228%. Enter a decimal fraction between 0 and 0.15 (2.28% = 0.0228).',
   },
   {
     severity: 'Error',
@@ -57,15 +68,15 @@ export const uploadIssues = [
   {
     severity: 'Warning',
     row: '63',
-    project: '1997-019-00',
-    issue: 'FY28 baseline is 42% above FY27. Confirm this increase is intended.',
+    project: '1987-127-00',
+    issue: 'Two-year cycle, but BaselineBudget is about 1× the FY27 baseline. Two-year baselines cover both years (double + inflation) — confirm the amount.',
   },
 ];
 
 // Second-upload (corrected sheet) summary.
 export const cleanSummary = {
-  rows: 216,
-  updated: 214,
+  rows: 239,
+  updated: 237,
   added: 2,
-  total: '$321.0M',
+  total: '$337.9M',
 };

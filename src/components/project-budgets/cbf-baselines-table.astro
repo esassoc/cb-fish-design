@@ -1,9 +1,15 @@
 ---
 // cbf-baselines-table — the FY28 baseline-budgets reference list for
 // /project-budgets/baselines: a stat band (coverage at a glance) over a static
-// table of per-project baselines. Two rows ship without an FY28 baseline; the
-// bulk-upload simulation (cbf-baselines-upload) fills them in on Apply via the
-// data-project / data-cell hooks, so the page visibly reconciles after an upload.
+// table of per-project baselines. Columns mirror the real data model (see the
+// FY27 "Baseline Upload" sheet): one row per project per cycle, with the
+// One-year/Two-year cycle type, a fiscal-year span that can be indefinite,
+// BaselineBudget in dollars-and-cents, COLA (stored as a decimal fraction,
+// shown as a percent), and the audit Comment. $0 baselines are legitimate
+// ("adjusted for multi-year contracting"). Two rows ship without an FY28
+// baseline; the bulk-upload simulation (cbf-baselines-upload) fills them in
+// on Apply via the data-project / data-cell hooks, so the page visibly
+// reconciles after an upload.
 //
 // bcn-lego-checked: no esa- table/grid lego exists (checked the catalog — same
 // finding as cbf-invoice-review-queue). Unlike the review queue this list is a
@@ -15,7 +21,12 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
 import { baselineRows, stats, FY } from '../../data/project-baselines.mjs';
 
 const usd = (n: number | null) =>
-  n === null ? null : n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+  n === null
+    ? null
+    : n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pct = (f: number | null) => (f === null ? '—' : `${(f * 100).toFixed(2)}%`);
+const span = (r: { startFY: string; endFY: string }) =>
+  r.endFY === r.startFY ? r.startFY : `${r.startFY}–${r.endFY}`;
 ---
 <section class="cbf-baselines stack" data-gap="md" aria-label={`${FY.current} baseline budgets`}>
   <header class="repel">
@@ -27,7 +38,7 @@ const usd = (n: number | null) =>
     <div><EsaStat value={stats.activeProjects} label="Active projects" sub={`${FY.current} SOY cycle`} /></div>
     <div data-stat-set><EsaStat value={stats.baselinesSet} label="Baselines set" sub={`of ${stats.activeProjects} projects`} /></div>
     <div data-stat-missing><EsaStat value={stats.missing} label="Missing" sub="need a baseline" accent /></div>
-    <div data-stat-total><EsaStat value={stats.totalBaseline} label={`Total ${FY.current} baseline`} sub="all funds" /></div>
+    <div data-stat-total><EsaStat value={stats.totalBaseline} label={`Total ${FY.current} baseline`} sub="all projects" /></div>
   </div>
 
   <div class="cbf-baselines__scroll">
@@ -36,10 +47,11 @@ const usd = (n: number | null) =>
         <tr>
           <th scope="col">Project</th>
           <th scope="col">Title</th>
-          <th scope="col">Fund</th>
-          <th scope="col" class="cbf-baselines__num">{FY.prior} baseline</th>
-          <th scope="col" class="cbf-baselines__num">COLA %</th>
-          <th scope="col" class="cbf-baselines__num">{FY.current} baseline</th>
+          <th scope="col">Cycle</th>
+          <th scope="col">Fiscal years</th>
+          <th scope="col" class="cbf-baselines__num">Baseline budget</th>
+          <th scope="col" class="cbf-baselines__num">COLA</th>
+          <th scope="col">Comment</th>
           <th scope="col">Status</th>
         </tr>
       </thead>
@@ -47,11 +59,12 @@ const usd = (n: number | null) =>
         {baselineRows.map((r) => (
           <tr data-project={r.project}>
             <td class="cbf-baselines__id">{r.project}</td>
-            <td>{r.title}</td>
-            <td>{r.fund}</td>
-            <td class="cbf-baselines__num cbf-num">{usd(r.fy27)}</td>
-            <td class="cbf-baselines__num cbf-num" data-cell="cola">{r.cola === null ? '—' : r.cola.toFixed(2)}</td>
-            <td class="cbf-baselines__num cbf-num" data-cell="fy28">{usd(r.fy28) ?? '—'}</td>
+            <td class="cbf-baselines__title">{r.title}</td>
+            <td>{r.cycle}</td>
+            <td>{span(r)}</td>
+            <td class="cbf-baselines__num cbf-num" data-cell="baseline">{usd(r.baseline) ?? '—'}</td>
+            <td class="cbf-baselines__num cbf-num" data-cell="cola">{pct(r.cola)}</td>
+            <td class="cbf-baselines__comment" data-cell="comment">{r.comment ?? '—'}</td>
             <td data-cell="status">
               {r.status === 'Set'
                 ? <EsaBadge value="Set" variant="success" size="lg" />
@@ -102,7 +115,13 @@ const usd = (n: number | null) =>
     text-align: left;
     white-space: nowrap;
   }
-  .cbf-baselines__table td:nth-child(2) { white-space: normal; min-width: 240px; }
+  .cbf-baselines__title { white-space: normal; min-width: 220px; }
+  .cbf-baselines__comment {
+    white-space: normal;
+    min-width: 240px;
+    color: var(--color-text-muted);
+    font-size: 14px;
+  }
   .cbf-baselines__table thead th {
     background: var(--color-gray-50, #f4f5f7);
     border-bottom: 1px solid var(--color-border);
