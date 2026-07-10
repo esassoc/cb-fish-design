@@ -6694,9 +6694,11 @@ function wizardStepStatus(we, stepId) {
       return (logsDrawn || logsCount || (we.fpStructs && we.fpStructs.length > 0)) ? 'done' : 'pending';
     }
     case 'fp_reach_width': {
-      var anyRW = scConnectivityMiles(we) !== null
-        || ['fp-bankfull-ac','fp-bankfull-2x-ac'].some(function(k){ return we.sowLayers[k] && we.sowLayers[k].value; });
-      return anyRW ? 'done' : 'pending';
+      // Connectivity reach/width are auto-calculated from Secondary Channels now (no
+      // action possible on this step for that part) — "done" should reflect the one
+      // thing you can actually still do here: enter the bankfull connectivity fields.
+      var bfDone = ['fp-bankfull-ac','fp-bankfull-2x-ac'].some(function(k){ return we.sowLayers[k] && we.sowLayers[k].value; });
+      return bfDone ? 'done' : 'pending';
     }
     case 'fp_grading': return (fpMultiHasAny(we,'grade') || (we.sowLayers['fp-grade'] && we.sowLayers['fp-grade'].valueM)) ? 'done' : 'pending';
     case 'fp_road': {
