@@ -1327,6 +1327,135 @@ function clipPolygonToPolygon(subject, clip) {
   return output.length>=3 ? output : null;
 }
 
+// Weiler-Atherton polygon clipping (subject ∩ clip) — unlike clipPolygonToPolygon()
+// above (Sutherland-Hodgman), this is correct for a CONCAVE clip polygon too, e.g. a
+// project perimeter that bends along a winding creek. Returns an array of output
+// rings (usually 1; can be >1 if the subject crosses the clip in genuinely disjoint
+// places, or 0 if they don't overlap at all), or null if the geometry looks
+// degenerate — callers should keep their existing fallback behavior in that case.
+function distToPolyRing(p, poly) {
+  var best = Infinity;
+  for (var i=0;i<poly.length;i++) {
+    var a=poly[i], b=poly[(i+1)%poly.length];
+    var dx=b.lng-a.lng, dy=b.lat-a.lat, lenSq=dx*dx+dy*dy;
+    var t = lenSq<1e-16 ? 0 : Math.max(0,Math.min(1,((p.lng-a.lng)*dx+(p.lat-a.lat)*dy)/lenSq));
+    var cx=a.lng+t*dx, cy=a.lat+t*dy;
+    var d=Math.sqrt((p.lng-cx)*(p.lng-cx)+(p.lat-cy)*(p.lat-cy));
+    if (d<best) best=d;
+  }
+  return best;
+}
+function ptOnOrInsidePoly(p, poly, eps) {
+  eps = eps || 1e-7;
+  return ptInsidePoly(p, poly) || distToPolyRing(p, poly) < eps;
+}
+function clipConcave(subjectIn, clipIn) {
+  if (!subjectIn || subjectIn.length < 3 || !clipIn || clipIn.length < 3) return null;
+  function ensureCCW(pts) {
+    var area=0;
+    for (var i=0;i<pts.length;i++){ var j=(i+1)%pts.length; area += pts[i].lat*pts[j].lng - pts[j].lat*pts[i].lng; }
+    return area < 0 ? pts.slice().reverse() : pts.slice();
+  }
+  function segSegIntersect(a,b,c,d) {
+    var r={lat:b.lat-a.lat,lng:b.lng-a.lng}, s={lat:d.lat-c.lat,lng:d.lng-c.lng};
+    var denom = r.lat*s.lng - r.lng*s.lat;
+    if (Math.abs(denom) < 1e-14) return null;
+    var ca = {lat:c.lat-a.lat, lng:c.lng-a.lng};
+    var t = (ca.lat*s.lng - ca.lng*s.lat) / denom;
+    var u = (ca.lat*r.lng - ca.lng*r.lat) / denom;
+    var EPS = 1e-9;
+    // Exclude endpoint-touching (t/u ~0 or ~1) — handled by the containment fallback instead,
+    // and excluding them avoids degenerate near-zero-length splits at shared/snapped vertices.
+    if (t < EPS || t > 1-EPS || u < EPS || u > 1-EPS) return null;
+    return {t:t, u:u, pt:{lat:a.lat+t*r.lat, lng:a.lng+t*r.lng}};
+  }
+  var subject = ensureCCW(subjectIn);
+  var clip = ensureCCW(clipIn);
+  var ns = subject.length, nc = clip.length;
+
+  var sInserts = []; for (var i=0;i<ns;i++) sInserts.push([]);
+  var cInserts = []; for (var i2=0;i2<nc;i2++) cInserts.push([]);
+  var found = false;
+
+  for (var si=0; si<ns; si++) {
+    var a=subject[si], b=subject[(si+1)%ns];
+    for (var ci=0; ci<nc; ci++) {
+      var c=clip[ci], d=clip[(ci+1)%nc];
+      var hit = segSegIntersect(a,b,c,d);
+      if (!hit) continue;
+      found = true;
+      sInserts[si].push({t:hit.t, pt:hit.pt});
+      cInserts[ci].push({t:hit.u, pt:hit.pt});
+    }
+  }
+
+  if (!found) {
+    if (subject.every(function(p){ return ptOnOrInsidePoly(p, clip); })) return [subject];
+    if (clip.every(function(p){ return ptOnOrInsidePoly(p, subject); })) return [clip];
+    return [];
+  }
+
+  function buildList(poly, inserts) {
+    var list = [];
+    for (var i=0;i<poly.length;i++) {
+      list.push({pt:poly[i], isX:false});
+      var ins = inserts[i].slice().sort(function(p,q){return p.t-q.t;});
+      ins.forEach(function(x){ list.push({pt:x.pt, isX:true}); });
+    }
+    return list;
+  }
+  var sList = buildList(subject, sInserts);
+  var cList = buildList(clip, cInserts);
+
+  function keyOf(pt){ return pt.lat.toFixed(9)+','+pt.lng.toFixed(9); }
+  var cIndexByKey = {};
+  cList.forEach(function(node, idx){ if (node.isX) { var k=keyOf(node.pt); (cIndexByKey[k]=cIndexByKey[k]||[]).push(idx); } });
+  var unpaired = 0;
+  sList.forEach(function(node, idx){
+    if (!node.isX) return;
+    var k = keyOf(node.pt);
+    var arr = cIndexByKey[k];
+    if (arr && arr.length) { node.cIdx = arr.shift(); cList[node.cIdx].sIdx = idx; }
+    else unpaired++;
+  });
+  if (unpaired > 0) return null; // degenerate pairing — let the caller fall back
+
+  var nS = sList.length;
+  for (var i3=0;i3<nS;i3++) {
+    if (!sList[i3].isX) continue;
+    var next = sList[(i3+1)%nS];
+    var mid = {lat:(sList[i3].pt.lat+next.pt.lat)/2, lng:(sList[i3].pt.lng+next.pt.lng)/2};
+    sList[i3].entry = ptInsidePoly(mid, clip);
+  }
+
+  var results = [];
+  for (var start=0; start<nS; start++) {
+    if (!sList[start].isX || sList[start].visited || !sList[start].entry) continue;
+    var ring = [];
+    var curList = sList, curIdx = start, isFirst = true;
+    var loopGuard = 0;
+    while (loopGuard++ < 5000) {
+      var node = curList[curIdx];
+      if (node.visited && !isFirst) break;
+      node.visited = true;
+      if (node.isX) {
+        if (curList===sList && node.cIdx!==undefined) cList[node.cIdx].visited = true;
+        if (curList===cList && node.sIdx!==undefined) sList[node.sIdx].visited = true;
+      }
+      ring.push(node.pt);
+      if (node.isX && !isFirst) {
+        if (curList===sList) { curIdx = node.cIdx; curList = cList; }
+        else { curIdx = node.sIdx; curList = sList; }
+      }
+      isFirst = false;
+      curIdx = (curIdx+1) % curList.length;
+      if (curList===sList && curIdx===start) break;
+    }
+    if (ring.length>=3) results.push(ring);
+  }
+  return results;
+}
+
 // Clip a polygon ring to the project perimeter using simple point-in-poly filter
 // (keeps only vertices inside perimeter, inserts crossing points)
 function clipRingToPerimeter(ring, perimPts) {
@@ -1524,14 +1653,20 @@ function buildFpFromOuterLine(we, outerPts) {
 
 function commitFpPoly(we, pts) {
   if (!we || !pts || pts.length < 3) return;
-  // Clip to project perimeter — only when perimeter is convex. S-H is correct
-  // for any subject shape against a convex clip; non-convex perimeters cause
-  // partial clips that eat the drawn polygon (skip clipping in that case).
+  // Clip to project perimeter. clipConcave() (Weiler-Atherton) is correct for
+  // both convex and concave perimeters (e.g. one that bends along a winding
+  // creek) — use it whenever it yields a single clean piece; if it bails
+  // (degenerate geometry) or the subject crosses the perimeter in genuinely
+  // disjoint places, fall back to the convex-only S-H clip so we still get
+  // something reasonable for the common convex case.
   var perimD = we.ppData['perimeter'];
   if (perimD && perimD.layer) {
     var perimPts = perimD.layer.getLatLngs();
     if (perimPts.length && Array.isArray(perimPts[0])) perimPts = perimPts[0];
-    if (isConvexPolygon(perimPts)) {
+    var concaveClipped = clipConcave(pts, perimPts);
+    if (concaveClipped && concaveClipped.length === 1 && concaveClipped[0].length >= 3) {
+      pts = concaveClipped[0];
+    } else if (isConvexPolygon(perimPts)) {
       var clipped = clipPolygonToPolygon(pts, perimPts);
       if (clipped && clipped.length >= 3) pts = clipped;
     }
@@ -1545,7 +1680,7 @@ function commitFpPoly(we, pts) {
   if (perimD3 && perimD3.layer) {
     var pp3 = perimD3.layer.getLatLngs();
     if (pp3.length && Array.isArray(pp3[0])) pp3 = pp3[0];
-    d._outsidePerim = pp3.length>=3 && pts.some(function(p){ return !ptInsidePoly(p, pp3); });
+    d._outsidePerim = pp3.length>=3 && pts.some(function(p){ return !ptOnOrInsidePoly(p, pp3); });
   } else { d._outsidePerim = false; }
   var grossAreaM2 = geoAreaM2(pts);
   // Get channel buffer ring to subtract as a hole
@@ -1581,7 +1716,10 @@ function commitPCFP(we, pts) {
   if (perimD && perimD.layer) {
     var pp = perimD.layer.getLatLngs();
     if (pp.length && Array.isArray(pp[0])) pp = pp[0];
-    if (isConvexPolygon(pp)) {
+    var concaveClippedPCFP = clipConcave(pts, pp);
+    if (concaveClippedPCFP && concaveClippedPCFP.length === 1 && concaveClippedPCFP[0].length >= 3) {
+      pts = concaveClippedPCFP[0];
+    } else if (isConvexPolygon(pp)) {
       var clipped = clipPolygonToPolygon(pts, pp);
       if (clipped && clipped.length >= 3) pts = clipped;
     }
@@ -1595,7 +1733,7 @@ function commitPCFP(we, pts) {
   if (perimD2 && perimD2.layer) {
     var pp2 = perimD2.layer.getLatLngs();
     if (pp2.length && Array.isArray(pp2[0])) pp2 = pp2[0];
-    d._outsidePerim = pp2.length>=3 && pts.some(function(p){ return !ptInsidePoly(p, pp2); });
+    d._outsidePerim = pp2.length>=3 && pts.some(function(p){ return !ptOnOrInsidePoly(p, pp2); });
   } else { d._outsidePerim = false; }
   var grossAreaM2 = geoAreaM2(pts);
   var pcAD = getActivePC(we).sowLayers['pc-area'];
@@ -3125,7 +3263,7 @@ function startPolyEdit(id) {
     }).bindTooltip('Floodplain (editing)').addTo(map);
     d._editingBoundary = true;
     lineEditing = {type:'pp-poly', id:id, weId:activeWEId, layer:d.layer};
-    showEditHandles(d.layer, 'polygon');
+    buildPolyEditHandles(d.layer, d._pts.slice());
     document.getElementById('edit-done-bar').style.display='flex';
     document.getElementById('mapwrap').classList.add('editing');
     if (wizardMode) renderWizardStep();
@@ -3140,7 +3278,7 @@ function startPolyEdit(id) {
     }).bindTooltip('New Floodplain (editing)').addTo(map);
     d._editingBoundary = true;
     lineEditing = {type:'pp-poly', id:id, weId:activeWEId, layer:d.layer};
-    showEditHandles(d.layer, 'polygon');
+    buildPolyEditHandles(d.layer, d._pts.slice());
     document.getElementById('edit-done-bar').style.display='flex';
     document.getElementById('mapwrap').classList.add('editing');
     if (wizardMode) renderWizardStep();
