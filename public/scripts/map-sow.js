@@ -6765,6 +6765,50 @@ function getVisibleSteps() {
   return expanded;
 }
 
+// Collapsible per-step help box — placeholder for now (generic text); will eventually
+// hold term definitions and reference photos (e.g. what a riffle looks like, the
+// different wood structure types) specific to each step's topic.
+function wzHelpBox(topic) {
+  return '<div class="wz-help">'
+    + '<div class="wz-help-head" onclick="toggleWzHelp(this)">'
+    + '<span class="wz-help-icon">&#9432;</span><span>Learn more about ' + topic + '</span>'
+    + '<span class="wz-help-caret">&#9660;</span>'
+    + '</div>'
+    + '<div class="wz-help-body">Help content coming soon — this will define key terms and show reference photos for this step.</div>'
+    + '</div>';
+}
+function toggleWzHelp(head) {
+  var body = head.nextElementSibling;
+  var open = body.classList.toggle('open');
+  head.classList.toggle('open', open);
+}
+// Insert the help box right after the step's own <div class="wz-step-desc"> intro
+// (every step case leads with one); if that pattern isn't found, fall back to
+// placing it at the very top of the step body.
+function wzInsertHelpBox(bodyHtml, topic) {
+  var helpBox = wzHelpBox(topic);
+  // Prefer right after the step's <div class="wz-step-desc"> (wherever it falls — every
+  // case emits a wz-step-num + wz-step-title header first, then its own description).
+  var descStart = bodyHtml.indexOf('<div class="wz-step-desc">');
+  if (descStart > -1) {
+    var descEnd = bodyHtml.indexOf('</div>', descStart);
+    if (descEnd > -1) {
+      var insertAt = descEnd + '</div>'.length;
+      return bodyHtml.slice(0, insertAt) + helpBox + bodyHtml.slice(insertAt);
+    }
+  }
+  // Fallback: right after the (always-present) step title, above any per-case content.
+  var titleStart = bodyHtml.indexOf('<div class="wz-step-title">');
+  if (titleStart > -1) {
+    var titleEnd = bodyHtml.indexOf('</div>', titleStart);
+    if (titleEnd > -1) {
+      var insertAt2 = titleEnd + '</div>'.length;
+      return bodyHtml.slice(0, insertAt2) + helpBox + bodyHtml.slice(insertAt2);
+    }
+  }
+  return helpBox + bodyHtml;
+}
+
 function renderWizardStep() {
   if (!wizardMode) return;
   var panel = document.getElementById('wizard-panel');
@@ -6819,6 +6863,7 @@ function renderWizardStep() {
   stepsHtml += '</div>';
 
   var bodyHtml = we ? wizardStepBody(we, step, wizardStep) : '<div class="wz-step-desc">Add a work element to get started.</div>';
+  bodyHtml = wzInsertHelpBox(bodyHtml, step.label);
   var footerHtml = wizardStepFooter(we, step, wizardStep);
 
   // Left column: header + vertical stepper only
