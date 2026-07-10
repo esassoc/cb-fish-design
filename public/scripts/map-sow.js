@@ -285,7 +285,7 @@ function newWEData() {
     channelReaches: [], // flat ordered list for channel structures (cms/mcs/css)
     inputVals: {},
     scReaches: [],  // [{id, layer, bufferLayer, valueM, pts}] secondary channel lines
-    fpMulti: {grade:[], road:[], berm:[], revet:[], tailings:[], wetland:[]}, // [{id, vol}] — id keys into sowLayers for the drawn geometry
+    fpMulti: {grade:[], road:[], berm:[], revet:[], tailings:[], pp_wetland:[], fp_wetland_enhance:[]}, // [{id, vol}] — id keys into sowLayers for the drawn geometry
     fpStructs: [],
     primaryChannels: [pc1], // [{id, name, sowLayers, inputVals, chuUnits, structures, structs, gravelPlacements, ppData, sowElev}]
     activePCId: pc1.id
@@ -1366,8 +1366,37 @@ function clipConcave(subjectIn, clipIn) {
     if (t < EPS || t > 1-EPS || u < EPS || u > 1-EPS) return null;
     return {t:t, u:u, pt:{lat:a.lat+t*r.lat, lng:a.lng+t*r.lng}};
   }
-  var subject = ensureCCW(subjectIn);
-  var clip = ensureCCW(clipIn);
+  // Break exact coordinate alignment between subject and clip (e.g. a drawn polygon
+  // that happens to share an exact lat/lng bound with the clip polygon, which is
+  // common for axis-ish rectangles) by nudging the subject a tiny, deterministic
+  // amount — ~1e-9 deg is ~0.1mm, far below any meaningful acreage precision, but
+  // enough to stop crossings from landing exactly on a clip vertex, which the
+  // endpoint-exclusion above would otherwise misclassify as a degenerate touch and
+  // silently drop, producing a false "no overlap" result.
+  function jitter(pts) {
+    return pts.map(function(p, i){
+      return {lat: p.lat + (((i*97+13)%23)-11)*1e-9, lng: p.lng + (((i*61+7)%19)-9)*1e-9};
+    });
+  }
+  // Also collapse consecutive (near-)duplicate vertices — e.g. this app's
+  // double-click-to-finish drawing leaves a trailing repeated point — since a
+  // real but non-jittered zero-length edge produces the same false-negative.
+  function dedupeRing(pts) {
+    var out = [];
+    for (var i=0;i<pts.length;i++) {
+      var p = pts[i], prev = out[out.length-1];
+      if (!prev || Math.abs(prev.lat-p.lat) > 1e-11 || Math.abs(prev.lng-p.lng) > 1e-11) out.push(p);
+    }
+    while (out.length > 1) {
+      var f = out[0], l = out[out.length-1];
+      if (Math.abs(f.lat-l.lat) < 1e-11 && Math.abs(f.lng-l.lng) < 1e-11) out.pop(); else break;
+    }
+    return out;
+  }
+  var subjectDeduped = dedupeRing(subjectIn), clipDeduped = dedupeRing(clipIn);
+  if (subjectDeduped.length < 3 || clipDeduped.length < 3) return null;
+  var subject = ensureCCW(jitter(subjectDeduped));
+  var clip = ensureCCW(clipDeduped);
   var ns = subject.length, nc = clip.length;
 
   var sInserts = []; for (var i=0;i<ns;i++) sInserts.push([]);
@@ -2582,6 +2611,28 @@ function startSOWDraw(id,geo,label) {
   setMapHint(msg);
 }
 
+// "Wetland Enhancement" polygons must represent habitat improved WITHIN existing
+// wetland, not just anywhere the user draws — clip the drawn ring against every
+// pre-project Existing Wetland Area polygon (there may be several, possibly
+// disjoint) and keep only the overlapping piece(s). Reuses the same
+// Weiler-Atherton clip already proven out for floodplain/perimeter clipping.
+// Returns an array of rings (may be empty if nothing overlapped).
+function clipDrawnPolygonToExistingWetlands(we, pts) {
+  var wetItems = (we.fpMulti && we.fpMulti['pp_wetland']) || [];
+  var pieces = [];
+  wetItems.forEach(function(item) {
+    var wd = we.sowLayers[item.id];
+    if (!wd) return;
+    var wetPts = null;
+    if (wd.layer) { var ll = wd.layer.getLatLngs(); wetPts = (ll.length && Array.isArray(ll[0])) ? ll[0] : ll; }
+    if ((!wetPts || wetPts.length < 3) && wd._pts) wetPts = wd._pts;
+    if (!wetPts || wetPts.length < 3) return;
+    var clipped = clipConcave(pts, wetPts);
+    if (clipped) clipped.forEach(function(piece){ if (piece && piece.length >= 3) pieces.push(piece); });
+  });
+  return pieces;
+}
+
 function finishSOWDraw() {
   if(!sowDrawing)return;
   var we=getWE(sowDrawing.weId);if(!we)return;
@@ -2591,6 +2642,28 @@ function finishSOWDraw() {
   var pts=drawPts.slice();drawPts=[];clearPreview();
   var NO_CLIP_SOW = {pcw1:1,pcw2:1,pcw3:1};
   if(!NO_CLIP_SOW[d.id]) pts=clipPtsToPerimeter(we,pts,d.geo);
+
+  // Wetland Enhancement polygons get clipped to existing wetland extent instead of
+  // being committed as a plain drawn polygon — handle that here and return early.
+  var enhRef = findFPMultiRef(we, d.id);
+  if (enhRef && enhRef.key === 'fp_wetland_enhance' && d.geo === 'polygon') {
+    var pieces = clipDrawnPolygonToExistingWetlands(we, pts);
+    var totalAcres = 0, totalValueM = 0;
+    pieces.forEach(function(p){ totalValueM += geoAreaM2(p); totalAcres += geoArea(p); });
+    var enhLayer = pieces.length
+      ? L.polygon(pieces.map(function(p){ return [p]; }), {color:col, fillColor:col, fillOpacity:.2, weight:2, interactive:false}).bindTooltip(d.label).addTo(map)
+      : null;
+    var enhOwner = sowOwner(we, d.id);
+    enhOwner.sowLayers[d.id] = {layer:enhLayer, valueM:totalValueM, acres:totalAcres, geo:'polygon', label:d.label, _pts:null, _noOverlap: pieces.length===0};
+    if (enhLayer) enhOwner.sowLayers[d.id]._labelMarker = addFPMultiLabelMarker(enhLayer, enhRef.idx + 1, col);
+    sowDrawing = null;
+    document.getElementById('mapwrap').classList.remove('drawing');
+    setMapHint(pieces.length ? '' : 'That area didn\'t overlap any Existing Wetland Area');
+    updateSOWCalcs(); renderLegend();
+    if (wizardMode) wizardRefreshIfActive();
+    return;
+  }
+
   // Secondary channel draw: append to scReaches array and return early
   if (d.id === 'sc-reach-new') {
     if (!we.scReaches) we.scReaches = [];
@@ -4974,7 +5047,7 @@ function wetlandAutoClickFeature(ring, previewLyr) {
   pts = clipPtsToPerimeter(we, pts, 'polygon');
   if (!pts || pts.length < 3) { setMapHint('That wetland falls outside the project boundary'); return; }
 
-  if (!we.fpMulti) we.fpMulti = {grade:[], road:[], berm:[], revet:[], tailings:[], wetland:[], pp_wetland:[]};
+  if (!we.fpMulti) we.fpMulti = {grade:[], road:[], berm:[], revet:[], tailings:[], pp_wetland:[], fp_wetland_enhance:[]};
   if (!we.fpMulti['pp_wetland']) we.fpMulti['pp_wetland'] = [];
   var n = we.fpMulti['pp_wetland'].length + 1;
   var id = 'fp-pp_wetland-' + Date.now();
@@ -6716,7 +6789,7 @@ var WIZARD_STEPS = [
   { id:'fp_berm',        label:'Berm Removal',    title:'Berm/Levee Removed',           phase:'work', types:['fp'] },
   { id:'fp_revetment',   label:'Revetment Removal', title:'Revetment Removed',          phase:'work', types:['fp'] },
   { id:'fp_tailings',    label:'Mine Tailings',   title:'Mine Tailings Removed',        phase:'work', types:['fp'] },
-  { id:'fp_wetland',     label:'Wetland',         title:'Wetland Restoration',          phase:'work', types:['fp'] },
+  { id:'fp_wetland_enhance', label:'Wetland Enhancement', title:'Existing Wetland Habitat Enhanced', phase:'work', types:['fp'] },
   { id:'rr_fencing',  label:'Fencing',           title:'Riparian Protection — Fencing',      phase:'work', types:['rr'] },
   { id:'rr_planting', label:'Planting & Invasive', title:'Riparian Planting & Regeneration', phase:'work', types:['rr'] },
   { id:'rr_totals',   label:'Bank & Totals',     title:'Riparian Totals',                    phase:'work', types:['rr'] },
@@ -6839,7 +6912,7 @@ function wizardStepStatus(we, stepId) {
       var tdV = we.sowLayers['fp-tailings-vol'];
       return (fpMultiHasAny(we,'tailings') || (we.sowLayers['fp-tailings'] && we.sowLayers['fp-tailings'].valueM) || (tdV && tdV.value)) ? 'done' : 'pending';
     }
-    case 'fp_wetland': return (fpMultiHasAny(we,'wetland') || (we.sowLayers['fp-wetland'] && we.sowLayers['fp-wetland'].valueM)) ? 'done' : 'pending';
+    case 'fp_wetland_enhance': return fpMultiHasAny(we, 'fp_wetland_enhance') ? 'done' : 'pending';
     case 'rr_fencing': {
       var rrFenceDone = ['rr-fence','rr-fence-area'].some(function(k){ return we.sowLayers[k] && we.sowLayers[k].valueM; });
       return rrFenceDone ? 'done' : 'pending';
@@ -7807,10 +7880,20 @@ function wizardStepBody(we, step, idx) {
       h += wzFPMultiSection(we, 'tailings', 'polygon', 'Tailings removal area', true);
       break;
 
-    case 'fp_wetland':
-      h += '<div class="wz-step-desc">Draw each area of wetland constructed, restored, or enhanced. Add as many as needed.</div>';
-      h += wzFPMultiSection(we, 'wetland', 'polygon', 'Wetland area', false);
+    case 'fp_wetland_enhance': {
+      var existingWetItems = (we.fpMulti && we.fpMulti['pp_wetland']) || [];
+      h += '<div class="wz-step-desc">Draw the area(s) of existing wetland habitat that were constructed, restored, or enhanced. Each area is automatically clipped to your pre-project Existing Wetland Areas, shown on the map for reference — only the overlapping portion counts.</div>';
+      if (!existingWetItems.length) {
+        h += '<div class="wz-status warning">&#9888; No pre-project Existing Wetland Areas identified yet — go back to that step first, or anything drawn here will clip to zero.</div>';
+      }
+      h += wzFPMultiSection(we, 'fp_wetland_enhance', 'polygon', 'Enhancement area', false);
+      var enhItems = (we.fpMulti && we.fpMulti['fp_wetland_enhance']) || [];
+      var anyNoOverlap = enhItems.some(function(item){ var d = we.sowLayers[item.id]; return d && d._noOverlap; });
+      if (anyNoOverlap) {
+        h += '<div class="wz-status warning">&#9888; One or more drawn areas didn\'t overlap any Existing Wetland Area — check placement and redraw.</div>';
+      }
       break;
+    }
 
     case 'rr_fencing':
       h += '<div class="wz-step-desc">Draw fencing installed for riparian protection and the floodplain area it protects.</div>';
@@ -7864,7 +7947,7 @@ function wizardStepFooter(we, step, idx) {
   var required  = ['perimeter', 'reach', 'ch_width', 'fp_left', 'fp_right'];
   // Steps where "Skip ›" shows when empty, "Next ›" when something is entered
   var skippable = ['bank_ht', 'substrate', 'pp_wetland', 'chu_split', 'structures', 'pc_gravel',
-    'fp_structures', 'fp_reach_width', 'fp_grading', 'fp_road', 'fp_berm', 'fp_revetment', 'fp_tailings', 'fp_wetland',
+    'fp_structures', 'fp_reach_width', 'fp_grading', 'fp_road', 'fp_berm', 'fp_revetment', 'fp_tailings', 'fp_wetland_enhance',
     'rr_fencing', 'rr_planting', 'rr_totals'];
 
   var nextLabel, nextCls, nextDisabled;
@@ -8054,7 +8137,7 @@ function wizardAutoActivate() {
     case 'fp_berm':
     case 'fp_revetment':
     case 'fp_tailings':
-    case 'fp_wetland':
+    case 'fp_wetland_enhance':
     case 'rr_fencing':
     case 'rr_planting':
     case 'rr_totals':
@@ -8186,7 +8269,7 @@ function wzFPInputRow(we, id, label) {
 
 function wizardAddFPMultiItem(key, geo, label) {
   var we = getActiveWE(); if (!we) return;
-  if (!we.fpMulti) we.fpMulti = {grade:[], road:[], berm:[], revet:[], tailings:[], wetland:[], pp_wetland:[]};
+  if (!we.fpMulti) we.fpMulti = {grade:[], road:[], berm:[], revet:[], tailings:[], pp_wetland:[], fp_wetland_enhance:[]};
   if (!we.fpMulti[key]) we.fpMulti[key] = [];
   var n = we.fpMulti[key].length + 1;
   var id = 'fp-' + key + '-' + Date.now();
@@ -8536,7 +8619,7 @@ function openSOW() {
       var scSMi = scS.length ? (scS.reduce(function(a,r){return a+r.valueM;},0)*0.000621371).toFixed(3)+' mi' : wMi2('fp-ephsc');
       h+='<tr><td>Perennial side channel</td><td>'+scPMi+'</td></tr>';
       h+='<tr><td>Seasonal side channel</td><td>'+scSMi+'</td></tr>';
-      h+='<tr><td>Wetland restored/enhanced</td><td>'+fpMultiDisplay('wetland','polygon','fp-wetland')+'</td></tr>';
+      h+='<tr><td>Acres of existing wetland habitat constructed/restored/enhanced</td><td>'+fpMultiDisplay('fp_wetland_enhance','polygon','fp-wetland-enhance')+'</td></tr>';
       h+='</tbody></table>';
       // ── Secondary Channels ─────────────────────────────────────────────────
       if (we.scReaches && we.scReaches.length > 0) {
