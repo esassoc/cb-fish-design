@@ -1,0 +1,11 @@
+Project#,StartFiscalYear,EndFiscalYear,Cycle Type (1/2/max),BaselineBudget,CreatePersonID,CreateDate,UpdatePersonID,UpdateDate,Comment,COLA,Change Type (Add/Mod),ProjectID,ProjectBaselineBudgetID
+1982-013-01,2028,2028,One-year,,,,,,,,,,
+1983-319-00,2028,2028,One-year,,,,,,,,,,
+1983-435-00,2028,indefinite,Two-year,,,,,,,,,,
+1984-021-00,2028,2028,One-year,,,,,,,,,,
+1986-050-00,2028,2028,One-year,,,,,,,,,,
+1987-127-00,2028,indefinite,Two-year,,,,,,,,,,
+1988-053-03,2028,2028,One-year,,,,,,,,,,
+1988-053-08,2028,2028,One-year,,,,,,,,,,
+1988-108-04,2028,2029,Two-year,,,,,,,,,,
+1989-096-00,2028,indefinite,Two-year,,,,,,,,,,
