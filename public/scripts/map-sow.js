@@ -227,9 +227,6 @@ window.onload = function() {
   map.on('mousemove', mapMove);
   map.on('dblclick', mapDbl);
   renderLegend();
-
-  // Default to guided mode on load
-  toggleWizardMode();
 };
 
 // ── WE helpers ────────────────────────────────────────────────────────────
@@ -6562,7 +6559,7 @@ function setMapHint(msg){var el=document.getElementById('map-hint');el.innerHTML
 function toggleSec(head){var body=head.nextElementSibling;var open=body.classList.toggle('open');head.querySelector('span').textContent=open?'▾':'▸';}
 
 // ── Wizard Mode ────────────────────────────────────────────────────────────
-var wizardMode = false;
+var wizardMode = true; // Guided wizard is the only mode now; Expert mode is retired but left in place, unreachable.
 var wizardStep = 0;
 
 var WIZARD_STEPS = [

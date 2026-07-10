@@ -98,13 +98,6 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
             <span onclick="clearAll()">
               <EsaButton color="ghost" appearance="outline" size="sm">Clear All</EsaButton>
             </span>
-            <!-- wizard-toggle-btn: raw button — map-sow.js sets .textContent + .style.background directly -->
-            <button
-              id="wizard-toggle-btn"
-              onclick="toggleWizardMode()"
-              aria-pressed="false"
-              class="msow-wizard-toggle"
-            >✦ Guided</button>
             <span onclick="openSOW()">
               <EsaButton color="primary" size="sm">Export Metrics</EsaButton>
             </span>
@@ -115,7 +108,7 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
         <!-- GIS layout: [wizard column] [sidebar] [map] — wizard only visible when active -->
         <div class="msow-root">
           <div id="msow-layout">
-            <!-- Wizard column — rendered by renderWizardStep(), hidden by CSS default -->
+            <!-- Wizard column — rendered by renderWizardStep(); shown by CSS default (Guided is the only mode) -->
             <div id="wizard-panel" role="region" aria-label="Guided workflow"></div>
             <CbfMsowSidebar />
             <CbfMsowMap />

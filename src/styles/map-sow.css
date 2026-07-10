@@ -515,14 +515,14 @@
   flex-shrink: 0;
   background: var(--color-surface-sunken);
   border-right: 1px solid var(--color-border);
-  display: none;          /* shown by JS when wizardMode = true */
+  display: flex;          /* Guided wizard is the only mode now (Expert mode retired) */
   flex-direction: column;
   overflow: hidden;
   min-height: 0;
 }
-/* Wizard body fills the sidebar when guided mode is active */
-#wizard-body-panel { display: none; flex-direction: column; height: 100%; overflow: hidden; background: var(--color-surface-sunken); }
-#expert-panel { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+/* Wizard body fills the sidebar — guided mode is the only mode now */
+#wizard-body-panel { display: flex; flex-direction: column; height: 100%; overflow: hidden; background: var(--color-surface-sunken); }
+#expert-panel { display: none; flex-direction: column; height: 100%; overflow: hidden; }
 
 /* Wizard column header */
 .wz-v-header {
