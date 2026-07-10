@@ -4876,6 +4876,126 @@ function clearReachAutoLayers() {
   reachAutoLayers = [];
 }
 
+// ── Wetland auto-detect (National Wetlands Inventory) ─────────────────────
+// Mirrors the NHD reach auto-detect pattern above (envelope query against a
+// USGS/USFWS ArcGIS FeatureServer -> clickable preview layers -> accept into the
+// app's data model) but wetlands are plain closed polygons, so there's no
+// centerline/trim step — a clicked ring is committed to the pp_wetland
+// multi-entry list directly, the same way a hand-drawn one would be.
+var wetlandAutoDetecting = false;
+var wetlandAutoLayers = []; // temp highlight layers for detected wetland candidates
+
+function clearWetlandAutoLayers() {
+  wetlandAutoLayers.forEach(function(l){ map.removeLayer(l); });
+  wetlandAutoLayers = [];
+}
+
+function startWetlandAutoDetect() {
+  var we = getActiveWE(); if (!we) return;
+  wetlandAutoDetecting = true;
+  if (wizardMode) renderWizardStep();
+  loadWetlandPreview();
+}
+
+function cancelWetlandAutoDetect() {
+  wetlandAutoDetecting = false;
+  clearWetlandAutoLayers();
+  setMapHint('');
+  if (wizardMode) renderWizardStep();
+}
+
+function loadWetlandPreview() {
+  clearWetlandAutoLayers();
+  var zoom = map.getZoom();
+  // Same rationale as the NHD preview: below this zoom the envelope is too large
+  // and the service returns too many (or zero, once past its record cap) features.
+  if (zoom < 11) {
+    setMapHint('Zoom in to level 11+ (currently '+zoom+'), then click Auto-Detect again');
+    return;
+  }
+  var bounds = map.getBounds();
+  var toRad = function(d){ return d*Math.PI/180; };
+  var R = 6378137;
+  var toMerc = function(lat, lng) {
+    return [R*toRad(lng), R*Math.log(Math.tan(Math.PI/4+toRad(lat)/2))];
+  };
+  var sw = toMerc(bounds.getSouth(), bounds.getWest());
+  var ne = toMerc(bounds.getNorth(), bounds.getEast());
+  var env = sw[0]+','+sw[1]+','+ne[0]+','+ne[1];
+
+  // Note: this service requires fully-qualified field names ("Wetlands.FIELD"),
+  // not bare field names — a bare outFields list returns a 400 error.
+  var url = 'https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?' +
+    'geometry='+encodeURIComponent(env)+
+    '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects' +
+    '&outFields='+encodeURIComponent('Wetlands.WETLAND_TYPE,Wetlands.ACRES')+
+    '&returnGeometry=true&outSR=4326&f=json';
+
+  setMapHint('Loading NWI wetlands...');
+  fetch(url).then(function(r){ return r.json(); }).then(function(data) {
+    if (!wetlandAutoDetecting) return;
+    if (data.error || !data.features || !data.features.length) {
+      setMapHint(data.error ? 'NWI query failed — try a smaller area or draw manually' : 'No mapped wetlands found in this view');
+      return;
+    }
+    data.features.forEach(function(feat) {
+      if (!feat.geometry || !feat.geometry.rings || !feat.geometry.rings.length) return;
+      var ring = feat.geometry.rings[0];
+      if (!ring || ring.length < 3) return;
+      var pts = ring.map(function(c){ return L.latLng(c[1], c[0]); });
+      var typeLabel = feat.attributes['Wetlands.WETLAND_TYPE'] || 'Wetland';
+      var acVal = feat.attributes['Wetlands.ACRES'];
+      var tip = typeLabel + (acVal ? ' ('+acVal.toFixed(2)+' ac, NWI)' : '') + ' — click to add';
+      var lyr = L.polygon(pts, {
+        color:'#2a7a5c', weight:2, opacity:0.85, fillColor:'#2a7a5c', fillOpacity:0.3, interactive:true
+      }).bindTooltip(tip, {sticky:true});
+      lyr.on('click', function(e) {
+        L.DomEvent.stop(e);
+        if (!wetlandAutoDetecting) return;
+        wetlandAutoClickFeature(ring, lyr);
+      });
+      lyr.addTo(map);
+      wetlandAutoLayers.push(lyr);
+    });
+    setMapHint(wetlandAutoLayers.length ? 'Click a highlighted wetland to add it' : 'No mapped wetlands found in this view');
+  }).catch(function(err) {
+    console.warn('[NWI] fetch failed:', err);
+    setMapHint('NWI query failed — try again or draw manually');
+  });
+}
+
+// Accept one clicked NWI candidate ring directly into the pp_wetland multi-entry
+// list (same shape finishSOWDraw() produces for a hand-drawn polygon), then
+// remove just that candidate from the preview so it can't be double-added —
+// detecting mode stays on so the user can keep clicking more in the same view.
+function wetlandAutoClickFeature(ring, previewLyr) {
+  var we = getActiveWE(); if (!we) return;
+  var pts = ring.map(function(c){ return L.latLng(c[1], c[0]); });
+  pts = clipPtsToPerimeter(we, pts, 'polygon');
+  if (!pts || pts.length < 3) { setMapHint('That wetland falls outside the project boundary'); return; }
+
+  if (!we.fpMulti) we.fpMulti = {grade:[], road:[], berm:[], revet:[], tailings:[], wetland:[], pp_wetland:[]};
+  if (!we.fpMulti['pp_wetland']) we.fpMulti['pp_wetland'] = [];
+  var n = we.fpMulti['pp_wetland'].length + 1;
+  var id = 'fp-pp_wetland-' + Date.now();
+  we.fpMulti['pp_wetland'].push({id: id, vol: ''});
+
+  var col = SOW_COLOR.polygon || '#2a7a5c';
+  var layer = L.polygon(pts, {color:col, fillColor:col, fillOpacity:.2, weight:2, interactive:false})
+    .bindTooltip('Wetland area ' + n).addTo(map);
+  var acres = geoArea(pts), valueM = geoAreaM2(pts);
+  we.sowLayers[id] = {layer:layer, valueM:valueM, acres:acres, geo:'polygon', label:'Wetland area', _pts:null};
+  we.sowLayers[id]._labelMarker = addFPMultiLabelMarker(layer, n, col);
+
+  if (previewLyr) {
+    map.removeLayer(previewLyr);
+    wetlandAutoLayers = wetlandAutoLayers.filter(function(l){ return l !== previewLyr; });
+  }
+  updateSOWCalcs();
+  renderLegend();
+  if (wizardMode) { renderWizardStep(); wizardRefreshIfActive(); }
+}
+
 function reachAutoClick(latlng) {
   var we = getActiveWE(); if (!we) return;
   // If the NHD preview is loaded, the user clicked empty space — reload preview for new view
@@ -6575,6 +6695,7 @@ var WIZARD_STEPS = [
   { id:'ch_width',   label:'Channel Width',   title:'Measure Channel Width',          phase:'pp' },
   { id:'substrate',  label:'Substrate',       title:'Enter Reach-Averaged Substrate', phase:'pp' },
   { id:'fp_poly',    label:'Floodplain',      title:'Draw Floodplain Boundary',       phase:'pp' },
+  { id:'pp_wetland', label:'Existing Wetlands', title:'Existing Wetland Areas',       phase:'pp' },
   { id:'buffers',    label:'Review Areas',    title:'Review Floodplain Areas',        phase:'pp' },
   { id:'pp_done',    label:'Pre-Project Done',  title:'Pre-Project Complete!',          phase:'pp' },
   { id:'pc_reach',   label:'Primary Channel',  title:'Draw Primary Channel',           phase:'work', types:['pc'], repeat:'pc' },
@@ -6646,6 +6767,7 @@ function wizardStepStatus(we, stepId) {
     case 'fp_left':  return (we.ppData['fp_left']  && we.ppData['fp_left'].layer)  ? 'done' : 'pending';
     case 'fp_right': return (we.ppData['fp_right'] && we.ppData['fp_right'].layer) ? 'done' : 'pending';
     case 'fp_poly':  return (we.ppData['fp_poly']  && we.ppData['fp_poly'].layer)  ? 'done' : 'pending';
+    case 'pp_wetland': return fpMultiHasAny(we, 'pp_wetland') ? 'done' : 'pending';
     case 'buffers': {
       var ach = we.ppData['area_ch'];
       var achDone = ach && (ach.layer || ach.bufferLayer);
@@ -7117,6 +7239,22 @@ function wizardStepBody(we, step, idx) {
       } else {
         h += '<button class="wz-action-btn" onclick="startPPDraw(\'fp_poly\',0);renderWizardStep()">&#128207; Draw Floodplain Boundary</button>';
         h += '<div class="wz-tip">Draw the outer boundary of the active floodplain — include both banks in one polygon. Clicks outside the project boundary snap to the nearest boundary point.</div>';
+      }
+      break;
+    }
+
+    case 'pp_wetland': {
+      var ppWetItems = (we.fpMulti && we.fpMulti['pp_wetland']) || [];
+      h += '<div class="wz-step-desc">Identify any wetland areas already present on the site, before project work begins. Check the National Wetlands Inventory for candidates, or draw manually. Add as many as needed — or skip if none are present.</div>';
+      if (wetlandAutoDetecting) {
+        h += '<div class="wz-status pending">&#9654; Click a highlighted wetland on the map to add it — click <span style="text-decoration:underline;cursor:pointer" onclick="cancelWetlandAutoDetect()">done</span> when finished.</div>';
+      } else {
+        h += '<button class="wz-action-btn secondary" onclick="startWetlandAutoDetect()">&#127760; Auto-Detect from Map (NWI)</button>';
+      }
+      h += wzFPMultiSection(we, 'pp_wetland', 'polygon', 'Wetland area', false);
+      if (ppWetItems.length) {
+        var ppWetSum = fpMultiSum(we, 'pp_wetland');
+        h += '<div class="wz-status done" style="margin-top:6px">&#10003; '+ppWetItems.length+' wetland area'+(ppWetItems.length>1?'s':'')+' &middot; '+ppWetSum.acres.toFixed(2)+' ac total</div>';
       }
       break;
     }
@@ -7725,7 +7863,7 @@ function wizardStepFooter(we, step, idx) {
   // Steps that must be completed before advancing
   var required  = ['perimeter', 'reach', 'ch_width', 'fp_left', 'fp_right'];
   // Steps where "Skip ›" shows when empty, "Next ›" when something is entered
-  var skippable = ['bank_ht', 'substrate', 'chu_split', 'structures', 'pc_gravel',
+  var skippable = ['bank_ht', 'substrate', 'pp_wetland', 'chu_split', 'structures', 'pc_gravel',
     'fp_structures', 'fp_reach_width', 'fp_grading', 'fp_road', 'fp_berm', 'fp_revetment', 'fp_tailings', 'fp_wetland',
     'rr_fencing', 'rr_planting', 'rr_totals'];
 
@@ -7816,6 +7954,7 @@ function wizardAutoActivate() {
   if (!step) return;
   var we = getActiveWE();
   if (ppDrawing) { ppDrawing = null; drawPts = []; clearPreview(); document.getElementById('mapwrap').classList.remove('drawing'); }
+  if (wetlandAutoDetecting && step.id !== 'pp_wetland') { wetlandAutoDetecting = false; clearWetlandAutoLayers(); }
   // Clear any hint left over from whichever step we were just on — only a couple of
   // step cases below set their own hint, so without this it stays stuck on screen
   // (e.g. leaving Stream Reach for another step used to leave its hint banner up).
@@ -8047,7 +8186,7 @@ function wzFPInputRow(we, id, label) {
 
 function wizardAddFPMultiItem(key, geo, label) {
   var we = getActiveWE(); if (!we) return;
-  if (!we.fpMulti) we.fpMulti = {grade:[], road:[], berm:[], revet:[], tailings:[], wetland:[]};
+  if (!we.fpMulti) we.fpMulti = {grade:[], road:[], berm:[], revet:[], tailings:[], wetland:[], pp_wetland:[]};
   if (!we.fpMulti[key]) we.fpMulti[key] = [];
   var n = we.fpMulti[key].length + 1;
   var id = 'fp-' + key + '-' + Date.now();
@@ -8230,6 +8369,10 @@ function openSOW() {
       }
       h+='<tr><td>'+m.label+'</td><td>'+m.method+'</td><td>'+val+'</td></tr>';
     });
+    // pp_wetland is a multi-entry list (we.fpMulti/we.sowLayers-backed), not a plain
+    // PP_DEFS field — sum it separately rather than through the loop above.
+    var ppWetSumExp = fpMultiSum(we, 'pp_wetland');
+    h+='<tr><td>Existing Wetland Areas</td><td>measured</td><td>'+(ppWetSumExp.count>0?ppWetSumExp.acres.toFixed(2)+' acres ('+ppWetSumExp.count+')':'—')+'</td></tr>';
     h+='</tbody></table>';
 
     // Only include sections for selected types — set this WE as active for fmtIn/fmtCalc to work
