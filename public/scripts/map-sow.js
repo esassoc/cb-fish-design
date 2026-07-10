@@ -8422,7 +8422,7 @@ function drawCHUPie(canvasId, data, fmtFn) {
 function openSOW() {
   if(!workElements.length){alert('No work elements to export.');return;}
   var today=new Date().toLocaleDateString();
-  var h='<h3>Contract Information</h3><dl class="smeta"><dt>Contract #</dt><dd>84042 REL 117</dd><dt>COR</dt><dd>Tracy Hauser</dd><dt>FY</dt><dd>2026</dd><dt>Date</dt><dd>'+today+'</dd></dl>';
+  var h='<h3>Contract Information</h3><dl class="smeta"><dt>Contract #</dt><dd>84051 REL 50</dd><dt>COR</dt><dd>Virginia Preiss</dd><dt>FY</dt><dd>2026</dd><dt>Date</dt><dd>'+today+'</dd></dl>';
 
   workElements.forEach(function(we,idx) {
     h+='<h2>WE '+(idx+1)+': '+we.name+'</h2>';
