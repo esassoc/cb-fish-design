@@ -6897,9 +6897,10 @@ function renderWizardStep() {
   stepsHtml += '</div>';
 
   var bodyHtml = we ? wizardStepBody(we, step, wizardStep) : '<div class="wz-step-desc">Add a work element to get started.</div>';
-  // pp_done (step 7, "Pre-Project Done") is a milestone/summary screen, not a
-  // term-heavy step — no help box needed there.
-  if (step.id !== 'pp_done') bodyHtml = wzInsertHelpBox(bodyHtml, step.label);
+  // Milestone/summary screens ("X Complete!") aren't term-heavy — no help box there:
+  // pp_done (step 7, Pre-Project Done), pc_channel_done (step 16, Channel Complete).
+  var wzNoHelpSteps = {pp_done:1, pc_channel_done:1};
+  if (!wzNoHelpSteps[step.id]) bodyHtml = wzInsertHelpBox(bodyHtml, step.label);
   var footerHtml = wizardStepFooter(we, step, wizardStep);
 
   // Left column: header + vertical stepper only
