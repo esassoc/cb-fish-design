@@ -6417,7 +6417,9 @@ var WIZARD_STEPS = [
   { id:'fp_revetment',   label:'Revetment Removal', title:'Revetment Removed',          phase:'work', types:['fp'] },
   { id:'fp_tailings',    label:'Mine Tailings',   title:'Mine Tailings Removed',        phase:'work', types:['fp'] },
   { id:'fp_wetland',     label:'Wetland',         title:'Wetland Restoration',          phase:'work', types:['fp'] },
-  { id:'rr_work',    label:'Riparian Work',   title:'Riparian Work Elements',         phase:'work', types:['rr'] },
+  { id:'rr_fencing',  label:'Fencing',           title:'Riparian Protection — Fencing',      phase:'work', types:['rr'] },
+  { id:'rr_planting', label:'Planting & Invasive', title:'Riparian Planting & Regeneration', phase:'work', types:['rr'] },
+  { id:'rr_totals',   label:'Bank & Totals',     title:'Riparian Totals',                    phase:'work', types:['rr'] },
   { id:'done',       label:'Complete',        title:'Work Element Complete!',         phase:'work' }
 ];
 
@@ -6513,7 +6515,8 @@ function wizardStepStatus(we, stepId) {
       return (logsDrawn || logsCount || (we.fpStructs && we.fpStructs.length > 0)) ? 'done' : 'pending';
     }
     case 'fp_reach_width': {
-      var anyRW = ['fp-conn-reach','fpw1','fpw2','fpw3'].some(function(k){ return we.sowLayers[k] && we.sowLayers[k].valueM; });
+      var anyRW = ['fp-conn-reach','fpw1','fpw2','fpw3'].some(function(k){ return we.sowLayers[k] && we.sowLayers[k].valueM; })
+        || ['fp-bankfull-ac','fp-bankfull-2x-ac'].some(function(k){ return we.sowLayers[k] && we.sowLayers[k].value; });
       return anyRW ? 'done' : 'pending';
     }
     case 'fp_grading': return (fpMultiHasAny(we,'grade') || (we.sowLayers['fp-grade'] && we.sowLayers['fp-grade'].valueM)) ? 'done' : 'pending';
@@ -6534,9 +6537,19 @@ function wizardStepStatus(we, stepId) {
       return (fpMultiHasAny(we,'tailings') || (we.sowLayers['fp-tailings'] && we.sowLayers['fp-tailings'].valueM) || (tdV && tdV.value)) ? 'done' : 'pending';
     }
     case 'fp_wetland': return (fpMultiHasAny(we,'wetland') || (we.sowLayers['fp-wetland'] && we.sowLayers['fp-wetland'].valueM)) ? 'done' : 'pending';
-    case 'rr_work': {
-      var rrSow = we.sowLayers && Object.keys(we.sowLayers).some(function(k){ return k.indexOf('rr')===0 && we.sowLayers[k] && we.sowLayers[k].valueM; });
-      return rrSow ? 'done' : 'pending';
+    case 'rr_fencing': {
+      var rrFenceDone = ['rr-fence','rr-fence-area'].some(function(k){ return we.sowLayers[k] && we.sowLayers[k].valueM; });
+      return rrFenceDone ? 'done' : 'pending';
+    }
+    case 'rr_planting': {
+      var rrPlantVal = we.sowLayers['rr-plants'];
+      var rrPlantDone = ['rr-plant-bf','rr-plant-abf','rr-invasive'].some(function(k){ return we.sowLayers[k] && we.sowLayers[k].valueM; })
+        || (rrPlantVal && rrPlantVal.value);
+      return rrPlantDone ? 'done' : 'pending';
+    }
+    case 'rr_totals': {
+      var rrTotalsDone = ['rr-bank','rr-total'].some(function(k){ return we.sowLayers[k] && we.sowLayers[k].valueM; });
+      return rrTotalsDone ? 'done' : 'pending';
     }
     case 'done':      return 'pending';
   }
@@ -7363,6 +7376,9 @@ function wizardStepBody(we, step, idx) {
       h += wzFPDrawRow(we, 'fpw3', 'segment', 'Width measurement 3');
       var avgFW = avgWidths(we, ['fpw1','fpw2','fpw3']);
       h += '<div class="wz-tip">Avg floodplain width: <b>'+(avgFW?Math.round(avgFW)+' ft':'—')+'</b></div>';
+      h += '<div class="wz-group-head divided">Post-Project Connectivity</div>';
+      h += wzFPInputRow(we, 'fp-bankfull-ac', 'FP area connected below bankfull (ac)');
+      h += wzFPInputRow(we, 'fp-bankfull-2x-ac', 'FP area connected below 2x bankfull (ac)');
       break;
 
     case 'fp_grading':
@@ -7395,10 +7411,24 @@ function wizardStepBody(we, step, idx) {
       h += wzFPMultiSection(we, 'wetland', 'polygon', 'Wetland area', false);
       break;
 
-    case 'rr_work':
-      h += '<div class="wz-step-desc">Draw riparian work features — fencing lines, planting areas, and invasive species removal areas.</div>';
-      h += '<button class="wz-action-btn" onclick="toggleWizardMode();showInnerTab(\'work\');showWorkTab(\'rr\')">&#9654; Go to Riparian Work</button>';
-      
+    case 'rr_fencing':
+      h += '<div class="wz-step-desc">Draw fencing installed for riparian protection and the floodplain area it protects.</div>';
+      h += wzFPDrawRow(we, 'rr-fence', 'line', 'Miles of fence installed');
+      h += wzFPDrawRow(we, 'rr-fence-area', 'polygon', 'Area of FP protected by fence');
+      break;
+
+    case 'rr_planting':
+      h += '<div class="wz-step-desc">Enter plants installed and draw planting and invasive-species-removal areas.</div>';
+      h += wzFPInputRow(we, 'rr-plants', '# Plants installed');
+      h += wzFPDrawRow(we, 'rr-plant-bf', 'polygon', 'Area FP below bankfull planted');
+      h += wzFPDrawRow(we, 'rr-plant-abf', 'polygon', 'Area FP above bankfull planted');
+      h += wzFPDrawRow(we, 'rr-invasive', 'polygon', 'Area invasive species removed/treated');
+      break;
+
+    case 'rr_totals':
+      h += '<div class="wz-step-desc">Draw the total bank length and area of riparian improvement for this work element.</div>';
+      h += wzFPDrawRow(we, 'rr-bank', 'line', 'Bank length with riparian improvement');
+      h += wzFPDrawRow(we, 'rr-total', 'polygon', 'Total area of riparian improvement');
       break;
 
     case 'done':
@@ -7434,7 +7464,7 @@ function wizardStepFooter(we, step, idx) {
   // Steps where "Skip ›" shows when empty, "Next ›" when something is entered
   var skippable = ['bank_ht', 'substrate', 'chu_split', 'structures', 'pc_gravel',
     'fp_structures', 'fp_reach_width', 'fp_grading', 'fp_road', 'fp_berm', 'fp_revetment', 'fp_tailings', 'fp_wetland',
-    'rr_work'];
+    'rr_fencing', 'rr_planting', 'rr_totals'];
 
   var nextLabel, nextCls, nextDisabled;
   if (isLast) {
@@ -7606,7 +7636,9 @@ function wizardAutoActivate() {
     case 'fp_revetment':
     case 'fp_tailings':
     case 'fp_wetland':
-    case 'rr_work':
+    case 'rr_fencing':
+    case 'rr_planting':
+    case 'rr_totals':
       showInnerTab('work');
       break;
   }
@@ -8043,8 +8075,8 @@ function openSOW() {
       });
       h+='<tr><td>FP connectivity reach</td><td>'+wMi2('fp-conn-reach')+'</td></tr>';
       h+='<tr><td>Avg floodplain width</td><td>'+wAvg2(['fpw1','fpw2','fpw3'])+'</td></tr>';
-      h+='<tr><td>Left floodplain area</td><td>'+(ppAcres(we,'fp_left')?ppAcres(we,'fp_left').toFixed(2)+' acres':'—')+'</td></tr>';
-      h+='<tr><td>Right floodplain area</td><td>'+(ppAcres(we,'fp_right')?ppAcres(we,'fp_right').toFixed(2)+' acres':'—')+'</td></tr>';
+      h+='<tr><td>Post-project FP area connected below bankfull</td><td>'+(wVal2('fp-bankfull-ac')!=='—'?wVal2('fp-bankfull-ac')+' acres':'—')+'</td></tr>';
+      h+='<tr><td>Post-project FP area connected below 2x bankfull</td><td>'+(wVal2('fp-bankfull-2x-ac')!=='—'?wVal2('fp-bankfull-2x-ac')+' acres':'—')+'</td></tr>';
       h+='<tr><td>FP grading area</td><td>'+fpMultiDisplay('grade','polygon','fp-grade')+'</td></tr>';
       h+='<tr><td>Road removed in FP</td><td>'+fpMultiDisplay('road','line','fp-road')+'</td></tr>';
       h+='<tr><td>Road removal volume</td><td>'+fpMultiVolDisplay('road','fp-road-vol')+'</td></tr>';
