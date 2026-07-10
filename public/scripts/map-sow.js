@@ -155,7 +155,7 @@ window.onload = function() {
       var container = L.DomUtil.create('div', 'layer-control-container');
       container.style.position = 'relative';
       container.innerHTML =
-        '<button class="zoom-we-btn" style="margin-top:0;margin-right:4px" onclick="zoomToActiveWE()">&#8982; Zoom to WE</button>' +
+        '<button class="zoom-we-btn" style="margin-top:0;margin-right:4px" onclick="zoomToActiveWE()">&#8982; Zoom to Project</button>' +
         '<button class="zoom-we-btn" style="margin-top:0;margin-right:4px" id="pp-layer-toggle-btn" onclick="togglePPLayers()">Hide Pre-Project</button>' +
         '<button class="zoom-we-btn" style="margin-top:0;margin-right:4px" id="label-toggle-btn" onclick="toggleLabels()">Hide Labels</button>' +
         '<button class="layer-control-btn" aria-haspopup="true" aria-expanded="false" id="layer-toggle-btn">&#9864; Layers</button>' +
@@ -559,6 +559,10 @@ function showActiveWELayers() {
 
 function updateWELabel(w, isActive) {
   if (w._labelMarker) { map.removeLayer(w._labelMarker); w._labelMarker = null; }
+  // WE pill label hidden on the map for now — per request. Original logic below
+  // preserved (just made unreachable) for easy restore.
+  return;
+  // eslint-disable-next-line no-unreachable
   if (!w.name) return;
 
   // Find bounding box of all drawn layers for this WE
