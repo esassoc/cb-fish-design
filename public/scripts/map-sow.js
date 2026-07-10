@@ -7928,6 +7928,7 @@ function openSOW() {
     // Pre-project
     h+='<h3>Pre-Project Conditions</h3><table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
     PP_DEFS.forEach(function(m){
+      if (m.id==='fp_left' || m.id==='fp_right') return;
       var d=we.ppData[m.id]||{},val='—';
       if(m.method==='entered'&&d.value)val=d.value;
       else if(m.method==='measured'&&!m.multi&&d.valueM)val=m.geo==='line'?Math.round(d.valueM*3.28084).toLocaleString()+' ft':(d.valueM*0.000247105).toFixed(2)+' acres';
