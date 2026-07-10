@@ -3633,18 +3633,13 @@ function commitLineEdit() {
 // ── Channel Habitat Units (CHU) ───────────────────────────────────────────
 
 function getCHUChannelPts(we) {
-  // Prefer primary channel buffer (pc-area); fall back to pre-project area_ch
+  // CHUs must be built from the active primary channel's own area, never the
+  // pre-project area_ch — that's shared/reach-level data and is wrong once
+  // there's more than one primary channel (or the channel step isn't done yet).
   var sl = getActivePC(we).sowLayers['pc-area'];
-  if (sl && sl.layer) {
-    var lls = sl.layer.getLatLngs();
-    return (lls.length && Array.isArray(lls[0])) ? lls[0] : lls;
-  }
-  var d = we.ppData['area_ch'];
-  if (!d) return null;
-  var layer = d.userDrawn ? d.layer : d.bufferLayer;
-  if (!layer) return null;
-  var lls2 = layer.getLatLngs();
-  return (lls2.length && Array.isArray(lls2[0])) ? lls2[0] : lls2;
+  if (!sl || !sl.layer) return null;
+  var lls = sl.layer.getLatLngs();
+  return (lls.length && Array.isArray(lls[0])) ? lls[0] : lls;
 }
 
 // Initialise the channel as a single riffle unit (called when entering the Identify Pools step).
