@@ -2793,6 +2793,34 @@ function avgWidths(we,ids) {
   return vals.length?vals.reduce(function(a,b){return a+b;},0)/vals.length:null;
 }
 
+// FP connectivity reach & floodplain width are derived from the already-drawn Secondary
+// Channels rather than requiring a separate manual draw.
+function scConnectivityMiles(we) {
+  // A secondary channel reach IS a reconnected reach — sum their lengths.
+  var reaches = (we && we.scReaches || []).filter(function(r){ return r.valueM; });
+  if (!reaches.length) return null;
+  return reaches.reduce(function(a,r){ return a+r.valueM; }, 0) * 0.000621371;
+}
+function scAvgWidthFt(we) {
+  // "Floodplain width" is the width of the floodplain corridor itself (fp_poly, drawn in
+  // pre-project), not a secondary channel's own (much narrower) channel width — measure the
+  // floodplain's cross-sectional width perpendicular to each secondary channel reach and average.
+  if (!we) return null;
+  var fpD = we.ppData['fp_poly'];
+  var fpPts = null;
+  if (fpD) {
+    if (fpD.layer) { var ll = fpD.layer.getLatLngs(); fpPts = (ll.length && Array.isArray(ll[0])) ? ll[0] : ll; }
+    if ((!fpPts || fpPts.length < 3) && fpD._pts) fpPts = fpD._pts;
+  }
+  if (!fpPts || fpPts.length < 3) return null;
+  var widths = (we.scReaches || []).map(function(r){
+    if (!r.layer) return null;
+    var wM = calcCrossWidthCore(r.layer, fpPts, 0.5);
+    return wM ? wM * 3.28084 : null;
+  }).filter(function(v){ return v !== null; });
+  return widths.length ? widths.reduce(function(a,b){return a+b;},0)/widths.length : null;
+}
+
 // fp_grading/fp_road/fp_berm/fp_revetment/fp_tailings/fp_wetland store N drawn
 // instances in we.fpMulti[key] (each keying its geometry into we.sowLayers).
 function fpMultiHasAny(we, key) {
@@ -6662,7 +6690,7 @@ function wizardStepStatus(we, stepId) {
       return (logsDrawn || logsCount || (we.fpStructs && we.fpStructs.length > 0)) ? 'done' : 'pending';
     }
     case 'fp_reach_width': {
-      var anyRW = ['fp-conn-reach','fpw1','fpw2','fpw3'].some(function(k){ return we.sowLayers[k] && we.sowLayers[k].valueM; })
+      var anyRW = scConnectivityMiles(we) !== null
         || ['fp-bankfull-ac','fp-bankfull-2x-ac'].some(function(k){ return we.sowLayers[k] && we.sowLayers[k].value; });
       return anyRW ? 'done' : 'pending';
     }
@@ -7515,18 +7543,25 @@ function wizardStepBody(we, step, idx) {
       break;
     }
 
-    case 'fp_reach_width':
-      h += '<div class="wz-step-desc">Draw the reach of improved floodplain connectivity and measure floodplain width at 3 points.</div>';
-      h += wzFPDrawRow(we, 'fp-conn-reach', 'line', 'FP connectivity reach');
-      h += wzFPDrawRow(we, 'fpw1', 'segment', 'Width measurement 1');
-      h += wzFPDrawRow(we, 'fpw2', 'segment', 'Width measurement 2');
-      h += wzFPDrawRow(we, 'fpw3', 'segment', 'Width measurement 3');
-      var avgFW = avgWidths(we, ['fpw1','fpw2','fpw3']);
-      h += '<div class="wz-tip">Avg floodplain width: <b>'+(avgFW?Math.round(avgFW)+' ft':'—')+'</b></div>';
+    case 'fp_reach_width': {
+      var scMi = scConnectivityMiles(we);
+      var scAvgW = scAvgWidthFt(we);
+      h += '<div class="wz-step-desc">FP connectivity reach is calculated from your Secondary Channels; floodplain width is measured across the pre-project Floodplain boundary at each channel — no separate drawing needed here.</div>';
+      if (scMi === null) {
+        h += '<div class="wz-status warning">&#9888; No secondary channels entered yet — go back to Secondary Channels and add at least one; this metric is calculated from that data.</div>';
+      } else {
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">FP connectivity reach</span><span class="wz-metric-val">'+scMi.toFixed(3)+' mi</span></div>';
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Avg floodplain width</span><span class="wz-metric-val">'+(scAvgW?Math.round(scAvgW)+' ft':'—')+'</span></div>';
+        h += '<div class="wz-status done">&#10003; Calculated from '+we.scReaches.length+' secondary channel'+(we.scReaches.length>1?'s':'')+'.</div>';
+        if (scAvgW === null) {
+          h += '<div class="wz-tip">Floodplain width unavailable — make sure the pre-project Floodplain boundary (step 5) is drawn and crosses your secondary channels.</div>';
+        }
+      }
       h += '<div class="wz-group-head divided">Post-Project Connectivity</div>';
       h += wzFPInputRow(we, 'fp-bankfull-ac', 'FP area connected below bankfull (ac)');
       h += wzFPInputRow(we, 'fp-bankfull-2x-ac', 'FP area connected below 2x bankfull (ac)');
       break;
+    }
 
     case 'fp_grading':
       h += '<div class="wz-step-desc">Draw each area of floodplain grading (cut). Add as many as needed.</div>';
@@ -8238,8 +8273,10 @@ function openSOW() {
         we.structures[t].forEach(function(s,i){ tLarge+=+s.large||0; tSmall+=+s.small||0; h+='<tr><td>'+STRUCT_LABEL[t]+' '+(i+1)+': '+s.desc+'</td><td>Large: '+(s.large||0)+', Small: '+(s.small||0)+'</td></tr>'; });
         if (we.structures[t].length) h+='<tr style="font-weight:700"><td>Total '+STRUCT_LABEL[t]+' large/small pieces</td><td>Large: '+tLarge+', Small: '+tSmall+'</td></tr>';
       });
-      h+='<tr><td>FP connectivity reach</td><td>'+wMi2('fp-conn-reach')+'</td></tr>';
-      h+='<tr><td>Avg floodplain width</td><td>'+wAvg2(['fpw1','fpw2','fpw3'])+'</td></tr>';
+      var scConnMi = scConnectivityMiles(we);
+      var scWidthFt = scAvgWidthFt(we);
+      h+='<tr><td>FP connectivity reach</td><td>'+(scConnMi!==null ? scConnMi.toFixed(3)+' mi' : wMi2('fp-conn-reach'))+'</td></tr>';
+      h+='<tr><td>Avg floodplain width</td><td>'+(scWidthFt!==null ? Math.round(scWidthFt)+' ft' : wAvg2(['fpw1','fpw2','fpw3']))+'</td></tr>';
       h+='<tr><td>Post-project FP area connected below bankfull</td><td>'+(wVal2('fp-bankfull-ac')!=='—'?wVal2('fp-bankfull-ac')+' acres':'—')+'</td></tr>';
       h+='<tr><td>Post-project FP area connected below 2x bankfull</td><td>'+(wVal2('fp-bankfull-2x-ac')!=='—'?wVal2('fp-bankfull-2x-ac')+' acres':'—')+'</td></tr>';
       h+='<tr><td>FP grading area</td><td>'+fpMultiDisplay('grade','polygon','fp-grade')+'</td></tr>';
