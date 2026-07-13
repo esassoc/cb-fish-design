@@ -1,0 +1,78 @@
+---
+// cbf-invoice-review-summary — the Review & submit summary.
+// Shared by BOTH the page step (cbf-invoice-step-review) and the confirm modal
+// (cbf-invoice-confirm) so the markup lives in ONE place. Each section is a real
+// esa-card lego; the dynamic values are [data-review="…"] placeholders that
+// invoice-wizard.client.ts fills (fillReviewSummary) — no hand-rolled card.
+//
+// bcn-lego-checked: the cards ARE esa-card (lego). The Replace/Remove controls are
+// compact 13px inline file-row actions carrying data-invoice-* JS hooks — esa-button
+// is a full-size CTA at the wrong scale for an in-row action; checked Beacon (no
+// ui-* inline file-action). These quiet row buttons stay bcn within this component.
+import EsaCard from '@esa/ecology/esa-card.astro';
+import CbfInvoiceCard from '../shared/cbf-invoice-card.astro';
+---
+<div class="cbf-review-summary" data-review-summary>
+
+  <CbfInvoiceCard placeholder />
+
+  <EsaCard title="Uploaded invoice">
+    <div class="cbf-review-row">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span data-review="file-name"></span>
+      <span class="cbf-review-meta" data-review="file-size"></span>
+    </div>
+  </EsaCard>
+
+  <div data-review="docs-card" hidden>
+    <EsaCard title="Supporting documents">
+      <div class="cbf-review-docs" data-review="docs-list"></div>
+    </EsaCard>
+  </div>
+
+  <div data-review="notes-card" hidden>
+    <EsaCard title="Notes">
+      <p class="cbf-review-notes" data-review="notes"></p>
+    </EsaCard>
+  </div>
+
+</div>
+
+<style>
+  .cbf-review-summary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-400);
+  }
+
+  /* Border edge + a soft shadow so the esa-cards lift off the white page. */
+  .cbf-review-summary :global(.esa-card) {
+    box-shadow: var(--shadow-100, 0 1px 3px rgba(16, 24, 40, 0.06));
+  }
+
+  /* ---- File row (Uploaded invoice + Supporting documents) ---- */
+  .cbf-review-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-200);
+    font-size: 15px;
+    color: var(--color-text-primary);
+  }
+  .cbf-review-row svg { color: var(--color-secondary); flex: none; }
+  .cbf-review-row + .cbf-review-row { margin-top: var(--spacing-300); }
+  .cbf-review-meta { color: var(--color-text-muted); font-size: 13px; }
+
+  /* The invoice card itself is now the shared CbfInvoiceCard component. */
+
+  /* ---- Conditional cards ---- */
+  [data-review="docs-card"][hidden],
+  [data-review="notes-card"][hidden] { display: none; }
+
+  .cbf-review-notes {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+</style>

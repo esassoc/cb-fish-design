@@ -35,8 +35,8 @@ const roles = [
   { token: 'color-text-muted', value: '#7c7c7c', note: 'Secondary / meta text (Figma Gray/500).' },
 ];
 ---
-<DocsLayout title="Color — CB Fish" activeHref="/design-system/foundations/color">
-  <nav class="crumbs"><a href={withBase('/design-system')}>CB Fish</a> <span>/</span> <span>Foundations</span> <span>/</span> <span>Color</span></nav>
+<DocsLayout title="Color — CBFish" activeHref="/design-system/foundations/color">
+  <nav class="crumbs"><a href={withBase('/design-system')}>CBFish</a> <span>/</span> <span>Foundations</span> <span>/</span> <span>Color</span></nav>
   <h1>Color</h1>
   <p class="lede">Navy blue replaces Ecology's teal; muted gold accents the app chrome. Values are verbatim from the CBFish Modernization Figma — primitive ramps feed the semantic roles components actually read.</p>
 
@@ -48,7 +48,7 @@ const roles = [
   </Section>
 
   <Section id="roles" title="Semantic roles">
-    <p>What components reference. The CB Fish theme re-points these off the ramps above — each swatch below renders live from its token, so it reflects exactly what ships.</p>
+    <p>What components reference. The CBFish theme re-points these off the ramps above — each swatch below renders live from its token, so it reflects exactly what ships.</p>
     <div class="roles">
       {roles.map((r) => (
         <div class="role">
@@ -68,7 +68,7 @@ const roles = [
     <p class="note">
       <strong>Neutral ramp —</strong> the full neutral chain (<code>--color-text-primary</code>,
       <code>-secondary</code>, <code>-tertiary</code>, <code>-muted</code>, and the borders) is re-pointed
-      to the <code>--cbf-gray-*</code> ramp, so body text reads CB Fish's warmer grays rather than the
+      to the <code>--cbf-gray-*</code> ramp, so body text reads CBFish's warmer grays rather than the
       hub's cooler neutrals (<code>text-primary</code> is <code>#3d3d3d</code>, not <code>#171717</code>).
       Surfaces stay white; <code>--color-surface-sunken</code> is intentionally blue-tinted and sits
       outside this chain.

@@ -1,0 +1,63 @@
+---
+// cbf-app-footer — the cbfish.org-style site footer: a four-column sitemap on a
+// brand-navy band, then a base bar with the program line + usage-policy link.
+// Sitemap data is shared with cbf-public-nav via src/data/app-nav.ts (one source
+// of truth, no drift).
+//
+// bcn-lego-checked: no esa- footer/sitemap lego exists (checked the catalog — the
+// closest, esa-link-column, IS used here, four times, for the columns). The band
+// background + base bar are component-internal layout/chrome; esa-link-column
+// inherits the band's text color via currentColor, so no brand values are baked in.
+import EsaLinkColumn from '@esa/ecology/esa-link-column.astro';
+import { mitigation, reporting, funding, help, type NavLink } from '../../data/app-nav';
+import { withBase } from '../../lib/base';
+// app-nav hrefs are root-relative and base-less — prefix internal ones here.
+const based = (links: NavLink[]): NavLink[] =>
+  links.map((l) => (l.href?.startsWith('/') ? { ...l, href: withBase(l.href) } : l));
+---
+<footer class="cbf-app-footer">
+  <div class="cbf-app-footer__inner">
+    <div class="cbf-app-footer__cols grid">
+      <EsaLinkColumn heading="Mitigation work" links={based(mitigation)} />
+      <EsaLinkColumn heading="Reporting" links={based(reporting)} />
+      <EsaLinkColumn heading="Funding" links={based(funding)} />
+      <EsaLinkColumn heading="Help" links={based(help)} />
+    </div>
+    <div class="cbf-app-footer__base">
+      <span class="cbf-app-footer__org">
+        Bonneville Power Administration &middot; Columbia Basin Fish &amp; Wildlife Program
+      </span>
+      <a class="cbf-app-footer__policy" href="#">Website usage policy</a>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .cbf-app-footer {
+    margin-top: var(--spacing-800);
+    background: var(--color-surface-inverse);
+    color: var(--color-text-inverse, #fff);
+  }
+  .cbf-app-footer__inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: var(--spacing-800) var(--spacing-600) var(--spacing-600);
+  }
+  .cbf-app-footer__cols {
+    --grid-min: 12rem;
+    gap: var(--spacing-700);
+  }
+  .cbf-app-footer__base {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-300);
+    margin-top: var(--spacing-700);
+    padding-top: var(--spacing-400);
+    border-top: 1px solid color-mix(in srgb, var(--color-text-inverse, #fff) 22%, transparent);
+    font-size: 14px;
+  }
+  .cbf-app-footer__org { color: color-mix(in srgb, var(--color-text-inverse, #fff) 82%, transparent); }
+  .cbf-app-footer__policy { color: inherit; text-decoration: underline; }
+</style>

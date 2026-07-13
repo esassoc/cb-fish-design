@@ -3,7 +3,10 @@
 // Idle state: drag/drop target. Loaded state: inline PDF preview with remove control.
 // bcn-lego-checked: combined drag-drop upload zone + inline PDF viewer — no esa-* component
 // covers this pattern; checked Beacon: no matching ui-* component. cbf-invoice-pdf-panel
-// is the reusable home for this pattern.
+// is the reusable home for this pattern. The inline upload error uses esa-alert-box (the
+// same lego the form uses for its other errors) placed in the drop zone so a size/type
+// rejection appears right at the input rather than at the bottom of the form.
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 ---
 <aside class="cbf-pdf-panel" data-pdf-panel data-upload-zone hidden>
 
@@ -30,6 +33,9 @@
       or <button type="button" class="cbf-pdf-drop__browse" data-upload-browse>browse to upload</button>
     </p>
     <p class="cbf-pdf-drop__hint">PDF only · Max 25 MB</p>
+    <div class="cbf-pdf-drop__error" data-upload-inline-error role="alert" hidden>
+      <EsaAlertBox variant="danger"><span data-upload-inline-error-msg></span></EsaAlertBox>
+    </div>
   </div>
 
   <!-- Loaded: PDF viewer (visible when file is loaded) -->
@@ -128,6 +134,17 @@
     color: var(--color-text-muted);
   }
 
+  /* Inline upload error — sits in the drop zone, directly under the hint.
+     Capped so it reads as a compact notice rather than stretching the panel width. */
+  .cbf-pdf-drop__error {
+    width: 100%;
+    max-width: 360px;
+    margin-top: var(--spacing-200);
+    margin-inline: auto;
+    text-align: left;
+  }
+  .cbf-pdf-drop__error[hidden] { display: none; }
+
   /* ---- Viewer (loaded) ---- */
   .cbf-pdf-viewer {
     flex: 1;
@@ -193,6 +210,15 @@
       height: 420px;
       border-right: none;
       border-bottom: 1px solid var(--color-border);
+    }
+  }
+
+  /* Mobile: no drag-drop area — uploading happens via the "Upload Invoice" button in
+     the form. Hide the panel while idle (drop zone showing); it reappears only to
+     preview a loaded PDF. */
+  @media (max-width: 600px) {
+    .cbf-pdf-panel:has([data-upload-idle]:not([hidden])) {
+      display: none;
     }
   }
 </style>

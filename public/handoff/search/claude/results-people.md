@@ -183,6 +183,48 @@ People-scoped results — each row resolves to a person with an Impersonate affo
 
 ## Styles
 ```css
+.cbf-search-surface .cbf-facet .cbf-icon {
+  color: var(--color-secondary);
+}
+.cbf-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-400);
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-100);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group__head {
+  background: var(--cbf-surface-section-head);
+  border-top: 0;
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--spacing-300) var(--spacing-400);
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group__title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-text-primary);
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon {
+  color: var(--color-secondary);
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group__count {
+  font-size: 16px;
+}
+.cbf-search-field .cbf-icon {
+  color: var(--color-text-muted);
+  display: inline-flex;
+}
 .cbf-icon {
   display: inline-flex;
   align-items: center;
@@ -262,55 +304,13 @@ People-scoped results — each row resolves to a person with an Impersonate affo
   opacity: 0;
   flex: none;
 }
-.cbf-search-results {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-400);
-}
-.cbf-search-surface .cbf-facet .cbf-icon {
-  color: var(--color-secondary);
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-100);
-  overflow: hidden;
-  background: var(--color-surface);
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group__head {
-  background: var(--cbf-surface-section-head);
-  border-top: 0;
-  border-bottom: 1px solid var(--color-border);
-  padding: var(--spacing-300) var(--spacing-400);
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group__title {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: var(--font-weight-medium);
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--color-text-primary);
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon {
-  color: var(--color-secondary);
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon svg {
-  width: 18px;
-  height: 18px;
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group__count {
-  font-size: 16px;
-}
-.cbf-search-field .cbf-icon {
-  color: var(--color-text-muted);
-  display: inline-flex;
-}
 ```
 
 ## Tokens
 - `--cbf-surface-section-head`: #f5f5f5 _(brand)_
 - `--color-border`: #dcdcdc _(semantic)_
 - `--color-secondary`: #2770b2 _(semantic)_
-- `--color-surface`: #ffffff _(semantic)_
+- `--color-surface`: #fcfcfc _(semantic)_
 - `--color-surface-sunken`: #f3f7fc _(semantic)_
 - `--color-text-muted`: #7c7c7c _(semantic)_
 - `--color-text-primary`: #3d3d3d _(semantic)_

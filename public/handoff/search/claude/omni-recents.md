@@ -219,10 +219,6 @@ The palette on open with no query — the Recent list (last-viewed records) as t
 .cbf-search-surface .cbf-facet__label {
   flex: 1;
 }
-.cbf-search-field .cbf-icon {
-  color: var(--color-text-muted);
-  display: inline-flex;
-}
 .cbf-omni-trigger {
   display: flex;
   align-items: center;
@@ -476,6 +472,10 @@ The palette on open with no query — the Recent list (last-viewed records) as t
   font-size: 13px;
   color: var(--color-text-muted);
 }
+.cbf-search-field .cbf-icon {
+  color: var(--color-text-muted);
+  display: inline-flex;
+}
 ```
 
 ## Tokens
@@ -484,9 +484,9 @@ The palette on open with no query — the Recent list (last-viewed records) as t
 - `--color-primary`: #1e5386 _(semantic)_
 - `--color-primary-subtle`: #f3f7fc _(semantic)_
 - `--color-secondary`: #2770b2 _(semantic)_
-- `--color-surface`: #ffffff _(semantic)_
+- `--color-surface`: #fcfcfc _(semantic)_
 - `--color-surface-sunken`: #f3f7fc _(semantic)_
-- `--color-text-inverse`: #ffffff _(semantic)_
+- `--color-text-inverse`: #fcfcfc _(semantic)_
 - `--color-text-muted`: #7c7c7c _(semantic)_
 - `--color-text-primary`: #3d3d3d _(semantic)_
 - `--font-display`: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif _(primitive)_
@@ -494,7 +494,7 @@ The palette on open with no query — the Recent list (last-viewed records) as t
 - `--font-weight-medium`: 500 _(primitive)_
 - `--font-weight-regular`: 400 _(primitive)_
 - `--font-weight-semibold`: 600 _(primitive)_
-- `--kbd-bg`: #ffffff _(component)_
+- `--kbd-bg`: #fcfcfc _(component)_
 - `--kbd-border-color`: #dcdcdc _(component)_
 - `--kbd-color`: #7c7c7c _(component)_
 - `--kbd-radius`: 4px _(component)_

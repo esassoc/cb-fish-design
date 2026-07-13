@@ -1,17 +1,17 @@
 # PDF upload
 
-Two-state PDF panel: (1) idle dropzone — drag-and-drop prompt with a browse button; (2) loaded viewer — iframe displaying the uploaded PDF with a toolbar showing the filename and a remove button. Uploading a PDF unlocks the entire details form.
+Two-state PDF panel that gates the whole form. Idle: a drag-and-drop zone with a browse button. Loaded: an inline iframe preview with a toolbar (filename + remove). Uploading a PDF is what unlocks the details form — nothing else can be entered until a PDF is present.
 
 ## Key decisions
-- Desktop upload: drag-drop onto [data-upload-zone] or click [data-upload-browse].
-- Mobile upload: a separate [data-mobile-upload-btn] in the form body triggers [data-mobile-upload-input] because the panel is not visible at narrow widths.
-- Only PDF MIME type is accepted; the wizard validates type on drop and on file input change.
-- Removing the PDF (via remove button or "Replace" in review) calls clearFile() and resets the viewer to the idle state.
+- Desktop: drag-drop onto [data-upload-zone] or click [data-upload-browse].
+- Mobile (≤600px): the idle drop zone is hidden entirely — the panel uses CSS `:has([data-upload-idle]:not([hidden]))` to collapse to display:none while idle. Upload happens via the full-width primary "Upload Invoice" button ([data-mobile-upload-btn]) in the form body; the panel reappears only to preview a loaded PDF.
+- PDF only, max 25 MB — validated on drop and on file-input change. A rejection (wrong type / too big) shows an inline esa-alert-box right in the drop zone ([data-upload-inline-error]), capped at 360px, not at the bottom of the form.
+- Removing the PDF (viewer remove button, or Remove in the review summary) calls clearFile(), resets to the idle state, and revokes the Blob URL.
 
 ## Gotchas
-- Panel stacks to full-width below 1100px with a fixed height of 420px — the CSS switches from sidebar to block layout at that breakpoint.
-- syncFormLock() is called on every file change — ALL [data-field] elements remain disabled until pdfEverLoaded is true.
-- The iframe src is a Blob object URL — it is revoked on remove to avoid memory leaks.
+- Panel stacks full-width below 1100px at a fixed 420px height; below 600px it is display:none while idle — do not assume it is always on screen.
+- syncFormLock() runs on every file change — ALL [data-field] controls stay disabled until pdfEverLoaded is true.
+- The iframe src is a Blob object URL — it is revoked on remove to avoid leaks.
 
 ## Markup
 ```html
@@ -51,6 +51,33 @@ Two-state PDF panel: (1) idle dropzone — drag-and-drop prompt with a browse bu
       </button>
     </p>
     <p class="cbf-pdf-drop__hint">PDF only · Max 25 MB</p>
+    <div class="cbf-pdf-drop__error" data-upload-inline-error="" role="alert" hidden="">
+      <div class="esa-alert-box esa-alert-box--danger">
+        <div class="esa-alert-box__icon">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 8v4"></path>
+            <path d="M12 16h.01"></path>
+          </svg>
+        </div>
+        <div class="esa-alert-box__body">
+          <div class="esa-alert-box__message">
+            <span data-upload-inline-error-msg=""></span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
   <!-- Loaded: PDF viewer (visible when file is loaded) -->
   <div class="cbf-pdf-viewer" data-pdf-viewer="" hidden="">
@@ -167,6 +194,16 @@ Two-state PDF panel: (1) idle dropzone — drag-and-drop prompt with a browse bu
   font-size: 12px;
   color: var(--color-text-muted);
 }
+.cbf-pdf-drop__error {
+  width: 100%;
+  max-width: 360px;
+  margin-top: var(--spacing-200);
+  margin-inline: auto;
+  text-align: left;
+}
+.cbf-pdf-drop__error[hidden] {
+  display: none;
+}
 .cbf-pdf-viewer {
   flex: 1;
   display: flex;
@@ -181,13 +218,14 @@ Two-state PDF panel: (1) idle dropzone — drag-and-drop prompt with a browse bu
 ## Tokens
 - `--color-border`: #dcdcdc _(semantic)_
 - `--color-secondary`: #2770b2 _(semantic)_
-- `--color-surface`: #ffffff _(semantic)_
+- `--color-surface`: #fcfcfc _(semantic)_
 - `--color-surface-sunken`: #f3f7fc _(semantic)_
 - `--color-text-muted`: #7c7c7c _(semantic)_
 - `--color-text-primary`: #3d3d3d _(semantic)_
 - `--color-text-secondary`: #525252 _(semantic)_
 - `--font-weight-semibold`: 600 _(primitive)_
 - `--radius-100`: .25rem _(primitive)_
+- `--spacing-200`: .5rem _(primitive)_
 - `--spacing-300`: .75rem _(primitive)_
 - `--spacing-500`: 1.5rem _(primitive)_
 - `--spacing-600`: 2rem _(primitive)_

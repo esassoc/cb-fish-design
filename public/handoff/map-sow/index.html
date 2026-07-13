@@ -1,0 +1,2784 @@
+<!doctype html>
+<html lang="en" data-theme="cb-fish">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Habitat Design Tool — Columbia Basin Fish & Wildlife Program</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Sans+Condensed:wght@400;500;600&amp;display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root,
+      [data-theme="cb-fish"] {
+        --app-bar-bg: #fcfcfc;
+        --app-bar-brand-bg: #1e5386;
+        --app-bar-brand-strong-bg: #13273e;
+        --app-bar-brand-strong-text: #fcfcfc;
+        --app-bar-brand-text: #fcfcfc;
+        --app-bar-gap: 2rem;
+        --app-bar-pad-x: 2rem;
+        --app-bar-pad-y: 1rem;
+        --app-bar-text: #3d3d3d;
+        --breadcrumbs-link-color: #525252;
+        --breadcrumbs-link-hover: #3d3d3d;
+        --breadcrumbs-separator-color: #bbbbbb;
+        --color-border: #dcdcdc;
+        --color-border-strong: #bdbdbd;
+        --color-primary: #1e5386;
+        --color-primary-hover: #1a4570;
+        --color-primary-strong: #2a7e3b;
+        --color-secondary: #2770b2;
+        --color-surface: #fcfcfc;
+        --color-surface-inverse: #13273e;
+        --color-surface-sunken: #f3f7fc;
+        --color-text-inverse: #fcfcfc;
+        --color-text-link: #1e5386;
+        --color-text-muted: #7c7c7c;
+        --color-text-primary: #3d3d3d;
+        --color-text-secondary: #525252;
+        --color-text-tertiary: #656565;
+        --container-gutter: 2rem;
+        --font-display: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+        --font-sans: "IBM Plex Sans", sans-serif;
+        --font-weight-bold: 700;
+        --font-weight-medium: 500;
+        --font-weight-regular: 400;
+        --font-weight-semibold: 600;
+        --form-font-size-md: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);
+        --form-font-size-sm: clamp(0.625rem, 0.56rem + 0.32vw, 0.75rem);
+        --form-height-md: 40px;
+        --form-height-sm: 32px;
+        --form-padding-x-md: 0.75rem;
+        --form-padding-x-sm: 0.625rem;
+        --form-radius-md: 0.5rem;
+        --form-radius-sm: 0.25rem;
+        --icon-link-font-size-md: 1rem;
+        --icon-link-font-size-sm: 0.875rem;
+        --icon-link-gap: 0.375rem;
+        --icon-size-md: 20px;
+        --icon-size-medium: 20px;
+        --icon-size-sm: 16px;
+        --icon-size-small: 16px;
+        --icon-size-xs: 14px;
+        --link-column-heading-font-size: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);
+        --link-column-item-font-size: clamp(0.6875rem, 0.61rem + 0.38vw, 0.875rem);
+        --link-column-rule-color: color-mix(in srgb, currentColor 40%, transparent);
+        --radius-100: 0.25rem;
+        --side-dialog-width: 400px;
+        --side-dialog-width-sm: 320px;
+        --spacing-100: 0.25rem;
+        --spacing-150: 0.375rem;
+        --spacing-200: 0.5rem;
+        --spacing-300: 0.75rem;
+        --spacing-400: 1rem;
+        --spacing-500: 1.5rem;
+        --spacing-600: 2rem;
+        --spacing-650: 2.5rem;
+        --spacing-800: 4rem;
+        --transition-fast: 0.15s ease;
+        --type-size-150: clamp(0.6875rem, 0.61rem + 0.38vw, 0.875rem);
+        --type-size-200: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);
+      }
+
+      *,
+      *:before,
+      *:after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--font-sans, system-ui, sans-serif);
+        color: var(--color-text-primary, #171717);
+        background: var(--color-surface, #fff);
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: var(--color-text-link, #1e5386);
+        text-decoration: none;
+      }
+      .cbf-app-bar--admin {
+        --app-bar-gap: var(--spacing-650);
+      }
+      .esa-app-bar {
+        --_bar-gap: var(--app-bar-gap, var(--spacing-600, 32px));
+        --_bar-pad-x: var(--app-bar-pad-x, var(--spacing-600, 32px));
+        --_bar-pad-y: var(--app-bar-pad-y, var(--spacing-400, 16px));
+        display: block;
+        width: 100%;
+        background: var(--app-bar-bg, var(--color-surface, #fff));
+        color: var(--app-bar-text, var(--color-text-primary, #171717));
+      }
+      .esa-app-bar--brand-strong {
+        background: var(--app-bar-brand-strong-bg, var(--color-surface-inverse, #171717));
+        color: var(--app-bar-brand-strong-text, var(--color-text-inverse, #fff));
+      }
+      .esa-app-bar__row {
+        display: flex;
+        align-items: center;
+        gap: var(--_bar-gap);
+        padding: var(--_bar-pad-y) var(--_bar-pad-x);
+      }
+      .esa-app-bar__start,
+      .esa-app-bar__main,
+      .esa-app-bar__end {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--_bar-gap);
+      }
+      .esa-app-bar__start {
+        flex: none;
+      }
+      button {
+        font-family: inherit;
+        cursor: pointer;
+        background: none;
+        border: 0;
+      }
+      .esa-icon-link {
+        --_il-font: var(--icon-link-font-size-md, 1rem);
+        display: inline-flex;
+        align-items: center;
+        gap: var(--icon-link-gap, var(--spacing-150, 6px));
+        padding: 0;
+        margin: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        font-family: var(--font-sans, system-ui, sans-serif);
+        font-size: var(--_il-font);
+        font-weight: var(--font-weight-medium, 500);
+        line-height: 1;
+        text-decoration: none;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .esa-icon-link--sm {
+        --_il-font: var(--icon-link-font-size-sm, 0.875rem);
+      }
+      .esa-icon-link--medium {
+        font-weight: var(--font-weight-medium, 500);
+      }
+      .esa-icon-link__label {
+        display: inline-block;
+      }
+      .esa-app-bar__main {
+        flex: 1 1 auto;
+      }
+      .esa-app-bar__end {
+        flex: none;
+        margin-left: auto;
+      }
+      summary.esa-icon-link {
+        list-style: none;
+      }
+      .cbf-app-bar--header {
+        --app-bar-gap: var(--spacing-800);
+      }
+      .esa-app-bar--brand {
+        background: var(--app-bar-brand-bg, var(--color-primary, #43608a));
+        color: var(--app-bar-brand-text, var(--color-text-inverse, #fff));
+      }
+      img {
+        display: block;
+        max-width: 100%;
+      }
+      .stack {
+        --gap: var(--spacing-400, 1rem);
+        display: flex;
+        flex-direction: column;
+        gap: var(--gap);
+      }
+      [data-gap="lg"] {
+        --gap: var(--spacing-500, 1.5rem);
+      }
+      :where(h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd, ul, ol, pre) {
+        margin: 0;
+      }
+      .esa-container {
+        width: 100%;
+        max-width: var(--_container-max, 1556px);
+        margin-inline: auto;
+        padding-inline: var(--container-gutter, var(--spacing-600, 2rem));
+      }
+      .esa-breadcrumbs {
+        --_crumb-font-size: var(--type-size-200, 0.875rem);
+        --_crumb-link-color: var(--breadcrumbs-link-color, #43608a);
+        --_crumb-link-hover: var(--breadcrumbs-link-hover, #39506f);
+        --_crumb-current-color: var(--color-text-primary, #171717);
+        --_crumb-separator-color: var(--breadcrumbs-separator-color, #737373);
+        --_crumb-gap: var(--spacing-200, 8px);
+        display: block;
+      }
+      .esa-breadcrumbs__list {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--_crumb-gap);
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        font-size: var(--_crumb-font-size);
+      }
+      .esa-breadcrumbs__item {
+        display: flex;
+        align-items: center;
+        gap: var(--_crumb-gap);
+      }
+      .esa-breadcrumbs__link {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-100, 4px);
+        color: var(--_crumb-link-color);
+        text-decoration: none;
+      }
+      .esa-breadcrumbs__icon {
+        display: inline-flex;
+        align-items: center;
+      }
+      .esa-breadcrumbs__separator {
+        flex-shrink: 0;
+        color: var(--_crumb-separator-color);
+      }
+      .esa-breadcrumbs__current {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-100, 4px);
+        color: var(--_crumb-current-color);
+        font-weight: var(--font-weight-medium, 500);
+      }
+      html:has(.msow-page) {
+        height: 100%;
+      }
+      html:has(.msow-page) body {
+        height: 100%;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .skip-link {
+        position: absolute;
+        top: -40px;
+        left: 0;
+        background: var(--color-secondary);
+        color: var(--color-text-inverse, #fff);
+        padding: 8px 12px;
+        z-index: 9999;
+        font-size: 13px;
+        font-weight: var(--font-weight-bold);
+        border-radius: 0 0 4px;
+        transition: top 0.1s;
+      }
+      .msow-page {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding-block: var(--spacing-600);
+        overflow: hidden;
+        min-height: 0;
+      }
+      .msow-page .esa-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .msow-card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-100);
+        overflow: hidden;
+        background: var(--color-surface);
+        box-shadow: 0 1px 3px color-mix(in srgb, var(--color-surface-inverse) 8%, transparent);
+      }
+      .msow-crumb-strip {
+        background: var(--color-gold-50);
+        border-bottom: 1px solid var(--color-border);
+        padding: var(--spacing-400) var(--spacing-600);
+        flex-shrink: 0;
+      }
+      .msow-crumb-strip .esa-breadcrumbs {
+        --breadcrumbs-link-color: var(--color-text-secondary);
+        --breadcrumbs-link-hover: var(--color-primary);
+      }
+      .msow-toolbar {
+        background: var(--color-surface);
+        border-bottom: 1px solid var(--color-border);
+        padding: var(--spacing-300) var(--spacing-600);
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-600);
+      }
+      .msow-toolbar-identity {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        flex-shrink: 0;
+      }
+      .msow-tool-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: var(--font-weight-bold);
+        font-family: var(--font-display, var(--font-sans));
+        color: var(--color-surface-inverse);
+        white-space: nowrap;
+        line-height: 1.2;
+      }
+      .msow-contract-meta {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-100);
+        font-size: 11px;
+        color: var(--color-text-muted);
+      }
+      .msow-meta-sep {
+        color: var(--color-border-strong);
+      }
+      .msow-toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-200);
+        flex-shrink: 0;
+        margin-left: auto;
+      }
+      .msow-root {
+        font-size: 13px;
+      }
+      .msow-root {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0;
+      }
+      .msow-root * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      #msow-layout {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+        min-height: 0;
+      }
+      #wizard-panel {
+        width: 260px;
+        flex-shrink: 0;
+        background: var(--color-surface-sunken);
+        border-right: 1px solid var(--color-border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0;
+      }
+      #sidebar {
+        width: 300px;
+        flex-shrink: 0;
+        background: var(--color-surface);
+        border-right: 1px solid var(--color-border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #wizard-body-panel {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+        background: var(--color-surface-sunken);
+      }
+      #expert-panel {
+        display: none;
+        flex-direction: column;
+        height: 100%;
+        overflow: hidden;
+      }
+      #mapwrap {
+        flex: 1;
+        position: relative;
+        overflow: hidden;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      #map {
+        width: 100%;
+        height: 100%;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      #map-hint {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translate(-50%);
+        background: color-mix(in srgb, var(--color-primary) 92%, transparent);
+        color: var(--color-text-inverse, #fff);
+        padding: 5px 14px;
+        border-radius: 16px;
+        font-size: 11px;
+        pointer-events: none;
+        z-index: 999;
+        display: none;
+        white-space: nowrap;
+      }
+      #draw-done-btn {
+        display: none;
+        position: absolute;
+        top: 52px;
+        left: 50%;
+        transform: translate(-50%);
+        z-index: 1000;
+        background: var(--color-primary);
+        color: var(--color-text-inverse, #fff);
+        border: none;
+        padding: 6px 16px;
+        border-radius: 16px;
+        font-size: 12px;
+        font-weight: var(--font-weight-bold);
+        font-family: var(--font-sans, system-ui, sans-serif);
+        cursor: pointer;
+        box-shadow: 0 2px 8px #0000004d;
+        transition: background 0.15s ease;
+      }
+      #edit-done-bar {
+        display: none;
+        position: absolute;
+        top: 52px;
+        left: 50%;
+        transform: translate(-50%);
+        z-index: 1000;
+        align-items: center;
+        gap: var(--spacing-200);
+        white-space: nowrap;
+      }
+      #map-legend {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background: #fffffff7;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-100);
+        padding: 8px 10px;
+        font-size: 11px;
+        z-index: 999;
+        box-shadow: 0 2px 8px #0000001f;
+        min-width: 160px;
+      }
+      .leg-title {
+        font-size: 10px;
+        font-weight: var(--font-weight-bold);
+        color: var(--color-surface-inverse);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 5px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .leg-toggle {
+        cursor: pointer;
+        color: var(--color-text-muted);
+        font-weight: var(--font-weight-regular);
+        text-transform: none;
+        letter-spacing: 0;
+        font-size: 11px;
+      }
+      .leg-body.collapsed {
+        display: none;
+      }
+      #we-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #00000080;
+        z-index: 3000;
+        align-items: center;
+        justify-content: center;
+      }
+      #sowmodal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #00000080;
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+      }
+      .msow-welcome-card {
+        background: var(--color-surface);
+        width: 440px;
+        border-radius: var(--radius-100);
+        overflow: hidden;
+        box-shadow: 0 8px 32px #00000040;
+      }
+      .msow-welcome-head {
+        background: var(--color-primary);
+        padding: var(--spacing-500) var(--spacing-600);
+        border-bottom: 3px solid var(--color-primary-hover);
+      }
+      .msow-welcome-title {
+        color: var(--color-text-inverse, #fff);
+        font-size: 15px;
+        font-weight: var(--font-weight-bold);
+        margin: 0;
+      }
+      .msow-welcome-body {
+        padding: var(--spacing-500) var(--spacing-600) var(--spacing-500);
+      }
+      .msow-welcome-heading {
+        font-size: 14px;
+        font-weight: var(--font-weight-bold);
+        color: var(--color-surface-inverse);
+        margin-bottom: var(--spacing-300);
+      }
+      .msow-welcome-desc {
+        font-size: 12px;
+        color: var(--color-text-tertiary);
+        line-height: 1.65;
+      }
+      .msow-welcome-actions {
+        padding: 0 20px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .msow-welcome-btn,
+      .msow-welcome-btn .esa-button {
+        display: block;
+      }
+      .leaflet-top.leaflet-left {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 6px;
+      }
+      .leaflet-control-zoom {
+        border: none !important;
+        box-shadow: 0 2px 8px #0000004d !important;
+        flex-shrink: 0;
+      }
+      .leaflet-top.leaflet-left .leaflet-control {
+        margin-bottom: 0 !important;
+      }
+      .layer-control-container {
+        background: transparent;
+      }
+      .zoom-we-btn {
+        display: block;
+        background: var(--color-primary);
+        color: var(--color-text-inverse, #fff);
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: var(--font-weight-semibold);
+        box-shadow: 0 1px 4px #0006;
+        white-space: nowrap;
+      }
+      .layer-control-btn {
+        background: var(--color-primary);
+        color: var(--color-text-inverse, #fff);
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: var(--font-weight-semibold);
+        box-shadow: 0 1px 4px #0006;
+        white-space: nowrap;
+      }
+      .layer-control-panel {
+        background: var(--color-primary);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 4px;
+        padding: 10px 12px;
+        margin-top: 4px;
+        min-width: 170px;
+        box-shadow: 0 2px 8px #0006;
+      }
+      :host {
+        --_width: var(--side-dialog-width, 400px);
+      }
+      :host([size="sm"]) {
+        --_width: var(--side-dialog-width-sm, 320px);
+      }
+      .cbf-app-bar--admin {
+        --app-bar-pad-y: var(--spacing-300);
+      }
+      .cbf-app-bar--admin .esa-app-bar__row {
+        display: grid;
+        grid-template-columns: 1fr minmax(0, 380px) 1fr;
+      }
+      .cbf-app-bar--admin .esa-app-bar__start {
+        justify-self: start;
+      }
+      .cbf-nav-collapsible {
+        display: contents;
+      }
+      .cbf-app-bar--admin .esa-app-bar__main {
+        justify-content: center;
+      }
+      .cbf-omni-trigger {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-200);
+        width: 380px;
+        max-width: 100%;
+        padding: 5px var(--spacing-200) 5px var(--spacing-300);
+        background: #ffffff1a;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 999px;
+        color: #ffffffbf;
+        transition:
+          background 0.12s,
+          border-color 0.12s;
+      }
+      .cbf-app-bar--admin .cbf-omni-trigger {
+        min-width: 0;
+      }
+      .cbf-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        color: inherit;
+      }
+      .cbf-omni-trigger__ph {
+        flex: 1;
+        min-width: 0;
+        text-align: left;
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .cbf-omni-trigger__kbd {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: var(--font-weight-medium);
+        color: #ffffffd9;
+        background: #ffffff1f;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        border-radius: 4px;
+      }
+      .cbf-app-bar--admin .esa-app-bar__end {
+        justify-self: end;
+      }
+      .esa-nav-dropdown {
+        position: relative;
+      }
+      .esa-nav-dropdown .esa-icon-link > .esa-icon:last-child {
+        transition: transform 0.15s ease;
+      }
+      .cbf-nav-burger {
+        display: none;
+      }
+      .cbf-logo {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-300, 12px);
+        flex: none;
+        color: inherit;
+        text-decoration: none;
+      }
+      .cbf-logo__mark {
+        width: 48px;
+        height: 48px;
+        flex: none;
+      }
+      .cbf-logo__type {
+        height: 40px;
+        width: auto;
+      }
+      .cbf-nav-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-600);
+      }
+      .cbf-nav-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: inherit;
+        background: none;
+        border: 0;
+        font-size: 16px;
+        font-weight: var(--font-weight-medium);
+        white-space: nowrap;
+      }
+      .cbf-nav-link .cbf-icon {
+        display: inline-flex;
+        align-items: center;
+      }
+      .cbf-nav-link--user {
+        position: relative;
+        padding-left: var(--spacing-500);
+      }
+      .cbf-nav-link--user:before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 1px;
+        height: 1.1em;
+        background: #ffffff40;
+      }
+      .cbf-omni {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+      }
+      .cbf-omni[hidden] {
+        display: none;
+      }
+      .esa-link-column {
+        color: inherit;
+      }
+      .esa-link-column__head {
+        display: block;
+        margin: 0 0 var(--spacing-100, 4px);
+        font-size: var(--link-column-heading-font-size, var(--type-size-200, 1rem));
+        font-weight: var(--font-weight-medium, 500);
+        color: inherit;
+        text-decoration: none;
+      }
+      .esa-link-column__rule {
+        height: 1px;
+        border: 0;
+        margin: 0 0 var(--spacing-200, 8px);
+        background: var(
+          --link-column-rule-color,
+          color-mix(in srgb, currentColor 40%, transparent)
+        );
+      }
+      .esa-link-column__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .esa-link-column__list li {
+        font-size: var(--link-column-item-font-size, var(--type-size-150, 0.875rem));
+        line-height: 22px;
+        margin-bottom: var(--spacing-100, 4px);
+      }
+      .esa-link-column__list a {
+        color: inherit;
+        text-decoration: none;
+      }
+      .esa-button {
+        --_btn-height: var(--form-height-md, 40px);
+        --_btn-padding-x: var(--form-padding-x-md, 16px);
+        --_btn-font-size: var(--form-font-size-md, 14px);
+        --_btn-radius: var(--form-radius-md, 6px);
+        --_accent: var(--color-primary, #46a758);
+        --_accent-hover: var(--color-primary-hover, #3e9b4f);
+        --_on: var(--color-text-inverse, #ffffff);
+        --_accent-text: var(--_accent);
+        --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);
+        --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);
+        display: inline-block;
+      }
+      .esa-button--sm {
+        --_btn-height: var(--form-height-sm, 32px);
+        --_btn-padding-x: var(--form-padding-x-sm, 12px);
+        --_btn-font-size: var(--form-font-size-sm, 12px);
+        --_btn-radius: var(--form-radius-sm, 4px);
+      }
+      .esa-button__native {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--spacing-200, 8px);
+        width: 100%;
+        height: var(--_btn-height);
+        padding-inline: var(--_btn-padding-x);
+        border: 1px solid transparent;
+        border-radius: var(--_btn-radius);
+        font-size: var(--_btn-font-size);
+        font-family: var(--font-sans, system-ui, sans-serif);
+        font-weight: var(--font-weight-medium, 500);
+        line-height: 1;
+        text-decoration: none;
+        cursor: pointer;
+        transition:
+          background var(--transition-fast, 0.15s ease),
+          border-color var(--transition-fast, 0.15s ease);
+        -webkit-appearance: none;
+        appearance: none;
+      }
+      .esa-button--sm .esa-button__native {
+        height: auto;
+        padding-block: var(--spacing-150, 6px);
+      }
+      .esa-button--appearance-outline .esa-button__native,
+      .esa-button--appearance-dashed .esa-button__native {
+        background: transparent;
+        color: var(--_accent-text);
+        border-color: var(--_accent);
+      }
+      .esa-button--color-ghost .esa-button__native {
+        background: transparent;
+        color: var(--color-text-primary, #171717);
+        border-color: transparent;
+      }
+      .esa-button--color-ghost.esa-button--appearance-outline .esa-button__native,
+      .esa-button--color-ghost.esa-button--appearance-dashed .esa-button__native {
+        border-color: var(--color-border, #e5e5e5);
+      }
+      .esa-button__label {
+        white-space: nowrap;
+      }
+      .esa-button--color-primary {
+        --_accent-text: var(--color-primary-strong);
+      }
+      .esa-button--appearance-fill .esa-button__native {
+        background: var(--_accent);
+        color: var(--_on);
+        border-color: transparent;
+      }
+      .esa-icon {
+        --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: var(--_icon-size);
+        height: var(--_icon-size);
+        line-height: 1;
+        color: inherit;
+      }
+      .esa-icon--xs {
+        --_icon-size: var(--icon-size-xs, 14px);
+      }
+      .esa-icon svg {
+        display: block;
+        width: var(--_icon-size);
+        height: var(--_icon-size);
+      }
+      .esa-icon--sm {
+        --_icon-size: var(--icon-size-sm, var(--icon-size-small, 16px));
+      }
+      .esa-icon--md {
+        --_icon-size: var(--icon-size-md, var(--icon-size-medium, 20px));
+      }
+      .leaflet-container {
+        overflow: hidden;
+      }
+      .leaflet-container {
+        -webkit-tap-highlight-color: transparent;
+      }
+      .leaflet-container {
+        background: #ddd;
+        outline-offset: 1px;
+      }
+      .leaflet-container {
+        font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+        font-size: 12px;
+        font-size: 0.75rem;
+        line-height: 1.5;
+      }
+      .leaflet-image-layer,
+      .leaflet-layer,
+      .leaflet-marker-icon,
+      .leaflet-marker-shadow,
+      .leaflet-pane,
+      .leaflet-pane > canvas,
+      .leaflet-pane > svg,
+      .leaflet-tile,
+      .leaflet-tile-container,
+      .leaflet-zoom-box {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+      .leaflet-pane {
+        z-index: 400;
+      }
+      .leaflet-tile-pane {
+        z-index: 200;
+      }
+      .leaflet-overlay-pane {
+        z-index: 400;
+      }
+      .leaflet-shadow-pane {
+        z-index: 500;
+      }
+      .leaflet-marker-pane {
+        z-index: 600;
+      }
+      .leaflet-tooltip-pane {
+        z-index: 650;
+      }
+      .leaflet-popup-pane {
+        z-index: 700;
+      }
+      .leaflet-control,
+      .leaflet-popup-pane {
+        cursor: auto;
+      }
+      .leaflet-bottom,
+      .leaflet-top {
+        position: absolute;
+        z-index: 1000;
+        pointer-events: none;
+      }
+      .leaflet-top {
+        top: 0;
+      }
+      .leaflet-left {
+        left: 0;
+      }
+      .leaflet-right {
+        right: 0;
+      }
+      .leaflet-bottom {
+        bottom: 0;
+      }
+      .leaflet-grab {
+        cursor: -webkit-grab;
+        cursor: -moz-grab;
+        cursor: grab;
+      }
+      .leaflet-container.leaflet-touch-zoom {
+        -ms-touch-action: pan-x pan-y;
+        touch-action: pan-x pan-y;
+      }
+      .leaflet-container.leaflet-touch-drag {
+        -ms-touch-action: pinch-zoom;
+        touch-action: none;
+        touch-action: pinch-zoom;
+      }
+      .leaflet-container.leaflet-touch-drag.leaflet-touch-zoom {
+        -ms-touch-action: none;
+        touch-action: none;
+      }
+      .leaflet-zoom-animated {
+        -webkit-transform-origin: 0 0;
+        -ms-transform-origin: 0 0;
+        transform-origin: 0 0;
+      }
+      .leaflet-image-layer,
+      .leaflet-marker-icon,
+      .leaflet-marker-shadow,
+      .leaflet-pane > svg path,
+      .leaflet-tile-container {
+        pointer-events: none;
+      }
+      .leaflet-control {
+        position: relative;
+        z-index: 800;
+        pointer-events: visiblePainted;
+        pointer-events: auto;
+      }
+      .leaflet-control {
+        float: left;
+        clear: both;
+      }
+      .leaflet-bar {
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.65);
+        border-radius: 4px;
+      }
+      .leaflet-top .leaflet-control {
+        margin-top: 10px;
+      }
+      .leaflet-left .leaflet-control {
+        margin-left: 10px;
+      }
+      .leaflet-touch .leaflet-bar,
+      .leaflet-touch .leaflet-control-attribution,
+      .leaflet-touch .leaflet-control-layers {
+        box-shadow: none;
+      }
+      .leaflet-touch .leaflet-bar,
+      .leaflet-touch .leaflet-control-layers {
+        border: 2px solid rgba(0, 0, 0, 0.2);
+        background-clip: padding-box;
+      }
+      .leaflet-control-zoom-in,
+      .leaflet-control-zoom-out {
+        font:
+          bold 18px "Lucida Console",
+          Monaco,
+          monospace;
+        text-indent: 1px;
+      }
+      .leaflet-container a {
+        -webkit-tap-highlight-color: rgba(51, 181, 229, 0.4);
+      }
+      .leaflet-container a {
+        color: #0078a8;
+      }
+      .leaflet-bar a {
+        background-color: #fff;
+        border-bottom: 1px solid #ccc;
+        width: 26px;
+        height: 26px;
+        line-height: 26px;
+        display: block;
+        text-align: center;
+        text-decoration: none;
+        color: #000;
+      }
+      .leaflet-bar a,
+      .leaflet-control-layers-toggle {
+        background-position: 50% 50%;
+        background-repeat: no-repeat;
+        display: block;
+      }
+      .leaflet-touch .leaflet-control-zoom-in,
+      .leaflet-touch .leaflet-control-zoom-out {
+        font-size: 22px;
+      }
+      .leaflet-bar a:first-child {
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+      }
+      .leaflet-touch .leaflet-bar a {
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+      }
+      .leaflet-touch .leaflet-bar a:first-child {
+        border-top-left-radius: 2px;
+        border-top-right-radius: 2px;
+      }
+      .leaflet-bar a:last-child {
+        border-bottom-left-radius: 4px;
+        border-bottom-right-radius: 4px;
+        border-bottom: none;
+      }
+      .leaflet-touch .leaflet-bar a:last-child {
+        border-bottom-left-radius: 2px;
+        border-bottom-right-radius: 2px;
+      }
+      .leaflet-right .leaflet-control {
+        float: right;
+      }
+      .leaflet-bottom .leaflet-control {
+        margin-bottom: 10px;
+      }
+      .leaflet-right .leaflet-control {
+        margin-right: 10px;
+      }
+      .leaflet-bottom .leaflet-control-scale {
+        margin-bottom: 5px;
+      }
+      .leaflet-control-attribution,
+      .leaflet-control-scale-line {
+        padding: 0 5px;
+        color: #333;
+        line-height: 1.4;
+      }
+      .leaflet-control-scale-line {
+        border: 2px solid #777;
+        border-top: none;
+        line-height: 1.1;
+        padding: 2px 5px 1px;
+        white-space: nowrap;
+        -moz-box-sizing: border-box;
+        box-sizing: border-box;
+        background: rgba(255, 255, 255, 0.8);
+        text-shadow: 1px 1px #fff;
+      }
+      .leaflet-control-scale-line:not(:first-child) {
+        border-top: 2px solid #777;
+        border-bottom: none;
+        margin-top: -2px;
+      }
+      .leaflet-container .leaflet-control-attribution {
+        background: #fff;
+        background: rgba(255, 255, 255, 0.8);
+        margin: 0;
+      }
+      .leaflet-control-attribution a {
+        text-decoration: none;
+      }
+      .leaflet-attribution-flag {
+        display: inline !important;
+        vertical-align: baseline !important;
+        width: 1em;
+        height: 0.6669em;
+      }
+      .leaflet-marker-icon,
+      .leaflet-marker-shadow,
+      .leaflet-tile {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+      .leaflet-tile {
+        filter: inherit;
+        visibility: hidden;
+      }
+      .leaflet-container .leaflet-marker-pane img,
+      .leaflet-container .leaflet-shadow-pane img,
+      .leaflet-container .leaflet-tile,
+      .leaflet-container .leaflet-tile-pane img,
+      .leaflet-container img.leaflet-image-layer {
+        max-width: none !important;
+        max-height: none !important;
+        width: auto;
+        padding: 0;
+      }
+      .leaflet-container img.leaflet-tile {
+        mix-blend-mode: plus-lighter;
+      }
+      .leaflet-tile::selection {
+        background: 0 0;
+      }
+      .leaflet-tile-loaded {
+        visibility: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <a href="#map" class="skip-link">Skip to map</a>
+    <nav class="esa-app-bar esa-app-bar--brand-strong cbf-app-bar--admin">
+      <div class="esa-app-bar__row">
+        <div class="esa-app-bar__start">
+          <div class="cbf-nav-collapsible">
+            <button class="esa-icon-link esa-icon-link--sm esa-icon-link--medium" type="button">
+              <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                  <path d="M3 5V19A9 3 0 0 0 21 19V5"></path>
+                  <path d="M3 12A9 3 0 0 0 21 12"></path>
+                </svg>
+              </span>
+              <span class="esa-icon-link__label">Data management</span>
+              <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <path d="m6 9 6 6 6-6"></path>
+                </svg>
+              </span>
+            </button>
+            <button class="esa-icon-link esa-icon-link--sm esa-icon-link--medium" type="button">
+              <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <path
+                    d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"
+                  ></path>
+                </svg>
+              </span>
+              <span class="esa-icon-link__label">System status</span>
+              <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <path d="m6 9 6 6 6-6"></path>
+                </svg>
+              </span>
+            </button>
+            <button class="esa-icon-link esa-icon-link--sm esa-icon-link--medium" type="button">
+              <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <path
+                    d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+                  ></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </span>
+              <span class="esa-icon-link__label">System configuration</span>
+              <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <path d="m6 9 6 6 6-6"></path>
+                </svg>
+              </span>
+            </button>
+          </div>
+        </div>
+        <div class="esa-app-bar__main">
+          <button class="cbf-omni-trigger" type="button" data-omni-open="" aria-label="Search">
+            <span class="cbf-icon"
+              ><svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path></svg
+            ></span>
+            <span class="cbf-omni-trigger__ph">Search projects, contracts, people…</span>
+            <kbd class="cbf-omni-trigger__kbd">/</kbd>
+          </button>
+        </div>
+        <div class="esa-app-bar__end">
+          <div class="cbf-nav-collapsible">
+            <details class="esa-nav-dropdown esa-nav-dropdown--end">
+              <summary class="esa-icon-link esa-icon-link--sm esa-icon-link--medium">
+                <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    focusable="false"
+                  >
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <path d="M12 17h.01"></path>
+                  </svg>
+                </span>
+                <span class="esa-icon-link__label">Help</span>
+                <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    focusable="false"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </span>
+              </summary>
+              <div class="esa-nav-dropdown__panel">
+                <div class="esa-link-column">
+                  <span class="esa-link-column__head">Help</span>
+                  <hr class="esa-link-column__rule" />
+                  <ul class="esa-link-column__list">
+                    <li>Help center</li>
+                    <li>Data dictionary</li>
+                    <li>EF&amp;W Program documents</li>
+                    <li>Request support</li>
+                    <li>Send feedback</li>
+                  </ul>
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <header class="esa-app-bar esa-app-bar--brand cbf-app-bar--header">
+      <div class="esa-app-bar__row">
+        <div class="esa-app-bar__start">
+          <span class="cbf-nav-burger" data-nav-toggle="">
+            <button
+              class="esa-icon-button esa-icon-button--md"
+              type="button"
+              aria-label="Open menu"
+              title="Open menu"
+            >
+              <span class="esa-icon esa-icon--md" aria-hidden="true">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <line x1="4" x2="20" y1="6" y2="6"></line>
+                  <line x1="4" x2="20" y1="12" y2="12"></line>
+                  <line x1="4" x2="20" y1="18" y2="18"></line>
+                </svg>
+              </span>
+            </button>
+          </span>
+          <a
+            class="cbf-logo"
+            href="/cb-fish-design/home"
+            title="Columbia Basin Fish &amp; Wildlife Program"
+          >
+            <img class="cbf-logo__mark" src="/cb-fish-design/logo-mark.svg" alt="" />
+            <img
+              class="cbf-logo__type"
+              src="/cb-fish-design/logo-type.svg"
+              alt="Columbia Basin Fish &amp; Wildlife Program"
+            />
+          </a>
+        </div>
+        <div class="esa-app-bar__main">
+          <div class="cbf-nav-collapsible cbf-nav-collapsible--inline">
+            <details class="esa-nav-dropdown esa-nav-dropdown--start">
+              <summary class="esa-icon-link esa-icon-link--md esa-icon-link--medium">
+                <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    focusable="false"
+                  >
+                    <path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"></path>
+                    <path d="M7 16v6"></path>
+                    <path d="M13 19v3"></path>
+                    <path
+                      d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5"
+                    ></path>
+                  </svg>
+                </span>
+                <span class="esa-icon-link__label">Mitigation work</span>
+                <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    focusable="false"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </span>
+              </summary>
+              <div class="esa-nav-dropdown__panel">
+                <div class="esa-link-column">
+                  <span class="esa-link-column__head">Mitigation work</span>
+                  <hr class="esa-link-column__rule" />
+                  <ul class="esa-link-column__list">
+                    <li>Projects</li>
+                    <li>Contracts</li>
+                    <li>Portfolios</li>
+                    <li>Work elements</li>
+                    <li>Estuary program</li>
+                    <li>Tributary habitat</li>
+                    <li>Land acquisitions</li>
+                  </ul>
+                </div>
+              </div>
+            </details>
+            <details class="esa-nav-dropdown esa-nav-dropdown--start">
+              <summary class="esa-icon-link esa-icon-link--md esa-icon-link--medium">
+                <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    focusable="false"
+                  >
+                    <path d="M16 7h6v6"></path>
+                    <path d="m22 7-8.5 8.5-5-5L2 17"></path>
+                  </svg>
+                </span>
+                <span class="esa-icon-link__label">Reporting</span>
+                <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    focusable="false"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </span>
+              </summary>
+              <div class="esa-nav-dropdown__panel">
+                <div class="esa-link-column">
+                  <span class="esa-link-column__head">Reporting</span>
+                  <hr class="esa-link-column__rule" />
+                  <ul class="esa-link-column__list">
+                    <li>Report Center</li>
+                    <li>Maps</li>
+                    <li>Publications</li>
+                  </ul>
+                </div>
+              </div>
+            </details>
+            <details class="esa-nav-dropdown esa-nav-dropdown--start">
+              <summary class="esa-icon-link esa-icon-link--md esa-icon-link--medium">
+                <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    focusable="false"
+                  >
+                    <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+                    <line x1="2" x2="22" y1="10" y2="10"></line>
+                  </svg>
+                </span>
+                <span class="esa-icon-link__label">Funding</span>
+                <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    focusable="false"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </span>
+              </summary>
+              <div class="esa-nav-dropdown__panel">
+                <div class="esa-link-column">
+                  <span class="esa-link-column__head">Funding</span>
+                  <hr class="esa-link-column__rule" />
+                  <ul class="esa-link-column__list">
+                    <li>Funds</li>
+                    <li>Fund budgets summary</li>
+                    <li>Long-term funding agreements</li>
+                    <li><a href="/cb-fish-design/project-budgets">Project budgets</a></li>
+                    <li>Working budgets</li>
+                    <li>Expenditures</li>
+                    <li>Accruals</li>
+                  </ul>
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+        <div class="esa-app-bar__end">
+          <div class="cbf-nav-actions">
+            <button class="cbf-nav-link cbf-nav-link--collapse" type="button">
+              <span class="cbf-icon"
+                ><svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                  <path d="M3 3v5h5"></path>
+                  <path d="M12 7v5l4 2"></path></svg
+              ></span>
+              Recent
+              <span class="cbf-icon"
+                ><svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m6 9 6 6 6-6"></path></svg
+              ></span>
+            </button>
+            <a class="cbf-nav-link cbf-nav-link--collapse" href="#">
+              <span class="cbf-icon"
+                ><svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <rect width="7" height="9" x="3" y="3" rx="1"></rect>
+                  <rect width="7" height="5" x="14" y="3" rx="1"></rect>
+                  <rect width="7" height="9" x="14" y="12" rx="1"></rect>
+                  <rect width="7" height="5" x="3" y="16" rx="1"></rect></svg
+              ></span>
+              Dashboard
+            </a>
+            <button class="cbf-nav-link cbf-nav-link--user" type="button" data-omni-user="">
+              <span class="cbf-icon"
+                ><svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M18 20a6 6 0 0 0-12 0"></path>
+                  <circle cx="12" cy="10" r="4"></circle></svg
+              ></span>
+              Angela Zhao
+              <span class="cbf-icon"
+                ><svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="m6 9 6 6 6-6"></path></svg
+              ></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div class="cbf-omni" data-omni="" hidden="">
+      <div class="cbf-omni__scrim" data-omni-close=""></div>
+      <div
+        class="cbf-omni__panel cbf-search-surface"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search"
+      >
+        <div class="cbf-omni__searchrow">
+          <span class="cbf-icon cbf-omni__searchicon"
+            ><svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.3-4.3"></path></svg
+          ></span>
+          <input
+            class="cbf-omni__input"
+            data-omni-input=""
+            type="text"
+            placeholder="Search projects, contracts, people, publications…"
+            autocomplete="off"
+          />
+          <button class="cbf-omni__clear" data-omni-clear="" type="button" aria-label="Clear">
+            <span class="cbf-icon"
+              ><svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M18 6 6 18"></path>
+                <path d="m6 6 12 12"></path></svg
+            ></span>
+          </button>
+        </div>
+        <div class="cbf-omni__scopes" data-omni-scopes=""></div>
+        <div class="cbf-omni__body">
+          <!-- default view: brand illustration + search note (Recent lives in the nav) -->
+          <div class="cbf-omni__empty" data-omni-empty="">
+            <div class="cbf-omni__hero">
+              <img class="cbf-omni__art" src="/cb-fish-design/dam-illustration.jpg" alt="" />
+              <p class="cbf-omni__hero-title">Search the Program</p>
+              <p class="cbf-omni__hero-note">
+                Find projects, contracts, people, and publications across the Columbia Basin. Start
+                typing, or press <kbd class="esa-kbd">Tab</kbd> to choose a scope.
+              </p>
+            </div>
+          </div>
+          <!-- query view: grouped results (injected) -->
+          <div class="cbf-omni__results" data-omni-results="" hidden=""></div>
+        </div>
+        <button class="cbf-omni__showall" data-omni-showall="" type="button" hidden="">
+          <span data-omni-showall-label="">Show all results</span>
+          <span class="cbf-icon"
+            ><svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m9 18 6-6-6-6"></path></svg
+          ></span>
+        </button>
+        <div class="cbf-omni__footer">
+          <div class="cbf-omni__hints">
+            <span><kbd class="esa-kbd">↑</kbd> <kbd class="esa-kbd">↓</kbd> Navigate</span>
+            <span><kbd class="esa-kbd">↵</kbd> Select</span>
+            <span><kbd class="esa-kbd">Tab</kbd> Scope</span>
+            <span><kbd class="esa-kbd">Esc</kbd> Close</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <esa-side-dialog
+      position="left"
+      heading="Menu"
+      size="sm"
+      class="cbf-nav-drawer"
+      data-nav-drawer="true"
+    >
+      <nav class="stack" data-gap="lg" aria-label="Site navigation">
+        <div class="esa-link-column">
+          <span class="esa-link-column__head">Mitigation work</span>
+          <hr class="esa-link-column__rule" />
+          <ul class="esa-link-column__list">
+            <li>Projects</li>
+            <li>Contracts</li>
+            <li>Portfolios</li>
+            <li>Work elements</li>
+            <li>Estuary program</li>
+            <li>Tributary habitat</li>
+            <li>Land acquisitions</li>
+          </ul>
+        </div>
+        <div class="esa-link-column">
+          <span class="esa-link-column__head">Reporting</span>
+          <hr class="esa-link-column__rule" />
+          <ul class="esa-link-column__list">
+            <li>Report Center</li>
+            <li>Maps</li>
+            <li>Publications</li>
+          </ul>
+        </div>
+        <div class="esa-link-column">
+          <span class="esa-link-column__head">Funding</span>
+          <hr class="esa-link-column__rule" />
+          <ul class="esa-link-column__list">
+            <li>Funds</li>
+            <li>Fund budgets summary</li>
+            <li>Long-term funding agreements</li>
+            <li><a href="/cb-fish-design/project-budgets">Project budgets</a></li>
+            <li>Working budgets</li>
+            <li>Expenditures</li>
+            <li>Accruals</li>
+          </ul>
+        </div>
+        <div class="esa-link-column">
+          <span class="esa-link-column__head">Quick links</span>
+          <hr class="esa-link-column__rule" />
+          <ul class="esa-link-column__list">
+            <li><a href="#">Recent</a></li>
+            <li><a href="#">Dashboard</a></li>
+          </ul>
+        </div>
+        <div class="esa-link-column">
+          <span class="esa-link-column__head">System</span>
+          <hr class="esa-link-column__rule" />
+          <ul class="esa-link-column__list">
+            <li>Data management</li>
+            <li>System status</li>
+            <li>System configuration</li>
+          </ul>
+        </div>
+        <div class="esa-link-column">
+          <span class="esa-link-column__head">Help</span>
+          <hr class="esa-link-column__rule" />
+          <ul class="esa-link-column__list">
+            <li>Help center</li>
+            <li>Data dictionary</li>
+            <li>EF&amp;W Program documents</li>
+            <li>Request support</li>
+            <li>Send feedback</li>
+          </ul>
+        </div>
+      </nav>
+    </esa-side-dialog>
+    <main class="msow-page">
+      <div class="esa-container" style="--_container-max: 1920px">
+        <div class="msow-card">
+          <!-- Gold breadcrumb strip -->
+          <div class="msow-crumb-strip">
+            <nav class="esa-breadcrumbs esa-breadcrumbs--md" aria-label="Breadcrumb">
+              <ol class="esa-breadcrumbs__list">
+                <li class="esa-breadcrumbs__item">
+                  <a href="/cb-fish-design/" class="esa-breadcrumbs__link">
+                    <span class="esa-breadcrumbs__icon"
+                      ><svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                        <path d="M9 22V12h6v10"></path></svg
+                    ></span>
+                    Home
+                  </a>
+                  <svg
+                    class="esa-breadcrumbs__separator"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m9 18 6-6-6-6"></path>
+                  </svg>
+                </li>
+                <li class="esa-breadcrumbs__item" aria-current="page">
+                  <span class="esa-breadcrumbs__current"> Habitat Design Tool </span>
+                </li>
+              </ol>
+            </nav>
+          </div>
+          <!-- Toolbar: H1 + contract metadata | WE switcher | actions -->
+          <div class="msow-toolbar">
+            <div class="msow-toolbar-identity">
+              <h1 class="msow-tool-title">Habitat Design Tool</h1>
+              <div class="msow-contract-meta">
+                <span>#84051 REL 50</span> <span class="msow-meta-sep">·</span> <span>FY 2026</span>
+                <span class="msow-meta-sep">·</span> <span>Virginia Preiss</span>
+              </div>
+            </div>
+            <!-- WE selector/edit/delete/add hidden for now — per request, kept for easy restore.
+          <div class="msow-we-selector">
+            <select
+              id="msow-we-dropdown"
+              class="msow-we-select"
+              onchange="selectWEFromDropdown(this.value)"
+              aria-label="Select work element"
+            >
+              <option value="">— No work elements yet —</option>
+            </select>
+            <button
+              id="we-edit-btn"
+              class="msow-we-action-btn"
+              onclick="openWEModal(activeWEId)"
+              title="Edit work element"
+              disabled
+            >&#9998;</button>
+            <button
+              id="we-delete-btn"
+              class="msow-we-action-btn msow-we-action-btn--danger"
+              onclick="deleteWE(activeWEId)"
+              title="Delete work element"
+              disabled
+            >&#10005;</button>
+            <span onclick="openWEModal(null)">
+              <EsaButton color="primary" size="sm" icon="plus">Add WE</EsaButton>
+            </span>
+          </div>
+          -->
+            <div class="msow-toolbar-actions">
+              <span onclick="clearAll()">
+                <span
+                  class="esa-button esa-button--color-ghost esa-button--appearance-outline esa-button--sm"
+                >
+                  <button class="esa-button__native" type="button">
+                    <span class="esa-button__label"> Clear All </span>
+                  </button>
+                </span>
+              </span>
+              <span onclick="openSOW()">
+                <span
+                  class="esa-button esa-button--color-primary esa-button--appearance-fill esa-button--sm"
+                >
+                  <button class="esa-button__native" type="button">
+                    <span class="esa-button__label"> Export Metrics </span>
+                  </button>
+                </span>
+              </span>
+            </div>
+          </div>
+          <!-- GIS layout: [wizard column] [sidebar] [map] — wizard only visible when active -->
+          <div class="msow-root">
+            <div id="msow-layout">
+              <!-- Wizard column — rendered by renderWizardStep(); shown by CSS default (Guided is the only mode) -->
+              <div id="wizard-panel" role="region" aria-label="Guided workflow"></div>
+              <div id="sidebar" role="complementary" aria-label="Work element details">
+                <!-- Wizard step body — shown when guided mode is active -->
+                <div id="wizard-body-panel"></div>
+                <!-- Expert panel — default view -->
+                <div id="expert-panel">
+                  <div id="sidebar-empty" aria-live="polite">
+                    <div class="big" aria-hidden="true">✎</div>
+                    <p>
+                      Add a work element to begin entering pre-project metrics and habitat work
+                      details.
+                    </p>
+                  </div>
+                  <div id="inner-tabbar" role="tablist" aria-label="Work element sections">
+                    <div
+                      class="itab active"
+                      id="itab-pp"
+                      role="tab"
+                      aria-selected="true"
+                      aria-controls="pp-side"
+                      tabindex="0"
+                      onclick="showInnerTab('pp')"
+                      onkeydown="
+                        if (event.key === 'Enter' || event.key === ' ') showInnerTab('pp');
+                      "
+                    >
+                      Pre-Project <span class="badge warn" id="pp-badge">0/11</span>
+                    </div>
+                    <div
+                      class="itab"
+                      id="itab-work"
+                      role="tab"
+                      aria-selected="false"
+                      aria-controls="work-side"
+                      tabindex="-1"
+                      onclick="showInnerTab('work')"
+                      onkeydown="
+                        if (event.key === 'Enter' || event.key === ' ') showInnerTab('work');
+                      "
+                    >
+                      Habitat Work
+                    </div>
+                  </div>
+                  <div id="pp-side" role="tabpanel" aria-labelledby="itab-pp"></div>
+                  <div id="work-side" role="tabpanel" aria-labelledby="itab-work"></div>
+                </div>
+              </div>
+              <div
+                id="mapwrap"
+                role="application"
+                aria-label="Interactive map — use the sidebar controls to draw features"
+              >
+                <div
+                  id="map"
+                  role="application"
+                  aria-label="Interactive map"
+                  class="leaflet-container leaflet-touch leaflet-fade-anim leaflet-grab leaflet-touch-drag leaflet-touch-zoom"
+                  style="position: relative"
+                  tabindex="0"
+                >
+                  <div
+                    class="leaflet-pane leaflet-map-pane"
+                    style="transform: translate3d(0px, 0px, 0px)"
+                  >
+                    <div class="leaflet-pane leaflet-tile-pane">
+                      <div class="leaflet-layer" style="z-index: 1; opacity: 1">
+                        <div
+                          class="leaflet-tile-container leaflet-zoom-animated"
+                          style="z-index: 19; transform: translate3d(0px, 0px, 0px) scale(1)"
+                        >
+                          <img
+                            alt=""
+                            src="https://c.basemaps.cartocdn.com/rastertiles/voyager/7/20/45.png"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(31px, 132px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://a.basemaps.cartocdn.com/rastertiles/voyager/7/21/45.png"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(287px, 132px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://b.basemaps.cartocdn.com/rastertiles/voyager/7/20/44.png"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(31px, -124px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://c.basemaps.cartocdn.com/rastertiles/voyager/7/21/44.png"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(287px, -124px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://a.basemaps.cartocdn.com/rastertiles/voyager/7/20/46.png"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(31px, 388px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://b.basemaps.cartocdn.com/rastertiles/voyager/7/21/46.png"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(287px, 388px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://b.basemaps.cartocdn.com/rastertiles/voyager/7/19/45.png"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(-225px, 132px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://b.basemaps.cartocdn.com/rastertiles/voyager/7/22/45.png"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(543px, 132px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://a.basemaps.cartocdn.com/rastertiles/voyager/7/19/44.png"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(-225px, -124px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://a.basemaps.cartocdn.com/rastertiles/voyager/7/22/44.png"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(543px, -124px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://c.basemaps.cartocdn.com/rastertiles/voyager/7/19/46.png"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(-225px, 388px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://c.basemaps.cartocdn.com/rastertiles/voyager/7/22/46.png"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(543px, 388px, 0px);
+                              opacity: 1;
+                            "
+                          />
+                        </div>
+                      </div>
+                      <div class="leaflet-layer" style="z-index: 1; opacity: 1">
+                        <div
+                          class="leaflet-tile-container leaflet-zoom-animated"
+                          style="z-index: 20; transform: translate3d(0px, 0px, 0px) scale(1)"
+                        >
+                          <img
+                            alt=""
+                            src="https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/7/45/20"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(31px, 132px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/7/45/21"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(287px, 132px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/7/44/20"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(31px, -124px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/7/44/21"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(287px, -124px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/7/46/20"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(31px, 388px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/7/46/21"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(287px, 388px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/7/45/19"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(-225px, 132px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/7/45/22"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(543px, 132px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/7/44/19"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(-225px, -124px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/7/44/22"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(543px, -124px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/7/46/19"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(-225px, 388px, 0px);
+                              opacity: 1;
+                            "
+                          /><img
+                            alt=""
+                            src="https://basemap.nationalmap.gov/arcgis/rest/services/USGSHydroCached/MapServer/tile/7/46/22"
+                            class="leaflet-tile leaflet-tile-loaded"
+                            style="
+                              width: 256px;
+                              height: 256px;
+                              transform: translate3d(543px, 388px, 0px);
+                              opacity: 1;
+                            "
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="leaflet-pane leaflet-overlay-pane"></div>
+                    <div class="leaflet-pane leaflet-shadow-pane"></div>
+                    <div class="leaflet-pane leaflet-marker-pane"></div>
+                    <div class="leaflet-pane leaflet-tooltip-pane"></div>
+                    <div class="leaflet-pane leaflet-popup-pane"></div>
+                    <div class="leaflet-proxy leaflet-zoom-animated"></div>
+                  </div>
+                  <div class="leaflet-control-container">
+                    <div class="leaflet-top leaflet-left">
+                      <div class="leaflet-control-zoom leaflet-bar leaflet-control">
+                        <a
+                          class="leaflet-control-zoom-in"
+                          href="#"
+                          title="Zoom in"
+                          role="button"
+                          aria-label="Zoom in"
+                          aria-disabled="false"
+                          ><span aria-hidden="true">+</span></a
+                        ><a
+                          class="leaflet-control-zoom-out"
+                          href="#"
+                          title="Zoom out"
+                          role="button"
+                          aria-label="Zoom out"
+                          aria-disabled="false"
+                          ><span aria-hidden="true">−</span></a
+                        >
+                      </div>
+                      <div class="map-search-control leaflet-control">
+                        <div
+                          style="
+                            display: flex;
+                            gap: 4px;
+                            align-items: center;
+                            background: #fff;
+                            border: 1px solid #dcdcdc;
+                            border-radius: 4px;
+                            padding: 4px 6px;
+                            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                          "
+                        >
+                          <input
+                            id="map-search-input"
+                            type="text"
+                            placeholder="Search location..."
+                            aria-label="Search for a location"
+                            style="
+                              background: transparent;
+                              border: none;
+                              outline: none;
+                              color: #3d3d3d;
+                              font-size: 12px;
+                              width: 180px;
+                            "
+                          /><button
+                            id="map-search-btn"
+                            aria-label="Search"
+                            style="
+                              background: #1e5386;
+                              border: none;
+                              color: #fff;
+                              border-radius: 3px;
+                              padding: 3px 8px;
+                              cursor: pointer;
+                              font-size: 11px;
+                              white-space: nowrap;
+                            "
+                          >
+                            🔍
+                          </button>
+                        </div>
+                        <div
+                          id="map-search-results"
+                          style="
+                            display: none;
+                            background: #fff;
+                            border: 1px solid #dcdcdc;
+                            border-top: none;
+                            border-radius: 0 0 4px 4px;
+                            max-height: 200px;
+                            overflow-y: auto;
+                            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+                          "
+                        ></div>
+                      </div>
+                    </div>
+                    <div class="leaflet-top leaflet-right">
+                      <div
+                        class="layer-control-container leaflet-control"
+                        style="position: relative; display: flex; align-items: center"
+                      >
+                        <button
+                          class="zoom-we-btn"
+                          style="margin-top: 0; margin-right: 4px"
+                          onclick="zoomToActiveWE()"
+                        >
+                          ⌖ Zoom to Project</button
+                        ><button
+                          class="zoom-we-btn"
+                          style="margin-top: 0; margin-right: 4px"
+                          id="pp-layer-toggle-btn"
+                          onclick="togglePPLayers()"
+                        >
+                          Hide Pre-Project</button
+                        ><button
+                          class="zoom-we-btn"
+                          style="margin-top: 0; margin-right: 4px"
+                          id="label-toggle-btn"
+                          onclick="toggleLabels()"
+                        >
+                          Hide Labels</button
+                        ><button
+                          class="layer-control-btn"
+                          aria-haspopup="true"
+                          aria-expanded="false"
+                          id="layer-toggle-btn"
+                        >
+                          ⚈ Layers
+                        </button>
+                        <div
+                          class="layer-control-panel"
+                          id="layer-panel"
+                          style="
+                            display: none;
+                            position: absolute;
+                            right: 0;
+                            top: 32px;
+                            z-index: 1000;
+                            min-width: 170px;
+                          "
+                        >
+                          <div class="layer-section-title">Basemap</div>
+                          <label class="layer-row"
+                            ><input type="radio" name="basemap" /> Street Map</label
+                          ><label class="layer-row"
+                            ><input type="radio" name="basemap" /> Satellite</label
+                          ><label class="layer-row"
+                            ><input type="radio" name="basemap" /> Topo</label
+                          >
+                          <div class="layer-section-title" style="margin-top: 8px">Overlays</div>
+                          <label class="layer-row"><input type="checkbox" /> NHD Streams</label
+                          ><input
+                            type="range"
+                            class="layer-opacity"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            style="display: block"
+                          /><label class="layer-row"><input type="checkbox" /> NWI Wetlands</label
+                          ><input
+                            type="range"
+                            class="layer-opacity"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            style="display: none"
+                          /><label class="layer-row"><input type="checkbox" /> USGS Hillshade</label
+                          ><input
+                            type="range"
+                            class="layer-opacity"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            style="display: none"
+                          /><label class="layer-row"
+                            ><input type="checkbox" /> NLCD Land Cover</label
+                          ><input
+                            type="range"
+                            class="layer-opacity"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            style="display: none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div class="leaflet-bottom leaflet-left"></div>
+                    <div class="leaflet-bottom leaflet-right">
+                      <div
+                        class="leaflet-control"
+                        id="zoom-display"
+                        style="
+                          background: rgba(30, 83, 134, 0.9);
+                          color: rgba(255, 255, 255, 0.75);
+                          font-size: 11px;
+                          padding: 2px 7px;
+                          border-radius: 3px;
+                          margin-bottom: 2px;
+                          pointer-events: none;
+                        "
+                      >
+                        Zoom: 7
+                      </div>
+                      <div class="leaflet-control-scale leaflet-control">
+                        <div class="leaflet-control-scale-line" style="width: 59px">50 km</div>
+                        <div class="leaflet-control-scale-line" style="width: 96px">50 mi</div>
+                      </div>
+                      <div class="leaflet-control-attribution leaflet-control">
+                        <a
+                          href="https://leafletjs.com"
+                          title="A JavaScript library for interactive maps"
+                          ><svg
+                            aria-hidden="true"
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="12"
+                            height="8"
+                            viewBox="0 0 12 8"
+                            class="leaflet-attribution-flag"
+                          >
+                            <path fill="#4C7BE1" d="M0 0h12v4H0z"></path>
+                            <path fill="#FFD500" d="M0 4h12v3H0z"></path>
+                            <path fill="#E0BC00" d="M0 7h12v1H0z"></path>
+                          </svg>
+                          Leaflet</a
+                        >
+                        <span aria-hidden="true">|</span> © OpenStreetMap © CARTO, © USGS 3DHP/NHD
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div id="map-hint" role="status" aria-live="polite"></div>
+                <!-- Done Drawing button — shown by CSS whenever #mapwrap has .drawing class -->
+                <button id="draw-done-btn" onclick="finishActiveDraw()" aria-label="Finish drawing">
+                  ✓ Done
+                </button>
+                <!-- Inline editing toolbar — shown/hidden via JS adding .visible class -->
+                <div id="edit-done-bar" role="status" aria-live="assertive">
+                  <button id="pan-shape-btn" onclick="togglePanShape()" class="msow-pan-btn">
+                    ↕ Pan shape
+                  </button>
+                  <button onclick="commitLineEdit()" class="msow-done-btn">
+                    ✓ Done editing — click to save
+                  </button>
+                </div>
+                <!-- Map legend -->
+                <div id="map-legend" role="complementary" aria-label="Map legend">
+                  <div class="leg-title">
+                    Legend
+                    <span
+                      class="leg-toggle"
+                      id="leg-toggle"
+                      onclick="toggleLegend()"
+                      role="button"
+                      tabindex="0"
+                      aria-expanded="false"
+                      aria-label="Toggle legend"
+                      onkeydown="if (event.key === 'Enter' || event.key === ' ') toggleLegend();"
+                      >[+]</span
+                    >
+                  </div>
+                  <div class="leg-body collapsed" id="leg-body">
+                    <div class="leg-section">
+                      <div class="leg-sec-title">Pre-Project</div>
+                      <div class="leg-row">
+                        <span class="leg-poly" style="background: #7b4fbf"></span>Polygons
+                      </div>
+                      <div class="leg-row">
+                        <span class="leg-line" style="background: #c07820"></span>Lines
+                      </div>
+                      <div class="leg-row">
+                        <span
+                          style="
+                            width: 14px;
+                            height: 10px;
+                            flex-shrink: 0;
+                            display: inline-flex;
+                            align-items: center;
+                            justify-content: center;
+                          "
+                          ><svg width="11" height="13" viewBox="0 0 18 18">
+                            <polygon
+                              points="9,0 17,18 9,12 1,18"
+                              fill="#c07820"
+                              stroke="#fff"
+                              stroke-width="1.5"
+                              stroke-linejoin="round"
+                            ></polygon></svg></span
+                        >Flow direction
+                      </div>
+                    </div>
+                    <div class="leg-section">
+                      <div class="leg-sec-title">Habitat Work</div>
+                      <div class="leg-row">
+                        <span class="leg-poly" style="background: #2a7a5c"></span>Polygons
+                      </div>
+                      <div class="leg-row">
+                        <span class="leg-line" style="background: #1a7abf"></span>Lines
+                      </div>
+                      <div class="leg-row">
+                        <span class="leg-line" style="background: #e07b28"></span>Width segments
+                      </div>
+                    </div>
+                    <div class="leg-section">
+                      <div class="leg-sec-title">Channel Habitat Units</div>
+                      <div class="leg-row">
+                        <span class="leg-poly" style="background: #c07820"></span>Riffle
+                      </div>
+                      <div class="leg-row">
+                        <span class="leg-poly" style="background: #1a7abf"></span>Pool
+                      </div>
+                    </div>
+                    <div class="leg-section">
+                      <div class="leg-sec-title">Secondary Channels</div>
+                      <div class="leg-row">
+                        <span class="leg-line" style="background: #2a6a9c"></span>Secondary channel
+                      </div>
+                    </div>
+                    <div class="leg-section">
+                      <div class="leg-sec-title">Wetlands</div>
+                      <div class="leg-row">
+                        <span class="leg-poly" style="background: #0c8599"></span>Existing Wetland
+                        Area
+                      </div>
+                      <div class="leg-row">
+                        <span class="leg-poly" style="background: #c2185b"></span>Wetland
+                        Enhancement
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <div
+      id="we-modal"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 3000;
+        align-items: center;
+        justify-content: center;
+      "
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="we-modal-title"
+    >
+      <div id="we-modal-box">
+        <div class="we-modal-head">
+          <span id="we-modal-title">New Work Element</span>
+          <button onclick="closeWEModal()" aria-label="Close dialog">✕</button>
+        </div>
+        <div class="we-modal-body">
+          <div class="we-modal-field">
+            <esa-text-field
+              label="Work Element Title"
+              placeholder="e.g. Eagle Valley Reach 1"
+              required=""
+              size="md"
+            ></esa-text-field>
+          </div>
+          <div class="we-modal-field">
+            <label>What type of work will this element include?</label>
+            <div class="we-type-check">
+              <div class="we-type-opt" id="opt-pc" onclick="toggleWEType('pc')">
+                <esa-checkbox
+                  id="chk-pc"
+                  onclick="event.stopPropagation()"
+                  size="md"
+                ></esa-checkbox>
+                <div>
+                  <div class="we-type-opt-label we-type-opt-label--pc">■ Primary Channel</div>
+                  <div class="we-type-opt-desc">
+                    Channel restoration, wood structures, habitat units
+                  </div>
+                </div>
+              </div>
+              <div class="we-type-opt" id="opt-fp" onclick="toggleWEType('fp')">
+                <esa-checkbox
+                  id="chk-fp"
+                  onclick="event.stopPropagation()"
+                  size="md"
+                ></esa-checkbox>
+                <div>
+                  <div class="we-type-opt-label we-type-opt-label--fp">
+                    ■ Floodplain &amp; Side Channels
+                  </div>
+                  <div class="we-type-opt-desc">
+                    Floodplain reconnection, side channels, wood placement
+                  </div>
+                </div>
+              </div>
+              <div class="we-type-opt" id="opt-rr" onclick="toggleWEType('rr')">
+                <esa-checkbox
+                  id="chk-rr"
+                  onclick="event.stopPropagation()"
+                  size="md"
+                ></esa-checkbox>
+                <div>
+                  <div class="we-type-opt-label we-type-opt-label--rr">■ Riparian Restoration</div>
+                  <div class="we-type-opt-desc">Fencing, planting, invasive species removal</div>
+                </div>
+              </div>
+            </div>
+            <div class="wm-err" id="we-modal-err">
+              Please enter a title and select at least one work type.
+            </div>
+          </div>
+        </div>
+        <div class="we-modal-foot">
+          <span onclick="closeWEModal()">
+            <span
+              class="esa-button esa-button--color-ghost esa-button--appearance-outline esa-button--md"
+            >
+              <button class="esa-button__native" type="button">
+                <span class="esa-button__label"> Cancel </span>
+              </button>
+            </span>
+          </span>
+          <span onclick="saveWEModal()">
+            <span
+              class="esa-button esa-button--color-primary esa-button--appearance-fill esa-button--md"
+            >
+              <button class="esa-button__native" type="button">
+                <span class="esa-button__label"> Save </span>
+              </button>
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div
+      id="sowmodal"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 2000;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div id="sowbox">
+        <div class="sowhead">
+          Statement of Work — Habitat Program
+          <button onclick="closeSOW()">✕</button>
+        </div>
+        <div id="sowbody"></div>
+        <div class="sowfoot">
+          <span onclick="window.print()">
+            <span
+              class="esa-button esa-button--color-primary esa-button--appearance-fill esa-button--md"
+            >
+              <button class="esa-button__native" type="button">
+                <span class="esa-icon esa-icon--md" aria-hidden="true">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    focusable="false"
+                  ></svg>
+                </span>
+                <span class="esa-button__label"> Print / Save PDF </span>
+              </button>
+            </span>
+          </span>
+          <span onclick="closeSOW()">
+            <span
+              class="esa-button esa-button--color-ghost esa-button--appearance-outline esa-button--md"
+            >
+              <button class="esa-button__native" type="button">
+                <span class="esa-button__label"> Close </span>
+              </button>
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div
+      id="welcome-modal"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.55);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      "
+    >
+      <div class="msow-welcome-card">
+        <div class="msow-welcome-head"><p class="msow-welcome-title">Habitat Design Tool</p></div>
+        <div class="msow-welcome-body">
+          <p class="msow-welcome-heading">
+            Your contract is eligible to use the new map-based tool.
+          </p>
+          <p class="msow-welcome-desc">
+            Define pre-project conditions and scope habitat work elements visually on the map, with
+            metrics calculated automatically from your digitized features.
+          </p>
+        </div>
+        <div class="msow-welcome-actions">
+          <span
+            onclick="
+              document.getElementById('welcome-modal').style.display = 'none';
+              createDefaultWE();
+            "
+            class="msow-welcome-btn"
+          >
+            <span
+              class="esa-button esa-button--color-primary esa-button--appearance-fill esa-button--md"
+            >
+              <button class="esa-button__native" type="button">
+                <span class="esa-icon esa-icon--md" aria-hidden="true">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    focusable="false"
+                  >
+                    <path d="M20 6 9 17l-5-5"></path>
+                  </svg>
+                </span>
+                <span class="esa-button__label"> Continue with new tool </span>
+              </button>
+            </span>
+          </span>
+          <!-- "Go back to old tool" removed for now — kept for easy restore.
+      <span onclick="alert('Returning to classic SOW editor...')" class="msow-welcome-btn">
+        <EsaButton color="ghost" appearance="outline" icon="arrow-left">Go back to old tool</EsaButton>
+      </span>
+      -->
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

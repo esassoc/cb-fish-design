@@ -1,0 +1,145 @@
+---
+// cbf-baselines-table — the FY28 baseline-budgets reference list for
+// /project-budgets/baselines: a stat band (coverage at a glance) over a static
+// table of per-project baselines. Columns mirror the real data model (see the
+// FY27 "Baseline Upload" sheet): one row per project per cycle, with the
+// One-year/Two-year cycle type, a fiscal-year span that can be indefinite,
+// BaselineBudget in dollars-and-cents, COLA (stored as a decimal fraction,
+// shown as a percent), and the audit Comment. $0 baselines are legitimate
+// ("adjusted for multi-year contracting"). Two rows ship without an FY28
+// baseline; the bulk-upload simulation (cbf-baselines-upload) fills them in
+// on Apply via the data-project / data-cell hooks, so the page visibly
+// reconciles after an upload.
+//
+// bcn-lego-checked: no esa- table/grid lego exists (checked the catalog — same
+// finding as cbf-invoice-review-queue). Unlike the review queue this list is a
+// static REFERENCE surface — no sort/filter/row-click — so AG Grid would ship a
+// client bundle for nothing; a semantic <table> is the right weight. Stats are
+// esa-stat legos; status chips are esa-badge; nothing else is a control.
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import { baselineRows, stats, FY } from '../../data/project-baselines.mjs';
+
+const usd = (n: number | null) =>
+  n === null
+    ? null
+    : n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pct = (f: number | null) => (f === null ? '—' : `${(f * 100).toFixed(2)}%`);
+const span = (r: { startFY: string; endFY: string }) =>
+  r.endFY === r.startFY ? r.startFY : `${r.startFY}–${r.endFY}`;
+---
+<section class="cbf-baselines stack" data-gap="md" aria-label={`${FY.current} baseline budgets`}>
+  <header class="repel">
+    <h2 class="type-section-title">{FY.current} baseline budgets</h2>
+  </header>
+
+  {/* esa-stat forwards no extra attrs — the update hooks live on wrapper divs */}
+  <div class="cbf-baselines__stats">
+    <div><EsaStat value={stats.activeProjects} label="Active projects" sub={`${FY.current} SOY cycle`} /></div>
+    <div data-stat-set><EsaStat value={stats.baselinesSet} label="Baselines set" sub={`of ${stats.activeProjects} projects`} /></div>
+    <div data-stat-missing><EsaStat value={stats.missing} label="Missing" sub="need a baseline" accent /></div>
+    <div data-stat-total><EsaStat value={stats.totalBaseline} label={`Total ${FY.current} baseline`} sub="all projects" /></div>
+  </div>
+
+  <div class="cbf-baselines__scroll">
+    <table class="cbf-baselines__table">
+      <thead>
+        <tr>
+          <th scope="col">Project</th>
+          <th scope="col">Title</th>
+          <th scope="col">Cycle</th>
+          <th scope="col">Fiscal years</th>
+          <th scope="col" class="cbf-baselines__num">Baseline budget</th>
+          <th scope="col" class="cbf-baselines__num">COLA</th>
+          <th scope="col">Comment</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {baselineRows.map((r) => (
+          <tr data-project={r.project}>
+            <td class="cbf-baselines__id">{r.project}</td>
+            <td class="cbf-baselines__title">{r.title}</td>
+            <td>{r.cycle}</td>
+            <td>{span(r)}</td>
+            <td class="cbf-baselines__num cbf-num" data-cell="baseline">{usd(r.baseline) ?? '—'}</td>
+            <td class="cbf-baselines__num cbf-num" data-cell="cola">{pct(r.cola)}</td>
+            <td class="cbf-baselines__comment" data-cell="comment">{r.comment ?? '—'}</td>
+            <td data-cell="status">
+              {r.status === 'Set'
+                ? <EsaBadge value="Set" variant="success" size="lg" />
+                : <EsaBadge value="Missing" variant="warning" size="lg" />}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Real esa-badge markup for the client script to clone when a Missing row
+       flips to Set after Apply — same template trick as the review queue, so
+       the injected badge is byte-identical to the lego. -->
+  <div data-badge-template-set hidden aria-hidden="true">
+    <EsaBadge value="Set" variant="success" size="lg" />
+  </div>
+
+  <footer>
+    <span class="type-caption">Showing {baselineRows.length} of {stats.activeProjects} projects</span>
+  </footer>
+</section>
+
+<style>
+  .cbf-baselines__stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--spacing-400);
+  }
+  @media (max-width: 900px) {
+    .cbf-baselines__stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  /* Wide table scrolls inside its own frame; the page never scrolls sideways. */
+  .cbf-baselines__scroll {
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200, 8px);
+  }
+  .cbf-baselines__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+  }
+  .cbf-baselines__table th,
+  .cbf-baselines__table td {
+    padding: var(--spacing-250) var(--spacing-300);
+    text-align: left;
+    white-space: nowrap;
+  }
+  .cbf-baselines__title { white-space: normal; min-width: 220px; }
+  .cbf-baselines__comment {
+    white-space: normal;
+    min-width: 240px;
+    color: var(--color-text-muted);
+    font-size: 14px;
+  }
+  .cbf-baselines__table thead th {
+    background: var(--color-gray-50, #f4f5f7);
+    border-bottom: 1px solid var(--color-border);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-baselines__table tbody tr + tr td { border-top: 1px solid var(--color-border); }
+  .cbf-baselines__num { text-align: right; }
+  .cbf-baselines__id {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-primary);
+  }
+  /* Row flash when the bulk upload fills a missing baseline. */
+  .cbf-baselines__table tbody tr.is-updated td {
+    animation: cbf-baseline-updated 1.6s ease-out 1;
+  }
+  @keyframes cbf-baseline-updated {
+    from { background: var(--color-primary-subtle); }
+    to { background: transparent; }
+  }
+</style>

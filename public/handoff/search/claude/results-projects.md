@@ -149,10 +149,6 @@ Project-scoped results — the same row component carrying a different entity ty
 
 ## Styles
 ```css
-.cbf-search-field .cbf-icon {
-  color: var(--color-text-muted);
-  display: inline-flex;
-}
 .cbf-search-results {
   display: flex;
   flex-direction: column;
@@ -289,6 +285,10 @@ Project-scoped results — the same row component carrying a different entity ty
   opacity: 0;
   flex: none;
 }
+.cbf-search-field .cbf-icon {
+  color: var(--color-text-muted);
+  display: inline-flex;
+}
 ```
 
 ## Tokens
@@ -296,7 +296,7 @@ Project-scoped results — the same row component carrying a different entity ty
 - `--cbf-surface-section-head`: #f5f5f5 _(brand)_
 - `--color-border`: #dcdcdc _(semantic)_
 - `--color-secondary`: #2770b2 _(semantic)_
-- `--color-surface`: #ffffff _(semantic)_
+- `--color-surface`: #fcfcfc _(semantic)_
 - `--color-surface-sunken`: #f3f7fc _(semantic)_
 - `--color-text-muted`: #7c7c7c _(semantic)_
 - `--color-text-primary`: #3d3d3d _(semantic)_

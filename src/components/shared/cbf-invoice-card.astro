@@ -1,0 +1,404 @@
+---
+// cbf-invoice-card — the canonical invoice card surface, shared by the
+// /vendor-invoice Review & submit step (cbf-invoice-review-summary) AND the
+// /vendor-dashboard card view (cbf-vendor-dashboard-invoices). ONE card, two
+// callers, so the invoice always reads the same wherever it appears.
+//
+// Two fill modes on the same markup:
+//   • placeholder mode (review): values render empty + carry [data-review="…"]
+//     hooks that invoice-wizard.client.ts fills from live form state.
+//   • props mode (dashboard): values render server-side from props; the status
+//     slot carries the pipeline esa-badge.
+//
+// bcn-lego-checked: the card box is esa-card (lego) and the project chip is
+// esa-pill variant="default" (lego, grey/neutral). The head/total/date rows are
+// this card's own quiet typographic structure (no esa- lego renders an invoice
+// summary body); checked Beacon (no ui- invoice-card). This bcn- component is
+// that structure's single reusable home.
+import EsaCard from '@esa/ecology/esa-card.astro';
+
+interface Props {
+  number?: string;
+  contract?: string;
+  contractNumber?: string;
+  /** When set, the contract name renders as a link to the contract. */
+  contractHref?: string;
+  project?: string;
+  projectNumber?: string;
+  /** When set, the project name renders as a link to the project. */
+  projectHref?: string;
+  invoiceDate?: string;
+  issued?: string;
+  period?: string;
+  /** Summary layout splits the period into separate start / end rows. */
+  perfStart?: string;
+  perfEnd?: string;
+  submitted?: string;
+  total?: string; // pre-formatted currency, e.g. "$5,210.00"
+  totalLabel?: string;
+  /**
+   * 'summary' (default): the Review & submit layout — head + dates + total.
+   * 'stat': the dashboard layout — hero figure + a band of metadata stat blocks
+   * + paired contract/project references (the "reads like an invoice" card).
+   */
+  variant?: 'summary' | 'stat';
+  /** Emit the [data-review="…"] hooks for wizard fill (review usage). */
+  placeholder?: boolean;
+}
+
+const {
+  number = '',
+  contract = '',
+  contractNumber = '',
+  contractHref = '',
+  project = '',
+  projectNumber = '',
+  projectHref = '',
+  invoiceDate = '',
+  issued = '',
+  period = '',
+  perfStart = '',
+  perfEnd = '',
+  submitted = '',
+  total = '',
+  totalLabel = 'Total amount due',
+  variant = 'summary',
+  placeholder = false,
+} = Astro.props;
+
+const hasStatus = Astro.slots.has('status');
+// Only the review usage wires the [data-review] fill hooks; on the dashboard the
+// values are server-rendered, so the inert attributes are left off.
+const rev = (key: string) => (placeholder ? { 'data-review': key } : {});
+---
+{variant === 'stat' ? (
+  <EsaCard>
+    <div class="cbf-invoice-card cbf-invoice-card--stat">
+      {/* Title band: invoice number (hero identifier) + status badge on the left;
+          the invoice date sits in the top-right corner as a quiet metadata
+          value. A hairline divider closes the band. */}
+      <div class="cbf-invoice-card__title-row">
+        <div class="cbf-invoice-card__id">
+          <p class="cbf-invoice-card__number" {...rev('invoice-number')}>{number}</p>
+          {(period || placeholder) && (
+            <span class="cbf-invoice-card__period-group">
+              <span class="cbf-invoice-card__period" {...rev('period')}>{period}</span>
+              <span class="cbf-invoice-card__period-label">Performance period</span>
+            </span>
+          )}
+        </div>
+        <div class="cbf-invoice-card__corner">
+          {hasStatus && <span class="cbf-invoice-card__status"><slot name="status" /></span>}
+          {placeholder && <span class="cbf-invoice-card__flag" data-review="final-flag" hidden>Final invoice</span>}
+          <span class="cbf-invoice-card__corner-value" {...rev('issued')}>{invoiceDate || issued}</span>
+        </div>
+      </div>
+
+      {/* Reference band: what the invoice bills against — contract (primary) and
+          project (secondary), each with its number as a quiet metadata line. */}
+      <div class="cbf-invoice-card__refs">
+        {/* Project sits on top as the smaller parent context; the contract — the
+            invoice's focal reference — is full-size and indented beneath it. */}
+        <div class="cbf-invoice-card__ref cbf-invoice-card__ref--project">
+          {projectHref ? (
+            <a class="cbf-invoice-card__ref-name cbf-invoice-card__ref-link" data-ref-link href={projectHref}>{project}</a>
+          ) : (
+            <p class="cbf-invoice-card__ref-name" {...rev('project')}>{project}</p>
+          )}
+          <p class="cbf-invoice-card__ref-meta" {...rev('project-meta')}>Project{projectNumber ? ` · ${projectNumber}` : ''}</p>
+        </div>
+        <div class="cbf-invoice-card__ref cbf-invoice-card__ref--contract">
+          {contractHref ? (
+            <a class="cbf-invoice-card__ref-name cbf-invoice-card__ref-link" data-ref-link href={contractHref}>{contract}</a>
+          ) : (
+            <p class="cbf-invoice-card__ref-name" {...rev('contract')}>{contract}</p>
+          )}
+          <p class="cbf-invoice-card__ref-meta" {...rev('contract-meta')}>Contract{contractNumber ? ` · ${contractNumber}` : ''}</p>
+        </div>
+      </div>
+
+      {/* Total band: the amount billed as the hero figure in the bottom-right
+          corner — the "where's my money". */}
+      <div class="cbf-invoice-card__total-band">
+        <div class="cbf-invoice-card__amount">
+          <span class="cbf-invoice-card__amount-value" {...rev('total')}>{total}</span>
+        </div>
+      </div>
+    </div>
+  </EsaCard>
+) : (
+<EsaCard>
+  <div class="cbf-invoice-card cbf-invoice-card--summary">
+    {/* Structured for careful verification before submit: every field is an
+        explicit label on the left with its value on the right. */}
+    <div class="cbf-invoice-card__head">
+      <p class="cbf-invoice-card__number" {...rev('invoice-number')}>{number}</p>
+      {hasStatus && <span class="cbf-invoice-card__status"><slot name="status" /></span>}
+      {placeholder && (
+        <span class="cbf-invoice-card__flag" data-review="final-flag" hidden>Final invoice</span>
+      )}
+    </div>
+
+    <dl class="cbf-invoice-card__rows">
+      <div class="cbf-invoice-card__row">
+        <dt class="cbf-invoice-card__row-label">Invoice date</dt>
+        <dd class="cbf-invoice-card__row-value" {...rev('issued')}>{issued || invoiceDate}</dd>
+      </div>
+      <div class="cbf-invoice-card__row">
+        <dt class="cbf-invoice-card__row-label">Performance start</dt>
+        <dd class="cbf-invoice-card__row-value" {...rev('perf-start')}>{perfStart}</dd>
+      </div>
+      <div class="cbf-invoice-card__row">
+        <dt class="cbf-invoice-card__row-label">Performance end</dt>
+        <dd class="cbf-invoice-card__row-value" {...rev('perf-end')}>{perfEnd}</dd>
+      </div>
+      <div class="cbf-invoice-card__row">
+        <dt class="cbf-invoice-card__row-label">Contract</dt>
+        <dd class="cbf-invoice-card__row-value" {...rev('contract')}>{contract}</dd>
+      </div>
+      <div class="cbf-invoice-card__row">
+        <dt class="cbf-invoice-card__row-label">Project</dt>
+        <dd class="cbf-invoice-card__row-value" {...rev('project')}>{project}</dd>
+      </div>
+    </dl>
+
+    <div class="cbf-invoice-card__total">
+      <span class="cbf-invoice-card__total-label">{totalLabel}</span>
+      <span class="cbf-invoice-card__total-value" {...rev('total')}>{total}</span>
+    </div>
+  </div>
+</EsaCard>
+)}
+
+<style>
+  /* The data identifies itself; labels appear only where a value is ambiguous. */
+  .cbf-invoice-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    padding-bottom: var(--spacing-400);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-invoice-card__number {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-invoice-card__status { flex: none; }
+  .cbf-invoice-card__flag {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--spacing-200);
+    border-radius: var(--radius-100);
+    background: var(--color-primary-subtle);
+    color: var(--color-secondary);
+    font-size: 12px;
+    font-weight: var(--font-weight-semibold);
+  }
+  .cbf-invoice-card__flag[hidden] { display: none; }
+
+  /* Label-left rows: each field is a fixed label column + its value, so the
+     reviewer can scan and verify each entry line by line. */
+  .cbf-invoice-card__rows {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-300);
+    padding: var(--spacing-400) 0;
+  }
+  .cbf-invoice-card__row {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: var(--spacing-400);
+    align-items: baseline;
+  }
+  .cbf-invoice-card__row-label {
+    font-size: 14px;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+  }
+  .cbf-invoice-card__row-value {
+    margin: 0;
+    font-size: 15px;
+    color: var(--color-text-primary);
+  }
+
+  /* Same label/value grid as the rows so the total figure lands on the same
+     vertical line as every other value — the eye scans straight down. */
+  .cbf-invoice-card__total {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: var(--spacing-400);
+    align-items: baseline;
+    padding-top: var(--spacing-400);
+    border-top: 1px solid var(--color-border);
+  }
+  .cbf-invoice-card__total-label {
+    font-size: 15px;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+  }
+  .cbf-invoice-card__total-value {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* ---- 'stat' variant (dashboard) -------------------------------------- */
+  /* Three bands split by hairline dividers: title → figures → references.
+     Neutral surface (the esa-card), brand display face for figures, plain
+     labels — the reference layout in the house style. */
+  .cbf-invoice-card--stat {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Title band: invoice number + status on the left, invoice date pinned to
+     the top-right corner. align-items:flex-start so the corner value sits on the
+     number's baseline-ish top edge. */
+  .cbf-invoice-card__title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    padding-bottom: var(--spacing-400);
+  }
+  .cbf-invoice-card__id {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-200);
+    min-width: 0;
+  }
+  .cbf-invoice-card--stat .cbf-invoice-card__number {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  .cbf-invoice-card--stat .cbf-invoice-card__status { flex: none; }
+  /* Performance period: the span the invoice bills for, tied to its identity
+     directly beneath the number. A range reads as a period; quiet metadata. */
+  .cbf-invoice-card__period-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .cbf-invoice-card__period {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+  /* Caption under the dates, naming what the range is. */
+  .cbf-invoice-card__period-label {
+    font-size: 12px;
+    color: var(--color-text-muted);
+  }
+
+  /* Top-right corner: the status badge sits in the corner, the invoice date
+     beneath it — both right-aligned, top of the band. */
+  .cbf-invoice-card__corner {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--spacing-200);
+    flex: none;
+    text-align: right;
+  }
+  .cbf-invoice-card__corner-value {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+
+  /* Reference band: the project (parent context) sits on top in smaller text; the
+     contract — the invoice's focal reference — is full size and indented beneath it,
+     with a child arrow marking the parent→child relationship. */
+  .cbf-invoice-card__refs {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-150);
+    padding-block: var(--spacing-400);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-invoice-card__ref--project .cbf-invoice-card__ref-name {
+    font-size: 14px;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+  }
+
+  /* Total band: the amount as the hero figure in the bottom-right corner. */
+  .cbf-invoice-card__total-band {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    gap: var(--spacing-400);
+    padding-top: var(--spacing-400);
+  }
+  .cbf-invoice-card__amount {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--spacing-050);
+    flex: none;
+    text-align: right;
+  }
+  .cbf-invoice-card__amount-value {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+  .cbf-invoice-card__ref { min-width: 0; }
+  .cbf-invoice-card__ref-name {
+    margin: 0;
+    font-size: 16px;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    line-height: 1.3;
+  }
+  /* Contract / project as a link: the reference is navigable. Sits above the
+     card's stretched-overlay open button (z-index) so it's independently
+     clickable; underline-on-hover keeps it quiet until intended. */
+  .cbf-invoice-card__ref-link {
+    position: relative;
+    z-index: 1;
+    display: inline-block;
+    color: var(--color-secondary, var(--color-primary));
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .cbf-invoice-card__ref-link:hover { text-decoration: underline; }
+  .cbf-invoice-card__ref-link:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-050, 2px);
+  }
+  /* Metadata value: small but darkened, not bleached — readable, subordinate. */
+  .cbf-invoice-card__ref-meta {
+    margin: var(--spacing-050) 0 0;
+    font-size: 13px;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

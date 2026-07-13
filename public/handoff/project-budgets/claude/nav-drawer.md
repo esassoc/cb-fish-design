@@ -1,0 +1,97 @@
+# Nav drawer
+
+Re-implement this UI section faithfully on your stack. Keep the CSS custom-property
+names (`var(--…)`) so it stays themeable — the values below are the resolved
+`cb-fish` theme of the **project-budgets** design system (an ESA Ecology spoke).
+
+- **Source prototype:** http://localhost:4321/cb-fish-design/project-budgets/
+- **Section element:** `<esa-side-dialog>`
+- **Components:** cbf-nav-drawer (spoke), esa-link-column (hub)
+
+## Markup (de-scoped, framework-free)
+```html
+<esa-side-dialog
+  position="left"
+  heading="Menu"
+  size="sm"
+  class="cbf-nav-drawer"
+  data-nav-drawer="true"
+>
+  <nav class="stack" data-gap="lg" aria-label="Site navigation">
+    <div class="esa-link-column">
+      <span class="esa-link-column__head">Mitigation work</span>
+      <hr class="esa-link-column__rule" />
+      <ul class="esa-link-column__list">
+        <li>Projects</li>
+        <li>Contracts</li>
+        <li>Portfolios</li>
+        <li>Work elements</li>
+        <li>Estuary program</li>
+        <li>Tributary habitat</li>
+        <li>Land acquisitions</li>
+      </ul>
+    </div>
+    <div class="esa-link-column">
+      <span class="esa-link-column__head">Reporting</span>
+      <hr class="esa-link-column__rule" />
+      <ul class="esa-link-column__list">
+        <li>Report Center</li>
+        <li>Maps</li>
+        <li>Publications</li>
+      </ul>
+    </div>
+    <div class="esa-link-column">
+      <span class="esa-link-column__head">Funding</span>
+      <hr class="esa-link-column__rule" />
+      <ul class="esa-link-column__list">
+        <li>Funds</li>
+        <li>Fund budgets summary</li>
+        <li>Long-term funding agreements</li>
+        <li><a href="/cb-fish-design/project-budgets">Project budgets</a></li>
+        <li>Working budgets</li>
+        <li>Expenditures</li>
+        <li>Accruals</li>
+      </ul>
+    </div>
+    <div class="esa-link-column">
+      <span class="esa-link-column__head">Quick links</span>
+      <hr class="esa-link-column__rule" />
+      <ul class="esa-link-column__list">
+        <li><a href="#">Recent</a></li>
+        <li><a href="#">Dashboard</a></li>
+      </ul>
+    </div>
+    <div class="esa-link-column">
+      <span class="esa-link-column__head">System</span>
+      <hr class="esa-link-column__rule" />
+      <ul class="esa-link-column__list">
+        <li>Data management</li>
+        <li>System status</li>
+        <li>System configuration</li>
+      </ul>
+    </div>
+    <div class="esa-link-column">
+      <span class="esa-link-column__head">Help</span>
+      <hr class="esa-link-column__rule" />
+      <ul class="esa-link-column__list">
+        <li>Help center</li>
+        <li>Data dictionary</li>
+        <li>EF&amp;W Program documents</li>
+        <li>Request support</li>
+        <li>Send feedback</li>
+      </ul>
+    </div>
+  </nav>
+</esa-side-dialog>
+```
+
+## Styles (only what this section uses; tokens resolved for the theme)
+```css
+/* inherits global/utility styles only */
+```
+
+## Tokens
+_None._
+
+---
+_Full page, complete stylesheet, and all tokens: `./full-page.md`, `../styles.css`, `../index.html`._

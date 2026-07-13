@@ -1,0 +1,77 @@
+---
+// /home — the shared CBFish homepage: a static, in-design-system snapshot of the
+// live cbfish.org landing. This is the "home" every prototype returns to via the
+// logo and the Home breadcrumb (NOT the design-system index at /, which is now
+// reachable only by URL/bookmark). Thin assembler: nav + photo hero + program
+// overview + impacts + sitemap footer, all from cbf-*/esa-* parts.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import CbfWelcomeHero from '../components/cbfish-home/cbf-welcome-hero.astro';
+import CbfProgramOverview from '../components/cbfish-home/cbf-program-overview.astro';
+import CbfProgramImpacts from '../components/cbfish-home/cbf-program-impacts.astro';
+import CbfAppFooter from '../components/cbfish-home/cbf-app-footer.astro';
+import { withBase } from '../lib/base';
+
+const hero = {
+  image: {
+    src: withBase('/cbfish-homepage-hero.jpg'),
+    alt: 'The Columbia River at dawn, with basin mountains and sky mirrored in still water',
+  },
+  eyebrow: 'Columbia Basin Fish & Wildlife Program',
+  tagline: 'An unprecedented view into the region’s fish & wildlife mitigation.',
+  credit: 'Photo: Rob Meyers / BPA',
+};
+
+const overview = {
+  heading: 'Welcome to the Columbia Basin Fish & Wildlife Program',
+  intro:
+    'The program is Bonneville Power Administration’s effort to protect, mitigate, and enhance the fish and wildlife affected by the hydroelectric dams on the Columbia River and its tributaries. Established under the Northwest Power Act of 1980, it funds work across a four-state region — Idaho, Montana, Oregon, and Washington.',
+  stats: [
+    { value: '41', label: 'Funds' },
+    { value: '301', label: 'Projects' },
+    { value: '633', label: 'Contracts' },
+    { value: '73,521', label: 'Work sites' },
+  ],
+};
+---
+<!-- manifest:
+  layout: stack                                 # nav, full-bleed hero/footer, centered body
+  sections:
+    - top nav        -> cbf-public-nav
+    - photo hero     -> cbf-welcome-hero
+    - overview+stats -> cbf-program-overview
+    - impacts chart  -> cbf-program-impacts
+    - sitemap footer -> cbf-app-footer
+-->
+<BaseLayout title="CBFish — Columbia Basin Fish & Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-home">
+    <CbfWelcomeHero
+      image={hero.image}
+      eyebrow={hero.eyebrow}
+      tagline={hero.tagline}
+      credit={hero.credit}
+    />
+
+    <div class="cbf-home__body">
+      <CbfProgramOverview heading={overview.heading} intro={overview.intro} stats={overview.stats} />
+      <CbfProgramImpacts />
+    </div>
+
+    <CbfAppFooter />
+  </main>
+</BaseLayout>
+
+<style>
+  /* page-level rhythm only — full-bleed hero/footer, centered max-width for the
+     body band (every block is a component, see manifest). */
+  .cbf-home__body {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: var(--spacing-800) var(--spacing-600);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-800);
+  }
+</style>
