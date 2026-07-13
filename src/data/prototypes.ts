@@ -31,6 +31,15 @@ export const prototypes: Prototype[] = [
     status: 'live',
   },
   {
+    slug: 'tributary-habitat',
+    title: 'Tributary Habitat program budget',
+    description:
+      'Modernizes the legacy CBFish "Work Element Budget" program page — planned-vs-actual Habitat and Admin spend (plus sponsor cost share) across the fiscal-year record, with an averages rail and a metadata tab. Chart ported to Vega-Lite (Beacon’s charting library).',
+    route: '/tributary-habitat',
+    createdAt: '2026-06-22',
+    status: 'in-progress',
+  },
+  {
     slug: 'search',
     title: 'Global search & command palette',
     description:

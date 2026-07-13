@@ -1,0 +1,45 @@
+---
+// cbf-budget-explorer — the body of the "Charts" tab on /tributary-habitat.
+// Sub-assembler: it owns NO bespoke UI primitives — it composes the filter
+// controls, the budget chart, and the averages rail (all real components) plus
+// the focus note and the "add comparison" action, arranging them with layout
+// primitives. The page stays a thin manifest; this holds the chart-view wiring.
+import CbfChartControls from './cbf-chart-controls.astro';
+import CbfBudgetChart from './cbf-budget-chart.astro';
+import CbfBudgetAverages from './cbf-budget-averages.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import { scopeViews, yearOptions, averages, metadata } from '../../data/tributary-habitat.mjs';
+---
+<section class="cbf-budget-explorer stack" data-gap="lg" aria-label="Work element budget chart">
+  <p class="type-body cbf-budget-explorer__note">{metadata.description}</p>
+
+  <CbfChartControls views={scopeViews} activeView={scopeViews[0].value} years={yearOptions} />
+
+  <div class="sidebar" data-side="end" data-gap="xl">
+    <CbfBudgetAverages stats={averages} />
+    <CbfBudgetChart
+      title="Tributary Habitat Work Element Budget"
+      caption="Habitat vs. Admin work-element budget — planned and actual — with sponsor cost share, FY 1995–2029."
+    />
+  </div>
+
+  <div class="cluster">
+    <EsaButton color="secondary" appearance="outline" icon="trending-up">
+      Add Secondary Chart for Comparison
+    </EsaButton>
+  </div>
+</section>
+
+<style>
+  .cbf-budget-explorer__note {
+    max-width: 70ch;
+    color: var(--color-text-secondary);
+  }
+  /* Keep the averages rail from getting too wide on large viewports; the chart
+     (the .sidebar main child) takes the remaining space. */
+  .cbf-budget-explorer .sidebar {
+    --sidebar-width: 16rem;
+    --sidebar-content-min: 62%;
+    align-items: start;
+  }
+</style>

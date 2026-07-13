@@ -1,0 +1,76 @@
+---
+// cbf-program-metadata — the "Metadata" tab body for the tributary-habitat program
+// page. The quiet "about this dataset" panel: a lede explaining what the budget
+// chart counts, then a definition list of program provenance (Program, Purpose
+// filter, work categories, FY range, currency, data source). Provenance answers
+// the trust question a money chart always raises — "what's in this number, and
+// where did it come from?" — so it lives next to the chart, not buried.
+//
+// No bcn-lego-checked needed: this is semantic CONTENT, not a reinvented UI
+// primitive. A <p> + <dl> is the correct HTML for term/detail prose; the only
+// lego in play is esa-card, composed as the panel shell (not hand-rolled).
+import EsaCard from '@esa/ecology/esa-card.astro';
+
+interface Field {
+  term: string;
+  detail: string;
+}
+interface Props {
+  description: string; // the lede paragraph
+  fields: Field[]; // term/detail rows
+}
+const { description, fields } = Astro.props;
+---
+<EsaCard variant="outlined" padding="spacious">
+  <div class="cbf-program-metadata stack" data-gap="lg">
+    <p class="cbf-program-metadata__lede type-body-large">{description}</p>
+
+    <dl class="cbf-program-metadata__fields stack" data-gap="md">
+      {fields.map((f) => (
+        <div class="cbf-program-metadata__row sidebar" data-gap="sm">
+          <dt class="cbf-program-metadata__term">{f.term}</dt>
+          <dd class="cbf-program-metadata__detail">{f.detail}</dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+</EsaCard>
+
+<style>
+  .cbf-program-metadata__lede {
+    color: var(--color-text-secondary);
+    max-inline-size: 60ch; /* keep the lede a comfortable measure */
+  }
+
+  /* Each row: term in a fixed-ish column, detail flowing beside it, both stacking
+     on narrow viewports (.sidebar's intrinsic wrap). Hairline divider between rows
+     so the list reads as a structured record, not a run-on paragraph. */
+  .cbf-program-metadata__row {
+    --sidebar-width: 12rem;
+    --sidebar-content-min: 55%;
+    padding-block-end: var(--spacing-300);
+    border-block-end: 1px solid var(--color-border-light, var(--color-border));
+  }
+  .cbf-program-metadata__row:last-child {
+    padding-block-end: 0;
+    border-block-end: none;
+  }
+
+  /* Term: a readable label — NOT an uppercase letter-spaced micro-overline.
+     Body-large size (>=16px), medium weight, secondary color. */
+  .cbf-program-metadata__term {
+    font-size: var(--type-size-300);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-normal);
+    color: var(--color-text-secondary);
+  }
+
+  /* Detail: primary body prose. Reset the default <dd> indent margin. */
+  .cbf-program-metadata__detail {
+    margin: 0;
+    font-size: var(--type-size-300);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-relaxed);
+    color: var(--color-text-primary);
+  }
+</style>

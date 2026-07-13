@@ -1,0 +1,60 @@
+---
+// cbf-budget-chart — the program's "Work Element Budget" multi-series line chart
+// (Habitat Planned/Actual, Admin Planned/Actual, Cost Share) by fiscal year.
+//
+// bcn-lego-checked: no esa-* chart/graph lego exists (checked the full ecology
+// catalog — none) and ecology ships no chart dependency. Beacon (tier 2) renders
+// its charts with Vega-Lite (vega / vega-embed / vega-lite in Beacon's deps), so
+// this faithfully ports that approach rather than hand-rolling an SVG engine.
+// cbf-budget-chart is the reusable home: it owns ONLY the figure chrome + mount
+// node; the Vega-Lite spec lives in cbf-budget-chart.client.ts and reads brand
+// tokens at runtime so the palette stays theme-driven, never hardcoded hex.
+interface Props {
+  title: string;
+  caption?: string;
+}
+const { title, caption } = Astro.props;
+---
+<figure class="cbf-budget-chart stack" data-gap="sm">
+  <figcaption class="cbf-budget-chart__head stack" data-gap="xs">
+    <h3 class="type-card-title">{title}</h3>
+    {caption && <p class="type-caption cbf-budget-chart__caption">{caption}</p>}
+  </figcaption>
+  <div
+    class="cbf-budget-chart__plot"
+    data-cbf-budget-chart
+    role="img"
+    aria-label={`Line chart: ${title}`}
+  ></div>
+</figure>
+
+<script>
+  import { initBudgetChart } from './cbf-budget-chart.client';
+  initBudgetChart();
+</script>
+
+<style>
+  .cbf-budget-chart {
+    margin: 0;
+  }
+  .cbf-budget-chart__head {
+    align-items: center;
+    text-align: center;
+  }
+  .cbf-budget-chart__caption {
+    color: var(--color-text-muted);
+  }
+  .cbf-budget-chart__plot {
+    width: 100%;
+    min-height: 440px;
+  }
+  /* Vega injects an inline <svg>; keep it fluid inside the content column. */
+  .cbf-budget-chart__plot :global(.vega-embed),
+  .cbf-budget-chart__plot :global(.vega-embed svg) {
+    width: 100%;
+    max-width: 100%;
+  }
+  .cbf-budget-chart__plot :global(.vega-embed) {
+    display: block;
+  }
+</style>

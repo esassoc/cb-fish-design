@@ -1,0 +1,77 @@
+---
+// /tributary-habitat — a modernization of the legacy CBFish program "Work Element
+// Budget" page: the program's planned-vs-actual Habitat and Admin spend (plus
+// sponsor cost share) over the fiscal-year record, with an averages rail and a
+// metadata tab. Thin assembler: esa-container + cbf-app-panel chrome; the page
+// header and the Charts/Metadata tabs are esa-* legos; all content is components.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
+import CbfBudgetExplorer from '../components/tributary-habitat/cbf-budget-explorer.astro';
+import CbfProgramMetadata from '../components/tributary-habitat/cbf-program-metadata.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import { withBase } from '../lib/base';
+import { metadata } from '../data/tributary-habitat.mjs';
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+
+const crumbs = [
+  { label: 'Home', href: withBase('/'), icon: homeIcon },
+  { label: 'Programs', href: withBase('/') },
+  { label: 'Tributary Habitat' },
+];
+---
+<!-- manifest:
+  layout: esa-container > cbf-app-panel
+  sections:
+    - nav            -> cbf-public-nav
+    - page header    -> esa-page-header
+    - program tabs   -> esa-tab-layout
+    - charts panel   -> cbf-budget-explorer
+    - metadata panel -> cbf-program-metadata
+-->
+<BaseLayout title="Tributary Habitat — Columbia Basin Fish &amp; Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <CbfAppPanel crumbs={crumbs}>
+        <EsaPageHeader title="Tributary Habitat">
+          <div slot="actions">
+            <EsaButton color="secondary" appearance="outline" icon="chevron-down">Go to…</EsaButton>
+          </div>
+        </EsaPageHeader>
+
+        <esa-tab-layout data-program-tabs appearance="underline">
+          <div slot="panel-0">
+            <CbfBudgetExplorer />
+          </div>
+          <div slot="panel-1">
+            <CbfProgramMetadata description={metadata.description} fields={metadata.fields} />
+          </div>
+        </esa-tab-layout>
+      </CbfAppPanel>
+    </EsaContainer>
+  </main>
+
+  <script>
+    import '@esa/ecology/esa-tab-layout';
+    customElements.whenDefined('esa-tab-layout').then(() => {
+      document.querySelectorAll('esa-tab-layout[data-program-tabs]').forEach((el) => {
+        (el as HTMLElement & { tabs: { label: string }[] }).tabs = [
+          { label: 'Charts' },
+          { label: 'Metadata' },
+        ];
+      });
+    });
+  </script>
+</BaseLayout>
+
+<style>
+  .cbf-page {
+    padding-block: var(--spacing-600) var(--spacing-800);
+  }
+</style>

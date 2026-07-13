@@ -1,0 +1,33 @@
+---
+// cbf-budget-averages — the "Averages" rail beside the program budget chart.
+// A titled card holding a VERTICAL list of headline aggregate dollar figures
+// over a fiscal-year range (Habitat/Admin planned vs actual, cost share, the
+// habitat/admin ratio). It answers "across the whole program, what do the
+// yearly averages roll up to?" — a glanceable companion to the chart's detail.
+//
+// Composition only, no bespoke chrome: esa-card supplies the titled card (its
+// `title` prop renders the heading at the card-title type role — a real
+// heading, not an ornamental overline), and esa-stat supplies each
+// value/label/sub metric. The vertical layout is the .stack primitive, so
+// there is no hand-rolled flex. Nothing here reinvents a lego, so no
+// bcn-lego-checked claim is warranted.
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaStat from '@esa/ecology/esa-stat.astro';
+
+interface Stat {
+  value: string;   // pre-formatted, e.g. "$46,294,234" or "73%"
+  label: string;   // e.g. "Habitat Planned"
+  sub?: string;    // e.g. "FY 1999–2029"
+  accent?: boolean;
+}
+interface Props {
+  stats: Stat[];
+  title?: string;
+}
+const { stats, title = 'Averages' } = Astro.props;
+---
+<EsaCard title={title}>
+  <div class="stack" data-gap="md">
+    {stats.map((s) => <EsaStat value={s.value} label={s.label} sub={s.sub} accent={s.accent} />)}
+  </div>
+</EsaCard>

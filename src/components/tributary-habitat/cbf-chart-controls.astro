@@ -1,0 +1,117 @@
+---
+// cbf-chart-controls — the filter toolbar above the program budget chart on
+// /tributary-habitat. Left group: filter actions (Save Chart Filter / Clear
+// Filter). Right group: a fiscal-year RANGE (Min Year / Max Year) and a
+// single-select scope segmented control. Non-functional prototype — the
+// controls render and are interactive at the widget level; they do not filter.
+//
+// Composition is pure lego assembly:
+//   - esa-button             (.astro) → "Save Chart Filter" (primary)
+//   - esa-filter-clear-button (.astro) → "Clear Filter" (purpose-built ghost)
+//   - esa-select         (.ts WC × 2) → Min Year / Max Year range
+//   - esa-button-toggle      (.ts WC) → scope segments
+// Layout is .repel + .cluster primitives (no bespoke flex). esa-select and
+// esa-button-toggle take their options/value as ARRAY/STRING PROPERTIES, so they
+// are bridged through data-* attributes and hydrated in the component <script>.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaFilterClearButton from '@esa/ecology/esa-filter-clear-button.astro';
+
+interface View {
+  label: string;
+  value: string;
+}
+interface Props {
+  views: View[]; // the 3 scope segments
+  activeView?: string; // value of the selected segment; default = views[0].value
+  years: number[]; // fiscal years for the Min/Max Year selects (ascending)
+}
+
+const { views, activeView, years } = Astro.props;
+const scopeValue = activeView ?? views[0]?.value;
+
+// esa-select renders its own dropdown from an `options` array property — the
+// same {label, value} shape the toggle uses. Strings keep the value contract
+// (the select stores the selected option's `value`).
+const yearOptions = years.map((y) => ({ label: String(y), value: String(y) }));
+const minYear = yearOptions[0]?.value;
+const maxYear = yearOptions[yearOptions.length - 1]?.value;
+---
+<div class="cbf-chart-controls repel" data-gap="lg" data-align="end">
+  <div class="cluster" data-gap="xs" data-align="center">
+    <EsaButton color="primary" size="sm">Save Chart Filter</EsaButton>
+    <EsaFilterClearButton label="Clear Filter" />
+  </div>
+
+  <div class="cluster" data-gap="lg" data-align="end">
+    <div class="cluster cbf-chart-controls__range" data-gap="sm" data-align="end">
+      <esa-select
+        class="cbf-chart-controls__year"
+        size="sm"
+        data-cbf-year
+        data-label="Min Year"
+        data-options={JSON.stringify(yearOptions)}
+        data-value={minYear}></esa-select>
+      <esa-select
+        class="cbf-chart-controls__year"
+        size="sm"
+        data-cbf-year
+        data-label="Max Year"
+        data-options={JSON.stringify(yearOptions)}
+        data-value={maxYear}></esa-select>
+    </div>
+
+    <esa-button-toggle
+      size="sm"
+      data-cbf-scope
+      data-options={JSON.stringify(views)}
+      data-value={scopeValue}></esa-button-toggle>
+  </div>
+</div>
+
+<script>
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-button-toggle';
+
+  // Astro <script> is module-scoped and can't read Astro.props at runtime, so the
+  // array/string properties arrive via data-* and are hydrated onto each element.
+  document.querySelectorAll('esa-select[data-cbf-year]').forEach((el: any) => {
+    el.label = el.dataset.label;
+    el.options = JSON.parse(el.dataset.options);
+    el.searchable = false; // a year picker, not a typeahead
+    el.value = el.dataset.value;
+  });
+
+  document.querySelectorAll('esa-button-toggle[data-cbf-scope]').forEach((el: any) => {
+    el.options = JSON.parse(el.dataset.options);
+    el.value = el.dataset.value;
+  });
+</script>
+
+<style>
+  /* Toolbar owns only its own seams — the .repel/.cluster primitives carry the
+     layout, and each lego owns its internals. The range pair gets a thin label
+     so "Min Year"/"Max Year" read as one fiscal-year control. */
+  .cbf-chart-controls {
+    width: 100%;
+  }
+
+  /* Cap each year select so the pair stays compact in the toolbar rather than
+     stretching to the select's natural block width. */
+  .cbf-chart-controls__year {
+    width: 9rem;
+    max-width: 9rem;
+  }
+
+  /* On narrow viewports the .repel already wraps the two groups; let the range
+     selects share the row width so they don't overflow. */
+  @media (max-width: 540px) {
+    .cbf-chart-controls__range {
+      width: 100%;
+    }
+    .cbf-chart-controls__year {
+      flex: 1;
+      width: auto;
+      max-width: none;
+    }
+  }
+</style>
