@@ -1669,7 +1669,7 @@ function updateAreaChBuffer(we) {
   // past the boundary at endpoints but will never be truncated mid-reach.
   d.bufferLayer = L.polygon(ring, {
     color: PP_COLOR.buffer, fillColor: PP_COLOR.buffer,
-    fillOpacity: 0.15, weight: 2, dashArray: '6,4', interactive: false
+    fillOpacity: 0.15, weight: 2, dashArray: '6,4', interactive: true
   }).bindTooltip('Area of Channel (estimated)').addTo(map);
   // Respect the pre-project visibility toggle
   if (!ppLayersVisible && map.hasLayer(d.bufferLayer)) map.removeLayer(d.bufferLayer);
@@ -1822,13 +1822,13 @@ function commitFpPoly(we, pts) {
   var col = '#2a7a5c';
   if (chRing && chRing.length >= 3) {
     d.layer = L.polygon([pts, chRing.slice().reverse()], {
-      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:false
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
     }).bindTooltip('Floodplain Area').addTo(map);
     var chAreaM2 = geoAreaM2(chRing);
     d.valueM = Math.max(0, grossAreaM2 - chAreaM2);
   } else {
     d.layer = L.polygon(pts, {
-      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:false
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
     }).bindTooltip('Floodplain Area').addTo(map);
     d.valueM = grossAreaM2;
   }
@@ -1871,12 +1871,12 @@ function commitPCFP(we, pts) {
   var col = '#1a7a6c';
   if (chRing && chRing.length >= 3) {
     d.layer = L.polygon([pts, chRing.slice().reverse()], {
-      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:false
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
     }).bindTooltip('New Floodplain').addTo(map);
     d.valueM = Math.max(0, grossAreaM2 - geoAreaM2(chRing));
   } else {
     d.layer = L.polygon(pts, {
-      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:false
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
     }).bindTooltip('New Floodplain').addTo(map);
     d.valueM = grossAreaM2;
   }
@@ -1894,7 +1894,7 @@ function commitFpSide(we, id, poly, side) {
   if (!we.ppData[finalId]) we.ppData[finalId] = {};
   var d = we.ppData[finalId];
   if (d.layer) map.removeLayer(d.layer);
-  d.layer = L.polygon(poly, {color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:false})
+  d.layer = L.polygon(poly, {color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true})
     .bindTooltip(label).addTo(map);
   d.valueM = geoAreaM2(poly);
   d.userDrawn = true;
@@ -1971,7 +1971,7 @@ function splitFpByReach(we, flip) {
     var d = we.ppData[id]; if (!d) { we.ppData[id] = {}; d = we.ppData[id]; }
     if (d.layer) map.removeLayer(d.layer);
     if (d.labelMarker) { map.removeLayer(d.labelMarker); d.labelMarker = null; }
-    d.layer = L.polygon(pts, {color:col, fillColor:col, fillOpacity:0.22, weight:2, interactive:false})
+    d.layer = L.polygon(pts, {color:col, fillColor:col, fillOpacity:0.22, weight:2, interactive:true})
       .bindTooltip(label).addTo(map);
     d.valueM = geoAreaM2(pts);
     // Add a label marker at the polygon centroid
@@ -2119,7 +2119,7 @@ function fetchElevationProfile(we) {
         if (rPts.length && Array.isArray(rPts[0])) rPts = rPts[0];
         rPts = rPts.slice().reverse();
         map.removeLayer(reachD2.layer);
-        reachD2.layer = L.polyline(rPts, {color:'#c07820', weight:2.5, interactive:false}).addTo(map);
+        reachD2.layer = L.polyline(rPts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
         elevs = elevs.slice().reverse();
         var tmp = upstreamElev; upstreamElev = downstreamElev; downstreamElev = tmp;
         setMapHint('Reach direction reversed to flow downstream ↓');
@@ -2165,7 +2165,7 @@ function flipReachDirection(weArg) {
   if (pts.length && Array.isArray(pts[0])) pts = pts[0];
   pts = pts.slice().reverse();
   map.removeLayer(rd.layer);
-  rd.layer = L.polyline(pts, {color:'#c07820', weight:2.5, interactive:false}).addTo(map);
+  rd.layer = L.polyline(pts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
 
   // Keep an already-computed elevation profile in sync with the new direction
   // rather than leaving stale upstream/downstream stats from the old orientation.
@@ -2434,13 +2434,13 @@ function finishPPDraw() {
       return;
     }
     if(we.ppData[m.id].layer)map.removeLayer(we.ppData[m.id].layer);
-    we.ppData[m.id].layer=L.polyline(pts,{color:col,weight:2,dashArray:'4,3',interactive:false}).bindTooltip(m.label).addTo(map);
+    we.ppData[m.id].layer=L.polyline(pts,{color:col,weight:2,dashArray:'4,3',interactive:true}).bindTooltip(m.label).addTo(map);
     we.ppData[m.id].valueM=geoLen(pts);
   } else {
     if(we.ppData[m.id].layer)map.removeLayer(we.ppData[m.id].layer);
     var polyStyle = m.id==='perimeter'
       ? {color:col, fillOpacity:0, weight:2, dashArray:'8 5', interactive:false}
-      : {color:col, fillColor:col, fillOpacity:.18, weight:2, interactive:false};
+      : {color:col, fillColor:col, fillOpacity:.18, weight:2, interactive:true};
     we.ppData[m.id].layer=L.polygon(pts,polyStyle).bindTooltip(m.label).addTo(map);
     we.ppData[m.id].valueM=geoAreaM2(pts);
     // if this is area_ch or area_fp, mark as user-drawn and hide the buffer
@@ -2899,7 +2899,7 @@ function finishSOWDraw() {
     var totalAcres = 0, totalValueM = 0;
     pieces.forEach(function(p){ totalValueM += geoAreaM2(p); totalAcres += geoArea(p); });
     var enhLayer = pieces.length
-      ? L.polygon(pieces.map(function(p){ return [p]; }), {color:col, fillColor:col, fillOpacity:.2, weight:2, interactive:false}).bindTooltip(d.label).addTo(map)
+      ? L.polygon(pieces.map(function(p){ return [p]; }), {color:col, fillColor:col, fillOpacity:.2, weight:2, interactive:true}).bindTooltip(d.label).addTo(map)
       : null;
     var enhOwner = sowOwner(we, d.id);
     enhOwner.sowLayers[d.id] = {layer:enhLayer, valueM:totalValueM, acres:totalAcres, geo:'polygon', label:d.label, _pts:null, _noOverlap: pieces.length===0};
@@ -2916,7 +2916,7 @@ function finishSOWDraw() {
   if (d.id === 'sc-reach-new') {
     if (!we.scReaches) we.scReaches = [];
     var scId = 'scr-'+Date.now();
-    var scLayer = L.polyline(pts, {color:SC_COLOR, weight:2.5, interactive:false})
+    var scLayer = L.polyline(pts, {color:SC_COLOR, weight:2.5, interactive:true})
       .bindTooltip('Secondary Channel '+(we.scReaches.length+1)).addTo(map);
     we.scReaches.push({id:scId, layer:scLayer, bufferLayer:null, valueM:geoLen(pts), pts:pts});
     updateSCBuffers(we);
@@ -2946,11 +2946,11 @@ function finishSOWDraw() {
     if(NO_DISPLAY_IDS[d.id]){
       layer=null; // store geometry but don't add to map
     } else {
-      layer=L.polyline(pts,{color:col,weight:2.5,interactive:false}).bindTooltip(tipLabel).addTo(map);
+      layer=L.polyline(pts,{color:col,weight:2.5,interactive:true}).bindTooltip(tipLabel).addTo(map);
     }
     valueM=geoLen(pts);
   }
-  else{layer=L.polygon(pts,{color:col,fillColor:col,fillOpacity:.2,weight:2,interactive:false}).bindTooltip(tipLabel).addTo(map);acres=geoArea(pts);valueM=geoAreaM2(pts);}
+  else{layer=L.polygon(pts,{color:col,fillColor:col,fillOpacity:.2,weight:2,interactive:true}).bindTooltip(tipLabel).addTo(map);acres=geoArea(pts);valueM=geoAreaM2(pts);}
   var owner=sowOwner(we,d.id);
   owner.sowLayers[d.id]={layer:layer,valueM:valueM,acres:acres,geo:d.geo,label:d.label,_pts:NO_DISPLAY_IDS[d.id]?pts:null};
   // Multi-entry FP items (grading/road/berm/revetment/tailings/wetland) get a numbered
@@ -2999,7 +2999,7 @@ function updatePCBuffer(we) {
   var areaTip = we.primaryChannels.length > 1 ? 'Area of Restored Channel (estimated) — '+getActivePC(we).name : 'Area of Restored Channel (estimated)';
   var bufLayer = L.polygon(ring, {
     color:areaCol, fillColor:areaCol, fillOpacity:0.15,
-    weight:2, dashArray:'6,4', interactive:false
+    weight:2, dashArray:'6,4', interactive:true
   }).bindTooltip(areaTip).addTo(map);
   var areaM2 = geoAreaM2(ring);
   getActivePC(we).sowLayers['pc-area'] = {layer:bufLayer, valueM:areaM2, acres:areaM2*0.000247105, geo:'polygon', label:'Area of Restored Channel', _auto:true};
@@ -3074,7 +3074,7 @@ function updateSOWCalcs() {
         var autoAreaTip = we.primaryChannels.length > 1 ? 'Area of Restored Channel (estimated) — '+getActivePC(we).name : 'Area of Restored Channel (estimated)';
         var bufLayer = L.polygon(ring, {
           color: autoAreaCol, fillColor: autoAreaCol, fillOpacity: 0.15,
-          weight: 2, dashArray: '6,4', interactive: false
+          weight: 2, dashArray: '6,4', interactive: true
         }).bindTooltip(autoAreaTip).addTo(map);
         getActivePC(we)._pcAreaAutoLayer = bufLayer;
         var areaM2 = geoAreaM2(ring);
@@ -4319,7 +4319,7 @@ function updateSCBuffer(we, r) {
   var ring = buildBufferPoly(pts, halfWM);
   if (!ring) return;
   r.bufferLayer = L.polygon(ring, {
-    color:SC_COLOR, fillColor:SC_COLOR, fillOpacity:0.15, weight:1.5, dashArray:'6,4', interactive:false
+    color:SC_COLOR, fillColor:SC_COLOR, fillOpacity:0.15, weight:1.5, dashArray:'6,4', interactive:true
   }).bindTooltip('Secondary Channel (estimated)').addTo(map);
 }
 
@@ -4731,7 +4731,7 @@ function renderCHUUnits(we) {
     if (u.type === 'pool') { poolNum++; typeLabel = 'Pool ' + poolNum; }
     else { riffleNum++; typeLabel = 'Riffle ' + riffleNum; }
     u._displayLabel = typeLabel;
-    u.layer = L.polygon(u.pts, {color:col, fillColor:col, fillOpacity:0.25, weight:2, interactive:false})
+    u.layer = L.polygon(u.pts, {color:col, fillColor:col, fillOpacity:0.25, weight:2, interactive:true})
       .bindTooltip(typeLabel + ' — ' + (u.areaM2*0.000247105).toFixed(3)+' ac')
       .addTo(map);
     var icon = L.divIcon({
@@ -5346,7 +5346,7 @@ function wetlandAutoClickFeature(ring, previewLyr) {
   we.fpMulti['pp_wetland'].push({id: id, vol: ''});
 
   var col = WETLAND_COLOR.existing;
-  var layer = L.polygon(pts, {color:col, fillColor:col, fillOpacity:.2, weight:2, interactive:false})
+  var layer = L.polygon(pts, {color:col, fillColor:col, fillOpacity:.2, weight:2, interactive:true})
     .bindTooltip('Wetland area ' + n).addTo(map);
   var acres = geoArea(pts), valueM = geoAreaM2(pts);
   we.sowLayers[id] = {layer:layer, valueM:valueM, acres:acres, geo:'polygon', label:'Wetland area', _pts:null};
@@ -5693,7 +5693,7 @@ function reachExtendClick(latlng) {
       clearReachAutoLayers();
       // Rebuild reach with combined pts
       map.removeLayer(reachD.layer);
-      reachD.layer = L.polyline(combinedPts, {color:'#c07820', weight:2.5, interactive:false}).addTo(map);
+      reachD.layer = L.polyline(combinedPts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
       reachD.valueM = geoLen(combinedPts);
       cancelReachExtend();
       var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
@@ -6769,7 +6769,7 @@ function commitAutoReach(pts) {
   pts = clipPtsToPerimeter(we, pts, 'line');
   if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
   if (we.ppData['reach_len'].layer) map.removeLayer(we.ppData['reach_len'].layer);
-  var layer = L.polyline(pts, {color:'#c07820', weight:2.5, interactive:false}).addTo(map);
+  var layer = L.polyline(pts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
   we.ppData['reach_len'].layer = layer;
   we.ppData['reach_len'].valueM = geoLen(pts);
   we.ppData['reach_len']._autoDetecting = false;
@@ -8244,7 +8244,8 @@ function wizardStepBody(we, step, idx) {
         });
       }
       h += '<button class="wz-action-btn" style="margin-top:16px" onclick="openSOW()">&#128196; Export Metrics</button>';
-      h += '<button class="wz-action-btn secondary" onclick="openWEModal(null)">&#43; Add Another Work Element</button>';
+      // "Add Another Work Element" hidden for now — kept for easy restore.
+      // h += '<button class="wz-action-btn secondary" onclick="openWEModal(null)">&#43; Add Another Work Element</button>';
       break;
   }
   return h;
