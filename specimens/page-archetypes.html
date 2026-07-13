@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CB Fish — Page Archetype Catalog (specimen)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ============================================================
+       CB Fish — Page Archetype Catalog
+       A LOW-FIDELITY visual taxonomy. Every CB Fish page = one shared
+       shell + one of six body archetypes. Boxes are wireframe regions,
+       not final skin; each region carries a manifest tag naming the
+       esa-* lego / bcn- component / hub gap that fills it.
+       Real CB Fish token values inlined so it reads on-brand but stays
+       self-contained (no build, save + refresh).
+       ============================================================ */
+
+    /* ----- tokens (real CB Fish values, from theme-cb-fish.css) ----- */
+    :root {
+      --navy:        #13273e;   /* utility bar  (--cbf-blue-950) */
+      --blue:        #1e5386;   /* brand bar    (--color-primary) */
+      --blue-600:    #2770b2;
+      --blue-50:     #f3f7fc;
+      --gold:        #f6c244;
+
+      --gray-50:  #fafafa;
+      --gray-100: #efefef;
+      --gray-200: #dcdcdc;
+      --gray-300: #bdbdbd;
+      --gray-500: #7c7c7c;
+      --gray-600: #656565;
+      --gray-700: #525252;
+      --gray-900: #3d3d3d;
+
+      --ok:    #2e7d4f;   /* esa lego exists */
+      --build: #2770b2;   /* bcn- to build  */
+      --gap:   #b06a00;   /* hub gap / redesign */
+
+      --font:    'IBM Plex Sans', system-ui, sans-serif;
+      --display: 'IBM Plex Sans Condensed', 'IBM Plex Sans', sans-serif;
+
+      --radius: 8px;
+      --shadow: 0 1px 2px rgba(19,39,62,.06), 0 4px 12px rgba(19,39,62,.05);
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      font-size: 16px;
+      line-height: 1.5;
+      color: var(--gray-900);
+      background: var(--gray-100);
+    }
+
+    .wrap { max-width: 1180px; margin-inline: auto; padding: 40px 24px 80px; }
+
+    /* ----- page intro ----- */
+    .intro__eyebrow { font-size: 14px; font-weight: 600; color: var(--blue-600); margin: 0 0 8px; }
+    .intro h1 { font-family: var(--display); font-size: 40px; line-height: 1.1; margin: 0 0 12px; color: var(--gray-900); }
+    .intro p  { font-size: 18px; max-width: 70ch; margin: 0 0 24px; color: var(--gray-700); }
+
+    .legend {
+      display: flex; flex-wrap: wrap; gap: 10px 20px;
+      padding: 16px 20px; background: #fff; border: 1px solid var(--gray-200);
+      border-radius: var(--radius); margin-bottom: 8px;
+    }
+    .legend__item { display: flex; align-items: center; gap: 8px; font-size: 15px; color: var(--gray-700); }
+    .legend__key {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 5px;
+      border: 1px solid; white-space: nowrap;
+    }
+    .k-ok    { color: var(--ok);    border-color: var(--ok);    background: #eef6f0; }
+    .k-build { color: var(--build); border-color: var(--build); background: var(--blue-50); }
+    .k-gap   { color: var(--gap);   border-color: var(--gap);   background: #fbf2e3; }
+
+    /* ----- section headings ----- */
+    .sec-head { margin: 56px 0 20px; }
+    .sec-head h2 { font-family: var(--display); font-size: 28px; margin: 0 0 6px; }
+    .sec-head p  { font-size: 16px; color: var(--gray-700); margin: 0; max-width: 72ch; }
+
+    /* ============================================================
+       SHARED SHELL — rendered once, in its real colors
+       ============================================================ */
+    .shell {
+      background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius);
+      overflow: hidden; box-shadow: var(--shadow);
+    }
+    .shell__bar {
+      display: flex; align-items: center; gap: 18px; padding: 0 18px; height: 44px;
+      color: #fff; font-size: 14px;
+    }
+    .shell__bar--utility { background: var(--navy); }
+    .shell__bar--brand   { background: var(--blue); height: 56px; font-size: 15px; }
+    .shell__bar .spacer { flex: 1; }
+    .shell__bar .dim { opacity: .85; }
+    .shell__logo { font-family: var(--display); font-weight: 600; line-height: 1.05; }
+    .shell__logo small { display: block; font-weight: 400; opacity: .9; font-size: 12px; }
+    .shell__search {
+      flex: 0 1 320px; display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,.14); border-radius: 16px; padding: 5px 14px; font-size: 13px;
+    }
+    .shell__crumb {
+      height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 18px;
+      background: var(--gray-50); border-bottom: 1px solid var(--gray-200);
+      font-size: 14px; color: var(--gray-600);
+    }
+    .shell__title { padding: 22px 18px; }
+    .shell__title h3 { font-family: var(--display); font-size: 30px; margin: 0; }
+
+    /* annotation callouts on the shared shell */
+    .shell__note {
+      display: flex; align-items: baseline; gap: 10px;
+      padding: 10px 18px; border-top: 1px dashed var(--gray-200);
+      font-size: 14px; color: var(--gray-700);
+    }
+    .shell__note b { color: var(--gray-900); font-weight: 600; min-width: 132px; display: inline-block; }
+
+    /* ============================================================
+       ARCHETYPE CARDS
+       ============================================================ */
+    .grid { display: grid; grid-template-columns: 1fr; gap: 28px; }
+    @media (min-width: 920px) { .grid { grid-template-columns: 1fr 1fr; } }
+
+    .arch {
+      background: #fff; border: 1px solid var(--gray-200); border-radius: var(--radius);
+      box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden;
+    }
+    .arch__head { padding: 18px 20px 14px; border-bottom: 1px solid var(--gray-100); }
+    .arch__titlerow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .arch__name { font-family: var(--display); font-size: 22px; margin: 0; }
+    .arch__purpose { font-size: 15px; color: var(--gray-700); margin: 6px 0 0; }
+    .status {
+      font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 5px;
+      border: 1px solid; white-space: nowrap;
+    }
+    .status--modern   { color: var(--ok);  border-color: var(--ok);  background: #eef6f0; }
+    .status--redesign { color: var(--gap); border-color: var(--gap); background: #fbf2e3; }
+
+    /* the wireframe stage */
+    .wf { padding: 16px 20px; background: var(--gray-50); }
+
+    /* mini-shell strip atop each archetype's body */
+    .mini { border: 1px solid var(--gray-200); border-radius: 6px; overflow: hidden; background: #fff; }
+    .mini__navy  { height: 8px; background: var(--navy); }
+    .mini__blue  { height: 22px; background: var(--blue); display: flex; align-items: center; padding: 0 8px; }
+    .mini__blue span { font-family: var(--display); font-size: 11px; color: #fff; opacity: .95; }
+    .mini__crumb { height: 18px; background: var(--gray-50); border-bottom: 1px solid var(--gray-100);
+                   display: flex; align-items: center; padding: 0 8px; font-size: 11px; color: var(--gray-500); }
+    .mini__title { padding: 8px 8px 2px; font-family: var(--display); font-size: 15px; }
+
+    /* generic wireframe region box */
+    .r {
+      position: relative; background: #fff; border: 1px solid var(--gray-300);
+      border-radius: 5px; min-height: 34px; padding: 20px 8px 8px;
+    }
+    .r > .lab {
+      position: absolute; top: 4px; left: 6px;
+      font-size: 12px; font-weight: 500; color: var(--gray-600);
+    }
+    .r--ghost { background: repeating-linear-gradient(45deg, #fff, #fff 7px, var(--gray-50) 7px, var(--gray-50) 14px);
+                border-style: dashed; }
+    .r--fill  { background: var(--gray-100); }
+    .r--banner{ background: var(--blue-50); border-color: var(--blue-50); color: var(--blue-600); }
+
+    .body { padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+    .row  { display: flex; gap: 8px; }
+    .row > * { flex: 1; }
+
+    /* faux lines / chips inside regions */
+    .ln  { height: 7px; background: var(--gray-200); border-radius: 3px; margin: 5px 0; }
+    .ln.w70 { width: 70%; } .ln.w50 { width: 50%; } .ln.w40 { width: 40%; } .ln.w85 { width: 85%; }
+    .chip { display: inline-block; height: 16px; padding: 0 8px; line-height: 16px; font-size: 10px;
+            background: #fff; border: 1px solid var(--gray-300); border-radius: 9px; color: var(--gray-600); }
+    .btnchip { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .tablrow { display: flex; gap: 14px; padding: 6px 8px; border-bottom: 1px solid var(--gray-200); }
+    .tablrow .t { font-size: 11px; color: var(--gray-600); }
+    .tablrow .t.on { color: var(--blue-600); font-weight: 600; border-bottom: 2px solid var(--blue-600); padding-bottom: 4px; }
+    .thead { display: flex; background: var(--navy); border-radius: 4px 4px 0 0; }
+    .thead .c { flex: 1; height: 18px; margin: 4px; background: rgba(255,255,255,.25); border-radius: 2px; }
+    .trow  { display: flex; border-bottom: 1px solid var(--gray-100); }
+    .trow .c { flex: 1; height: 9px; margin: 5px 4px; background: var(--gray-100); border-radius: 2px; }
+    .mapbox {
+      height: 132px; border-radius: 5px; position: relative; border: 1px solid var(--gray-300);
+      background:
+        radial-gradient(circle at 30% 40%, #cfe0d2 0 14px, transparent 15px),
+        radial-gradient(circle at 62% 66%, #cfe0d2 0 10px, transparent 11px),
+        radial-gradient(circle at 48% 30%, #bcd0ea 0 8px, transparent 9px),
+        linear-gradient(120deg, #eef1ee, #e7ebef);
+    }
+    .ov { position: absolute; background: #fff; border: 1px solid var(--gray-300); border-radius: 4px;
+          font-size: 10px; color: var(--gray-600); padding: 2px 6px; }
+
+    /* manifest list */
+    .manifest { padding: 14px 20px 20px; border-top: 1px solid var(--gray-100); }
+    .manifest h4 { font-size: 14px; margin: 0 0 10px; color: var(--gray-700); font-weight: 600; }
+    .manifest ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+    .manifest li { display: flex; align-items: baseline; gap: 10px; font-size: 14px; }
+    .manifest .reg { min-width: 124px; color: var(--gray-700); }
+    .tag {
+      font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 5px;
+      border: 1px solid; white-space: nowrap;
+    }
+    .tag--ok    { color: var(--ok);    border-color: var(--ok);    background: #eef6f0; }
+    .tag--build { color: var(--build); border-color: var(--build); background: var(--blue-50); }
+    .tag--gap   { color: var(--gap);   border-color: var(--gap);   background: #fbf2e3; }
+
+    .footnote { margin-top: 48px; font-size: 14px; color: var(--gray-600); border-top: 1px solid var(--gray-200); padding-top: 18px; }
+    .footnote code { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 13px;
+                     background: var(--gray-100); padding: 1px 5px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============================ INTRO ============================ -->
+  <div class="intro">
+    <p class="intro__eyebrow">Pattern library · page tier</p>
+    <h1>Page Archetype Catalog</h1>
+    <p>Every CB Fish page is <b>one shared shell</b> wrapping <b>one of six body archetypes</b>.
+       This is the structural taxonomy — low-fidelity on purpose. Boxes are layout regions, not
+       final skin; each region names the lego that fills it.</p>
+
+    <div class="legend">
+      <span class="legend__item"><span class="legend__key k-ok">esa-*</span> hub lego exists — compose it</span>
+      <span class="legend__item"><span class="legend__key k-build">bcn-*</span> spoke component to build</span>
+      <span class="legend__item"><span class="legend__key k-gap">gap</span> hub gap — port from Beacon / redesign</span>
+    </div>
+  </div>
+
+  <!-- ============================ SHARED SHELL ============================ -->
+  <div class="sec-head">
+    <h2>The shared shell</h2>
+    <p>Invariant across all six archetypes — proven by all eight screenshots. Build it once; every page reuses it.</p>
+  </div>
+
+  <div class="shell">
+    <div class="shell__bar shell__bar--utility">
+      <span class="dim">Data management ⌄</span>
+      <span class="dim">System status ⌄</span>
+      <span class="dim">System configuration ⌄</span>
+      <span class="spacer"></span>
+      <span class="shell__search">⌕ Search projects, contracts, people…</span>
+      <span class="spacer"></span>
+      <span class="dim">Help ⌄</span>
+    </div>
+    <div class="shell__bar shell__bar--brand">
+      <span class="shell__logo">Columbia Basin<small>Fish &amp; Wildlife Program</small></span>
+      <span class="dim">Mitigation work ⌄</span>
+      <span class="dim">Reporting ⌄</span>
+      <span class="dim">Funding ⌄</span>
+      <span class="spacer"></span>
+      <span class="dim">Dashboard</span>
+      <span class="dim">Recent ⌄</span>
+      <span class="dim">◑</span>
+    </div>
+    <div class="shell__crumb">⌂ Home › Section › Page</div>
+    <div class="shell__title"><h3>Page title</h3></div>
+
+    <div class="shell__note"><b>Utility bar</b> system menus · global entity search · help — <span class="tag tag--ok">esa-app-bar</span> <span class="tag tag--ok">esa-entity-search</span></div>
+    <div class="shell__note"><b>Brand bar</b> logo · primary nav dropdowns · dashboard / recent / profile — <span class="tag tag--ok">esa-app-shell</span> <span class="tag tag--ok">esa-app-bar</span> <span class="tag tag--ok">esa-header-nav</span></div>
+    <div class="shell__note"><b>Breadcrumb</b> location trail — <span class="tag tag--ok">esa-breadcrumbs</span></div>
+    <div class="shell__note"><b>Page header</b> title (± icon, ± edit/actions) — <span class="tag tag--ok">esa-page-header</span></div>
+  </div>
+
+  <!-- ============================ ARCHETYPES ============================ -->
+  <div class="sec-head">
+    <h2>The six body archetypes</h2>
+    <p>What changes below the shell. Four are already modern; Map and Record are legacy redesign targets — the wireframe shows the modern skeleton we propose, not the old chrome.</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- ---------- 1. HUB ---------- -->
+    <div class="arch">
+      <div class="arch__head">
+        <div class="arch__titlerow">
+          <h3 class="arch__name">1 · Hub</h3>
+          <span class="status status--modern">modern</span>
+        </div>
+        <p class="arch__purpose">Section landing — a categorized link directory beside editorial content. (Mitigation work)</p>
+      </div>
+      <div class="wf">
+        <div class="mini">
+          <div class="mini__navy"></div><div class="mini__blue"><span>Columbia Basin F&amp;W</span></div>
+          <div class="mini__crumb">Home › Mitigation work</div>
+          <div class="mini__title">Mitigation work</div>
+          <div class="body">
+            <div class="row">
+              <div class="r" style="flex:0 0 34%">
+                <span class="lab">link rail</span>
+                <div class="ln w70"></div><div class="ln w50"></div><div class="ln w70"></div>
+                <div class="ln w40" style="margin-top:12px"></div><div class="ln w50"></div>
+              </div>
+              <div class="r" style="flex:1">
+                <span class="lab">editorial</span>
+                <div class="ln w85"></div><div class="ln w70"></div>
+                <div class="row" style="margin-top:8px">
+                  <div class="r--fill" style="height:46px;border-radius:4px"></div>
+                  <div style="flex:1"><div class="ln"></div><div class="ln"></div><div class="ln w70"></div></div>
+                </div>
+                <div class="row" style="margin-top:8px">
+                  <div class="r--fill" style="height:30px;border-radius:4px"></div>
+                  <div class="r--fill" style="height:30px;border-radius:4px"></div>
+                  <div class="r--fill" style="height:30px;border-radius:4px"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="manifest">
+        <h4>Region → lego</h4>
+        <ul>
+          <li><span class="reg">Link rail</span><span class="tag tag--build">bcn-link-rail</span><span style="font-size:13px;color:var(--gray-500)">grouped nav directory — no esa equivalent</span></li>
+          <li><span class="reg">Editorial lede + body</span><span class="tag tag--ok">esa-container</span> <span class="tag tag--ok">prose</span></li>
+          <li><span class="reg">Thumbnail cards</span><span class="tag tag--ok">esa-card</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ---------- 2. SUB-HUB / SUMMARY ---------- -->
+    <div class="arch">
+      <div class="arch__head">
+        <div class="arch__titlerow">
+          <h3 class="arch__name">2 · Sub-hub / Summary</h3>
+          <span class="status status--modern">modern</span>
+        </div>
+        <p class="arch__purpose">Topic overview — sub-section tabs over an editorial intro plus related-item cards. (Accruals, BiOp reporting)</p>
+      </div>
+      <div class="wf">
+        <div class="mini">
+          <div class="mini__navy"></div><div class="mini__blue"><span>Columbia Basin F&amp;W</span></div>
+          <div class="mini__crumb">Home › Funding › Accruals</div>
+          <div class="mini__title">Accruals: Summary</div>
+          <div class="body">
+            <div class="tablrow"><span class="t on">Summary</span><span class="t">Burn rates</span><span class="t">Trends</span><span class="t">Accuracy</span><span class="t">Related ⌄</span></div>
+            <div class="row">
+              <div class="r--fill" style="flex:0 0 38%;height:74px;border-radius:4px"></div>
+              <div class="r" style="flex:1"><span class="lab">intro</span><div class="ln w85"></div><div class="ln w70"></div><div class="ln w85"></div><div class="ln w50"></div></div>
+            </div>
+            <div class="r" style="padding-top:20px"><span class="lab">related items</span>
+              <div class="row"><div class="r--fill" style="height:40px;border-radius:4px"></div><div class="r--fill" style="height:40px;border-radius:4px"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="manifest">
+        <h4>Region → lego</h4>
+        <ul>
+          <li><span class="reg">Sub-section tabs</span><span class="tag tag--ok">esa-tab-layout</span></li>
+          <li><span class="reg">Editorial intro</span><span class="tag tag--ok">esa-container</span> <span class="tag tag--ok">prose</span></li>
+          <li><span class="reg">Related items</span><span class="tag tag--ok">esa-card</span> <span class="tag tag--ok">grid</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ---------- 3. REPORT EMBED ---------- -->
+    <div class="arch">
+      <div class="arch__head">
+        <div class="arch__titlerow">
+          <h3 class="arch__name">3 · Report embed</h3>
+          <span class="status status--modern">modern</span>
+        </div>
+        <p class="arch__purpose">Embedded BI canvas — info banner, action toolbar, then a Power BI report with its own slicers + filter rail. (Expenditures, Invoice trends)</p>
+      </div>
+      <div class="wf">
+        <div class="mini">
+          <div class="mini__navy"></div><div class="mini__blue"><span>Columbia Basin F&amp;W</span></div>
+          <div class="mini__crumb">Home › Funding › Expenditures</div>
+          <div class="mini__title">Expenditures</div>
+          <div class="body">
+            <div class="r--banner" style="border:1px solid var(--blue-50);border-radius:4px;padding:8px;font-size:11px">ⓘ  Reported by fiscal year; refreshed nightly.</div>
+            <div class="r" style="padding-top:20px"><span class="lab">toolbar</span>
+              <div style="display:flex;justify-content:flex-end;gap:6px"><span class="chip">⤓ Download</span><span class="chip">⤢ Expand</span></div>
+            </div>
+            <div class="r--ghost" style="padding-top:20px"><span class="lab">Power BI canvas (embed)</span>
+              <div class="row">
+                <div style="flex:0 0 24%"><div class="ln"></div><div class="ln w70"></div><div class="ln w50"></div></div>
+                <div style="flex:1"><div class="r--fill" style="height:54px;border-radius:4px"></div></div>
+                <div style="flex:0 0 22%"><div class="ln w85"></div><div class="ln w70"></div><div class="ln w85"></div><div class="ln w50"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="manifest">
+        <h4>Region → lego</h4>
+        <ul>
+          <li><span class="reg">Info banner</span><span class="tag tag--ok">esa-alert-box</span></li>
+          <li><span class="reg">Action toolbar</span><span class="tag tag--ok">esa-button</span></li>
+          <li><span class="reg">BI embed frame</span><span class="tag tag--build">bcn-report-embed</span><span style="font-size:13px;color:var(--gray-500)">iframe wrapper + chrome</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ---------- 4. DATA GRID ---------- -->
+    <div class="arch">
+      <div class="arch__head">
+        <div class="arch__titlerow">
+          <h3 class="arch__name">4 · Data grid</h3>
+          <span class="status status--modern">modern</span>
+        </div>
+        <p class="arch__purpose">Native sortable / filterable table — info banner, grid toolbar, table with column filters, export footer. (Populations)</p>
+      </div>
+      <div class="wf">
+        <div class="mini">
+          <div class="mini__navy"></div><div class="mini__blue"><span>Columbia Basin F&amp;W</span></div>
+          <div class="mini__crumb">Home › Data management › Populations</div>
+          <div class="mini__title">Populations</div>
+          <div class="body">
+            <div class="r--banner" style="border:1px solid var(--blue-50);border-radius:4px;padding:8px;font-size:11px">ⓘ  Significant species groups relevant to F&amp;W projects.</div>
+            <div class="r" style="padding-top:20px"><span class="lab">grid toolbar</span>
+              <div style="display:flex;justify-content:space-between;gap:6px"><span class="chip">⌕ Search grid…</span><span class="chip">Clear filters</span></div>
+            </div>
+            <div class="r" style="padding:6px"><span class="lab" style="position:static;display:block;margin-bottom:4px">data table</span>
+              <div class="thead"><div class="c"></div><div class="c"></div><div class="c"></div><div class="c"></div></div>
+              <div class="trow"><div class="c"></div><div class="c"></div><div class="c"></div><div class="c"></div></div>
+              <div class="trow"><div class="c"></div><div class="c"></div><div class="c"></div><div class="c"></div></div>
+              <div class="trow"><div class="c"></div><div class="c"></div><div class="c"></div><div class="c"></div></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--gray-500)"><span>⤓ Download CSV</span><span>Total records: 513</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="manifest">
+        <h4>Region → lego</h4>
+        <ul>
+          <li><span class="reg">Info banner</span><span class="tag tag--ok">esa-alert-box</span></li>
+          <li><span class="reg">Grid toolbar</span><span class="tag tag--ok">esa-text-field</span> <span class="tag tag--ok">esa-button</span></li>
+          <li><span class="reg">Data table</span><span class="tag tag--gap">data-table</span><span style="font-size:13px;color:var(--gray-500)">no hub lego — port from Beacon</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ---------- 5. MAP ---------- -->
+    <div class="arch">
+      <div class="arch__head">
+        <div class="arch__titlerow">
+          <h3 class="arch__name">5 · Map</h3>
+          <span class="status status--redesign">redesign target</span>
+        </div>
+        <p class="arch__purpose">Full-bleed spatial canvas — overlay controls (layers, legend, zoom, save) over a basemap, source footer. (Estuary Program map — legacy)</p>
+      </div>
+      <div class="wf">
+        <div class="mini">
+          <div class="mini__navy"></div><div class="mini__blue"><span>Columbia Basin F&amp;W</span></div>
+          <div class="mini__crumb">Programs › Estuary Program › Map</div>
+          <div class="mini__title">Map</div>
+          <div class="body">
+            <div class="r" style="padding:6px"><span class="lab" style="position:static;display:block;margin-bottom:4px">map canvas + overlays</span>
+              <div class="mapbox">
+                <span class="ov" style="top:6px;left:6px">▤ Layers ⌄</span>
+                <span class="ov" style="top:6px;left:50%;transform:translateX(-50%)">Save this map</span>
+                <span class="ov" style="top:6px;right:6px">Legend ⌄</span>
+                <span class="ov" style="top:40%;left:6px">＋<br>－</span>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--gray-500)">Source: NOAA species ranges — Oct 2020</div>
+          </div>
+        </div>
+      </div>
+      <div class="manifest">
+        <h4>Region → lego</h4>
+        <ul>
+          <li><span class="reg">Map canvas</span><span class="tag tag--gap">map</span><span style="font-size:13px;color:var(--gray-500)">no hub lego — wrap a map engine</span></li>
+          <li><span class="reg">Overlay controls</span><span class="tag tag--build">bcn-map-controls</span><span style="font-size:13px;color:var(--gray-500)">layers / legend / zoom / save</span></li>
+          <li><span class="reg">Source footer</span><span class="tag tag--ok">prose</span> <span class="tag tag--ok">esa-link</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ---------- 6. RECORD / DETAIL ---------- -->
+    <div class="arch">
+      <div class="arch__head">
+        <div class="arch__titlerow">
+          <h3 class="arch__name">6 · Record / Detail</h3>
+          <span class="status status--redesign">redesign target</span>
+        </div>
+        <p class="arch__purpose">Single entity — record header + many-tab bar + collapsible field-section groups beside a contextual mini-map aside. (Contract Summary — legacy)</p>
+      </div>
+      <div class="wf">
+        <div class="mini">
+          <div class="mini__navy"></div><div class="mini__blue"><span>Columbia Basin F&amp;W</span></div>
+          <div class="mini__crumb">Projects › 2010-077-00 › Contracts › 73982 REL 222</div>
+          <div class="mini__title">Contract 73982 REL 222</div>
+          <div class="body">
+            <div class="tablrow" style="flex-wrap:wrap;gap:8px"><span class="t on">Summary</span><span class="t">SOW</span><span class="t">Budgets</span><span class="t">Status</span><span class="t">Workflow</span><span class="t">Docs</span><span class="t">…</span></div>
+            <div class="row">
+              <div class="r" style="flex:1;padding-top:20px"><span class="lab">field sections (collapsible)</span>
+                <div class="ln w40"></div><div class="ln w85"></div><div class="ln w70"></div><div class="ln w85"></div><div class="ln w50"></div><div class="ln w70"></div>
+              </div>
+              <div class="r--fill" style="flex:0 0 34%;border-radius:4px;min-height:96px;position:relative">
+                <span class="lab" style="color:var(--gray-500)">mini-map</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="manifest">
+        <h4>Region → lego</h4>
+        <ul>
+          <li><span class="reg">Record header</span><span class="tag tag--ok">esa-page-header</span><span style="font-size:13px;color:var(--gray-500)">title + actions + modified</span></li>
+          <li><span class="reg">Facet tabs</span><span class="tag tag--ok">esa-tab-layout</span></li>
+          <li><span class="reg">Field sections</span><span class="tag tag--build">bcn-field-group</span><span style="font-size:13px;color:var(--gray-500)">collapsible key/value</span></li>
+          <li><span class="reg">Mini-map aside</span><span class="tag tag--gap">map</span><span style="font-size:13px;color:var(--gray-500)">reuses the Map lego</span></li>
+        </ul>
+      </div>
+    </div>
+
+  </div><!-- /grid -->
+
+  <div class="footnote">
+    <p><b>How to read this:</b> the shell + four modern archetypes compose from existing <code>esa-*</code> legos today.
+       Three regions surface real <b>hub gaps</b> — a <code>data-table</code> and a <code>map</code> lego — that gate the Grid, Map and Record archetypes.
+       That dependency sets the build order: shell → Hub / Sub-hub / Report (no new legos) → Grid (port table) → Map → Record (reuses map).</p>
+    <p>Next: lift each archetype to a high-fidelity, CB-Fish-skinned specimen — one at a time — then promote the stable shell + skeletons to the hub.</p>
+  </div>
+
+</div>
+</body>
+</html>
