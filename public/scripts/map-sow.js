@@ -28,6 +28,7 @@ var CHU_CYCLE = ['riffle','pool','glide','run'];
 // Floodplain polygon (also purple) and Wetland Enhancement sits ON TOP of an
 // Existing Wetland Area, so both need to read as distinct from what they overlap.
 var WETLAND_COLOR = {existing:'#0c8599', enhance:'#c2185b'};
+var activeBasemap = 'Street Map'; // read by updateNaipYearDisplay() outside the map-init closure
 var STRUCT_COLOR = {cms:'#e07b28', mcs:'#1a7abf', css:'#c44a4a', fps:'#7b4fbf', scs:'#2a7a5c'};
 var STRUCT_LABEL = {cms:'Channel Margin', mcs:'Mid Channel', css:'Channel Spanning', fps:'Floodplain', scs:'Side Channel'};
 
@@ -67,6 +68,20 @@ window.onload = function() {
     }
   });
   new zoomDisplay().addTo(map);
+
+  // NAIP imagery-year display (bottom-right, above zoom/scale) — only shown while
+  // the USGS NAIP basemap is active. See updateNaipYearDisplay() for the fetch.
+  var naipYearDisplayCtl = L.Control.extend({
+    options: {position: 'bottomright'},
+    onAdd: function() {
+      var div = L.DomUtil.create('div','');
+      div.style.cssText = 'background:rgba(30,83,134,0.9);color:rgba(255,255,255,0.9);font-size:11px;padding:2px 7px;border-radius:3px;margin-bottom:2px;pointer-events:none;display:none';
+      div.id = 'naip-year-display';
+      return div;
+    }
+  });
+  new naipYearDisplayCtl().addTo(map);
+  map.on('moveend', updateNaipYearDisplay);
 
   // Search box using Nominatim (OpenStreetMap geocoder)
   var searchControl = L.Control.extend({
@@ -129,6 +144,7 @@ window.onload = function() {
   var basemaps = {
     'Street Map': L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {maxZoom:19, attribution:'© OpenStreetMap © CARTO'}),
     'Satellite':  L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {maxZoom:20, attribution:'© Google'}),
+    'USGS NAIP':  L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}', {maxZoom:19, maxNativeZoom:16, attribution:'USDA/USGS NAIP'}),
     'Topo':       L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {maxZoom:17, attribution:'© OpenTopoMap'})
   };
 
@@ -150,7 +166,6 @@ window.onload = function() {
   };
 
   basemaps['Street Map'].addTo(map);
-  var activeBasemap = 'Street Map';
   overlays['NHD Streams'].addTo(map);
 
   // Layer control — topright
@@ -198,6 +213,7 @@ window.onload = function() {
               overlays[n].addTo(map);
             }
           });
+          updateNaipYearDisplay();
         };
         row.appendChild(radio); row.appendChild(document.createTextNode(' '+name)); panel.appendChild(row);
       });
@@ -5105,6 +5121,38 @@ function clearReachAutoLayers() {
 // multi-entry list directly, the same way a hand-drawn one would be.
 var wetlandAutoDetecting = false;
 var wetlandAutoLayers = []; // temp highlight layers for detected wetland candidates
+
+// USGS NAIP imagery-year lookup — queries the USGS NAIP Plus catalog (The National
+// Map) for whatever source image covers the current map center, and shows its real
+// acquisition year in the bottom-right control. Only relevant while the USGS NAIP
+// basemap is selected; hidden otherwise. NAIP is refreshed per state every 2-3
+// years and this service keeps just the latest vintage per area (not a historical
+// archive), so this is a single "as of" year, not a pickable range.
+var naipYearReqSeq = 0;
+function updateNaipYearDisplay() {
+  var div = document.getElementById('naip-year-display');
+  if (!div) return;
+  if (activeBasemap !== 'USGS NAIP') { div.style.display = 'none'; return; }
+  div.style.display = 'block';
+  div.textContent = 'USGS NAIP imagery: loading…';
+  var seq = ++naipYearReqSeq;
+  var center = map.getCenter();
+  var url = 'https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/query?' +
+    'geometry=' + encodeURIComponent(center.lng + ',' + center.lat) +
+    '&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects' +
+    '&where=' + encodeURIComponent('Year IS NOT NULL') +
+    '&outFields=Year&returnGeometry=false&f=json';
+  fetch(url).then(function(r){ return r.json(); }).then(function(data) {
+    if (seq !== naipYearReqSeq) return; // a newer request superseded this one
+    var years = (data.features || []).map(function(f){ return f.attributes.Year; }).filter(function(y){ return y; });
+    if (!years.length) { div.textContent = 'USGS NAIP imagery: no coverage here'; return; }
+    var minY = Math.min.apply(null, years), maxY = Math.max.apply(null, years);
+    div.textContent = 'USGS NAIP imagery: ' + (minY === maxY ? minY : minY + '–' + maxY);
+  }).catch(function() {
+    if (seq !== naipYearReqSeq) return;
+    div.textContent = 'USGS NAIP imagery: unavailable';
+  });
+}
 
 function clearWetlandAutoLayers() {
   wetlandAutoLayers.forEach(function(l){ map.removeLayer(l); });
