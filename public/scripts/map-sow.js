@@ -496,6 +496,27 @@ function setPPLayersVisible(show) {
 
 function togglePPLayers() { setPPLayersVisible(!ppLayersVisible); }
 
+// Existing Wetland Area shapes (drawn/auto-detected in the pp_wetland pre-project
+// step) clutter the map through primary channel / floodplain work — hide them once
+// the wizard moves past pre-project, and only show them again on the Wetland
+// Enhancement step (fp_wetland_enhance), where the user needs to see the wetland
+// extent to draw an enhancement polygon within it.
+var WIZARD_STEP_ORDER_IDS = null;
+function updateWetlandLayerVisibility(we, step) {
+  if (!we) return;
+  if (!WIZARD_STEP_ORDER_IDS) WIZARD_STEP_ORDER_IDS = WIZARD_STEPS.map(function(s){ return s.id; });
+  var enhanceIdx = WIZARD_STEP_ORDER_IDS.indexOf('fp_wetland_enhance');
+  var curIdx = step ? WIZARD_STEP_ORDER_IDS.indexOf(step.id) : -1;
+  var show = !step || step.phase === 'pp' || (curIdx >= 0 && curIdx >= enhanceIdx);
+  var items = (we.fpMulti && we.fpMulti['pp_wetland']) || [];
+  items.forEach(function(item) {
+    var d = we.sowLayers[item.id];
+    if (!d) return;
+    if (d.layer) { if (show && !map.hasLayer(d.layer)) map.addLayer(d.layer); else if (!show && map.hasLayer(d.layer)) map.removeLayer(d.layer); }
+    if (d._labelMarker) { if (show && !map.hasLayer(d._labelMarker)) map.addLayer(d._labelMarker); else if (!show && map.hasLayer(d._labelMarker)) map.removeLayer(d._labelMarker); }
+  });
+}
+
 var labelsVisible = true;
 
 function setLabelsVisible(show) {
@@ -6938,6 +6959,7 @@ function toggleWizardMode() {
     if (wizBody) { wizBody.style.display = 'none'; wizBody.innerHTML = ''; }
     if (exp) exp.style.display = 'flex';
     if (activeWEId) showInnerTab(activeInnerTab);
+    updateWetlandLayerVisibility(getActiveWE(), null);
   }
 }
 
@@ -7137,6 +7159,7 @@ function renderWizardStep() {
   var visSteps = getVisibleSteps();
   var step = visSteps[wizardStep] || visSteps[visSteps.length-1];
   if (!step) return;
+  updateWetlandLayerVisibility(we, step);
 
   // ── Vertical stepper (vendor-invoice pattern), grouped into collapsible sections ──
   var workSectionLabels = {pc: 'Primary Channel', sc: 'Secondary Channels', fp: 'Floodplain & Side Channels', rr: 'Riparian Restoration'};
