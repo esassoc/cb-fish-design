@@ -2091,9 +2091,23 @@ function fetchElevationProfile(we) {
   renderPMRow(m);
   var samples = sampleReachPts(pts, ELEV_SAMPLES);
   var promises = samples.map(function(p){ return fetchElevation(p.lat, p.lng); });
-  Promise.all(promises).then(function(elevs) {
+  // USGS's elevation service occasionally 500s on individual points, and when that
+  // error response lacks CORS headers the fetch throws outright rather than just
+  // resolving null — Promise.all() would fail the ENTIRE profile over one bad
+  // sample. Promise.allSettled() lets the profile still compute from whatever
+  // samples do succeed, so a partial USGS hiccup doesn't take out the whole feature.
+  Promise.allSettled(promises).then(function(results) {
+    var rejectedCount = results.filter(function(r){ return r.status === 'rejected'; }).length;
+    var elevs = results.map(function(r){ return r.status === 'fulfilled' ? r.value : null; });
     var valid = elevs.filter(function(e){ return e !== null && !isNaN(e) && e > -100; });
-    if (valid.length < 2) { we.ppData['avg_slope']._elevLoading = false; we.ppData['avg_slope']._elevError = 'No elevation data returned — outside USGS coverage?'; renderPMRow(m); return; }
+    if (valid.length < 2) {
+      we.ppData['avg_slope']._elevLoading = false;
+      we.ppData['avg_slope']._elevError = rejectedCount > 0
+        ? 'USGS elevation service is currently having issues — try again in a bit.'
+        : 'No elevation data returned — outside USGS coverage?';
+      renderPMRow(m);
+      return;
+    }
     var upstreamElev = elevs[0] !== null ? elevs[0] : valid[0];
     var downstreamElev = elevs[elevs.length-1] !== null ? elevs[elevs.length-1] : valid[valid.length-1];
 
@@ -2110,8 +2124,13 @@ function fetchElevationProfile(we) {
         var tmp = upstreamElev; upstreamElev = downstreamElev; downstreamElev = tmp;
         setMapHint('Reach direction reversed to flow downstream ↓');
         setTimeout(function(){setMapHint('');}, 3000);
-        // Rebuild buffers with corrected direction
+        // Rebuild buffers with corrected direction. Note updateAreaChBuffer() bails
+        // out early (before its own addReachArrow() call) when channel width hasn't
+        // been measured yet — which is the common case here, since elevation loads
+        // while the user is likely still on the Stream Reach step — so refresh the
+        // flow arrows explicitly rather than relying on that call to do it.
         updateAreaChBuffer(we); updateAreaFpBuffer(we);
+        addReachArrow(we);
       }
     }
 
