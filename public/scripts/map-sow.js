@@ -5211,10 +5211,13 @@ function loadWetlandPreview() {
 
   // Note: this service requires fully-qualified field names ("Wetlands.FIELD"),
   // not bare field names — a bare outFields list returns a 400 error.
+  // Riverine features are the stream/river channel itself, not a pre-project
+  // wetland area to preserve — exclude them so only actual wetlands show up here.
   var url = 'https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?' +
     'geometry='+encodeURIComponent(env)+
     '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects' +
     '&outFields='+encodeURIComponent('Wetlands.WETLAND_TYPE,Wetlands.ACRES')+
+    '&where='+encodeURIComponent("Wetlands.WETLAND_TYPE <> 'Riverine'")+
     '&returnGeometry=true&outSR=4326&f=json';
 
   setMapHint('Loading NWI wetlands...');
