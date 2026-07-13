@@ -7155,11 +7155,15 @@ function wizardStepStatus(we, stepId) {
     }
     case 'fp_split':  return (we.ppData['area_fp'] && we.ppData['area_fp'].fpSplit) ? 'done' : 'pending';
     case 'pp_done': {
-      // Done when core PP measurements are all complete
-      var corePP = ['perimeter','reach','ch_width','fp_poly'];
+      // Done when every non-skippable pre-project step is complete (substrate and
+      // pp_wetland are legitimately skippable, so they don't gate this)
+      var corePP = ['perimeter','reach','ch_width','fp_poly','buffers'];
       return corePP.every(function(id){ return wizardStepStatus(we, id) === 'done'; }) ? 'done' : 'pending';
     }
-    case 'pc_metrics': return (getActivePC(we).sowLayers['pc-reach'] && getActivePC(we).sowLayers['pc-reach'].layer) ? 'done' : 'pending';
+    case 'pc_metrics': {
+      var pcmEV = getActivePC(we).inputVals['pc-excavation-vol'];
+      return (pcmEV !== undefined && pcmEV !== null && pcmEV !== '') ? 'done' : 'pending';
+    }
     case 'pc_gravel': {
       var anyGravelPlaced = (getActivePC(we).gravelPlacements||[]).some(function(p){ return !!p.latlng; });
       return anyGravelPlaced ? 'done' : 'pending';
@@ -7183,8 +7187,10 @@ function wizardStepStatus(we, stepId) {
       return hasSt ? 'done' : 'pending';
     }
     case 'pc_channel_done': {
-      var pcCheck = getActivePC(we);
-      return (pcCheck.sowLayers['pc-reach'] && pcCheck.sowLayers['pc-reach'].layer) ? 'done' : 'pending';
+      // Done when every non-skippable step in this primary channel is complete
+      // (chu_split, structures, and pc_gravel are legitimately skippable)
+      var corePC = ['pc_reach','pc_width','pc_metrics','pc_fp'];
+      return corePC.every(function(id){ return wizardStepStatus(we, id) === 'done'; }) ? 'done' : 'pending';
     }
     case 'sc_draw':  return (we.scReaches && we.scReaches.length > 0 && we.scReaches.every(function(r){return r.width>0 && r.flowType;})) ? 'done' : 'pending';
     case 'sc_wood':  { var scL=we.inputVals&&we.inputVals['sc-large-wood'], scS=we.inputVals&&we.inputVals['sc-small-wood']; return (scL>=0&&scS>=0&&(scL>0||scS>0))?'done':'pending'; }
