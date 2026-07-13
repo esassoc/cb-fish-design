@@ -7087,7 +7087,7 @@ var WIZARD_STEPS = [
   { id:'sc_draw',  label:'Secondary Channels', title:'Draw Secondary Channels',   phase:'work', types:['fp'], section:'sc' },
   { id:'sc_wood',  label:'Wood Counts',         title:'Secondary Channel Wood',    phase:'work', types:['fp'], section:'sc' },
   { id:'fp_structures',  label:'Structures',      title:'Floodplain Structures',        phase:'work', types:['fp'] },
-  { id:'fp_reach_width', label:'Reach & Width',   title:'FP Connectivity Reach & Width', phase:'work', types:['fp'] },
+  { id:'fp_reach_width', label:'Floodplain Width',   title:'Floodplain Connectivity Width', phase:'work', types:['fp'] },
   { id:'fp_grading',     label:'Grading',         title:'Floodplain Grading',           phase:'work', types:['fp'] },
   { id:'fp_road',        label:'Road Removal',    title:'Road Removed/Setback',         phase:'work', types:['fp'] },
   { id:'fp_berm',        label:'Berm Removal',    title:'Berm/Levee Removed',           phase:'work', types:['fp'] },
@@ -7739,6 +7739,9 @@ function wizardStepBody(we, step, idx) {
       var inputStyle = 'width:100%;box-sizing:border-box;border:1px solid var(--color-border);border-radius:4px;padding:4px 8px;font-size:13px;font-family:var(--font-sans)';
       var labelStyle = 'display:block;font-size:11px;color:var(--color-text-secondary);margin-bottom:3px';
       h += '<div class="wz-step-desc">Enter additional complexity metrics for the primary channel.</div>';
+      var pcmReachSL = getActivePC(we).sowLayers['pc-reach'];
+      var pcmStreamMi = pcmReachSL && pcmReachSL.valueM ? (pcmReachSL.valueM * 0.000621371).toFixed(3)+' mi' : null;
+      h += '<div class="wz-metric-row"><span class="wz-metric-label">Stream miles with improved floodplain connectivity</span><span class="wz-metric-val '+(pcmStreamMi?'':'missing')+'">'+(pcmStreamMi||'draw the primary channel to calculate')+'</span></div>';
       h += '<div style="margin-bottom:8px"><label style="'+labelStyle+'">Excavation volume (CY)</label>';
       h += '<input type="number" min="0" step="1" placeholder="e.g. 500" value="'+(pcmEV||'')+'"';
       h += ' style="'+inputStyle+'" onchange="setPCExcavVol(this.value)"></div>';
@@ -8150,18 +8153,13 @@ function wizardStepBody(we, step, idx) {
     }
 
     case 'fp_reach_width': {
-      var scMi = scConnectivityMiles(we);
       var scAvgW = scAvgWidthFt(we);
-      h += '<div class="wz-step-desc">FP connectivity reach is calculated from your Secondary Channels; floodplain width is measured across the pre-project Floodplain boundary at each channel — no separate drawing needed here.</div>';
-      if (scMi === null) {
-        h += '<div class="wz-status warning">&#9888; No secondary channels entered yet — go back to Secondary Channels and add at least one; this metric is calculated from that data.</div>';
+      h += '<div class="wz-step-desc">Floodplain width is measured across the pre-project Floodplain boundary at each Secondary Channel — no separate drawing needed here.</div>';
+      if (scAvgW === null) {
+        h += '<div class="wz-status warning">&#9888; Floodplain width unavailable — make sure the pre-project Floodplain boundary (step 5) is drawn and at least one Secondary Channel is entered and crosses it.</div>';
       } else {
-        h += '<div class="wz-metric-row"><span class="wz-metric-label">FP connectivity reach</span><span class="wz-metric-val">'+scMi.toFixed(3)+' mi</span></div>';
-        h += '<div class="wz-metric-row"><span class="wz-metric-label">Avg floodplain width</span><span class="wz-metric-val">'+(scAvgW?Math.round(scAvgW)+' ft':'—')+'</span></div>';
-        h += '<div class="wz-status done">&#10003; Calculated from '+we.scReaches.length+' secondary channel'+(we.scReaches.length>1?'s':'')+'.</div>';
-        if (scAvgW === null) {
-          h += '<div class="wz-tip">Floodplain width unavailable — make sure the pre-project Floodplain boundary (step 5) is drawn and crosses your secondary channels.</div>';
-        }
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Avg floodplain width</span><span class="wz-metric-val">'+Math.round(scAvgW)+' ft</span></div>';
+        h += '<div class="wz-status done">&#10003; Calculated from secondary channel data.</div>';
       }
       h += '<div class="wz-group-head divided">Post-Project Connectivity</div>';
       h += wzFPInputRow(we, 'fp-bankfull-ac', 'FP area connected below bankfull (ac)');
@@ -8877,6 +8875,7 @@ function openSOW() {
         });
         var pcGravelAvgDepth = pcGravelDepths.length ? (pcGravelDepths.reduce(function(a,v){return a+v;},0)/pcGravelDepths.length) : null;
         h += '<tr><td>Reach length</td><td>measured</td><td>'+pcRchFt2+'</td></tr>';
+        h += '<tr><td>Stream miles with improved floodplain connectivity</td><td>calc</td><td>'+(pcRchSL && pcRchSL.valueM ? (pcRchSL.valueM*0.000621371).toFixed(3)+' mi' : '—')+'</td></tr>';
         h += '<tr><td>Valley length</td><td>calc</td><td>'+pcVlFt2+'</td></tr>';
         h += '<tr><td>Sinuosity</td><td>calc</td><td>'+pcSin2+'</td></tr>';
         h += '<tr><td>Average reach slope</td><td>calc</td><td>'+pcSlope2+'</td></tr>';
@@ -8913,9 +8912,7 @@ function openSOW() {
         we.structures[t].forEach(function(s,i){ tLarge+=+s.large||0; tSmall+=+s.small||0; h+='<tr><td>'+STRUCT_LABEL[t]+' '+(i+1)+': '+s.desc+'</td><td>entered</td><td>Large: '+(s.large||0)+', Small: '+(s.small||0)+'</td></tr>'; });
         if (we.structures[t].length) h+='<tr style="font-weight:700"><td>Total '+STRUCT_LABEL[t]+' large/small pieces</td><td>calc</td><td>Large: '+tLarge+', Small: '+tSmall+'</td></tr>';
       });
-      var scConnMi = scConnectivityMiles(we);
       var scWidthFt = scAvgWidthFt(we);
-      h+='<tr><td>FP connectivity reach</td><td>calc</td><td>'+(scConnMi!==null ? scConnMi.toFixed(3)+' mi' : wMi2('fp-conn-reach'))+'</td></tr>';
       h+='<tr><td>Avg floodplain width</td><td>calc</td><td>'+(scWidthFt!==null ? Math.round(scWidthFt)+' ft' : wAvg2(['fpw1','fpw2','fpw3']))+'</td></tr>';
       h+='<tr><td>Post-project FP area connected below bankfull</td><td>entered</td><td>'+(wVal2('fp-bankfull-ac')!=='—'?wVal2('fp-bankfull-ac')+' acres':'—')+'</td></tr>';
       h+='<tr><td>Post-project FP area connected below 2x bankfull</td><td>entered</td><td>'+(wVal2('fp-bankfull-2x-ac')!=='—'?wVal2('fp-bankfull-2x-ac')+' acres':'—')+'</td></tr>';
