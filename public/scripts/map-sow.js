@@ -2731,6 +2731,21 @@ function startSOWDraw(id,geo,label) {
   setMapHint(msg);
 }
 
+// The primary channel is a redesign of the same stream as the pre-project reach —
+// its flow direction (and therefore its flow arrows) should match, but a hand-drawn
+// line's point order only reflects whichever end the user happened to click first.
+// Reverse the drawn points if that gives a better endpoint match to the reference
+// reach than the as-drawn order does.
+function orientPtsLikeReach(pts, refPts) {
+  if (!pts || pts.length < 2 || !refPts || refPts.length < 2) return pts;
+  var cosLat = Math.cos(refPts[0].lat*Math.PI/180);
+  function d2(a,b){ var dlat=a.lat-b.lat, dlng=(a.lng-b.lng)*cosLat; return dlat*dlat+dlng*dlng; }
+  var pStart=pts[0], pEnd=pts[pts.length-1], rStart=refPts[0], rEnd=refPts[refPts.length-1];
+  var sameOrient = d2(pStart,rStart)+d2(pEnd,rEnd);
+  var revOrient  = d2(pStart,rEnd)+d2(pEnd,rStart);
+  return revOrient < sameOrient ? pts.slice().reverse() : pts;
+}
+
 // "Wetland Enhancement" polygons must represent habitat improved WITHIN existing
 // wetland, not just anywhere the user draws — clip the drawn ring against every
 // pre-project Existing Wetland Area polygon (there may be several, possibly
@@ -2802,6 +2817,14 @@ function finishSOWDraw() {
     renderLegend();
     if (wizardMode) wizardRefreshIfActive();
     return;
+  }
+  if (d.id === 'pc-reach') {
+    var refReachD = we.ppData['reach_len'];
+    if (refReachD && refReachD.layer) {
+      var refReachPts = refReachD.layer.getLatLngs();
+      if (refReachPts.length && Array.isArray(refReachPts[0])) refReachPts = refReachPts[0];
+      pts = orientPtsLikeReach(pts, refReachPts);
+    }
   }
   var layer,valueM=0,acres=0;
   var NO_DISPLAY_IDS = {pcw1:1,pcw2:1,pcw3:1};
@@ -7991,8 +8014,8 @@ function wizardStepBody(we, step, idx) {
         }
       }
       h += '<div class="wz-group-head divided">Post-Project Connectivity</div>';
-      h += wzFPInputRow(we, 'fp-bankfull-ac', 'FP area connected below bankfull (ac)');
-      h += wzFPInputRow(we, 'fp-bankfull-2x-ac', 'FP area connected below 2x bankfull (ac)');
+      h += wzFPInputRow(we, 'fp-bankfull-ac', 'FP area connected below bankfull (sq ft)');
+      h += wzFPInputRow(we, 'fp-bankfull-2x-ac', 'FP area connected below 2x bankfull (sq ft)');
       break;
     }
 
