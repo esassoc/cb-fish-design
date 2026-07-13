@@ -523,7 +523,9 @@ function updateWetlandLayerVisibility(we, step) {
   if (!WIZARD_STEP_ORDER_IDS) WIZARD_STEP_ORDER_IDS = WIZARD_STEPS.map(function(s){ return s.id; });
   var enhanceIdx = WIZARD_STEP_ORDER_IDS.indexOf('fp_wetland_enhance');
   var curIdx = step ? WIZARD_STEP_ORDER_IDS.indexOf(step.id) : -1;
-  var show = !step || step.phase === 'pp' || (curIdx >= 0 && curIdx >= enhanceIdx);
+  // 'buffers' (Review Areas) is crowded enough with channel/floodplain buffers —
+  // hide the selected wetland shapes there too, even though it's still pre-project.
+  var show = !step || (step.phase === 'pp' && step.id !== 'buffers') || (curIdx >= 0 && curIdx >= enhanceIdx);
   var items = (we.fpMulti && we.fpMulti['pp_wetland']) || [];
   items.forEach(function(item) {
     var d = we.sowLayers[item.id];
