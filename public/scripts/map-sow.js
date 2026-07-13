@@ -18,7 +18,7 @@ var PP_DEFS = [
 ];
 
 var TYPE_COLORS = {pc:'#1a7abf', fp:'#7b4fbf', rr:'#2a7a5c'};
-var TYPE_LABELS = {pc:'Primary Channel', fp:'Floodplain & Side Channels', rr:'Riparian Restoration'};
+var TYPE_LABELS = {pc:'Primary Channel', fp:'Floodplain', rr:'Riparian Restoration'};
 var PP_COLOR = {polygon:'#7b4fbf', line:'#c07820', buffer:'#1a7abf', bufferFp:'#2a7a5c'};
 var SOW_COLOR = {line:'#1a7abf', polygon:'#2a7a5c', segment:'#e07b28'};
 var CHU_COLOR = {riffle:'#c07820', pool:'#1a7abf', glide:'#2a8a6a', run:'#7b4fbf', unassigned:'#e07b28'};
@@ -7097,7 +7097,7 @@ var WIZARD_STEPS = [
   { id:'rr_fencing',  label:'Fencing',           title:'Riparian Protection — Fencing',      phase:'work', types:['rr'] },
   { id:'rr_planting', label:'Planting & Invasive', title:'Riparian Planting & Regeneration', phase:'work', types:['rr'] },
   { id:'rr_totals',   label:'Bank & Totals',     title:'Riparian Totals',                    phase:'work', types:['rr'] },
-  { id:'done',       label:'Complete',        title:'Work Element Complete!',         phase:'work' }
+  { id:'done',       label:'Complete',        title:'Design Complete!',         phase:'work' }
 ];
 
 function toggleWizardMode() {
@@ -7336,11 +7336,11 @@ function renderWizardStep() {
   updateFpPolyVisibilityForStep(we, step);
 
   // ── Vertical stepper (vendor-invoice pattern), grouped into collapsible sections ──
-  var workSectionLabels = {pc: 'Primary Channel', sc: 'Secondary Channels', fp: 'Floodplain & Side Channels', rr: 'Riparian Restoration'};
+  var workSectionLabels = {pc: 'Primary Channel', sc: 'Secondary Channels', fp: 'Floodplain', rr: 'Riparian Restoration'};
   var savedActivePCId = we ? we.activePCId : null;
 
   // Group steps into sections first (Pre-Project, each Primary Channel, Secondary
-  // Channels, Floodplain & Side Channels, Riparian) so each can be collapsed as a unit.
+  // Channels, Floodplain, Riparian) so each can be collapsed as a unit.
   var sections = [];
   var prevSectionKey = null;
   visSteps.forEach(function(s, i) {
@@ -7408,8 +7408,8 @@ function renderWizardStep() {
 
   var bodyHtml = we ? wizardStepBody(we, step, wizardStep) : '<div class="wz-step-desc">Add a work element to get started.</div>';
   // Milestone/summary screens ("X Complete!") aren't term-heavy — no help box there:
-  // pp_done (step 7, Pre-Project Done), pc_channel_done (step 16, Channel Complete).
-  var wzNoHelpSteps = {pp_done:1, pc_channel_done:1};
+  // pp_done (Pre-Project Done), pc_channel_done (Channel Complete), done (Design Complete).
+  var wzNoHelpSteps = {pp_done:1, pc_channel_done:1, done:1};
   if (!wzNoHelpSteps[step.id]) bodyHtml = wzInsertHelpBox(bodyHtml, step.label);
   var footerHtml = wizardStepFooter(we, step, wizardStep);
 
@@ -8228,21 +8228,8 @@ function wizardStepBody(we, step, idx) {
       break;
 
     case 'done':
-      h += '<div class="wz-step-desc">Your work element is complete. Review the summary and export your Statement of Work.</div>';
-      h += '<div class="wz-status done" style="font-size:13px;padding:14px">&#10003; <b>'+( we ? we.name : 'Work element')+' complete!</b></div>';
-      if (we) {
-        var doneMetrics = [
-          ['Reach Length', ppLenFt(we,'reach_len') ? Math.round(ppLenFt(we,'reach_len')).toLocaleString()+' ft' : null],
-          ['Area of Channel', ppAcres(we,'area_ch') ? ppAcres(we,'area_ch').toFixed(2)+' ac' : null],
-          ['Left Floodplain', ppAcres(we,'fp_left') ? ppAcres(we,'fp_left').toFixed(2)+' ac' : null],
-          ['Right Floodplain', ppAcres(we,'fp_right') ? ppAcres(we,'fp_right').toFixed(2)+' ac' : null],
-          ['CHUs', getActivePC(we).chuUnits && getActivePC(we).chuUnits.length > 0 ? getActivePC(we).chuUnits.length+' units' : null]
-        ];
-        doneMetrics.forEach(function(m) {
-          h += '<div class="wz-metric-row"><span class="wz-metric-label">'+m[0]+'</span>';
-          h += '<span class="wz-metric-val '+(m[1]?'':'missing')+'">'+( m[1] || 'not entered')+'</span></div>';
-        });
-      }
+      h += '<div class="wz-step-desc">Your design is complete. Export your metrics.</div>';
+      h += '<div class="wz-status done" style="font-size:13px;padding:14px">&#10003; <b>Design complete!</b></div>';
       h += '<button class="wz-action-btn" style="margin-top:16px" onclick="openSOW()">&#128196; Export Metrics</button>';
       // "Add Another Work Element" hidden for now — kept for easy restore.
       // h += '<button class="wz-action-btn secondary" onclick="openWEModal(null)">&#43; Add Another Work Element</button>';
@@ -8905,7 +8892,7 @@ function openSOW() {
       // via we.fpMulti[key]; fall back to the single legacy sowLayers id from expert mode.
       function fpMultiDisplay(key,geo,legacyId){var sum=fpMultiSum(we,key);if(sum.count>0)return geo==='polygon'?sum.acres.toFixed(2)+' acres':(sum.valueM*0.000621371).toFixed(3)+' mi';return geo==='polygon'?wAc2(legacyId):wMi2(legacyId);}
       function fpMultiVolDisplay(key,legacyVolId){var sum=fpMultiSum(we,key);if(sum.count>0)return sum.hasVol?sum.vol+' CY':'—';var v=wVal2(legacyVolId);return v!=='—'?v+' CY':'—';}
-      h+='<h3>Floodplain &amp; Side Channels</h3><table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
+      h+='<h3>Floodplain</h3><table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
       h+='<tr><td>FP large log placement area</td><td>measured</td><td>'+wAc2('fp-logs-area')+'</td></tr>';
       h+='<tr><td># Large logs placed</td><td>entered</td><td>'+wVal2('fp-large-logs')+'</td></tr>';
       ['fps','scs'].forEach(function(t){
