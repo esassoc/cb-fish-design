@@ -895,8 +895,8 @@ function renderPMRow(m) {
         var hasUserPoly = d.layer && d.userDrawn;
         var hasBuffer = d.bufferLayer && d.valueM && !hasUserPoly;
         var srcNote = 'from reach &times; avg channel width';
-        var vs = hasUserPoly ? Math.round(d.valueM*10.7639).toLocaleString()+' sq ft (digitized)'
-                 : hasBuffer ? Math.round(d.valueM*10.7639).toLocaleString()+' sq ft (estimated)'
+        var vs = hasUserPoly ? (d.valueM*0.000247105).toFixed(2)+' acres (digitized)'
+                 : hasBuffer ? (d.valueM*0.000247105).toFixed(2)+' acres (estimated)'
                  : null;
         var editLink = (hasUserPoly || hasBuffer) ? ' <span class="pm-redraw" onclick="startPolyEdit(\''+bufId+'\')">'+(isEditingPoly?'editing…':'edit')+'</span>' : '';
         var redoBtn2 = hasUserPoly ? ' <span class="pm-redraw" onclick="clearPPGeom(\''+bufId+'\')">redo</span>' : '';
@@ -909,10 +909,10 @@ function renderPMRow(m) {
           h += drawnResult + estResult + drawPrompt;
         }
       } else {
-        var vs2=(d.layer||(d._pts&&d.valueM))?(m.geo==='line'?Math.round((d.valueM||0)*3.28084).toLocaleString()+' ft':Math.round((d.valueM||0)*10.7639).toLocaleString()+' sq ft'):null;
-        // fp_left/fp_right are lines that produce polygons — show sq ft
+        var vs2=(d.layer||(d._pts&&d.valueM))?(m.geo==='line'?Math.round((d.valueM||0)*3.28084).toLocaleString()+' ft':((d.valueM||0)*0.000247105).toFixed(2)+' acres'):null;
+        // fp_left/fp_right are lines that produce polygons — show acres
         if ((m.id==='fp_left'||m.id==='fp_right') && d.layer && d.valueM) {
-          vs2 = Math.round((d.valueM||0)*10.7639).toLocaleString()+' sq ft';
+          vs2 = ((d.valueM||0)*0.000247105).toFixed(2)+' acres';
         }
         var editBtn = (vs2 && m.geo==='line') ? ' <span class="pm-redraw" onclick="startLineEdit(\'pp\',\''+m.id+'\')">'+(isEditing?'editing…':'edit')+'</span>' : '';
         var redoBtn = vs2 ? ' <span class="pm-redraw" onclick="clearPPGeom(\''+m.id+'\')">redo</span>' : '';
@@ -959,7 +959,7 @@ function renderPMRow(m) {
       }
     }
   } else if (m.method === 'auto') {
-    var autoVal = (d && d.valueM) ? Math.round(d.valueM*10.7639).toLocaleString()+' sq ft' : null;
+    var autoVal = (d && d.valueM) ? (d.valueM*0.000247105).toFixed(2)+' acres' : null;
     if (autoVal) {
       h += '<span class="pm-result">&#10003; '+autoVal+'</span>';
       h += '<div style="font-size:10px;color:var(--msow-helper-text,#7a96b0);margin-top:2px">Auto-calculated from floodplain split</div>';
@@ -996,10 +996,10 @@ function renderPMRow(m) {
         h += '<span class="pm-waiting">Enter bank height with each channel width measurement</span>';
       }
     } else if (m.id === 'area_fp') {
-      // Show total as sq ft (left + right), with swap button
+      // Show total as acres (left + right), with swap button
       if (res2 !== null) {
-        var fpAcres = Math.round(res2 * 10.7639).toLocaleString();
-        h += '<span class="pm-result">'+fpAcres+' sq ft</span>';
+        var fpAcres = (res2 * 0.000247105).toFixed(2);
+        h += '<span class="pm-result">'+fpAcres+' acres</span>';
         h += '<span style="font-size:10px;color:var(--msow-helper-text,#7a96b0);margin-left:5px">Left + Right</span>';
       } else {
         h += '<span class="pm-waiting">Draw Left and/or Right floodplain polygons</span>';
@@ -1178,7 +1178,7 @@ function calcPCFPCrossWidth(we, t) {
 function calcPCFPCrossWidthFt(we, t) { var v = calcPCFPCrossWidth(we, t); return v ? Math.round(v*3.28084) : null; }
 
 function ppLenFt(we,id){var d=we.ppData[id];return(d&&d.valueM)?d.valueM*3.28084:null;}
-function ppAcres(we,id){var d=we.ppData[id];return(d&&d.valueM)?d.valueM*10.7639:null;}
+function ppAcres(we,id){var d=we.ppData[id];return(d&&d.valueM)?d.valueM*0.000247105:null;}
 function ppMultiAvgFt(we,id){var d=we.ppData[id];if(!d||!d.lines)return null;var lines=d.lines.filter(function(l){return l&&l.lengthM;});return lines.length?lines.reduce(function(a,l){return a+l.lengthM;},0)/lines.length*3.28084:null;}
 function ppMultiAvgM(we,id){var d=we.ppData[id];if(!d||!d.lines)return null;var lines=d.lines.filter(function(l){return l&&l.lengthM;});return lines.length?lines.reduce(function(a,l){return a+l.lengthM;},0)/lines.length:null;}
 
@@ -2791,18 +2791,18 @@ function buildFPPanelHTML(we) {
   h+=fCalc('Avg floodplain width (calculated)','fp-width');
   h+=fRow('Left floodplain area','fp-left','polygon','&#9646; Draw polygon');
   h+=fRow('Right floodplain area','fp-right','polygon','&#9646; Draw polygon');
-  h+=fRow('Square feet of floodplain grading (cut)','fp-grade','polygon','&#9646; Draw polygon');
+  h+=fRow('Acres of floodplain grading (cut)','fp-grade','polygon','&#9646; Draw polygon');
   h+=fRow('Miles of road removed/setback in FP','fp-road','line','&#128207; Draw line');
   h+=fInput('Volume (CY) road removed','fp-road-vol');
   h+=fRow('Miles of berm/levee removed','fp-berm','line','&#128207; Draw line');
   h+=fInput('Volume (CY) berm/levee removed','fp-berm-vol');
   h+=fRow('Miles of revetment removed','fp-revet','line','&#128207; Draw line');
   h+=fInput('Volume (CY) revetment removed','fp-revet-vol');
-  h+=fRow('Square feet of mine tailings removal','fp-tailings','polygon','&#9646; Draw polygon');
+  h+=fRow('Acres of mine tailings removal','fp-tailings','polygon','&#9646; Draw polygon');
   h+=fInput('Volume (CY) tailings removed','fp-tailings-vol');
   h+=fRow('Miles perennial side channel constructed','fp-perensc','line','&#128207; Draw line');
   h+=fRow('Miles ephemeral side channel constructed','fp-ephsc','line','&#128207; Draw line');
-  h+=fRow('Square feet wetland constructed/restored/enhanced','fp-wetland','polygon','&#9646; Draw polygon');
+  h+=fRow('Acres wetland constructed/restored/enhanced','fp-wetland','polygon','&#9646; Draw polygon');
   h+=secEnd();
   return h;
 }
@@ -2961,7 +2961,7 @@ function finishSOWDraw() {
   }
   var el=document.getElementById('dr-'+d.id);
   if(el){
-    var val=d.geo==='polygon'?Math.round(acres).toLocaleString()+' sq ft':Math.round(valueM*3.28084).toLocaleString()+' ft';
+    var val=d.geo==='polygon'?acres.toFixed(2)+' acres':Math.round(valueM*3.28084).toLocaleString()+' ft';
     var editLink=(d.geo==='line'||d.geo==='segment')?'<span class="drawn-redo" onclick="startLineEdit(\'sow\',\''+d.id+'\')">edit</span> ':'';
     el.innerHTML='<span class="drawn-result">&#10003; '+val+'</span> '+editLink+'<span class="drawn-redo" onclick="startSOWDraw(\''+d.id+'\',\''+d.geo+'\',\''+d.label+'\')">redo</span>';
   }
@@ -3002,7 +3002,7 @@ function updatePCBuffer(we) {
     weight:2, dashArray:'6,4', interactive:false
   }).bindTooltip(areaTip).addTo(map);
   var areaM2 = geoAreaM2(ring);
-  getActivePC(we).sowLayers['pc-area'] = {layer:bufLayer, valueM:areaM2, acres:areaM2*10.7639, geo:'polygon', label:'Area of Restored Channel', _auto:true};
+  getActivePC(we).sowLayers['pc-area'] = {layer:bufLayer, valueM:areaM2, acres:areaM2*0.000247105, geo:'polygon', label:'Area of Restored Channel', _auto:true};
   renderLegend();
   addPCReachArrow(we); // channel width just changed — re-fan flow arrows if now wide enough
 }
@@ -3054,7 +3054,7 @@ function updateSOWCalcs() {
       // User has drawn/edited manually
       var acresSL = (sl.valueM || sl.acres || 0);
       var displayAc = typeof acresSL === 'number' && acresSL > 0
-        ? Math.round(acresSL).toLocaleString() + ' sq ft'
+        ? (acresSL < 10 ? acresSL.toFixed(3) : acresSL.toFixed(2)) + ' acres'
         : '—';
       pcAreaWrap.innerHTML =
         '<span class="drawn-result">~ '+displayAc+'</span> from reach × avg channel width ' +
@@ -3078,10 +3078,10 @@ function updateSOWCalcs() {
         }).bindTooltip(autoAreaTip).addTo(map);
         getActivePC(we)._pcAreaAutoLayer = bufLayer;
         var areaM2 = geoAreaM2(ring);
-        var acresAuto = (areaM2 * 10.7639).toFixed(3);
-        getActivePC(we).sowLayers['pc-area'] = {layer: bufLayer, valueM: areaM2 * 10.7639, acres: parseFloat(acresAuto), geo: 'polygon', label: 'Area of Restored Channel', _auto: true};
+        var acresAuto = (areaM2 * 0.000247105).toFixed(3);
+        getActivePC(we).sowLayers['pc-area'] = {layer: bufLayer, valueM: areaM2 * 0.000247105, acres: parseFloat(acresAuto), geo: 'polygon', label: 'Area of Restored Channel', _auto: true};
         pcAreaWrap.innerHTML =
-          '<span class="drawn-result">~ '+Math.round(acresAuto).toLocaleString()+' sq ft</span> <span style="font-size:10px;color:var(--msow-desc-text,#5a7a9a)">(estimated)</span> ' +
+          '<span class="drawn-result">~ '+acresAuto+' acres</span> <span style="font-size:10px;color:var(--msow-desc-text,#5a7a9a)">(estimated)</span> ' +
           '<span class="drawn-redo" onclick="startPolyEditSOW(\'pc-area\')">edit</span> ' +
           '<span class="drawn-redo" onclick="startSOWDraw(\'pc-area\',\'polygon\',\'Area of Restored Channel\')">draw from scratch</span>';
       }
@@ -4047,7 +4047,7 @@ function commitLineEdit() {
       if (crR) {
         var crRing = layer.getLatLngs();
         if (crRing.length && Array.isArray(crRing[0])) crRing = crRing[0];
-        crR.sowLayers['pc-area'].valueM = geoAreaM2(crRing) * 10.7639;
+        crR.sowLayers['pc-area'].valueM = geoAreaM2(crRing) * 0.000247105;
         crR.sowLayers['pc-area']._auto = false;
         renderChannelReaches();
       }
@@ -4732,7 +4732,7 @@ function renderCHUUnits(we) {
     else { riffleNum++; typeLabel = 'Riffle ' + riffleNum; }
     u._displayLabel = typeLabel;
     u.layer = L.polygon(u.pts, {color:col, fillColor:col, fillOpacity:0.25, weight:2, interactive:false})
-      .bindTooltip(typeLabel + ' — ' + Math.round(u.areaM2*10.7639).toLocaleString()+' sq ft')
+      .bindTooltip(typeLabel + ' — ' + (u.areaM2*0.000247105).toFixed(3)+' ac')
       .addTo(map);
     var icon = L.divIcon({
       className: '',
@@ -4754,7 +4754,7 @@ function renderCHUUnits(we) {
   el.innerHTML = '';
   getActivePC(we).chuUnits.forEach(function(u, i) {
     var typeClass = u.type || 'unassigned';
-    var areaAc = Math.round(u.areaM2*10.7639).toLocaleString();
+    var areaAc = (u.areaM2*0.000247105).toFixed(3);
     var lenFt = Math.round(u.lengthM * 3.28084).toLocaleString();
     var div = document.createElement('div');
     div.className = 'chu-unit ' + typeClass;
@@ -4767,7 +4767,7 @@ function renderCHUUnits(we) {
       '<button class="chu-type-btn'+(u.type==='glide'?' active-glide':'')+'" onclick="setCHUType(&apos;'+u.id+'&apos;,&apos;glide&apos;)">Glide</button>'+
       '<button class="chu-type-btn'+(u.type==='run'?' active-run':'')+'" onclick="setCHUType(&apos;'+u.id+'&apos;,&apos;run&apos;)">Run</button>'+
       '</div>'+
-      '<div class="chu-unit-info" style="margin-left:auto">'+areaAc+' sq ft &nbsp;·&nbsp; ~'+lenFt+' ft</div>'+
+      '<div class="chu-unit-info" style="margin-left:auto">'+areaAc+' ac &nbsp;·&nbsp; ~'+lenFt+' ft</div>'+
       '</div>'+
       (u.type==='riffle' ? '<div style="display:flex;align-items:center;gap:5px;margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.15);width:100%"><label style="font-size:11px;color:rgba(255,255,255,0.7);white-space:nowrap">Boulders:</label><input type="number" min="0" style="width:60px;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:2px 5px;border-radius:3px;font-size:11px" value="'+(u.boulders||'')+'" placeholder="0" oninput="setCHUBoulders(\''+u.id+'\',this.value)"></div>' : '')+
       (u.type==='pool' ? '<div style="display:flex;align-items:center;gap:5px;margin-top:5px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.15);width:100%"><label style="font-size:11px;color:rgba(255,255,255,0.7);white-space:nowrap">Avg depth at low flow (ft):</label><input type="number" min="0" step="0.1" style="width:60px;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:2px 5px;border-radius:3px;font-size:11px" value="'+(u.poolDepth||'')+'" placeholder="0.0" oninput="setCHUPoolDepth(\''+u.id+'\',this.value)"></div>' : '');
@@ -4785,14 +4785,14 @@ function updateCHUSummary(we) {
   var runs       = getActivePC(we).chuUnits.filter(function(u){return u.type==='run';});
   var unassigned = getActivePC(we).chuUnits.filter(function(u){return !u.type;});
   if (!getActivePC(we).chuUnits.length) { el.innerHTML=''; return; }
-  var rArea = riffles.reduce(function(a,u){return a+u.areaM2;},0)*10.7639;
-  var pArea = pools.reduce(function(a,u){return a+u.areaM2;},0)*10.7639;
+  var rArea = riffles.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105;
+  var pArea = pools.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105;
   var rLen  = riffles.reduce(function(a,u){return a+u.lengthM;},0)*3.28084;
   var pLen  = pools.reduce(function(a,u){return a+u.lengthM;},0)*3.28084;
   var gLen  = glides.reduce(function(a,u){return a+u.lengthM;},0)*3.28084;
   var rnLen = runs.reduce(function(a,u){return a+u.lengthM;},0)*3.28084;
-  var gArea = glides.reduce(function(a,u){return a+u.areaM2;},0)*10.7639;
-  var rnArea= runs.reduce(function(a,u){return a+u.areaM2;},0)*10.7639;
+  var gArea = glides.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105;
+  var rnArea= runs.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105;
   var totalBoulders = riffles.reduce(function(a,u){return a+(u.boulders||0);},0);
   var poolDepths = pools.filter(function(u){return u.poolDepth;}).map(function(u){return u.poolDepth;});
   var avgPoolDepth = poolDepths.length ? (poolDepths.reduce(function(a,v){return a+v;},0)/poolDepths.length).toFixed(1) : null;
@@ -4800,12 +4800,12 @@ function updateCHUSummary(we) {
     '<div style="color:#7ab8df;font-weight:700;margin-bottom:4px">CHU Summary</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px 12px;font-size:10px;color:#c8d4df">'+
     '<div style="color:var(--msow-helper-text,#7a96b0)">Type</div><div style="color:var(--msow-helper-text,#7a96b0)">Count</div><div style="color:var(--msow-helper-text,#7a96b0)">Area / Length</div>'+
-    (riffles.length?'<div style="color:#7ab8df">Riffles</div><div>'+riffles.length+'</div><div>'+Math.round(rArea).toLocaleString()+' sq ft · ~'+Math.round(rLen).toLocaleString()+' ft</div>':'')+
+    (riffles.length?'<div style="color:#7ab8df">Riffles</div><div>'+riffles.length+'</div><div>'+rArea.toFixed(3)+' ac · ~'+Math.round(rLen).toLocaleString()+' ft</div>':'')+ 
     (riffles.length&&totalBoulders?'<div style="color:#7ab8df;padding-left:8px">↳ Boulders</div><div>'+totalBoulders+'</div><div></div>':'')+
-    (pools.length?'<div style="color:#b07bdf">Pools</div><div>'+pools.length+'</div><div>'+Math.round(pArea).toLocaleString()+' sq ft · ~'+Math.round(pLen).toLocaleString()+' ft</div>':'')+
+    (pools.length?'<div style="color:#b07bdf">Pools</div><div>'+pools.length+'</div><div>'+pArea.toFixed(3)+' ac · ~'+Math.round(pLen).toLocaleString()+' ft</div>':'')+
     (avgPoolDepth?'<div style="color:#b07bdf;padding-left:8px">↳ Avg depth</div><div>'+avgPoolDepth+' ft</div><div></div>':'')+
-    (glides.length?'<div style="color:#5ddba5">Glides</div><div>'+glides.length+'</div><div>'+Math.round(gArea).toLocaleString()+' sq ft · ~'+Math.round(gLen).toLocaleString()+' ft</div>':'')+
-    (runs.length?'<div style="color:#e0a050">Runs</div><div>'+runs.length+'</div><div>'+Math.round(rnArea).toLocaleString()+' sq ft · ~'+Math.round(rnLen).toLocaleString()+' ft</div>':'')+
+    (glides.length?'<div style="color:#5ddba5">Glides</div><div>'+glides.length+'</div><div>'+gArea.toFixed(3)+' ac · ~'+Math.round(gLen).toLocaleString()+' ft</div>':'')+
+    (runs.length?'<div style="color:#e0a050">Runs</div><div>'+runs.length+'</div><div>'+rnArea.toFixed(3)+' ac · ~'+Math.round(rnLen).toLocaleString()+' ft</div>':'')+
     (unassigned.length?'<div style="color:#e07b28">Unassigned</div><div>'+unassigned.length+'</div><div>—</div>':'')+
     '</div>';
 }
@@ -5310,7 +5310,7 @@ function loadWetlandPreview() {
       var pts = ring.map(function(c){ return L.latLng(c[1], c[0]); });
       var typeLabel = feat.attributes['Wetlands.WETLAND_TYPE'] || 'Wetland';
       var acVal = feat.attributes['Wetlands.ACRES'];
-      var tip = typeLabel + (acVal ? ' ('+Math.round(acVal*43560).toLocaleString()+' sq ft, NWI)' : '') + ' — click to add';
+      var tip = typeLabel + (acVal ? ' ('+acVal.toFixed(2)+' ac, NWI)' : '') + ' — click to add';
       var lyr = L.polygon(pts, {
         color:'#2a7a5c', weight:2, opacity:0.85, fillColor:'#2a7a5c', fillOpacity:0.3, interactive:true
       }).bindTooltip(tip, {sticky:true});
@@ -5985,11 +5985,11 @@ function crAreaHTML(r) {
   var areaSL = r.sowLayers['pc-area'];
   var avgW = crAvgWidth(r);
   if (areaSL && areaSL.layer && !areaSL._auto) {
-    var ac = Math.round((areaSL.valueM||0)*10.7639).toLocaleString();
-    return '<span class="drawn-result">~ '+ac+' sq ft</span> <span class="drawn-redo" onclick="startCRDraw(&apos;'+r.id+'&apos;,&apos;pc-area&apos;,&apos;polygon&apos;,&apos;Area&apos;)">draw from scratch</span>';
+    var ac = ((areaSL.valueM||0)*0.000247105).toFixed(3);
+    return '<span class="drawn-result">~ '+ac+' acres</span> <span class="drawn-redo" onclick="startCRDraw(&apos;'+r.id+'&apos;,&apos;pc-area&apos;,&apos;polygon&apos;,&apos;Area&apos;)">draw from scratch</span>';
   } else if (areaSL && areaSL.layer && areaSL._auto) {
-    var ac2 = Math.round((areaSL.valueM||0)*10.7639).toLocaleString();
-    return '<span class="drawn-result">~ '+ac2+' sq ft</span> <span style="font-size:10px;color:var(--msow-desc-text,#5a7a9a)">(estimated)</span> '+
+    var ac2 = ((areaSL.valueM||0)*0.000247105).toFixed(3);
+    return '<span class="drawn-result">~ '+ac2+' acres</span> <span style="font-size:10px;color:var(--msow-desc-text,#5a7a9a)">(estimated)</span> '+
       '<span class="drawn-redo" onclick="startCRPolyEdit(&apos;'+r.id+'&apos;)">edit</span> '+
       '<span class="drawn-redo" onclick="startCRDraw(&apos;'+r.id+'&apos;,&apos;pc-area&apos;,&apos;polygon&apos;,&apos;Area&apos;)">draw from scratch</span>';
   } else if (reachSL && reachSL.layer && avgW) {
@@ -6223,7 +6223,7 @@ function updateCRAutoArea(r) {
     .bindTooltip('Area of Restored Channel (estimated)').addTo(map);
   r._pcAreaAutoLayer = bufLayer;
   var areaM2 = geoAreaM2(ring);
-  r.sowLayers['pc-area'] = {layer:bufLayer, valueM:areaM2*10.7639, geo:'polygon', label:'Area of Restored Channel', _auto:true};
+  r.sowLayers['pc-area'] = {layer:bufLayer, valueM:areaM2*0.000247105, geo:'polygon', label:'Area of Restored Channel', _auto:true};
   renderChannelReaches();
 }
 
@@ -7048,7 +7048,7 @@ function renderLegend() {
 
 // ── Geometry ──────────────────────────────────────────────────────────────
 function geoLen(pts){var d=0;for(var i=0;i<pts.length-1;i++)d+=pts[i].distanceTo(pts[i+1]);return d;}
-function geoArea(pts){return geoAreaM2(pts)*10.7639;}
+function geoArea(pts){return geoAreaM2(pts)*0.000247105;}
 function geoAreaM2(pts){var R=6378137,toRad=function(x){return x*Math.PI/180;},area=0,n=pts.length;for(var i=0;i<n;i++){var j=(i+1)%n;area+=toRad(pts[j].lng-pts[i].lng)*(2+Math.sin(toRad(pts[i].lat))+Math.sin(toRad(pts[j].lat)));}return Math.abs(area*R*R/2);}
 
 // ── Misc ──────────────────────────────────────────────────────────────────
@@ -7464,8 +7464,8 @@ function wizardStepBody(we, step, idx) {
       h += '<div class="wz-step-desc">Draw the outer boundary of your project area. This helps auto-clip the stream reach and other features to your site.</div>';
       var perimDone = we && we.ppData['perimeter'] && we.ppData['perimeter'].layer;
       if (perimDone) {
-        var perimAc = Math.round((we.ppData['perimeter'].valueM||0)*10.7639).toLocaleString();
-        h += '<div class="wz-status done">&#10003; Project boundary drawn — <b>'+perimAc+' sq ft</b></div>';
+        var perimAc = ((we.ppData['perimeter'].valueM||0)*0.000247105).toFixed(2);
+        h += '<div class="wz-status done">&#10003; Project boundary drawn — <b>'+perimAc+' ac</b></div>';
         h += '<button class="wz-action-btn secondary" onclick="wizardRedraw(\'perimeter\')">&#8635; Redraw Boundary</button>';
       } else {
         h += '<div class="wz-status pending">&#9654; Click the button below, then click on the map to place polygon vertices. Double-click to finish.</div>';
@@ -7579,7 +7579,7 @@ function wizardStepBody(we, step, idx) {
       var fpLDone = dFpL && dFpL.layer;
       h += '<div class="wz-step-desc">Draw the outer edge of the left floodplain (left bank looking downstream). The inner edge auto-completes along the channel buffer.</div>';
       if (fpLDone) {
-        h += '<div class="wz-status done">&#10003; Left floodplain: <b>'+Math.round((dFpL.valueM||0)*10.7639).toLocaleString()+' sq ft</b></div>';
+        h += '<div class="wz-status done">&#10003; Left floodplain: <b>'+((dFpL.valueM||0)*0.000247105).toFixed(2)+' ac</b></div>';
         h += '<button class="wz-action-btn secondary" onclick="startPPDraw(\'fp_left\',0);renderWizardStep()">&#128207; Redraw</button>';
         h += '<button class="wz-action-btn secondary" onclick="startLineEdit(\'pp\',\'fp_left\');renderWizardStep()">&#9998; Edit Vertices</button>';
       } else {
@@ -7594,7 +7594,7 @@ function wizardStepBody(we, step, idx) {
       var fpRDone = dFpR && dFpR.layer;
       h += '<div class="wz-step-desc">Draw the outer edge of the right floodplain (right bank looking downstream). The inner edge auto-completes along the channel buffer.</div>';
       if (fpRDone) {
-        h += '<div class="wz-status done">&#10003; Right floodplain: <b>'+Math.round((dFpR.valueM||0)*10.7639).toLocaleString()+' sq ft</b></div>';
+        h += '<div class="wz-status done">&#10003; Right floodplain: <b>'+((dFpR.valueM||0)*0.000247105).toFixed(2)+' ac</b></div>';
         h += '<button class="wz-action-btn secondary" onclick="startPPDraw(\'fp_right\',0);renderWizardStep()">&#128207; Redraw</button>';
         h += '<button class="wz-action-btn secondary" onclick="startLineEdit(\'pp\',\'fp_right\');renderWizardStep()">&#9998; Edit Vertices</button>';
       } else {
@@ -7610,7 +7610,7 @@ function wizardStepBody(we, step, idx) {
       h += '<div class="wz-step-desc">Draw a polygon covering the active floodplain on both sides of the channel. The channel area will be automatically subtracted to give net floodplain area.</div>';
       var isEditingFpPoly = lineEditing && lineEditing.type==='pp-poly' && lineEditing.id==='fp_poly';
       if (fpPolyDone) {
-        h += '<div class="wz-status done">&#10003; Floodplain: <b>'+Math.round((dFp.valueM||0)*10.7639).toLocaleString()+' sq ft (net)</b></div>';
+        h += '<div class="wz-status done">&#10003; Floodplain: <b>'+((dFp.valueM||0)*0.000247105).toFixed(2)+' ac (net)</b></div>';
         if (dFp._outsidePerim) {
           h += '<div class="wz-status warning">&#9888; Some vertices are outside the project boundary — edit or redraw to correct.</div>';
         }
@@ -7644,7 +7644,7 @@ function wizardStepBody(we, step, idx) {
       h += wzFPMultiSection(we, 'pp_wetland', 'polygon', 'Wetland area', false);
       if (ppWetItems.length) {
         var ppWetSum = fpMultiSum(we, 'pp_wetland');
-        h += '<div class="wz-status done" style="margin-top:6px">&#10003; '+ppWetItems.length+' wetland area'+(ppWetItems.length>1?'s':'')+' &middot; '+Math.round(ppWetSum.acres).toLocaleString()+' sq ft total</div>';
+        h += '<div class="wz-status done" style="margin-top:6px">&#10003; '+ppWetItems.length+' wetland area'+(ppWetItems.length>1?'s':'')+' &middot; '+ppWetSum.acres.toFixed(2)+' ac total</div>';
       }
       break;
     }
@@ -7660,20 +7660,20 @@ function wizardStepBody(we, step, idx) {
       var fpLDoneB = fpLB && fpLB.layer;
       var fpRDoneB = fpRB && fpRB.layer;
       h += '<div class="wz-metric-row"><span class="wz-metric-label">Area of Channel</span>';
-      h += achDoneB ? '<span class="wz-metric-val">'+Math.round((achB.valueM||0)*10.7639).toLocaleString()+' sq ft</span>' : '<span class="wz-metric-val missing">pending channel widths</span>';
+      h += achDoneB ? '<span class="wz-metric-val">'+((achB.valueM||0)*0.000247105).toFixed(2)+' ac</span>' : '<span class="wz-metric-val missing">pending channel widths</span>';
       h += achDoneB ? '<button style="background:#f3f7fc;color:#3d3d3d;border:1px solid #dcdcdc;padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:8px" onclick="startPolyEdit(\'area_ch\')">edit</button>' : '';
       h += '</div>';
       if (fpPolyDoneB) {
         h += '<div class="wz-metric-row"><span class="wz-metric-label">Floodplain (net)</span>';
-        h += '<span class="wz-metric-val">'+Math.round((fpPolyB.valueM||0)*10.7639).toLocaleString()+' sq ft</span>';
+        h += '<span class="wz-metric-val">'+((fpPolyB.valueM||0)*0.000247105).toFixed(2)+' ac</span>';
         h += '<button style="background:#f3f7fc;color:#3d3d3d;border:1px solid #dcdcdc;padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:8px" onclick="clearPPGeom(\'fp_poly\');startPPDraw(\'fp_poly\',0)">redraw</button>';
         h += '</div>';
       } else if (fpLDoneB || fpRDoneB) {
         h += '<div class="wz-metric-row"><span class="wz-metric-label">Left Floodplain</span>';
-        h += fpLDoneB ? '<span class="wz-metric-val">'+Math.round((fpLB.valueM||0)*10.7639).toLocaleString()+' sq ft</span>' : '<span class="wz-metric-val missing">not drawn</span>';
+        h += fpLDoneB ? '<span class="wz-metric-val">'+((fpLB.valueM||0)*0.000247105).toFixed(2)+' ac</span>' : '<span class="wz-metric-val missing">not drawn</span>';
         h += '</div>';
         h += '<div class="wz-metric-row"><span class="wz-metric-label">Right Floodplain</span>';
-        h += fpRDoneB ? '<span class="wz-metric-val">'+Math.round((fpRB.valueM||0)*10.7639).toLocaleString()+' sq ft</span>' : '<span class="wz-metric-val missing">not drawn</span>';
+        h += fpRDoneB ? '<span class="wz-metric-val">'+((fpRB.valueM||0)*0.000247105).toFixed(2)+' ac</span>' : '<span class="wz-metric-val missing">not drawn</span>';
         h += '</div>';
       } else {
         h += '<div class="wz-metric-row"><span class="wz-metric-label">Floodplain</span><span class="wz-metric-val missing">not drawn</span></div>';
@@ -7695,8 +7695,8 @@ function wizardStepBody(we, step, idx) {
       if (fpSplit) {
         var fpL = we.ppData['fp_left'], fpR = we.ppData['fp_right'];
         h += '<div class="wz-status done">&#10003; Floodplain split complete.</div>';
-        h += '<div class="wz-metric-row"><span class="wz-metric-label">Left Floodplain</span><span class="wz-metric-val">'+Math.round((fpL&&fpL.valueM||0)*10.7639).toLocaleString()+' sq ft</span></div>';
-        h += '<div class="wz-metric-row"><span class="wz-metric-label">Right Floodplain</span><span class="wz-metric-val">'+Math.round((fpR&&fpR.valueM||0)*10.7639).toLocaleString()+' sq ft</span></div>';
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Left Floodplain</span><span class="wz-metric-val">'+((fpL&&fpL.valueM||0)*0.000247105).toFixed(2)+' ac</span></div>';
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Right Floodplain</span><span class="wz-metric-val">'+((fpR&&fpR.valueM||0)*0.000247105).toFixed(2)+' ac</span></div>';
         h += '<button class="wz-action-btn secondary" onclick="doFpFlip(\''+we.id+'\');renderWizardStep()">&#8646; Flip Left / Right</button>';
         h += '<button class="wz-action-btn secondary" onclick="doFpSplit(\''+we.id+'\');renderWizardStep()">&#8635; Re-split</button>';
       } else if (fpReady) {
@@ -7711,14 +7711,14 @@ function wizardStepBody(we, step, idx) {
       h += '<div class="wz-status done" style="font-size:13px;padding:14px">&#10003; <b>Pre-project entry complete!</b></div>';
       if (we) {
         var bhVal = (function(){ var bh=ppCalc(we,'bank_ht'); return bh!==null?bh.toFixed(1)+' ft':null; })();
-        var fpPolyAc = (we.ppData['fp_poly'] && we.ppData['fp_poly'].valueM) ? Math.round(we.ppData['fp_poly'].valueM*10.7639).toLocaleString()+' sq ft (net)' : null;
-        var fpLAc   = ppAcres(we,'fp_left')  ? Math.round(ppAcres(we,'fp_left')).toLocaleString()+' sq ft'  : null;
-        var fpRAc   = ppAcres(we,'fp_right') ? Math.round(ppAcres(we,'fp_right')).toLocaleString()+' sq ft' : null;
+        var fpPolyAc = (we.ppData['fp_poly'] && we.ppData['fp_poly'].valueM) ? (we.ppData['fp_poly'].valueM*0.000247105).toFixed(2)+' ac (net)' : null;
+        var fpLAc   = ppAcres(we,'fp_left')  ? ppAcres(we,'fp_left').toFixed(2)+' ac'  : null;
+        var fpRAc   = ppAcres(we,'fp_right') ? ppAcres(we,'fp_right').toFixed(2)+' ac' : null;
         var ppMetrics = [
           ['Reach Length',       ppLenFt(we,'reach_len') ? Math.round(ppLenFt(we,'reach_len')).toLocaleString()+' ft' : null],
           ['Channel Width (avg)',ppMultiAvgFt(we,'ch_width') ? Math.round(ppMultiAvgFt(we,'ch_width'))+' ft' : null],
           ['Substrate',          we.ppData['substrate'] && we.ppData['substrate'].value ? we.ppData['substrate'].value : null],
-          ['Area of Channel',    ppAcres(we,'area_ch') ? Math.round(ppAcres(we,'area_ch')).toLocaleString()+' sq ft' : null],
+          ['Area of Channel',    ppAcres(we,'area_ch') ? ppAcres(we,'area_ch').toFixed(2)+' ac' : null],
           ['Floodplain Area',    fpPolyAc || (fpLAc||fpRAc ? (fpLAc||'—')+' L / '+(fpRAc||'—')+' R' : null)],
           ['FP Width — Start',  (function(){ var v=calcFpCrossWidthFt(we,0.05); return v?v.toLocaleString()+' ft':null; })()],
           ['FP Width — Middle', (function(){ var v=calcFpCrossWidthFt(we,0.5);  return v?v.toLocaleString()+' ft':null; })()],
@@ -7798,7 +7798,7 @@ function wizardStepBody(we, step, idx) {
       var isEditingPCFP = lineEditing && lineEditing.type==='pp-poly' && lineEditing.id==='pc_fp';
       h += '<div class="wz-step-desc">Draw a polygon covering the new designed floodplain on both sides of the primary channel. The channel area will be automatically subtracted to give the net new floodplain area.</div>';
       if (pcFPDone) {
-        h += '<div class="wz-status done">&#10003; New floodplain: <b>'+Math.round((dPCFP.valueM||0)*10.7639).toLocaleString()+' sq ft (net)</b></div>';
+        h += '<div class="wz-status done">&#10003; New floodplain: <b>'+((dPCFP.valueM||0)*0.000247105).toFixed(2)+' ac (net)</b></div>';
         if (dPCFP._outsidePerim) {
           h += '<div class="wz-status warning">&#9888; Some vertices are outside the project boundary — edit or redraw to correct.</div>';
         }
@@ -7901,7 +7901,7 @@ function wizardStepBody(we, step, idx) {
           units.forEach(function(u) {
             if (u.type !== 'pool') return;
             pIdx++;
-            var ac = u.areaM2 ? Math.round(u.areaM2*10.7639).toLocaleString()+' sq ft' : '—';
+            var ac = u.areaM2 ? (u.areaM2*0.000247105).toFixed(3)+' ac' : '—';
             h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;margin-bottom:4px;';
             h += 'background:#1a7abf18;border:2px solid #1a7abf55;border-radius:5px">';
             h += '<span style="font-size:12px;font-weight:600;color:#1a7abf">Pool '+pIdx+'</span>';
@@ -7929,7 +7929,7 @@ function wizardStepBody(we, step, idx) {
           var isPool = u.type === 'pool';
           var col = CHU_COLOR[u.type || 'unassigned'];
           var typeLabel = u._displayLabel || (isPool ? 'Pool' : 'Riffle');
-          var ac = u.areaM2 ? Math.round(u.areaM2*10.7639).toLocaleString()+' sq ft' : '—';
+          var ac = u.areaM2 ? (u.areaM2*0.000247105).toFixed(3)+' ac' : '—';
           var ft = u.lengthM ? Math.round(u.lengthM*3.28084)+' ft' : '—';
           h += '<div style="background:#fff;border:2px solid '+col+'33;border-radius:6px;padding:10px;margin-bottom:8px">';
           h += '<div style="display:flex;align-items:center;margin-bottom:8px">';
@@ -8054,7 +8054,7 @@ function wizardStepBody(we, step, idx) {
       if (scReaches.length > 0) {
         scReaches.forEach(function(r, i) {
           var ft = r.valueM ? Math.round(r.valueM*3.28084).toLocaleString()+' ft' : '—';
-          var areaAc = (r.width && r.valueM) ? Math.round((r.valueM * (r.width/3.28084)) * 10.7639).toLocaleString()+' sq ft' : null;
+          var areaAc = (r.width && r.valueM) ? ((r.valueM * (r.width/3.28084)) * 0.000247105).toFixed(3)+' ac' : null;
           h += '<div style="background:#2a6a9c0d;border:2px solid #2a6a9c55;border-radius:6px;padding:8px 10px;margin-top:8px">';
           h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">';
           h += '<span style="font-size:12px;font-weight:600;color:#2a6a9c">Channel '+(i+1)+'</span>';
@@ -8082,8 +8082,8 @@ function wizardStepBody(we, step, idx) {
         });
         var allComplete = scReaches.every(function(r){return r.width>0 && r.flowType;});
         if (allComplete && scReaches.length > 0) {
-          var totalAc = Math.round(scReaches.reduce(function(a,r){return a+(r.valueM*(r.width/3.28084)*10.7639);},0)).toLocaleString();
-          h += '<div class="wz-status done" style="margin-top:8px">&#10003; '+scReaches.length+' channel'+(scReaches.length>1?'s':'')+' · '+totalAc+' sq ft total</div>';
+          var totalAc = scReaches.reduce(function(a,r){return a+(r.valueM*(r.width/3.28084)*0.000247105);},0).toFixed(3);
+          h += '<div class="wz-status done" style="margin-top:8px">&#10003; '+scReaches.length+' channel'+(scReaches.length>1?'s':'')+' · '+totalAc+' ac total</div>';
         } else if (scReaches.length > 0) {
           h += '<div class="wz-tip" style="margin-top:8px">Enter a width and flow type for each channel.</div>';
         }
@@ -8164,8 +8164,8 @@ function wizardStepBody(we, step, idx) {
         }
       }
       h += '<div class="wz-group-head divided">Post-Project Connectivity</div>';
-      h += wzFPInputRow(we, 'fp-bankfull-ac', 'FP area connected below bankfull (sq ft)');
-      h += wzFPInputRow(we, 'fp-bankfull-2x-ac', 'FP area connected below 2x bankfull (sq ft)');
+      h += wzFPInputRow(we, 'fp-bankfull-ac', 'FP area connected below bankfull (ac)');
+      h += wzFPInputRow(we, 'fp-bankfull-2x-ac', 'FP area connected below 2x bankfull (ac)');
       break;
     }
 
@@ -8235,9 +8235,9 @@ function wizardStepBody(we, step, idx) {
       if (we) {
         var doneMetrics = [
           ['Reach Length', ppLenFt(we,'reach_len') ? Math.round(ppLenFt(we,'reach_len')).toLocaleString()+' ft' : null],
-          ['Area of Channel', ppAcres(we,'area_ch') ? Math.round(ppAcres(we,'area_ch')).toLocaleString()+' sq ft' : null],
-          ['Left Floodplain', ppAcres(we,'fp_left') ? Math.round(ppAcres(we,'fp_left')).toLocaleString()+' sq ft' : null],
-          ['Right Floodplain', ppAcres(we,'fp_right') ? Math.round(ppAcres(we,'fp_right')).toLocaleString()+' sq ft' : null],
+          ['Area of Channel', ppAcres(we,'area_ch') ? ppAcres(we,'area_ch').toFixed(2)+' ac' : null],
+          ['Left Floodplain', ppAcres(we,'fp_left') ? ppAcres(we,'fp_left').toFixed(2)+' ac' : null],
+          ['Right Floodplain', ppAcres(we,'fp_right') ? ppAcres(we,'fp_right').toFixed(2)+' ac' : null],
           ['CHUs', getActivePC(we).chuUnits && getActivePC(we).chuUnits.length > 0 ? getActivePC(we).chuUnits.length+' units' : null]
         ];
         doneMetrics.forEach(function(m) {
@@ -8557,7 +8557,7 @@ function wzFPDrawRow(we, id, geo, label) {
   var hasVal = d && (geo === 'polygon' ? d.acres : d.valueM);
   var displayVal = null;
   if (hasVal) {
-    if (geo === 'polygon') displayVal = Math.round(d.acres).toLocaleString() + ' sq ft';
+    if (geo === 'polygon') displayVal = d.acres.toFixed(2) + ' ac';
     else if (geo === 'segment') displayVal = Math.round(d.valueM * 3.28084) + ' ft';
     else displayVal = (d.valueM * 0.000621371).toFixed(3) + ' mi';
   }
@@ -8626,7 +8626,7 @@ function wzFPMultiSection(we, key, geo, label, hasVolume) {
     var hasVal = d && (geo === 'polygon' ? d.acres : d.valueM);
     var displayVal = null;
     if (hasVal) {
-      displayVal = geo === 'polygon' ? Math.round(d.acres).toLocaleString() + ' sq ft' : (d.valueM * 0.000621371).toFixed(3) + ' mi';
+      displayVal = geo === 'polygon' ? d.acres.toFixed(2) + ' ac' : (d.valueM * 0.000621371).toFixed(3) + ' mi';
     }
     var itemLabel = label + ' ' + (i + 1);
     var hoverAttrs = displayVal
@@ -8686,7 +8686,7 @@ function clearAll() {
 // ── SOW export ────────────────────────────────────────────────────────────
 function fmtFt(we,id){var l=we.sowLayers[id];return l?Math.round(l.valueM*3.28084).toLocaleString()+' ft':'—';}
 function fmtMi(we,id){var l=we.sowLayers[id];return l?(l.valueM*0.000621371).toFixed(3)+' mi':'—';}
-function fmtAc(we,id){var l=we.sowLayers[id];return l?Math.round(l.acres).toLocaleString()+' sq ft':'—';}
+function fmtAc(we,id){var l=we.sowLayers[id];return l?l.acres.toFixed(2)+' acres':'—';}
 function fmtIn(id){var el=document.getElementById('f-'+id);return(el&&el.value)?el.value:'—';}
 function fmtCalc(id){var el=document.getElementById('calc-'+id);return el?el.textContent:'—';}
 
@@ -8752,7 +8752,7 @@ function openSOW() {
       if (m.id==='fp_left' || m.id==='fp_right' || m.id==='pc_fp') return;
       var d=we.ppData[m.id]||{},val='—';
       if(m.method==='entered'&&d.value)val=d.value;
-      else if(m.method==='measured'&&!m.multi&&d.valueM)val=m.geo==='line'?Math.round(d.valueM*3.28084).toLocaleString()+' ft':Math.round(d.valueM*10.7639).toLocaleString()+' sq ft';
+      else if(m.method==='measured'&&!m.multi&&d.valueM)val=m.geo==='line'?Math.round(d.valueM*3.28084).toLocaleString()+' ft':(d.valueM*0.000247105).toFixed(2)+' acres';
       else if(m.method==='measured'&&m.multi){var avg=ppMultiAvgFt(we,m.id);if(avg!==null)val=Math.round(avg).toLocaleString()+' ft (avg)';}
       else if(m.method==='calc'){
         var c=ppCalc(we,m.id);
@@ -8761,7 +8761,7 @@ function openSOW() {
           else if(m.id==='avg_slope'){var sd=we.ppData['avg_slope']||{};val=c.toFixed(2)+'°'+(sd._slopePct!==undefined?' / '+sd._slopePct.toFixed(2)+'%':'');}
           else if(m.id==='bank_ht') val=c.toFixed(1)+' ft';
           else if(m.id==='valley_len'||m.id==='fp_width') val=Math.round(c*3.28084).toLocaleString()+' ft';
-          else if(m.id==='area_fp') val=Math.round(c*10.7639).toLocaleString()+' sq ft';
+          else if(m.id==='area_fp') val=(c*0.000247105).toFixed(2)+' acres';
           else val=c;
         }
       }
@@ -8770,7 +8770,7 @@ function openSOW() {
     // pp_wetland is a multi-entry list (we.fpMulti/we.sowLayers-backed), not a plain
     // PP_DEFS field — sum it separately rather than through the loop above.
     var ppWetSumExp = fpMultiSum(we, 'pp_wetland');
-    h+='<tr><td>Existing Wetland Areas</td><td>measured</td><td>'+(ppWetSumExp.count>0?Math.round(ppWetSumExp.acres).toLocaleString()+' sq ft ('+ppWetSumExp.count+')':'—')+'</td></tr>';
+    h+='<tr><td>Existing Wetland Areas</td><td>measured</td><td>'+(ppWetSumExp.count>0?ppWetSumExp.acres.toFixed(2)+' acres ('+ppWetSumExp.count+')':'—')+'</td></tr>';
     h+='</tbody></table>';
 
     // Only include sections for selected types — set this WE as active for fmtIn/fmtCalc to work
@@ -8791,8 +8791,8 @@ function openSOW() {
         // ── Channel Habitat Units ──────────────────────────────────────────────
         var chuR=pc.chuUnits?pc.chuUnits.filter(function(u){return u.type==='riffle';}):[];
         var chuP=pc.chuUnits?pc.chuUnits.filter(function(u){return u.type==='pool';}):[];
-        var chuRArea=(chuR.reduce(function(a,u){return a+u.areaM2;},0)*10.7639);
-        var chuPArea=(chuP.reduce(function(a,u){return a+u.areaM2;},0)*10.7639);
+        var chuRArea=(chuR.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105);
+        var chuPArea=(chuP.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105);
         var chuRLen=chuR.reduce(function(a,u){return a+u.lengthM;},0)*3.28084;
         var chuPLen=chuP.reduce(function(a,u){return a+u.lengthM;},0)*3.28084;
         var chuTotalBoulders = chuR.reduce(function(a,u){return a+(u.boulders||u.boulderCount||0);},0);
@@ -8800,7 +8800,7 @@ function openSOW() {
         var chuAvgDepth = chuPDepths.length?(chuPDepths.reduce(function(a,v){return a+v;},0)/chuPDepths.length).toFixed(1)+' ft':null;
         // % of reach — riffle/pool area relative to the total restored channel area
         var pcTotalAreaSL = pc.sowLayers['pc-area'];
-        var pcTotalAreaAc = pcTotalAreaSL && pcTotalAreaSL.valueM ? pcTotalAreaSL.valueM*10.7639 : null;
+        var pcTotalAreaAc = pcTotalAreaSL && pcTotalAreaSL.valueM ? pcTotalAreaSL.valueM*0.000247105 : null;
         var chuRPct = (pcTotalAreaAc && chuR.length) ? (chuRArea/pcTotalAreaAc*100) : null;
         var chuPPct = (pcTotalAreaAc && chuP.length) ? (chuPArea/pcTotalAreaAc*100) : null;
         if (chuR.length||chuP.length) {
@@ -8808,10 +8808,10 @@ function openSOW() {
           h+='<table class="sow-table"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
           h+='<tr><td># Riffles</td><td>'+(chuR.length||'—')+'</td></tr>';
           h+='<tr><td>Total boulders</td><td>'+(chuR.length?(chuTotalBoulders||'0'):'—')+'</td></tr>';
-          h+='<tr><td>Riffle area</td><td>'+(chuR.length?Math.round(chuRArea).toLocaleString()+' sq ft':'—')+'</td></tr>';
+          h+='<tr><td>Riffle area</td><td>'+(chuR.length?chuRArea.toFixed(3)+' acres':'—')+'</td></tr>';
           h+='<tr><td>Riffle length (approx)</td><td>'+(chuR.length?'~'+Math.round(chuRLen).toLocaleString()+' ft':'—')+'</td></tr>';
           h+='<tr><td># Pools</td><td>'+(chuP.length||'—')+'</td></tr>';
-          h+='<tr><td>Pool area</td><td>'+(chuP.length?Math.round(chuPArea).toLocaleString()+' sq ft':'—')+'</td></tr>';
+          h+='<tr><td>Pool area</td><td>'+(chuP.length?chuPArea.toFixed(3)+' acres':'—')+'</td></tr>';
           h+='<tr><td>Pool length (approx)</td><td>'+(chuP.length?'~'+Math.round(chuPLen).toLocaleString()+' ft':'—')+'</td></tr>';
           h+='<tr><td>Avg pool depth at low flow</td><td>'+(chuAvgDepth||'—')+'</td></tr>';
           h+='<tr><td>Total area of riffles in project reach</td><td>'+(chuRPct!==null?chuRPct.toFixed(1)+'%':'—')+'</td></tr>';
@@ -8823,7 +8823,7 @@ function openSOW() {
         if (hasTypes) {
           var chartId1 = 'chu-pie-ac-'+we.id+'-'+pcIdx, chartId2 = 'chu-pie-ft-'+we.id+'-'+pcIdx;
           h += '<div style="display:flex;gap:24px;margin:16px 0;flex-wrap:wrap">';
-          h += '<div style="flex:1;min-width:200px;text-align:center"><div style="font-size:11px;font-weight:700;color:#2c4a6a;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">By Area (sq ft)</div><canvas id="'+chartId1+'" width="180" height="180"></canvas><div id="'+chartId1+'-leg" style="margin-top:8px;font-size:10px;text-align:left;display:inline-block"></div></div>';
+          h += '<div style="flex:1;min-width:200px;text-align:center"><div style="font-size:11px;font-weight:700;color:#2c4a6a;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">By Area (acres)</div><canvas id="'+chartId1+'" width="180" height="180"></canvas><div id="'+chartId1+'-leg" style="margin-top:8px;font-size:10px;text-align:left;display:inline-block"></div></div>';
           h += '<div style="flex:1;min-width:200px;text-align:center"><div style="font-size:11px;font-weight:700;color:#2c4a6a;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">By Length (ft)</div><canvas id="'+chartId2+'" width="180" height="180"></canvas><div id="'+chartId2+'-leg" style="margin-top:8px;font-size:10px;text-align:left;display:inline-block"></div></div>';
           h += '</div>';
           // Draw after DOM is ready — capture per-channel values via closure
@@ -8831,7 +8831,7 @@ function openSOW() {
             setTimeout(function() {
               var acData  = [{label:'Riffle',val:chuRArea,color:'#c07820'},{label:'Pool',val:chuPArea,color:'#1a7abf'}].filter(function(d){return d.val>0;});
               var ftData  = [{label:'Riffle',val:chuRLen,color:'#c07820'},{label:'Pool',val:chuPLen,color:'#1a7abf'}].filter(function(d){return d.val>0;});
-              drawCHUPie(chartId1, acData, function(v){return Math.round(v).toLocaleString()+' sq ft'});
+              drawCHUPie(chartId1, acData, function(v){return v.toFixed(2)+' ac'});
               drawCHUPie(chartId2, ftData, function(v){return Math.round(v).toLocaleString()+' ft'});
             }, 100);
           })(chartId1, chartId2, chuRArea, chuPArea, chuRLen, chuPLen);
@@ -8861,10 +8861,10 @@ function openSOW() {
         var pcWidFt2  = pc.inputVals['pc-width'] ? Math.round(pc.inputVals['pc-width'])+' ft' : '—';
         var pcBHFt2   = pc.inputVals['pc-bank-height'] ? pc.inputVals['pc-bank-height']+' ft' : '—';
         var pcAreaSL2 = pc.sowLayers['pc-area'];
-        var pcAreaAc2 = pcAreaSL2 && pcAreaSL2.valueM ? Math.round(pcAreaSL2.valueM*10.7639).toLocaleString()+' sq ft' : '—';
+        var pcAreaAc2 = pcAreaSL2 && pcAreaSL2.valueM ? (pcAreaSL2.valueM*0.000247105).toFixed(3)+' acres' : '—';
         var pcExcav2  = pc.inputVals['pc-excavation-vol'] ? pc.inputVals['pc-excavation-vol'].toLocaleString()+' CY' : '—';
         var pcNewFpSL = pc.ppData['pc_fp'];
-        var pcNewFpAc = pcNewFpSL && pcNewFpSL.valueM ? Math.round(pcNewFpSL.valueM*10.7639).toLocaleString()+' sq ft' : '—';
+        var pcNewFpAc = pcNewFpSL && pcNewFpSL.valueM ? (pcNewFpSL.valueM*0.000247105).toFixed(2)+' acres' : '—';
         // Gravel placement — point placements, each with its own length/depth.
         var pcGravelWFt = pcChannelWidthFt(we);
         var pcGravelPlaced2 = (pc.gravelPlacements||[]).filter(function(p){return p.latlng;});
@@ -8897,12 +8897,12 @@ function openSOW() {
       var sl=we.sowLayers;
       function wFt2(id){var l=sl[id];return l?Math.round(l.valueM*3.28084).toLocaleString()+' ft':'—';}
       function wMi2(id){var l=sl[id];return l?(l.valueM*0.000621371).toFixed(3)+' mi':'—';}
-      function wAc2(id){var l=sl[id];return l?Math.round(l.acres).toLocaleString()+' sq ft':'—';}
+      function wAc2(id){var l=sl[id];return l?l.acres.toFixed(2)+' acres':'—';}
       function wAvg2(ids){var v=ids.map(function(id){return sl[id]?sl[id].valueM*3.28084:null;}).filter(function(x){return x!==null;});return v.length?Math.round(v.reduce(function(a,b){return a+b;},0)/v.length)+' ft':'—';}
       function wVal2(id){var l=sl[id];return (l&&l.value!==undefined&&l.value!=='')?l.value:'—';}
       // Grading/road/berm/revetment/tailings/wetland support multiple drawn instances
       // via we.fpMulti[key]; fall back to the single legacy sowLayers id from expert mode.
-      function fpMultiDisplay(key,geo,legacyId){var sum=fpMultiSum(we,key);if(sum.count>0)return geo==='polygon'?Math.round(sum.acres).toLocaleString()+' sq ft':(sum.valueM*0.000621371).toFixed(3)+' mi';return geo==='polygon'?wAc2(legacyId):wMi2(legacyId);}
+      function fpMultiDisplay(key,geo,legacyId){var sum=fpMultiSum(we,key);if(sum.count>0)return geo==='polygon'?sum.acres.toFixed(2)+' acres':(sum.valueM*0.000621371).toFixed(3)+' mi';return geo==='polygon'?wAc2(legacyId):wMi2(legacyId);}
       function fpMultiVolDisplay(key,legacyVolId){var sum=fpMultiSum(we,key);if(sum.count>0)return sum.hasVol?sum.vol+' CY':'—';var v=wVal2(legacyVolId);return v!=='—'?v+' CY':'—';}
       h+='<h3>Floodplain &amp; Side Channels</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
       h+='<tr><td>FP large log placement area</td><td>'+wAc2('fp-logs-area')+'</td></tr>';
@@ -8916,8 +8916,8 @@ function openSOW() {
       var scWidthFt = scAvgWidthFt(we);
       h+='<tr><td>FP connectivity reach</td><td>'+(scConnMi!==null ? scConnMi.toFixed(3)+' mi' : wMi2('fp-conn-reach'))+'</td></tr>';
       h+='<tr><td>Avg floodplain width</td><td>'+(scWidthFt!==null ? Math.round(scWidthFt)+' ft' : wAvg2(['fpw1','fpw2','fpw3']))+'</td></tr>';
-      h+='<tr><td>Post-project FP area connected below bankfull</td><td>'+(wVal2('fp-bankfull-ac')!=='—'?wVal2('fp-bankfull-ac')+' sq ft':'—')+'</td></tr>';
-      h+='<tr><td>Post-project FP area connected below 2x bankfull</td><td>'+(wVal2('fp-bankfull-2x-ac')!=='—'?wVal2('fp-bankfull-2x-ac')+' sq ft':'—')+'</td></tr>';
+      h+='<tr><td>Post-project FP area connected below bankfull</td><td>'+(wVal2('fp-bankfull-ac')!=='—'?wVal2('fp-bankfull-ac')+' acres':'—')+'</td></tr>';
+      h+='<tr><td>Post-project FP area connected below 2x bankfull</td><td>'+(wVal2('fp-bankfull-2x-ac')!=='—'?wVal2('fp-bankfull-2x-ac')+' acres':'—')+'</td></tr>';
       h+='<tr><td>FP grading area</td><td>'+fpMultiDisplay('grade','polygon','fp-grade')+'</td></tr>';
       h+='<tr><td>Road removed in FP</td><td>'+fpMultiDisplay('road','line','fp-road')+'</td></tr>';
       h+='<tr><td>Road removal volume</td><td>'+fpMultiVolDisplay('road','fp-road-vol')+'</td></tr>';
@@ -8934,12 +8934,12 @@ function openSOW() {
       var scSMi = scS.length ? (scS.reduce(function(a,r){return a+r.valueM;},0)*0.000621371).toFixed(3)+' mi' : wMi2('fp-ephsc');
       h+='<tr><td>Perennial side channel</td><td>'+scPMi+'</td></tr>';
       h+='<tr><td>Seasonal side channel</td><td>'+scSMi+'</td></tr>';
-      h+='<tr><td>Square feet of existing wetland habitat constructed/restored/enhanced</td><td>'+fpMultiDisplay('fp_wetland_enhance','polygon','fp-wetland-enhance')+'</td></tr>';
+      h+='<tr><td>Acres of existing wetland habitat constructed/restored/enhanced</td><td>'+fpMultiDisplay('fp_wetland_enhance','polygon','fp-wetland-enhance')+'</td></tr>';
       h+='</tbody></table>';
       // ── Secondary Channels ─────────────────────────────────────────────────
       if (we.scReaches && we.scReaches.length > 0) {
         h += '<h3>Secondary Channels</h3>';
-        h += '<table class="sow-table"><thead><tr><th>Channel</th><th>Length</th><th>Width</th><th>Flow Type</th><th>Area (sq ft)</th></tr></thead><tbody>';
+        h += '<table class="sow-table"><thead><tr><th>Channel</th><th>Length</th><th>Width</th><th>Flow Type</th><th>Area (ac)</th></tr></thead><tbody>';
         var totalScAc = 0;
         we.scReaches.forEach(function(r, i) {
           var lenFt = r.valueM ? Math.round(r.valueM*3.28084).toLocaleString()+' ft' : '—';
@@ -8947,14 +8947,14 @@ function openSOW() {
           var flow  = r.flowType || '—';
           var acStr = '—';
           if (r.valueM && r.width) {
-            var ac = r.valueM * (r.width/3.28084) * 10.7639;
-            acStr = Math.round(ac).toLocaleString();
+            var ac = r.valueM * (r.width/3.28084) * 0.000247105;
+            acStr = ac.toFixed(3);
             totalScAc += ac;
           }
           h += '<tr><td>Channel '+(i+1)+'</td><td>'+lenFt+'</td><td>'+widFt+'</td><td>'+flow+'</td><td>'+acStr+'</td></tr>';
         });
         if (totalScAc > 0) {
-          h += '<tr style="font-weight:700"><td>Total</td><td colspan="3"></td><td>'+Math.round(totalScAc).toLocaleString()+' sq ft</td></tr>';
+          h += '<tr style="font-weight:700"><td>Total</td><td colspan="3"></td><td>'+totalScAc.toFixed(3)+' ac</td></tr>';
         }
         var scLarge = we.inputVals && we.inputVals['sc-large-wood'];
         var scSmall = we.inputVals && we.inputVals['sc-small-wood'];
@@ -8972,7 +8972,7 @@ function openSOW() {
       var sl=we.sowLayers;
       function wFt3(id){var l=sl[id];return l?Math.round(l.valueM*3.28084).toLocaleString()+' ft':'—';}
       function wMi3(id){var l=sl[id];return l?(l.valueM*0.000621371).toFixed(3)+' mi':'—';}
-      function wAc3(id){var l=sl[id];return l?Math.round(l.acres).toLocaleString()+' sq ft':'—';}
+      function wAc3(id){var l=sl[id];return l?l.acres.toFixed(2)+' acres':'—';}
       function wVal3(id){var l=sl[id];return (l&&l.value!==undefined&&l.value!=='')?l.value:'—';}
       h+='<h3>Riparian Restoration</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
       h+='<tr><td>Miles fence installed</td><td>'+wMi3('rr-fence')+'</td></tr>';
