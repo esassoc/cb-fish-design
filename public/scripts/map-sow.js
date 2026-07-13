@@ -8806,17 +8806,17 @@ function openSOW() {
         var chuPPct = (pcTotalAreaAc && chuP.length) ? (chuPArea/pcTotalAreaAc*100) : null;
         if (chuR.length||chuP.length) {
           h+='<h3 class="sow-section-title">'+pcLabel+' — Habitat Units</h3>';
-          h+='<table class="sow-table"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
-          h+='<tr><td># Riffles</td><td>'+(chuR.length||'—')+'</td></tr>';
-          h+='<tr><td>Total boulders</td><td>'+(chuR.length?(chuTotalBoulders||'0'):'—')+'</td></tr>';
-          h+='<tr><td>Riffle area</td><td>'+(chuR.length?chuRArea.toFixed(3)+' acres':'—')+'</td></tr>';
-          h+='<tr><td>Riffle length (approx)</td><td>'+(chuR.length?'~'+Math.round(chuRLen).toLocaleString()+' ft':'—')+'</td></tr>';
-          h+='<tr><td># Pools</td><td>'+(chuP.length||'—')+'</td></tr>';
-          h+='<tr><td>Pool area</td><td>'+(chuP.length?chuPArea.toFixed(3)+' acres':'—')+'</td></tr>';
-          h+='<tr><td>Pool length (approx)</td><td>'+(chuP.length?'~'+Math.round(chuPLen).toLocaleString()+' ft':'—')+'</td></tr>';
-          h+='<tr><td>Avg pool depth at low flow</td><td>'+(chuAvgDepth||'—')+'</td></tr>';
-          h+='<tr><td>Total area of riffles in project reach</td><td>'+(chuRPct!==null?chuRPct.toFixed(1)+'%':'—')+'</td></tr>';
-          h+='<tr><td>Total area of pools in project reach</td><td>'+(chuPPct!==null?chuPPct.toFixed(1)+'%':'—')+'</td></tr>';
+          h+='<table class="sow-table"><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
+          h+='<tr><td># Riffles</td><td>measured</td><td>'+(chuR.length||'—')+'</td></tr>';
+          h+='<tr><td>Total boulders</td><td>entered</td><td>'+(chuR.length?(chuTotalBoulders||'0'):'—')+'</td></tr>';
+          h+='<tr><td>Riffle area</td><td>calc</td><td>'+(chuR.length?chuRArea.toFixed(3)+' acres':'—')+'</td></tr>';
+          h+='<tr><td>Riffle length (approx)</td><td>calc</td><td>'+(chuR.length?'~'+Math.round(chuRLen).toLocaleString()+' ft':'—')+'</td></tr>';
+          h+='<tr><td># Pools</td><td>measured</td><td>'+(chuP.length||'—')+'</td></tr>';
+          h+='<tr><td>Pool area</td><td>calc</td><td>'+(chuP.length?chuPArea.toFixed(3)+' acres':'—')+'</td></tr>';
+          h+='<tr><td>Pool length (approx)</td><td>calc</td><td>'+(chuP.length?'~'+Math.round(chuPLen).toLocaleString()+' ft':'—')+'</td></tr>';
+          h+='<tr><td>Avg pool depth at low flow</td><td>entered</td><td>'+(chuAvgDepth||'—')+'</td></tr>';
+          h+='<tr><td>Total area of riffles in project reach</td><td>calc</td><td>'+(chuRPct!==null?chuRPct.toFixed(1)+'%':'—')+'</td></tr>';
+          h+='<tr><td>Total area of pools in project reach</td><td>calc</td><td>'+(chuPPct!==null?chuPPct.toFixed(1)+'%':'—')+'</td></tr>';
           h+='</tbody></table>';
         }
         // Pie charts — only if we have typed units
@@ -8839,7 +8839,7 @@ function openSOW() {
         }
 
         // ── Complexity Metrics ──
-        h+='<h3>'+pcLabel+' — Complexity Metrics</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
+        h+='<h3>'+pcLabel+' — Complexity Metrics</h3><table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
         var pcRchSL = pc.sowLayers['pc-reach'];
         var pcRchFt2 = pcRchSL && pcRchSL.valueM ? Math.round(pcRchSL.valueM*3.28084).toLocaleString()+' ft' : '—';
         // Valley length from pc-reach endpoints
@@ -8876,19 +8876,19 @@ function openSOW() {
           if (pcGravelWFt && p.length && p.depth) pcGravelTotalCY2 += parseFloat(p.length)*parseFloat(p.depth)*pcGravelWFt/27;
         });
         var pcGravelAvgDepth = pcGravelDepths.length ? (pcGravelDepths.reduce(function(a,v){return a+v;},0)/pcGravelDepths.length) : null;
-        h += '<tr><td>Reach length</td><td>'+pcRchFt2+'</td></tr>';
-        h += '<tr><td>Valley length</td><td>'+pcVlFt2+'</td></tr>';
-        h += '<tr><td>Sinuosity</td><td>'+pcSin2+'</td></tr>';
-        h += '<tr><td>Average reach slope</td><td>'+pcSlope2+'</td></tr>';
-        h += '<tr><td>Average channel width (at riffle)</td><td>'+pcWidFt2+'</td></tr>';
-        h += '<tr><td>Average bank height (at riffle)</td><td>'+pcBHFt2+'</td></tr>';
-        h += '<tr><td>Area of restored channel</td><td>'+pcAreaAc2+'</td></tr>';
-        h += '<tr><td>New floodplain area</td><td>'+pcNewFpAc+'</td></tr>';
-        h += '<tr><td>Primary channel excavation volume</td><td>'+pcExcav2+'</td></tr>';
-        h += '<tr><td># Gravel placements</td><td>'+(pcGravelPlaced2.length||'—')+'</td></tr>';
-        h += '<tr><td>Length of gravel placement or channel fill</td><td>'+(pcGravelTotalLenFt>0?Math.round(pcGravelTotalLenFt).toLocaleString()+' ft':'—')+'</td></tr>';
-        h += '<tr><td>Average depth of gravel placement</td><td>'+(pcGravelAvgDepth!==null?pcGravelAvgDepth.toFixed(1)+' ft':'—')+'</td></tr>';
-        h += '<tr><td>Gravel placement volume</td><td>'+(pcGravelTotalCY2>0?pcGravelTotalCY2.toFixed(1)+' CY':'—')+'</td></tr>';
+        h += '<tr><td>Reach length</td><td>measured</td><td>'+pcRchFt2+'</td></tr>';
+        h += '<tr><td>Valley length</td><td>calc</td><td>'+pcVlFt2+'</td></tr>';
+        h += '<tr><td>Sinuosity</td><td>calc</td><td>'+pcSin2+'</td></tr>';
+        h += '<tr><td>Average reach slope</td><td>calc</td><td>'+pcSlope2+'</td></tr>';
+        h += '<tr><td>Average channel width (at riffle)</td><td>entered</td><td>'+pcWidFt2+'</td></tr>';
+        h += '<tr><td>Average bank height (at riffle)</td><td>entered</td><td>'+pcBHFt2+'</td></tr>';
+        h += '<tr><td>Area of restored channel</td><td>measured</td><td>'+pcAreaAc2+'</td></tr>';
+        h += '<tr><td>New floodplain area</td><td>measured</td><td>'+pcNewFpAc+'</td></tr>';
+        h += '<tr><td>Primary channel excavation volume</td><td>entered</td><td>'+pcExcav2+'</td></tr>';
+        h += '<tr><td># Gravel placements</td><td>measured</td><td>'+(pcGravelPlaced2.length||'—')+'</td></tr>';
+        h += '<tr><td>Length of gravel placement or channel fill</td><td>entered</td><td>'+(pcGravelTotalLenFt>0?Math.round(pcGravelTotalLenFt).toLocaleString()+' ft':'—')+'</td></tr>';
+        h += '<tr><td>Average depth of gravel placement</td><td>entered</td><td>'+(pcGravelAvgDepth!==null?pcGravelAvgDepth.toFixed(1)+' ft':'—')+'</td></tr>';
+        h += '<tr><td>Gravel placement volume</td><td>calc</td><td>'+(pcGravelTotalCY2>0?pcGravelTotalCY2.toFixed(1)+' CY':'—')+'</td></tr>';
         h+='</tbody></table>';
       });
       we.activePCId = savedActivePCIdForExport;
@@ -8905,37 +8905,37 @@ function openSOW() {
       // via we.fpMulti[key]; fall back to the single legacy sowLayers id from expert mode.
       function fpMultiDisplay(key,geo,legacyId){var sum=fpMultiSum(we,key);if(sum.count>0)return geo==='polygon'?sum.acres.toFixed(2)+' acres':(sum.valueM*0.000621371).toFixed(3)+' mi';return geo==='polygon'?wAc2(legacyId):wMi2(legacyId);}
       function fpMultiVolDisplay(key,legacyVolId){var sum=fpMultiSum(we,key);if(sum.count>0)return sum.hasVol?sum.vol+' CY':'—';var v=wVal2(legacyVolId);return v!=='—'?v+' CY':'—';}
-      h+='<h3>Floodplain &amp; Side Channels</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
-      h+='<tr><td>FP large log placement area</td><td>'+wAc2('fp-logs-area')+'</td></tr>';
-      h+='<tr><td># Large logs placed</td><td>'+wVal2('fp-large-logs')+'</td></tr>';
+      h+='<h3>Floodplain &amp; Side Channels</h3><table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
+      h+='<tr><td>FP large log placement area</td><td>measured</td><td>'+wAc2('fp-logs-area')+'</td></tr>';
+      h+='<tr><td># Large logs placed</td><td>entered</td><td>'+wVal2('fp-large-logs')+'</td></tr>';
       ['fps','scs'].forEach(function(t){
         var tLarge=0, tSmall=0;
-        we.structures[t].forEach(function(s,i){ tLarge+=+s.large||0; tSmall+=+s.small||0; h+='<tr><td>'+STRUCT_LABEL[t]+' '+(i+1)+': '+s.desc+'</td><td>Large: '+(s.large||0)+', Small: '+(s.small||0)+'</td></tr>'; });
-        if (we.structures[t].length) h+='<tr style="font-weight:700"><td>Total '+STRUCT_LABEL[t]+' large/small pieces</td><td>Large: '+tLarge+', Small: '+tSmall+'</td></tr>';
+        we.structures[t].forEach(function(s,i){ tLarge+=+s.large||0; tSmall+=+s.small||0; h+='<tr><td>'+STRUCT_LABEL[t]+' '+(i+1)+': '+s.desc+'</td><td>entered</td><td>Large: '+(s.large||0)+', Small: '+(s.small||0)+'</td></tr>'; });
+        if (we.structures[t].length) h+='<tr style="font-weight:700"><td>Total '+STRUCT_LABEL[t]+' large/small pieces</td><td>calc</td><td>Large: '+tLarge+', Small: '+tSmall+'</td></tr>';
       });
       var scConnMi = scConnectivityMiles(we);
       var scWidthFt = scAvgWidthFt(we);
-      h+='<tr><td>FP connectivity reach</td><td>'+(scConnMi!==null ? scConnMi.toFixed(3)+' mi' : wMi2('fp-conn-reach'))+'</td></tr>';
-      h+='<tr><td>Avg floodplain width</td><td>'+(scWidthFt!==null ? Math.round(scWidthFt)+' ft' : wAvg2(['fpw1','fpw2','fpw3']))+'</td></tr>';
-      h+='<tr><td>Post-project FP area connected below bankfull</td><td>'+(wVal2('fp-bankfull-ac')!=='—'?wVal2('fp-bankfull-ac')+' acres':'—')+'</td></tr>';
-      h+='<tr><td>Post-project FP area connected below 2x bankfull</td><td>'+(wVal2('fp-bankfull-2x-ac')!=='—'?wVal2('fp-bankfull-2x-ac')+' acres':'—')+'</td></tr>';
-      h+='<tr><td>FP grading area</td><td>'+fpMultiDisplay('grade','polygon','fp-grade')+'</td></tr>';
-      h+='<tr><td>Road removed in FP</td><td>'+fpMultiDisplay('road','line','fp-road')+'</td></tr>';
-      h+='<tr><td>Road removal volume</td><td>'+fpMultiVolDisplay('road','fp-road-vol')+'</td></tr>';
-      h+='<tr><td>Berm/levee removed</td><td>'+fpMultiDisplay('berm','line','fp-berm')+'</td></tr>';
-      h+='<tr><td>Berm/levee removal volume</td><td>'+fpMultiVolDisplay('berm','fp-berm-vol')+'</td></tr>';
-      h+='<tr><td>Revetment removed</td><td>'+fpMultiDisplay('revet','line','fp-revet')+'</td></tr>';
-      h+='<tr><td>Revetment removal volume</td><td>'+fpMultiVolDisplay('revet','fp-revet-vol')+'</td></tr>';
-      h+='<tr><td>Mine tailings removed</td><td>'+fpMultiDisplay('tailings','polygon','fp-tailings')+'</td></tr>';
-      h+='<tr><td>Mine tailings removal volume</td><td>'+fpMultiVolDisplay('tailings','fp-tailings-vol')+'</td></tr>';
+      h+='<tr><td>FP connectivity reach</td><td>calc</td><td>'+(scConnMi!==null ? scConnMi.toFixed(3)+' mi' : wMi2('fp-conn-reach'))+'</td></tr>';
+      h+='<tr><td>Avg floodplain width</td><td>calc</td><td>'+(scWidthFt!==null ? Math.round(scWidthFt)+' ft' : wAvg2(['fpw1','fpw2','fpw3']))+'</td></tr>';
+      h+='<tr><td>Post-project FP area connected below bankfull</td><td>entered</td><td>'+(wVal2('fp-bankfull-ac')!=='—'?wVal2('fp-bankfull-ac')+' acres':'—')+'</td></tr>';
+      h+='<tr><td>Post-project FP area connected below 2x bankfull</td><td>entered</td><td>'+(wVal2('fp-bankfull-2x-ac')!=='—'?wVal2('fp-bankfull-2x-ac')+' acres':'—')+'</td></tr>';
+      h+='<tr><td>FP grading area</td><td>measured</td><td>'+fpMultiDisplay('grade','polygon','fp-grade')+'</td></tr>';
+      h+='<tr><td>Road removed in FP</td><td>measured</td><td>'+fpMultiDisplay('road','line','fp-road')+'</td></tr>';
+      h+='<tr><td>Road removal volume</td><td>entered</td><td>'+fpMultiVolDisplay('road','fp-road-vol')+'</td></tr>';
+      h+='<tr><td>Berm/levee removed</td><td>measured</td><td>'+fpMultiDisplay('berm','line','fp-berm')+'</td></tr>';
+      h+='<tr><td>Berm/levee removal volume</td><td>entered</td><td>'+fpMultiVolDisplay('berm','fp-berm-vol')+'</td></tr>';
+      h+='<tr><td>Revetment removed</td><td>measured</td><td>'+fpMultiDisplay('revet','line','fp-revet')+'</td></tr>';
+      h+='<tr><td>Revetment removal volume</td><td>entered</td><td>'+fpMultiVolDisplay('revet','fp-revet-vol')+'</td></tr>';
+      h+='<tr><td>Mine tailings removed</td><td>measured</td><td>'+fpMultiDisplay('tailings','polygon','fp-tailings')+'</td></tr>';
+      h+='<tr><td>Mine tailings removal volume</td><td>entered</td><td>'+fpMultiVolDisplay('tailings','fp-tailings-vol')+'</td></tr>';
       // Sum secondary channel lengths by flow type; fall back to SOW layers if no scReaches
       var scP = (we.scReaches||[]).filter(function(r){return r.flowType==='Perennial';});
       var scS = (we.scReaches||[]).filter(function(r){return r.flowType==='Seasonal';});
       var scPMi = scP.length ? (scP.reduce(function(a,r){return a+r.valueM;},0)*0.000621371).toFixed(3)+' mi' : wMi2('fp-perensc');
       var scSMi = scS.length ? (scS.reduce(function(a,r){return a+r.valueM;},0)*0.000621371).toFixed(3)+' mi' : wMi2('fp-ephsc');
-      h+='<tr><td>Perennial side channel</td><td>'+scPMi+'</td></tr>';
-      h+='<tr><td>Seasonal side channel</td><td>'+scSMi+'</td></tr>';
-      h+='<tr><td>Acres of existing wetland habitat constructed/restored/enhanced</td><td>'+fpMultiDisplay('fp_wetland_enhance','polygon','fp-wetland-enhance')+'</td></tr>';
+      h+='<tr><td>Perennial side channel</td><td>measured</td><td>'+scPMi+'</td></tr>';
+      h+='<tr><td>Seasonal side channel</td><td>measured</td><td>'+scSMi+'</td></tr>';
+      h+='<tr><td>Acres of existing wetland habitat constructed/restored/enhanced</td><td>measured</td><td>'+fpMultiDisplay('fp_wetland_enhance','polygon','fp-wetland-enhance')+'</td></tr>';
       h+='</tbody></table>';
       // ── Secondary Channels ─────────────────────────────────────────────────
       if (we.scReaches && we.scReaches.length > 0) {
@@ -8975,15 +8975,15 @@ function openSOW() {
       function wMi3(id){var l=sl[id];return l?(l.valueM*0.000621371).toFixed(3)+' mi':'—';}
       function wAc3(id){var l=sl[id];return l?l.acres.toFixed(2)+' acres':'—';}
       function wVal3(id){var l=sl[id];return (l&&l.value!==undefined&&l.value!=='')?l.value:'—';}
-      h+='<h3>Riparian Restoration</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
-      h+='<tr><td>Miles fence installed</td><td>'+wMi3('rr-fence')+'</td></tr>';
-      h+='<tr><td>FP protected by fence</td><td>'+wAc3('rr-fence-area')+'</td></tr>';
-      h+='<tr><td># Plants installed</td><td>'+wVal3('rr-plants')+'</td></tr>';
-      h+='<tr><td>Planted below bankfull</td><td>'+wAc3('rr-plant-bf')+'</td></tr>';
-      h+='<tr><td>Planted above bankfull</td><td>'+wAc3('rr-plant-abf')+'</td></tr>';
-      h+='<tr><td>Invasive species removed</td><td>'+wAc3('rr-invasive')+'</td></tr>';
-      h+='<tr><td>Bank length riparian improvement</td><td>'+wMi3('rr-bank')+'</td></tr>';
-      h+='<tr><td>Total riparian improvement area</td><td>'+wAc3('rr-total')+'</td></tr>';
+      h+='<h3>Riparian Restoration</h3><table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
+      h+='<tr><td>Miles fence installed</td><td>measured</td><td>'+wMi3('rr-fence')+'</td></tr>';
+      h+='<tr><td>FP protected by fence</td><td>measured</td><td>'+wAc3('rr-fence-area')+'</td></tr>';
+      h+='<tr><td># Plants installed</td><td>entered</td><td>'+wVal3('rr-plants')+'</td></tr>';
+      h+='<tr><td>Planted below bankfull</td><td>measured</td><td>'+wAc3('rr-plant-bf')+'</td></tr>';
+      h+='<tr><td>Planted above bankfull</td><td>measured</td><td>'+wAc3('rr-plant-abf')+'</td></tr>';
+      h+='<tr><td>Invasive species removed</td><td>measured</td><td>'+wAc3('rr-invasive')+'</td></tr>';
+      h+='<tr><td>Bank length riparian improvement</td><td>measured</td><td>'+wMi3('rr-bank')+'</td></tr>';
+      h+='<tr><td>Total riparian improvement area</td><td>measured</td><td>'+wAc3('rr-total')+'</td></tr>';
       h+='</tbody></table>';
     }
   });
