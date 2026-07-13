@@ -533,6 +533,23 @@ function updateWetlandLayerVisibility(we, step) {
   });
 }
 
+// The floodplain polygon's green fill sits right behind the wetland step's NWI
+// candidates/drawn areas and makes them hard to pick out — hide it just for that
+// one step, restoring it afterward (unless the user has pre-project layers hidden
+// entirely, in which case leave that alone).
+function updateFpPolyVisibilityForStep(we, step) {
+  if (!we) return;
+  var d = we.ppData['fp_poly'];
+  if (!d || !d.layer) return;
+  var hide = !!(step && step.id === 'pp_wetland');
+  if (hide) {
+    if (map.hasLayer(d.layer)) { map.removeLayer(d.layer); d._hiddenForWetlandStep = true; }
+  } else if (d._hiddenForWetlandStep) {
+    d._hiddenForWetlandStep = false;
+    if (ppLayersVisible && !map.hasLayer(d.layer)) map.addLayer(d.layer);
+  }
+}
+
 var labelsVisible = true;
 
 function setLabelsVisible(show) {
@@ -7231,6 +7248,7 @@ function renderWizardStep() {
   var step = visSteps[wizardStep] || visSteps[visSteps.length-1];
   if (!step) return;
   updateWetlandLayerVisibility(we, step);
+  updateFpPolyVisibilityForStep(we, step);
 
   // ── Vertical stepper (vendor-invoice pattern), grouped into collapsible sections ──
   var workSectionLabels = {pc: 'Primary Channel', sc: 'Secondary Channels', fp: 'Floodplain & Side Channels', rr: 'Riparian Restoration'};
@@ -8257,6 +8275,7 @@ function wizardAutoActivate() {
   // Auto-manage pre-project layer visibility based on phase
   if (step.phase === 'pp') { setPPLayersVisible(true); }
   else if (step.phase === 'work') { setPPLayersVisible(false); }
+  updateFpPolyVisibilityForStep(we, step); // must run after setPPLayersVisible(true) above, which would otherwise re-show it
   setGravelMarkersVisible(we, !!(step.types && step.types.indexOf('pc') >= 0));
   switch(step.id) {
     case 'perimeter':
