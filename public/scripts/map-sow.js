@@ -2589,6 +2589,11 @@ function addReachArrow(we) {
   if(!rd || !rd.layer) return;
   var markers = buildFlowArrowMarkers(rd.layer, we.ppData['area_ch'], '#c07820');
   if (!markers.length) return;
+  // Respect the pre-project visibility toggle — buildFlowArrowMarkers() always adds
+  // fresh markers to the map, which otherwise leaks the pre-project reach's arrows
+  // back in on every zoom (refreshAllFlowArrows runs regardless of wizard step)
+  // even while pre-project layers are supposed to be hidden during habitat work.
+  if (!ppLayersVisible) markers.forEach(function(mk){ map.removeLayer(mk); });
   rd._arrowMarkers = markers;
   rd._arrowMarker = markers[Math.floor(markers.length/2)]; // keep reference for legacy code
 }
