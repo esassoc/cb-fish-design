@@ -8116,7 +8116,7 @@ function wizardStepBody(we, step, idx) {
     }
 
     case 'fp_structures': {
-      h += '<div class="wz-step-desc">Draw large-log placement and add any floodplain or side-channel structures.</div>';
+      h += '<div class="wz-step-desc">Draw large-log placement and add any floodplain structures. Side-channel structures are counted separately under Secondary Channels — Wood Counts.</div>';
       h += wzFPDrawRow(we, 'fp-logs-area', 'polygon', 'Large-log placement area');
       h += wzFPInputRow(we, 'fp-large-logs', '# Large logs placed');
 
@@ -8132,10 +8132,7 @@ function wizardStepBody(we, step, idx) {
         var isWaiting = pendingStructPoint && pendingStructPoint.id === s.id;
         h += '<div style="background:#fff;border:1px solid #dcdcdc;border-radius:5px;padding:8px;margin-bottom:6px">';
         h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
-        h += '<select style="font-size:11px;border:1px solid var(--color-border);border-radius:3px;padding:2px 4px;background:var(--color-surface);color:var(--color-text-primary);font-family:var(--font-sans,system-ui)" onchange="changeFPStructType(\''+s.id+'\',this.value)">';
-        h += '<option value="fps"'+(t==='fps'?' selected':'')+'>Floodplain Structure</option>';
-        h += '<option value="scs"'+(t==='scs'?' selected':'')+'>Side Channel Structure</option>';
-        h += '</select>';
+        h += '<span style="font-size:11px;font-weight:600;color:#7c7c7c">Floodplain Structure</span>';
         h += '<span style="cursor:pointer;color:#ef4444;font-size:12px" onclick="wizardDelFPStructure(\''+s.id+'\')">&#10005;</span>';
         h += '</div>';
         if (s.latlng) {
