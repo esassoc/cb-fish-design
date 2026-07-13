@@ -2154,6 +2154,56 @@ function fetchElevationProfile(we) {
   });
 }
 
+// Manual override for reach flow direction — elevation data isn't always available
+// (USGS outage) or reliable (very flat reaches), so let the user flip it themselves
+// rather than being stuck with whatever direction it happened to be drawn/detected in.
+function flipReachDirection(weArg) {
+  var we = weArg || getActiveWE();
+  var rd = we && we.ppData['reach_len'];
+  if (!rd || !rd.layer) return;
+  var pts = rd.layer.getLatLngs();
+  if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+  pts = pts.slice().reverse();
+  map.removeLayer(rd.layer);
+  rd.layer = L.polyline(pts, {color:'#c07820', weight:2.5, interactive:false}).addTo(map);
+
+  // Keep an already-computed elevation profile in sync with the new direction
+  // rather than leaving stale upstream/downstream stats from the old orientation.
+  var sd = we.ppData['avg_slope'];
+  if (sd && sd._elevProfile) {
+    sd._elevProfile = sd._elevProfile.slice().reverse();
+    var tmp = sd._upstreamElev; sd._upstreamElev = sd._downstreamElev; sd._downstreamElev = tmp;
+    sd._elevChangeM = sd._upstreamElev - sd._downstreamElev;
+    var reachLenM = rd.valueM || 1;
+    sd._slopePct = (sd._elevChangeM / reachLenM) * 100;
+    sd._slopeDeg = Math.atan(sd._elevChangeM / reachLenM) * (180 / Math.PI);
+    sd.value = sd._slopeDeg.toFixed(3);
+  }
+
+  updateAreaChBuffer(we); updateAreaFpBuffer(we);
+  addReachArrow(we);
+
+  // Keep any already-drawn primary channel reach(es) oriented to match, same as
+  // when they're first drawn (see orientPtsLikeReach in finishSOWDraw).
+  var savedActivePCId = we.activePCId;
+  we.primaryChannels.forEach(function(pc) {
+    var sl = pc.sowLayers['pc-reach'];
+    if (!sl || !sl.layer) return;
+    var pcPts = sl.layer.getLatLngs();
+    if (pcPts.length && Array.isArray(pcPts[0])) pcPts = pcPts[0];
+    var oriented = orientPtsLikeReach(pcPts, pts);
+    if (oriented !== pcPts) {
+      sl.layer.setLatLngs(oriented);
+      we.activePCId = pc.id;
+      addPCReachArrow(we);
+    }
+  });
+  we.activePCId = savedActivePCId;
+
+  var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
+  renderPMRow(m); rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
+}
+
 function drawElevChart(canvasId, elevs) {
   var canvas = document.getElementById(canvasId);
   if (!canvas || !canvas.getContext) return;
@@ -7431,6 +7481,8 @@ function wizardStepBody(we, step, idx) {
         h += '<button class="wz-action-btn secondary" style="margin-top:12px" onclick="startReachAutoDetect();renderWizardStep()">&#127760; Re-detect from Map</button>';
         h += '<button class="wz-action-btn secondary" onclick="wizardRedraw(\'reach_len\')">&#128207; Redraw Manually</button>';
         h += '<button class="wz-action-btn secondary" onclick="startLineEdit(\'pp\',\'reach_len\');renderWizardStep()">&#9998; Edit Vertices</button>';
+        h += '<button class="wz-action-btn secondary" onclick="flipReachDirection();renderWizardStep()">&#8646; Flip Flow Direction</button>';
+        h += '<div class="wz-tip">Flow direction is normally set from elevation data — flip it manually if that\'s unavailable or looks wrong.</div>';
       } else if (reachPreTrim) {
         var ext = reachD._preTrimExtending;
         h += '<div class="wz-status pending">&#10003; Stream selected — extend if needed, then pick your endpoints.</div>';
