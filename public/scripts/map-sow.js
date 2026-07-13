@@ -1569,6 +1569,26 @@ function reClipReachToPerimeter(we) {
   rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
 }
 
+// Re-clip the pre-project floodplain polygon to the current perimeter.
+// Called after perimeter is drawn or edited so an existing floodplain snaps to the new boundary.
+function reClipFpPolyToPerimeter(we) {
+  var d = we && we.ppData['fp_poly'];
+  if (!d || !d.layer) return;
+  var pts = d._pts || d.layer.getLatLngs();
+  if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+  commitFpPoly(we, pts);
+}
+
+// Re-clip the primary channel's new-floodplain polygon to the current perimeter.
+function reClipPCFPToPerimeter(we) {
+  var pc = we && getActivePC(we);
+  var d = pc && pc.ppData['pc_fp'];
+  if (!d || !d.layer) return;
+  var pts = d._pts || d.layer.getLatLngs();
+  if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+  commitPCFP(we, pts);
+}
+
 function updateAreaChBuffer(we) {
   if (!we) return;
   var d = we.ppData['area_ch'];
@@ -2322,7 +2342,7 @@ function finishPPDraw() {
   updateAreaChBuffer(getWE(we.id));
   updateAreaFpBuffer(getWE(we.id));
   if(m.id==='reach_len') addReachArrow(getWE(we.id));
-  if(m.id==='perimeter') { reClipReachToPerimeter(getWE(we.id)); reClipPCReach(getWE(we.id)); }
+  if(m.id==='perimeter') { reClipReachToPerimeter(getWE(we.id)); reClipPCReach(getWE(we.id)); reClipFpPolyToPerimeter(getWE(we.id)); reClipPCFPToPerimeter(getWE(we.id)); }
   if(m.id==='reach_len') {
     updateWELabel(getWE(we.id), true);
     setTimeout(function(){ fetchElevationProfile(getWE(we.id)); }, 300);
@@ -3866,7 +3886,7 @@ function commitLineEdit() {
     updateAreaChBuffer(we);
     updateAreaFpBuffer(we);
     if (id === 'reach_len') { addReachArrow(we); setTimeout(function(){ fetchElevationProfile(getWE(activeWEId)); }, 300); }
-    if (id === 'perimeter') { reClipReachToPerimeter(we); reClipPCReach(we); }
+    if (id === 'perimeter') { reClipReachToPerimeter(we); reClipPCReach(we); reClipFpPolyToPerimeter(we); reClipPCFPToPerimeter(we); }
   } else if (type === 'cr-poly') {
     var crWe = getWE(lineEditing.weId);
     if (crWe) {
