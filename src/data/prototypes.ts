@@ -76,6 +76,15 @@ export const prototypes: Prototype[] = [
     createdAt: '2026-06-23',
     status: 'in-progress',
   },
+  {
+    slug: 'map-sow',
+    title: 'Habitat Design Tool',
+    description:
+      'Map-based statement-of-work builder — draw work elements on a Leaflet map, compute pre-project metrics from digitized features, and export a formatted SOW.',
+    route: '/map-sow',
+    createdAt: '2026-06-22',
+    status: 'in-progress',
+  },
 ];
 
 /** Newest first — the order the index table renders. */

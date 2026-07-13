@@ -1,0 +1,123 @@
+---
+// All modals for the Habitat Design Tool:
+//   #we-modal      — create / edit a work element
+//   #sowmodal      — export / print the Statement of Work
+//   #welcome-modal — onboarding overlay shown on first load
+//
+// Buttons use esa-button via a <span onclick> wrapper — click events bubble up
+// from the inner native button to the outer span, firing the onclick handler.
+// The X close buttons in modal headers are kept as raw buttons (icon-only,
+// no text, styled via .we-modal-head / .sowhead CSS).
+import EsaButton from '@esa/ecology/esa-button.astro';
+---
+
+<!-- WE setup modal -->
+<div
+  id="we-modal"
+  style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:3000;align-items:center;justify-content:center"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="we-modal-title"
+>
+  <div id="we-modal-box">
+    <div class="we-modal-head">
+      <span id="we-modal-title">New Work Element</span>
+      <button onclick="closeWEModal()" aria-label="Close dialog">&#10005;</button>
+    </div>
+    <div class="we-modal-body">
+      <div class="we-modal-field">
+        <esa-text-field
+          label="Work Element Title"
+          placeholder="e.g. Eagle Valley Reach 1"
+          required
+        ></esa-text-field>
+      </div>
+      <div class="we-modal-field">
+        <label>What type of work will this element include?</label>
+        <div class="we-type-check">
+          <div class="we-type-opt" id="opt-pc" onclick="toggleWEType('pc')">
+            <esa-checkbox id="chk-pc" onclick="event.stopPropagation()"></esa-checkbox>
+            <div>
+              <div class="we-type-opt-label we-type-opt-label--pc">&#9632; Primary Channel</div>
+              <div class="we-type-opt-desc">Channel restoration, wood structures, habitat units</div>
+            </div>
+          </div>
+          <div class="we-type-opt" id="opt-fp" onclick="toggleWEType('fp')">
+            <esa-checkbox id="chk-fp" onclick="event.stopPropagation()"></esa-checkbox>
+            <div>
+              <div class="we-type-opt-label we-type-opt-label--fp">&#9632; Floodplain &amp; Side Channels</div>
+              <div class="we-type-opt-desc">Floodplain reconnection, side channels, wood placement</div>
+            </div>
+          </div>
+          <div class="we-type-opt" id="opt-rr" onclick="toggleWEType('rr')">
+            <esa-checkbox id="chk-rr" onclick="event.stopPropagation()"></esa-checkbox>
+            <div>
+              <div class="we-type-opt-label we-type-opt-label--rr">&#9632; Riparian Restoration</div>
+              <div class="we-type-opt-desc">Fencing, planting, invasive species removal</div>
+            </div>
+          </div>
+        </div>
+        <div class="wm-err" id="we-modal-err">Please enter a title and select at least one work type.</div>
+      </div>
+    </div>
+    <div class="we-modal-foot">
+      <span onclick="closeWEModal()">
+        <EsaButton color="ghost" appearance="outline">Cancel</EsaButton>
+      </span>
+      <span onclick="saveWEModal()">
+        <EsaButton color="primary">Save</EsaButton>
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- SOW export modal -->
+<div
+  id="sowmodal"
+  style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:2000;align-items:center;justify-content:center"
+>
+  <div id="sowbox">
+    <div class="sowhead">
+      Statement of Work — Habitat Program
+      <button onclick="closeSOW()">&#10005;</button>
+    </div>
+    <div id="sowbody"></div>
+    <div class="sowfoot">
+      <span onclick="window.print()">
+        <EsaButton color="primary" icon="printer">Print / Save PDF</EsaButton>
+      </span>
+      <span onclick="closeSOW()">
+        <EsaButton color="ghost" appearance="outline">Close</EsaButton>
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Welcome / onboarding modal -->
+<div
+  id="welcome-modal"
+  style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center"
+>
+  <div class="msow-welcome-card">
+    <div class="msow-welcome-head">
+      <p class="msow-welcome-title">Habitat Design Tool</p>
+    </div>
+    <div class="msow-welcome-body">
+      <p class="msow-welcome-heading">Your contract is eligible to use the new map-based tool.</p>
+      <p class="msow-welcome-desc">
+        Define pre-project conditions and scope habitat work elements visually on the map,
+        with metrics calculated automatically from your digitized features.
+      </p>
+    </div>
+    <div class="msow-welcome-actions">
+      <span onclick="document.getElementById('welcome-modal').style.display='none';createDefaultWE();" class="msow-welcome-btn">
+        <EsaButton color="primary" icon="check">Continue with new tool</EsaButton>
+      </span>
+      <!-- "Go back to old tool" removed for now — kept for easy restore.
+      <span onclick="alert('Returning to classic SOW editor...')" class="msow-welcome-btn">
+        <EsaButton color="ghost" appearance="outline" icon="arrow-left">Go back to old tool</EsaButton>
+      </span>
+      -->
+    </div>
+  </div>
+</div>
