@@ -8740,8 +8740,9 @@ function openSOW() {
   var h='<h3>Contract Information</h3><dl class="smeta"><dt>Contract #</dt><dd>84051 REL 50</dd><dt>COR</dt><dd>Virginia Preiss</dd><dt>FY</dt><dd>2026</dd><dt>Date</dt><dd>'+today+'</dd></dl>';
 
   workElements.forEach(function(we,idx) {
-    h+='<h2>WE '+(idx+1)+': '+we.name+'</h2>';
-    h+='<div style="font-size:11px;color:#5ddba5;margin-bottom:8px">Work types: '+we.types.map(function(t){return TYPE_LABELS[t];}).join(', ')+'</div>';
+    // WE header/work-types line hidden for now — kept for easy restore.
+    // h+='<h2>WE '+(idx+1)+': '+we.name+'</h2>';
+    // h+='<div style="font-size:11px;color:#5ddba5;margin-bottom:8px">Work types: '+we.types.map(function(t){return TYPE_LABELS[t];}).join(', ')+'</div>';
 
     // Pre-project
     h+='<h3>Pre-Project Conditions</h3><table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
