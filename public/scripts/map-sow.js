@@ -2865,6 +2865,7 @@ function startSOWDraw(id,geo,label) {
   var we=getActiveWE();if(!we)return;
   var owner=sowOwner(we,id);
   if(lineEditing){cancelLineEdit();}
+  if(wetlandAutoDetecting){cancelWetlandAutoDetect();}
   if(owner.sowLayers[id]&&owner.sowLayers[id].layer)map.removeLayer(owner.sowLayers[id].layer);
   if(owner.sowLayers[id]&&owner.sowLayers[id]._labelMarker)map.removeLayer(owner.sowLayers[id]._labelMarker);
   sowDrawing={id:id,geo:geo,label:label,weId:activeWEId};
@@ -4857,7 +4858,12 @@ var reachAutoLayers = []; // temp highlight layers for detected streams
 function startReachAutoDetect() {
   var we = getActiveWE(); if (!we) return;
   if (lineEditing) cancelLineEdit();
+  // Cancel any in-progress manual draw fully — nulling the flags alone leaves stale
+  // clicked vertices and a dangling preview line on the map (same class of bug fixed
+  // for the wetland step's Auto-Detect/+Add conflict).
   ppDrawing = null; sowDrawing = null; chuDrawing = false;
+  drawPts = []; clearPreview();
+  document.querySelectorAll('.draw-btn').forEach(function(b){b.classList.remove('active');});
   // Clear any existing manually-drawn reach before re-detecting
   if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
   var rd = we.ppData['reach_len'];
@@ -5294,6 +5300,14 @@ function clearWetlandAutoLayers() {
 
 function startWetlandAutoDetect() {
   var we = getActiveWE(); if (!we) return;
+  // Cancel any in-progress manual polygon draw first (e.g. from "+ Add Wetland area") —
+  // otherwise both modes stay active at once and the user gets stuck with no way to
+  // finish either one.
+  if (sowDrawing) {
+    sowDrawing = null; drawPts = []; clearPreview();
+    document.getElementById('mapwrap').classList.remove('drawing');
+    document.querySelectorAll('.draw-btn').forEach(function(b){b.classList.remove('active');});
+  }
   wetlandAutoDetecting = true;
   if (wizardMode) renderWizardStep();
   loadWetlandPreview();
