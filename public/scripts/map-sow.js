@@ -5418,6 +5418,7 @@ function loadWetlandPreview() {
   // and the service returns too many (or zero, once past its record cap) features.
   if (zoom < 11) {
     setMapHint('Zoom in to level 11+ (currently '+zoom+'), then click Auto-Detect again');
+    if (wizardMode) wizardRefreshIfActive();
     return;
   }
   var bounds = map.getBounds();
@@ -5449,6 +5450,7 @@ function loadWetlandPreview() {
     if (!wetlandAutoDetecting) return;
     if (data.error || !data.features || !data.features.length) {
       setMapHint(data.error ? 'NWI service returned an error — try a smaller area, try again shortly, or draw manually' : 'No mapped wetlands found in this view');
+      if (wizardMode) wizardRefreshIfActive();
       return;
     }
     data.features.forEach(function(feat) {
@@ -5471,6 +5473,7 @@ function loadWetlandPreview() {
       wetlandAutoLayers.push(lyr);
     });
     setMapHint(wetlandAutoLayers.length ? 'Click a highlighted wetland to add it' : 'No mapped wetlands found in this view');
+    if (wizardMode) wizardRefreshIfActive();
   }).catch(function(err) {
     console.warn('[NWI] fetch failed:', err);
     if (!wetlandAutoDetecting) return;
@@ -5478,6 +5481,7 @@ function loadWetlandPreview() {
     // surface identically as a generic TypeError here — the browser hides the actual
     // status once a response is blocked, so we can't say more specifically what failed.
     setMapHint('Couldn\'t reach the NWI wetlands service — it may be temporarily down. Try again shortly, or draw manually.');
+    if (wizardMode) wizardRefreshIfActive();
   });
 }
 
@@ -7865,6 +7869,11 @@ function wizardStepBody(we, step, idx) {
       h += '<div class="wz-step-desc">Identify any wetland areas already present on the site, before project work begins. Check the National Wetlands Inventory for candidates, or draw manually. Add as many as needed — or skip if none are present.</div>';
       if (wetlandAutoDetecting) {
         h += '<div class="wz-status pending">&#9654; Click a highlighted wetland on the map to add it — click <span style="text-decoration:underline;cursor:pointer" onclick="cancelWetlandAutoDetect()">done</span> when finished.</div>';
+        // No candidates currently shown means the last query failed or came back empty —
+        // offer a one-click retry instead of making the user cancel and re-click Auto-Detect.
+        if (!wetlandAutoLayers.length) {
+          h += '<button class="wz-action-btn secondary" onclick="loadWetlandPreview();renderWizardStep()">&#8635; Retry NWI Query</button>';
+        }
       } else {
         h += '<button class="wz-action-btn secondary" onclick="startWetlandAutoDetect()">&#127760; Auto-Detect from Map (NWI)</button>';
       }
