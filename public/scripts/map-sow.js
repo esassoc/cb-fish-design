@@ -2204,6 +2204,42 @@ function flipReachDirection(weArg) {
   renderPMRow(m); rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
 }
 
+// Manual override for the primary (designed) channel's own flow direction — same
+// rationale as flipReachDirection() above, but for the pc-reach line drawn in the
+// Primary Channel section rather than the pre-project reach.
+function flipPCReachDirection(weArg) {
+  var we = weArg || getActiveWE();
+  var pc = we && getActivePC(we);
+  var sl = pc && pc.sowLayers['pc-reach'];
+  if (!sl || !sl.layer) return;
+  var pts = sl.layer.getLatLngs();
+  if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+  pts = pts.slice().reverse();
+  map.removeLayer(sl.layer);
+  var col = pcChannelColor(we, we.activePCId);
+  var tipLabel = sl.label || 'Primary Channel';
+  if (we.primaryChannels.length > 1) tipLabel += ' (' + pc.name + ')';
+  sl.layer = L.polyline(pts, {color:col, weight:2.5, interactive:true}).bindTooltip(tipLabel).addTo(map);
+
+  // Keep an already-computed elevation profile in sync with the new direction.
+  var sd = pc.sowElev;
+  if (sd && sd._profile) {
+    sd._profile = sd._profile.slice().reverse();
+    var tmp = sd._upstreamElev; sd._upstreamElev = sd._downstreamElev; sd._downstreamElev = tmp;
+    sd._elevChangeM = sd._upstreamElev - sd._downstreamElev;
+    var reachLenM = sl.valueM || 1;
+    sd._slopePct = (sd._elevChangeM / reachLenM) * 100;
+    sd._slopeDeg = Math.atan(sd._elevChangeM / reachLenM) * (180 / Math.PI);
+    if (!pc.sowLayers['pc-slope']) pc.sowLayers['pc-slope'] = {};
+    pc.sowLayers['pc-slope'].value = sd._slopeDeg.toFixed(3);
+  }
+
+  addPCReachArrow(we);
+  updatePCBuffer(we);
+  rerenderCalcs(); updateSOWCalcs();
+  if (wizardMode) wizardRefreshIfActive();
+}
+
 function drawElevChart(canvasId, elevs) {
   var canvas = document.getElementById(canvasId);
   if (!canvas || !canvas.getContext) return;
@@ -7880,6 +7916,8 @@ function wizardStepBody(we, step, idx) {
         h += buildSOWElevChartHTML(we);
         h += '<button class="wz-action-btn secondary" style="margin-top:8px" onclick="startSOWDraw(\'pc-reach\',\'line\',\'Primary Channel\');renderWizardStep()">&#128207; Redraw</button>';
         h += '<button class="wz-action-btn secondary" onclick="startLineEdit(\'sow\',\'pc-reach\');renderWizardStep()">&#9998; Edit Vertices</button>';
+        h += '<button class="wz-action-btn secondary" onclick="flipPCReachDirection();renderWizardStep()">&#8646; Flip Flow Direction</button>';
+        h += '<div class="wz-tip">Flow direction is normally set from elevation data — flip it manually if that\'s unavailable or looks wrong.</div>';
       } else {
         h += '<button class="wz-action-btn" onclick="startSOWDraw(\'pc-reach\',\'line\',\'Primary Channel\');renderWizardStep()">&#128207; Draw Primary Channel</button>';
         h += '<div class="wz-tip">Draw the designed channel centerline — this is different from the existing reach and represents where the channel will be after restoration.</div>';
