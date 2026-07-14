@@ -50,6 +50,15 @@ var chuPendingPoolDownId = null; // ID of downstream piece from first split
 var chuDrawPts = [];    // pts being drawn for current split line
 var chuSnapDist = 15;   // px snap distance to area_ch boundary
 
+// Leaflet's map panning (and any Leaflet-draggable marker) treats a mousedown+mouseup
+// as a real click only if the pointer moved less than this many px — default is 3,
+// which is easy to exceed by accident (trackpad jitter, a slightly-shaky click) and
+// silently drops the click instead of, say, placing a drawn vertex. Raising it globally
+// via mergeOptions (Leaflet's supported way to change a class's defaults) makes clicks
+// more forgiving everywhere without touching the custom vertex-edit-handle drag code,
+// which uses its own raw mousemove/mouseup listeners rather than L.Draggable.
+L.Draggable.mergeOptions({ clickTolerance: 10 });
+
 // ── Init ──────────────────────────────────────────────────────────────────
 window.onload = function() {
   map = L.map('map', {center:[46.5,-120.5], zoom:7, doubleClickZoom:false});
