@@ -6519,7 +6519,7 @@ function enterPreTrimStep(pts, skipFit) {
   if (reachTrimLayer) map.removeLayer(reachTrimLayer);
   reachTrimLayer = L.polyline(pts, {color:'#1a9abf', weight:3, dashArray:'6,4', interactive:false}).addTo(map);
   if (!skipFit) map.fitBounds(L.polyline(pts).getBounds(), {padding:[60,60]});
-  setMapHint('Wrong stream? Click <b>Re-detect</b> in the sidebar. Otherwise extend if needed, then click <b>Pick endpoints</b>');
+  setMapHint('Wrong stream? Click <b>Try different stream</b> in the sidebar. Otherwise extend if needed, then click <b>Pick endpoints</b>');
   // Refresh sidebar to show the pre-trim panel
   var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
   var we = getActiveWE(); if (!we) return;
@@ -6638,7 +6638,7 @@ function cancelPreTrimExtend() {
   preReachExtend = false;
   clearReachAutoLayers();
   document.getElementById('mapwrap').classList.remove('drawing');
-  setMapHint('Wrong stream? Click <b>Re-detect</b> in the sidebar. Otherwise extend if needed, then click <b>Pick endpoints</b>');
+  setMapHint('Wrong stream? Click <b>Try different stream</b> in the sidebar. Otherwise extend if needed, then click <b>Pick endpoints</b>');
   var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
   var we = getActiveWE(); if (!we) return;
   we.ppData['reach_len']._preTrimExtending = false;
