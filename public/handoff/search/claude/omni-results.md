@@ -670,6 +670,9 @@ The palette mid-query — grouped results across types with scope pills, matched
     background 0.12s,
     border-color 0.12s;
 }
+.cbf-app-bar--admin .cbf-omni-trigger {
+  min-width: 0;
+}
 .cbf-icon {
   display: inline-flex;
   align-items: center;
@@ -679,8 +682,12 @@ The palette mid-query — grouped results across types with scope pills, matched
 }
 .cbf-omni-trigger__ph {
   flex: 1;
+  min-width: 0;
   text-align: left;
   font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .cbf-omni-trigger__kbd {
   display: inline-flex;
@@ -988,9 +995,9 @@ The palette mid-query — grouped results across types with scope pills, matched
 - `--color-primary`: #1e5386 _(semantic)_
 - `--color-primary-subtle`: #f3f7fc _(semantic)_
 - `--color-secondary`: #2770b2 _(semantic)_
-- `--color-surface`: #ffffff _(semantic)_
+- `--color-surface`: #fcfcfc _(semantic)_
 - `--color-surface-sunken`: #f3f7fc _(semantic)_
-- `--color-text-inverse`: #ffffff _(semantic)_
+- `--color-text-inverse`: #fcfcfc _(semantic)_
 - `--color-text-muted`: #7c7c7c _(semantic)_
 - `--color-text-primary`: #3d3d3d _(semantic)_
 - `--font-display`: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif _(primitive)_
@@ -998,7 +1005,7 @@ The palette mid-query — grouped results across types with scope pills, matched
 - `--font-weight-medium`: 500 _(primitive)_
 - `--font-weight-regular`: 400 _(primitive)_
 - `--font-weight-semibold`: 600 _(primitive)_
-- `--kbd-bg`: #ffffff _(component)_
+- `--kbd-bg`: #fcfcfc _(component)_
 - `--kbd-border-color`: #dcdcdc _(component)_
 - `--kbd-color`: #7c7c7c _(component)_
 - `--kbd-radius`: 4px _(component)_
@@ -1297,7 +1304,7 @@ export function renderResults(
       btn.innerHTML = `
         <div class="cbf-result__body">
           <div class="cbf-result__title">${n} Publication result${n === 1 ? '' : 's'}</div>
-          <div class="cbf-result__sub">Open in Publications Search</div>
+          <div class="cbf-result__sub">Open in Publications search</div>
         </div>
         <span class="cbf-result__chevron cbf-icon">${svg('chevron-right', 18)}</span>`;
       btn.addEventListener('click', () => opts.onPublicationsAll!(n));

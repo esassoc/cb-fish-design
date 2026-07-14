@@ -1,0 +1,145 @@
+---
+// cbf-report-tabs — the Report Center "summary page" sub-navigation strip.
+// A horizontal row of <a> links between the sub-pages of a report area
+// (Summary + its detail views), with a trailing "Related items" disclosure that
+// lists the related report links. Mirrors the live CBFish accruals/expenditures
+// summary pages. First used by /project-budgets; scoped here until a second
+// summary page consumes it, then promote to components/shared/.
+//
+// bcn-lego-checked: this is a NAVIGATION link strip — distinct routes, not
+// panels — so a semantic <nav> of <a> links is correct, not esa-tab-layout
+// (a panel-SWITCHING control), same rationale as cbf-pubs-tabs. The trailing
+// "Related items" menu is a native <details>/<summary> disclosure (a browser
+// disclosure primitive, no JS), NOT esa-nav-dropdown — that lego is app-bar
+// chrome (an icon-link trigger + floating panel tuned for the bar), not an
+// inline tab-strip menu. Checked Beacon (report sub-nav). No reinvented control.
+interface Tab {
+  label: string;
+  href?: string;
+  active?: boolean;
+}
+interface RelatedItem {
+  title: string;
+  href?: string;
+}
+interface Props {
+  tabs: Tab[];
+  related?: RelatedItem[];
+  ariaLabel?: string;
+}
+const { tabs, related = [], ariaLabel = 'Report sections' } = Astro.props;
+const chevron =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+---
+<nav class="cbf-report-tabs" aria-label={ariaLabel}>
+  {tabs.map((t) => (
+    <a
+      class:list={['cbf-report-tabs__tab', t.active && 'is-active']}
+      href={t.href ?? '#'}
+      aria-current={t.active ? 'page' : undefined}
+    >{t.label}</a>
+  ))}
+
+  {related.length > 0 && (
+    <details class="cbf-report-tabs__related">
+      <summary class="cbf-report-tabs__tab cbf-report-tabs__related-trigger">
+        Related items<span class="cbf-report-tabs__chev" set:html={chevron} />
+      </summary>
+      <div class="cbf-report-tabs__menu" role="menu">
+        {related.map((r) => (
+          <a class="cbf-report-tabs__menu-item" role="menuitem" href={r.href ?? '#'}>{r.title}</a>
+        ))}
+      </div>
+    </details>
+  )}
+</nav>
+
+<style>
+  /* Contained "bar" wrapper around the sub-nav — a bordered, subtly-tinted
+     strip (matches the live Report Center summary pages), not a borderless row.
+     <a> links, not styled <button>s, so this stays a genuine navigation control. */
+  .cbf-report-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-100);
+    padding: var(--spacing-150);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200, 8px);
+    background: var(--color-gray-50, #f4f5f7);
+  }
+  .cbf-report-tabs__tab {
+    padding: var(--spacing-200) var(--spacing-300);
+    border-radius: var(--radius-100);
+    color: var(--color-primary);
+    font-size: 16px;
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+  }
+  .cbf-report-tabs__tab:hover {
+    background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  }
+  /* Active page: a raised white segment + bold navy text — a quiet selection
+     cue, NOT a solid color fill. */
+  .cbf-report-tabs__tab.is-active {
+    background: var(--color-surface, #fff);
+    color: var(--color-surface-inverse);
+    font-weight: var(--font-weight-semibold);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--color-surface-inverse) 12%, transparent);
+  }
+  .cbf-report-tabs__tab.is-active:hover {
+    background: var(--color-surface, #fff);
+  }
+
+  /* Related-items disclosure — native <details>; the menu floats over the
+     content below without reflowing the strip. */
+  .cbf-report-tabs__related {
+    position: relative;
+    margin-left: auto; /* push to the trailing edge, like the live summary pages */
+  }
+  .cbf-report-tabs__related-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-150);
+    list-style: none; /* drop the default disclosure marker */
+    cursor: pointer;
+  }
+  .cbf-report-tabs__related-trigger::-webkit-details-marker { display: none; }
+  .cbf-report-tabs__chev {
+    display: inline-flex;
+    transition: transform 0.12s ease;
+  }
+  .cbf-report-tabs__related[open] .cbf-report-tabs__chev { transform: rotate(180deg); }
+  .cbf-report-tabs__menu {
+    position: absolute;
+    top: calc(100% + var(--spacing-150));
+    right: 0;
+    z-index: 20;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    padding: var(--spacing-150);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--color-surface-inverse) 14%, transparent);
+  }
+  .cbf-report-tabs__menu-item {
+    padding: var(--spacing-200) var(--spacing-300);
+    border-radius: var(--radius-100);
+    color: var(--color-text-primary);
+    font-size: 15px;
+    white-space: nowrap;
+  }
+  .cbf-report-tabs__menu-item:hover {
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
+  }
+
+  /* On a wrapped (narrow) strip the auto margin would orphan the disclosure on
+     its own row; let it sit inline with the tabs instead. */
+  @media (max-width: 640px) {
+    .cbf-report-tabs__related { margin-left: 0; }
+    .cbf-report-tabs__menu { right: auto; left: 0; }
+  }
+</style>

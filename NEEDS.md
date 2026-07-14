@@ -1,4 +1,4 @@
-# CB Fish — Needs Analysis
+# CBFish — Needs Analysis
 
 Gap analysis between the **CBFish Modernization** Figma (source of truth) and the
 **@esa/ecology** hub design system. This is the inventory that drives what the
@@ -11,9 +11,9 @@ Gap analysis between the **CBFish Modernization** Figma (source of truth) and th
 
 ## 1. Token delta
 
-CB Fish shares ecology's **structural** tokens and diverges on the **brand** layer.
+CBFish shares ecology's **structural** tokens and diverges on the **brand** layer.
 
-| Token group | CB Fish (Figma) | Ecology | Action |
+| Token group | CBFish (Figma) | Ecology | Action |
 |---|---|---|---|
 | Spacing scale | 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 | identical numeric scale | **Inherit as-is** |
 | Radius | 4px | `--radius` / `spacing-100` = 4 | **Inherit** |
@@ -34,14 +34,14 @@ semantic token instead). The `--font-display` slot and the `--color-primary-subt
 
 ### Reuse from ecology (re-skinned automatically by the token overrides)
 
-| CB Fish need | Ecology component | Notes |
+| CBFish need | Ecology component | Notes |
 |---|---|---|
 | Page banners (info / warning / success) | `esa-alert-box` | Maps 1:1 to its variants |
 | Search w/ scope selector | `esa-combobox` / `esa-select` | Scope dropdown + free-text input |
 | Buttons & text links | `esa-button` | Inherits blue primary |
 | Section control pill (Prev · Enlarge · Next) | `esa-button-group` | Compose 3 ghost buttons + dividers |
 
-### Build new (CB Fish spoke components)
+### Build new (CBFish spoke components)
 
 | Component | Purpose | Notes |
 |---|---|---|
@@ -78,7 +78,7 @@ to the manifest discipline); the workaround column now reflects the centralized 
 
 | # | Request | Why it recurs | Current workaround in spoke |
 |---|---|---|---|
-| 1 | **Semantic document/file-link color role** (hub `--color-document-link`) | CB Fish needs a green for document paths that is NOT the status-success green; prod renders publication paths in green as a recognizable affordance | Now a spoke semantic `--cbf-document-link` (`theme-cb-fish.css`), consumed by `cbf-pubs-results`. Promote to a hub `--color-document-link`. |
+| 1 | **Semantic document/file-link color role** (hub `--color-document-link`) | CBFish needs a green for document paths that is NOT the status-success green; prod renders publication paths in green as a recognizable affordance | Now a spoke semantic `--cbf-document-link` (`theme-cb-fish.css`), consumed by `cbf-pubs-results`. Promote to a hub `--color-document-link`. |
 | 2 | **`--color-attention*` semantic trio** (base / subtle / border) for non-error elevated/highlight states | Impersonation / "elevated session" UI wants an amber distinct from `--color-warning` (form-validation amber); every admin-tooling spoke will want this | `theme-cb-fish.css` defines local `--cbf-amber-attention: #f6c244`, consumed in `cbf-public-nav.astro` |
 | 3 | **Borderless omnibox lego** (`esa-omnibox-field` / `esa-search-input`) | The icon + borderless `<input>` + brand focus-ring pattern recurs | Now centralized in **`cbf-search-field`** (the reusable home, bcn-lego-checked), used by `search.astro` + `publications.astro`; the palette + tray-trigger keep their own variants. Promote to hub. |
 | 4 | **Scoped multi-entity search palette** (`esa-entity-search-palette`) | `esa-command-palette` is a flat action launcher; `esa-entity-search` is a single-list navigate omnibox — neither does scoped multi-entity results (projects/contracts/people/publications) + a results-page twin | `cbf-omni-search` + the shared `omni-render.ts` core (bcn-lego-checked) |

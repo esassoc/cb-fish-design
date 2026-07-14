@@ -22,21 +22,30 @@ export interface Prototype {
 
 export const prototypes: Prototype[] = [
   {
+    slug: 'home',
+    title: 'CBFish homepage',
+    description:
+      'A static, in-design-system snapshot of the live cbfish.org landing — the shared home every prototype returns to via the logo and the Home breadcrumb.',
+    route: '/home',
+    createdAt: '2026-06-24',
+    status: 'live',
+  },
+  {
     slug: 'search',
     title: 'Global search & command palette',
     description:
-      'Omni-search command palette (⌘K) plus a full /search results page with faceted filtering — CBFish Modernization "Report Center v2".',
+      'Omni-search command palette (⌘K) plus a full /search results page with faceted filtering.',
     route: '/search',
     createdAt: '2026-06-04',
     ticket: 'CBF-8117',
     status: 'live',
   },
   {
-    slug: 'vendor-portal',
-    title: 'Vendor portal',
+    slug: 'vendor-dashboard',
+    title: 'Vendor dashboard',
     description:
-      'Accountant landing page — activity snapshot and four quick-action cards for invoice management.',
-    route: '/vendor-portal',
+      'Vendor’s invoices & financial-outlook view — cross-contract money position, a needs-attention strip, and a sortable invoices grid with a click-through detail drawer.',
+    route: '/vendor-dashboard',
     createdAt: '2026-06-15',
     status: 'in-progress',
   },
@@ -47,6 +56,24 @@ export const prototypes: Prototype[] = [
       'Three-step wizard: upload a PDF invoice, enter metadata + contract reference + line items, then review and submit.',
     route: '/vendor-invoice',
     createdAt: '2026-06-15',
+    status: 'in-progress',
+  },
+  {
+    slug: 'invoice-review',
+    title: 'Invoice review (COR)',
+    description:
+      'The reviewer’s side: an urgency-triaged queue of invoices assigned across contracts, and a split-view detail — submitted document beside the contract context — to QA/QC then Approve or Return for revision.',
+    route: '/invoice-review',
+    createdAt: '2026-06-22',
+    status: 'in-progress',
+  },
+  {
+    slug: 'project-budgets',
+    title: 'Project budgets',
+    description:
+      'A new Funding area for managing project budgets by fiscal year and fund. Starts with the "Summary" landing — sub-nav across Baselines, SOY, Decisions, and Change requests (BOG), a photo/prose intro, and related report links.',
+    route: '/project-budgets',
+    createdAt: '2026-06-23',
     status: 'in-progress',
   },
   {

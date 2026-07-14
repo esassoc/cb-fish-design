@@ -1,33 +1,37 @@
 ---
 // cbf-invoice-step-review — Step 1: review all entered data before submitting.
-// The review card content is populated entirely by invoice-wizard.client.ts from
-// form state; this file provides the static shell, the info notice, and the actions.
-// bcn-lego-checked: (1) the review card is a multi-section summary container with
-// internal bordered section dividers (file / invoice details / line items / notes) —
-// esa-card is a general content container without internal section structure; checked
-// Beacon: no ui-* component matches this summary pattern. cbf-invoice-step-review
-// owns this pattern. (2) cbf-btn-ghost Back button: esa-button is used for primary
+// The summary cards (CbfInvoiceReviewSummary, composed of esa-card legos) are
+// populated by invoice-wizard.client.ts from form state; this file provides the
+// page shell, the info notice, and the actions.
+// bcn-lego-checked: cbf-btn-ghost Back button — esa-button is used for the primary
 // CTA (Submit); the Back button requires a data-wizard-back JS hook that a plain
 // styled <button> carries more predictably than an Astro component with unknown
 // prop-spread behaviour. Token-driven (border, spacing tokens only).
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
+import CbfInvoiceReviewSummary from './cbf-invoice-review-summary.astro';
 ---
 <div class="cbf-wizard-step" data-step="1" hidden>
   <h1 class="cbf-page-title">Review &amp; submit</h1>
 
   <div class="cbf-review-notice">
     <EsaAlertBox variant="info">
-      Please review your invoice before submitting. Once submitted, you'll receive a
-      confirmation and can track processing status in your account.
+      Review your invoice before submitting.
     </EsaAlertBox>
   </div>
 
-  <!-- JS populates this from form state (invoice-wizard.client.ts: populateReview) -->
-  <div class="cbf-review-card" data-review-content></div>
+  <!-- esa-card summary; JS fills the [data-review] placeholders (populateReview). -->
+  <div data-review-content>
+    <CbfInvoiceReviewSummary />
+  </div>
 
   <div class="cbf-step-actions">
-    <button type="button" class="cbf-btn-ghost" data-wizard-back>Back</button>
+    <span data-wizard-cancel>
+      <EsaButton color="danger" appearance="outline" size="md">Cancel</EsaButton>
+    </span>
+    <span data-wizard-back>
+      <EsaButton color="secondary" appearance="outline" size="md">Edit</EsaButton>
+    </span>
     <span data-wizard-submit>
       <EsaButton color="primary" size="md">Submit invoice</EsaButton>
     </span>
@@ -56,12 +60,6 @@ import EsaButton from '@esa/ecology/esa-button.astro';
     font-size: 15px;
   }
 
-  .cbf-review-card {
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-100);
-    overflow: hidden;
-  }
-
   .cbf-step-actions {
     display: flex;
     align-items: center;
@@ -70,128 +68,6 @@ import EsaButton from '@esa/ecology/esa-button.astro';
     padding-top: var(--spacing-500);
     border-top: 1px solid var(--color-border);
   }
-  .cbf-btn-ghost {
-    display: inline-flex;
-    align-items: center;
-    height: 40px;
-    padding: 0 var(--spacing-400);
-    border-radius: var(--radius-100);
-    font-family: var(--font-sans);
-    font-size: 15px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-secondary);
-    border: 1px solid var(--color-border);
-    background: var(--color-surface);
-    transition: background 0.12s ease, border-color 0.12s ease;
-  }
-  .cbf-btn-ghost:hover {
-    background: var(--color-surface-sunken, #f8f9fb);
-    border-color: var(--color-primary-border);
-    color: var(--color-text-primary);
-  }
-</style>
-
-<style is:global>
-  /* Review card content is JS-rendered and can't carry Astro's scope hash. */
-  .cbf-review-section {
-    padding: var(--spacing-500);
-    border-bottom: 1px solid var(--color-border);
-  }
-  .cbf-review-section:last-child { border-bottom: 0; }
-  .cbf-review-section__title {
-    margin: 0 0 var(--spacing-300);
-    font-family: var(--font-display);
-    font-size: 16px;
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  .cbf-review-row {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-200);
-    font-size: 15px;
-    color: var(--color-text-primary);
-  }
-  .cbf-review-row svg { color: var(--color-secondary); flex: none; }
-  .cbf-review-meta { color: var(--color-text-muted); font-size: 13px; }
-
-  .cbf-review-dl { margin: 0; }
-  .cbf-review-dl__row {
-    display: flex;
-    gap: var(--spacing-400);
-    padding: var(--spacing-250, 10px) 0;
-    border-bottom: 1px solid var(--color-border);
-    font-size: 14px;
-  }
-  .cbf-review-dl__row:last-child { border-bottom: 0; }
-  .cbf-review-dl__row dt {
-    flex: none;
-    width: 140px;
-    color: var(--color-text-muted);
-    font-weight: var(--font-weight-medium);
-  }
-  .cbf-review-dl__row dd { margin: 0; color: var(--color-text-primary); }
-
-  .cbf-review-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-  }
-  .cbf-review-table th,
-  .cbf-review-table td {
-    padding: var(--spacing-250) var(--spacing-300);
-    text-align: left;
-    border-bottom: 1px solid var(--color-border);
-  }
-  .cbf-review-table th {
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-muted);
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    background: var(--color-surface-sunken, #f8f9fb);
-  }
-  .cbf-review-table td:nth-child(2),
-  .cbf-review-table td:nth-child(3),
-  .cbf-review-table td:nth-child(4),
-  .cbf-review-table th:nth-child(2),
-  .cbf-review-table th:nth-child(3),
-  .cbf-review-table th:nth-child(4) { text-align: right; }
-  .cbf-review-table__total td {
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
-    background: var(--color-surface-sunken, #f8f9fb);
-    border-bottom: 0;
-  }
-
-  .cbf-review-file-actions {
-    display: flex;
-    gap: var(--spacing-200);
-    margin-left: auto;
-    flex: none;
-  }
-  .cbf-review-file-btn {
-    font-size: 13px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-secondary);
-    padding: var(--spacing-100) var(--spacing-300);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-100);
-    background: var(--color-surface);
-    transition: background 0.12s ease, border-color 0.12s ease;
-  }
-  .cbf-review-file-btn:hover { background: var(--color-primary-subtle); border-color: var(--color-primary-border); }
-  .cbf-review-file-btn--danger { color: var(--color-danger, #dc2626); }
-  .cbf-review-file-btn--danger:hover { background: var(--color-danger-subtle, #fef2f2); border-color: var(--color-danger, #dc2626); }
-
-  .cbf-review-notes {
-    margin: 0;
-    font-size: 14px;
-    color: var(--color-text-secondary);
-    line-height: 1.6;
-    white-space: pre-wrap;
-  }
+  /* Cancel stays left; Edit + Submit are grouped at the right edge. */
+  .cbf-step-actions [data-wizard-back] { margin-left: auto; }
 </style>

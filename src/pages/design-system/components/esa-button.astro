@@ -8,7 +8,7 @@ import EsaButton from '@esa/ecology/esa-button.astro';
 const colors = ['primary', 'secondary', 'danger', 'success', 'warning', 'info'] as const;
 
 const props = [
-  { name: 'color', type: "'primary' | 'secondary' | 'danger' | 'success' | 'warning' | 'info' | 'ai' | 'ghost'", default: "'primary'", description: 'Semantic color role. CB Fish navy comes from --color-primary.' },
+  { name: 'color', type: "'primary' | 'secondary' | 'danger' | 'success' | 'warning' | 'info' | 'ai' | 'ghost'", default: "'primary'", description: 'Semantic color role. CBFish navy comes from --color-primary.' },
   { name: 'appearance', type: "'fill' | 'outline'", default: "'fill'", description: 'Solid or outlined.' },
   { name: 'size', type: "'xs' | 'sm' | 'md' | 'lg'", default: "'md'", description: 'Control size.' },
   { name: 'disabled', type: 'boolean', default: 'false', description: 'Non-interactive state.' },
@@ -20,7 +20,7 @@ const props = [
   category="Core"
   slug="esa-button"
   type=".astro"
-  summary="The inherited Ecology button, wearing the CB Fish skin. Primary picks up brand navy because the theme re-points <code>--color-primary</code>; the rest of the palette is inherited."
+  summary="The inherited Ecology button, wearing the CBFish skin. Primary picks up brand navy because the theme re-points <code>--color-primary</code>; the rest of the palette is inherited."
 >
   <Section id="colors" title="Colors">
     <Preview code={`<EsaButton color="primary">Save</EsaButton>`}>

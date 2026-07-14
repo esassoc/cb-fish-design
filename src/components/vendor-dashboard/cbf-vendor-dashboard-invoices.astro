@@ -1,0 +1,1583 @@
+---
+// cbf-vendor-dashboard-invoices — the invoices table for the vendor dashboard's
+// financial-outlook view. A searchable, status-filterable, group-able, sortable
+// tracking grid of every submitted invoice across the vendor's contracts, with
+// an esa-pill status column, a click-a-row detail drawer, a live record-count
+// footer, and an esa-empty-state when nothing matches.
+//
+// bcn-lego-checked: ecology has NO table/grid/data-grid lego (checked the full
+// node_modules/@esa/ecology/src/components catalog — esa-card/esa-pill/esa-badge
+// are atoms, none render a sortable tabular data surface) and Beacon is not on
+// this machine. The tabular surface is AG Grid Community (ag-grid-community), an
+// explicit dependency chosen for sort/filter/quick-search over a hand-rolled
+// <table>; this bcn- component is its reusable home. Every other control is a
+// lego: the status cell + drawer status reuse the real esa-pill markup (server-
+// rendered into hidden templates, cloned into grid cells so the design-system
+// styling is identical — never reinvented), the search input reuses
+// cbf-search-field, the status + group-by controls use esa-chip-group, the
+// detail drawer uses esa-side-dialog, and the no-results state uses
+// esa-empty-state.
+import CbfSearchField from '../search/cbf-search-field.astro';
+import CbfInvoiceCard from '../shared/cbf-invoice-card.astro';
+import EsaPill from '@esa/ecology/esa-pill.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import '@esa/tokens/layouts.css'; // .grid auto-fit primitive for the card view
+import { invoices as defaultInvoices, fmtExact } from '../../data/vendor-dashboard-invoices.mjs';
+
+type Stage = 'Draft' | 'In review' | 'Paid' | 'Needs revision';
+
+interface LineItem {
+  description: string;
+  qty: number;
+  unitPrice: number;
+}
+
+interface Invoice {
+  number: string;
+  lastEdited?: string;
+  contractNumber: string;
+  contract: string;
+  projectNumber: string;
+  project: string;
+  submitted: string;
+  amount: number;
+  stage: Stage;
+  invoiceDate: string;
+  issued: string;
+  perfStart: string;
+  perfEnd: string;
+  lineItems: LineItem[];
+  notes?: string;
+  pdfName: string;
+  revisionNote?: string;
+  returnedBy?: string;
+  returnedOn?: string;
+}
+
+interface Props {
+  invoices?: Invoice[];
+}
+
+// esa-pill variant per pipeline stage — a soft tinted status chip (subtle bg +
+// colored text), color conveys data/state, not decoration. Draft uses the neutral
+// info (blue) tone: it's the vendor's own unsent work, not yet a live pipeline
+// stage, and blue keeps it distinct from In review (amber), Paid (green), and
+// Needs revision (red).
+const stageVariant: Record<Stage, 'info' | 'warning' | 'success' | 'danger'> = {
+  Draft: 'info',
+  'In review': 'warning',
+  Paid: 'success',
+  'Needs revision': 'danger',
+};
+const stages = Object.keys(stageVariant) as Stage[];
+
+// Single-select chip filters. value="" is the "All" escape; 'Needs revision'
+// gets the amber tone so the blocked-on-vendor stage stands out in the control.
+const stageFilters = [
+  { value: '', label: 'All' },
+  { value: 'Draft', label: 'Draft' },
+  { value: 'In review', label: 'In review' },
+  { value: 'Paid', label: 'Paid' },
+  { value: 'Needs revision', label: 'Needs revision', tone: 'amber' },
+];
+const groupOptions = [
+  { value: 'none', label: 'No grouping' },
+  { value: 'contract', label: 'Contract' },
+  { value: 'project', label: 'Project' },
+];
+
+// Grid ⇄ cards view switch. The grid stays mounted in both modes as the
+// filter/search/sort engine; the toggle only swaps which surface is shown.
+const viewOptions = [
+  {
+    value: 'grid',
+    label: 'Grid',
+    ariaLabel: 'Grid view',
+    icon: '<line x1="3" x2="21" y1="9" y2="9"/><line x1="3" x2="21" y1="15" y2="15"/><line x1="9" x2="9" y1="3" y2="21"/><rect width="18" height="18" x="3" y="3" rx="2"/>',
+  },
+  {
+    value: 'cards',
+    label: 'Cards',
+    ariaLabel: 'Card view',
+    icon: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+  },
+];
+
+const { invoices = defaultInvoices } = Astro.props;
+---
+<section class="cbf-vendor-dashboard-invoices stack" data-gap="md">
+  <header class="cbf-vendor-dashboard-invoices__header repel">
+    <h2 class="type-section-title">Invoices</h2>
+    <div class="cbf-vendor-dashboard-invoices__search">
+      <CbfSearchField
+        placeholder="Search invoices, contracts or status…"
+        iconSize={18}
+        data-invoice-search
+        aria-label="Search invoices"
+      />
+    </div>
+  </header>
+
+  <div class="cbf-vendor-dashboard-invoices__controls repel">
+    <esa-chip-group
+      data-invoice-stage-filter
+      size="sm"
+      label="Filter by status"
+      value=""
+      options={JSON.stringify(stageFilters)}
+    ></esa-chip-group>
+    <div class="cbf-vendor-dashboard-invoices__right cluster" data-gap="md">
+      <label class="cbf-vendor-dashboard-invoices__group">
+        <span class="type-caption">Group by</span>
+        <esa-chip-group
+          data-invoice-group
+          size="sm"
+          label="Group invoices by"
+          value="none"
+          options={JSON.stringify(groupOptions)}
+        ></esa-chip-group>
+      </label>
+      <label class="cbf-vendor-dashboard-invoices__view">
+        <span class="type-caption">View</span>
+        <esa-button-toggle
+          data-invoice-view
+          size="sm"
+          label="Choose invoice layout"
+          value="grid"
+          options={JSON.stringify(viewOptions)}
+        ></esa-button-toggle>
+      </label>
+    </div>
+  </div>
+
+  <!-- AG Grid mounts here. Sized by its container; auto-height grows with rows
+       so the page (not an inner pane) owns vertical scroll. Hidden when the
+       card view is active, but stays mounted as the filter/sort engine. -->
+  <div class="cbf-vendor-dashboard-invoices__grid" data-invoice-grid></div>
+
+  <!-- Card view: the same invoices as a responsive card grid (the .grid auto-fit
+       primitive). Each card is the SHARED CbfInvoiceCard — the very same card the
+       /vendor-invoice Review & submit step uses — server-rendered once per
+       invoice with the pipeline esa-pill passed into its status slot. The client
+       only shows/hides and reorders the cards to mirror the grid's filtered +
+       sorted display order, so search, status chips, and group-by behave
+       identically across both views. Clicking a card opens the same
+       esa-side-dialog detail drawer. -->
+  <div class="cbf-vendor-dashboard-invoices__cards grid" data-invoice-cards hidden>
+    {invoices.map((inv) => (
+      <div class="cbf-invoice-card-link" data-card={inv.number}>
+        <!-- Stretched-overlay open button: keeps the WHOLE card a single click /
+             keyboard target for the detail drawer, while the contract/project
+             links inside the card stay independently clickable (they sit above
+             this via z-index). Nesting links inside a <button> would be invalid;
+             this is the accessible card-with-nested-links pattern. -->
+        <button type="button" class="cbf-invoice-card-link__open" data-card-open aria-label={`View invoice ${inv.number}`}></button>
+        <CbfInvoiceCard
+          variant="stat"
+          number={inv.number}
+          contract={inv.contract}
+          contractNumber={inv.contractNumber}
+          contractHref="#"
+          project={inv.project}
+          projectNumber={inv.projectNumber}
+          projectHref="#"
+          invoiceDate={inv.invoiceDate}
+          period={`${inv.perfStart} – ${inv.perfEnd}`}
+          total={fmtExact(inv.amount)}
+          totalLabel="Amount billed"
+        >
+          <EsaPill slot="status" label={inv.stage} variant={stageVariant[inv.stage]} size="sm" removable={false} />
+        </CbfInvoiceCard>
+      </div>
+    ))}
+  </div>
+
+  <div class="cbf-vendor-dashboard-invoices__empty" data-invoice-empty hidden>
+    <EsaEmptyState
+      title="No invoices match your filters"
+      description="Try a different invoice number, contract name, or status."
+      size="sm"
+    />
+  </div>
+
+  <footer class="cbf-vendor-dashboard-invoices__footer">
+    <span class="type-caption" data-invoice-count>
+      Showing {invoices.length} of {invoices.length} invoices
+    </span>
+  </footer>
+
+  <!-- The real esa-pill lego, server-rendered once per stage with the design-
+       system scope hash intact. The grid's status cell renderer and the drawer
+       hero clone the matching template's markup — so those status chips are
+       byte-identical to the lego, never a hand-rolled copy. -->
+  <div class="cbf-vendor-dashboard-invoices__badge-templates" data-badge-templates hidden aria-hidden="true">
+    {stages.map((s) => (
+      <span data-stage={s}><EsaPill label={s} variant={stageVariant[s]} size="md" removable={false} /></span>
+    ))}
+  </div>
+
+  <!-- Row data for the grid. Serialized here so the client module (which imports
+       ag-grid-community) can hydrate without a second fetch. -->
+  <script type="application/json" data-invoice-data set:html={JSON.stringify(invoices)}></script>
+
+  <!-- Click-a-row detail: the esa-side-dialog overlay drawer (lego). Body is
+       populated from the clicked row's invoice record; prev/next step through
+       the rows currently displayed (respecting search + filter + sort) so a
+       reviewer can walk the whole list. -->
+  <esa-side-dialog data-invoice-dialog size="lg" heading="Invoice" style="--side-dialog-width-lg: max(1180px, 75vw);">
+    <!-- Wide screens: the document preview and the dashboard's tracking fields sit
+         side by side (mirrors the /vendor-invoice PDF-left / form-right layout).
+         Narrow screens: a single column led by the tracking fields, the document
+         beneath — the lego clamps the panel to the viewport, so this stacks
+         automatically without a horizontal scroll. -->
+    <div class="cbf-invoice-detail" data-gap="lg">
+
+      <!-- Tracking column (the "form"): the dashboard metadata the printed document
+           does not carry — the headline figure, its pipeline status, and what the
+           invoice is billed against. DOM-first so the narrow single-column stack
+           leads with the figure (the "narrow treatment"); on wide screens the
+           grid places it in the right column. -->
+      <div class="cbf-invoice-detail__meta stack" data-gap="lg">
+        <!-- Hero: the amount is the headline figure; the status badge + a
+             plain-language state line sit beneath so the vendor reads "how much"
+             and "where is it" before anything else. -->
+        <div class="cbf-invoice-detail__hero">
+          <div class="cbf-invoice-detail__amount-group">
+            <span class="cbf-invoice-detail__label">Amount billed</span>
+            <span class="type-page-title cbf-invoice-detail__amount cbf-num" data-detail-amount></span>
+            <span class="cbf-invoice-detail__state" data-detail-state></span>
+          </div>
+          <div class="cbf-invoice-detail__status" data-detail-status></div>
+        </div>
+
+        <!-- Status pipeline: where the invoice sits in the In review → Paid flow,
+             so the vendor can see progress at a glance. Steps injected by JS. -->
+        <ol class="cbf-invoice-pipeline" data-detail-pipeline aria-label="Invoice status"></ol>
+
+        <dl class="cbf-invoice-detail__fields">
+          <div class="cbf-invoice-detail__row">
+            <dt class="cbf-invoice-detail__label">Contract</dt>
+            <dd class="cbf-invoice-detail__value cbf-invoice-detail__value--lead" data-detail-contract></dd>
+          </div>
+          <div class="cbf-invoice-detail__row">
+            <dt class="cbf-invoice-detail__label">Project</dt>
+            <dd class="cbf-invoice-detail__value" data-detail-project></dd>
+          </div>
+          <div class="cbf-invoice-detail__row">
+            <dt class="cbf-invoice-detail__label">Invoice date</dt>
+            <dd class="cbf-invoice-detail__value" data-detail-invoice-date></dd>
+          </div>
+          <div class="cbf-invoice-detail__row">
+            <dt class="cbf-invoice-detail__label">Performance</dt>
+            <dd class="cbf-invoice-detail__value" data-detail-perf></dd>
+          </div>
+        </dl>
+
+        <!-- Attachments: the invoice document + the vendor's own uploaded files,
+             re-downloadable. Rows injected by JS; the per-row download control
+             clones the server-rendered esa-icon-button template below. -->
+        <section class="cbf-invoice-detail__attach">
+          <div class="cbf-invoice-detail__attach-head repel">
+            <h3 class="cbf-invoice-detail__section-title" data-detail-attach-title>Attachments</h3>
+            <span data-detail-download-all>
+              <EsaButton appearance="outline" color="secondary" size="sm" icon="download">Download all</EsaButton>
+            </span>
+          </div>
+          <ul class="cbf-invoice-attach-list" data-detail-attachments></ul>
+
+          <!-- Add backup documents — shown by JS only while the invoice is In
+               review. Lets a vendor supply extra documentation the COR asks for
+               without the invoice being returned or its status changed. -->
+          <div class="cbf-invoice-detail__add-docs" data-detail-add-docs hidden>
+            <button type="button" class="cbf-invoice-detail__add-zone" data-detail-docs-zone data-detail-docs-add>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <span class="cbf-invoice-detail__add-text"><strong>Add backup documents</strong> — drag files here or click to browse</span>
+            </button>
+            <p class="cbf-invoice-detail__add-hint">Provide additional documentation your contract officer requested — no need to change this invoice's status.</p>
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+              class="cbf-invoice-detail__docs-input"
+              data-detail-docs-input
+              tabindex="-1"
+              aria-hidden="true"
+            />
+          </div>
+        </section>
+        <div data-detail-dl-template hidden aria-hidden="true">
+          <EsaIconButton icon="download" label="Download file" size="sm" />
+        </div>
+
+        <!-- Vendor-action unit (Draft / Needs revision) — kept in the invoice's own
+             tracking column (not the detached dialog footer) and pinned to the
+             bottom. For a returned invoice the COR's reason sits directly above the
+             action it drives (cause → fix). esa-alert-box is JS-filled; the primary
+             control escalates to the wizard ("Continue editing" / "Edit & resubmit");
+             Discard is drafts-only and sits far-left, away from the primary. -->
+        <div class="cbf-invoice-detail__vendor" data-detail-vendor hidden>
+          <div class="cbf-invoice-detail__revision" data-detail-revision hidden>
+            <EsaAlertBox variant="warning" title="Returned for revision">
+              <span data-detail-revision-note></span>
+              <span class="cbf-invoice-detail__revision-by" data-detail-revision-by></span>
+            </EsaAlertBox>
+          </div>
+          <div class="cbf-invoice-detail__actions" data-detail-vendor-actions hidden>
+            <span data-detail-discard>
+              <EsaButton color="danger" appearance="outline" size="md">Discard</EsaButton>
+            </span>
+            <span data-detail-continue>
+              <EsaButton color="primary" size="md">Continue editing</EsaButton>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Document preview (the "PDF"): a paper rendering of the submitted invoice.
+           bcn-lego-checked: no esa- lego renders a document / paper-invoice
+           preview (checked the ecology catalog — esa-card/esa-badge are atoms,
+           esa-file-upload is an UPLOADER not a viewer), and there is no real PDF
+           asset for an already-submitted mock invoice, so the credible mock is an
+           HTML document sheet. Beacon has no ui- equivalent. This bcn- drawer is
+           its reusable home; the sheet's per-invoice body is injected by JS. -->
+      <div class="cbf-invoice-detail__doc">
+        <article class="cbf-doc-sheet" data-detail-doc></article>
+      </div>
+    </div>
+
+    <div slot="footer" class="cbf-invoice-detail__footer repel">
+      <span class="cbf-invoice-detail__position" data-detail-position></span>
+      <div class="cluster" data-gap="xs">
+        <span data-detail-prev>
+          <EsaButton appearance="outline" color="secondary" icon="chevron-left">Previous</EsaButton>
+        </span>
+        <span data-detail-next>
+          <EsaButton appearance="outline" color="secondary" icon="chevron-right">Next</EsaButton>
+        </span>
+      </div>
+    </div>
+  </esa-side-dialog>
+</section>
+
+<style>
+  .cbf-vendor-dashboard-invoices__header {
+    align-items: center;
+    gap: var(--spacing-400);
+    flex-wrap: wrap;
+  }
+  .cbf-vendor-dashboard-invoices__search {
+    flex: 1 1 280px;
+    max-width: 420px;
+    min-width: 220px;
+  }
+
+  .cbf-vendor-dashboard-invoices__controls {
+    align-items: center;
+    gap: var(--spacing-400);
+    flex-wrap: wrap;
+  }
+  .cbf-vendor-dashboard-invoices__right { align-items: center; }
+  .cbf-vendor-dashboard-invoices__group,
+  .cbf-vendor-dashboard-invoices__view {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-200);
+  }
+  .cbf-vendor-dashboard-invoices__group .type-caption,
+  .cbf-vendor-dashboard-invoices__view .type-caption {
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  /* ---- Card view -------------------------------------------------------- */
+  /* The auto-fit .grid primitive's per-card floor. */
+  /* Invoice cards should READ like invoices, not condense into a dense tile
+     wall: each card is at least half the container on wide screens (so ≤ 2 per
+     row), with a 26rem floor so it collapses to a single full-width column on
+     narrow screens. The .grid primitive caps this at 100% via min(--grid-min,
+     100%), so it never overflows. (--gap is the .grid track gap.) */
+  .cbf-vendor-dashboard-invoices__cards { --grid-min: max(26rem, calc(50% - var(--gap))); }
+  /* .grid sets display:grid, which beats the UA [hidden] rule — so re-assert
+     it here (attribute + class out-specifies .grid) or the cards leak into the
+     grid view. */
+  .cbf-vendor-dashboard-invoices__cards[hidden] { display: none; }
+
+  /* Card-with-nested-links: the wrapper holds a stretched-overlay open button
+     (the whole-card click target → detail drawer) plus the CbfInvoiceCard, whose
+     contract/project links sit above the overlay. The esa-card owns the box. */
+  .cbf-invoice-card-link {
+    position: relative;
+    display: block;
+    border-radius: var(--radius-200);
+  }
+  .cbf-invoice-card-link > :global(.esa-card) {
+    height: 100%;
+    transition: border-color 120ms ease, box-shadow 120ms ease;
+  }
+  /* The stretched overlay: invisible, covers the whole card, opens the drawer. */
+  .cbf-invoice-card-link__open {
+    all: unset;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    cursor: pointer;
+    border-radius: inherit;
+  }
+  .cbf-invoice-card-link:hover > :global(.esa-card) {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-200, 0 2px 8px -2px rgba(19, 39, 62, 0.12));
+  }
+  .cbf-invoice-card-link:focus-within {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-200);
+  }
+  /* The ref-links carry their own focus ring; don't double up the card outline
+     when the focus is on a nested link. */
+  .cbf-invoice-card-link:has(.cbf-invoice-card__ref-link:focus-visible) {
+    outline: none;
+  }
+
+  /* The grid wrapper owns the framed surface; AG Grid's own border is disabled
+     via the theme so the frame reads like the rest of the spoke's data cards. */
+  .cbf-vendor-dashboard-invoices__grid {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    overflow: hidden;
+    background: var(--color-surface);
+  }
+
+  .cbf-vendor-dashboard-invoices__footer {
+    color: var(--color-text-muted);
+  }
+
+  /* ---- Detail drawer ---------------------------------------------------- */
+
+  /* Single column by default (narrow / mobile): tracking fields lead, document
+     beneath — the "keep the narrow treatment" path. */
+  .cbf-invoice-detail {
+    display: grid;
+    gap: var(--spacing-500);
+  }
+  /* Wide screens: document left, tracking column right (PDF-left / form-right,
+     matching the submission page). DOM order is meta-then-doc so the narrow
+     stack leads with the figure; explicit placement flips them on desktop. */
+  @media (min-width: 900px) {
+    /* Fill the dialog body's full height (the side-dialog .body is flex:1 inside
+       a fixed-height panel) so the document pane runs the whole height like a
+       real PDF viewer, rather than sizing to its content. */
+    .cbf-invoice-detail {
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+      grid-template-rows: 1fr;
+      align-items: stretch;
+      min-height: 100%;
+    }
+    .cbf-invoice-detail__doc { grid-column: 1; grid-row: 1; }
+    .cbf-invoice-detail__meta { grid-column: 2; grid-row: 1; }
+  }
+
+  /* The document gutter: a sunken track the white "sheet" floats on, like a
+     PDF viewer's page on its canvas. A flex column so the sheet fills the
+     pane's full height; the gutter scrolls when a long invoice overflows it. */
+  .cbf-invoice-detail__doc {
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    padding: var(--spacing-400);
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .cbf-doc-sheet { flex: 1 0 auto; }
+
+  /* Labels are content, not ornament: normal-case, 14px, muted — never an
+     uppercase micro-eyebrow. One shared role for every label in the drawer. */
+  .cbf-invoice-detail__label {
+    font-size: var(--type-size-150);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+  }
+
+  /* Hero: the billed amount on a sunken surface, status badge alongside. */
+  .cbf-invoice-detail__hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    padding: var(--spacing-450, var(--spacing-400));
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+  }
+  .cbf-invoice-detail__amount-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-100);
+    min-width: 0;
+  }
+  .cbf-invoice-detail__amount {
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-invoice-detail__status { flex: none; }
+
+  /* Plain-language state line under the amount — the emphasis the vendor reads
+     first ("where is my money"). Danger tone only when it needs their action. */
+  .cbf-invoice-detail__state {
+    font-size: var(--type-size-150);
+    color: var(--color-text-secondary);
+  }
+  .cbf-invoice-detail__state--alert {
+    color: var(--color-danger, #c0392b);
+    font-weight: var(--font-weight-medium);
+  }
+
+  /* Vendor-action unit (Draft / Needs revision): lives in the tracking column,
+     pinned to the bottom and separated by a rule like a mini in-column footer, so
+     the action clearly belongs to this invoice (not the detached dialog footer).
+     For a returned invoice it holds the COR's reason directly above the buttons. */
+  .cbf-invoice-detail__vendor {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-400);
+    padding-top: var(--spacing-400);
+    border-top: 1px solid var(--color-border);
+  }
+  .cbf-invoice-detail__vendor[hidden] { display: none; }
+  .cbf-invoice-detail__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--spacing-300);
+  }
+  .cbf-invoice-detail__actions[hidden] { display: none; }
+  /* Destructive action sits at the far left, away from the primary CTA (which
+     stays pinned right). When Discard is hidden, the primary stays right. */
+  .cbf-invoice-detail__actions [data-detail-discard] { margin-right: auto; }
+
+  /* COR return reason (Needs revision only). */
+  .cbf-invoice-detail__revision[hidden] { display: none; }
+  .cbf-invoice-detail__revision-by {
+    display: block;
+    margin-top: var(--spacing-100);
+    font-size: var(--type-size-100, 0.75rem);
+    color: var(--color-text-muted);
+  }
+
+  /* Section header (Attachments): readable, primary, modest weight — not the
+     uppercase micro-label pattern. */
+  .cbf-invoice-detail__section-title {
+    margin: 0;
+    font-size: var(--type-size-200);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-invoice-detail__attach-head { align-items: center; gap: var(--spacing-300); }
+  .cbf-invoice-attach-list {
+    list-style: none;
+    margin: var(--spacing-300) 0 0;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    overflow: hidden;
+  }
+
+  /* Spec list: a fixed label column + flexible value column reads as a ledger.
+     Hierarchy is carried by the value's weight + color, not by label size. */
+  .cbf-invoice-detail__fields { margin: 0; }
+  .cbf-invoice-detail__row {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: var(--spacing-400);
+    align-items: baseline;
+    padding-block: var(--spacing-300);
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+  }
+  .cbf-invoice-detail__row:first-child { border-top: 0; padding-top: 0; }
+  .cbf-invoice-detail__value {
+    margin: 0;
+    font-size: var(--type-size-200);
+    color: var(--color-text-secondary);
+  }
+  /* Lead value (contract) is the primary identifier — heavier and darker. */
+  .cbf-invoice-detail__value--lead {
+    font-size: var(--type-size-300);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+  }
+
+  /* Add backup documents (In review only). The zone is a full-width drop target
+     that doubles as the browse button; the hint below explains the why. */
+  .cbf-invoice-detail__add-docs { margin-top: var(--spacing-300); }
+  .cbf-invoice-detail__add-docs[hidden] { display: none; }
+  .cbf-invoice-detail__add-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-200);
+    width: 100%;
+    padding: var(--spacing-400);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-200);
+    background: var(--color-surface);
+    font-size: var(--type-size-150);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease;
+  }
+  .cbf-invoice-detail__add-zone svg { flex: none; color: var(--color-secondary); }
+  .cbf-invoice-detail__add-text strong {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-secondary);
+  }
+  .cbf-invoice-detail__add-zone:hover { background: var(--color-primary-subtle); }
+  .cbf-invoice-detail__add-zone.is-over {
+    border-color: var(--color-primary);
+    border-style: solid;
+    background: var(--color-primary-subtle);
+  }
+  .cbf-invoice-detail__add-zone.is-over * { pointer-events: none; }
+  .cbf-invoice-detail__add-hint {
+    margin: var(--spacing-200) 0 0;
+    font-size: var(--type-size-100, 0.75rem);
+    color: var(--color-text-muted);
+    line-height: 1.5;
+  }
+  .cbf-invoice-detail__docs-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .cbf-invoice-detail__position {
+    font-size: var(--type-size-150);
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Narrow drawer (phone widths): keep the position label and the prev/next
+     nav as a single space-between row; it wraps gracefully if cramped. */
+  .cbf-invoice-detail__footer { gap: var(--spacing-300); flex-wrap: wrap; }
+</style>
+
+<style is:global>
+  /* Card-view group headers (JS-created, so styled globally — no Astro scope
+     hash). A full-width grid item that forces a new row and labels the cluster
+     beneath it: group name left, count + subtotal right. Extra top space on
+     every header after the first visually separates one group from the next. */
+  .cbf-vendor-dashboard-invoices__cards .cbf-invoice-group-header {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--spacing-100) var(--spacing-400);
+    padding-bottom: var(--spacing-200);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-vendor-dashboard-invoices__cards .cbf-invoice-group-header:not(:first-child) {
+    margin-top: var(--spacing-400);
+  }
+  .cbf-invoice-group-header__label {
+    font-size: 16px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-invoice-group-header__meta {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* AG Grid status cell: the cloned esa-pill sits in a flex cell so it centers
+     vertically without disturbing the lego's own box. */
+  .cbf-vendor-dashboard-invoices__grid .cbf-grid-status {
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+  }
+  /* Right-align numeric columns (amount) including the header label. */
+  .cbf-vendor-dashboard-invoices__grid .cbf-grid-num,
+  .cbf-vendor-dashboard-invoices__grid .cbf-grid-num .ag-header-cell-label {
+    justify-content: flex-end;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  /* Invoice IDs read as data — tabular figures, recede in color. */
+  .cbf-vendor-dashboard-invoices__grid .cbf-grid-id {
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-secondary);
+  }
+
+  /* Detail-drawer document sheet. Its body is injected by JS (no Astro scope
+     hash), so everything under .cbf-doc-sheet is styled globally. The sheet
+     reads as a printed invoice: a white page with a soft shadow on the sunken
+     gutter, structured head → parties → line items → total. */
+  .cbf-doc-sheet {
+    display: block;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light, var(--color-border));
+    border-radius: var(--radius-100);
+    box-shadow: var(--shadow-200, 0 2px 8px -2px rgba(19, 39, 62, 0.12));
+    padding: var(--spacing-600);
+    color: var(--color-text-primary);
+  }
+
+  /* Head: supplier identity left, the document mark (Invoice + number) right. */
+  .cbf-doc__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    padding-bottom: var(--spacing-400);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-doc__supplier {
+    margin: 0;
+    font-size: var(--type-size-300);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-doc__supplier-meta {
+    margin: var(--spacing-050) 0 0;
+    font-size: var(--type-size-150);
+    color: var(--color-text-muted);
+  }
+  .cbf-doc__mark { text-align: right; flex: none; }
+  .cbf-doc__mark-word {
+    margin: 0;
+    font-size: var(--type-size-150);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+  }
+  .cbf-doc__mark-number {
+    margin: var(--spacing-050) 0 0;
+    font-size: var(--type-size-200);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Parties + dates band. */
+  .cbf-doc__parties {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    padding-block: var(--spacing-400);
+  }
+  .cbf-doc__dates {
+    display: flex;
+    gap: var(--spacing-500);
+    text-align: right;
+  }
+  .cbf-doc__label {
+    display: block;
+    font-size: var(--type-size-100, 0.75rem);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+  }
+  .cbf-doc__parties p {
+    margin: var(--spacing-050) 0 0;
+    font-size: var(--type-size-150);
+    color: var(--color-text-primary);
+  }
+  .cbf-doc__party-name { font-weight: var(--font-weight-medium); }
+
+  /* Line items table — the breakdown behind the total. */
+  .cbf-doc__items {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--type-size-150);
+    color: var(--color-text-primary);
+  }
+  .cbf-doc__items th,
+  .cbf-doc__items td {
+    text-align: left;
+    padding: var(--spacing-250) var(--spacing-200);
+    vertical-align: top;
+  }
+  /* Outer edges flush to the sheet so the table aligns with the total row. */
+  .cbf-doc__items th:first-child,
+  .cbf-doc__items td:first-child { padding-left: 0; }
+  .cbf-doc__items th:last-child,
+  .cbf-doc__items td:last-child { padding-right: 0; }
+  .cbf-doc__items thead th {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-doc__items tbody tr + tr td { border-top: 1px solid var(--color-border-light, var(--color-border)); }
+  .cbf-doc__items .cbf-num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Total due — the printed bottom line of the document. */
+  .cbf-doc__total {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    margin-top: var(--spacing-300);
+    padding-top: var(--spacing-300);
+    border-top: 2px solid var(--color-border);
+  }
+  .cbf-doc__total-label {
+    font-size: var(--type-size-150);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-doc__total-value {
+    font-size: var(--type-size-300);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Notes printed on the document, when present. */
+  .cbf-doc__notes {
+    margin-top: var(--spacing-400);
+    padding-top: var(--spacing-300);
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+  }
+  .cbf-doc__notes p {
+    margin: var(--spacing-100) 0 0;
+    font-size: var(--type-size-150);
+    line-height: var(--line-height-relaxed);
+    color: var(--color-text-secondary);
+  }
+
+  /* Status pipeline (injected by JS). A horizontal stepper: dot + label per
+     stage, a connector line between dots, the reached stages in brand color. */
+  .cbf-invoice-pipeline {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .cbf-invoice-pipeline__step {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-150);
+    position: relative;
+    text-align: center;
+    min-width: 0;
+  }
+  /* Connector to the previous dot. */
+  .cbf-invoice-pipeline__step:not(:first-child)::before {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: calc(-50% + 7px);
+    right: calc(50% + 7px);
+    height: 2px;
+    background: var(--color-border);
+  }
+  .cbf-invoice-pipeline__step[data-state='done']::before,
+  .cbf-invoice-pipeline__step[data-state='active']::before { background: var(--color-primary); }
+  .cbf-invoice-pipeline__dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    box-sizing: border-box;
+    z-index: 1;
+  }
+  .cbf-invoice-pipeline__step[data-state='done'] .cbf-invoice-pipeline__dot { background: var(--color-primary); border-color: var(--color-primary); }
+  .cbf-invoice-pipeline__step[data-state='active'] .cbf-invoice-pipeline__dot {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px var(--color-primary-subtle);
+  }
+  .cbf-invoice-pipeline__step[data-state='returned'] .cbf-invoice-pipeline__dot {
+    background: var(--color-danger, #c0392b);
+    border-color: var(--color-danger, #c0392b);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-danger, #c0392b) 16%, transparent);
+  }
+  .cbf-invoice-pipeline__label {
+    font-size: var(--type-size-050, 0.6875rem);
+    color: var(--color-text-muted);
+    line-height: 1.2;
+  }
+  .cbf-invoice-pipeline__step[data-state='done'] .cbf-invoice-pipeline__label,
+  .cbf-invoice-pipeline__step[data-state='active'] .cbf-invoice-pipeline__label { color: var(--color-text-primary); }
+  .cbf-invoice-pipeline__step[data-state='active'] .cbf-invoice-pipeline__label { font-weight: var(--font-weight-medium); }
+  .cbf-invoice-pipeline__step[data-state='returned'] .cbf-invoice-pipeline__label { color: var(--color-danger, #c0392b); font-weight: var(--font-weight-medium); }
+
+  /* Attachment rows (injected by JS). No per-item icon (design principle:
+     icons mark structure, not items) — filename + download action only. */
+  .cbf-invoice-attach {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300);
+    padding: var(--spacing-150) var(--spacing-200) var(--spacing-150) var(--spacing-400);
+  }
+  .cbf-invoice-attach + .cbf-invoice-attach { border-top: 1px solid var(--color-border-light, var(--color-border)); }
+  .cbf-invoice-attach__name {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--type-size-150);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cbf-invoice-attach[data-primary='true'] .cbf-invoice-attach__name { font-weight: var(--font-weight-medium); }
+  .cbf-invoice-attach__role { flex: none; font-size: var(--type-size-100, 0.75rem); color: var(--color-text-muted); }
+  .cbf-invoice-attach__dl { flex: none; line-height: 0; color: var(--color-text-muted); }
+  .cbf-invoice-attach__dl .esa-icon-button:hover {
+    background: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
+    color: var(--color-text-primary);
+  }
+</style>
+
+<script>
+  import { createGrid, ModuleRegistry, AllCommunityModule, themeQuartz } from 'ag-grid-community';
+  import type { GridApi } from 'ag-grid-community';
+  import '@esa/ecology/esa-chip-group';
+  import '@esa/ecology/esa-button-toggle';
+  import '@esa/ecology/esa-side-dialog';
+
+  ModuleRegistry.registerModules([AllCommunityModule]);
+
+  type Dir = 1 | -1;
+  type Stage = 'Draft' | 'In review' | 'Paid' | 'Needs revision';
+  type LineItem = { description: string; qty: number; unitPrice: number };
+  type Invoice = {
+    number: string; contractNumber: string; contract: string;
+    projectNumber: string; project: string; submitted: string;
+    amount: number; stage: Stage; invoiceDate: string; issued: string;
+    perfStart: string; perfEnd: string; lineItems: LineItem[]; notes?: string; pdfName: string;
+    supportingDocs: string[]; paidDate?: string; lastEdited?: string;
+    revisionNote?: string; returnedBy?: string; returnedOn?: string;
+  };
+
+  const usd = new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+  });
+
+  // ---- File download (prototype) ---------------------------------------
+  // No real blobs exist for the mock invoices, so a download builds a minimal
+  // valid one-page PDF named after the file — enough to feel real in the demo.
+  const pdfEscape = (s: string) => s.replace(/([()\\])/g, '\\$1');
+  function makePlaceholderPdf(filename: string, subtitle: string): Blob {
+    const body =
+      `BT /F1 18 Tf 60 740 Td (${pdfEscape(filename)}) Tj ` +
+      `/F1 11 Tf 0 -26 Td (${pdfEscape(subtitle)}) Tj ` +
+      `0 -18 Td (Columbia Basin Fish & Wildlife Program — prototype placeholder) Tj ET`;
+    const objs = [
+      '<</Type/Catalog/Pages 2 0 R>>',
+      '<</Type/Pages/Kids[3 0 R]/Count 1>>',
+      '<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Resources<</Font<</F1 5 0 R>>>>/Contents 4 0 R>>',
+      `<</Length ${body.length}>>\nstream\n${body}\nendstream`,
+      '<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>',
+    ];
+    let pdf = '%PDF-1.4\n';
+    const offsets: number[] = [];
+    objs.forEach((o, i) => { offsets.push(pdf.length); pdf += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+    const xref = pdf.length;
+    pdf += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+    offsets.forEach((off) => { pdf += `${String(off).padStart(10, '0')} 00000 n \n`; });
+    pdf += `trailer\n<</Size ${objs.length + 1}/Root 1 0 R>>\nstartxref\n${xref}\n%%EOF`;
+    return new Blob([pdf], { type: 'application/pdf' });
+  }
+  function downloadFile(filename: string, invoiceNumber: string) {
+    const url = URL.createObjectURL(makePlaceholderPdf(filename, `Attachment for invoice ${invoiceNumber}`));
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  // Plain-language state line per pipeline stage (the vendor's "where is it").
+  const PIPELINE: Stage[] = ['In review', 'Paid'];
+  function stateLine(inv: Invoice): { text: string; alert: boolean } {
+    switch (inv.stage) {
+      case 'Draft': return { text: inv.lastEdited ? `Draft · last edited ${inv.lastEdited}` : 'Draft — not yet submitted', alert: false };
+      case 'In review': return { text: 'Under review by BPA', alert: false };
+      case 'Paid': return { text: inv.paidDate ? `Paid on ${inv.paidDate}` : 'Paid', alert: false };
+      case 'Needs revision': return { text: 'Needs revision — action required', alert: true };
+      default: return { text: '', alert: false };
+    }
+  }
+
+  // Render a parsed Date back to the data's display form ("Jun 20, 2026") so the
+  // typed date column reads identically to the source string.
+  const dateFmt = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const asDate = (s?: string): Date | null => {
+    if (!s) return null;
+    const d = new Date(s);
+    return Number.isNaN(d.getTime()) ? null : d;
+  };
+
+  // AG Grid Theming API mapped onto the spoke's semantic tokens — the grid reads
+  // like the rest of the surfaces instead of shipping its own palette.
+  const cbfTheme = themeQuartz.withParams({
+    fontFamily: 'inherit',
+    fontSize: '14px',
+    foregroundColor: 'var(--color-text-primary)',
+    backgroundColor: 'var(--color-surface)',
+    headerBackgroundColor: 'var(--color-surface-sunken, transparent)',
+    headerTextColor: 'var(--color-text-secondary)',
+    headerFontWeight: 600,
+    borderColor: 'var(--color-border)',
+    rowHoverColor: 'var(--color-surface-subtle, var(--color-primary-subtle))',
+    accentColor: 'var(--color-primary)',
+    wrapperBorderRadius: 0,
+    borderRadius: 'var(--radius-100, 4px)',
+  });
+
+  function initInvoices(root: HTMLElement) {
+    const gridHost = root.querySelector<HTMLElement>('[data-invoice-grid]');
+    const dataEl = root.querySelector<HTMLScriptElement>('[data-invoice-data]');
+    if (!gridHost || !dataEl) return;
+
+    const data: Invoice[] = JSON.parse(dataEl.textContent ?? '[]');
+    const total = data.length;
+    const byNumber = new Map(data.map((inv) => [inv.number, inv]));
+
+    const search = root.querySelector<HTMLInputElement>('[data-invoice-search]');
+    const stageFilter = root.querySelector<HTMLElement & { value: string }>('[data-invoice-stage-filter]');
+    const groupControl = root.querySelector<HTMLElement & { value: string }>('[data-invoice-group]');
+    const viewControl = root.querySelector<HTMLElement & { value: string }>('[data-invoice-view]');
+    const cardsHost = root.querySelector<HTMLElement>('[data-invoice-cards]');
+    const empty = root.querySelector<HTMLElement>('[data-invoice-empty]');
+    const count = root.querySelector<HTMLElement>('[data-invoice-count]');
+
+    // number → server-rendered card button, for show/hide + reorder.
+    const cardByNumber = new Map<string, HTMLElement>();
+    cardsHost?.querySelectorAll<HTMLElement>('[data-card]').forEach((el) => {
+      cardByNumber.set(el.dataset.card ?? '', el);
+    });
+
+    let view: 'grid' | 'cards' = (viewControl?.value as 'grid' | 'cards') || 'grid';
+    let groupKey = groupControl?.value ?? 'none';
+
+    // Pre-clone the real esa-pill markup per stage (server-rendered with the
+    // design-system scope hash) so grid cells reuse the lego verbatim.
+    const badgeHTML = new Map<string, string>();
+    root.querySelectorAll<HTMLElement>('[data-badge-templates] [data-stage]').forEach((el) => {
+      badgeHTML.set(el.dataset.stage ?? '', el.innerHTML);
+    });
+
+    // External (chip-driven) status filter — kept out of the column filter UI so
+    // the esa-chip-group stays the single control surface.
+    let stageValue = '';
+    // Assigned once the grid exists (createGrid must already have an api to walk
+    // displayed rows); onRowClicked closes over this mutable reference.
+    let openDetail: (inv: Invoice) => void = () => {};
+
+    const gridApi = createGrid(gridHost, {
+      theme: cbfTheme,
+      rowData: data,
+      domLayout: 'autoHeight',
+      animateRows: false,
+      suppressCellFocus: true,
+      defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true },
+      columnDefs: [
+        {
+          headerName: 'Invoice #', field: 'number', colId: 'number',
+          cellClass: 'cbf-grid-id', minWidth: 150,
+          getQuickFilterText: (p) => `${p.data.number} ${p.data.contractNumber} ${p.data.projectNumber} ${p.data.project}`,
+        },
+        {
+          headerName: 'Contract #', field: 'contractNumber', colId: 'contractNumber',
+          cellClass: 'cbf-grid-id', minWidth: 120, maxWidth: 140,
+        },
+        { headerName: 'Contract', field: 'contract', colId: 'contract', flex: 2, minWidth: 200 },
+        {
+          headerName: 'Project #', field: 'projectNumber', colId: 'projectNumber',
+          cellClass: 'cbf-grid-id', minWidth: 120, maxWidth: 140,
+        },
+        {
+          // Date column: parse the display string to a Date so sort/filter are
+          // chronological (a string column sorts "Apr"<"Jun"<"May"). The
+          // valueFormatter renders it back to the original "Jun 20, 2026" form.
+          headerName: 'Invoice date', field: 'invoiceDate', colId: 'invoiceDate', minWidth: 130,
+          cellDataType: 'date',
+          valueGetter: (p) => asDate(p.data?.invoiceDate),
+          valueFormatter: (p) => (p.value instanceof Date ? dateFmt.format(p.value) : ''),
+          getQuickFilterText: (p) => p.data?.invoiceDate ?? '',
+        },
+        {
+          headerName: 'Amount', field: 'amount', colId: 'amount',
+          type: 'numericColumn', headerClass: 'cbf-grid-num', cellClass: 'cbf-grid-num',
+          minWidth: 130, valueFormatter: (p) => usd.format(p.value as number),
+        },
+        {
+          headerName: 'Status', field: 'stage', colId: 'stage', minWidth: 150, sortable: true,
+          cellRenderer: (p: { value: string }) =>
+            `<span class="cbf-grid-status">${badgeHTML.get(p.value) ?? p.value}</span>`,
+        },
+      ],
+      isExternalFilterPresent: () => stageValue !== '',
+      doesExternalFilterPass: (node) => node.data.stage === stageValue,
+      onModelUpdated: () => syncView(),
+      onRowClicked: (e) => { if (e.data) openDetail(e.data as Invoice); },
+    });
+
+    // The displayed rows in filter + sort order — the shared source of truth for
+    // the count, the empty state, and (in card view) which cards show and in what
+    // order. Both views read the same AG Grid model, so the controls behave
+    // identically regardless of which surface is on screen.
+    const usdGroup = new Intl.NumberFormat('en-US', {
+      style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+    });
+    const groupValue = (inv: Invoice): string => (groupKey === 'project' ? inv.project : inv.contract);
+    const makeGroupHeader = (label: string, c: { count: number; sum: number }): HTMLElement => {
+      const el = document.createElement('div');
+      el.className = 'cbf-invoice-group-header';
+      el.setAttribute('data-card-group-header', '');
+      el.innerHTML = '<span class="cbf-invoice-group-header__label"></span><span class="cbf-invoice-group-header__meta"></span>';
+      el.querySelector('.cbf-invoice-group-header__label')!.textContent = label;
+      const noun = c.count === 1 ? 'invoice' : 'invoices';
+      el.querySelector('.cbf-invoice-group-header__meta')!.textContent = `${c.count} ${noun} · ${usdGroup.format(c.sum)}`;
+      return el;
+    };
+
+    function syncView() {
+      // Clear any group headers from a prior pass so reordering is over cards only.
+      cardsHost?.querySelectorAll('[data-card-group-header]').forEach((h) => h.remove());
+
+      const order: string[] = [];
+      gridApi.forEachNodeAfterFilterAndSort((n) => { if (n.data) order.push((n.data as Invoice).number); });
+      const shown = order.length;
+
+      if (count) count.textContent = `Showing ${shown} of ${total} invoices`;
+      if (empty) empty.hidden = shown !== 0;
+      gridHost.hidden = view !== 'grid' || shown === 0;
+      if (cardsHost) cardsHost.hidden = view !== 'cards' || shown === 0;
+
+      if (view !== 'cards' || !cardsHost) return;
+      // Reorder visible cards to match the grid, then hide the filtered-out ones.
+      const visible = new Set(order);
+      order.forEach((num) => {
+        const card = cardByNumber.get(num);
+        if (card) { card.hidden = false; cardsHost.appendChild(card); }
+      });
+      cardByNumber.forEach((card, num) => { if (!visible.has(num)) card.hidden = true; });
+
+      // Grouped: insert a full-width header before each group's first card so the
+      // clusters read as labelled sections, not an unbroken wall. AG Grid already
+      // sorted the rows by the grouped field, so groups are contiguous in `order`.
+      if (groupKey === 'none') return;
+      const totals = new Map<string, { count: number; sum: number }>();
+      order.forEach((num) => {
+        const inv = byNumber.get(num);
+        if (!inv) return;
+        const g = groupValue(inv);
+        const t = totals.get(g) ?? { count: 0, sum: 0 };
+        t.count += 1; t.sum += inv.amount; totals.set(g, t);
+      });
+      let prevGroup: string | null = null;
+      order.forEach((num) => {
+        const inv = byNumber.get(num);
+        const card = cardByNumber.get(num);
+        if (!inv || !card) return;
+        const g = groupValue(inv);
+        if (g !== prevGroup) {
+          cardsHost.insertBefore(makeGroupHeader(g, totals.get(g)!), card);
+          prevGroup = g;
+        }
+      });
+    }
+
+    // Search → AG Grid quick filter (matches across all columns + project).
+    search?.addEventListener('input', () => {
+      gridApi.setGridOption('quickFilterText', (search.value ?? '').trim());
+    });
+
+    // Status chip → external filter.
+    stageFilter?.addEventListener('change', () => {
+      stageValue = stageFilter.value ?? '';
+      gridApi.onFilterChanged();
+    });
+
+    // Group by → Community has no native row grouping (Enterprise only), so the
+    // control clusters rows by sorting on the chosen field; 'none' clears it.
+    groupControl?.addEventListener('change', () => {
+      groupKey = groupControl.value ?? 'none';
+      // applyColumnState fires onModelUpdated → syncView, which (re)builds the
+      // group headers from the freshly sorted order.
+      gridApi.applyColumnState({
+        state: groupKey === 'none' ? [] : [{ colId: groupKey, sort: 'asc' }],
+        defaultState: { sort: null },
+      });
+    });
+
+    // Grid ⇄ cards. Both surfaces read the same AG Grid model; the toggle just
+    // swaps which one is visible (and triggers a card reorder when switching in).
+    viewControl?.addEventListener('change', () => {
+      view = (viewControl.value as 'grid' | 'cards') || 'grid';
+      syncView();
+    });
+
+    // Card click → the same detail drawer the grid rows open. Contract/project
+    // links are independent: they sit above the overlay and route on their own,
+    // so a click on one must NOT also open the drawer. (Hrefs are placeholders
+    // until contract/project detail routes exist — intercept to avoid the jump.)
+    cardsHost?.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-ref-link]')) {
+        e.preventDefault();
+        return; // TODO: route to contract/project detail when those pages exist
+      }
+      const card = target.closest<HTMLElement>('[data-card]');
+      const inv = card && byNumber.get(card.dataset.card ?? '');
+      if (inv) openDetail(inv);
+    });
+
+    openDetail = bindDetail(root, gridApi, badgeHTML);
+    syncView();
+  }
+
+  // Bind the drawer once; returns an opener that populates + shows it for a row.
+  function bindDetail(
+    root: HTMLElement,
+    gridApi: GridApi<Invoice>,
+    badgeHTML: Map<string, string>,
+  ): (inv: Invoice) => void {
+    const dialog = root.querySelector<HTMLElement & { heading: string; show(): void }>('[data-invoice-dialog]');
+    const statusBox = dialog?.querySelector<HTMLElement>('[data-detail-status]') ?? null;
+    const fState = dialog?.querySelector<HTMLElement>('[data-detail-state]') ?? null;
+    const pipeline = dialog?.querySelector<HTMLElement>('[data-detail-pipeline]') ?? null;
+    const fContract = dialog?.querySelector<HTMLElement>('[data-detail-contract]') ?? null;
+    const fProject = dialog?.querySelector<HTMLElement>('[data-detail-project]') ?? null;
+    const fInvoiceDate = dialog?.querySelector<HTMLElement>('[data-detail-invoice-date]') ?? null;
+    const fPerf = dialog?.querySelector<HTMLElement>('[data-detail-perf]') ?? null;
+    const fAmount = dialog?.querySelector<HTMLElement>('[data-detail-amount]') ?? null;
+    const docSheet = dialog?.querySelector<HTMLElement>('[data-detail-doc]') ?? null;
+    const attachList = dialog?.querySelector<HTMLElement>('[data-detail-attachments]') ?? null;
+    const attachTitle = dialog?.querySelector<HTMLElement>('[data-detail-attach-title]') ?? null;
+    const dlBtnHTML = dialog?.querySelector('[data-detail-dl-template] button')?.outerHTML ?? '';
+    const position = dialog?.querySelector<HTMLElement>('[data-detail-position]') ?? null;
+    const addDocsBox = dialog?.querySelector<HTMLElement>('[data-detail-add-docs]') ?? null;
+    const docsInput = dialog?.querySelector<HTMLInputElement>('[data-detail-docs-input]') ?? null;
+    const docsZone = dialog?.querySelector<HTMLElement>('[data-detail-docs-zone]') ?? null;
+    const vendorBox = dialog?.querySelector<HTMLElement>('[data-detail-vendor]') ?? null;
+    const vendorActions = dialog?.querySelector<HTMLElement>('[data-detail-vendor-actions]') ?? null;
+    const continueWrap = dialog?.querySelector<HTMLElement>('[data-detail-continue]') ?? null;
+    const continueLabel = dialog?.querySelector<HTMLElement>('[data-detail-continue] .esa-button__label') ?? null;
+    const discardWrap = dialog?.querySelector<HTMLElement>('[data-detail-discard]') ?? null;
+    const attachSection = dialog?.querySelector<HTMLElement>('.cbf-invoice-detail__attach') ?? null;
+    const addDocsHint = dialog?.querySelector<HTMLElement>('.cbf-invoice-detail__add-hint') ?? null;
+    const revisionBox = dialog?.querySelector<HTMLElement>('[data-detail-revision]') ?? null;
+    const revisionNoteEl = dialog?.querySelector<HTMLElement>('[data-detail-revision-note]') ?? null;
+    const revisionByEl = dialog?.querySelector<HTMLElement>('[data-detail-revision-by]') ?? null;
+    let currentFiles: string[] = [];
+    // Backup docs the vendor adds from this drawer while an invoice is In review,
+    // keyed by invoice number so they persist as prev/next walks the list
+    // (prototype: client-only, names only — no upload backend).
+    const extraDocs = new Map<string, string[]>();
+    let currentInv: Invoice | null = null;
+    const prevWrap = dialog?.querySelector<HTMLElement>('[data-detail-prev]') ?? null;
+    const nextWrap = dialog?.querySelector<HTMLElement>('[data-detail-next]') ?? null;
+    const prev = prevWrap?.querySelector('button') ?? null;
+    const next = nextWrap?.querySelector('button') ?? null;
+
+    const usd = new Intl.NumberFormat('en-US', {
+      style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+    });
+
+    // Document parties — fixed for this prototype's single mock vendor. The
+    // dashboard session is Pacific Environmental Services billing the Program.
+    const SUPPLIER = 'Pacific Environmental Services, LLC';
+    const SUPPLIER_META = 'Environmental consulting · Portland, OR';
+    const BUYER = 'Columbia Basin Fish & Wildlife Program';
+
+    const esc = (s: string) =>
+      s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    // The rows currently displayed, in filter+sort order — the walk order for
+    // prev/next, so the drawer matches what the reviewer sees in the grid.
+    const displayed = (): Invoice[] => {
+      const out: Invoice[] = [];
+      gridApi.forEachNodeAfterFilterAndSort((n) => { if (n.data) out.push(n.data as Invoice); });
+      return out;
+    };
+
+    let current = -1;
+
+    // Render the attachment rows: invoice PDF, the vendor's submitted supporting
+    // files, then any backup docs added from this drawer (tagged "Added"). Kept
+    // separate from populate() so adding a doc can re-render in place.
+    const renderAttachments = (inv: Invoice) => {
+      // Drops empty names — a draft may not have uploaded its invoice PDF yet.
+      const base = [inv.pdfName, ...(inv.supportingDocs ?? [])].filter(Boolean);
+      const added = extraDocs.get(inv.number) ?? [];
+      currentFiles = [...base, ...added];
+      // Hide the whole Attachments section when there's nothing to show (empty draft).
+      if (attachSection) attachSection.hidden = currentFiles.length === 0;
+      if (attachTitle) attachTitle.textContent = `Attachments (${currentFiles.length})`;
+      if (!attachList) return;
+      attachList.innerHTML = currentFiles
+        .map((name, i) => {
+          const role = i === 0 ? 'Invoice' : i >= base.length ? 'Added' : '';
+          return `<li class="cbf-invoice-attach" data-primary="${i === 0}">
+            <span class="cbf-invoice-attach__name" title="${esc(name)}">${esc(name)}</span>
+            ${role ? `<span class="cbf-invoice-attach__role">${role}</span>` : ''}
+            <span class="cbf-invoice-attach__dl" data-attach-dl data-file="${esc(name)}">${dlBtnHTML}</span>
+          </li>`;
+        })
+        .join('');
+      attachList.querySelectorAll<HTMLElement>('[data-attach-dl]').forEach((slot) => {
+        const file = slot.dataset.file ?? '';
+        const btn = slot.querySelector('button');
+        if (btn) { btn.setAttribute('aria-label', `Download ${file}`); btn.setAttribute('title', `Download ${file}`); }
+      });
+    };
+
+    // Add dropped/picked files (names only) to the current invoice's backup docs,
+    // skipping any that already exist, then re-render the list in place.
+    const addBackupDocs = (names: string[]) => {
+      if (!currentInv || !names.length) return;
+      const existing = new Set(currentFiles);
+      const fresh = names.filter((n) => n && !existing.has(n));
+      if (!fresh.length) return;
+      const list = extraDocs.get(currentInv.number) ?? [];
+      list.push(...fresh);
+      extraDocs.set(currentInv.number, list);
+      renderAttachments(currentInv);
+    };
+
+    const populate = (inv: Invoice) => {
+      if (!dialog) return;
+      const list = displayed();
+      current = list.findIndex((d) => d.number === inv.number);
+      const isDraft = inv.stage === 'Draft';
+      const needsRevision = inv.stage === 'Needs revision';
+      dialog.heading = inv.number ?? 'Invoice';
+      if (statusBox) statusBox.innerHTML = `<span class="cbf-grid-status">${badgeHTML.get(inv.stage) ?? inv.stage}</span>`;
+      if (fContract) fContract.textContent = inv.contract ?? '';
+      if (fProject) fProject.textContent = inv.project ?? '';
+      if (fInvoiceDate) fInvoiceDate.textContent = inv.invoiceDate ?? '';
+      if (fPerf) fPerf.textContent = inv.perfStart && inv.perfEnd ? `${inv.perfStart} – ${inv.perfEnd}` : '';
+      // A barely-started draft may have no total yet — show an em dash, not $0.00.
+      if (fAmount) fAmount.textContent = inv.stage === 'Draft' && !inv.amount ? '—' : usd.format(inv.amount ?? 0);
+
+      // State line.
+      if (fState) {
+        const st = stateLine(inv);
+        fState.textContent = st.text;
+        fState.classList.toggle('cbf-invoice-detail__state--alert', st.alert);
+      }
+
+      // Status pipeline: In review → Paid. A Needs-revision invoice is shown
+      // returned at the review step; a Draft sits at a pre-submission step.
+      if (pipeline && isDraft) {
+        const steps = ['Draft', 'In review', 'Paid'];
+        pipeline.innerHTML = steps.map((label, i) => {
+          const state = i === 0 ? 'active' : 'todo';
+          return `<li class="cbf-invoice-pipeline__step" data-state="${state}">
+            <span class="cbf-invoice-pipeline__dot"></span>
+            <span class="cbf-invoice-pipeline__label">${label}</span>
+          </li>`;
+        }).join('');
+      } else if (pipeline) {
+        const activeIdx = needsRevision ? 0 : PIPELINE.indexOf(inv.stage);
+        pipeline.innerHTML = PIPELINE.map((label, i) => {
+          let state: string;
+          if (needsRevision && i === 0) state = 'returned';
+          else if (i < activeIdx) state = 'done';
+          else if (i === activeIdx) state = 'active';
+          else state = 'todo';
+          return `<li class="cbf-invoice-pipeline__step" data-state="${state}">
+            <span class="cbf-invoice-pipeline__dot"></span>
+            <span class="cbf-invoice-pipeline__label">${label}</span>
+          </li>`;
+        }).join('');
+      }
+
+      // Attachments: invoice document, submitted supporting files, and any backup
+      // docs added here. Adding is offered only while the invoice is In review —
+      // so a vendor can answer a COR's request for more documentation without the
+      // invoice being returned or its status changed.
+      currentInv = inv;
+      renderAttachments(inv);
+
+      // Add backup docs: offered whenever the ball is in the vendor's court —
+      // In review (COR asked for more) or Needs revision (fix + attach). The hint
+      // reflects which case it is.
+      if (addDocsBox) addDocsBox.hidden = !(inv.stage === 'In review' || needsRevision);
+      if (addDocsHint) {
+        addDocsHint.textContent = needsRevision
+          ? 'Attach the documentation your contract officer asked for, then use Edit & resubmit to send it back.'
+          : 'Provide additional documentation your contract officer requested — no need to change this invoice’s status.';
+      }
+
+      // Vendor-action unit (Draft or Needs revision): the primary control escalates
+      // to the wizard; its label depends on the state. Discard is drafts-only.
+      if (vendorBox) vendorBox.hidden = !(isDraft || needsRevision);
+      if (vendorActions) vendorActions.hidden = !(isDraft || needsRevision);
+      if (continueLabel) continueLabel.textContent = isDraft ? 'Continue editing' : 'Edit & resubmit';
+      if (discardWrap) discardWrap.hidden = !isDraft;
+
+      // COR return reason (Needs revision only): why it came back + who returned it.
+      if (revisionBox) revisionBox.hidden = !needsRevision;
+      if (needsRevision) {
+        if (revisionNoteEl) {
+          revisionNoteEl.textContent =
+            inv.revisionNote ?? 'This invoice needs changes before it can be approved.';
+        }
+        if (revisionByEl) {
+          revisionByEl.textContent = inv.returnedBy
+            ? `— ${inv.returnedBy}${inv.returnedOn ? ` · ${inv.returnedOn}` : ''}`
+            : '';
+        }
+      }
+
+      // The document "sheet": the printed invoice the vendor submitted.
+      if (docSheet) {
+        const rows = (inv.lineItems ?? [])
+          .map(
+            (li: LineItem) => `<tr>
+              <td>${esc(li.description)}</td>
+              <td class="cbf-num">${li.qty}</td>
+              <td class="cbf-num">${usd.format(li.unitPrice)}</td>
+              <td class="cbf-num">${usd.format(li.qty * li.unitPrice)}</td>
+            </tr>`,
+          )
+          .join('');
+        const perf = inv.perfStart && inv.perfEnd ? `${inv.perfStart} – ${inv.perfEnd}` : '—';
+        docSheet.innerHTML = `
+          <header class="cbf-doc__head">
+            <div class="cbf-doc__brand">
+              <p class="cbf-doc__supplier">${SUPPLIER}</p>
+              <p class="cbf-doc__supplier-meta">${SUPPLIER_META}</p>
+            </div>
+            <div class="cbf-doc__mark">
+              <p class="cbf-doc__mark-word">Invoice</p>
+              <p class="cbf-doc__mark-number">${esc(inv.number ?? '')}</p>
+            </div>
+          </header>
+          <div class="cbf-doc__parties">
+            <div class="cbf-doc__party">
+              <span class="cbf-doc__label">Billed to</span>
+              <p class="cbf-doc__party-name">${BUYER}</p>
+            </div>
+            <div class="cbf-doc__dates">
+              <div>
+                <span class="cbf-doc__label">Invoice date</span>
+                <p>${esc(inv.invoiceDate ?? '—')}</p>
+              </div>
+              <div>
+                <span class="cbf-doc__label">Performance period</span>
+                <p>${esc(perf)}</p>
+              </div>
+            </div>
+          </div>
+          <table class="cbf-doc__items">
+            <thead>
+              <tr>
+                <th scope="col">Description</th>
+                <th scope="col" class="cbf-num">Qty</th>
+                <th scope="col" class="cbf-num">Unit price</th>
+                <th scope="col" class="cbf-num">Amount</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <div class="cbf-doc__total">
+            <span class="cbf-doc__total-label">Total due</span>
+            <span class="cbf-doc__total-value">${usd.format(inv.amount ?? 0)}</span>
+          </div>
+          ${
+            inv.notes
+              ? `<div class="cbf-doc__notes">
+                   <span class="cbf-doc__label">Notes</span>
+                   <p>${esc(inv.notes)}</p>
+                 </div>`
+              : ''
+          }
+        `;
+      }
+
+      if (position) position.textContent = `Invoice ${current + 1} of ${list.length}`;
+      if (prev) prev.disabled = current <= 0;
+      if (next) next.disabled = current >= list.length - 1;
+    };
+
+    const step = (dir: Dir) => {
+      const list = displayed();
+      const target = list[current + dir];
+      if (target) populate(target);
+    };
+
+    prevWrap?.addEventListener('click', () => step(-1));
+    nextWrap?.addEventListener('click', () => step(1));
+
+    // Per-file download (delegated) + download all.
+    attachList?.addEventListener('click', (e) => {
+      const slot = (e.target as HTMLElement)?.closest<HTMLElement>('[data-attach-dl]');
+      const file = slot?.dataset.file;
+      if (file) downloadFile(file, dialog?.heading ?? '');
+    });
+    dialog?.querySelector('[data-detail-download-all]')?.addEventListener('click', () => {
+      currentFiles.forEach((file, i) => setTimeout(() => downloadFile(file, dialog?.heading ?? ''), i * 250));
+    });
+
+    // Add backup documents (In review only): click to browse or drag files onto
+    // the zone. Multiple files land in one drop.
+    docsZone?.addEventListener('click', () => docsInput?.click());
+    docsInput?.addEventListener('change', () => {
+      addBackupDocs(Array.from(docsInput.files ?? []).map((f) => f.name));
+      docsInput.value = '';
+    });
+    docsZone?.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      docsZone.classList.add('is-over');
+    });
+    docsZone?.addEventListener('dragleave', (e) => {
+      if (!docsZone.contains(e.relatedTarget as Node)) docsZone.classList.remove('is-over');
+    });
+    docsZone?.addEventListener('drop', (e) => {
+      e.preventDefault();
+      docsZone.classList.remove('is-over');
+      addBackupDocs(Array.from(e.dataTransfer?.files ?? []).map((f) => f.name));
+    });
+
+    // Draft: Continue editing escalates to the full-page wizard (authoring needs
+    // the room); the draft number rides along so a real backend could rehydrate it.
+    continueWrap?.addEventListener('click', () => {
+      if (!currentInv) return;
+      const base = import.meta.env.BASE_URL;
+      window.location.href = `${base}vendor-invoice?invoice=${encodeURIComponent(currentInv.number)}`;
+    });
+
+    // Draft: Discard removes it from the vendor's list (prototype: client-only).
+    discardWrap?.addEventListener('click', () => {
+      if (!currentInv) return;
+      if (!window.confirm(`Discard draft ${currentInv.number}? This can’t be undone.`)) return;
+      const gone = currentInv;
+      gridApi.applyTransaction({ remove: [gone] });          // drops the grid row → syncView refreshes count/cards
+      root.querySelector<HTMLElement>(`[data-card="${gone.number}"]`)?.remove();
+      (dialog as unknown as { close(): void })?.close?.();
+    });
+
+    return (inv: Invoice) => { populate(inv); dialog?.show(); };
+  }
+
+  document
+    .querySelectorAll<HTMLElement>('.cbf-vendor-dashboard-invoices')
+    .forEach(initInvoices);
+</script>

@@ -1,0 +1,91 @@
+---
+// /project-budgets — the "Project budgets: Summary" landing page for the new
+// Project Budgets area. Financial analysts and project managers land here to
+// read what the area is for, then branch into its sub-pages (Baselines, SOY,
+// Decisions, Change requests) or the related report views. Mirrors the live
+// CBFish Report Center summary pages (cf. accruals): app-page panel + page
+// title + sub-nav tab strip + photo/prose intro band + Related items grid.
+// Thin assembler: chrome from cbf-* shared components, content from cbf-* sections.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
+import CbfPageHeading from '../components/shared/cbf-page-heading.astro';
+import CbfReportTabs from '../components/project-budgets/cbf-report-tabs.astro';
+import CbfReportIntro from '../components/project-budgets/cbf-report-intro.astro';
+import CbfRelatedItems from '../components/project-budgets/cbf-related-items.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import { withBase } from '../lib/base';
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+const crumbs = [
+  { label: 'Home', href: withBase('/home'), icon: homeIcon },
+  { label: 'Funding' },
+  { label: 'Project budgets' },
+];
+
+// Sub-nav: Summary is the landing (active); Baselines is built (CBF-8142);
+// the remaining detail pages aren't yet (href='#').
+const tabs = [
+  { label: 'Summary', active: true },
+  { label: 'Baselines', href: withBase('/project-budgets/baselines') },
+  { label: 'Start-of-year (SOY)' },
+  { label: 'Decisions' },
+  { label: 'Change requests (BOG)' },
+];
+
+// Related items — surfaced both in the tab-strip disclosure and the section
+// below. Overview copy is placeholder for the prototype.
+const related = [
+  {
+    title: 'Reviews',
+    overview:
+      'Review project budgets across fiscal years and funds — open a working budget to inspect its baseline, start-of-year amount, and the decisions and transfers applied through the year.',
+    href: '#',
+  },
+  {
+    title: 'Featured reviews',
+    overview:
+      'Curated budget reviews highlighted for quick access — the project budget views financial analysts and project managers return to most often.',
+    href: '#',
+  },
+];
+
+const intro = {
+  image: {
+    src: withBase('/project-budgets-hero.jpg'),
+    alt: 'A Columbia River Gorge stream in autumn',
+  },
+  lede: 'BPA financial analysts manage budgets at a project level by fiscal year and fund.',
+  body: 'Every year, project budgets are set for the majority of the F&W Program through the start-of-year (SOY) process, in which financial analysts and project managers discuss project budget needs and finalize budgets for the fiscal year. Throughout the year, budget decisions and transfers are documented to track funding changes to project working budgets.',
+};
+---
+<!-- manifest:
+  layout: esa-container > cbf-app-panel       # page spine — width frame + app-page chrome
+  sections:
+    - top nav       -> cbf-public-nav
+    - page frame    -> esa-container
+    - page heading  -> cbf-page-heading
+    - sub-nav tabs  -> cbf-report-tabs
+    - intro band    -> cbf-report-intro
+    - related items -> cbf-related-items
+-->
+<BaseLayout title="Project budgets: Summary — Columbia Basin Fish &amp; Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <CbfAppPanel crumbs={crumbs}>
+        <CbfPageHeading title="Project budgets: Summary" />
+        <CbfReportTabs tabs={tabs} related={related} ariaLabel="Project budget sections" />
+        <CbfReportIntro image={intro.image} lede={intro.lede} body={intro.body} />
+        <CbfRelatedItems items={related} />
+      </CbfAppPanel>
+    </EsaContainer>
+  </main>
+</BaseLayout>
+
+<style>
+  /* page-level outer rhythm only — every section is a component (manifest above) */
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+</style>

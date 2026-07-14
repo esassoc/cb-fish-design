@@ -262,9 +262,6 @@ People-scoped results — each row resolves to a person with an Impersonate affo
   opacity: 0;
   flex: none;
 }
-.cbf-search-surface .cbf-facet .cbf-icon {
-  color: var(--color-secondary);
-}
 .cbf-search-field .cbf-icon {
   color: var(--color-text-muted);
   display: inline-flex;
@@ -273,6 +270,9 @@ People-scoped results — each row resolves to a person with an Impersonate affo
   display: flex;
   flex-direction: column;
   gap: var(--spacing-400);
+}
+.cbf-search-surface .cbf-facet .cbf-icon {
+  color: var(--color-secondary);
 }
 .cbf-search-surface .cbf-search-results .cbf-result-group {
   border: 1px solid var(--color-border);
@@ -310,7 +310,7 @@ People-scoped results — each row resolves to a person with an Impersonate affo
 - `--cbf-surface-section-head`: #f5f5f5 _(brand)_
 - `--color-border`: #dcdcdc _(semantic)_
 - `--color-secondary`: #2770b2 _(semantic)_
-- `--color-surface`: #ffffff _(semantic)_
+- `--color-surface`: #fcfcfc _(semantic)_
 - `--color-surface-sunken`: #f3f7fc _(semantic)_
 - `--color-text-muted`: #7c7c7c _(semantic)_
 - `--color-text-primary`: #3d3d3d _(semantic)_
@@ -609,7 +609,7 @@ export function renderResults(
       btn.innerHTML = `
         <div class="cbf-result__body">
           <div class="cbf-result__title">${n} Publication result${n === 1 ? '' : 's'}</div>
-          <div class="cbf-result__sub">Open in Publications Search</div>
+          <div class="cbf-result__sub">Open in Publications search</div>
         </div>
         <span class="cbf-result__chevron cbf-icon">${svg('chevron-right', 18)}</span>`;
       btn.addEventListener('click', () => opts.onPublicationsAll!(n));

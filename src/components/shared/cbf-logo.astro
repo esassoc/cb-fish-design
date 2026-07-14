@@ -1,13 +1,17 @@
 ---
-// cbf-logo — the CB Fish brand lockup (mark + wordmark). Spoke-local because the
+// cbf-logo — the CBFish brand lockup (mark + wordmark). Spoke-local because the
 // asset is brand-specific, but it slots into hub chrome (esa-app-bar, footer).
 // `variant="mark"` drops the wordmark for tight spaces.
+//
+// Default home link is the shared CBFish homepage (/home), NOT the design-system
+// index (/): inside a prototype the logo keeps the user in the prototype world
+// rather than escaping back to the design system. Override via the `href` prop.
 import { withBase } from '../../lib/base';
 interface Props {
   variant?: 'full' | 'mark';
   href?: string;
 }
-const { variant = 'full', href = withBase('/') } = Astro.props;
+const { variant = 'full', href = withBase('/home') } = Astro.props;
 ---
 <a class="cbf-logo" href={href} title="Columbia Basin Fish & Wildlife Program">
   <img class="cbf-logo__mark" src={withBase('/logo-mark.svg')} alt="" />

@@ -143,7 +143,7 @@ export function renderResults(
       btn.innerHTML = `
         <div class="cbf-result__body">
           <div class="cbf-result__title">${n} Publication result${n === 1 ? '' : 's'}</div>
-          <div class="cbf-result__sub">Open in Publications Search</div>
+          <div class="cbf-result__sub">Open in Publications search</div>
         </div>
         <span class="cbf-result__chevron cbf-icon">${svg('chevron-right', 18)}</span>`;
       btn.addEventListener('click', () => opts.onPublicationsAll!(n));
