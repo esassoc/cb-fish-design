@@ -18,7 +18,7 @@ var PP_DEFS = [
 ];
 
 var TYPE_COLORS = {pc:'#1a7abf', fp:'#7b4fbf', rr:'#2a7a5c'};
-var TYPE_LABELS = {pc:'Primary Channel', fp:'Floodplain & Side Channels', rr:'Riparian Restoration'};
+var TYPE_LABELS = {pc:'Primary Channel', fp:'Floodplain', rr:'Riparian Restoration'};
 var PP_COLOR = {polygon:'#7b4fbf', line:'#c07820', buffer:'#1a7abf', bufferFp:'#2a7a5c'};
 var SOW_COLOR = {line:'#1a7abf', polygon:'#2a7a5c', segment:'#e07b28'};
 var CHU_COLOR = {riffle:'#c07820', pool:'#1a7abf', glide:'#2a8a6a', run:'#7b4fbf', unassigned:'#e07b28'};
@@ -28,6 +28,7 @@ var CHU_CYCLE = ['riffle','pool','glide','run'];
 // Floodplain polygon (also purple) and Wetland Enhancement sits ON TOP of an
 // Existing Wetland Area, so both need to read as distinct from what they overlap.
 var WETLAND_COLOR = {existing:'#0c8599', enhance:'#c2185b'};
+var activeBasemap = 'Street Map'; // read by updateNaipYearDisplay() outside the map-init closure
 var STRUCT_COLOR = {cms:'#e07b28', mcs:'#1a7abf', css:'#c44a4a', fps:'#7b4fbf', scs:'#2a7a5c'};
 var STRUCT_LABEL = {cms:'Channel Margin', mcs:'Mid Channel', css:'Channel Spanning', fps:'Floodplain', scs:'Side Channel'};
 
@@ -67,6 +68,20 @@ window.onload = function() {
     }
   });
   new zoomDisplay().addTo(map);
+
+  // NAIP imagery-year display (bottom-right, above zoom/scale) — only shown while
+  // the USGS NAIP basemap is active. See updateNaipYearDisplay() for the fetch.
+  var naipYearDisplayCtl = L.Control.extend({
+    options: {position: 'bottomright'},
+    onAdd: function() {
+      var div = L.DomUtil.create('div','');
+      div.style.cssText = 'background:rgba(30,83,134,0.9);color:rgba(255,255,255,0.9);font-size:11px;padding:2px 7px;border-radius:3px;margin-bottom:2px;pointer-events:none;display:none';
+      div.id = 'naip-year-display';
+      return div;
+    }
+  });
+  new naipYearDisplayCtl().addTo(map);
+  map.on('moveend', updateNaipYearDisplay);
 
   // Search box using Nominatim (OpenStreetMap geocoder)
   var searchControl = L.Control.extend({
@@ -129,6 +144,7 @@ window.onload = function() {
   var basemaps = {
     'Street Map': L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {maxZoom:19, attribution:'© OpenStreetMap © CARTO'}),
     'Satellite':  L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {maxZoom:20, attribution:'© Google'}),
+    'USGS NAIP':  L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}', {maxZoom:19, maxNativeZoom:16, attribution:'USDA/USGS NAIP'}),
     'Topo':       L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {maxZoom:17, attribution:'© OpenTopoMap'})
   };
 
@@ -150,7 +166,6 @@ window.onload = function() {
   };
 
   basemaps['Street Map'].addTo(map);
-  var activeBasemap = 'Street Map';
   overlays['NHD Streams'].addTo(map);
 
   // Layer control — topright
@@ -198,6 +213,7 @@ window.onload = function() {
               overlays[n].addTo(map);
             }
           });
+          updateNaipYearDisplay();
         };
         row.appendChild(radio); row.appendChild(document.createTextNode(' '+name)); panel.appendChild(row);
       });
@@ -495,6 +511,46 @@ function setPPLayersVisible(show) {
 }
 
 function togglePPLayers() { setPPLayersVisible(!ppLayersVisible); }
+
+// Existing Wetland Area shapes (drawn/auto-detected in the pp_wetland pre-project
+// step) clutter the map through primary channel / floodplain work — hide them once
+// the wizard moves past pre-project, and only show them again on the Wetland
+// Enhancement step (fp_wetland_enhance), where the user needs to see the wetland
+// extent to draw an enhancement polygon within it.
+var WIZARD_STEP_ORDER_IDS = null;
+function updateWetlandLayerVisibility(we, step) {
+  if (!we) return;
+  if (!WIZARD_STEP_ORDER_IDS) WIZARD_STEP_ORDER_IDS = WIZARD_STEPS.map(function(s){ return s.id; });
+  var enhanceIdx = WIZARD_STEP_ORDER_IDS.indexOf('fp_wetland_enhance');
+  var curIdx = step ? WIZARD_STEP_ORDER_IDS.indexOf(step.id) : -1;
+  // 'buffers' (Review Areas) is crowded enough with channel/floodplain buffers —
+  // hide the selected wetland shapes there too, even though it's still pre-project.
+  var show = !step || (step.phase === 'pp' && step.id !== 'buffers') || (curIdx >= 0 && curIdx >= enhanceIdx);
+  var items = (we.fpMulti && we.fpMulti['pp_wetland']) || [];
+  items.forEach(function(item) {
+    var d = we.sowLayers[item.id];
+    if (!d) return;
+    if (d.layer) { if (show && !map.hasLayer(d.layer)) map.addLayer(d.layer); else if (!show && map.hasLayer(d.layer)) map.removeLayer(d.layer); }
+    if (d._labelMarker) { if (show && !map.hasLayer(d._labelMarker)) map.addLayer(d._labelMarker); else if (!show && map.hasLayer(d._labelMarker)) map.removeLayer(d._labelMarker); }
+  });
+}
+
+// The floodplain polygon's green fill sits right behind the wetland step's NWI
+// candidates/drawn areas and makes them hard to pick out — hide it just for that
+// one step, restoring it afterward (unless the user has pre-project layers hidden
+// entirely, in which case leave that alone).
+function updateFpPolyVisibilityForStep(we, step) {
+  if (!we) return;
+  var d = we.ppData['fp_poly'];
+  if (!d || !d.layer) return;
+  var hide = !!(step && step.id === 'pp_wetland');
+  if (hide) {
+    if (map.hasLayer(d.layer)) { map.removeLayer(d.layer); d._hiddenForWetlandStep = true; }
+  } else if (d._hiddenForWetlandStep) {
+    d._hiddenForWetlandStep = false;
+    if (ppLayersVisible && !map.hasLayer(d.layer)) map.addLayer(d.layer);
+  }
+}
 
 var labelsVisible = true;
 
@@ -1569,6 +1625,26 @@ function reClipReachToPerimeter(we) {
   rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
 }
 
+// Re-clip the pre-project floodplain polygon to the current perimeter.
+// Called after perimeter is drawn or edited so an existing floodplain snaps to the new boundary.
+function reClipFpPolyToPerimeter(we) {
+  var d = we && we.ppData['fp_poly'];
+  if (!d || !d.layer) return;
+  var pts = d._pts || d.layer.getLatLngs();
+  if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+  commitFpPoly(we, pts);
+}
+
+// Re-clip the primary channel's new-floodplain polygon to the current perimeter.
+function reClipPCFPToPerimeter(we) {
+  var pc = we && getActivePC(we);
+  var d = pc && pc.ppData['pc_fp'];
+  if (!d || !d.layer) return;
+  var pts = d._pts || d.layer.getLatLngs();
+  if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+  commitPCFP(we, pts);
+}
+
 function updateAreaChBuffer(we) {
   if (!we) return;
   var d = we.ppData['area_ch'];
@@ -1593,7 +1669,7 @@ function updateAreaChBuffer(we) {
   // past the boundary at endpoints but will never be truncated mid-reach.
   d.bufferLayer = L.polygon(ring, {
     color: PP_COLOR.buffer, fillColor: PP_COLOR.buffer,
-    fillOpacity: 0.15, weight: 2, dashArray: '6,4', interactive: false
+    fillOpacity: 0.15, weight: 2, dashArray: '6,4', interactive: true
   }).bindTooltip('Area of Channel (estimated)').addTo(map);
   // Respect the pre-project visibility toggle
   if (!ppLayersVisible && map.hasLayer(d.bufferLayer)) map.removeLayer(d.bufferLayer);
@@ -1746,13 +1822,13 @@ function commitFpPoly(we, pts) {
   var col = '#2a7a5c';
   if (chRing && chRing.length >= 3) {
     d.layer = L.polygon([pts, chRing.slice().reverse()], {
-      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:false
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
     }).bindTooltip('Floodplain Area').addTo(map);
     var chAreaM2 = geoAreaM2(chRing);
     d.valueM = Math.max(0, grossAreaM2 - chAreaM2);
   } else {
     d.layer = L.polygon(pts, {
-      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:false
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
     }).bindTooltip('Floodplain Area').addTo(map);
     d.valueM = grossAreaM2;
   }
@@ -1795,12 +1871,12 @@ function commitPCFP(we, pts) {
   var col = '#1a7a6c';
   if (chRing && chRing.length >= 3) {
     d.layer = L.polygon([pts, chRing.slice().reverse()], {
-      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:false
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
     }).bindTooltip('New Floodplain').addTo(map);
     d.valueM = Math.max(0, grossAreaM2 - geoAreaM2(chRing));
   } else {
     d.layer = L.polygon(pts, {
-      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:false
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
     }).bindTooltip('New Floodplain').addTo(map);
     d.valueM = grossAreaM2;
   }
@@ -1818,7 +1894,7 @@ function commitFpSide(we, id, poly, side) {
   if (!we.ppData[finalId]) we.ppData[finalId] = {};
   var d = we.ppData[finalId];
   if (d.layer) map.removeLayer(d.layer);
-  d.layer = L.polygon(poly, {color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:false})
+  d.layer = L.polygon(poly, {color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true})
     .bindTooltip(label).addTo(map);
   d.valueM = geoAreaM2(poly);
   d.userDrawn = true;
@@ -1895,7 +1971,7 @@ function splitFpByReach(we, flip) {
     var d = we.ppData[id]; if (!d) { we.ppData[id] = {}; d = we.ppData[id]; }
     if (d.layer) map.removeLayer(d.layer);
     if (d.labelMarker) { map.removeLayer(d.labelMarker); d.labelMarker = null; }
-    d.layer = L.polygon(pts, {color:col, fillColor:col, fillOpacity:0.22, weight:2, interactive:false})
+    d.layer = L.polygon(pts, {color:col, fillColor:col, fillOpacity:0.22, weight:2, interactive:true})
       .bindTooltip(label).addTo(map);
     d.valueM = geoAreaM2(pts);
     // Add a label marker at the polygon centroid
@@ -2015,9 +2091,23 @@ function fetchElevationProfile(we) {
   renderPMRow(m);
   var samples = sampleReachPts(pts, ELEV_SAMPLES);
   var promises = samples.map(function(p){ return fetchElevation(p.lat, p.lng); });
-  Promise.all(promises).then(function(elevs) {
+  // USGS's elevation service occasionally 500s on individual points, and when that
+  // error response lacks CORS headers the fetch throws outright rather than just
+  // resolving null — Promise.all() would fail the ENTIRE profile over one bad
+  // sample. Promise.allSettled() lets the profile still compute from whatever
+  // samples do succeed, so a partial USGS hiccup doesn't take out the whole feature.
+  Promise.allSettled(promises).then(function(results) {
+    var rejectedCount = results.filter(function(r){ return r.status === 'rejected'; }).length;
+    var elevs = results.map(function(r){ return r.status === 'fulfilled' ? r.value : null; });
     var valid = elevs.filter(function(e){ return e !== null && !isNaN(e) && e > -100; });
-    if (valid.length < 2) { we.ppData['avg_slope']._elevLoading = false; we.ppData['avg_slope']._elevError = 'No elevation data returned — outside USGS coverage?'; renderPMRow(m); return; }
+    if (valid.length < 2) {
+      we.ppData['avg_slope']._elevLoading = false;
+      we.ppData['avg_slope']._elevError = rejectedCount > 0
+        ? 'USGS elevation service is currently having issues — try again in a bit.'
+        : 'No elevation data returned — outside USGS coverage?';
+      renderPMRow(m);
+      return;
+    }
     var upstreamElev = elevs[0] !== null ? elevs[0] : valid[0];
     var downstreamElev = elevs[elevs.length-1] !== null ? elevs[elevs.length-1] : valid[valid.length-1];
 
@@ -2029,13 +2119,18 @@ function fetchElevationProfile(we) {
         if (rPts.length && Array.isArray(rPts[0])) rPts = rPts[0];
         rPts = rPts.slice().reverse();
         map.removeLayer(reachD2.layer);
-        reachD2.layer = L.polyline(rPts, {color:'#c07820', weight:2.5, interactive:false}).addTo(map);
+        reachD2.layer = L.polyline(rPts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
         elevs = elevs.slice().reverse();
         var tmp = upstreamElev; upstreamElev = downstreamElev; downstreamElev = tmp;
         setMapHint('Reach direction reversed to flow downstream ↓');
         setTimeout(function(){setMapHint('');}, 3000);
-        // Rebuild buffers with corrected direction
+        // Rebuild buffers with corrected direction. Note updateAreaChBuffer() bails
+        // out early (before its own addReachArrow() call) when channel width hasn't
+        // been measured yet — which is the common case here, since elevation loads
+        // while the user is likely still on the Stream Reach step — so refresh the
+        // flow arrows explicitly rather than relying on that call to do it.
         updateAreaChBuffer(we); updateAreaFpBuffer(we);
+        addReachArrow(we);
       }
     }
 
@@ -2057,6 +2152,56 @@ function fetchElevationProfile(we) {
     we.ppData['avg_slope']._elevError = 'Could not reach USGS elevation service — check connection.';
     renderPMRow(m); wizardRefreshIfActive();
   });
+}
+
+// Manual override for reach flow direction — elevation data isn't always available
+// (USGS outage) or reliable (very flat reaches), so let the user flip it themselves
+// rather than being stuck with whatever direction it happened to be drawn/detected in.
+function flipReachDirection(weArg) {
+  var we = weArg || getActiveWE();
+  var rd = we && we.ppData['reach_len'];
+  if (!rd || !rd.layer) return;
+  var pts = rd.layer.getLatLngs();
+  if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+  pts = pts.slice().reverse();
+  map.removeLayer(rd.layer);
+  rd.layer = L.polyline(pts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
+
+  // Keep an already-computed elevation profile in sync with the new direction
+  // rather than leaving stale upstream/downstream stats from the old orientation.
+  var sd = we.ppData['avg_slope'];
+  if (sd && sd._elevProfile) {
+    sd._elevProfile = sd._elevProfile.slice().reverse();
+    var tmp = sd._upstreamElev; sd._upstreamElev = sd._downstreamElev; sd._downstreamElev = tmp;
+    sd._elevChangeM = sd._upstreamElev - sd._downstreamElev;
+    var reachLenM = rd.valueM || 1;
+    sd._slopePct = (sd._elevChangeM / reachLenM) * 100;
+    sd._slopeDeg = Math.atan(sd._elevChangeM / reachLenM) * (180 / Math.PI);
+    sd.value = sd._slopeDeg.toFixed(3);
+  }
+
+  updateAreaChBuffer(we); updateAreaFpBuffer(we);
+  addReachArrow(we);
+
+  // Keep any already-drawn primary channel reach(es) oriented to match, same as
+  // when they're first drawn (see orientPtsLikeReach in finishSOWDraw).
+  var savedActivePCId = we.activePCId;
+  we.primaryChannels.forEach(function(pc) {
+    var sl = pc.sowLayers['pc-reach'];
+    if (!sl || !sl.layer) return;
+    var pcPts = sl.layer.getLatLngs();
+    if (pcPts.length && Array.isArray(pcPts[0])) pcPts = pcPts[0];
+    var oriented = orientPtsLikeReach(pcPts, pts);
+    if (oriented !== pcPts) {
+      sl.layer.setLatLngs(oriented);
+      we.activePCId = pc.id;
+      addPCReachArrow(we);
+    }
+  });
+  we.activePCId = savedActivePCId;
+
+  var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
+  renderPMRow(m); rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
 }
 
 function drawElevChart(canvasId, elevs) {
@@ -2289,13 +2434,13 @@ function finishPPDraw() {
       return;
     }
     if(we.ppData[m.id].layer)map.removeLayer(we.ppData[m.id].layer);
-    we.ppData[m.id].layer=L.polyline(pts,{color:col,weight:2,dashArray:'4,3',interactive:false}).bindTooltip(m.label).addTo(map);
+    we.ppData[m.id].layer=L.polyline(pts,{color:col,weight:2,dashArray:'4,3',interactive:true}).bindTooltip(m.label).addTo(map);
     we.ppData[m.id].valueM=geoLen(pts);
   } else {
     if(we.ppData[m.id].layer)map.removeLayer(we.ppData[m.id].layer);
     var polyStyle = m.id==='perimeter'
       ? {color:col, fillOpacity:0, weight:2, dashArray:'8 5', interactive:false}
-      : {color:col, fillColor:col, fillOpacity:.18, weight:2, interactive:false};
+      : {color:col, fillColor:col, fillOpacity:.18, weight:2, interactive:true};
     we.ppData[m.id].layer=L.polygon(pts,polyStyle).bindTooltip(m.label).addTo(map);
     we.ppData[m.id].valueM=geoAreaM2(pts);
     // if this is area_ch or area_fp, mark as user-drawn and hide the buffer
@@ -2322,7 +2467,7 @@ function finishPPDraw() {
   updateAreaChBuffer(getWE(we.id));
   updateAreaFpBuffer(getWE(we.id));
   if(m.id==='reach_len') addReachArrow(getWE(we.id));
-  if(m.id==='perimeter') { reClipReachToPerimeter(getWE(we.id)); reClipPCReach(getWE(we.id)); }
+  if(m.id==='perimeter') { reClipReachToPerimeter(getWE(we.id)); reClipPCReach(getWE(we.id)); reClipFpPolyToPerimeter(getWE(we.id)); reClipPCFPToPerimeter(getWE(we.id)); }
   if(m.id==='reach_len') {
     updateWELabel(getWE(we.id), true);
     setTimeout(function(){ fetchElevationProfile(getWE(we.id)); }, 300);
@@ -2444,6 +2589,11 @@ function addReachArrow(we) {
   if(!rd || !rd.layer) return;
   var markers = buildFlowArrowMarkers(rd.layer, we.ppData['area_ch'], '#c07820');
   if (!markers.length) return;
+  // Respect the pre-project visibility toggle — buildFlowArrowMarkers() always adds
+  // fresh markers to the map, which otherwise leaks the pre-project reach's arrows
+  // back in on every zoom (refreshAllFlowArrows runs regardless of wizard step)
+  // even while pre-project layers are supposed to be hidden during habitat work.
+  if (!ppLayersVisible) markers.forEach(function(mk){ map.removeLayer(mk); });
   rd._arrowMarkers = markers;
   rd._arrowMarker = markers[Math.floor(markers.length/2)]; // keep reference for legacy code
 }
@@ -2690,6 +2840,21 @@ function startSOWDraw(id,geo,label) {
   setMapHint(msg);
 }
 
+// The primary channel is a redesign of the same stream as the pre-project reach —
+// its flow direction (and therefore its flow arrows) should match, but a hand-drawn
+// line's point order only reflects whichever end the user happened to click first.
+// Reverse the drawn points if that gives a better endpoint match to the reference
+// reach than the as-drawn order does.
+function orientPtsLikeReach(pts, refPts) {
+  if (!pts || pts.length < 2 || !refPts || refPts.length < 2) return pts;
+  var cosLat = Math.cos(refPts[0].lat*Math.PI/180);
+  function d2(a,b){ var dlat=a.lat-b.lat, dlng=(a.lng-b.lng)*cosLat; return dlat*dlat+dlng*dlng; }
+  var pStart=pts[0], pEnd=pts[pts.length-1], rStart=refPts[0], rEnd=refPts[refPts.length-1];
+  var sameOrient = d2(pStart,rStart)+d2(pEnd,rEnd);
+  var revOrient  = d2(pStart,rEnd)+d2(pEnd,rStart);
+  return revOrient < sameOrient ? pts.slice().reverse() : pts;
+}
+
 // "Wetland Enhancement" polygons must represent habitat improved WITHIN existing
 // wetland, not just anywhere the user draws — clip the drawn ring against every
 // pre-project Existing Wetland Area polygon (there may be several, possibly
@@ -2734,7 +2899,7 @@ function finishSOWDraw() {
     var totalAcres = 0, totalValueM = 0;
     pieces.forEach(function(p){ totalValueM += geoAreaM2(p); totalAcres += geoArea(p); });
     var enhLayer = pieces.length
-      ? L.polygon(pieces.map(function(p){ return [p]; }), {color:col, fillColor:col, fillOpacity:.2, weight:2, interactive:false}).bindTooltip(d.label).addTo(map)
+      ? L.polygon(pieces.map(function(p){ return [p]; }), {color:col, fillColor:col, fillOpacity:.2, weight:2, interactive:true}).bindTooltip(d.label).addTo(map)
       : null;
     var enhOwner = sowOwner(we, d.id);
     enhOwner.sowLayers[d.id] = {layer:enhLayer, valueM:totalValueM, acres:totalAcres, geo:'polygon', label:d.label, _pts:null, _noOverlap: pieces.length===0};
@@ -2751,7 +2916,7 @@ function finishSOWDraw() {
   if (d.id === 'sc-reach-new') {
     if (!we.scReaches) we.scReaches = [];
     var scId = 'scr-'+Date.now();
-    var scLayer = L.polyline(pts, {color:SC_COLOR, weight:2.5, interactive:false})
+    var scLayer = L.polyline(pts, {color:SC_COLOR, weight:2.5, interactive:true})
       .bindTooltip('Secondary Channel '+(we.scReaches.length+1)).addTo(map);
     we.scReaches.push({id:scId, layer:scLayer, bufferLayer:null, valueM:geoLen(pts), pts:pts});
     updateSCBuffers(we);
@@ -2761,6 +2926,14 @@ function finishSOWDraw() {
     renderLegend();
     if (wizardMode) wizardRefreshIfActive();
     return;
+  }
+  if (d.id === 'pc-reach') {
+    var refReachD = we.ppData['reach_len'];
+    if (refReachD && refReachD.layer) {
+      var refReachPts = refReachD.layer.getLatLngs();
+      if (refReachPts.length && Array.isArray(refReachPts[0])) refReachPts = refReachPts[0];
+      pts = orientPtsLikeReach(pts, refReachPts);
+    }
   }
   var layer,valueM=0,acres=0;
   var NO_DISPLAY_IDS = {pcw1:1,pcw2:1,pcw3:1};
@@ -2773,11 +2946,11 @@ function finishSOWDraw() {
     if(NO_DISPLAY_IDS[d.id]){
       layer=null; // store geometry but don't add to map
     } else {
-      layer=L.polyline(pts,{color:col,weight:2.5,interactive:false}).bindTooltip(tipLabel).addTo(map);
+      layer=L.polyline(pts,{color:col,weight:2.5,interactive:true}).bindTooltip(tipLabel).addTo(map);
     }
     valueM=geoLen(pts);
   }
-  else{layer=L.polygon(pts,{color:col,fillColor:col,fillOpacity:.2,weight:2,interactive:false}).bindTooltip(tipLabel).addTo(map);acres=geoArea(pts);valueM=geoAreaM2(pts);}
+  else{layer=L.polygon(pts,{color:col,fillColor:col,fillOpacity:.2,weight:2,interactive:true}).bindTooltip(tipLabel).addTo(map);acres=geoArea(pts);valueM=geoAreaM2(pts);}
   var owner=sowOwner(we,d.id);
   owner.sowLayers[d.id]={layer:layer,valueM:valueM,acres:acres,geo:d.geo,label:d.label,_pts:NO_DISPLAY_IDS[d.id]?pts:null};
   // Multi-entry FP items (grading/road/berm/revetment/tailings/wetland) get a numbered
@@ -2826,7 +2999,7 @@ function updatePCBuffer(we) {
   var areaTip = we.primaryChannels.length > 1 ? 'Area of Restored Channel (estimated) — '+getActivePC(we).name : 'Area of Restored Channel (estimated)';
   var bufLayer = L.polygon(ring, {
     color:areaCol, fillColor:areaCol, fillOpacity:0.15,
-    weight:2, dashArray:'6,4', interactive:false
+    weight:2, dashArray:'6,4', interactive:true
   }).bindTooltip(areaTip).addTo(map);
   var areaM2 = geoAreaM2(ring);
   getActivePC(we).sowLayers['pc-area'] = {layer:bufLayer, valueM:areaM2, acres:areaM2*0.000247105, geo:'polygon', label:'Area of Restored Channel', _auto:true};
@@ -2901,7 +3074,7 @@ function updateSOWCalcs() {
         var autoAreaTip = we.primaryChannels.length > 1 ? 'Area of Restored Channel (estimated) — '+getActivePC(we).name : 'Area of Restored Channel (estimated)';
         var bufLayer = L.polygon(ring, {
           color: autoAreaCol, fillColor: autoAreaCol, fillOpacity: 0.15,
-          weight: 2, dashArray: '6,4', interactive: false
+          weight: 2, dashArray: '6,4', interactive: true
         }).bindTooltip(autoAreaTip).addTo(map);
         getActivePC(we)._pcAreaAutoLayer = bufLayer;
         var areaM2 = geoAreaM2(ring);
@@ -3866,7 +4039,7 @@ function commitLineEdit() {
     updateAreaChBuffer(we);
     updateAreaFpBuffer(we);
     if (id === 'reach_len') { addReachArrow(we); setTimeout(function(){ fetchElevationProfile(getWE(activeWEId)); }, 300); }
-    if (id === 'perimeter') { reClipReachToPerimeter(we); reClipPCReach(we); }
+    if (id === 'perimeter') { reClipReachToPerimeter(we); reClipPCReach(we); reClipFpPolyToPerimeter(we); reClipPCFPToPerimeter(we); }
   } else if (type === 'cr-poly') {
     var crWe = getWE(lineEditing.weId);
     if (crWe) {
@@ -4146,7 +4319,7 @@ function updateSCBuffer(we, r) {
   var ring = buildBufferPoly(pts, halfWM);
   if (!ring) return;
   r.bufferLayer = L.polygon(ring, {
-    color:SC_COLOR, fillColor:SC_COLOR, fillOpacity:0.15, weight:1.5, dashArray:'6,4', interactive:false
+    color:SC_COLOR, fillColor:SC_COLOR, fillOpacity:0.15, weight:1.5, dashArray:'6,4', interactive:true
   }).bindTooltip('Secondary Channel (estimated)').addTo(map);
 }
 
@@ -4558,7 +4731,7 @@ function renderCHUUnits(we) {
     if (u.type === 'pool') { poolNum++; typeLabel = 'Pool ' + poolNum; }
     else { riffleNum++; typeLabel = 'Riffle ' + riffleNum; }
     u._displayLabel = typeLabel;
-    u.layer = L.polygon(u.pts, {color:col, fillColor:col, fillOpacity:0.25, weight:2, interactive:false})
+    u.layer = L.polygon(u.pts, {color:col, fillColor:col, fillOpacity:0.25, weight:2, interactive:true})
       .bindTooltip(typeLabel + ' — ' + (u.areaM2*0.000247105).toFixed(3)+' ac')
       .addTo(map);
     var icon = L.divIcon({
@@ -5042,6 +5215,38 @@ function clearReachAutoLayers() {
 var wetlandAutoDetecting = false;
 var wetlandAutoLayers = []; // temp highlight layers for detected wetland candidates
 
+// USGS NAIP imagery-year lookup — queries the USGS NAIP Plus catalog (The National
+// Map) for whatever source image covers the current map center, and shows its real
+// acquisition year in the bottom-right control. Only relevant while the USGS NAIP
+// basemap is selected; hidden otherwise. NAIP is refreshed per state every 2-3
+// years and this service keeps just the latest vintage per area (not a historical
+// archive), so this is a single "as of" year, not a pickable range.
+var naipYearReqSeq = 0;
+function updateNaipYearDisplay() {
+  var div = document.getElementById('naip-year-display');
+  if (!div) return;
+  if (activeBasemap !== 'USGS NAIP') { div.style.display = 'none'; return; }
+  div.style.display = 'block';
+  div.textContent = 'USGS NAIP imagery: loading…';
+  var seq = ++naipYearReqSeq;
+  var center = map.getCenter();
+  var url = 'https://imagery.nationalmap.gov/arcgis/rest/services/USGSNAIPPlus/ImageServer/query?' +
+    'geometry=' + encodeURIComponent(center.lng + ',' + center.lat) +
+    '&geometryType=esriGeometryPoint&inSR=4326&spatialRel=esriSpatialRelIntersects' +
+    '&where=' + encodeURIComponent('Year IS NOT NULL') +
+    '&outFields=Year&returnGeometry=false&f=json';
+  fetch(url).then(function(r){ return r.json(); }).then(function(data) {
+    if (seq !== naipYearReqSeq) return; // a newer request superseded this one
+    var years = (data.features || []).map(function(f){ return f.attributes.Year; }).filter(function(y){ return y; });
+    if (!years.length) { div.textContent = 'USGS NAIP imagery: no coverage here'; return; }
+    var minY = Math.min.apply(null, years), maxY = Math.max.apply(null, years);
+    div.textContent = 'USGS NAIP imagery: ' + (minY === maxY ? minY : minY + '–' + maxY);
+  }).catch(function() {
+    if (seq !== naipYearReqSeq) return;
+    div.textContent = 'USGS NAIP imagery: unavailable';
+  });
+}
+
 function clearWetlandAutoLayers() {
   wetlandAutoLayers.forEach(function(l){ map.removeLayer(l); });
   wetlandAutoLayers = [];
@@ -5082,10 +5287,13 @@ function loadWetlandPreview() {
 
   // Note: this service requires fully-qualified field names ("Wetlands.FIELD"),
   // not bare field names — a bare outFields list returns a 400 error.
+  // Riverine features are the stream/river channel itself, not a pre-project
+  // wetland area to preserve — exclude them so only actual wetlands show up here.
   var url = 'https://fwspublicservices.wim.usgs.gov/wetlandsmapservice/rest/services/Wetlands/MapServer/0/query?' +
     'geometry='+encodeURIComponent(env)+
     '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects' +
     '&outFields='+encodeURIComponent('Wetlands.WETLAND_TYPE,Wetlands.ACRES')+
+    '&where='+encodeURIComponent("Wetlands.WETLAND_TYPE <> 'Riverine'")+
     '&returnGeometry=true&outSR=4326&f=json';
 
   setMapHint('Loading NWI wetlands...');
@@ -5138,7 +5346,7 @@ function wetlandAutoClickFeature(ring, previewLyr) {
   we.fpMulti['pp_wetland'].push({id: id, vol: ''});
 
   var col = WETLAND_COLOR.existing;
-  var layer = L.polygon(pts, {color:col, fillColor:col, fillOpacity:.2, weight:2, interactive:false})
+  var layer = L.polygon(pts, {color:col, fillColor:col, fillOpacity:.2, weight:2, interactive:true})
     .bindTooltip('Wetland area ' + n).addTo(map);
   var acres = geoArea(pts), valueM = geoAreaM2(pts);
   we.sowLayers[id] = {layer:layer, valueM:valueM, acres:acres, geo:'polygon', label:'Wetland area', _pts:null};
@@ -5485,7 +5693,7 @@ function reachExtendClick(latlng) {
       clearReachAutoLayers();
       // Rebuild reach with combined pts
       map.removeLayer(reachD.layer);
-      reachD.layer = L.polyline(combinedPts, {color:'#c07820', weight:2.5, interactive:false}).addTo(map);
+      reachD.layer = L.polyline(combinedPts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
       reachD.valueM = geoLen(combinedPts);
       cancelReachExtend();
       var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
@@ -6561,7 +6769,7 @@ function commitAutoReach(pts) {
   pts = clipPtsToPerimeter(we, pts, 'line');
   if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
   if (we.ppData['reach_len'].layer) map.removeLayer(we.ppData['reach_len'].layer);
-  var layer = L.polyline(pts, {color:'#c07820', weight:2.5, interactive:false}).addTo(map);
+  var layer = L.polyline(pts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
   we.ppData['reach_len'].layer = layer;
   we.ppData['reach_len'].valueM = geoLen(pts);
   we.ppData['reach_len']._autoDetecting = false;
@@ -6864,8 +7072,8 @@ var WIZARD_STEPS = [
   { id:'ch_width',   label:'Channel Width',   title:'Measure Channel Width',          phase:'pp' },
   { id:'substrate',  label:'Substrate',       title:'Enter Reach-Averaged Substrate', phase:'pp' },
   { id:'fp_poly',    label:'Floodplain',      title:'Draw Floodplain Boundary',       phase:'pp' },
-  { id:'pp_wetland', label:'Existing Wetlands', title:'Existing Wetland Areas',       phase:'pp' },
   { id:'buffers',    label:'Review Areas',    title:'Review Floodplain Areas',        phase:'pp' },
+  { id:'pp_wetland', label:'Existing Wetlands', title:'Existing Wetland Areas',       phase:'pp' },
   { id:'pp_done',    label:'Pre-Project Done',  title:'Pre-Project Complete!',          phase:'pp' },
   { id:'pc_reach',   label:'Primary Channel',  title:'Draw Primary Channel',           phase:'work', types:['pc'], repeat:'pc' },
   { id:'pc_width',   label:'Channel Width',    title:'Enter Primary Channel Width',    phase:'work', types:['pc'], repeat:'pc' },
@@ -6879,7 +7087,7 @@ var WIZARD_STEPS = [
   { id:'sc_draw',  label:'Secondary Channels', title:'Draw Secondary Channels',   phase:'work', types:['fp'], section:'sc' },
   { id:'sc_wood',  label:'Wood Counts',         title:'Secondary Channel Wood',    phase:'work', types:['fp'], section:'sc' },
   { id:'fp_structures',  label:'Structures',      title:'Floodplain Structures',        phase:'work', types:['fp'] },
-  { id:'fp_reach_width', label:'Reach & Width',   title:'FP Connectivity Reach & Width', phase:'work', types:['fp'] },
+  { id:'fp_reach_width', label:'Floodplain Width',   title:'Floodplain Connectivity Width', phase:'work', types:['fp'] },
   { id:'fp_grading',     label:'Grading',         title:'Floodplain Grading',           phase:'work', types:['fp'] },
   { id:'fp_road',        label:'Road Removal',    title:'Road Removed/Setback',         phase:'work', types:['fp'] },
   { id:'fp_berm',        label:'Berm Removal',    title:'Berm/Levee Removed',           phase:'work', types:['fp'] },
@@ -6889,7 +7097,7 @@ var WIZARD_STEPS = [
   { id:'rr_fencing',  label:'Fencing',           title:'Riparian Protection — Fencing',      phase:'work', types:['rr'] },
   { id:'rr_planting', label:'Planting & Invasive', title:'Riparian Planting & Regeneration', phase:'work', types:['rr'] },
   { id:'rr_totals',   label:'Bank & Totals',     title:'Riparian Totals',                    phase:'work', types:['rr'] },
-  { id:'done',       label:'Complete',        title:'Work Element Complete!',         phase:'work' }
+  { id:'done',       label:'Complete',        title:'Design Complete!',         phase:'work' }
 ];
 
 function toggleWizardMode() {
@@ -6918,6 +7126,7 @@ function toggleWizardMode() {
     if (wizBody) { wizBody.style.display = 'none'; wizBody.innerHTML = ''; }
     if (exp) exp.style.display = 'flex';
     if (activeWEId) showInnerTab(activeInnerTab);
+    updateWetlandLayerVisibility(getActiveWE(), null);
   }
 }
 
@@ -6946,11 +7155,15 @@ function wizardStepStatus(we, stepId) {
     }
     case 'fp_split':  return (we.ppData['area_fp'] && we.ppData['area_fp'].fpSplit) ? 'done' : 'pending';
     case 'pp_done': {
-      // Done when core PP measurements are all complete
-      var corePP = ['perimeter','reach','ch_width','fp_poly'];
+      // Done when every non-skippable pre-project step is complete (substrate and
+      // pp_wetland are legitimately skippable, so they don't gate this)
+      var corePP = ['perimeter','reach','ch_width','fp_poly','buffers'];
       return corePP.every(function(id){ return wizardStepStatus(we, id) === 'done'; }) ? 'done' : 'pending';
     }
-    case 'pc_metrics': return (getActivePC(we).sowLayers['pc-reach'] && getActivePC(we).sowLayers['pc-reach'].layer) ? 'done' : 'pending';
+    case 'pc_metrics': {
+      var pcmEV = getActivePC(we).inputVals['pc-excavation-vol'];
+      return (pcmEV !== undefined && pcmEV !== null && pcmEV !== '') ? 'done' : 'pending';
+    }
     case 'pc_gravel': {
       var anyGravelPlaced = (getActivePC(we).gravelPlacements||[]).some(function(p){ return !!p.latlng; });
       return anyGravelPlaced ? 'done' : 'pending';
@@ -6974,8 +7187,10 @@ function wizardStepStatus(we, stepId) {
       return hasSt ? 'done' : 'pending';
     }
     case 'pc_channel_done': {
-      var pcCheck = getActivePC(we);
-      return (pcCheck.sowLayers['pc-reach'] && pcCheck.sowLayers['pc-reach'].layer) ? 'done' : 'pending';
+      // Done when every non-skippable step in this primary channel is complete
+      // (chu_split, structures, and pc_gravel are legitimately skippable)
+      var corePC = ['pc_reach','pc_width','pc_metrics','pc_fp'];
+      return corePC.every(function(id){ return wizardStepStatus(we, id) === 'done'; }) ? 'done' : 'pending';
     }
     case 'sc_draw':  return (we.scReaches && we.scReaches.length > 0 && we.scReaches.every(function(r){return r.width>0 && r.flowType;})) ? 'done' : 'pending';
     case 'sc_wood':  { var scL=we.inputVals&&we.inputVals['sc-large-wood'], scS=we.inputVals&&we.inputVals['sc-small-wood']; return (scL>=0&&scS>=0&&(scL>0||scS>0))?'done':'pending'; }
@@ -7117,13 +7332,15 @@ function renderWizardStep() {
   var visSteps = getVisibleSteps();
   var step = visSteps[wizardStep] || visSteps[visSteps.length-1];
   if (!step) return;
+  updateWetlandLayerVisibility(we, step);
+  updateFpPolyVisibilityForStep(we, step);
 
   // ── Vertical stepper (vendor-invoice pattern), grouped into collapsible sections ──
-  var workSectionLabels = {pc: 'Primary Channel', sc: 'Secondary Channels', fp: 'Floodplain & Side Channels', rr: 'Riparian Restoration'};
+  var workSectionLabels = {pc: 'Primary Channel', sc: 'Secondary Channels', fp: 'Floodplain', rr: 'Riparian Restoration'};
   var savedActivePCId = we ? we.activePCId : null;
 
   // Group steps into sections first (Pre-Project, each Primary Channel, Secondary
-  // Channels, Floodplain & Side Channels, Riparian) so each can be collapsed as a unit.
+  // Channels, Floodplain, Riparian) so each can be collapsed as a unit.
   var sections = [];
   var prevSectionKey = null;
   visSteps.forEach(function(s, i) {
@@ -7191,8 +7408,8 @@ function renderWizardStep() {
 
   var bodyHtml = we ? wizardStepBody(we, step, wizardStep) : '<div class="wz-step-desc">Add a work element to get started.</div>';
   // Milestone/summary screens ("X Complete!") aren't term-heavy — no help box there:
-  // pp_done (step 7, Pre-Project Done), pc_channel_done (step 16, Channel Complete).
-  var wzNoHelpSteps = {pp_done:1, pc_channel_done:1};
+  // pp_done (Pre-Project Done), pc_channel_done (Channel Complete), done (Design Complete).
+  var wzNoHelpSteps = {pp_done:1, pc_channel_done:1, done:1};
   if (!wzNoHelpSteps[step.id]) bodyHtml = wzInsertHelpBox(bodyHtml, step.label);
   var footerHtml = wizardStepFooter(we, step, wizardStep);
 
@@ -7275,6 +7492,8 @@ function wizardStepBody(we, step, idx) {
         h += '<button class="wz-action-btn secondary" style="margin-top:12px" onclick="startReachAutoDetect();renderWizardStep()">&#127760; Re-detect from Map</button>';
         h += '<button class="wz-action-btn secondary" onclick="wizardRedraw(\'reach_len\')">&#128207; Redraw Manually</button>';
         h += '<button class="wz-action-btn secondary" onclick="startLineEdit(\'pp\',\'reach_len\');renderWizardStep()">&#9998; Edit Vertices</button>';
+        h += '<button class="wz-action-btn secondary" onclick="flipReachDirection();renderWizardStep()">&#8646; Flip Flow Direction</button>';
+        h += '<div class="wz-tip">Flow direction is normally set from elevation data — flip it manually if that\'s unavailable or looks wrong.</div>';
       } else if (reachPreTrim) {
         var ext = reachD._preTrimExtending;
         h += '<div class="wz-status pending">&#10003; Stream selected — extend if needed, then pick your endpoints.</div>';
@@ -7520,6 +7739,9 @@ function wizardStepBody(we, step, idx) {
       var inputStyle = 'width:100%;box-sizing:border-box;border:1px solid var(--color-border);border-radius:4px;padding:4px 8px;font-size:13px;font-family:var(--font-sans)';
       var labelStyle = 'display:block;font-size:11px;color:var(--color-text-secondary);margin-bottom:3px';
       h += '<div class="wz-step-desc">Enter additional complexity metrics for the primary channel.</div>';
+      var pcmReachSL = getActivePC(we).sowLayers['pc-reach'];
+      var pcmStreamMi = pcmReachSL && pcmReachSL.valueM ? (pcmReachSL.valueM * 0.000621371).toFixed(3)+' mi' : null;
+      h += '<div class="wz-metric-row"><span class="wz-metric-label">Stream miles with improved floodplain connectivity</span><span class="wz-metric-val '+(pcmStreamMi?'':'missing')+'">'+(pcmStreamMi||'draw the primary channel to calculate')+'</span></div>';
       h += '<div style="margin-bottom:8px"><label style="'+labelStyle+'">Excavation volume (CY)</label>';
       h += '<input type="number" min="0" step="1" placeholder="e.g. 500" value="'+(pcmEV||'')+'"';
       h += ' style="'+inputStyle+'" onchange="setPCExcavVol(this.value)"></div>';
@@ -7897,7 +8119,7 @@ function wizardStepBody(we, step, idx) {
     }
 
     case 'fp_structures': {
-      h += '<div class="wz-step-desc">Draw large-log placement and add any floodplain or side-channel structures.</div>';
+      h += '<div class="wz-step-desc">Draw large-log placement and add any floodplain structures. Side-channel structures are counted separately under Secondary Channels — Wood Counts.</div>';
       h += wzFPDrawRow(we, 'fp-logs-area', 'polygon', 'Large-log placement area');
       h += wzFPInputRow(we, 'fp-large-logs', '# Large logs placed');
 
@@ -7913,10 +8135,7 @@ function wizardStepBody(we, step, idx) {
         var isWaiting = pendingStructPoint && pendingStructPoint.id === s.id;
         h += '<div style="background:#fff;border:1px solid #dcdcdc;border-radius:5px;padding:8px;margin-bottom:6px">';
         h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
-        h += '<select style="font-size:11px;border:1px solid var(--color-border);border-radius:3px;padding:2px 4px;background:var(--color-surface);color:var(--color-text-primary);font-family:var(--font-sans,system-ui)" onchange="changeFPStructType(\''+s.id+'\',this.value)">';
-        h += '<option value="fps"'+(t==='fps'?' selected':'')+'>Floodplain Structure</option>';
-        h += '<option value="scs"'+(t==='scs'?' selected':'')+'>Side Channel Structure</option>';
-        h += '</select>';
+        h += '<span style="font-size:11px;font-weight:600;color:#7c7c7c">Floodplain Structure</span>';
         h += '<span style="cursor:pointer;color:#ef4444;font-size:12px" onclick="wizardDelFPStructure(\''+s.id+'\')">&#10005;</span>';
         h += '</div>';
         if (s.latlng) {
@@ -7934,18 +8153,13 @@ function wizardStepBody(we, step, idx) {
     }
 
     case 'fp_reach_width': {
-      var scMi = scConnectivityMiles(we);
       var scAvgW = scAvgWidthFt(we);
-      h += '<div class="wz-step-desc">FP connectivity reach is calculated from your Secondary Channels; floodplain width is measured across the pre-project Floodplain boundary at each channel — no separate drawing needed here.</div>';
-      if (scMi === null) {
-        h += '<div class="wz-status warning">&#9888; No secondary channels entered yet — go back to Secondary Channels and add at least one; this metric is calculated from that data.</div>';
+      h += '<div class="wz-step-desc">Floodplain width is measured across the pre-project Floodplain boundary at each Secondary Channel — no separate drawing needed here.</div>';
+      if (scAvgW === null) {
+        h += '<div class="wz-status warning">&#9888; Floodplain width unavailable — make sure the pre-project Floodplain boundary (step 5) is drawn and at least one Secondary Channel is entered and crosses it.</div>';
       } else {
-        h += '<div class="wz-metric-row"><span class="wz-metric-label">FP connectivity reach</span><span class="wz-metric-val">'+scMi.toFixed(3)+' mi</span></div>';
-        h += '<div class="wz-metric-row"><span class="wz-metric-label">Avg floodplain width</span><span class="wz-metric-val">'+(scAvgW?Math.round(scAvgW)+' ft':'—')+'</span></div>';
-        h += '<div class="wz-status done">&#10003; Calculated from '+we.scReaches.length+' secondary channel'+(we.scReaches.length>1?'s':'')+'.</div>';
-        if (scAvgW === null) {
-          h += '<div class="wz-tip">Floodplain width unavailable — make sure the pre-project Floodplain boundary (step 5) is drawn and crosses your secondary channels.</div>';
-        }
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Avg floodplain width</span><span class="wz-metric-val">'+Math.round(scAvgW)+' ft</span></div>';
+        h += '<div class="wz-status done">&#10003; Calculated from secondary channel data.</div>';
       }
       h += '<div class="wz-group-head divided">Post-Project Connectivity</div>';
       h += wzFPInputRow(we, 'fp-bankfull-ac', 'FP area connected below bankfull (ac)');
@@ -8014,23 +8228,11 @@ function wizardStepBody(we, step, idx) {
       break;
 
     case 'done':
-      h += '<div class="wz-step-desc">Your work element is complete. Review the summary and export your Statement of Work.</div>';
-      h += '<div class="wz-status done" style="font-size:13px;padding:14px">&#10003; <b>'+( we ? we.name : 'Work element')+' complete!</b></div>';
-      if (we) {
-        var doneMetrics = [
-          ['Reach Length', ppLenFt(we,'reach_len') ? Math.round(ppLenFt(we,'reach_len')).toLocaleString()+' ft' : null],
-          ['Area of Channel', ppAcres(we,'area_ch') ? ppAcres(we,'area_ch').toFixed(2)+' ac' : null],
-          ['Left Floodplain', ppAcres(we,'fp_left') ? ppAcres(we,'fp_left').toFixed(2)+' ac' : null],
-          ['Right Floodplain', ppAcres(we,'fp_right') ? ppAcres(we,'fp_right').toFixed(2)+' ac' : null],
-          ['CHUs', getActivePC(we).chuUnits && getActivePC(we).chuUnits.length > 0 ? getActivePC(we).chuUnits.length+' units' : null]
-        ];
-        doneMetrics.forEach(function(m) {
-          h += '<div class="wz-metric-row"><span class="wz-metric-label">'+m[0]+'</span>';
-          h += '<span class="wz-metric-val '+(m[1]?'':'missing')+'">'+( m[1] || 'not entered')+'</span></div>';
-        });
-      }
+      h += '<div class="wz-step-desc">Your design is complete. Export your metrics.</div>';
+      h += '<div class="wz-status done" style="font-size:13px;padding:14px">&#10003; <b>Design complete!</b></div>';
       h += '<button class="wz-action-btn" style="margin-top:16px" onclick="openSOW()">&#128196; Export Metrics</button>';
-      h += '<button class="wz-action-btn secondary" onclick="openWEModal(null)">&#43; Add Another Work Element</button>';
+      // "Add Another Work Element" hidden for now — kept for easy restore.
+      // h += '<button class="wz-action-btn secondary" onclick="openWEModal(null)">&#43; Add Another Work Element</button>';
       break;
   }
   return h;
@@ -8143,6 +8345,7 @@ function wizardAutoActivate() {
   // Auto-manage pre-project layer visibility based on phase
   if (step.phase === 'pp') { setPPLayersVisible(true); }
   else if (step.phase === 'work') { setPPLayersVisible(false); }
+  updateFpPolyVisibilityForStep(we, step); // must run after setPPLayersVisible(true) above, which would otherwise re-show it
   setGravelMarkersVisible(we, !!(step.types && step.types.indexOf('pc') >= 0));
   switch(step.id) {
     case 'perimeter':
@@ -8523,8 +8726,9 @@ function openSOW() {
   var h='<h3>Contract Information</h3><dl class="smeta"><dt>Contract #</dt><dd>84051 REL 50</dd><dt>COR</dt><dd>Virginia Preiss</dd><dt>FY</dt><dd>2026</dd><dt>Date</dt><dd>'+today+'</dd></dl>';
 
   workElements.forEach(function(we,idx) {
-    h+='<h2>WE '+(idx+1)+': '+we.name+'</h2>';
-    h+='<div style="font-size:11px;color:#5ddba5;margin-bottom:8px">Work types: '+we.types.map(function(t){return TYPE_LABELS[t];}).join(', ')+'</div>';
+    // WE header/work-types line hidden for now — kept for easy restore.
+    // h+='<h2>WE '+(idx+1)+': '+we.name+'</h2>';
+    // h+='<div style="font-size:11px;color:#5ddba5;margin-bottom:8px">Work types: '+we.types.map(function(t){return TYPE_LABELS[t];}).join(', ')+'</div>';
 
     // Pre-project
     h+='<h3>Pre-Project Conditions</h3><table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
@@ -8588,17 +8792,17 @@ function openSOW() {
         var chuPPct = (pcTotalAreaAc && chuP.length) ? (chuPArea/pcTotalAreaAc*100) : null;
         if (chuR.length||chuP.length) {
           h+='<h3 class="sow-section-title">'+pcLabel+' — Habitat Units</h3>';
-          h+='<table class="sow-table"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
-          h+='<tr><td># Riffles</td><td>'+(chuR.length||'—')+'</td></tr>';
-          h+='<tr><td>Total boulders</td><td>'+(chuR.length?(chuTotalBoulders||'0'):'—')+'</td></tr>';
-          h+='<tr><td>Riffle area</td><td>'+(chuR.length?chuRArea.toFixed(3)+' acres':'—')+'</td></tr>';
-          h+='<tr><td>Riffle length (approx)</td><td>'+(chuR.length?'~'+Math.round(chuRLen).toLocaleString()+' ft':'—')+'</td></tr>';
-          h+='<tr><td># Pools</td><td>'+(chuP.length||'—')+'</td></tr>';
-          h+='<tr><td>Pool area</td><td>'+(chuP.length?chuPArea.toFixed(3)+' acres':'—')+'</td></tr>';
-          h+='<tr><td>Pool length (approx)</td><td>'+(chuP.length?'~'+Math.round(chuPLen).toLocaleString()+' ft':'—')+'</td></tr>';
-          h+='<tr><td>Avg pool depth at low flow</td><td>'+(chuAvgDepth||'—')+'</td></tr>';
-          h+='<tr><td>Total area of riffles in project reach</td><td>'+(chuRPct!==null?chuRPct.toFixed(1)+'%':'—')+'</td></tr>';
-          h+='<tr><td>Total area of pools in project reach</td><td>'+(chuPPct!==null?chuPPct.toFixed(1)+'%':'—')+'</td></tr>';
+          h+='<table class="sow-table"><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
+          h+='<tr><td># Riffles</td><td>measured</td><td>'+(chuR.length||'—')+'</td></tr>';
+          h+='<tr><td>Total boulders</td><td>entered</td><td>'+(chuR.length?(chuTotalBoulders||'0'):'—')+'</td></tr>';
+          h+='<tr><td>Riffle area</td><td>calc</td><td>'+(chuR.length?chuRArea.toFixed(3)+' acres':'—')+'</td></tr>';
+          h+='<tr><td>Riffle length (approx)</td><td>calc</td><td>'+(chuR.length?'~'+Math.round(chuRLen).toLocaleString()+' ft':'—')+'</td></tr>';
+          h+='<tr><td># Pools</td><td>measured</td><td>'+(chuP.length||'—')+'</td></tr>';
+          h+='<tr><td>Pool area</td><td>calc</td><td>'+(chuP.length?chuPArea.toFixed(3)+' acres':'—')+'</td></tr>';
+          h+='<tr><td>Pool length (approx)</td><td>calc</td><td>'+(chuP.length?'~'+Math.round(chuPLen).toLocaleString()+' ft':'—')+'</td></tr>';
+          h+='<tr><td>Avg pool depth at low flow</td><td>entered</td><td>'+(chuAvgDepth||'—')+'</td></tr>';
+          h+='<tr><td>Total area of riffles in project reach</td><td>calc</td><td>'+(chuRPct!==null?chuRPct.toFixed(1)+'%':'—')+'</td></tr>';
+          h+='<tr><td>Total area of pools in project reach</td><td>calc</td><td>'+(chuPPct!==null?chuPPct.toFixed(1)+'%':'—')+'</td></tr>';
           h+='</tbody></table>';
         }
         // Pie charts — only if we have typed units
@@ -8621,7 +8825,7 @@ function openSOW() {
         }
 
         // ── Complexity Metrics ──
-        h+='<h3>'+pcLabel+' — Complexity Metrics</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
+        h+='<h3>'+pcLabel+' — Complexity Metrics</h3><table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
         var pcRchSL = pc.sowLayers['pc-reach'];
         var pcRchFt2 = pcRchSL && pcRchSL.valueM ? Math.round(pcRchSL.valueM*3.28084).toLocaleString()+' ft' : '—';
         // Valley length from pc-reach endpoints
@@ -8658,19 +8862,20 @@ function openSOW() {
           if (pcGravelWFt && p.length && p.depth) pcGravelTotalCY2 += parseFloat(p.length)*parseFloat(p.depth)*pcGravelWFt/27;
         });
         var pcGravelAvgDepth = pcGravelDepths.length ? (pcGravelDepths.reduce(function(a,v){return a+v;},0)/pcGravelDepths.length) : null;
-        h += '<tr><td>Reach length</td><td>'+pcRchFt2+'</td></tr>';
-        h += '<tr><td>Valley length</td><td>'+pcVlFt2+'</td></tr>';
-        h += '<tr><td>Sinuosity</td><td>'+pcSin2+'</td></tr>';
-        h += '<tr><td>Average reach slope</td><td>'+pcSlope2+'</td></tr>';
-        h += '<tr><td>Average channel width (at riffle)</td><td>'+pcWidFt2+'</td></tr>';
-        h += '<tr><td>Average bank height (at riffle)</td><td>'+pcBHFt2+'</td></tr>';
-        h += '<tr><td>Area of restored channel</td><td>'+pcAreaAc2+'</td></tr>';
-        h += '<tr><td>New floodplain area</td><td>'+pcNewFpAc+'</td></tr>';
-        h += '<tr><td>Primary channel excavation volume</td><td>'+pcExcav2+'</td></tr>';
-        h += '<tr><td># Gravel placements</td><td>'+(pcGravelPlaced2.length||'—')+'</td></tr>';
-        h += '<tr><td>Length of gravel placement or channel fill</td><td>'+(pcGravelTotalLenFt>0?Math.round(pcGravelTotalLenFt).toLocaleString()+' ft':'—')+'</td></tr>';
-        h += '<tr><td>Average depth of gravel placement</td><td>'+(pcGravelAvgDepth!==null?pcGravelAvgDepth.toFixed(1)+' ft':'—')+'</td></tr>';
-        h += '<tr><td>Gravel placement volume</td><td>'+(pcGravelTotalCY2>0?pcGravelTotalCY2.toFixed(1)+' CY':'—')+'</td></tr>';
+        h += '<tr><td>Reach length</td><td>measured</td><td>'+pcRchFt2+'</td></tr>';
+        h += '<tr><td>Stream miles with improved floodplain connectivity</td><td>calc</td><td>'+(pcRchSL && pcRchSL.valueM ? (pcRchSL.valueM*0.000621371).toFixed(3)+' mi' : '—')+'</td></tr>';
+        h += '<tr><td>Valley length</td><td>calc</td><td>'+pcVlFt2+'</td></tr>';
+        h += '<tr><td>Sinuosity</td><td>calc</td><td>'+pcSin2+'</td></tr>';
+        h += '<tr><td>Average reach slope</td><td>calc</td><td>'+pcSlope2+'</td></tr>';
+        h += '<tr><td>Average channel width (at riffle)</td><td>entered</td><td>'+pcWidFt2+'</td></tr>';
+        h += '<tr><td>Average bank height (at riffle)</td><td>entered</td><td>'+pcBHFt2+'</td></tr>';
+        h += '<tr><td>Area of restored channel</td><td>measured</td><td>'+pcAreaAc2+'</td></tr>';
+        h += '<tr><td>New floodplain area</td><td>measured</td><td>'+pcNewFpAc+'</td></tr>';
+        h += '<tr><td>Primary channel excavation volume</td><td>entered</td><td>'+pcExcav2+'</td></tr>';
+        h += '<tr><td># Gravel placements</td><td>measured</td><td>'+(pcGravelPlaced2.length||'—')+'</td></tr>';
+        h += '<tr><td>Length of gravel placement or channel fill</td><td>entered</td><td>'+(pcGravelTotalLenFt>0?Math.round(pcGravelTotalLenFt).toLocaleString()+' ft':'—')+'</td></tr>';
+        h += '<tr><td>Average depth of gravel placement</td><td>entered</td><td>'+(pcGravelAvgDepth!==null?pcGravelAvgDepth.toFixed(1)+' ft':'—')+'</td></tr>';
+        h += '<tr><td>Gravel placement volume</td><td>calc</td><td>'+(pcGravelTotalCY2>0?pcGravelTotalCY2.toFixed(1)+' CY':'—')+'</td></tr>';
         h+='</tbody></table>';
       });
       we.activePCId = savedActivePCIdForExport;
@@ -8687,37 +8892,35 @@ function openSOW() {
       // via we.fpMulti[key]; fall back to the single legacy sowLayers id from expert mode.
       function fpMultiDisplay(key,geo,legacyId){var sum=fpMultiSum(we,key);if(sum.count>0)return geo==='polygon'?sum.acres.toFixed(2)+' acres':(sum.valueM*0.000621371).toFixed(3)+' mi';return geo==='polygon'?wAc2(legacyId):wMi2(legacyId);}
       function fpMultiVolDisplay(key,legacyVolId){var sum=fpMultiSum(we,key);if(sum.count>0)return sum.hasVol?sum.vol+' CY':'—';var v=wVal2(legacyVolId);return v!=='—'?v+' CY':'—';}
-      h+='<h3>Floodplain &amp; Side Channels</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
-      h+='<tr><td>FP large log placement area</td><td>'+wAc2('fp-logs-area')+'</td></tr>';
-      h+='<tr><td># Large logs placed</td><td>'+wVal2('fp-large-logs')+'</td></tr>';
+      h+='<h3>Floodplain</h3><table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
+      h+='<tr><td>FP large log placement area</td><td>measured</td><td>'+wAc2('fp-logs-area')+'</td></tr>';
+      h+='<tr><td># Large logs placed</td><td>entered</td><td>'+wVal2('fp-large-logs')+'</td></tr>';
       ['fps','scs'].forEach(function(t){
         var tLarge=0, tSmall=0;
-        we.structures[t].forEach(function(s,i){ tLarge+=+s.large||0; tSmall+=+s.small||0; h+='<tr><td>'+STRUCT_LABEL[t]+' '+(i+1)+': '+s.desc+'</td><td>Large: '+(s.large||0)+', Small: '+(s.small||0)+'</td></tr>'; });
-        if (we.structures[t].length) h+='<tr style="font-weight:700"><td>Total '+STRUCT_LABEL[t]+' large/small pieces</td><td>Large: '+tLarge+', Small: '+tSmall+'</td></tr>';
+        we.structures[t].forEach(function(s,i){ tLarge+=+s.large||0; tSmall+=+s.small||0; h+='<tr><td>'+STRUCT_LABEL[t]+' '+(i+1)+': '+s.desc+'</td><td>entered</td><td>Large: '+(s.large||0)+', Small: '+(s.small||0)+'</td></tr>'; });
+        if (we.structures[t].length) h+='<tr style="font-weight:700"><td>Total '+STRUCT_LABEL[t]+' large/small pieces</td><td>calc</td><td>Large: '+tLarge+', Small: '+tSmall+'</td></tr>';
       });
-      var scConnMi = scConnectivityMiles(we);
       var scWidthFt = scAvgWidthFt(we);
-      h+='<tr><td>FP connectivity reach</td><td>'+(scConnMi!==null ? scConnMi.toFixed(3)+' mi' : wMi2('fp-conn-reach'))+'</td></tr>';
-      h+='<tr><td>Avg floodplain width</td><td>'+(scWidthFt!==null ? Math.round(scWidthFt)+' ft' : wAvg2(['fpw1','fpw2','fpw3']))+'</td></tr>';
-      h+='<tr><td>Post-project FP area connected below bankfull</td><td>'+(wVal2('fp-bankfull-ac')!=='—'?wVal2('fp-bankfull-ac')+' acres':'—')+'</td></tr>';
-      h+='<tr><td>Post-project FP area connected below 2x bankfull</td><td>'+(wVal2('fp-bankfull-2x-ac')!=='—'?wVal2('fp-bankfull-2x-ac')+' acres':'—')+'</td></tr>';
-      h+='<tr><td>FP grading area</td><td>'+fpMultiDisplay('grade','polygon','fp-grade')+'</td></tr>';
-      h+='<tr><td>Road removed in FP</td><td>'+fpMultiDisplay('road','line','fp-road')+'</td></tr>';
-      h+='<tr><td>Road removal volume</td><td>'+fpMultiVolDisplay('road','fp-road-vol')+'</td></tr>';
-      h+='<tr><td>Berm/levee removed</td><td>'+fpMultiDisplay('berm','line','fp-berm')+'</td></tr>';
-      h+='<tr><td>Berm/levee removal volume</td><td>'+fpMultiVolDisplay('berm','fp-berm-vol')+'</td></tr>';
-      h+='<tr><td>Revetment removed</td><td>'+fpMultiDisplay('revet','line','fp-revet')+'</td></tr>';
-      h+='<tr><td>Revetment removal volume</td><td>'+fpMultiVolDisplay('revet','fp-revet-vol')+'</td></tr>';
-      h+='<tr><td>Mine tailings removed</td><td>'+fpMultiDisplay('tailings','polygon','fp-tailings')+'</td></tr>';
-      h+='<tr><td>Mine tailings removal volume</td><td>'+fpMultiVolDisplay('tailings','fp-tailings-vol')+'</td></tr>';
+      h+='<tr><td>Avg floodplain width</td><td>calc</td><td>'+(scWidthFt!==null ? Math.round(scWidthFt)+' ft' : wAvg2(['fpw1','fpw2','fpw3']))+'</td></tr>';
+      h+='<tr><td>Post-project FP area connected below bankfull</td><td>entered</td><td>'+(wVal2('fp-bankfull-ac')!=='—'?wVal2('fp-bankfull-ac')+' acres':'—')+'</td></tr>';
+      h+='<tr><td>Post-project FP area connected below 2x bankfull</td><td>entered</td><td>'+(wVal2('fp-bankfull-2x-ac')!=='—'?wVal2('fp-bankfull-2x-ac')+' acres':'—')+'</td></tr>';
+      h+='<tr><td>FP grading area</td><td>measured</td><td>'+fpMultiDisplay('grade','polygon','fp-grade')+'</td></tr>';
+      h+='<tr><td>Road removed in FP</td><td>measured</td><td>'+fpMultiDisplay('road','line','fp-road')+'</td></tr>';
+      h+='<tr><td>Road removal volume</td><td>entered</td><td>'+fpMultiVolDisplay('road','fp-road-vol')+'</td></tr>';
+      h+='<tr><td>Berm/levee removed</td><td>measured</td><td>'+fpMultiDisplay('berm','line','fp-berm')+'</td></tr>';
+      h+='<tr><td>Berm/levee removal volume</td><td>entered</td><td>'+fpMultiVolDisplay('berm','fp-berm-vol')+'</td></tr>';
+      h+='<tr><td>Revetment removed</td><td>measured</td><td>'+fpMultiDisplay('revet','line','fp-revet')+'</td></tr>';
+      h+='<tr><td>Revetment removal volume</td><td>entered</td><td>'+fpMultiVolDisplay('revet','fp-revet-vol')+'</td></tr>';
+      h+='<tr><td>Mine tailings removed</td><td>measured</td><td>'+fpMultiDisplay('tailings','polygon','fp-tailings')+'</td></tr>';
+      h+='<tr><td>Mine tailings removal volume</td><td>entered</td><td>'+fpMultiVolDisplay('tailings','fp-tailings-vol')+'</td></tr>';
       // Sum secondary channel lengths by flow type; fall back to SOW layers if no scReaches
       var scP = (we.scReaches||[]).filter(function(r){return r.flowType==='Perennial';});
       var scS = (we.scReaches||[]).filter(function(r){return r.flowType==='Seasonal';});
       var scPMi = scP.length ? (scP.reduce(function(a,r){return a+r.valueM;},0)*0.000621371).toFixed(3)+' mi' : wMi2('fp-perensc');
       var scSMi = scS.length ? (scS.reduce(function(a,r){return a+r.valueM;},0)*0.000621371).toFixed(3)+' mi' : wMi2('fp-ephsc');
-      h+='<tr><td>Perennial side channel</td><td>'+scPMi+'</td></tr>';
-      h+='<tr><td>Seasonal side channel</td><td>'+scSMi+'</td></tr>';
-      h+='<tr><td>Acres of existing wetland habitat constructed/restored/enhanced</td><td>'+fpMultiDisplay('fp_wetland_enhance','polygon','fp-wetland-enhance')+'</td></tr>';
+      h+='<tr><td>Perennial side channel</td><td>measured</td><td>'+scPMi+'</td></tr>';
+      h+='<tr><td>Seasonal side channel</td><td>measured</td><td>'+scSMi+'</td></tr>';
+      h+='<tr><td>Acres of existing wetland habitat constructed/restored/enhanced</td><td>measured</td><td>'+fpMultiDisplay('fp_wetland_enhance','polygon','fp-wetland-enhance')+'</td></tr>';
       h+='</tbody></table>';
       // ── Secondary Channels ─────────────────────────────────────────────────
       if (we.scReaches && we.scReaches.length > 0) {
@@ -8757,15 +8960,15 @@ function openSOW() {
       function wMi3(id){var l=sl[id];return l?(l.valueM*0.000621371).toFixed(3)+' mi':'—';}
       function wAc3(id){var l=sl[id];return l?l.acres.toFixed(2)+' acres':'—';}
       function wVal3(id){var l=sl[id];return (l&&l.value!==undefined&&l.value!=='')?l.value:'—';}
-      h+='<h3>Riparian Restoration</h3><table><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>';
-      h+='<tr><td>Miles fence installed</td><td>'+wMi3('rr-fence')+'</td></tr>';
-      h+='<tr><td>FP protected by fence</td><td>'+wAc3('rr-fence-area')+'</td></tr>';
-      h+='<tr><td># Plants installed</td><td>'+wVal3('rr-plants')+'</td></tr>';
-      h+='<tr><td>Planted below bankfull</td><td>'+wAc3('rr-plant-bf')+'</td></tr>';
-      h+='<tr><td>Planted above bankfull</td><td>'+wAc3('rr-plant-abf')+'</td></tr>';
-      h+='<tr><td>Invasive species removed</td><td>'+wAc3('rr-invasive')+'</td></tr>';
-      h+='<tr><td>Bank length riparian improvement</td><td>'+wMi3('rr-bank')+'</td></tr>';
-      h+='<tr><td>Total riparian improvement area</td><td>'+wAc3('rr-total')+'</td></tr>';
+      h+='<h3>Riparian Restoration</h3><table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
+      h+='<tr><td>Miles fence installed</td><td>measured</td><td>'+wMi3('rr-fence')+'</td></tr>';
+      h+='<tr><td>FP protected by fence</td><td>measured</td><td>'+wAc3('rr-fence-area')+'</td></tr>';
+      h+='<tr><td># Plants installed</td><td>entered</td><td>'+wVal3('rr-plants')+'</td></tr>';
+      h+='<tr><td>Planted below bankfull</td><td>measured</td><td>'+wAc3('rr-plant-bf')+'</td></tr>';
+      h+='<tr><td>Planted above bankfull</td><td>measured</td><td>'+wAc3('rr-plant-abf')+'</td></tr>';
+      h+='<tr><td>Invasive species removed</td><td>measured</td><td>'+wAc3('rr-invasive')+'</td></tr>';
+      h+='<tr><td>Bank length riparian improvement</td><td>measured</td><td>'+wMi3('rr-bank')+'</td></tr>';
+      h+='<tr><td>Total riparian improvement area</td><td>measured</td><td>'+wAc3('rr-total')+'</td></tr>';
       h+='</tbody></table>';
     }
   });
