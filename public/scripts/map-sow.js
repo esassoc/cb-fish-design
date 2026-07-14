@@ -3658,6 +3658,7 @@ function startPolyEdit(id) {
     buildPolyEditHandles(d.layer, d._pts.slice());
     document.getElementById('edit-done-bar').style.display='flex';
     document.getElementById('mapwrap').classList.add('editing');
+    repositionMapOverlays();
     if (wizardMode) renderWizardStep();
     return;
   }
@@ -3673,6 +3674,7 @@ function startPolyEdit(id) {
     buildPolyEditHandles(d.layer, d._pts.slice());
     document.getElementById('edit-done-bar').style.display='flex';
     document.getElementById('mapwrap').classList.add('editing');
+    repositionMapOverlays();
     if (wizardMode) renderWizardStep();
     return;
   }
@@ -3705,7 +3707,7 @@ function startPolyEdit(id) {
   var ring = d.layer.getLatLngs();
   if (ring.length && Array.isArray(ring[0])) ring = ring[0];
   buildPolyEditHandles(d.layer, ring);
-  document.getElementById('edit-done-bar').style.display = 'flex'; document.getElementById('mapwrap').classList.add('editing');
+  document.getElementById('edit-done-bar').style.display = 'flex'; document.getElementById('mapwrap').classList.add('editing'); repositionMapOverlays();
   renderPMRow(m);
 }
 
@@ -3830,7 +3832,7 @@ function startLineEdit(type, id) {
   lineEditing = {type: type, id: id, weId: activeWEId, layer: layer};
   buildEditHandles(layer);
   setMapHint('');
-  document.getElementById('edit-done-bar').style.display = 'flex'; document.getElementById('mapwrap').classList.add('editing');
+  document.getElementById('edit-done-bar').style.display = 'flex'; document.getElementById('mapwrap').classList.add('editing'); repositionMapOverlays();
   var ddb = document.getElementById('draw-done-btn'); if (ddb) ddb.style.display = 'none';
   // Hide reach arrows during editing — recalculated on commit
   if (id === 'reach_len') { var _weE=getWE(activeWEId); var _rdE=_weE&&_weE.ppData['reach_len']; if(_rdE&&_rdE._arrowMarkers) _rdE._arrowMarkers.forEach(function(a){if(a)a.setOpacity(0);}); }
@@ -6306,6 +6308,7 @@ function startCRPolyEdit(reachId) {
   lineEditing = {type:'cr-poly', id:'pc-area', reachId:reachId, weId:we.id, layer:sl.layer};
   buildPolyEditHandles(sl.layer);
   document.getElementById('edit-done-bar').style.display='flex'; document.getElementById('mapwrap').classList.add('editing');
+  repositionMapOverlays();
 }
 
 function fetchCRElevProfile(reachId) {
@@ -7134,7 +7137,42 @@ function geoArea(pts){return geoAreaM2(pts)*0.000247105;}
 function geoAreaM2(pts){var R=6378137,toRad=function(x){return x*Math.PI/180;},area=0,n=pts.length;for(var i=0;i<n;i++){var j=(i+1)%n;area+=toRad(pts[j].lng-pts[i].lng)*(2+Math.sin(toRad(pts[i].lat))+Math.sin(toRad(pts[j].lat)));}return Math.abs(area*R*R/2);}
 
 // ── Misc ──────────────────────────────────────────────────────────────────
-function setMapHint(msg){var el=document.getElementById('map-hint');el.innerHTML=msg;el.style.display=msg?'block':'none';}
+function setMapHint(msg){
+  var el=document.getElementById('map-hint');
+  el.innerHTML=msg;
+  el.style.display=msg?'block':'none';
+  repositionMapOverlays();
+}
+// Drop the hint (and, below that, the draw-done/edit-done overlay buttons) under whichever
+// top corner control stack — search box + zoom control on the left, layer toggle cluster on
+// the right — extends furthest down, so a long/wrapped message never renders under either one.
+// Called whenever the hint text changes, and also whenever edit-done-bar is shown directly
+// (entering vertex-edit mode doesn't always go through setMapHint).
+function repositionMapOverlays(){
+  var el = document.getElementById('map-hint');
+  var mapEl = document.getElementById('map');
+  if (!el || !mapEl) return;
+  var msg = el.innerHTML;
+  var mapTop = mapEl.getBoundingClientRect().top;
+  var topLeft = document.querySelector('.leaflet-top.leaflet-left');
+  var topRight = document.querySelector('.leaflet-top.leaflet-right');
+  var belowY = 10;
+  [topLeft, topRight].forEach(function(c){
+    if (c) belowY = Math.max(belowY, c.getBoundingClientRect().bottom - mapTop);
+  });
+  belowY += 8;
+  if (msg && el.style.display !== 'none') {
+    el.style.top = belowY + 'px';
+    belowY += el.getBoundingClientRect().height + 8;
+  }
+  var doneBtn = document.getElementById('draw-done-btn');
+  var editBar = document.getElementById('edit-done-bar');
+  if (doneBtn) doneBtn.style.top = belowY + 'px';
+  if (editBar) editBar.style.top = belowY + 'px';
+}
+// A narrower window rewraps the hint to more lines without any of the setMapHint()/
+// edit-done-bar call sites firing, which left draw-done-btn's stale top overlapping it.
+window.addEventListener('resize', repositionMapOverlays);
 function toggleSec(head){var body=head.nextElementSibling;var open=body.classList.toggle('open');head.querySelector('span').textContent=open?'▾':'▸';}
 
 // ── Wizard Mode ────────────────────────────────────────────────────────────
