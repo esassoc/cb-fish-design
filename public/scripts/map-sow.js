@@ -1574,13 +1574,21 @@ function clipRingToPerimeter(ring, perimPts) {
 
 // Clip drawn points to the project perimeter (if one exists).
 // geo: 'line'|'segment' → clipLineToPolygon; 'polygon' → clipRingToPerimeter.
-// Returns original pts unchanged when no perimeter is drawn yet.
+// Returns original pts unchanged when no perimeter is drawn yet. Returns null when the
+// drawn shape is genuinely entirely outside the perimeter — callers must reject that
+// rather than committing whatever this function returns.
 function clipPtsToPerimeter(we, pts, geo) {
   var perimD = we && we.ppData['perimeter'];
   if (!perimD || !perimD.layer) return pts;
   var perimLLs = perimD.layer.getLatLngs();
   if (perimLLs.length && Array.isArray(perimLLs[0])) perimLLs = perimLLs[0];
   if (!perimLLs || perimLLs.length < 3) return pts;
+
+  // Check this BEFORE attempting to clip — clipRingToPerimeter in particular falls back
+  // to returning the original (unclipped) ring internally when it can't produce a clean
+  // result, which would otherwise mask a shape that's genuinely entirely outside.
+  var anyInside = pts.some(function(p){ return ptOnOrInsidePoly(p, perimLLs); });
+  if (!anyInside) return null;
 
   if (geo === 'polygon') {
     var cp = clipRingToPerimeter(pts, perimLLs);
@@ -2433,6 +2441,15 @@ function finishPPDraw() {
   var pts=drawPts.slice();drawPts=[];
   var NO_CLIP_PP = {perimeter:1, ch_width:1};
   if(!NO_CLIP_PP[m.id]) pts=clipPtsToPerimeter(we,pts,m.geo);
+  if (!pts) {
+    ppDrawing=null;
+    clearPreview();
+    document.getElementById('mapwrap').classList.remove('drawing');
+    setMapHint('That falls entirely outside your project boundary — not saved. Try drawing again inside the boundary.');
+    renderPMRow(m);
+    if (wizardMode) wizardRefreshIfActive();
+    return;
+  }
   var col=PP_COLOR[m.geo]||'#c07820';
   if(m.id==='fp_left') col='#2a7a5c';
   if(m.id==='fp_right') col='#5c2a7a';
@@ -2946,6 +2963,26 @@ function finishSOWDraw() {
   var pts=drawPts.slice();drawPts=[];clearPreview();
   var NO_CLIP_SOW = {pcw1:1,pcw2:1,pcw3:1};
   if(!NO_CLIP_SOW[d.id]) pts=clipPtsToPerimeter(we,pts,d.geo);
+  if (!pts) {
+    sowDrawing=null;
+    document.getElementById('mapwrap').classList.remove('drawing');
+    setMapHint('That falls entirely outside your project boundary — not saved. Try drawing again inside the boundary.');
+    if (we.sowLayers[d.id]) {
+      // This was a "redo" of a previously-successful shape — startSOWDraw already
+      // removed the old layer/marker from the map in anticipation of a new one, so
+      // don't leave stale acreage/length sitting here referring to geometry that's
+      // no longer actually on the map.
+      delete we.sowLayers[d.id];
+    } else if (enhRef) {
+      // Brand-new multi-entry item (wetland, road removal, etc.) that never got real
+      // geometry — undo the optimistic push from wizardAddFPMultiItem so no permanent
+      // "not drawn" phantom row lingers and inflates every later item's number.
+      we.fpMulti[enhRef.key] = we.fpMulti[enhRef.key].filter(function(x){ return x.id !== d.id; });
+      renumberFPMultiLabels(we, enhRef.key);
+    }
+    if (wizardMode) wizardRefreshIfActive();
+    return;
+  }
 
   // Wetland Enhancement polygons get clipped to existing wetland extent instead of
   // being committed as a plain drawn polygon — handle that here and return early.
@@ -3256,8 +3293,18 @@ function renumberFPMultiLabels(we, key) {
   var items = (we.fpMulti && we.fpMulti[key]) || [];
   items.forEach(function(item, i) {
     var sl = we.sowLayers[item.id];
-    if (sl && sl._labelMarker) {
+    if (!sl) return;
+    if (sl._labelMarker) {
       sl._labelMarker.setIcon(fpMultiLabelIcon(i + 1, sl._labelMarker._fpLabelColor));
+    }
+    // The layer's own hover tooltip and stored label were baked in with whatever number
+    // the item had at draw time — regenerate both so hovering the shape doesn't show a
+    // stale number once items get deleted/reordered.
+    var base = (sl.label || '').replace(/\s+\d+$/, '');
+    if (base) {
+      var newLabel = base + ' ' + (i + 1);
+      sl.label = newLabel;
+      if (sl.layer && sl.layer.setTooltipContent) sl.layer.setTooltipContent(newLabel);
     }
   });
 }
@@ -6204,6 +6251,12 @@ function finishCRDraw() {
   var pts = drawPts.slice(); drawPts = [];
   var NO_CLIP_CR = {pcw1:1,pcw2:1,pcw3:1};
   if(!NO_CLIP_CR[crDrawing.key]) pts = clipPtsToPerimeter(we, pts, geo);
+  if (!pts) {
+    crDrawing = null;
+    document.getElementById('mapwrap').classList.remove('drawing');
+    setMapHint('That falls entirely outside your project boundary — not saved.');
+    return;
+  }
   var key = crDrawing.key;
   var label = crDrawing.label;
   var noDisplay = {pcw1:1, pcw2:1, pcw3:1};
@@ -6891,7 +6944,12 @@ function nearestParamOnLine(pts, latlng) {
 function commitAutoReach(pts) {
   var we = getActiveWE(); if (!we) return;
   if (we.ppData['reach_len'] && we.ppData['reach_len'].layer && !confirmReachChange(we)) return;
-  pts = clipPtsToPerimeter(we, pts, 'line');
+  var clipped = clipPtsToPerimeter(we, pts, 'line');
+  if (!clipped) {
+    setMapHint('That stream falls entirely outside your project boundary — not saved.');
+    return;
+  }
+  pts = clipped;
   if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
   if (we.ppData['reach_len'].layer) map.removeLayer(we.ppData['reach_len'].layer);
   var layer = L.polyline(pts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
