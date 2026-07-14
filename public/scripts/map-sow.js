@@ -5002,15 +5002,19 @@ function loadNHDPreview() {
           var lyr = L.polyline(pts, {
             color: isMajor ? '#1a9abf' : '#4a8abf',
             weight: isMajor ? 5 : 3,
-            opacity: 0.7, interactive: true
+            opacity: 0.7, interactive: false
           });
-          lyr.bindTooltip(feat.attributes.gnisidlabel || 'Unnamed stream', {sticky: true});
-          lyr.on('click', function(e) {
+          layers.push(lyr);
+          // Invisible, much wider companion carries the actual hover/click — the
+          // thin visible line above is too precise a target to click reliably.
+          var hitLyr = L.polyline(pts, {weight: 20, opacity: 0.001, interactive: true});
+          hitLyr.bindTooltip(feat.attributes.gnisidlabel || 'Unnamed stream', {sticky: true});
+          hitLyr.on('click', function(e) {
             L.DomEvent.stop(e);
             if (!reachAutoDetecting) return;
             reachAutoClickFeature(feat, e.latlng);
           });
-          layers.push(lyr);
+          layers.push(hitLyr);
         });
       });
     }
@@ -5580,10 +5584,13 @@ function processAutoDetectResults(we, data, latlng, envelope, wbName) {
 
     if (primaryChain) {
       var name = targetName || wbName || 'Stream';
-      var layer = L.polyline(primaryChain.pts, {color:'#1a9abf', weight:4, opacity:0.8, interactive:true})
-        .bindTooltip(name + ' (' + primaryChain.features.length + ' segments)').addTo(map);
-      layer.on('click', function(e){ L.DomEvent.stop(e); acceptAutoReach(0); });
+      var layer = L.polyline(primaryChain.pts, {color:'#1a9abf', weight:4, opacity:0.8, interactive:false}).addTo(map);
       reachAutoLayers.push(layer);
+      // Invisible, wider companion carries the click/hover — see note above.
+      var hitLine = L.polyline(primaryChain.pts, {weight:20, opacity:0.001, interactive:true})
+        .bindTooltip(name + ' (' + primaryChain.features.length + ' segments)').addTo(map);
+      hitLine.on('click', function(e){ L.DomEvent.stop(e); acceptAutoReach(0); });
+      reachAutoLayers.push(hitLine);
       results.push({name: name, pts: primaryChain.pts, layer: layer});
     }
 
@@ -5683,12 +5690,15 @@ function reachExtendClick(latlng) {
 
     // Show preview
     var name = (bestFeat.attributes.gnisidlabel||'segment');
-    var preview = L.polyline(newPts, {color:'#c07820', weight:3, dashArray:'6,3', interactive:true})
-      .bindTooltip('Append "'+name+'" — click to confirm').addTo(map);
+    var preview = L.polyline(newPts, {color:'#c07820', weight:3, dashArray:'6,3', interactive:false}).addTo(map);
     reachAutoLayers.push(preview);
+    // Invisible, wider companion carries the click/hover — see note above.
+    var previewHit = L.polyline(newPts, {weight:20, opacity:0.001, interactive:true})
+      .bindTooltip('Append "'+name+'" — click to confirm').addTo(map);
+    reachAutoLayers.push(previewHit);
 
     // Confirm on click of preview
-    preview.on('click', function(e) {
+    previewHit.on('click', function(e) {
       L.DomEvent.stop(e);
       clearReachAutoLayers();
       // Rebuild reach with combined pts
@@ -6513,11 +6523,14 @@ function preTrimExtendClick(latlng) {
     else                   combinedPts = newPts.slice().reverse().concat(existPts);
 
     var name = bestFeat.attributes.gnisidlabel || 'segment';
-    var preview = L.polyline(newPts, {color:'#c07820', weight:3, dashArray:'6,3', interactive:true})
-      .bindTooltip('Append "'+name+'" — click to confirm').addTo(map);
+    var preview = L.polyline(newPts, {color:'#c07820', weight:3, dashArray:'6,3', interactive:false}).addTo(map);
     reachAutoLayers.push(preview);
+    // Invisible, wider companion carries the click/hover — see note above.
+    var previewHit = L.polyline(newPts, {weight:20, opacity:0.001, interactive:true})
+      .bindTooltip('Append "'+name+'" — click to confirm').addTo(map);
+    reachAutoLayers.push(previewHit);
 
-    preview.on('click', function(e) {
+    previewHit.on('click', function(e) {
       L.DomEvent.stop(e);
       clearReachAutoLayers();
       preReachPts = combinedPts;
