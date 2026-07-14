@@ -2916,8 +2916,14 @@ function clipDrawnPolygonToExistingWetlands(we, pts) {
 
 function finishSOWDraw() {
   if(!sowDrawing)return;
+  var d=sowDrawing;
+  // Mirror finishPPDraw's vertex-count guard — without it, finishing a draw with too few
+  // points (e.g. clicking Done right after starting, or right after a stray reset) falls
+  // through to clipPtsToPerimeter with an empty/too-short array and throws.
+  if((d.geo==='line'||d.geo==='segment')&&drawPts.length<2)return;
+  if(d.geo==='polygon'&&drawPts.length<3)return;
   var we=getWE(sowDrawing.weId);if(!we)return;
-  var d=sowDrawing,col=SOW_COLOR[d.geo]||'#1a3a5c';
+  var col=SOW_COLOR[d.geo]||'#1a3a5c';
   // Color primary-channel geometry per channel so multiple channels stay distinguishable
   if (d.id && d.id.substring(0,2)==='pc') col = pcChannelColor(we, we.activePCId);
   // Wetlands get their own dedicated colors (see WETLAND_COLOR) rather than the
@@ -6146,7 +6152,7 @@ var crDrawing = null; // {reachId, key, geo, label}
 function startCRDraw(reachId, key, geo, label) {
   var we = getActiveWE(); if (!we) return;
   if (lineEditing) cancelLineEdit();
-  if (sowDrawing) { sowDrawing = null; }
+  ppDrawing = null; sowDrawing = null;
   crDrawing = {reachId: reachId, key: key, geo: geo, label: label, weId: we.id};
   drawPts = [];
   document.getElementById('mapwrap').classList.add('drawing');
@@ -6382,7 +6388,7 @@ function startCRGravelDraw(reachId, idx) {
     return;
   }
   if (lineEditing) cancelLineEdit();
-  if (sowDrawing) sowDrawing = null;
+  ppDrawing = null; sowDrawing = null;
   crDrawing = {reachId: reachId, key: 'pc-gravel', geo: 'gravel-perp', label: 'Gravel Placement', weId: we.id, gravelIdx: idx, clicks: []};
   drawPts = [];
   document.getElementById('mapwrap').classList.add('drawing');
@@ -8453,13 +8459,40 @@ function wizardSkip() {
   if (wizardStep < vis.length - 1) { wizardStep++; syncActivePCForStep(wizardStep); renderWizardStep(); wizardAutoActivate(); }
 }
 
+// Cancels every interactive map mode (manual draws, auto-detects, vertex editing) at
+// once. Called whenever the wizard switches steps — previously only ppDrawing and
+// wetlandAutoDetecting were reset here, so a draw/detect left in progress on the old
+// step (e.g. mid manual-line-draw, mid CHU pool split, mid reach auto-detect) survived
+// the step change and silently fed the next map click into the wrong handler.
+// exceptStepId lets a mode survive if the wizard is (re-)landing on the very step that
+// mode belongs to, matching the wetland behavior this replaces.
+function cancelAllDrawModes(exceptStepId) {
+  if (ppDrawing) { ppDrawing = null; drawPts = []; clearPreview(); }
+  if (sowDrawing) { sowDrawing = null; drawPts = []; clearPreview(); }
+  if (crDrawing) { crDrawing = null; drawPts = []; clearPreview(); }
+  pendingStructPoint = null;
+  pendingGravelPoint = null;
+  if (chuDrawing) cancelCHUSplit();
+  if (chuPoolMode) { chuPoolMode = false; chuPoolPhase = 0; chuPendingPoolUpId = null; chuPendingPoolDownId = null; }
+  if (lineEditing) cancelLineEdit();
+  if (exceptStepId !== 'reach') {
+    if (reachAutoDetecting) cancelReachAutoDetect();
+    if (reachExtending) cancelReachExtend();
+    if (reachTrimming) cancelReachTrimMode();
+    var we = getActiveWE();
+    if (we && we.ppData['reach_len'] && we.ppData['reach_len']._preTrim) cancelPreTrimStep();
+  }
+  if (exceptStepId !== 'pp_wetland' && wetlandAutoDetecting) cancelWetlandAutoDetect();
+  document.getElementById('mapwrap').classList.remove('drawing');
+  document.querySelectorAll('.draw-btn').forEach(function(b){ b.classList.remove('active'); });
+}
+
 function wizardAutoActivate() {
   var vis = getVisibleSteps();
   var step = vis[wizardStep];
   if (!step) return;
   var we = getActiveWE();
-  if (ppDrawing) { ppDrawing = null; drawPts = []; clearPreview(); document.getElementById('mapwrap').classList.remove('drawing'); }
-  if (wetlandAutoDetecting && step.id !== 'pp_wetland') { wetlandAutoDetecting = false; clearWetlandAutoLayers(); }
+  cancelAllDrawModes(step.id);
   // Clear any hint left over from whichever step we were just on — only a couple of
   // step cases below set their own hint, so without this it stays stuck on screen
   // (e.g. leaving Stream Reach for another step used to leave its hint banner up).
