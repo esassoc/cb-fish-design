@@ -1591,6 +1591,18 @@ function clipPtsToPerimeter(we, pts, geo) {
   }
 }
 
+// Point placements (structures, gravel, etc.) can't be clipped like a line/polygon —
+// there's nothing to trim to, so reject the click outright instead. Returns true when
+// there's no perimeter drawn yet (nothing to bound against).
+function isPtInsidePerimeter(we, latlng) {
+  var perimD = we && we.ppData['perimeter'];
+  if (!perimD || !perimD.layer) return true;
+  var perimLLs = perimD.layer.getLatLngs();
+  if (perimLLs.length && Array.isArray(perimLLs[0])) perimLLs = perimLLs[0];
+  if (!perimLLs || perimLLs.length < 3) return true;
+  return ptOnOrInsidePoly(latlng, perimLLs);
+}
+
 // Re-clip the primary channel (pc-reach SOW layer) to the current perimeter.
 function reClipPCReach(we) {
   var sl = we && getActivePC(we).sowLayers['pc-reach'];
@@ -3619,6 +3631,10 @@ function replaceStructPoint(type,id) {
 function placeStructPoint(latlng) {
   if(!pendingStructPoint)return;
   var we=getWE(pendingStructPoint.weId);if(!we)return;
+  if (!isPtInsidePerimeter(we, latlng)) {
+    setMapHint('That\'s outside your project boundary — click map to place structure location');
+    return;
+  }
   var type=pendingStructPoint.type,id=pendingStructPoint.id;
   var owner=structOwner(we,type);
   var s = (owner.structs && owner.structs.filter(function(x){return x.id===id;})[0])
@@ -4313,6 +4329,10 @@ function startGravelPoint(placementId) {
 function placeGravelPoint(latlng) {
   if (!pendingGravelPoint) return;
   var we = getWE(pendingGravelPoint.weId); if (!we) return;
+  if (!isPtInsidePerimeter(we, latlng)) {
+    setMapHint('That\'s outside your project boundary — click map to place gravel placement location');
+    return;
+  }
   var p = getActivePC(we).gravelPlacements.filter(function(x){return x.id===pendingGravelPoint.placementId;})[0];
   pendingGravelPoint = null;
   document.getElementById('mapwrap').classList.remove('drawing');
