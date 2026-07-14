@@ -5029,12 +5029,16 @@ function loadNHDPreview() {
     '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects' +
     '&outFields=gnisidlabel&returnGeometry=true&outSR=4326&f=json';
 
+  // Each fetch swallows its own failure into an empty-features fallback (so one bad
+  // service doesn't kill the other), but tags _failed so the combined handler below can
+  // still tell "genuinely no candidates nearby" apart from "couldn't reach the service".
   Promise.all([
-    fetch(url).then(function(r){ return r.json(); }).catch(function(){ return {features:[]}; }),
-    fetch(wbUrl).then(function(r){ return r.json(); }).catch(function(){ return {features:[]}; })
+    fetch(url).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).catch(function(){ return {features:[], _failed:true}; }),
+    fetch(wbUrl).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).catch(function(){ return {features:[], _failed:true}; })
   ]).then(function(results) {
     if (!reachAutoDetecting) return;
     var data = results[0], wbData = results[1];
+    var anyFailed = data._failed || wbData._failed || data.error || wbData.error;
     if (data.error) { data = {features:[]}; }
     if (wbData.error) { wbData = {features:[]}; }
 
@@ -5118,7 +5122,9 @@ function loadNHDPreview() {
     }
 
     if (!layers.length && !wbLayers.length) {
-      setMapHint('Click on or near a stream to auto-detect it');
+      setMapHint(anyFailed
+        ? 'Couldn\'t reach the NHD stream service — it may be temporarily down. Try again shortly, or draw manually.'
+        : 'Click on or near a stream to auto-detect it');
       return;
     }
     // Add each layer directly to map (not via layerGroup) so click events work reliably
@@ -5130,7 +5136,8 @@ function loadNHDPreview() {
     setMapHint('Click a highlighted stream to select it');
   }).catch(function(err) {
     console.warn('[NHDPreview] fetch failed:', err);
-    setMapHint('Click on or near a stream to auto-detect it');
+    if (!reachAutoDetecting) return;
+    setMapHint('Couldn\'t reach the NHD stream service — it may be temporarily down. Try again shortly, or draw manually.');
   });
 }
 
@@ -5359,10 +5366,13 @@ function loadWetlandPreview() {
     '&returnGeometry=true&outSR=4326&f=json';
 
   setMapHint('Loading NWI wetlands...');
-  fetch(url).then(function(r){ return r.json(); }).then(function(data) {
+  fetch(url).then(function(r){
+    if (!r.ok) throw new Error('NWI service returned HTTP ' + r.status);
+    return r.json();
+  }).then(function(data) {
     if (!wetlandAutoDetecting) return;
     if (data.error || !data.features || !data.features.length) {
-      setMapHint(data.error ? 'NWI query failed — try a smaller area or draw manually' : 'No mapped wetlands found in this view');
+      setMapHint(data.error ? 'NWI service returned an error — try a smaller area, try again shortly, or draw manually' : 'No mapped wetlands found in this view');
       return;
     }
     data.features.forEach(function(feat) {
@@ -5387,7 +5397,11 @@ function loadWetlandPreview() {
     setMapHint(wetlandAutoLayers.length ? 'Click a highlighted wetland to add it' : 'No mapped wetlands found in this view');
   }).catch(function(err) {
     console.warn('[NWI] fetch failed:', err);
-    setMapHint('NWI query failed — try again or draw manually');
+    if (!wetlandAutoDetecting) return;
+    // A blocked/rejected fetch (network error, CORS, or the service itself down) all
+    // surface identically as a generic TypeError here — the browser hides the actual
+    // status once a response is blocked, so we can't say more specifically what failed.
+    setMapHint('Couldn\'t reach the NWI wetlands service — it may be temporarily down. Try again shortly, or draw manually.');
   });
 }
 
