@@ -5682,6 +5682,17 @@ function reachExtendClick(latlng) {
     var dStartToStart= reachStart.distanceTo(newStart);
     var dStartToEnd  = reachStart.distanceTo(newEnd);
     var minD = Math.min(dEndToStart, dEndToEnd, dStartToStart, dStartToEnd);
+    // The clicked segment is just whatever NHD feature has a vertex nearest the click —
+    // it may not actually touch the reach at all. Unlike buildConnectedChains() (which
+    // only stitches segments within its SNAP tolerance), this used to concatenate
+    // regardless of distance, drawing a straight "phantom" line to whichever endpoint
+    // was least-far when nothing genuinely connects.
+    var MAX_CONNECT_M = 50;
+    if (minD > MAX_CONNECT_M) {
+      clearReachAutoLayers();
+      setMapHint('That segment doesn\'t connect to your reach — click a segment nearer the end you want to extend');
+      return;
+    }
     var combinedPts;
     if (minD === dEndToStart)   combinedPts = existPts.concat(newPts);
     else if (minD === dEndToEnd)   combinedPts = existPts.concat(newPts.slice().reverse());
@@ -6516,6 +6527,14 @@ function preTrimExtendClick(latlng) {
     var dES = reachEnd.distanceTo(newStart), dEE = reachEnd.distanceTo(newEnd);
     var dSS = reachStart.distanceTo(newStart), dSE = reachStart.distanceTo(newEnd);
     var minD = Math.min(dES, dEE, dSS, dSE);
+    // See note in reachExtendClick() — reject segments that don't actually touch the
+    // reach instead of drawing a straight phantom line to the nearest endpoint.
+    var MAX_CONNECT_M = 50;
+    if (minD > MAX_CONNECT_M) {
+      clearReachAutoLayers();
+      setMapHint('That segment doesn\'t connect to your reach — click a segment nearer the end you want to extend');
+      return;
+    }
     var combinedPts;
     if (minD === dES)      combinedPts = existPts.concat(newPts);
     else if (minD === dEE) combinedPts = existPts.concat(newPts.slice().reverse());
