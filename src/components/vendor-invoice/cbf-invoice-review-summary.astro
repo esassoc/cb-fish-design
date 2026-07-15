@@ -5,10 +5,11 @@
 // esa-card lego; the dynamic values are [data-review="…"] placeholders that
 // invoice-wizard.client.ts fills (fillReviewSummary) — no hand-rolled card.
 //
-// bcn-lego-checked: the cards ARE esa-card (lego). The Replace/Remove controls are
-// compact 13px inline file-row actions carrying data-invoice-* JS hooks — esa-button
-// is a full-size CTA at the wrong scale for an in-row action; checked Beacon (no
-// ui-* inline file-action). These quiet row buttons stay bcn within this component.
+// bcn-lego-checked: the cards ARE esa-card (lego). The Replace/Remove and icon-only
+// "view" controls are compact inline file-row actions carrying data-* JS hooks —
+// esa-button (and esa-icon-button) is a full-size CTA at the wrong scale for an
+// in-row 30px action; checked Beacon (no ui-* inline file-action). These quiet row
+// buttons stay bcn within this component, matching the existing row-action pattern.
 import EsaCard from '@esa/ecology/esa-card.astro';
 import CbfInvoiceCard from '../shared/cbf-invoice-card.astro';
 ---
@@ -21,6 +22,9 @@ import CbfInvoiceCard from '../shared/cbf-invoice-card.astro';
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       <span data-review="file-name"></span>
       <span class="cbf-review-meta" data-review="file-size"></span>
+      <button type="button" class="cbf-doc-view" data-view-invoice hidden aria-label="Preview invoice">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
     </div>
   </EsaCard>
 
@@ -50,17 +54,53 @@ import CbfInvoiceCard from '../shared/cbf-invoice-card.astro';
     box-shadow: var(--shadow-100, 0 1px 3px rgba(16, 24, 40, 0.06));
   }
 
-  /* ---- File row (Uploaded invoice + Supporting documents) ---- */
-  .cbf-review-row {
+  /* ---- File row (Uploaded invoice + Supporting documents) ----
+     :global() within the summary root so the identical layout reaches BOTH the
+     static "Uploaded invoice" row and the supporting-doc rows injected via
+     innerHTML (which don't carry Astro's scope attribute). */
+  .cbf-review-summary :global(.cbf-review-row) {
     display: flex;
     align-items: center;
     gap: var(--spacing-200);
     font-size: 15px;
     color: var(--color-text-primary);
   }
-  .cbf-review-row svg { color: var(--color-secondary); flex: none; }
-  .cbf-review-row + .cbf-review-row { margin-top: var(--spacing-300); }
-  .cbf-review-meta { color: var(--color-text-muted); font-size: 13px; }
+  .cbf-review-summary :global(.cbf-review-row svg) { color: var(--color-secondary); flex: none; }
+  .cbf-review-summary :global(.cbf-review-row + .cbf-review-row) { margin-top: var(--spacing-300); }
+  .cbf-review-summary :global(.cbf-review-meta) { color: var(--color-text-muted); font-size: 13px; }
+
+  /* Icon-only "view" action — pushes to the row's right edge and drives the
+     side PDF panel to show this document. Same in-row scale as the file rows;
+     the icon colour is set on the button so it beats the .cbf-review-row svg rule.
+     :global() so it also reaches the supporting-doc buttons injected via innerHTML,
+     which don't carry Astro's scope attribute. */
+  .cbf-review-summary :global(.cbf-doc-view) {
+    flex: none;
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+  }
+  .cbf-review-summary :global(.cbf-doc-view[hidden]) { display: none; }
+  .cbf-review-summary :global(.cbf-doc-view svg) { color: inherit; }
+  .cbf-review-summary :global(.cbf-doc-view:hover) {
+    color: var(--color-secondary);
+    border-color: var(--color-primary-border);
+    background: var(--color-primary-subtle);
+  }
+  .cbf-review-summary :global(.cbf-doc-view.is-active) {
+    color: var(--color-surface);
+    background: var(--color-secondary);
+    border-color: var(--color-secondary);
+  }
 
   /* The invoice card itself is now the shared CbfInvoiceCard component. */
 

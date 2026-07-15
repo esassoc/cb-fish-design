@@ -316,3 +316,13 @@ Added the missing step to the theme block:
 /* theme-cb-fish.css */
 --color-secondary-strong: #1c4a76; /* step 11 — else the hub's grass-11 (green) leaks onto secondary outline button text */
 ```
+
+## esa-tab-layout — tab strip has no overflow handling
+
+**Found:** 2026-07-13, building the CBFish "My Work" console (`/my-work`, three tabs with badges via the `tabs` array).
+
+**Issue:** The shadow tablist lays tabs out on one line with no `overflow-x` handling. Three tabs with badges (`My Tasks ●9 / My Invoices ●1 overdue / My Portfolio ●3`) measure ~511px; at a 380px viewport the strip overflows the host with `overflow-x: visible` — the tail tabs are simply clipped/unreachable by pointer (keyboard arrows still reach them). Same genre as the esa-app-bar overflow entry above: the lego assumes it always fits.
+
+**Requested change:** give the tablist `overflow-x: auto` (scrollbar-width: none) so the strip pans on narrow viewports, and/or expose a part/`--tab-layout-*` hook so themes can opt into a compact mode. An `activeIndex` change should also scroll the active tab into view.
+
+**Local workaround (CBFish):** none applied yet — the console is desktop-first and the strip fits ≥~520px; below that the trailing tab clips. If mobile becomes a requirement, drop `size="lg"` → `"md"` under a container query in `cbf-mywork-tabs` (buys ~60px) or shorten labels.

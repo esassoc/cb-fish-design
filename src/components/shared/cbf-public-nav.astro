@@ -4,7 +4,7 @@
 // re-pointing --color-primary (header) and --color-surface-inverse (admin bar).
 //
 // CBF-8117: search moved OUT of the blue header and UP into the dark admin tray
-// (centered), freeing the header for the Recent menu, Dashboard, and the user —
+// (centered), freeing the header for the Recent menu, My Work, and the user —
 // who is also the Impersonation target (a QA/ESA-admin shortcut). The command
 // palette itself is cbf-omni-search, mounted once at the end of this nav.
 //
@@ -15,7 +15,7 @@
 //   cbf-omni-trigger  the tray search affordance  → opens cbf-omni-search
 //   cbf-logo / cbf-icon  spoke-local lockup + glyphs
 //
-// The end cluster (Recent · Dashboard · user) is authored as local cbf-nav-link
+// The end cluster (Recent · My Work · user) is authored as local cbf-nav-link
 // chrome rather than esa-icon-link: it needs the `history` glyph (absent from the
 // hub icon set) and the user menu's markup is rewritten live during impersonation.
 import EsaAppBar from '@esa/ecology/esa-app-bar.astro';
@@ -75,11 +75,11 @@ const based = (links: NavLink[]): NavLink[] =>
         bcn-lego-checked: end-cluster stays local cbf-nav-link chrome (not esa-icon-link)
         because it needs the `history` glyph absent from the hub icon set and the user
         menu's markup is rewritten live during impersonation; --collapse hides Recent/
-        Dashboard below the nav breakpoint, where they reappear in the esa-side-dialog drawer. */}
+        My Work below the nav breakpoint, where they reappear in the esa-side-dialog drawer. */}
     <button class="cbf-nav-link cbf-nav-link--collapse" type="button">
       <CbfIcon name="history" size={16} /> Recent <CbfIcon name="chevron-down" size={14} />
     </button>
-    <a class="cbf-nav-link cbf-nav-link--collapse" href="#">
+    <a class="cbf-nav-link cbf-nav-link--collapse" href={withBase('/my-work')}>
       <CbfIcon name="layout-dashboard" size={16} /> Dashboard
     </a>
     <button class="cbf-nav-link cbf-nav-link--user" type="button" data-omni-user>
@@ -161,7 +161,7 @@ const based = (links: NavLink[]): NavLink[] =>
      button's innerHTML, so no wrapper span to rely on); the circle-user and
      chevron icons keep their explicit pixel size, and the impersonation badge
      keeps its own explicit font-size, so both survive. The separator is dropped
-     since Recent/Dashboard no longer precede the user here. */
+     since Recent/My Work no longer precede the user here. */
   @media (max-width: 680px) {
     .cbf-nav-link--user { font-size: 0; padding-left: 0; }
     .cbf-nav-link--user::before { display: none; }

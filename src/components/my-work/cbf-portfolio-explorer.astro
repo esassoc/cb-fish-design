@@ -1,0 +1,1020 @@
+---
+// cbf-portfolio-explorer — a Miller-columns (Finder-style) drill-down that walks
+// the CBFish data model inside the /my-work console's "My Portfolio" tab:
+//   project → contract → artifact type → record.
+// Four equal columns in a fixed-height band; each column is its own scroll area,
+// separated by hairlines. Selecting a row in a column populates the next column
+// and clears everything deeper; a live breadcrumb above the band tracks the path.
+//
+// bcn-lego-checked: no esa-* lego renders Miller columns — a fixed-height band of
+// N parallel, independently-scrolling listbox panes where a selection in column K
+// drives the contents of column K+1. Checked the full
+// node_modules/@esa/ecology/src/components catalog: esa-tab-layout is single-pane
+// tabs, esa-sidebar-nav is a single nav tree (not a cascade of panes), esa-card /
+// esa-link-column are static; none model a drill-down cascade. The .grid layout
+// primitive can't give per-column scroll + hairline separators + roving-focus
+// listbox semantics. Beacon is not on this machine. The `.cbf-portfolio-explorer`
+// grid + its column panes are the bespoke, reusable home. Every ATOM inside IS a
+// lego: status chips are esa-pill (server-rendered per variant, cloned into rows
+// so styling is byte-identical — never hand-rolled in JS); the empty item column
+// is esa-empty-state; type roles + .stack/.cluster/.repel carry all layout.
+import EsaPill from '@esa/ecology/esa-pill.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import EsaProgressBar from '@esa/ecology/esa-progress-bar.astro';
+
+// ── Prop shapes (data module src/data/portfolio-explorer.mjs authored elsewhere) ──
+type PillVariant = 'default' | 'info' | 'success' | 'warning' | 'danger';
+// Rollup severity for the attention dot; null = nothing below needs attention.
+type Attention = 'warning' | 'danger' | null;
+interface EntityStatus { label: string; variant: PillVariant }
+interface EntityItem {
+  id: string;
+  label: string;
+  sub?: string;
+  status: EntityStatus | null;
+  href: string;
+}
+interface EntityClusters {
+  sow: EntityItem[];
+  lib: EntityItem[];
+  statusReports: EntityItem[];
+  invoices: EntityItem[];
+}
+interface ExplorerContract {
+  id: string;
+  number: string;
+  title: string;
+  vendor: string;
+  status: EntityStatus | null;
+  clusters: EntityClusters;
+  attention?: Attention;
+  clusterAttention?: Record<keyof EntityClusters, Attention>;
+}
+// Hover-card payload — sponsor, rolled-up budget position, last activity.
+// Derived in portfolio-explorer.mjs; optional so a payload without it degrades
+// to no card.
+interface ProjectBudget {
+  valueLabel: string;
+  expendedLabel: string;
+  spentPct: number;
+  plannedPct: number;
+  variancePct: number;
+  pace: 'over' | 'under' | 'on';
+}
+interface ProjectPreview {
+  sponsor: string;
+  budget: ProjectBudget;
+  lastActivity: { label: string; date: string };
+}
+interface ExplorerProject {
+  id: string;
+  number: string;
+  name: string;
+  contracts: ExplorerContract[];
+  attention?: Attention;
+  preview?: ProjectPreview;
+}
+interface Props {
+  projects: ExplorerProject[];
+}
+
+const { projects } = Astro.props;
+
+// The four fixed artifact types, in drill order. `key` maps into
+// ExplorerContract.clusters; `label` is the user-facing row title (no data-model
+// vocabulary leaks — "Line Item Budget (LIB)", not "lib"). `empty` is the quiet
+// placeholder for an empty item column. Kept here (server) and mirrored in the
+// client script so both render identical copy.
+const artifactTypes = [
+  { key: 'sow', label: 'Statement of Work', empty: 'No statement of work on this contract yet.' },
+  { key: 'lib', label: 'Line Item Budget (LIB)', empty: 'No line item budget on this contract yet.' },
+  { key: 'statusReports', label: 'Status Reports', empty: 'No status reports on this contract yet.' },
+  { key: 'invoices', label: 'Invoices', empty: 'No invoices on this contract yet.' },
+] as const;
+
+// Every esa-pill variant we may need to clone into a client-rendered row.
+const pillVariants: PillVariant[] = ['default', 'info', 'success', 'warning', 'danger'];
+
+// SSR the first project's rows so the band is never empty on load; the client
+// re-selects it and drives columns 2-4. Contract count per project for the badge.
+const firstProject = projects[0];
+
+// The inline detail region (below the band, inside the card) is SSR'd with the
+// first project's preview and re-rendered client-side on hover / selection.
+// These formatters are mirrored in the client script so both render identical copy.
+const fp = firstProject?.preview ?? null;
+const paceText = (b: ProjectBudget): string =>
+  b.pace === 'on' ? 'On plan' : `${Math.abs(b.variancePct)} pts ${b.pace === 'over' ? 'over' : 'under'} plan`;
+const budgetText = (b: ProjectBudget): string =>
+  `${b.spentPct}% spent · ${b.expendedLabel} of ${b.valueLabel} · ${b.plannedPct}% planned`;
+const activityText = (la: { label: string; date: string }): string =>
+  la.date ? `${la.label} · ${la.date}` : la.label;
+const contractsText = (n: number): string => `${n} contract${n === 1 ? '' : 's'}`;
+
+// Attention dot: a quiet esa-badge in dot mode on any parent row whose descendants
+// carry a warning/danger status. Danger outranks warning for the color; the label
+// distinguishes the two for screen readers. Variants map 1:1 to esa-badge dot colors.
+const attnVariant = (a: Attention): 'warning' | 'danger' => (a === 'danger' ? 'danger' : 'warning');
+const attnLabel = (a: Attention): string =>
+  a === 'danger' ? 'Has an item needing urgent attention' : 'Has an item needing attention';
+---
+<section class="cbf-portfolio-explorer-section stack" data-gap="sm" data-portfolio-explorer>
+  <!-- Lede + live breadcrumb of the current selection path -->
+  <header class="cbf-portfolio-explorer__intro stack" data-gap="2xs">
+    <p class="type-caption cbf-portfolio-explorer__lede">
+      Walk the data model: project &rsaquo; contract &rsaquo; artifact &rsaquo; record.
+    </p>
+    <p class="type-caption cbf-portfolio-explorer__crumb" data-crumb aria-live="polite"></p>
+  </header>
+
+  <!-- The explorer CARD: the Miller-columns band plus an inline project-detail
+       region beneath it, sharing one bordered surface (no floating overlay). -->
+  <div class="cbf-portfolio-explorer" role="group" aria-label="Portfolio explorer">
+
+    <!-- The Miller-columns band. overflow-x lets four ~16rem columns scroll
+         horizontally on narrow viewports instead of crushing. -->
+    <div class="cbf-pe-band">
+
+    <!-- Column 1 · My projects (SSR'd; client re-selects the first row) -->
+    <div class="cbf-pe-col" data-col="projects">
+      <h3 class="type-label cbf-pe-col__head">My projects</h3>
+      <ul class="cbf-pe-list" role="listbox" aria-label="My projects" data-list="projects">
+        {projects.map((p, i) => (
+          <li
+            class="cbf-pe-row"
+            role="option"
+            data-row
+            data-project-id={p.id}
+            aria-selected="false"
+            tabindex={i === 0 ? '0' : '-1'}
+          >
+            <span class="cbf-pe-row__body">
+              <span class="type-caption cbf-pe-row__caption cbf-num">{p.number}</span>
+              <span class="type-body cbf-pe-row__title">{p.name}</span>
+            </span>
+            <span class="cbf-pe-row__trail">
+              {p.attention && (
+                <span class="cbf-pe-dot" role="img" aria-label={attnLabel(p.attention)} title={attnLabel(p.attention)}>
+                  <EsaBadge dot variant={attnVariant(p.attention)} />
+                </span>
+              )}
+              <span class="cbf-pe-count cbf-num" aria-label={`${p.contracts.length} contract${p.contracts.length === 1 ? '' : 's'}`}>
+                {p.contracts.length}
+              </span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <!-- Column 2 · Contracts (client-rendered from the selected project) -->
+    <div class="cbf-pe-col" data-col="contracts">
+      <h3 class="type-label cbf-pe-col__head">Contracts</h3>
+      <ul class="cbf-pe-list" role="listbox" aria-label="Contracts" data-list="contracts"></ul>
+      <p class="cbf-pe-prompt type-caption" data-prompt="contracts" hidden>Select a project</p>
+    </div>
+
+    <!-- Column 3 · Artifacts (four fixed types for the selected contract) -->
+    <div class="cbf-pe-col" data-col="artifacts">
+      <h3 class="type-label cbf-pe-col__head">Artifacts</h3>
+      <ul class="cbf-pe-list" role="listbox" aria-label="Artifact types" data-list="artifacts"></ul>
+      <p class="cbf-pe-prompt type-caption" data-prompt="artifacts">Select a contract</p>
+    </div>
+
+    <!-- Column 4 · Items (records of the selected artifact type) -->
+    <div class="cbf-pe-col cbf-pe-col--items" data-col="items">
+      <h3 class="type-label cbf-pe-col__head" data-items-head>Items</h3>
+      <ul class="cbf-pe-list" role="listbox" aria-label="Records" data-list="items"></ul>
+      <p class="cbf-pe-prompt type-caption" data-prompt="items">Select an artifact</p>
+      <!-- Empty-collection state (an artifact type with zero records) -->
+      <div class="cbf-pe-empty" data-items-empty hidden>
+        <EsaEmptyState title="Nothing here yet" description="No records on this contract yet." size="sm" />
+      </div>
+    </div>
+    </div><!-- /.cbf-pe-band -->
+
+    <!-- Inline project detail — part of the card, re-rendered on hover/selection.
+         Sponsor, budget position (spent vs an authored baseline), and last
+         activity for the focused project. The budget bar is a real esa-progress-bar
+         lego; the client mutates its fill width + baseline tick per project
+         (never hand-rolls the bar). -->
+    <div class="cbf-pe-detail" data-detail>
+      <div class="cbf-pe-detail__head repel">
+        <span class="cbf-pe-detail__ident stack" data-gap="3xs">
+          <span class="type-caption cbf-pe-detail__num cbf-num" data-detail-num>{firstProject?.number}</span>
+          <span class="type-card-title cbf-pe-detail__name" data-detail-name>{firstProject?.name}</span>
+        </span>
+        <span class="type-caption cbf-pe-detail__meta cbf-num" data-detail-count>
+          {firstProject ? contractsText(firstProject.contracts.length) : ''}
+        </span>
+      </div>
+      <div class="cbf-pe-detail__facts grid" style="--grid-min: 12rem" data-gap="md" aria-live="polite">
+        <div class="stack" data-gap="2xs">
+          <span class="type-label cbf-pe-detail__label">Sponsor</span>
+          <span class="type-body cbf-pe-detail__sponsor" data-detail-sponsor>{fp?.sponsor}</span>
+        </div>
+        <div class="stack" data-gap="2xs">
+          <div class="repel">
+            <span class="type-label cbf-pe-detail__label">Budget position</span>
+            <span
+              class:list={['type-caption cbf-pe-detail__pace', fp && `cbf-pe-detail__pace--${fp.budget.pace}`]}
+              data-detail-pace
+            >{fp ? paceText(fp.budget) : ''}</span>
+          </div>
+          <div class="cbf-pe-detail__bar" data-detail-bar>
+            <EsaProgressBar value={fp?.budget.spentPct ?? 0} size="sm" variant="primary" />
+          </div>
+          <span class="type-caption cbf-pe-detail__budget" data-detail-budget>{fp ? budgetText(fp.budget) : ''}</span>
+        </div>
+        <div class="stack" data-gap="2xs">
+          <span class="type-label cbf-pe-detail__label">Last activity</span>
+          <span class="type-caption cbf-pe-detail__activity" data-detail-activity>{fp ? activityText(fp.lastActivity) : ''}</span>
+        </div>
+      </div>
+    </div>
+  </div><!-- /.cbf-portfolio-explorer card -->
+
+  <!-- Real esa-pill legos, server-rendered once per variant with the design-system
+       scope hash intact. Contract/item rows clone the matching template's markup
+       and swap the label text — so every status chip is byte-identical to the lego,
+       never hand-rolled in JS (same pattern as cbf-invoice-review-queue). -->
+  <div class="cbf-pe-pill-templates" data-pill-templates hidden aria-hidden="true">
+    {pillVariants.map((v) => (
+      <span data-pill-variant={v}><EsaPill label={v} variant={v} size="sm" removable={false} /></span>
+    ))}
+  </div>
+
+  <!-- Real esa-badge dot legos (warning/danger), server-rendered once per severity so
+       the client-injected contract/artifact rows clone byte-identical dots — same
+       clone-a-real-lego discipline as the pills above, never hand-rolled in JS. -->
+  <div class="cbf-pe-dot-templates" data-dot-templates hidden aria-hidden="true">
+    {(['warning', 'danger'] as const).map((v) => (
+      <span data-dot-variant={v}><EsaBadge dot variant={v} /></span>
+    ))}
+  </div>
+
+  <!-- Data for the client module: full project graph (avoids a second fetch).
+       Column 1 is SSR'd; columns 2-4 render from here. -->
+  <script type="application/json" data-explorer-data set:html={JSON.stringify(projects)}></script>
+</section>
+
+<style>
+  /* cbf-portfolio-explorer — component-scoped Miller columns.
+   * Token discipline: colors/spacing/radius via @esa/tokens with literal
+   * fallbacks; text via type-role classes, never raw --type-size-*. Selection is
+   * a background tint + medium weight — NO colored left border (design-principle:
+   * banned). Dense 14px floor: darken small text, never gray it out. */
+
+  /* Intro band */
+  .cbf-portfolio-explorer__lede { color: var(--color-text-secondary, #525252); margin: 0; }
+  .cbf-portfolio-explorer__crumb {
+    color: var(--color-text-primary, #171717);
+    margin: 0;
+    min-height: 1.2em; /* reserve space so the band doesn't jump on first paint */
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-portfolio-explorer__crumb :global(.cbf-pe-crumb-sep) { color: var(--color-text-muted, #a3a3a3); }
+  .cbf-portfolio-explorer__crumb :global(.cbf-pe-crumb-cur) { font-weight: var(--font-weight-medium, 500); }
+
+  /* The explorer CARD: one bordered surface wrapping the band + inline detail. */
+  .cbf-portfolio-explorer {
+    border: 1px solid var(--color-border, #e5e5e5);
+    border-radius: var(--radius-200, 8px);
+    background: var(--color-surface, #fff);
+    overflow: hidden; /* clip band + detail to the card's rounded corners */
+  }
+
+  /* The band: four equal, independently-scrolling columns, hairline separators,
+     fixed height. overflow-x lets narrow viewports scroll horizontally. */
+  .cbf-pe-band {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(16rem, 1fr));
+    height: 24rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .cbf-pe-col {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0; /* let the inner list scroll instead of stretching the band */
+    border-left: 1px solid var(--color-border-light, #e5e5e5);
+  }
+  .cbf-pe-col:first-child { border-left: none; }
+
+  /* Column header — normal-case label, not ornamental micro-caps. */
+  .cbf-pe-col__head {
+    margin: 0;
+    padding: var(--spacing-250, 0.625rem) var(--spacing-300, 0.75rem);
+    color: var(--color-text-secondary, #525252);
+    background: var(--color-surface, #fff);
+    border-bottom: 1px solid var(--color-border-light, #e5e5e5);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    flex: none;
+  }
+
+  /* The scroll area for each column's rows. */
+  .cbf-pe-list {
+    list-style: none;
+    margin: 0;
+    padding: var(--spacing-100, 0.25rem);
+    overflow-y: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .cbf-pe-list:empty { display: none; }
+
+  /* NB: the ROW-INTERNAL rules (.cbf-pe-row and its __body/__caption/__title/
+     __sub/__trail/.cbf-pe-count children, plus row state) live in the is:global
+     block below, NOT here. Columns 2-4 inject those rows as raw HTML with no
+     Astro scope hash, so scoped selectors would never match them — the SSR
+     column 1 would style correctly while the injected rows read as run-on inline
+     text. Global (keyed under the stable SSR .cbf-portfolio-explorer wrapper)
+     styles BOTH the SSR and the injected rows identically. */
+
+  /* Muted prompt shown in a column when nothing upstream is selected. */
+  .cbf-pe-prompt {
+    color: var(--color-text-muted, #a3a3a3);
+    margin: 0;
+    padding: var(--spacing-400, 1rem) var(--spacing-300, 0.75rem);
+  }
+  .cbf-pe-prompt[hidden] { display: none; }
+
+  .cbf-pe-empty[hidden] { display: none; }
+
+  /* Inline project-detail region — part of the card, below the band. A hairline
+     separator and a value-layered off-white surface set it apart from the band
+     without a brand fill. Re-rendered on hover/selection by the client.
+     bcn-lego-checked: bespoke chrome INSIDE the already-justified bcn Miller-columns
+     component (see top-of-file note). No esa-* lego renders a "detail footer that
+     mirrors the focused list row"; its one primitive is the esa-progress-bar budget
+     bar composed here, plus type-roles + grid/stack/repel layout — nothing
+     hand-rolled that a lego provides. */
+  .cbf-pe-detail {
+    border-top: 1px solid var(--color-border, #e5e5e5);
+    background: var(--color-surface-subtle, var(--color-surface-sunken, #fafafa));
+    padding: var(--spacing-300, 0.75rem) var(--spacing-350, 0.875rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-300, 0.75rem);
+  }
+
+  /* Header: project number + name on the left, contract count on the right. */
+  .cbf-pe-detail__head { align-items: flex-start; }
+  .cbf-pe-detail__num { color: var(--color-text-secondary, #525252); }
+  .cbf-pe-detail__name { margin: 0; color: var(--color-text-primary, #171717); }
+  .cbf-pe-detail__meta { color: var(--color-text-secondary, #525252); white-space: nowrap; }
+
+  /* Functional field labels (sentence case, secondary) — not ornamental overlines. */
+  .cbf-pe-detail__label { color: var(--color-text-secondary, #525252); }
+  .cbf-pe-detail__sponsor { color: var(--color-text-primary, #171717); }
+  .cbf-pe-detail__budget,
+  .cbf-pe-detail__activity {
+    color: var(--color-text-secondary, #525252);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Pace signal (spent vs baseline). Quiet by default; over-plan reads warning,
+     on/under-plan stay calm — same quiet-badge restraint as the row dots. */
+  .cbf-pe-detail__pace {
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-muted, #737373);
+  }
+  .cbf-pe-detail__pace--over { color: var(--color-warning-strong, var(--color-warning, #b45309)); }
+  .cbf-pe-detail__pace--on { color: var(--color-success-strong, var(--color-success, #15803d)); }
+  .cbf-pe-detail__pace--under { color: var(--color-text-secondary, #525252); }
+</style>
+
+<style is:global>
+  /* Row-internal styling is GLOBAL — not scoped — because columns 2-4 inject
+     their rows as raw HTML strings that carry no Astro scope hash. Keying every
+     rule under the stable SSR `.cbf-portfolio-explorer` wrapper keeps the blast
+     radius tight while styling the SSR column-1 rows and the injected columns
+     2-4 rows byte-for-byte identically. (The wrapper itself + its columns/lists/
+     headers/prompts stay in the scoped block above; only rows cross into JS.) */
+
+  /* A row: fluid identity + a trailing affordance (count badge or status pill).
+     Selection = background tint + medium weight, never a colored left border. */
+  .cbf-portfolio-explorer .cbf-pe-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-200, 0.5rem);
+    padding: var(--spacing-200, 0.5rem) var(--spacing-250, 0.625rem);
+    border-radius: var(--radius-100, 4px);
+    cursor: pointer;
+    color: var(--color-text-primary, #171717);
+    text-decoration: none;
+    scroll-margin: var(--spacing-400, 1rem);
+  }
+  .cbf-portfolio-explorer .cbf-pe-row:hover {
+    background: var(--color-surface-subtle, var(--color-surface-sunken, #f5f5f5));
+  }
+  .cbf-portfolio-explorer .cbf-pe-row[aria-selected='true'] {
+    background: var(--color-surface-sunken, #efefef);
+  }
+  .cbf-portfolio-explorer .cbf-pe-row[aria-selected='true'] .cbf-pe-row__title {
+    font-weight: var(--font-weight-medium, 500);
+  }
+  .cbf-portfolio-explorer .cbf-pe-row:focus-visible {
+    outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--color-primary, #43608a));
+    outline-offset: -2px;
+  }
+
+  /* Identity block: caption / title / sub stacked in a column (this is what
+     was collapsing to inline run-on text for the injected rows). */
+  .cbf-portfolio-explorer .cbf-pe-row__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-050, 0.125rem);
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+  .cbf-portfolio-explorer .cbf-pe-row__caption {
+    color: var(--color-text-secondary, #525252);
+    line-height: 1.2;
+  }
+  .cbf-portfolio-explorer .cbf-pe-row__title {
+    color: var(--color-text-primary, #171717);
+    line-height: 1.25;
+    /* two-line clamp keeps rows dense but readable */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .cbf-portfolio-explorer .cbf-pe-row__sub {
+    color: var(--color-text-secondary, #525252);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Quiet count badge (cols 1 & 3): a small muted number, 4px, never a bulky
+     pill — house rule: badges are quiet. */
+  .cbf-portfolio-explorer .cbf-pe-count {
+    flex: none;
+    align-self: center;
+    min-width: 1.5rem;
+    padding: 1px var(--spacing-150, 0.375rem);
+    border: 1px solid var(--color-border-light, #e5e5e5);
+    border-radius: var(--radius-100, 4px);
+    font-size: var(--type-size-100, 0.75rem);
+    line-height: 1.4;
+    text-align: center;
+    color: var(--color-text-secondary, #525252);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Trailing status pill / count slot on contract, artifact & item rows. The gap
+     separates an attention dot from the count/pill it sits beside. */
+  .cbf-portfolio-explorer .cbf-pe-row__trail {
+    flex: none;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-150, 0.375rem);
+  }
+
+  /* Attention rollup dot: wraps a real esa-badge dot lego. Quiet, 8px, sits just
+     left of the trailing count/pill. Color (warning/danger) comes from the lego. */
+  .cbf-portfolio-explorer .cbf-pe-dot {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Cloned esa-pill legos carry their own scoped styles; inert in a row. */
+  .cbf-portfolio-explorer .cbf-pe-row--injected .cbf-pe-row__trail .esa-pill { pointer-events: none; }
+
+  /* Baseline marker injected into the detail's esa-progress-bar track: a thin tick
+     at the planned-spend %, so the bar reads "spent vs baseline" at a glance.
+     Injected as raw DOM (no Astro scope hash) → styled globally, keyed under the
+     SSR .cbf-pe-detail wrapper to keep the blast radius tight. Left is set inline
+     (planned %) by the client. */
+  .cbf-pe-detail .esa-progress-bar__track { overflow: visible; }
+  .cbf-pe-detail .cbf-pe-baseline {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 2px;
+    border-radius: 1px;
+    background: var(--color-text-secondary, #525252);
+    transform: translateX(-50%);
+  }
+</style>
+
+<script>
+  import { withBase } from '../../lib/base';
+
+  type PillVariant = 'default' | 'info' | 'success' | 'warning' | 'danger';
+  type Attention = 'warning' | 'danger' | null;
+  interface EntityStatus { label: string; variant: PillVariant }
+  interface EntityItem { id: string; label: string; sub?: string; status: EntityStatus | null; href: string }
+  interface EntityClusters { sow: EntityItem[]; lib: EntityItem[]; statusReports: EntityItem[]; invoices: EntityItem[] }
+  interface ExplorerContract {
+    id: string; number: string; title: string; vendor: string;
+    // The data module supplies this as a plain status STRING; normalized via
+    // contractStatus() before rendering. Kept loose to match the real payload.
+    status: EntityStatus | string | null; clusters: EntityClusters;
+    // Attention rollups precomputed in portfolio-explorer.mjs and serialized with
+    // the graph: `attention` drives the contract-row dot, `clusterAttention` the
+    // per-artifact dots. Optional so a payload without them degrades to no dots.
+    attention?: Attention; clusterAttention?: Record<keyof EntityClusters, Attention>;
+  }
+  interface ProjectBudget {
+    valueLabel: string; expendedLabel: string;
+    spentPct: number; plannedPct: number; variancePct: number;
+    pace: 'over' | 'under' | 'on';
+  }
+  interface ProjectPreview {
+    sponsor: string; budget: ProjectBudget; lastActivity: { label: string; date: string };
+  }
+  interface ExplorerProject {
+    id: string; number: string; name: string; contracts: ExplorerContract[];
+    attention?: Attention; preview?: ProjectPreview;
+  }
+
+  type ArtifactKey = keyof EntityClusters;
+  const ARTIFACTS: { key: ArtifactKey; label: string; empty: string }[] = [
+    { key: 'sow', label: 'Statement of Work', empty: 'No statement of work on this contract yet.' },
+    { key: 'lib', label: 'Line Item Budget (LIB)', empty: 'No line item budget on this contract yet.' },
+    { key: 'statusReports', label: 'Status Reports', empty: 'No status reports on this contract yet.' },
+    { key: 'invoices', label: 'Invoices', empty: 'No invoices on this contract yet.' },
+  ];
+
+  const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  // Root-relative hrefs get the configured base; '#' (and empty) stay inert.
+  const resolveHref = (href: string) =>
+    href && href.startsWith('/') ? withBase(href) : (href || '#');
+
+  function initExplorer(root: HTMLElement) {
+    const dataEl = root.querySelector<HTMLScriptElement>('[data-explorer-data]');
+    if (!dataEl) return;
+    const projects: ExplorerProject[] = JSON.parse(dataEl.textContent ?? '[]');
+    if (!projects.length) return;
+
+    // Pre-clone the real esa-pill markup per variant (scope hash intact), then
+    // swap the label text per row — never hand-roll pill markup in JS.
+    const pillHTML = new Map<PillVariant, string>();
+    root.querySelectorAll<HTMLElement>('[data-pill-templates] [data-pill-variant]').forEach((el) => {
+      pillHTML.set(el.dataset.pillVariant as PillVariant, el.innerHTML);
+    });
+    // Clone the matching esa-pill template and swap its label text. Defensive:
+    // a null status, or one whose label resolves empty, renders NO pill (never
+    // an empty rounded box) — the bug the coordinator saw on contract rows.
+    const pillWith = (status: EntityStatus | null): string => {
+      const label = status?.label?.trim();
+      if (!status || !label) return '';
+      const tmpl = document.createElement('div');
+      tmpl.innerHTML = pillHTML.get(status.variant) ?? pillHTML.get('default') ?? '';
+      const labelEl = tmpl.querySelector('.esa-pill__label') ?? tmpl.firstElementChild;
+      if (!labelEl) return '';
+      labelEl.textContent = label;
+      return tmpl.innerHTML;
+    };
+
+    // Pre-clone the real esa-badge dot markup per severity (warning/danger), then
+    // wrap it in a labelled span per row — never hand-roll a dot in JS.
+    const dotHTML = new Map<'warning' | 'danger', string>();
+    root.querySelectorAll<HTMLElement>('[data-dot-templates] [data-dot-variant]').forEach((el) => {
+      dotHTML.set(el.dataset.dotVariant as 'warning' | 'danger', el.innerHTML);
+    });
+    // Render the attention dot for a rolled-up severity, or nothing when calm.
+    const dotWith = (sev: Attention): string => {
+      if (!sev) return '';
+      const label = sev === 'danger' ? 'Has an item needing urgent attention' : 'Has an item needing attention';
+      const markup = dotHTML.get(sev) ?? '';
+      if (!markup) return '';
+      return `<span class="cbf-pe-dot" role="img" aria-label="${esc(label)}" title="${esc(label)}">${markup}</span>`;
+    };
+
+    // The data module supplies ExplorerContract.status as a plain STRING copied
+    // from the portfolio row ('Active' | 'Pending modification' | 'Expiring
+    // soon' | 'Closeout eligible'), NOT an {label, variant} object. Normalize it
+    // to a pill status here — same variant mapping cbf-portfolio-health uses
+    // (Active→default, Closeout eligible→info, else→warning). Per the quiet-badge
+    // house rule an 'Active' contract carries NO pill (nine identical "Active"
+    // pills is noise); only exceptions get a chip. Already-normalized objects
+    // (should the module change) pass through unchanged.
+    const contractStatus = (raw: unknown): EntityStatus | null => {
+      if (!raw) return null;
+      if (typeof raw === 'object' && 'label' in (raw as EntityStatus)) {
+        const s = raw as EntityStatus;
+        return s.label && s.label !== 'Active' ? s : null;
+      }
+      const label = String(raw);
+      if (!label || label === 'Active') return null;
+      const variant: PillVariant = label === 'Closeout eligible' ? 'info' : 'warning';
+      return { label, variant };
+    };
+
+    // ── Inline project detail (below the band) ─────────────────────────────────
+    // The detail region mirrors the FOCUSED project: it follows hover over the
+    // projects column and falls back to the SELECTED project when the pointer
+    // leaves. Populated by mutating the SSR nodes (no markup re-injection); its
+    // budget bar is the SSR esa-progress-bar lego whose fill + baseline tick we move.
+    const detailEl = root.querySelector<HTMLElement>('[data-detail]');
+    const detail = detailEl
+      ? {
+          num: detailEl.querySelector<HTMLElement>('[data-detail-num]')!,
+          name: detailEl.querySelector<HTMLElement>('[data-detail-name]')!,
+          count: detailEl.querySelector<HTMLElement>('[data-detail-count]')!,
+          sponsor: detailEl.querySelector<HTMLElement>('[data-detail-sponsor]')!,
+          pace: detailEl.querySelector<HTMLElement>('[data-detail-pace]')!,
+          budget: detailEl.querySelector<HTMLElement>('[data-detail-budget]')!,
+          activity: detailEl.querySelector<HTMLElement>('[data-detail-activity]')!,
+          bar: detailEl.querySelector<HTMLElement>('[data-detail-bar] .esa-progress-bar'),
+        }
+      : null;
+
+    // The baseline tick lives inside the SSR bar's track — created once, then moved
+    // (left %) per project. Escapes the "clone a lego" rule because it's our own
+    // marker overlaid on the lego, not a reimplementation of the bar.
+    let detailTick: HTMLElement | null = null;
+    if (detail?.bar) {
+      const track = detail.bar.querySelector<HTMLElement>('.esa-progress-bar__track');
+      if (track) {
+        detailTick = document.createElement('span');
+        detailTick.className = 'cbf-pe-baseline';
+        detailTick.setAttribute('role', 'img');
+        track.appendChild(detailTick);
+      }
+    }
+
+    // The project whose detail is shown when nothing is hovered (the selection).
+    let detailPinned: ExplorerProject | null = null;
+
+    function renderDetail(project: ExplorerProject | null) {
+      if (!detail || !project) return;
+      detail.num.textContent = project.number;
+      detail.name.textContent = project.name;
+      const n = project.contracts.length;
+      detail.count.textContent = `${n} contract${n === 1 ? '' : 's'}`;
+
+      const pv = project.preview;
+      if (!pv) return;
+      detail.sponsor.textContent = pv.sponsor;
+
+      const { spentPct, plannedPct, variancePct, pace } = pv.budget;
+      // Pace chip: quiet on plan; names the gap to the planned baseline otherwise.
+      detail.pace.textContent =
+        pace === 'on' ? 'On plan' : `${Math.abs(variancePct)} pts ${pace === 'over' ? 'over' : 'under'} plan`;
+      detail.pace.className = `type-caption cbf-pe-detail__pace cbf-pe-detail__pace--${pace}`;
+
+      // Move the SSR bar's fill + baseline tick to this project's figures.
+      if (detail.bar) {
+        detail.bar.setAttribute('aria-valuenow', String(spentPct));
+        detail.bar.setAttribute('aria-label', `Budget spent: ${spentPct}% of ${plannedPct}% planned`);
+        const fill = detail.bar.querySelector<HTMLElement>('.esa-progress-bar__fill');
+        if (fill) fill.style.width = `${spentPct}%`;
+      }
+      if (detailTick) {
+        detailTick.style.left = `${plannedPct}%`;
+        detailTick.setAttribute('aria-label', `Planned baseline ${plannedPct}%`);
+      }
+
+      detail.budget.textContent =
+        `${spentPct}% spent · ${pv.budget.expendedLabel} of ${pv.budget.valueLabel} · ${plannedPct}% planned`;
+      detail.activity.textContent = pv.lastActivity.date
+        ? `${pv.lastActivity.label} · ${pv.lastActivity.date}`
+        : pv.lastActivity.label;
+    }
+
+    const projectById = (id: string | null): ExplorerProject | null =>
+      projects.find((p) => p.id === id) ?? null;
+
+    // ── Column plumbing ──────────────────────────────────────────────────────
+    const lists = {
+      projects: root.querySelector<HTMLElement>('[data-list="projects"]')!,
+      contracts: root.querySelector<HTMLElement>('[data-list="contracts"]')!,
+      artifacts: root.querySelector<HTMLElement>('[data-list="artifacts"]')!,
+      items: root.querySelector<HTMLElement>('[data-list="items"]')!,
+    };
+    const prompts = {
+      contracts: root.querySelector<HTMLElement>('[data-prompt="contracts"]'),
+      artifacts: root.querySelector<HTMLElement>('[data-prompt="artifacts"]'),
+      items: root.querySelector<HTMLElement>('[data-prompt="items"]'),
+    };
+    const itemsEmpty = root.querySelector<HTMLElement>('[data-items-empty]');
+    const itemsHead = root.querySelector<HTMLElement>('[data-items-head]');
+    const crumbEl = root.querySelector<HTMLElement>('[data-crumb]');
+    const colOrder: (keyof typeof lists)[] = ['projects', 'contracts', 'artifacts', 'items'];
+
+    // Selection state (indexes into the respective source arrays).
+    let selProject: ExplorerProject | null = null;
+    let selContract: ExplorerContract | null = null;
+    let selArtifact: (typeof ARTIFACTS)[number] | null = null;
+
+    // ── Row factory (columns 2-4) ────────────────────────────────────────────
+    // Contract/artifact rows are <li>; item rows are <a> (they navigate).
+    function rowMarkup(opts: {
+      tag: 'li' | 'a'; href?: string; caption?: string; title: string;
+      sub?: string; trail?: string; dot?: string;
+    }): string {
+      // The trailing cluster holds an optional attention dot followed by the
+      // pill/count. Emit the wrapper if EITHER is present so a dot-only row (a
+      // calm-status contract with an attention descendant) still renders it.
+      const trailInner = `${opts.dot ?? ''}${opts.trail ?? ''}`;
+      const trail = trailInner ? `<span class="cbf-pe-row__trail">${trailInner}</span>` : '';
+      const cap = opts.caption ? `<span class="type-caption cbf-pe-row__caption cbf-num">${esc(opts.caption)}</span>` : '';
+      const sub = opts.sub ? `<span class="type-caption cbf-pe-row__sub">${esc(opts.sub)}</span>` : '';
+      const body = `<span class="cbf-pe-row__body">${cap}<span class="type-body cbf-pe-row__title">${esc(opts.title)}</span>${sub}</span>`;
+      return `${body}${trail}`;
+    }
+
+    function makeRow(inner: string, extraAttrs: string, tag: 'li' | 'a' = 'li'): HTMLElement {
+      const el = document.createElement(tag);
+      el.className = 'cbf-pe-row cbf-pe-row--injected';
+      el.setAttribute('role', 'option');
+      el.setAttribute('data-row', '');
+      el.setAttribute('aria-selected', 'false');
+      el.setAttribute('tabindex', '-1');
+      el.innerHTML = inner;
+      if (extraAttrs) {
+        // extraAttrs is a small set of attr="val" pairs we control (ids/hrefs).
+        const holder = document.createElement('div');
+        holder.innerHTML = `<i ${extraAttrs}></i>`;
+        const src = holder.firstElementChild!;
+        for (const a of Array.from(src.attributes)) el.setAttribute(a.name, a.value);
+      }
+      return el;
+    }
+
+    // Roving tabindex: exactly one row per column is tabbable at a time.
+    function setRoving(list: HTMLElement, active: HTMLElement | null) {
+      list.querySelectorAll<HTMLElement>('[data-row]').forEach((r) => (r.tabIndex = -1));
+      if (active) active.tabIndex = 0;
+      else {
+        const first = list.querySelector<HTMLElement>('[data-row]');
+        if (first) first.tabIndex = 0;
+      }
+    }
+
+    function markSelected(list: HTMLElement, row: HTMLElement | null) {
+      list.querySelectorAll<HTMLElement>('[data-row]').forEach((r) => r.setAttribute('aria-selected', 'false'));
+      if (row) row.setAttribute('aria-selected', 'true');
+    }
+
+    // ── Render columns ────────────────────────────────────────────────────────
+    function renderContracts(project: ExplorerProject) {
+      lists.contracts.innerHTML = '';
+      project.contracts.forEach((c) => {
+        const inner = rowMarkup({
+          tag: 'li', caption: c.number, title: c.title, sub: c.vendor,
+          dot: dotWith(c.attention ?? null),
+          trail: pillWith(contractStatus(c.status)),
+        });
+        const row = makeRow(inner, `data-contract-id="${esc(c.id)}"`, 'li');
+        lists.contracts.appendChild(row);
+      });
+      if (prompts.contracts) prompts.contracts.hidden = true;
+    }
+
+    function renderArtifacts(contract: ExplorerContract) {
+      lists.artifacts.innerHTML = '';
+      ARTIFACTS.forEach((a) => {
+        const coll = contract.clusters[a.key] ?? [];
+        // Sub-caption where informative: the LIB row surfaces the ACTIVE rev as
+        // "Rev N active". Derive from the cluster — the item whose status label
+        // is 'Active'; pull its rev number from the item label (e.g. "LIB Rev 2"
+        // → "Rev 2 active"), else fall back to the raw label, else nothing.
+        let sub = '';
+        if (a.key === 'lib') {
+          const active = coll.find((it) => (it.status?.label ?? '').toLowerCase() === 'active');
+          if (active) {
+            const revMatch = active.label.match(/rev\s*\.?\s*(\d+)/i);
+            sub = revMatch ? `Rev ${revMatch[1]} active` : `${active.label} active`;
+          }
+        }
+        const count = `<span class="cbf-pe-count cbf-num" aria-label="${coll.length} record${coll.length === 1 ? '' : 's'}">${coll.length}</span>`;
+        const inner = rowMarkup({
+          tag: 'li', title: a.label, sub,
+          dot: dotWith(contract.clusterAttention?.[a.key] ?? null),
+          trail: count,
+        });
+        const row = makeRow(inner, `data-artifact-key="${esc(a.key)}"`, 'li');
+        lists.artifacts.appendChild(row);
+      });
+      if (prompts.artifacts) prompts.artifacts.hidden = true;
+    }
+
+    function renderItems(contract: ExplorerContract, artifact: (typeof ARTIFACTS)[number]) {
+      lists.items.innerHTML = '';
+      const coll = contract.clusters[artifact.key] ?? [];
+      if (itemsHead) itemsHead.textContent = artifact.label;
+      if (prompts.items) prompts.items.hidden = true;
+
+      if (!coll.length) {
+        // Empty collection → quiet esa-empty-state with type-specific copy.
+        if (itemsEmpty) {
+          itemsEmpty.hidden = false;
+          const desc = itemsEmpty.querySelector('.esa-empty-state__description');
+          if (desc) desc.textContent = artifact.empty;
+        }
+        return;
+      }
+      if (itemsEmpty) itemsEmpty.hidden = true;
+
+      coll.forEach((it) => {
+        const inner = rowMarkup({
+          tag: 'a', title: it.label, sub: it.sub, trail: pillWith(it.status),
+        });
+        const href = resolveHref(it.href);
+        const row = makeRow(inner, `data-item-id="${esc(it.id)}" href="${esc(href)}"`, 'a');
+        lists.items.appendChild(row);
+      });
+    }
+
+    // Clear a column and every column to its right; show the muted prompt.
+    function clearFrom(col: 'contracts' | 'artifacts' | 'items') {
+      const idx = colOrder.indexOf(col);
+      for (let i = idx; i < colOrder.length; i++) {
+        const key = colOrder[i] as 'contracts' | 'artifacts' | 'items';
+        lists[key].innerHTML = '';
+        if (prompts[key]) prompts[key]!.hidden = false;
+      }
+      if (itemsEmpty) itemsEmpty.hidden = true;
+      if (itemsHead) itemsHead.textContent = 'Items';
+    }
+
+    // ── Breadcrumb ─────────────────────────────────────────────────────────────
+    function updateCrumb() {
+      if (!crumbEl) return;
+      const parts: string[] = [];
+      if (selProject) parts.push(esc(selProject.name));
+      if (selContract) parts.push(`${esc(selContract.number)} · ${esc(selContract.title)}`);
+      if (selArtifact) parts.push(esc(selArtifact.label));
+      if (!parts.length) { crumbEl.textContent = ''; return; }
+      crumbEl.innerHTML = parts
+        .map((p, i) => (i === parts.length - 1 ? `<span class="cbf-pe-crumb-cur">${p}</span>` : p))
+        .join(' <span class="cbf-pe-crumb-sep">›</span> ');
+    }
+
+    // ── Selection handlers ─────────────────────────────────────────────────────
+    function selectProject(row: HTMLElement) {
+      const id = row.getAttribute('data-project-id');
+      const project = projects.find((p) => p.id === id) ?? null;
+      selProject = project;
+      selContract = null;
+      selArtifact = null;
+      markSelected(lists.projects, row);
+      setRoving(lists.projects, row);
+      clearFrom('contracts');
+      if (project) renderContracts(project);
+      updateCrumb();
+      // Pin the detail region to the selected project (hover overrides transiently).
+      detailPinned = project;
+      renderDetail(project);
+    }
+
+    function selectContract(row: HTMLElement) {
+      if (!selProject) return;
+      const id = row.getAttribute('data-contract-id');
+      const contract = selProject.contracts.find((c) => c.id === id) ?? null;
+      selContract = contract;
+      selArtifact = null;
+      markSelected(lists.contracts, row);
+      setRoving(lists.contracts, row);
+      clearFrom('artifacts');
+      if (contract) renderArtifacts(contract);
+      updateCrumb();
+    }
+
+    function selectArtifact(row: HTMLElement) {
+      if (!selContract) return;
+      const key = row.getAttribute('data-artifact-key') as ArtifactKey | null;
+      const artifact = ARTIFACTS.find((a) => a.key === key) ?? null;
+      selArtifact = artifact;
+      markSelected(lists.artifacts, row);
+      setRoving(lists.artifacts, row);
+      clearFrom('items');
+      if (artifact) renderItems(selContract, artifact);
+      updateCrumb();
+    }
+
+    function selectItem(row: HTMLElement) {
+      markSelected(lists.items, row);
+      setRoving(lists.items, row);
+      // Items don't drive a deeper column; the <a> handles navigation natively.
+    }
+
+    // Dispatch a selection by which column the row lives in.
+    function selectRow(row: HTMLElement) {
+      const col = row.closest<HTMLElement>('[data-col]')?.dataset.col;
+      if (col === 'projects') selectProject(row);
+      else if (col === 'contracts') selectContract(row);
+      else if (col === 'artifacts') selectArtifact(row);
+      else if (col === 'items') selectItem(row);
+    }
+
+    // ── Events: click ──────────────────────────────────────────────────────────
+    Object.values(lists).forEach((list) => {
+      list.addEventListener('click', (e) => {
+        const row = (e.target as HTMLElement).closest<HTMLElement>('[data-row]');
+        if (row && list.contains(row)) selectRow(row);
+        // Item rows are <a>: a click follows the link natively (unless '#').
+      });
+    });
+
+    // ── Events: keyboard (roving listbox) ──────────────────────────────────────
+    function rowsIn(list: HTMLElement): HTMLElement[] {
+      return Array.from(list.querySelectorAll<HTMLElement>('[data-row]'));
+    }
+    function focusRow(row: HTMLElement | undefined | null) {
+      if (!row) return;
+      const list = row.closest<HTMLElement>('[role="listbox"]');
+      if (list) setRoving(list, row);
+      row.focus();
+    }
+    function adjacentColumnFirstRow(list: HTMLElement, dir: 1 | -1): HTMLElement | null {
+      const idx = colOrder.indexOf((list.getAttribute('data-list') as keyof typeof lists));
+      const nextKey = colOrder[idx + dir];
+      if (!nextKey) return null;
+      const nextList = lists[nextKey as keyof typeof lists];
+      // Prefer the already-selected row in that column, else its first row.
+      return (
+        nextList.querySelector<HTMLElement>('[data-row][aria-selected="true"]') ??
+        nextList.querySelector<HTMLElement>('[data-row]')
+      );
+    }
+
+    Object.values(lists).forEach((list) => {
+      list.addEventListener('keydown', (e: KeyboardEvent) => {
+        const row = (e.target as HTMLElement).closest<HTMLElement>('[data-row]');
+        if (!row || !list.contains(row)) return;
+        const rows = rowsIn(list);
+        const i = rows.indexOf(row);
+
+        switch (e.key) {
+          case 'ArrowDown': {
+            e.preventDefault();
+            const next = rows[Math.min(i + 1, rows.length - 1)];
+            if (next && next !== row) { focusRow(next); selectRow(next); }
+            break;
+          }
+          case 'ArrowUp': {
+            e.preventDefault();
+            const prev = rows[Math.max(i - 1, 0)];
+            if (prev && prev !== row) { focusRow(prev); selectRow(prev); }
+            break;
+          }
+          case 'ArrowRight': {
+            e.preventDefault();
+            focusRow(adjacentColumnFirstRow(list, 1));
+            break;
+          }
+          case 'ArrowLeft': {
+            e.preventDefault();
+            focusRow(adjacentColumnFirstRow(list, -1));
+            break;
+          }
+          case 'Enter':
+          case ' ': {
+            e.preventDefault();
+            selectRow(row);
+            // Item rows navigate on activation (follow the <a>, unless inert '#').
+            if (row.tagName === 'A') {
+              const href = (row as HTMLAnchorElement).getAttribute('href');
+              if (href && href !== '#') (row as HTMLAnchorElement).click();
+            }
+            break;
+          }
+        }
+      });
+    });
+
+    // ── Events: detail follows hover / focus over the projects column ──────────
+    if (detail) {
+      const showFor = (target: EventTarget | null) => {
+        const row = (target as HTMLElement | null)?.closest<HTMLElement>('[data-row]');
+        if (row && lists.projects.contains(row)) renderDetail(projectById(row.getAttribute('data-project-id')));
+      };
+      lists.projects.addEventListener('mouseover', (e) => showFor(e.target));
+      // Pointer left the whole column → restore the pinned (selected) project.
+      lists.projects.addEventListener('mouseleave', () => renderDetail(detailPinned));
+      // Keyboard parity: focusing a row shows its detail; leaving restores the pin.
+      lists.projects.addEventListener('focusin', (e) => showFor(e.target));
+      lists.projects.addEventListener('focusout', (e) => {
+        const to = (e as FocusEvent).relatedTarget as Node | null;
+        if (!to || !lists.projects.contains(to)) renderDetail(detailPinned);
+      });
+    }
+
+    // ── Default state: first project pre-selected, nothing deeper ──────────────
+    const firstRow = lists.projects.querySelector<HTMLElement>('[data-row]');
+    if (firstRow) selectProject(firstRow);
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-portfolio-explorer]').forEach(initExplorer);
+</script>

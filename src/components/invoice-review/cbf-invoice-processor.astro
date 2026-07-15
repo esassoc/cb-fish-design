@@ -1,0 +1,1207 @@
+---
+// cbf-invoice-processor — the COR's full-page "process invoice" surface. The heavy
+// invoice-processing experience (à la Acctual) lifted out of the review-queue's
+// esa-side-dialog overlay into a STANDALONE page component that a route renders for
+// a single invoice: the SUBMITTED DOCUMENT pane on the LEFT (fluid — hosts the
+// invoice sheet, the Line Item Budget, and backup files opened side-by-side with the
+// invoice at independent per-column scroll) and the REVIEW PANEL on the RIGHT
+// (~24rem — hero amount + copy, review clock, final-invoice alert, contract context,
+// copyable spec fields, backup + documents, and the Approve / Return-for-revision
+// decision actions with their confirm/comment sub-states and in-place result alert).
+//
+// Differs from the overlay: no esa-side-dialog, no prev/next footer, no grid, no
+// initQueue, no cross-row decisions Map. The script is self-contained — it reads the
+// single serialized invoice from the [data-processor-data] JSON tag, populates the
+// one record, and wires view controls + approve/return + copy + download. A decision
+// updates the result alert in place. The docpane gets a bounded, sticky height so its
+// internal scroll (and the compare columns) can scroll while the right panel scrolls
+// in normal page flow.
+//
+// bcn-lego-checked: no esa-* lego renders an invoice/budget DOCUMENT (a paper vendor
+// bill with letterhead, bill-to, line-item ledger, totals — or the reconciled Line
+// Item Budget sheet) — that paper-doc markup is bespoke and reusable, and lives here
+// (same justification the review-queue overlay carries). Beacon is not on this
+// machine. Every other control IS a lego: hero/status/urgency + Final are esa-pill
+// (real markup cloned so styling is byte-identical, never reinvented); the
+// final-invoice notice + decision result are esa-alert-box; Approve/Return and the
+// download/back controls are esa-button; per-field copy + per-file view/download are
+// esa-icon-button; Return's comment capture is esa-textarea. The split is the
+// .sidebar layout primitive.
+import EsaPill from '@esa/ecology/esa-pill.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import { withBase } from '../../lib/base';
+
+type Stage = 'Submitted' | 'In review' | 'Returned' | 'Approved';
+
+interface Props {
+  invoice: any;
+  /** Where "Return to dashboard" (shown after a decision) links. */
+  dashboardHref?: string;
+}
+
+// esa-pill variant per review stage — color conveys state, not decoration. Cloned
+// client-side per stage so the panel's status chip is byte-identical to the lego.
+const stageVariant: Record<Stage, 'info' | 'warning' | 'success' | 'danger'> = {
+  Submitted: 'info',
+  'In review': 'warning',
+  Returned: 'danger',
+  Approved: 'success',
+};
+const stages = Object.keys(stageVariant) as Stage[];
+
+// Urgency pill variants, keyed by bucket (see urgencyOf in the data module).
+const urgencyVariant = { overdue: 'danger', 'due-soon': 'warning', 'on-track': 'default' } as const;
+const urgencyKeys = Object.keys(urgencyVariant) as (keyof typeof urgencyVariant)[];
+
+const { invoice, dashboardHref = withBase('/my-work#invoices') } = Astro.props;
+---
+<section class="cbf-invoice-processor" aria-label="Process invoice">
+  <div
+    class="cbf-invoice-processor__split sidebar"
+    data-side="end"
+    style="--sidebar-width: 24rem; --sidebar-content-min: 50%; --gap: var(--spacing-600);"
+  >
+    <!-- Panel (first child → ordered right by data-side=end). -->
+    <aside class="cbf-review-panel stack" data-gap="lg" aria-label="Review">
+      <!-- Invoice information leads. The REVIEW-BY deadline is the one figure called
+           out (large + red) since it's the thing that must happen by a date, with the
+           overdue/countdown alert directly beneath it; submitted + net terms are quiet
+           supporting context. The identifying spec fields follow, all of equal weight.
+           The amount + contract draw-down come AFTER, as a separate money block. -->
+      <header class="cbf-review-hero">
+        <div class="cbf-review-deadline">
+          <span class="cbf-review__label" data-f-review-label>Review by</span>
+          <span class="cbf-review-deadline__date" data-f-reviewby></span>
+          <span class="cbf-review-deadline__urgency" data-f-urgency></span>
+          <p class="cbf-review-deadline__support">
+            Submitted <span data-f-submitted></span> · <span data-f-net-terms></span>
+          </p>
+        </div>
+      </header>
+
+      <div data-f-final-alert hidden>
+        <EsaAlertBox variant="info" title="Final invoice">
+          Closes out this contract. Confirm all deliverables are accepted and any retainage is accounted for before approving.
+        </EsaAlertBox>
+      </div>
+
+      <!-- Invoice information — the identifying fields, all of roughly equal weight.
+           Each row carries a copy control that copies that field's value. -->
+      <dl class="cbf-review-fields">
+        <div class="cbf-review-fields__row">
+          <dt class="cbf-review__label">Invoice</dt>
+          <dd class="cbf-review-fields__value cbf-num" data-f-number-panel></dd>
+          <span class="cbf-review-fields__copy" data-copy>
+            <EsaIconButton icon="copy" label="Copy invoice number" size="xs" />
+          </span>
+        </div>
+        <div class="cbf-review-fields__row">
+          <dt class="cbf-review__label">Vendor</dt>
+          <dd class="cbf-review-fields__value" data-f-vendor-panel></dd>
+          <span class="cbf-review-fields__copy" data-copy>
+            <EsaIconButton icon="copy" label="Copy vendor" size="xs" />
+          </span>
+        </div>
+        <div class="cbf-review-fields__row">
+          <dt class="cbf-review__label">Contract</dt>
+          <dd class="cbf-review-fields__value cbf-num" data-f-contract>
+            <span data-f-contract-num></span>
+            <span class="cbf-review-fields__sub" data-f-contract-name></span>
+          </dd>
+          <span class="cbf-review-fields__copy" data-copy data-f-contract-copy>
+            <EsaIconButton icon="copy" label="Copy contract number" size="xs" />
+          </span>
+        </div>
+        <div class="cbf-review-fields__row">
+          <dt class="cbf-review__label">Project</dt>
+          <dd class="cbf-review-fields__value cbf-num" data-f-project>
+            <span data-f-project-num></span>
+            <span class="cbf-review-fields__sub" data-f-project-name></span>
+          </dd>
+          <span class="cbf-review-fields__copy" data-copy data-f-project-copy>
+            <EsaIconButton icon="copy" label="Copy project number" size="xs" />
+          </span>
+        </div>
+        <div class="cbf-review-fields__row">
+          <dt class="cbf-review__label">Perf. start</dt>
+          <dd class="cbf-review-fields__value" data-f-perf-start></dd>
+          <span class="cbf-review-fields__copy" data-copy>
+            <EsaIconButton icon="copy" label="Copy performance start date" size="xs" />
+          </span>
+        </div>
+        <div class="cbf-review-fields__row">
+          <dt class="cbf-review__label">Perf. end</dt>
+          <dd class="cbf-review-fields__value" data-f-perf-end>
+            <span data-f-perf-end-date></span>
+            <span class="cbf-review-fields__sub" data-f-contract-end></span>
+          </dd>
+          <span class="cbf-review-fields__copy" data-copy data-f-perf-end-copy>
+            <EsaIconButton icon="copy" label="Copy performance end date" size="xs" />
+          </span>
+        </div>
+      </dl>
+
+      <!-- Amount information — the billed figure and how it draws down the contract.
+           Comes AFTER the invoice information, and reuses the SAME label→value row
+           grid as the fields above so every value lines up in one left column (no
+           right-aligned figures for the eye to jump to). The amount is emphasized by
+           size only. -->
+      <dl class="cbf-review-fields cbf-review-money" aria-label="Amount">
+        <div class="cbf-review-fields__row">
+          <dt class="cbf-review__label">Amount</dt>
+          <dd class="cbf-review-fields__value cbf-review-money__amount cbf-num" data-f-amount-hero></dd>
+          <span class="cbf-review-fields__copy" data-copy data-f-amount-copy>
+            <EsaIconButton icon="copy" label="Copy amount" size="xs" />
+          </span>
+        </div>
+        <div class="cbf-review-fields__row">
+          <dt class="cbf-review__label">Contract remaining</dt>
+          <dd class="cbf-review-fields__value cbf-num" data-f-remaining>
+            <span data-f-remaining-val></span>
+            <span class="cbf-review-fields__sub" data-f-rem-after></span>
+          </dd>
+        </div>
+      </dl>
+
+      <!-- Backup documentation: the supporting files the vendor uploaded with the
+           invoice. Each row carries a "view" control (renders the file in the
+           document pane) and a download control. Rows are injected by JS; the
+           per-row view + download controls clone the server-rendered esa-icon-button
+           templates below so the lego markup stays byte-identical. -->
+      <section class="cbf-review-attachments" aria-label="Backup documentation">
+        <div class="cbf-review-attachments__head repel">
+          <h3 class="cbf-review__section-title" data-f-attach-title>Backup documentation</h3>
+          <span data-attach-all>
+            <EsaButton appearance="outline" color="secondary" size="sm" icon="download">Download all</EsaButton>
+          </span>
+        </div>
+        <ul class="cbf-review-attachments__list" data-f-attachments></ul>
+      </section>
+
+      <!-- Documents: the Line Item Budget renders in the document pane (left) when
+           viewed — same pane the invoice occupies, so the COR reconciles line items
+           against the budget without leaving the page. -->
+      <section class="cbf-review-attachments" aria-label="Documents">
+        <div class="cbf-review-attachments__head repel">
+          <h3 class="cbf-review__section-title">Documents</h3>
+        </div>
+        <ul class="cbf-review-attachments__list">
+          <li class="cbf-review-attach">
+            <span class="cbf-review-attach__name">Line Item Budget</span>
+            <span class="cbf-review-attach__view" data-doc-view-btn data-doc-kind="budget">
+              <EsaIconButton icon="eye" label="View Line Item Budget" size="sm" />
+            </span>
+            <span class="cbf-review-attach__dl" data-budget-dl>
+              <EsaIconButton icon="download" label="Download Line Item Budget" size="sm" />
+            </span>
+          </li>
+        </ul>
+      </section>
+      <div data-dl-template hidden aria-hidden="true">
+        <EsaIconButton icon="download" label="Download file" size="sm" />
+      </div>
+      <div data-view-template hidden aria-hidden="true">
+        <EsaIconButton icon="eye" label="View file" size="sm" />
+      </div>
+
+      <!-- Decisions. Inline confirm/comment (no nested modal). -->
+      <div class="cbf-review-actions" data-actions>
+        <!-- Return left, Approve right — the primary action sits at the right edge. -->
+        <div class="repel cbf-review-actions__default" data-actions-default>
+          <span data-act-return><EsaButton color="danger" appearance="outline" size="md">Return for revision</EsaButton></span>
+          <span data-act-approve><EsaButton color="primary" size="md">Approve</EsaButton></span>
+        </div>
+
+        <div class="stack" data-gap="sm" data-actions-approve hidden>
+          <p class="cbf-review-fields__value">
+            Approve <strong class="cbf-num" data-f-num-approve></strong> for <span data-f-amount-approve></span> and route it to the Contracting Officer for payment? This records your QA/QC sign-off.
+          </p>
+          <div class="repel">
+            <span data-act-approve-cancel><EsaButton appearance="outline" color="secondary" size="md">Cancel</EsaButton></span>
+            <span data-act-approve-confirm><EsaButton color="primary" size="md">Confirm approval</EsaButton></span>
+          </div>
+        </div>
+
+        <div class="stack" data-gap="sm" data-actions-return hidden>
+          <esa-textarea
+            data-return-reason
+            label="Comments for the vendor"
+            placeholder="Explain what needs to change — e.g. a line item needs a supporting receipt, or the mileage rate exceeds the contract."
+            rows="4"
+          ></esa-textarea>
+          <div class="repel">
+            <span data-act-return-cancel><EsaButton appearance="outline" color="secondary" size="md">Cancel</EsaButton></span>
+            <span data-act-return-confirm><EsaButton color="danger" size="md">Return for revision</EsaButton></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Decision result — replaces the action bar in place once a decision is
+           made, so the outcome appears where the COR clicked. The invoice is now
+           processed, so the next step is back to the queue. -->
+      <div class="cbf-review-result stack" data-gap="md" data-review-result hidden>
+        <EsaAlertBox variant="success" title="Approved">
+          <span data-result-text></span>
+        </EsaAlertBox>
+        <div class="cbf-review-result__actions">
+          <EsaButton href={dashboardHref} color="primary" size="md" icon="arrow-left">Return to dashboard</EsaButton>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Document (last child → fluid, left). The pane the COR reads — it hosts the
+         invoice by default, and swaps to the Line Item Budget or a backup file when
+         one is "viewed" from the panel. A bounded, sticky viewer that stays put
+         while the right panel scrolls in normal page flow. A quiet bar names the
+         current document and offers a way back to the invoice. -->
+    <div class="cbf-invoice-processor__docpane cbf-review-docpane">
+      <div class="cbf-review-docpane__bar" data-doc-bar hidden>
+        <span class="cbf-review-docpane__name" data-doc-name></span>
+        <span data-doc-back>
+          <EsaButton appearance="outline" color="secondary" size="sm" icon="chevron-left">Back to invoice</EsaButton>
+        </span>
+      </div>
+      <div class="cbf-review-docpane__scroll">
+        <article class="cbf-invoice-doc" data-doc-view="invoice" aria-label="Submitted invoice document">
+          <div class="cbf-invoice-doc__stamp" data-f-stamp hidden>Final invoice</div>
+          <header class="cbf-invoice-doc__head">
+            <div>
+              <p class="cbf-invoice-doc__vendor" data-f-vendor-doc></p>
+              <p class="cbf-invoice-doc__sub">Vendor</p>
+            </div>
+            <div class="cbf-invoice-doc__meta">
+              <p><span>Invoice #</span> <strong class="cbf-num" data-f-num-doc></strong></p>
+              <p><span>Date</span> <strong data-f-date></strong></p>
+            </div>
+          </header>
+
+          <div class="cbf-invoice-doc__billto">
+            <p class="cbf-invoice-doc__sub">Bill to</p>
+            <p data-f-billto></p>
+          </div>
+
+          <table class="cbf-invoice-doc__items">
+            <thead>
+              <tr>
+                <th scope="col">Description</th>
+                <th scope="col" class="cbf-num">Qty</th>
+                <th scope="col" class="cbf-num">Unit</th>
+                <th scope="col" class="cbf-num">Total</th>
+              </tr>
+            </thead>
+            <tbody data-f-items></tbody>
+            <tfoot>
+              <tr><th scope="row" colspan="3">Subtotal</th><td class="cbf-num" data-f-subtotal></td></tr>
+              <tr><th scope="row" colspan="3">Tax</th><td class="cbf-num" data-f-tax></td></tr>
+              <tr class="cbf-invoice-doc__total"><th scope="row" colspan="3">Total</th><td class="cbf-num" data-f-total></td></tr>
+            </tfoot>
+          </table>
+
+          <p class="cbf-invoice-doc__memo" data-f-memo-wrap hidden><span>Memo:</span> <span data-f-memo></span></p>
+          <p class="cbf-invoice-doc__generated" data-f-pdf></p>
+        </article>
+
+        <!-- Line Item Budget document — the invoice's line items reconciled against
+             the contract budget. Rendered client-side from the same record. -->
+        <article class="cbf-invoice-doc cbf-budget-doc" data-doc-view="budget" aria-label="Line item budget" hidden>
+          <header class="cbf-invoice-doc__head">
+            <div>
+              <p class="cbf-invoice-doc__vendor">Line Item Budget</p>
+              <p class="cbf-invoice-doc__sub" data-f-budget-contract></p>
+            </div>
+            <div class="cbf-invoice-doc__meta">
+              <p><span>As of</span> <strong data-f-budget-asof></strong></p>
+            </div>
+          </header>
+          <table class="cbf-invoice-doc__items">
+            <thead>
+              <tr>
+                <th scope="col">Line item</th>
+                <th scope="col" class="cbf-num">Qty</th>
+                <th scope="col" class="cbf-num">Unit</th>
+                <th scope="col" class="cbf-num">This invoice</th>
+              </tr>
+            </thead>
+            <tbody data-f-budget-items></tbody>
+            <tfoot>
+              <tr><th scope="row" colspan="3">Billed this invoice</th><td class="cbf-num" data-f-budget-invoice></td></tr>
+            </tfoot>
+          </table>
+          <dl class="cbf-review-impact__ledger cbf-budget-doc__summary">
+            <div class="cbf-review-impact__row">
+              <dt>Contract value</dt>
+              <dd class="cbf-num" data-f-budget-value></dd>
+            </div>
+            <div class="cbf-review-impact__row">
+              <dt>Expended to date</dt>
+              <dd class="cbf-num" data-f-budget-expended></dd>
+            </div>
+            <div class="cbf-review-impact__row cbf-review-impact__row--total">
+              <dt>Remaining after this invoice</dt>
+              <dd class="cbf-num" data-f-budget-remaining></dd>
+            </div>
+          </dl>
+        </article>
+
+        <!-- Backup file preview — mock files have no real blob, so the pane shows a
+             named placeholder with a download control. -->
+        <article class="cbf-invoice-doc cbf-doc-placeholder" data-doc-view="backup" aria-label="Document preview" hidden>
+          <div class="cbf-doc-placeholder__icon" aria-hidden="true">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <p class="cbf-doc-placeholder__name" data-f-backup-name></p>
+          <p class="cbf-invoice-doc__sub">Preview isn't available for this file in the prototype.</p>
+          <span data-doc-placeholder-dl>
+            <EsaButton appearance="outline" color="secondary" size="sm" icon="download">Download file</EsaButton>
+          </span>
+        </article>
+      </div>
+    </div>
+  </div>
+
+  <!-- Real esa-pill legos, server-rendered once per stage AND per urgency bucket
+       with the design-system scope hash intact. The panel clones the matching
+       template's markup so every pill is byte-identical to the lego. -->
+  <div class="cbf-invoice-processor__badge-templates" data-badge-templates hidden aria-hidden="true">
+    {stages.map((s) => (
+      <span data-stage={s}><EsaPill label={s} variant={stageVariant[s]} size="md" removable={false} /></span>
+    ))}
+    {urgencyKeys.map((u) => (
+      <span data-urgency={u}><EsaPill label={u} variant={urgencyVariant[u]} size="md" removable={false} /></span>
+    ))}
+    <span data-flag="final"><EsaPill label="Final" variant="default" size="md" removable={false} /></span>
+  </div>
+
+  <!-- Single-invoice record for the client script (no second fetch). -->
+  <script type="application/json" data-processor-data set:html={JSON.stringify(invoice)}></script>
+</section>
+
+<style>
+  /* Root: the page owns vertical scroll; the docpane is a sticky bounded viewer
+     while the panel scrolls in normal flow (see the docpane rules below). */
+  .cbf-invoice-processor { display: block; }
+  .cbf-invoice-processor__split { align-items: start; }
+
+  /* Panel ----------------------------------------------------------------- */
+  .cbf-review__label {
+    font-size: var(--type-size-150);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+  }
+  .cbf-review__section-title {
+    margin: 0;
+    font-size: var(--type-size-150);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+  }
+
+  /* Invoice-information hero — the review-by DEADLINE leads. Large and red so it
+     calls attention to itself; the overdue/countdown alert sits on its own line
+     directly beneath, and submitted + net terms are quiet supporting context. */
+  .cbf-review-deadline { display: flex; flex-direction: column; gap: var(--spacing-100); min-width: 0; }
+  /* Prominent by size/weight; standard text color unless the invoice is OVERDUE,
+     in which case it goes red — so red always means "this is late", nothing else. */
+  .cbf-review-deadline__date {
+    font-size: var(--type-size-500);
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-tight);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-review-deadline__date--overdue { color: var(--color-danger, #b42318); }
+  .cbf-review-deadline__urgency { display: block; }
+  .cbf-review-deadline__urgency:empty { display: none; }
+  .cbf-review-deadline__support {
+    margin: var(--spacing-100) 0 0;
+    font-size: var(--type-size-100);
+    color: var(--color-text-muted);
+  }
+
+  /* Amount information — a money block set off with a hairline top/bottom rule,
+     placed AFTER the invoice fields. The amount is a labeled line at a moderate
+     scale (not a giant hero); the remaining balance leads the draw-down below it. */
+  /* The money block reuses the field-row grid; a top/bottom hairline sets it off
+     as a group. The amount is emphasized by SIZE only (no bold), still left-aligned
+     in the shared value column. */
+  .cbf-review-money { padding-block: var(--spacing-200); border-block: 1px solid var(--color-border); }
+  .cbf-review-money__amount {
+    font-size: var(--type-size-400);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+  }
+
+  .cbf-review-fields { margin: 0; }
+  .cbf-review-fields__row {
+    display: grid;
+    grid-template-columns: 92px 1fr auto;
+    gap: var(--spacing-300);
+    align-items: baseline;
+    padding-block: var(--spacing-250);
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+  }
+  .cbf-review-fields__row:first-child { border-top: 0; padding-top: 0; }
+  .cbf-review-fields__value { margin: 0; font-size: var(--type-size-200); color: var(--color-text-secondary); }
+  /* Secondary line under a value — the reference number (contract/project) or the
+     contract-end note under the performance end date. Quieter than the value. */
+  /* Secondary line under a lead value — the contract/project NAME (the number is
+     the lead) or the contract-end note under the performance end date. Reset to a
+     regular weight so it stays clearly quieter than the lead value above it. */
+  .cbf-review-fields__sub {
+    display: block;
+    margin-top: var(--spacing-50);
+    font-size: var(--type-size-100);
+    font-weight: var(--font-weight-regular);
+    color: var(--color-text-muted);
+  }
+  .cbf-review-fields__sub.cbf-num { font-variant-numeric: tabular-nums; }
+
+  /* Per-field copy control — the esa-icon-button lego, quiet until hovered. */
+  .cbf-review-fields__copy {
+    align-self: center;
+    position: relative;
+    line-height: 0;
+    color: var(--color-text-muted);
+  }
+  .cbf-review-fields__copy :global(.esa-icon-button) { color: inherit; }
+  .cbf-review-fields__copy :global(.esa-icon-button:hover) {
+    background: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
+    color: var(--color-text-primary);
+  }
+  .cbf-review-fields__copy[data-state='copied'] { color: var(--color-success, #1f8a4c); }
+  .cbf-review-fields__copy[data-state='copied']::after {
+    content: 'Copied';
+    position: absolute;
+    right: calc(100% + var(--spacing-150));
+    top: 50%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    font-size: var(--type-size-050);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-success, #1f8a4c);
+    pointer-events: none;
+  }
+
+  /* Ledger table shared by the budget-document summary. */
+  .cbf-review-impact__ledger {
+    margin: var(--spacing-200) 0 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    overflow: hidden;
+  }
+  .cbf-review-impact__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    padding: var(--spacing-250) var(--spacing-400);
+  }
+  .cbf-review-impact__row + .cbf-review-impact__row {
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+  }
+  .cbf-review-impact__row dt {
+    margin: 0;
+    font-size: var(--type-size-150);
+    color: var(--color-text-secondary);
+  }
+  .cbf-review-impact__row dd {
+    margin: 0;
+    font-size: var(--type-size-200);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-review-impact__row--total {
+    background: var(--color-surface-sunken);
+    border-top: 1px solid var(--color-border);
+  }
+  .cbf-review-impact__row--total dt {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-review-impact__row--total dd { font-weight: var(--font-weight-semibold); }
+
+  /* Attachments ----------------------------------------------------------- */
+  .cbf-review-attachments { margin-top: var(--spacing-200); }
+  .cbf-review-attachments__head {
+    align-items: center;
+    gap: var(--spacing-300);
+    margin-bottom: var(--spacing-300);
+  }
+  .cbf-review-attachments__head .cbf-review__section-title { margin: 0; }
+  .cbf-review-attachments__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    overflow: hidden;
+  }
+
+  /* Decision sub-states (Approve-confirm / Return-comment) are .stack/.cluster
+     groups toggled via the [hidden] attribute. Those layout primitives set
+     `display: flex`, which OVERRIDES the UA `[hidden] { display: none }` — so
+     without this guard all three action groups render at once. Restore hidden's
+     intent for the toggled groups. */
+  .cbf-review-actions [hidden] { display: none !important; }
+  /* The result block is a .stack (display:flex) — same hub gap; restore [hidden]. */
+  .cbf-review-result[hidden] { display: none !important; }
+  .cbf-review-result__actions { display: flex; justify-content: flex-end; }
+
+  /* Document pane --------------------------------------------------------- */
+  /* On a page there is no fixed-height dialog body to bound the pane. Give the
+     docpane a definite bounded height and make it a sticky viewer that stays put
+     while the right panel scrolls in normal page flow — this height source is what
+     lets the internal scroll (and the compare columns) scroll independently. */
+  .cbf-invoice-processor__docpane {
+    position: sticky;
+    top: var(--spacing-500);
+    height: calc(100vh - 9rem);
+  }
+  .cbf-review-docpane {
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  /* Bar names the document on screen and offers a way back to the invoice. */
+  .cbf-review-docpane__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-300);
+    flex: none;
+    padding: var(--spacing-300) var(--spacing-400);
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+  .cbf-review-docpane__bar[hidden] { display: none; }
+  .cbf-review-docpane__name {
+    min-width: 0;
+    font-size: var(--type-size-150);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* Scroll area holds the centered document(s). */
+  .cbf-review-docpane__scroll {
+    flex: 1;
+    min-height: 0;
+    padding: var(--spacing-600);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+  }
+  .cbf-review-docpane__scroll > [data-doc-view][hidden] { display: none; }
+
+  /* Compare mode — a backup file opens side by side with the invoice so the COR
+     checks the bill against its backup. The pane itself STOPS scrolling; each
+     document column is its own bounded, independently-scrolling viewport. */
+  .cbf-review-docpane__scroll--compare {
+    flex-direction: row;
+    align-items: stretch;
+    gap: var(--spacing-500);
+    overflow: hidden; /* columns own the scroll, not the pane */
+  }
+  .cbf-review-docpane__scroll--compare > [data-doc-view] {
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+    min-height: 0;
+    max-height: 100%;
+    overflow-y: auto;
+    align-self: stretch;
+  }
+
+  .cbf-budget-doc__summary { margin-top: var(--spacing-500); border-radius: var(--radius-100); }
+
+  /* Backup-file placeholder — a centered card standing in for an un-previewable file. */
+  .cbf-doc-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-300);
+    text-align: center;
+    flex: 1 0 auto;
+  }
+  .cbf-doc-placeholder__icon { color: var(--color-text-muted); }
+  .cbf-doc-placeholder__name {
+    margin: 0;
+    font-size: var(--type-size-250);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    word-break: break-word;
+  }
+  .cbf-doc-placeholder .cbf-invoice-doc__sub { margin-bottom: var(--spacing-200); }
+  .cbf-invoice-doc {
+    position: relative;
+    flex: 1 0 auto;
+    width: 100%;
+    max-width: 620px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--color-surface-inverse) 10%, transparent);
+    padding: var(--spacing-700) var(--spacing-700) var(--spacing-600);
+    color: var(--color-text-primary);
+    font-size: var(--type-size-150);
+    line-height: var(--line-height-normal);
+  }
+  .cbf-invoice-doc__stamp {
+    position: absolute;
+    top: var(--spacing-500);
+    right: var(--spacing-500);
+    font-size: var(--type-size-100);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-danger, #b42318);
+    border: 1.5px solid currentColor;
+    border-radius: var(--radius-100);
+    padding: 2px var(--spacing-200);
+    transform: rotate(-4deg);
+    opacity: 0.8;
+  }
+  .cbf-invoice-doc__head {
+    display: flex; justify-content: space-between; gap: var(--spacing-400);
+    align-items: flex-start; margin-bottom: var(--spacing-500);
+  }
+  .cbf-invoice-doc__vendor { margin: 0; font-size: var(--type-size-400); font-weight: var(--font-weight-bold); }
+  .cbf-invoice-doc__sub { margin: 0; color: var(--color-text-muted); font-size: var(--type-size-100); }
+  .cbf-invoice-doc__meta { text-align: right; }
+  .cbf-invoice-doc__meta p { margin: 0 0 var(--spacing-100); }
+  .cbf-invoice-doc__meta span { color: var(--color-text-muted); margin-right: var(--spacing-200); }
+  .cbf-invoice-doc__billto { margin-bottom: var(--spacing-500); }
+  .cbf-invoice-doc__billto p { margin: 0; }
+
+  .cbf-invoice-doc__items { width: 100%; border-collapse: collapse; }
+  .cbf-invoice-doc__items th, .cbf-invoice-doc__items td { text-align: left; padding: var(--spacing-250) 0; vertical-align: top; }
+  .cbf-invoice-doc__items thead th {
+    border-bottom: 1px solid var(--color-text-primary);
+    font-weight: var(--font-weight-semibold); font-size: var(--type-size-100); color: var(--color-text-secondary);
+  }
+  .cbf-invoice-doc__items tbody tr + tr td { border-top: 1px solid var(--color-border-light, var(--color-border)); }
+  .cbf-invoice-doc__items tfoot th, .cbf-invoice-doc__items tfoot td { padding: var(--spacing-150) 0; text-align: right; }
+  .cbf-invoice-doc__items tfoot th { font-weight: var(--font-weight-regular); color: var(--color-text-secondary); }
+  .cbf-invoice-doc__items tfoot tr:first-child th, .cbf-invoice-doc__items tfoot tr:first-child td { padding-top: var(--spacing-400); }
+  .cbf-invoice-doc__total th, .cbf-invoice-doc__total td {
+    border-top: 1px solid var(--color-text-primary); font-weight: var(--font-weight-bold);
+    font-size: var(--type-size-200); padding-top: var(--spacing-300) !important;
+  }
+  .cbf-invoice-doc .cbf-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cbf-invoice-doc__items th.cbf-num { text-align: right; }
+  .cbf-invoice-doc__memo { margin: var(--spacing-600) 0 0; color: var(--color-text-secondary); line-height: var(--line-height-relaxed); }
+  .cbf-invoice-doc__memo span { color: var(--color-text-muted); }
+  .cbf-invoice-doc__generated {
+    margin: var(--spacing-600) 0 0; padding-top: var(--spacing-400);
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+    color: var(--color-text-muted); font-size: var(--type-size-100); font-style: italic;
+  }
+</style>
+
+<style is:global>
+  /* Document line items are injected by JS (no Astro scope hash) — styled globally. */
+  .cbf-invoice-doc__items tbody td { font-size: var(--type-size-150); }
+
+  /* Backup-documentation rows are injected by JS — styled globally. The filename
+     carries its own extension; the affordances are the view control (renders the
+     file in the document pane) and the download control — actions, not decoration. */
+  .cbf-review-attach {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300);
+    padding: var(--spacing-150) var(--spacing-200) var(--spacing-150) var(--spacing-400);
+  }
+  .cbf-review-attach + .cbf-review-attach { border-top: 1px solid var(--color-border-light, var(--color-border)); }
+  .cbf-review-attach__name {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--type-size-150);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cbf-review-attach--empty .cbf-review-attach__name { color: var(--color-text-muted); }
+  .cbf-review-attach__dl,
+  .cbf-review-attach__view { flex: none; line-height: 0; color: var(--color-text-muted); }
+  .cbf-review-attach__dl .esa-icon-button:hover,
+  .cbf-review-attach__view .esa-icon-button:hover {
+    background: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
+    color: var(--color-text-primary);
+  }
+  /* Active view control: the file it points at is the one on screen in the pane. */
+  .cbf-review-attach__view.is-active { color: var(--color-primary); }
+  .cbf-review-attach__view.is-active .esa-icon-button {
+    background: var(--color-primary-subtle, color-mix(in srgb, var(--color-primary) 12%, transparent));
+    color: var(--color-primary);
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-textarea';
+
+  type Stage = 'Submitted' | 'In review' | 'Returned' | 'Approved';
+  type LineItem = { description: string; qty: number; unitPrice: number };
+  type Invoice = {
+    number: string; vendor: string;
+    contract: string; contractNumber: string; project: string; projectNumber: string;
+    submitted: string; reviewBy: string; daysRemaining: number; netTerms: string;
+    amount: number; stage: Stage; final: boolean;
+    invoiceDate: string; perfStart: string; perfEnd: string; contractEnd: string;
+    billTo: string; lineItems: LineItem[]; notes?: string; pdfName: string;
+    supportingDocs: string[];
+    contractValue: number; expended: number; remaining: number; asOf: string;
+  };
+  type Decision = { variant: 'success' | 'danger'; title: string; text: string; badge: string };
+
+  const usd = new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+  });
+  const usdCompact = new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1,
+  });
+  const qtyFmt = new Intl.NumberFormat('en-US');
+
+  // ---- File download (prototype) ---------------------------------------
+  // No real blobs exist for the mock invoices, so a download builds a minimal
+  // valid one-page PDF named after the file.
+  const pdfEscape = (s: string) => s.replace(/([()\\])/g, '\\$1');
+  function makePlaceholderPdf(filename: string, subtitle: string): Blob {
+    const body =
+      `BT /F1 18 Tf 60 740 Td (${pdfEscape(filename)}) Tj ` +
+      `/F1 11 Tf 0 -26 Td (${pdfEscape(subtitle)}) Tj ` +
+      `0 -18 Td (Columbia Basin Fish & Wildlife Program — prototype placeholder) Tj ET`;
+    const objs = [
+      '<</Type/Catalog/Pages 2 0 R>>',
+      '<</Type/Pages/Kids[3 0 R]/Count 1>>',
+      '<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Resources<</Font<</F1 5 0 R>>>>/Contents 4 0 R>>',
+      `<</Length ${body.length}>>\nstream\n${body}\nendstream`,
+      '<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>',
+    ];
+    let pdf = '%PDF-1.4\n';
+    const offsets: number[] = [];
+    objs.forEach((o, i) => { offsets.push(pdf.length); pdf += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+    const xref = pdf.length;
+    pdf += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+    offsets.forEach((off) => { pdf += `${String(off).padStart(10, '0')} 00000 n \n`; });
+    pdf += `trailer\n<</Size ${objs.length + 1}/Root 1 0 R>>\nstartxref\n${xref}\n%%EOF`;
+    return new Blob([pdf], { type: 'application/pdf' });
+  }
+  function downloadFile(filename: string, invoiceNumber: string) {
+    const blob = makePlaceholderPdf(filename, `Attachment for invoice ${invoiceNumber}`);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  const urgencyOf = (d: number) => (d < 0 ? 'overdue' : d <= 3 ? 'due-soon' : 'on-track');
+  const daysLabel = (d: number) => {
+    if (d < 0) { const n = Math.abs(d); return `${n} day${n === 1 ? '' : 's'} overdue`; }
+    if (d === 0) return 'Due today';
+    return `${d} day${d === 1 ? '' : 's'} left`;
+  };
+  const openStages: Stage[] = ['Submitted', 'In review'];
+  const isOpenStage = (s: Stage) => openStages.includes(s);
+
+  // How the invoice's performance-period END sits relative to the contract's END
+  // date — the COR reads how close this invoice's work runs to contract close.
+  const contractEndGap = (perfEndStr: string, contractEndStr: string): string => {
+    const a = new Date(perfEndStr);
+    const b = new Date(contractEndStr);
+    if (isNaN(a.getTime()) || isNaN(b.getTime())) return '';
+    const days = Math.round((b.getTime() - a.getTime()) / 86_400_000);
+    if (days === 0) return 'ends on the contract end date';
+    const n = Math.abs(days);
+    return days > 0
+      ? `${n} day${n === 1 ? '' : 's'} before contract end`
+      : `${n} day${n === 1 ? '' : 's'} past contract end`;
+  };
+
+  // Bind ONE processor surface: populate the single invoice, wire view controls +
+  // approve/return + copy + download. No prev/next, no cross-row decisions Map — a
+  // decision updates the result alert in place for this one record.
+  function bindProcessor(root: HTMLElement) {
+    const dataEl = root.querySelector<HTMLScriptElement>('[data-processor-data]');
+    if (!dataEl) return;
+    let inv: Invoice;
+    try { inv = JSON.parse(dataEl.textContent ?? 'null'); } catch { return; }
+    if (!inv) return;
+
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string) => root.querySelector<T>(sel);
+
+    // Pre-clone the real esa-pill markup per stage + urgency (scope hash intact).
+    const stageHTML = new Map<string, string>();
+    root.querySelectorAll<HTMLElement>('[data-badge-templates] [data-stage]').forEach((el) => {
+      stageHTML.set(el.dataset.stage ?? '', el.innerHTML);
+    });
+    const urgencyHTML = new Map<string, string>();
+    root.querySelectorAll<HTMLElement>('[data-badge-templates] [data-urgency]').forEach((el) => {
+      urgencyHTML.set(el.dataset.urgency ?? '', el.innerHTML);
+    });
+
+    const badgeWith = (html: string, label: string) => {
+      const t = document.createElement('div');
+      t.innerHTML = html;
+      const el = t.querySelector('.esa-pill__label') ?? t.firstElementChild ?? t;
+      el.textContent = label;
+      return t.innerHTML;
+    };
+
+    // This invoice's decision (in place — no cross-row Map).
+    let decision: Decision | null = null;
+
+    const result = $('[data-review-result]');
+    const resultText = $('[data-result-text]');
+    const actions = $('[data-actions]');
+    const def = $('[data-actions-default]');
+    const approveBox = $('[data-actions-approve]');
+    const returnBox = $('[data-actions-return]');
+    const reason = $<HTMLElement & { value: string }>('[data-return-reason]');
+    const statusSlot = $('[data-f-status]');
+
+    // Attachments: list element + the cloneable download/view-button markup.
+    const attachList = $('[data-f-attachments]');
+    const attachTitle = $('[data-f-attach-title]');
+    const dlBtnHTML = $('[data-dl-template]')?.querySelector('button')?.outerHTML ?? '';
+    const viewBtnHTML = $('[data-view-template]')?.querySelector('button')?.outerHTML ?? '';
+    const escAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    let currentFiles: string[] = [];
+    let currentNumber = '';
+
+    // Document pane: the invoice, the Line Item Budget, and a backup-file preview
+    // share one pane; a bar names the active document and steps back to the invoice.
+    const docBar = $('[data-doc-bar]');
+    const docName = $('[data-doc-name]');
+    const docViews = new Map<string, HTMLElement>();
+    root.querySelectorAll<HTMLElement>('[data-doc-view]').forEach((el) => {
+      docViews.set(el.dataset.docView ?? '', el);
+    });
+    const budgetItems = $('[data-f-budget-items]');
+    const backupName = $('[data-f-backup-name]');
+    let backupViewFile = '';
+
+    const scrollEl = root.querySelector<HTMLElement>('.cbf-review-docpane__scroll');
+
+    // Show the pane's document(s). 'invoice' / 'budget' show a single document;
+    // 'backup' opens side by side WITH the invoice (compare mode) so the COR can
+    // check the bill against its backup file at independent per-column scroll.
+    const showDoc = (kind: string, opts?: { name?: string; matchFile?: string }) => {
+      const compare = kind === 'backup';
+      scrollEl?.classList.toggle('cbf-review-docpane__scroll--compare', compare);
+      docViews.forEach((el, key) => {
+        el.hidden = compare ? !(key === 'invoice' || key === 'backup') : key !== kind;
+      });
+      const isInvoice = kind === 'invoice';
+      if (docBar) docBar.hidden = isInvoice;
+      if (docName && opts?.name) docName.textContent = opts.name;
+      root.querySelectorAll<HTMLElement>('[data-doc-view-btn]').forEach((btn) => {
+        const on = !isInvoice
+          && btn.dataset.docKind === kind
+          && (kind !== 'backup' || btn.dataset.file === opts?.matchFile);
+        btn.classList.toggle('is-active', on);
+      });
+      scrollEl?.scrollTo?.(0, 0);
+    };
+
+    const showActionMode = (mode: 'default' | 'approve' | 'return' | 'done', dec?: Decision) => {
+      if (def) def.hidden = mode !== 'default';
+      if (approveBox) approveBox.hidden = mode !== 'approve';
+      if (returnBox) returnBox.hidden = mode !== 'return';
+      if (actions) actions.hidden = mode === 'done';
+      if (result) result.hidden = mode !== 'done';
+      if (mode === 'done' && dec && result && resultText) {
+        const box = result.querySelector('.esa-alert-box');
+        if (box) {
+          box.classList.remove('esa-alert-box--success', 'esa-alert-box--danger', 'esa-alert-box--info', 'esa-alert-box--warning');
+          box.classList.add(`esa-alert-box--${dec.variant}`);
+          const titleEl = box.querySelector('.esa-alert-box__title');
+          if (titleEl) titleEl.textContent = dec.title;
+        }
+        resultText.textContent = dec.text;
+      }
+    };
+
+    const setText = (sel: string, value: string) => { const el = $(sel); if (el) el.textContent = value; };
+
+    const populate = () => {
+      // Status badge (decided stage overrides the invoice stage).
+      const shownStage = decision ? decision.badge : inv.stage;
+      if (statusSlot) statusSlot.innerHTML = `<span class="cbf-grid-status">${stageHTML.get(shownStage) ?? shownStage}</span>`;
+
+      // Submission & review timeline. Submitted + net terms always show; the
+      // review-by deadline shows its urgency pill only while the invoice is open —
+      // terminal / decided records have a finished clock (no stale "overdue").
+      setText('[data-f-submitted]', inv.submitted);
+      setText('[data-f-net-terms]', inv.netTerms);
+      setText('[data-f-reviewby]', inv.reviewBy);
+      // The date uses the standard text color, going red ONLY when overdue. Terminal/
+      // decided records never tint (their clock is finished).
+      const open = isOpenStage(shownStage as Stage);
+      const bucket = urgencyOf(inv.daysRemaining);
+      const reviewByEl = $('[data-f-reviewby]');
+      if (reviewByEl) {
+        reviewByEl.className = 'cbf-review-deadline__date'
+          + (open && bucket === 'overdue' ? ' cbf-review-deadline__date--overdue' : '');
+      }
+      const urg = $('[data-f-urgency]');
+      if (urg) urg.innerHTML = open
+        ? `<span class="cbf-grid-status">${badgeWith(urgencyHTML.get(bucket) ?? '', daysLabel(inv.daysRemaining))}</span>`
+        : '';
+
+      // Final-invoice notice + document stamp.
+      const finalAlert = $('[data-f-final-alert]');
+      if (finalAlert) finalAlert.hidden = !inv.final;
+      const stamp = $('[data-f-stamp]');
+      if (stamp) stamp.hidden = !inv.final;
+
+      // Amount information — the billed figure (exact); its draw-down context follows.
+      setText('[data-f-amount-hero]', usd.format(inv.amount));
+      const amtCopy = $('[data-f-amount-copy]');
+      if (amtCopy) amtCopy.dataset.copyValue = inv.amount.toFixed(2);
+
+      // Amount draw-down (compact figures). Contract remaining shows a muted sub with
+      // the projected balance once this invoice is processed.
+      setText('[data-f-remaining-val]', usdCompact.format(inv.remaining));
+      const remAfter = inv.remaining - inv.amount;
+      setText('[data-f-rem-after]', `${usdCompact.format(remAfter)} after this invoice`);
+
+      // Spec fields.
+      setText('[data-f-number-panel]', inv.number);
+      setText('[data-f-vendor-panel]', inv.vendor);
+      // Contract & project: name + reference number. The copy control carries the
+      // NUMBER — that's the ID the COR transcribes into Asset Suite / other systems.
+      setText('[data-f-contract-name]', inv.contract);
+      setText('[data-f-contract-num]', inv.contractNumber);
+      const contractCopy = $<HTMLElement>('[data-f-contract-copy]');
+      if (contractCopy) contractCopy.dataset.copyValue = inv.contractNumber || inv.contract;
+      setText('[data-f-project-name]', inv.project);
+      setText('[data-f-project-num]', inv.projectNumber);
+      const projectCopy = $<HTMLElement>('[data-f-project-copy]');
+      if (projectCopy) projectCopy.dataset.copyValue = inv.projectNumber || inv.project;
+      // Performance start & end on separate rows so each copies on its own. The end
+      // row also notes how close the work runs to the contract's end date.
+      setText('[data-f-perf-start]', inv.perfStart);
+      setText('[data-f-perf-end-date]', inv.perfEnd);
+      setText('[data-f-contract-end]', `Contract ends ${inv.contractEnd} · ${contractEndGap(inv.perfEnd, inv.contractEnd)}`);
+      const perfEndCopy = $<HTMLElement>('[data-f-perf-end-copy]');
+      if (perfEndCopy) perfEndCopy.dataset.copyValue = inv.perfEnd;
+
+      // Invoice document.
+      setText('[data-f-vendor-doc]', inv.vendor);
+      setText('[data-f-num-doc]', inv.number);
+      setText('[data-f-date]', inv.invoiceDate);
+      setText('[data-f-billto]', inv.billTo);
+      const itemsBody = $('[data-f-items]');
+      const subtotal = inv.lineItems.reduce((t, li) => t + li.qty * li.unitPrice, 0);
+      if (itemsBody) {
+        itemsBody.innerHTML = inv.lineItems.map((li) => `<tr>
+          <td>${li.description}</td>
+          <td class="cbf-num">${qtyFmt.format(li.qty)}</td>
+          <td class="cbf-num">${usd.format(li.unitPrice)}</td>
+          <td class="cbf-num">${usd.format(li.qty * li.unitPrice)}</td>
+        </tr>`).join('');
+      }
+      setText('[data-f-subtotal]', usd.format(subtotal));
+      setText('[data-f-tax]', usd.format(0));
+      setText('[data-f-total]', usd.format(inv.amount));
+      const memoWrap = $('[data-f-memo-wrap]');
+      if (memoWrap) memoWrap.hidden = !inv.notes;
+      setText('[data-f-memo]', inv.notes ?? '');
+      setText('[data-f-pdf]', `Submitted document · ${inv.pdfName}`);
+
+      // Backup documentation rows.
+      currentFiles = [...inv.supportingDocs];
+      currentNumber = inv.number;
+      if (attachTitle) attachTitle.textContent = `Backup documentation (${currentFiles.length})`;
+      const attachAll = $('[data-attach-all]');
+      if (attachAll) attachAll.hidden = currentFiles.length === 0;
+      if (attachList) {
+        attachList.innerHTML = currentFiles.length
+          ? currentFiles
+              .map((name) => `<li class="cbf-review-attach">
+            <span class="cbf-review-attach__name" title="${escAttr(name)}">${escAttr(name)}</span>
+            <span class="cbf-review-attach__view" data-doc-view-btn data-doc-kind="backup" data-file="${escAttr(name)}">${viewBtnHTML}</span>
+            <span class="cbf-review-attach__dl" data-attach-dl data-file="${escAttr(name)}">${dlBtnHTML}</span>
+          </li>`)
+              .join('')
+          : '<li class="cbf-review-attach cbf-review-attach--empty"><span class="cbf-review-attach__name">No backup documentation was submitted with this invoice.</span></li>';
+        attachList.querySelectorAll<HTMLElement>('[data-attach-dl]').forEach((slot) => {
+          const file = slot.dataset.file ?? '';
+          const btn = slot.querySelector('button');
+          if (btn) { btn.setAttribute('aria-label', `Download ${file}`); btn.setAttribute('title', `Download ${file}`); }
+        });
+        attachList.querySelectorAll<HTMLElement>('[data-doc-view-btn][data-doc-kind="backup"]').forEach((slot) => {
+          const file = slot.dataset.file ?? '';
+          const btn = slot.querySelector('button');
+          if (btn) { btn.setAttribute('aria-label', `View ${file}`); btn.setAttribute('title', `View ${file}`); }
+        });
+      }
+
+      // Line Item Budget document.
+      setText('[data-f-budget-contract]', inv.contract);
+      setText('[data-f-budget-asof]', inv.asOf);
+      if (budgetItems) {
+        budgetItems.innerHTML = inv.lineItems.map((li) => `<tr>
+          <td>${li.description}</td>
+          <td class="cbf-num">${qtyFmt.format(li.qty)}</td>
+          <td class="cbf-num">${usd.format(li.unitPrice)}</td>
+          <td class="cbf-num">${usd.format(li.qty * li.unitPrice)}</td>
+        </tr>`).join('');
+      }
+      setText('[data-f-budget-invoice]', usd.format(inv.amount));
+      setText('[data-f-budget-value]', usd.format(inv.contractValue));
+      setText('[data-f-budget-expended]', usd.format(inv.expended));
+      setText('[data-f-budget-remaining]', usd.format(inv.remaining - inv.amount));
+
+      // Reset the document pane to the invoice.
+      showDoc('invoice');
+
+      // Approve-confirm copy.
+      setText('[data-f-num-approve]', inv.number);
+      setText('[data-f-amount-approve]', usd.format(inv.amount));
+      if (reason) reason.value = '';
+
+      showActionMode(decision ? 'done' : 'default', decision ?? undefined);
+    };
+
+    // Wire actions (delegated to wrapper spans like the rest of the spoke).
+    $('[data-act-approve]')?.addEventListener('click', () => showActionMode('approve'));
+    $('[data-act-return]')?.addEventListener('click', () => showActionMode('return'));
+    $('[data-act-approve-cancel]')?.addEventListener('click', () => showActionMode('default'));
+    $('[data-act-return-cancel]')?.addEventListener('click', () => showActionMode('default'));
+
+    // Once a decision is made the review step is COMPLETE — the deadline block flips
+    // from "Review by <due date>" to "Reviewed <today>" and the due/urgency alert
+    // clears (no stale countdown or red once the work is done).
+    const reviewedToday = () =>
+      new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const markReviewed = () => {
+      setText('[data-f-review-label]', 'Reviewed');
+      const reviewByEl = $('[data-f-reviewby]');
+      if (reviewByEl) {
+        reviewByEl.className = 'cbf-review-deadline__date';
+        reviewByEl.textContent = reviewedToday();
+      }
+      const urgEl = $('[data-f-urgency]');
+      if (urgEl) urgEl.innerHTML = '';
+    };
+
+    $('[data-act-approve-confirm]')?.addEventListener('click', () => {
+      const dec: Decision = {
+        variant: 'success', title: 'Approved', badge: 'Approved',
+        text: 'This invoice has been approved and routed to the Contracting Officer for payment.',
+      };
+      decision = dec;
+      if (statusSlot) statusSlot.innerHTML = `<span class="cbf-grid-status">${stageHTML.get('Approved') ?? 'Approved'}</span>`;
+      markReviewed();
+      showActionMode('done', dec);
+    });
+
+    $('[data-act-return-confirm]')?.addEventListener('click', () => {
+      const note = (reason?.value ?? '').trim();
+      const dec: Decision = {
+        variant: 'danger', title: 'Returned for revision', badge: 'Returned',
+        text: note ? `Returned to the vendor with your comments: “${note}”` : 'Returned to the vendor for revision.',
+      };
+      decision = dec;
+      if (statusSlot) statusSlot.innerHTML = `<span class="cbf-grid-status">${stageHTML.get('Returned') ?? 'Returned'}</span>`;
+      markReviewed();
+      showActionMode('done', dec);
+    });
+
+    // Per-file download (delegated over the injected rows).
+    attachList?.addEventListener('click', (e) => {
+      const slot = (e.target as HTMLElement)?.closest<HTMLElement>('[data-attach-dl]');
+      const file = slot?.dataset.file;
+      if (file) downloadFile(file, currentNumber);
+    });
+    // Download all: each file in turn, lightly staggered.
+    $('[data-attach-all]')?.addEventListener('click', () => {
+      currentFiles.forEach((file, i) => setTimeout(() => downloadFile(file, currentNumber), i * 250));
+    });
+
+    // Document viewing: delegated on the root so it covers both the server-rendered
+    // budget row and the injected file rows.
+    root.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-doc-back]')) { showDoc('invoice'); return; }
+      // Download the Line Item Budget as a named file (prototype placeholder PDF,
+      // same mechanism the backup files use).
+      if (target.closest('[data-budget-dl]')) {
+        downloadFile(`Line-Item-Budget-${currentNumber}.pdf`, currentNumber);
+        return;
+      }
+      const viewBtn = target.closest<HTMLElement>('[data-doc-view-btn]');
+      if (viewBtn) {
+        if (viewBtn.dataset.docKind === 'budget') {
+          showDoc('budget', { name: 'Line Item Budget' });
+        } else if (viewBtn.dataset.docKind === 'backup') {
+          const file = viewBtn.dataset.file ?? '';
+          backupViewFile = file;
+          if (backupName) backupName.textContent = file;
+          showDoc('backup', { name: `Comparing: ${file}`, matchFile: file });
+        }
+        return;
+      }
+      if (target.closest('[data-doc-placeholder-dl]') && backupViewFile) {
+        downloadFile(backupViewFile, currentNumber);
+      }
+    });
+
+    // Copy controls: each [data-copy] copies one atomic value to the clipboard.
+    const copyTimers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
+    const writeClipboard = async (text: string) => {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch { ok = false; }
+        ta.remove();
+        return ok;
+      }
+    };
+    root.addEventListener('click', (e) => {
+      const trigger = (e.target as HTMLElement)?.closest<HTMLElement>('[data-copy]');
+      if (!trigger || !root.contains(trigger)) return;
+      let text = (trigger.dataset.copyValue ?? '').trim();
+      if (!text) {
+        const targetSel = trigger.dataset.copyTarget;
+        const valueEl = targetSel
+          ? root.querySelector<HTMLElement>(targetSel)
+          : trigger.closest('.cbf-review-fields__row')?.querySelector<HTMLElement>('.cbf-review-fields__value');
+        text = (valueEl?.textContent ?? '').trim();
+      }
+      if (!text) return;
+      void writeClipboard(text).then((ok) => {
+        if (!ok) return;
+        trigger.dataset.state = 'copied';
+        clearTimeout(copyTimers.get(trigger));
+        copyTimers.set(trigger, setTimeout(() => { delete trigger.dataset.state; }, 1200));
+      });
+    });
+
+    populate();
+  }
+
+  document.querySelectorAll<HTMLElement>('.cbf-invoice-processor').forEach(bindProcessor);
+</script>

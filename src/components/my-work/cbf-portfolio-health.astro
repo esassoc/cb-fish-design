@@ -1,0 +1,353 @@
+---
+// cbf-portfolio-health — "My Portfolio" tab panel for the My Work COR landing page.
+// Renders a health/ownership view of contracts the COR owns: a semantic list of
+// contract rows (not cards, not AG Grid) with status pills, budget progress, and
+// provenance labels on every row.
+//
+// Design law: orientation surface ONLY — no search, sort, or filter. Every
+// contract is a pointer out to where the object lives (stub '#' links).
+//
+// Row layout: two-column repel — LEFT identity (fluid), RIGHT health (fixed).
+// Two-column achieved with .repel layout primitive; no bespoke flex wrapper.
+//
+// bcn-lego-checked: no esa-* lego covers a dense semantic list of contract health
+// rows (the list itself — not the atoms inside it). esa-card fails at 40+ owned
+// contracts; no list/table lego exists in ecology. Checked Beacon (Angular data
+// tables exist but are AG Grid — wrong genre for a health summary). The row
+// container is intentionally bespoke. All atoms inside (EsaPill, EsaProgressBar)
+// ARE legos. The two-column row uses the .repel layout primitive from @esa/tokens
+// where possible; the fixed-width right column requires an explicit width constraint
+// that .repel alone cannot provide, so a minimal wrapper class is added.
+import EsaPill from '@esa/ecology/esa-pill.astro';
+import EsaProgressBar from '@esa/ecology/esa-progress-bar.astro';
+import { fmtCompact } from '../../data/vendor-dashboard-invoices.mjs';
+
+export interface PortfolioContract {
+  id: string;
+  contract: string;
+  vendor: string;
+  project: string;
+  status: 'Active' | 'Pending modification' | 'Expiring soon' | 'Closeout eligible';
+  perfEnd: string;
+  closeoutEligible?: boolean;
+  closeoutBlocker?: string;
+  value: number;
+  expended: number;
+  remaining: number;
+  asOf: string;
+  source: string;
+  ecGateDue?: string;
+}
+
+interface Props {
+  contracts: PortfolioContract[];
+}
+
+const { contracts } = Astro.props;
+
+// Map contract status to EsaPill variant
+function statusVariant(
+  status: PortfolioContract['status']
+): 'default' | 'warning' | 'info' {
+  if (status === 'Active') return 'default';
+  if (status === 'Closeout eligible') return 'info';
+  // 'Pending modification' | 'Expiring soon'
+  return 'warning';
+}
+
+// Budget progress percentage, clamped to [0, 100]
+function pct(expended: number, value: number): number {
+  if (!value) return 0;
+  return Math.min(100, Math.max(0, Math.round((expended / value) * 100)));
+}
+
+// Progress bar variant: warn when >= 90%, danger when over
+function progressVariant(
+  expended: number,
+  value: number
+): 'primary' | 'warning' | 'danger' {
+  const p = (expended / value) * 100;
+  if (p >= 100) return 'danger';
+  if (p >= 90) return 'warning';
+  return 'primary';
+}
+
+// ── Health-first sort ─────────────────────────────────────────────────────────────────────
+// Contracts needing attention (status !== Active OR closeoutBlocker set) come first;
+// Active contracts with no blocker follow. Stable within each group (authored order preserved).
+const needsAttention = contracts.filter(
+  (c) => c.status !== 'Active' || Boolean(c.closeoutBlocker)
+);
+const activeOk = contracts.filter(
+  (c) => c.status === 'Active' && !c.closeoutBlocker
+);
+const sorted = [...needsAttention, ...activeOk];
+
+// ── Provenance hoisting ───────────────────────────────────────────────────────────────────
+// Check whether all rows share the same asOf + source. If uniform, render provenance ONCE
+// in the band footer and suppress per-row captions. If any row differs, per-row captions
+// are shown only where they differ from the uniform value.
+const uniformAsOf = sorted[0]?.asOf ?? '';
+const uniformSource = sorted[0]?.source ?? '';
+const isUniform = sorted.every(
+  (c) => c.asOf === uniformAsOf && c.source === uniformSource
+);
+
+const n = sorted.length;
+---
+
+<section class="cbf-portfolio-health">
+  <!-- Section header -->
+  <div class="cbf-portfolio-health__header stack" data-gap="xs">
+    <h2 class="type-section-title cbf-portfolio-health__title">My contracts</h2>
+    <p class="type-caption cbf-portfolio-health__subtitle">
+      {n} contract{n === 1 ? '' : 's'} &middot; figures from the nightly Asset Suite feed
+    </p>
+  </div>
+
+  <!-- Contract list -->
+  <ul class="cbf-portfolio-health__list" role="list">
+    {sorted.map((c) => {
+      const expendedPct = pct(c.expended, c.value);
+      const barVariant = progressVariant(c.expended, c.value);
+      // Show per-row provenance only when this row's data differs from the uniform baseline
+      const showRowProvenance = !isUniform && (c.asOf !== uniformAsOf || c.source !== uniformSource);
+
+      return (
+        <li class="cbf-portfolio-health__row">
+          <!-- Two-column row: LEFT identity (fluid) · RIGHT health (fixed) -->
+          <div class="cbf-portfolio-health__row-body repel" data-gap="sm">
+
+            <!-- LEFT: contract name + vendor·project caption + perf end + optional blocker -->
+            <div class="cbf-portfolio-health__identity stack" data-gap="2xs">
+              <a
+                href="#"
+                class="type-body cbf-portfolio-health__contract-link"
+                aria-label={`${c.contract} — opens contract detail`}
+              >
+                {c.contract}
+              </a>
+              <span class="type-caption cbf-portfolio-health__meta-line">
+                {c.vendor} &middot; {c.project} &middot; Perf. ends {c.perfEnd}
+              </span>
+
+              <!-- Closeout blocker earns its own line (no colored left border — banned) -->
+              {c.closeoutBlocker && (
+                <div class="cbf-portfolio-health__blocker cluster" data-gap="xs">
+                  <EsaPill
+                    label="Closeout blocked"
+                    variant="danger"
+                    size="sm"
+                    removable={false}
+                  />
+                  <span class="type-caption cbf-portfolio-health__blocker-text">
+                    {c.closeoutBlocker}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <!-- RIGHT: status pills + compact budget block (fixed width, right-aligned) -->
+            <div class="cbf-portfolio-health__health stack" data-gap="xs">
+              <!-- Status pills -->
+              <div class="cbf-portfolio-health__pills cluster" data-gap="xs">
+                <EsaPill
+                  label={c.status}
+                  variant={statusVariant(c.status)}
+                  size="sm"
+                  removable={false}
+                />
+                {c.ecGateDue && (
+                  <EsaPill
+                    label={`EC gate ${c.ecGateDue}`}
+                    variant="warning"
+                    size="sm"
+                    removable={false}
+                  />
+                )}
+              </div>
+
+              <!-- Budget: constrained-width progress bar + figures caption -->
+              <div class="cbf-portfolio-health__budget stack" data-gap="2xs">
+                <div class="cbf-portfolio-health__bar-wrap">
+                  <EsaProgressBar
+                    value={expendedPct}
+                    size="sm"
+                    variant={barVariant}
+                    aria-label={`${expendedPct}% of contract value expended`}
+                  />
+                </div>
+                <span class="type-caption cbf-portfolio-health__figures-main">
+                  {fmtCompact(c.expended)} of {fmtCompact(c.value)} &middot; <strong>{fmtCompact(c.remaining)} remaining</strong>
+                </span>
+                {showRowProvenance && (
+                  <p class="type-caption cbf-portfolio-health__provenance">
+                    as of {c.asOf} &middot; {c.source}
+                  </p>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </li>
+      );
+    })}
+  </ul>
+
+  <!-- Band footer — absorbs uniform provenance + running-balance disclaimer -->
+  <p class="type-caption cbf-portfolio-health__footer">
+    {isUniform
+      ? `Figures as of ${uniformAsOf} · ${uniformSource} — running balances are not real-time.`
+      : 'Running balances are drawn from the nightly Asset Suite feed and include accruals; they are not real-time.'
+    }
+  </p>
+</section>
+
+<style>
+  /*
+   * cbf-portfolio-health — component-scoped styles.
+   * No color-coded left borders (design-principles: banned).
+   * Token discipline: all colors/spacing via @esa/tokens variables with literal
+   * fallbacks. Font sizes via type-roles classes, never raw --type-size-*.
+   * Dense floor: 14px body text per brief. type-caption = 12px (--type-size-100).
+   * Row layout: .repel primitive provides the two-column split; .cbf-portfolio-health__health
+   * adds a fixed width so the right column never shrinks/grows with content.
+   */
+
+  .cbf-portfolio-health {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-400, 1rem);
+  }
+
+  /* ---- Header ---- */
+  .cbf-portfolio-health__title {
+    color: var(--color-text-primary, #171717);
+    margin: 0;
+  }
+
+  .cbf-portfolio-health__subtitle {
+    color: var(--color-text-secondary, #525252);
+    margin: 0;
+  }
+
+  /* ---- List reset ---- */
+  .cbf-portfolio-health__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid var(--color-border-light, #e5e5e5);
+  }
+
+  /* ---- Row ---- */
+  .cbf-portfolio-health__row {
+    padding-block: var(--spacing-250, 0.625rem);
+    padding-inline: var(--spacing-050, 0.125rem);
+    border-bottom: 1px solid var(--color-border-light, #e5e5e5);
+  }
+
+  .cbf-portfolio-health__row:last-child {
+    border-bottom: none;
+  }
+
+  /* ---- Row body: repel primitive handles the two-column split.
+     Wrap is OFF so the right column stays pinned right; on very narrow
+     viewports the right col drops below via a media query. ---- */
+  .cbf-portfolio-health__row-body {
+    align-items: flex-start;
+    flex-wrap: nowrap;
+  }
+
+  @media (max-width: 39.9375rem) {
+    .cbf-portfolio-health__row-body {
+      flex-wrap: wrap;
+    }
+  }
+
+  /* ---- LEFT: identity — fluid, takes remaining space ---- */
+  .cbf-portfolio-health__identity {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* ---- RIGHT: health column — fixed width, right-aligned content ---- */
+  .cbf-portfolio-health__health {
+    flex: 0 0 200px;
+    width: 200px;
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .cbf-portfolio-health__pills {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  /* ---- Progress bar: constrained to the right column width ---- */
+  .cbf-portfolio-health__bar-wrap {
+    width: 180px;
+    /* Align bar to the right edge of the health column */
+    margin-left: auto;
+  }
+
+  /* ---- Contract link ---- */
+  .cbf-portfolio-health__contract-link {
+    font-weight: var(--font-weight-medium, 500);
+    color: var(--color-text-link, var(--color-primary, #43608a));
+    text-decoration: none;
+    word-break: break-word;
+  }
+
+  .cbf-portfolio-health__contract-link:hover {
+    text-decoration: underline;
+    color: var(--color-text-link-hover, var(--color-primary-hover, #325075));
+  }
+
+  .cbf-portfolio-health__contract-link:focus-visible {
+    outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--color-primary, #43608a));
+    outline-offset: var(--focus-ring-offset, 2px);
+    border-radius: var(--radius-sm, 2px);
+  }
+
+  /* ---- Meta caption line ---- */
+  .cbf-portfolio-health__meta-line {
+    color: var(--color-text-secondary, #525252);
+  }
+
+  /* ---- Closeout blocker — danger text, no colored left border ---- */
+  .cbf-portfolio-health__blocker {
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .cbf-portfolio-health__blocker-text {
+    /* Darken, not gray — design principle: darken for dense small text */
+    color: var(--color-danger-strong, #ce2c31);
+  }
+
+  /* ---- Budget figures ---- */
+  .cbf-portfolio-health__figures-main {
+    color: var(--color-text-secondary, #525252);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cbf-portfolio-health__figures-main strong {
+    font-weight: var(--font-weight-medium, 500);
+    color: var(--color-text-primary, #171717);
+  }
+
+  /* ---- Per-row provenance (only rendered when row differs from uniform baseline) ---- */
+  .cbf-portfolio-health__provenance {
+    color: var(--color-text-muted, #a3a3a3);
+    margin: 0;
+    font-style: italic;
+  }
+
+  /* ---- Band footer: absorbs uniform provenance + disclaimer ---- */
+  .cbf-portfolio-health__footer {
+    color: var(--color-text-muted, #a3a3a3);
+    margin: 0;
+    padding-top: var(--spacing-200, 0.5rem);
+    border-top: 1px solid var(--color-border-light, #e5e5e5);
+  }
+</style>

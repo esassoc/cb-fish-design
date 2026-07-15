@@ -194,6 +194,10 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     border-color: var(--color-danger, #dc2626);
     background: var(--color-danger-subtle, #fef2f2);
   }
+  /* Removal is a step-0 edit action; the wizard hides this on the review step, where
+     the viewer is a read-only preview. An explicit rule is needed because the
+     display:inline-flex above would otherwise override the UA [hidden] style. */
+  .cbf-pdf-viewer__remove[hidden] { display: none; }
 
   .cbf-pdf-viewer__frame {
     flex: 1;

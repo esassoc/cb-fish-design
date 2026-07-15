@@ -1,0 +1,83 @@
+---
+// cbf-my-portfolio — "My Portfolio" tab panel wrapper for the My Work COR landing page.
+// Hosts a list ⇄ explorer view toggle and renders both views; toggles visibility
+// client-side so both sub-components are server-rendered (no flash on switch).
+//
+// Toggle lego: esa-button-toggle — a segmented single-select (radiogroup pattern,
+// pill-track UI, options set as a property array, emits change event with detail.value).
+// Chosen over esa-button-group (requires slotted esa-button children + data-value
+// plumbing — heavier for a two-option exclusive choice) and esa-tab-layout
+// (full tab chrome — too heavy for a compact orientation toggle).
+//
+// bcn-lego-checked: esa-button-toggle IS the right lego and is used below.
+// No bespoke toggle primitive is introduced.
+import CbfPortfolioHealth from './cbf-portfolio-health.astro';
+import CbfPortfolioExplorer from './cbf-portfolio-explorer.astro';
+
+interface Props {
+  contracts: any[];
+  projects: any[];
+}
+
+const { contracts, projects } = Astro.props;
+---
+
+<div class="cbf-my-portfolio stack" data-gap="md">
+  <!-- Header row: section title (left) + view toggle (right) -->
+  <div class="cbf-my-portfolio__header repel">
+    <h2 class="type-section-title cbf-my-portfolio__heading">My Portfolio</h2>
+    <!-- esa-button-toggle: segmented single-select for list vs. explorer view -->
+    <esa-button-toggle
+      id="cbf-portfolio-view-toggle"
+      size="sm"
+      aria-label="Portfolio view"
+    ></esa-button-toggle>
+  </div>
+
+  <!-- List view (default — shown on load) -->
+  <div id="cbf-portfolio-view-list" class="cbf-my-portfolio__view">
+    <CbfPortfolioHealth contracts={contracts} />
+  </div>
+
+  <!-- Explorer view (hidden on load) -->
+  <div id="cbf-portfolio-view-explorer" class="cbf-my-portfolio__view" hidden>
+    <CbfPortfolioExplorer projects={projects} />
+  </div>
+</div>
+
+<!-- Guard: .stack and other layout primitives use display:flex which can override
+     the [hidden] attribute. Pin it to none so toggling is reliable. -->
+<style>
+  [hidden] { display: none !important; }
+
+  .cbf-my-portfolio__heading {
+    margin: 0;
+    color: var(--color-text-primary, #171717);
+  }
+</style>
+
+<script>
+  // Register the esa-button-toggle web component and wire the toggle.
+  // Runs client-side only; both views are already SSR'd in the markup.
+  import '@esa/ecology/esa-button-toggle';
+
+  const toggle = document.getElementById('cbf-portfolio-view-toggle') as any;
+  const listView = document.getElementById('cbf-portfolio-view-list') as HTMLElement;
+  const explorerView = document.getElementById('cbf-portfolio-view-explorer') as HTMLElement;
+
+  if (toggle && listView && explorerView) {
+    // Set options as a property (arrays cannot be passed as HTML attributes).
+    toggle.options = [
+      { label: 'List', value: 'list' },
+      { label: 'Explorer', value: 'explorer' },
+    ];
+    // Default selection: List (the orientation surface)
+    toggle.value = 'list';
+
+    toggle.addEventListener('change', (event: CustomEvent) => {
+      const view = (event as CustomEvent<{ value: string }>).detail.value;
+      listView.hidden = view !== 'list';
+      explorerView.hidden = view !== 'explorer';
+    });
+  }
+</script>

@@ -1,0 +1,170 @@
+---
+// cbf-task-risk-band — "At risk / needs attention" band for the My Tasks tab.
+// Answers the COR's risk lens: what is past due, what is blocked, what is at a
+// gate. Renders nothing when risks is empty (the band simply disappears — no
+// empty state for a risk lens).
+//
+// Rendering rules:
+//   • If a past-due item is present, lead with a single EsaAlertBox variant="danger"
+//     carrying the derived summary (NOT one alert per overdue task — alarm fatigue).
+//     HUB GOTCHA: variant is "danger", never "error" — see docs/hub-issues.md.
+//   • Remaining items (ec-gate, pending-mod, closeout-blocked) render as a quiet
+//     semantic <ul> of rows: severity EsaPill + title + one-line detail blocker.
+//   • Banned: colored left-border indicators; ornamental micro-labels. Status lives
+//     in pills. The row container is bespoke — see bcn-lego-checked below.
+//
+// bcn-lego-checked: no esa-* list/row lego exists in ecology (confirmed via
+//   `ls node_modules/@esa/ecology/src/components/` — no list, feed, or row lego);
+//   checked Beacon (Angular ui-list-item is an AG-Grid-backed table component,
+//   not a semantic-list row); the quiet risk-row pattern is the reusable home here
+//   and is used identically in the sibling cbf-task-queue. Atoms inside (EsaPill,
+//   type roles, layout primitives) are all legos.
+
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaPill from '@esa/ecology/esa-pill.astro';
+
+export interface RiskItem {
+  id: string;
+  kind: 'past-due' | 'ec-gate' | 'pending-mod' | 'closeout-blocked';
+  severity: 'danger' | 'warning';
+  title: string;
+  detail: string;
+  contract?: string;
+  due?: string;
+}
+
+interface Props {
+  risks: RiskItem[];
+}
+
+const { risks } = Astro.props;
+
+// Bail early — band disappears when there is nothing at risk.
+const hasRisks = risks.length > 0;
+
+// Separate the past-due summary item from the remaining quiet-row items.
+const pastDueItem = risks.find((r) => r.kind === 'past-due');
+const quietItems  = risks.filter((r) => r.kind !== 'past-due');
+
+// Kind → human-readable pill label.
+const KIND_LABEL: Record<string, string> = {
+  'ec-gate':          'EC gate',
+  'pending-mod':      'Pending mod',
+  'closeout-blocked': 'Closeout blocked',
+};
+---
+
+{hasRisks && (
+  <section
+    class="cbf-task-risk-band stack"
+    data-gap="sm"
+    aria-label="At risk — needs attention"
+  >
+    {/* ── Section header ─────────────────────────────────────────────── */}
+    <h2 class="type-section-title cbf-task-risk-band__heading">
+      At risk / needs attention
+    </h2>
+
+    {/* ── Past-due alert — one derived summary, not one per task ─────── */}
+    {pastDueItem && (
+      <EsaAlertBox variant="danger" title={pastDueItem.title}>
+        {pastDueItem.detail}
+      </EsaAlertBox>
+    )}
+
+    {/* ── Quiet risk rows — ec-gate / pending-mod / closeout-blocked ─── */}
+    {quietItems.length > 0 && (
+      <ul class="cbf-task-risk-band__list stack" data-gap="xs" role="list">
+        {quietItems.map((item) => (
+          <li class="cbf-task-risk-band__row cluster" data-gap="sm">
+            {/* Severity pill — variant maps 1:1 from RiskItem.severity */}
+            <span class="cbf-task-risk-band__pill-wrap">
+              <EsaPill
+                label={KIND_LABEL[item.kind] ?? item.kind}
+                variant={item.severity}
+                size="sm"
+                removable={false}
+              />
+            </span>
+
+            {/* Title + detail block */}
+            <span class="cbf-task-risk-band__body stack" data-gap="xs">
+              <span class="type-body cbf-task-risk-band__title">
+                {item.title}
+              </span>
+              <span class="type-body-small cbf-task-risk-band__detail">
+                {item.detail}
+              </span>
+              {/* Optional contract / due meta */}
+              {(item.contract || item.due) && (
+                <span class="type-caption cbf-task-risk-band__meta">
+                  {[item.contract, item.due ? `Due ${item.due}` : undefined]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </span>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
+)}
+
+<style>
+  .cbf-task-risk-band {
+    padding-block: var(--spacing-400);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .cbf-task-risk-band__heading {
+    /* Reset browser h2 margin so the .stack gap controls spacing. */
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+
+  /* ── Quiet-row list ──────────────────────────────────────────────────── */
+  .cbf-task-risk-band__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .cbf-task-risk-band__row {
+    /* .cluster centers by default — override to top-align mixed-height children. */
+    --align: flex-start;
+    padding-block: var(--spacing-200);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .cbf-task-risk-band__row:last-child {
+    border-bottom: none;
+  }
+
+  /* Pill column — fixed-width so body text always starts at the same x. */
+  .cbf-task-risk-band__pill-wrap {
+    flex-shrink: 0;
+    /* Align the pill cap-height with the first line of the title text. */
+    padding-top: 2px;
+    min-width: 7rem;
+  }
+
+  /* Body column — grows to fill available row space. */
+  .cbf-task-risk-band__body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .cbf-task-risk-band__title {
+    font-weight: 500;
+    color: var(--color-text-primary);
+  }
+
+  .cbf-task-risk-band__detail {
+    color: var(--color-text-secondary);
+  }
+
+  .cbf-task-risk-band__meta {
+    color: var(--color-text-muted);
+  }
+</style>

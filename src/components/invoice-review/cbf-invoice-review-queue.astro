@@ -15,13 +15,13 @@
 // DOCUMENT (a paper vendor bill with letterhead, bill-to, line-item ledger,
 // totals) — that markup is bespoke and reusable, and lives here. Beacon is not on
 // this machine. Every other control IS a lego: the overlay is esa-side-dialog; the
-// split is the .sidebar layout primitive; status + days-left are esa-badge (real
+// split is the .sidebar layout primitive; status + days-left are esa-pill (real
 // markup cloned into cells/panel so styling is identical, never reinvented); the
 // final-invoice notice + decision result are esa-alert-box; Approve/Return and the
 // nav are esa-button; Return's comment capture is esa-textarea; search reuses
 // cbf-search-field; the status filter is esa-chip-group; empty is esa-empty-state.
 import CbfSearchField from '../search/cbf-search-field.astro';
-import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaPill from '@esa/ecology/esa-pill.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
@@ -32,9 +32,21 @@ type Stage = 'Submitted' | 'In review' | 'Returned' | 'Approved';
 
 interface Props {
   invoices?: typeof defaultQueue;
+  // 'review' = the COR review queue (default, unchanged). 'workspace' = My
+  // Invoices: adds the Asset Suite processing + aging columns, same overlay.
+  variant?: 'review' | 'workspace';
+  // Section heading text — defaults to the review-queue title so existing usage
+  // is byte-for-byte unchanged; My Invoices passes "My invoices".
+  title?: string;
 }
 
-// esa-badge variant per review stage — color conveys state, not decoration.
+// Asset Suite processing state → esa-pill variant. Mirrors the external Asset
+// Suite money-processing lifecycle surfaced only in the workspace variant.
+const assetVariant = { 'not-sent': 'default', processing: 'info', paid: 'success' } as const;
+const assetKeys = Object.keys(assetVariant) as (keyof typeof assetVariant)[];
+
+// esa-pill variant per review stage — color conveys state, not decoration.
+// Same soft-tinted status chip the vendor dashboard invoices grid uses.
 const stageVariant: Record<Stage, 'info' | 'warning' | 'success' | 'danger'> = {
   Submitted: 'info',
   'In review': 'warning',
@@ -43,8 +55,8 @@ const stageVariant: Record<Stage, 'info' | 'warning' | 'success' | 'danger'> = {
 };
 const stages = Object.keys(stageVariant) as Stage[];
 
-// Urgency badge variants, keyed by bucket (see urgencyOf in the data module).
-const urgencyVariant = { overdue: 'danger', 'due-soon': 'warning', 'on-track': 'secondary' } as const;
+// Urgency pill variants, keyed by bucket (see urgencyOf in the data module).
+const urgencyVariant = { overdue: 'danger', 'due-soon': 'warning', 'on-track': 'default' } as const;
 const urgencyKeys = Object.keys(urgencyVariant) as (keyof typeof urgencyVariant)[];
 
 const stageFilters = [
@@ -55,11 +67,11 @@ const stageFilters = [
   { value: 'Approved', label: 'Approved' },
 ];
 
-const { invoices = defaultQueue } = Astro.props;
+const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = Astro.props;
 ---
-<section class="cbf-invoice-review-queue stack" data-gap="md">
+<section class="cbf-invoice-review-queue stack" data-gap="md" data-variant={variant}>
   <header class="cbf-invoice-review-queue__header repel">
-    <h2 class="type-section-title">Review queue</h2>
+    <h2 class="type-section-title">{title}</h2>
     <div class="cbf-invoice-review-queue__search">
       <CbfSearchField
         placeholder="Search invoices, vendors or contracts…"
@@ -78,6 +90,11 @@ const { invoices = defaultQueue } = Astro.props;
       value=""
       options={JSON.stringify(stageFilters)}
     ></esa-chip-group>
+    {/* Optional trailing controls (e.g. a "View invoice history" link) — sit at
+        the right edge of the filter row. Empty in the review variant. */}
+    <div class="cbf-invoice-review-queue__controls-end">
+      <slot name="controls-end" />
+    </div>
   </div>
 
   <!-- AG Grid mounts here; auto-height grows with rows so the page owns scroll. -->
@@ -97,17 +114,21 @@ const { invoices = defaultQueue } = Astro.props;
     </span>
   </footer>
 
-  <!-- Real esa-badge legos, server-rendered once per stage AND per urgency bucket
+  <!-- Real esa-pill legos, server-rendered once per stage AND per urgency bucket
        with the design-system scope hash intact. Grid cells + the panel clone the
-       matching template's markup — so every badge is byte-identical to the lego. -->
+       matching template's markup — so every pill is byte-identical to the lego,
+       matching the vendor dashboard invoices grid's status chips. -->
   <div class="cbf-invoice-review-queue__badge-templates" data-badge-templates hidden aria-hidden="true">
     {stages.map((s) => (
-      <span data-stage={s}><EsaBadge value={s} variant={stageVariant[s]} size="lg" /></span>
+      <span data-stage={s}><EsaPill label={s} variant={stageVariant[s]} size="md" removable={false} /></span>
     ))}
     {urgencyKeys.map((u) => (
-      <span data-urgency={u}><EsaBadge value={u} variant={urgencyVariant[u]} size="lg" /></span>
+      <span data-urgency={u}><EsaPill label={u} variant={urgencyVariant[u]} size="md" removable={false} /></span>
     ))}
-    <span data-flag="final"><EsaBadge value="Final" variant="secondary" size="lg" /></span>
+    <span data-flag="final"><EsaPill label="Final" variant="default" size="md" removable={false} /></span>
+    {variant === 'workspace' && assetKeys.map((a) => (
+      <span data-asset={a}><EsaPill label={a} variant={assetVariant[a]} size="md" removable={false} /></span>
+    ))}
   </div>
 
   <!-- Row data for the client grid module (avoids a second fetch). -->
@@ -116,6 +137,11 @@ const { invoices = defaultQueue } = Astro.props;
   <!-- ───────── Review overlay: the split-view QA/QC surface (lego drawer) ─────────
        Populated from the clicked row; prev/next step through the displayed rows. -->
   <esa-side-dialog data-review-dialog size="lg" heading="Invoice" class="cbf-review-dialog">
+    <!-- Custom header: a large invoice-number title pushed to the right so it sits
+         over the info panel (the side strip), instead of a small title lost top-left. -->
+    <div slot="header" class="cbf-review-dialog__titlebar">
+      <span class="cbf-review-dialog__title cbf-num" data-f-dialog-title></span>
+    </div>
     <div
       class="cbf-review-split sidebar"
       data-side="end"
@@ -123,34 +149,21 @@ const { invoices = defaultQueue } = Astro.props;
     >
       <!-- Panel (first child → ordered right by data-side=end). -->
       <aside class="cbf-review-panel stack" data-gap="lg" aria-label="Review">
-        <div data-review-result hidden>
-          <EsaAlertBox variant="success" title="Approved">
-            <span data-result-text></span>
-          </EsaAlertBox>
-        </div>
-
-        <!-- Hero: the billed amount is the headline figure the COR is deciding on;
-             the status badge sits beside it, and the one line of context that
-             matters most (this invoice vs. what's left on the contract) sits
-             directly beneath. Everything below recedes in scale from here. -->
+        <!-- Deadline leads (matches the detail page); the status pill stays on the
+             right because the preview must still show where the invoice sits in the
+             pipeline. The review-by date goes red only when overdue; the urgency
+             alert + a quiet submitted/net-terms line sit beneath it. -->
         <header class="cbf-review-hero repel">
-          <div class="cbf-review-hero__group">
-            <span class="cbf-review__label">Amount billed</span>
-            <div class="cbf-review-hero__amount-row">
-              <span class="cbf-review-hero__amount cbf-num" data-f-amount-hero></span>
-              <span class="cbf-review-fields__copy" data-copy data-f-amount-copy>
-                <EsaIconButton icon="copy" label="Copy amount" size="xs" />
-              </span>
-            </div>
-            <span class="cbf-review-hero__pct" data-f-pct></span>
+          <div class="cbf-review-deadline">
+            <span class="cbf-review__label">Review by</span>
+            <span class="cbf-review-deadline__date" data-f-reviewby></span>
+            <span class="cbf-review-deadline__urgency" data-f-urgency></span>
+            <p class="cbf-review-deadline__support">
+              Submitted <span data-f-submitted></span> · <span data-f-net-terms></span>
+            </p>
           </div>
           <span class="cbf-review-hero__status" data-f-status></span>
         </header>
-
-        <div class="cbf-review-panel__clock repel">
-          <span class="cbf-review__label">Review by <span data-f-reviewby></span></span>
-          <span data-f-urgency></span>
-        </div>
 
         <div data-f-final-alert hidden>
           <EsaAlertBox variant="info" title="Final invoice">
@@ -158,53 +171,9 @@ const { invoices = defaultQueue } = Astro.props;
           </EsaAlertBox>
         </div>
 
-        <!-- Supporting context: smaller than the hero, read as one related set —
-             where this contract stands, so the amount above lands in proportion.
-             Compact figures (the exact billed amount is the hero above). -->
-        <section class="cbf-review-panel__context stack" data-gap="sm">
-          <h3 class="cbf-review__section-title">Against this contract</h3>
-          <div class="cbf-review-context">
-            <div class="cbf-review-context__item">
-              <span class="cbf-review-context__value cbf-num" data-f-contractvalue></span>
-              <span class="cbf-review-context__label">Contract value</span>
-            </div>
-            <div class="cbf-review-context__item">
-              <span class="cbf-review-context__value cbf-num" data-f-expended></span>
-              <span class="cbf-review-context__label" data-f-asof></span>
-            </div>
-            <div class="cbf-review-context__item">
-              <span class="cbf-review-context__value cbf-num cbf-review-context__value--accent" data-f-remaining></span>
-              <span class="cbf-review-context__label">Remaining</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- Budget impact: what processing THIS invoice does to the contract's
-             remaining balance — a before → after ledger so the COR sees the
-             draw-down at the moment of decision. Exact figures (not compact) so
-             the arithmetic reconciles on screen. -->
-        <section class="cbf-review-impact" aria-label="Budget impact if approved">
-          <h3 class="cbf-review__section-title">If this invoice is processed</h3>
-          <dl class="cbf-review-impact__ledger">
-            <div class="cbf-review-impact__row">
-              <dt>Remaining before</dt>
-              <dd class="cbf-num" data-f-rem-before></dd>
-            </div>
-            <div class="cbf-review-impact__row">
-              <dt>This invoice</dt>
-              <dd class="cbf-num cbf-review-impact__delta" data-f-rem-delta></dd>
-            </div>
-            <div class="cbf-review-impact__row cbf-review-impact__row--total">
-              <dt>Remaining after</dt>
-              <dd class="cbf-num" data-f-rem-after></dd>
-            </div>
-          </dl>
-        </section>
-
-        <!-- Spec fields. Each row carries a copy control (esa-icon-button lego)
-             that copies that field's value to the clipboard. Invoice number is
-             repeated here (it also heads the modal) so it is copyable in-line
-             with the rest of the metadata. -->
+        <!-- Invoice information — uniform-weight fields; contract & project lead with
+             the reference NUMBER (that's what's copied), the name as a quiet sub. The
+             performance-end row notes how close it runs to the contract end date. -->
         <dl class="cbf-review-fields">
           <div class="cbf-review-fields__row">
             <dt class="cbf-review__label">Invoice</dt>
@@ -215,23 +184,29 @@ const { invoices = defaultQueue } = Astro.props;
           </div>
           <div class="cbf-review-fields__row">
             <dt class="cbf-review__label">Vendor</dt>
-            <dd class="cbf-review-fields__value cbf-review-fields__value--lead" data-f-vendor-panel></dd>
+            <dd class="cbf-review-fields__value" data-f-vendor-panel></dd>
             <span class="cbf-review-fields__copy" data-copy>
               <EsaIconButton icon="copy" label="Copy vendor" size="xs" />
             </span>
           </div>
           <div class="cbf-review-fields__row">
             <dt class="cbf-review__label">Contract</dt>
-            <dd class="cbf-review-fields__value" data-f-contract></dd>
-            <span class="cbf-review-fields__copy" data-copy>
-              <EsaIconButton icon="copy" label="Copy contract" size="xs" />
+            <dd class="cbf-review-fields__value cbf-num" data-f-contract>
+              <span data-f-contract-num></span>
+              <span class="cbf-review-fields__sub" data-f-contract-name></span>
+            </dd>
+            <span class="cbf-review-fields__copy" data-copy data-f-contract-copy>
+              <EsaIconButton icon="copy" label="Copy contract number" size="xs" />
             </span>
           </div>
           <div class="cbf-review-fields__row">
             <dt class="cbf-review__label">Project</dt>
-            <dd class="cbf-review-fields__value" data-f-project></dd>
-            <span class="cbf-review-fields__copy" data-copy>
-              <EsaIconButton icon="copy" label="Copy project" size="xs" />
+            <dd class="cbf-review-fields__value cbf-num" data-f-project>
+              <span data-f-project-num></span>
+              <span class="cbf-review-fields__sub" data-f-project-name></span>
+            </dd>
+            <span class="cbf-review-fields__copy" data-copy data-f-project-copy>
+              <EsaIconButton icon="copy" label="Copy project number" size="xs" />
             </span>
           </div>
           <div class="cbf-review-fields__row">
@@ -243,74 +218,71 @@ const { invoices = defaultQueue } = Astro.props;
           </div>
           <div class="cbf-review-fields__row">
             <dt class="cbf-review__label">Perf. end</dt>
-            <dd class="cbf-review-fields__value" data-f-perf-end></dd>
-            <span class="cbf-review-fields__copy" data-copy>
+            <dd class="cbf-review-fields__value" data-f-perf-end>
+              <span data-f-perf-end-date></span>
+              <span class="cbf-review-fields__sub" data-f-contract-end></span>
+            </dd>
+            <span class="cbf-review-fields__copy" data-copy data-f-perf-end-copy>
               <EsaIconButton icon="copy" label="Copy performance end date" size="xs" />
-            </span>
-          </div>
-          <div class="cbf-review-fields__row">
-            <dt class="cbf-review__label">Submitted</dt>
-            <dd class="cbf-review-fields__value" data-f-submitted></dd>
-            <span class="cbf-review-fields__copy" data-copy>
-              <EsaIconButton icon="copy" label="Copy submitted date" size="xs" />
             </span>
           </div>
         </dl>
 
-        <!-- Attachments: the invoice document the vendor submitted + the
-             supporting files they uploaded. The COR downloads any single file or
-             all at once. Rows are injected by JS; the per-row download control
-             clones the server-rendered esa-icon-button template below so the lego
-             markup stays byte-identical. (Mock files — download produces a named
-             placeholder PDF, since no real blob exists.) -->
-        <section class="cbf-review-attachments" aria-label="Attachments">
+        <!-- Amount information — left-aligned rows matching the fields above. -->
+        <dl class="cbf-review-fields cbf-review-money" aria-label="Amount">
+          <div class="cbf-review-fields__row">
+            <dt class="cbf-review__label">Amount</dt>
+            <dd class="cbf-review-fields__value cbf-review-money__amount cbf-num" data-f-amount-hero></dd>
+            <span class="cbf-review-fields__copy" data-copy data-f-amount-copy>
+              <EsaIconButton icon="copy" label="Copy amount" size="xs" />
+            </span>
+          </div>
+          <div class="cbf-review-fields__row">
+            <dt class="cbf-review__label">Contract remaining</dt>
+            <dd class="cbf-review-fields__value cbf-num" data-f-remaining>
+              <span data-f-remaining-val></span>
+              <span class="cbf-review-fields__sub" data-f-rem-after></span>
+            </dd>
+          </div>
+        </dl>
+
+        <!-- Backup documentation: the supporting files the vendor uploaded with
+             the invoice. Each row carries a "view" control that renders the file in
+             the document pane (left) and a download control. The COR downloads any
+             single file or all at once. Rows are injected by JS; the per-row view +
+             download controls clone the server-rendered esa-icon-button templates
+             below so the lego markup stays byte-identical. (Mock files — download
+             produces a named placeholder PDF, since no real blob exists.) -->
+        <section class="cbf-review-attachments" aria-label="Backup documentation">
           <div class="cbf-review-attachments__head repel">
-            <h3 class="cbf-review__section-title" data-f-attach-title>Attachments</h3>
+            <h3 class="cbf-review__section-title" data-f-attach-title>Backup documentation</h3>
             <span data-attach-all>
               <EsaButton appearance="outline" color="secondary" size="sm" icon="download">Download all</EsaButton>
             </span>
           </div>
           <ul class="cbf-review-attachments__list" data-f-attachments></ul>
         </section>
+
         <div data-dl-template hidden aria-hidden="true">
           <EsaIconButton icon="download" label="Download file" size="sm" />
         </div>
 
-        <!-- Decisions. Inline confirm/comment (no nested modal). -->
-        <div class="cbf-review-actions" data-actions>
-          <div class="cluster" data-gap="sm" data-actions-default>
-            <span data-act-approve><EsaButton color="primary" appearance="fill" icon="check">Approve</EsaButton></span>
-            <span data-act-return><EsaButton color="danger" appearance="outline" icon="rotate-ccw">Return for revision</EsaButton></span>
-          </div>
-
-          <div class="stack" data-gap="sm" data-actions-approve hidden>
-            <p class="cbf-review-fields__value">
-              Approve <strong class="cbf-num" data-f-num-approve></strong> for <span data-f-amount-approve></span> and route it to the Contracting Officer for payment? This records your QA/QC sign-off.
-            </p>
-            <div class="cluster" data-gap="sm">
-              <span data-act-approve-cancel><EsaButton appearance="outline" color="secondary">Cancel</EsaButton></span>
-              <span data-act-approve-confirm><EsaButton color="primary" appearance="fill" icon="check">Confirm approval</EsaButton></span>
-            </div>
-          </div>
-
-          <div class="stack" data-gap="sm" data-actions-return hidden>
-            <esa-textarea
-              data-return-reason
-              label="Comments for the vendor"
-              placeholder="Explain what needs to change — e.g. a line item needs a supporting receipt, or the mileage rate exceeds the contract."
-              rows="4"
-            ></esa-textarea>
-            <div class="cluster" data-gap="sm">
-              <span data-act-return-cancel><EsaButton appearance="outline" color="secondary">Cancel</EsaButton></span>
-              <span data-act-return-confirm><EsaButton color="danger" appearance="fill" icon="rotate-ccw">Return for revision</EsaButton></span>
-            </div>
-          </div>
+        <!-- Single action: this overlay is a quick preview. Processing the invoice
+             (reviewing the documents + Line Item Budget and approving or returning)
+             happens on the invoice's own page. EsaButton renders as a link; its href
+             is set to the invoice's process page per record in populate(). -->
+        <div class="cbf-review-process" data-process>
+          <EsaButton href="#" color="primary" size="md" icon="arrow-right">Process invoice</EsaButton>
         </div>
       </aside>
 
-      <!-- Document (last child → fluid, left). The thing the COR reads. -->
+      <!-- Document (last child → fluid, left). A read-only preview of the submitted
+           invoice so the COR can eyeball the bill from the queue. The full document
+           workspace (Line Item Budget, backup files side by side, approve / return)
+           lives on the invoice's Process page, not this preview. -->
       <div class="cbf-review-docpane">
-        <article class="cbf-invoice-doc" aria-label="Submitted invoice document">
+        <div class="cbf-review-docpane__scroll">
+        <article class="cbf-invoice-doc" data-doc-view="invoice" aria-label="Submitted invoice document">
           <div class="cbf-invoice-doc__stamp" data-f-stamp hidden>Final invoice</div>
           <header class="cbf-invoice-doc__head">
             <div>
@@ -348,6 +320,7 @@ const { invoices = defaultQueue } = Astro.props;
           <p class="cbf-invoice-doc__memo" data-f-memo-wrap hidden><span>Memo:</span> <span data-f-memo></span></p>
           <p class="cbf-invoice-doc__generated" data-f-pdf></p>
         </article>
+        </div>
       </div>
     </div>
 
@@ -372,6 +345,17 @@ const { invoices = defaultQueue } = Astro.props;
     max-width: 440px;
     min-width: 220px;
   }
+  /* Filter row: status chips on the left, optional trailing controls (the
+     controls-end slot) pushed to the right corner. Wraps on narrow widths. */
+  .cbf-invoice-review-queue__controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300) var(--spacing-400);
+    flex-wrap: wrap;
+  }
+  .cbf-invoice-review-queue__controls-end { margin-left: auto; }
+  /* No trailing controls (review variant / empty slot) → the wrapper adds no gap. */
+  .cbf-invoice-review-queue__controls-end:empty { display: none; }
   .cbf-invoice-review-queue__grid {
     border: 1px solid var(--color-border);
     border-radius: var(--radius-200);
@@ -390,6 +374,17 @@ const { invoices = defaultQueue } = Astro.props;
      overrides). Re-point the lg token or the override is silently ignored. */
   .cbf-review-dialog { --side-dialog-width-lg: max(1180px, 75vw); }
 
+  /* Dialog title (custom header slot): a large invoice number pushed to the right
+     so it sits over the info panel (the side strip) rather than getting lost small
+     in the top-left. flex:1 + right-align places it beside the close button. */
+  .cbf-review-dialog__titlebar { flex: 1; min-width: 0; text-align: right; }
+  .cbf-review-dialog__title {
+    font-size: var(--type-size-500);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
   /* Panel ----------------------------------------------------------------- */
   .cbf-review__label {
     font-size: var(--type-size-150);
@@ -403,48 +398,36 @@ const { invoices = defaultQueue } = Astro.props;
     color: var(--color-text-muted);
   }
 
-  /* Hero — the billed amount, the top of the panel's hierarchy. */
+  /* Deadline leads the panel (matches the detail page); standard text color, red
+     ONLY when overdue. The status pill stays on the right so the preview shows where
+     the invoice sits in the pipeline. */
   .cbf-review-hero { align-items: flex-start; gap: var(--spacing-400); }
-  .cbf-review-hero__group { display: flex; flex-direction: column; gap: var(--spacing-50); min-width: 0; }
-  .cbf-review-hero__amount {
-    font-size: var(--type-size-600);
+  .cbf-review-hero__status { flex: none; }
+  .cbf-review-deadline { display: flex; flex-direction: column; gap: var(--spacing-100); min-width: 0; }
+  .cbf-review-deadline__date {
+    font-size: var(--type-size-500);
     font-weight: var(--font-weight-bold);
     line-height: var(--line-height-tight);
     color: var(--color-text-primary);
     font-variant-numeric: tabular-nums;
   }
-  .cbf-review-hero__pct { font-size: var(--type-size-100); color: var(--color-text-muted); }
-  .cbf-review-hero__status { flex: none; }
-
-  .cbf-review-panel__clock {
-    align-items: center;
-    gap: var(--spacing-300);
-    padding: var(--spacing-300) var(--spacing-400);
-    background: var(--color-surface-sunken);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-200);
+  .cbf-review-deadline__date--overdue { color: var(--color-danger, #b42318); }
+  .cbf-review-deadline__urgency { display: block; }
+  .cbf-review-deadline__urgency:empty { display: none; }
+  .cbf-review-deadline__support {
+    margin: var(--spacing-100) 0 0;
+    font-size: var(--type-size-100);
+    color: var(--color-text-muted);
   }
 
-  /* Supporting context — deliberately smaller than the hero, read as one set.
-     (Not esa-stat: populated client-side per invoice; esa-stat is static SSR.) */
-  .cbf-review-panel__context {
-    padding-block: var(--spacing-400);
-    border-block: 1px solid var(--color-border);
+  /* Amount block reuses the field-row grid; a top/bottom hairline sets it off. The
+     amount is emphasized by size only (no bold), left-aligned in the shared column. */
+  .cbf-review-money { padding-block: var(--spacing-200); border-block: 1px solid var(--color-border); }
+  .cbf-review-money__amount {
+    font-size: var(--type-size-400);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
   }
-  .cbf-review-context {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing-300) var(--spacing-500);
-  }
-  .cbf-review-context__item { display: flex; flex-direction: column; gap: var(--spacing-50); }
-  .cbf-review-context__value {
-    font-size: var(--type-size-250);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-secondary);
-    font-variant-numeric: tabular-nums;
-  }
-  .cbf-review-context__value--accent { color: var(--color-text-primary); }
-  .cbf-review-context__label { font-size: var(--type-size-050); color: var(--color-text-muted); }
 
   .cbf-review-fields { margin: 0; }
   .cbf-review-fields__row {
@@ -457,7 +440,15 @@ const { invoices = defaultQueue } = Astro.props;
   }
   .cbf-review-fields__row:first-child { border-top: 0; padding-top: 0; }
   .cbf-review-fields__value { margin: 0; font-size: var(--type-size-200); color: var(--color-text-secondary); }
-  .cbf-review-fields__value--lead { font-weight: var(--font-weight-medium); color: var(--color-text-primary); }
+  /* Secondary line under a value — the contract/project NAME (the number leads) or
+     the contract-end note under the performance end date. Quieter than the value. */
+  .cbf-review-fields__sub {
+    display: block;
+    margin-top: var(--spacing-50);
+    font-size: var(--type-size-100);
+    font-weight: var(--font-weight-regular);
+    color: var(--color-text-muted);
+  }
 
   /* Per-field copy control — the esa-icon-button lego, quiet until hovered.
      They're transcribing these values into another system, so every atomic
@@ -488,53 +479,6 @@ const { invoices = defaultQueue } = Astro.props;
     pointer-events: none;
   }
 
-  /* Hero amount + its inline copy control. */
-  .cbf-review-hero__amount-row {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-200);
-  }
-
-  /* Budget-impact ledger: remaining before → −invoice → remaining after. */
-  .cbf-review-impact { margin-top: var(--spacing-200); }
-  .cbf-review-impact__ledger {
-    margin: var(--spacing-200) 0 0;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-200);
-    overflow: hidden;
-  }
-  .cbf-review-impact__row {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: var(--spacing-400);
-    padding: var(--spacing-250) var(--spacing-400);
-  }
-  .cbf-review-impact__row + .cbf-review-impact__row {
-    border-top: 1px solid var(--color-border-light, var(--color-border));
-  }
-  .cbf-review-impact__row dt {
-    margin: 0;
-    font-size: var(--type-size-150);
-    color: var(--color-text-secondary);
-  }
-  .cbf-review-impact__row dd {
-    margin: 0;
-    font-size: var(--type-size-200);
-    color: var(--color-text-primary);
-    font-variant-numeric: tabular-nums;
-  }
-  .cbf-review-impact__delta { color: var(--color-text-secondary); }
-  .cbf-review-impact__row--total {
-    background: var(--color-surface-sunken);
-    border-top: 1px solid var(--color-border);
-  }
-  .cbf-review-impact__row--total dt {
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
-  }
-  .cbf-review-impact__row--total dd { font-weight: var(--font-weight-semibold); }
-
   /* Attachments ----------------------------------------------------------- */
   .cbf-review-attachments { margin-top: var(--spacing-200); }
   .cbf-review-attachments__head {
@@ -552,13 +496,9 @@ const { invoices = defaultQueue } = Astro.props;
     overflow: hidden;
   }
 
-  /* Decision sub-states (Approve-confirm / Return-comment) are .stack/.cluster
-     groups toggled via the [hidden] attribute. Those layout primitives set
-     `display: flex`, which OVERRIDES the UA `[hidden] { display: none }` — so
-     without this guard all three action groups render at once. Restore hidden's
-     intent for the toggled groups. (Hub gap: layouts.css primitives lack a
-     :not([hidden]) guard — logged in docs/hub-issues.md.) */
-  .cbf-review-actions [hidden] { display: none !important; }
+  /* Single "Process invoice" CTA — right-aligned at the foot of the preview panel
+     (this overlay is a quick preview; the decision happens on the Process page). */
+  .cbf-review-process { display: flex; justify-content: flex-end; margin-top: var(--spacing-200); }
 
   /* Fill the dialog body's full height (the side-dialog .body is flex:1 inside a
      fixed-height panel) so the split — and the document pane within it — runs the
@@ -571,12 +511,22 @@ const { invoices = defaultQueue } = Astro.props;
     background: var(--color-surface-sunken);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-200);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+  /* Scroll area holds the centered invoice document. */
+  .cbf-review-docpane__scroll {
+    flex: 1;
+    min-height: 0;
     padding: var(--spacing-600);
     display: flex;
     flex-direction: column;
     align-items: center;
     overflow-y: auto;
   }
+
   .cbf-invoice-doc {
     position: relative;
     flex: 1 0 auto;
@@ -655,15 +605,18 @@ const { invoices = defaultQueue } = Astro.props;
     justify-content: flex-end; text-align: right; font-variant-numeric: tabular-nums;
   }
   .cbf-invoice-review-queue__grid .cbf-grid-id { font-variant-numeric: tabular-nums; color: var(--color-text-secondary); }
+  /* Workspace Invoice # cell: number + inline Final pill (Final? column dropped). */
+  .cbf-invoice-review-queue__grid .cbf-grid-idcell { display: inline-flex; align-items: center; gap: var(--spacing-200); height: 100%; }
+  /* Terminal-stage Days-left cell: a quiet placeholder, not an urgency pill. */
+  .cbf-invoice-review-queue__grid .cbf-grid-muted { color: var(--color-text-muted); }
   .cbf-invoice-review-queue__grid .ag-row { cursor: pointer; }
 
   /* Document line items are injected by JS (no Astro scope hash) — styled globally. */
   .cbf-invoice-doc__items tbody td { font-size: var(--type-size-150); }
 
-  /* Attachment rows are injected by JS — styled globally. No per-item icon
-     (design principle: icons mark structure, not items); the filename carries
-     its own extension, the primary doc is marked with a quiet role label, and
-     the only affordance is the download control (an action, not decoration). */
+  /* Backup-documentation rows are injected by JS — styled globally. The filename
+     carries its own extension; the affordances are the view control (renders the
+     file in the document pane) and the download control — actions, not decoration. */
   .cbf-review-attach {
     display: flex;
     align-items: center;
@@ -680,12 +633,7 @@ const { invoices = defaultQueue } = Astro.props;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .cbf-review-attach[data-primary='true'] .cbf-review-attach__name { font-weight: var(--font-weight-medium); }
-  .cbf-review-attach__role {
-    flex: none;
-    font-size: var(--type-size-100, 0.75rem);
-    color: var(--color-text-muted);
-  }
+  .cbf-review-attach--empty .cbf-review-attach__name { color: var(--color-text-muted); }
   .cbf-review-attach__dl { flex: none; line-height: 0; color: var(--color-text-muted); }
   .cbf-review-attach__dl .esa-icon-button:hover {
     background: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
@@ -697,7 +645,6 @@ const { invoices = defaultQueue } = Astro.props;
   import { createGrid, ModuleRegistry, AllCommunityModule, themeQuartz } from 'ag-grid-community';
   import '@esa/ecology/esa-chip-group';
   import '@esa/ecology/esa-side-dialog';
-  import '@esa/ecology/esa-textarea';
 
   ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -705,15 +652,18 @@ const { invoices = defaultQueue } = Astro.props;
   type Stage = 'Submitted' | 'In review' | 'Returned' | 'Approved';
   type LineItem = { description: string; qty: number; unitPrice: number };
   type Invoice = {
-    number: string; vendor: string; contract: string; project: string;
-    submitted: string; reviewBy: string; daysRemaining: number;
+    number: string; vendor: string;
+    contract: string; contractNumber: string; project: string; projectNumber: string;
+    submitted: string; reviewBy: string; daysRemaining: number; netTerms: string;
     amount: number; stage: Stage; final: boolean;
-    invoiceDate: string; perfStart: string; perfEnd: string;
+    invoiceDate: string; perfStart: string; perfEnd: string; contractEnd: string;
     billTo: string; lineItems: LineItem[]; notes?: string; pdfName: string;
     supportingDocs: string[];
     contractValue: number; expended: number; remaining: number; asOf: string;
+    // Workspace-variant fields (My Invoices). Present on every record; only
+    // read when the queue renders the workspace columns.
+    assetSuite?: string; inStatusDays?: number;
   };
-  type Decision = { variant: 'success' | 'danger'; title: string; text: string; badge: string };
 
   const usd = new Intl.NumberFormat('en-US', {
     style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2,
@@ -770,6 +720,27 @@ const { invoices = defaultQueue } = Astro.props;
     return `${d} day${d === 1 ? '' : 's'} left`;
   };
 
+  // Open (actionable) stages — the review clock is only meaningful here. Mirrors
+  // openStages in the data module: Returned/Approved are terminal, so their
+  // stored daysRemaining no longer signals urgency. rank sorts open before
+  // terminal; isOpenStage gates the urgency pill (grid + overlay clock).
+  const openStages: Stage[] = ['Submitted', 'In review'];
+  const isOpenStage = (s: Stage) => openStages.includes(s);
+
+  // How the invoice's performance-period END sits relative to the contract's END.
+  const contractEndGap = (perfEndStr: string, contractEndStr: string): string => {
+    const a = new Date(perfEndStr);
+    const b = new Date(contractEndStr);
+    if (isNaN(a.getTime()) || isNaN(b.getTime())) return '';
+    const days = Math.round((b.getTime() - a.getTime()) / 86_400_000);
+    if (days === 0) return 'ends on the contract end date';
+    const n = Math.abs(days);
+    return days > 0
+      ? `${n} day${n === 1 ? '' : 's'} before contract end`
+      : `${n} day${n === 1 ? '' : 's'} past contract end`;
+  };
+  const stageRank = (inv: Invoice) => (isOpenStage(inv.stage) ? 0 : 1);
+
   const cbfTheme = themeQuartz.withParams({
     fontFamily: 'inherit', fontSize: '14px',
     foregroundColor: 'var(--color-text-primary)', backgroundColor: 'var(--color-surface)',
@@ -793,7 +764,7 @@ const { invoices = defaultQueue } = Astro.props;
     const empty = root.querySelector<HTMLElement>('[data-queue-empty]');
     const count = root.querySelector<HTMLElement>('[data-queue-count]');
 
-    // Pre-clone the real esa-badge markup per stage + urgency (scope hash intact).
+    // Pre-clone the real esa-pill markup per stage + urgency (scope hash intact).
     const stageHTML = new Map<string, string>();
     root.querySelectorAll<HTMLElement>('[data-badge-templates] [data-stage]').forEach((el) => {
       stageHTML.set(el.dataset.stage ?? '', el.innerHTML);
@@ -804,19 +775,147 @@ const { invoices = defaultQueue } = Astro.props;
     });
     const finalHTML = root.querySelector<HTMLElement>('[data-badge-templates] [data-flag="final"]')?.innerHTML ?? 'Final';
 
-    // Clone a badge template and swap its text node for a custom label.
+    // Asset Suite pill templates (workspace variant only). Empty in the review
+    // variant since those templates aren't server-rendered there.
+    const assetHTML = new Map<string, string>();
+    root.querySelectorAll<HTMLElement>('[data-badge-templates] [data-asset]').forEach((el) => {
+      assetHTML.set(el.dataset.asset ?? '', el.innerHTML);
+    });
+
+    // Clone a pill template and swap its text node for a custom label.
     const badgeWith = (html: string, label: string) => {
       const tmpl = document.createElement('div');
       tmpl.innerHTML = html;
-      const labelEl = tmpl.querySelector('.esa-badge__text') ?? tmpl.firstElementChild ?? tmpl;
+      const labelEl = tmpl.querySelector('.esa-pill__label') ?? tmpl.firstElementChild ?? tmpl;
       labelEl.textContent = label;
       return tmpl.innerHTML;
     };
+    // Open-stage rows show the urgency pill; terminal rows (Returned/Approved)
+    // have a finished clock, so a plain muted em dash — never a red "overdue" pill.
     const urgencyBadge = (inv: Invoice) =>
-      `<span class="cbf-grid-status">${badgeWith(urgencyHTML.get(urgencyOf(inv.daysRemaining)) ?? '', daysLabel(inv.daysRemaining))}</span>`;
+      isOpenStage(inv.stage)
+        ? `<span class="cbf-grid-status">${badgeWith(urgencyHTML.get(urgencyOf(inv.daysRemaining)) ?? '', daysLabel(inv.daysRemaining))}</span>`
+        : '<span class="cbf-grid-muted" aria-hidden="true">—</span>';
+
+    // Map an Asset Suite display string to its processing state, then render the
+    // matching pill with the full display string as its label — same
+    // label-inside-the-pill presentation the stage/urgency cells use.
+    const assetStateOf = (display: string) =>
+      display.startsWith('Paid') ? 'paid' : display.startsWith('Processing') ? 'processing' : 'not-sent';
+    const assetBadge = (inv: Invoice) => {
+      const display = inv.assetSuite ?? 'Not sent';
+      return `<span class="cbf-grid-status">${badgeWith(assetHTML.get(assetStateOf(display)) ?? '', display)}</span>`;
+    };
 
     let stageValue = '';
+    let overdueOnly = false;
     let openDetail: (inv: Invoice) => void = () => {};
+
+    const isWorkspace = root.dataset.variant === 'workspace';
+
+    // Days-left cell renders as pill (open) or muted em dash (terminal); the
+    // custom comparator keeps open-stage rows above terminal rows under the
+    // default 'asc' sort, then daysRemaining ascending within each group — so a
+    // -20 "Approved" record can never surface above a genuinely open invoice.
+    const daysLeftCol = {
+      headerName: 'Days left', field: 'daysRemaining', colId: 'daysRemaining',
+      minWidth: isWorkspace ? 140 : 150, sort: 'asc' as const,
+      cellRenderer: (p: { data: Invoice }) => urgencyBadge(p.data),
+      comparator: (a: number, b: number, nodeA: { data: Invoice }, nodeB: { data: Invoice }) =>
+        stageRank(nodeA.data) - stageRank(nodeB.data) || (a - b),
+    };
+
+    // Invoice #. In the workspace variant the "Final?" column is dropped, so the
+    // final flag rides inline after the number (same clone/scope-hash pill the
+    // standalone column used). Review variant keeps the plain number + a separate
+    // Final? column.
+    const invoiceNumCol = {
+      headerName: 'Invoice #', field: 'number', colId: 'number',
+      cellClass: 'cbf-grid-id', minWidth: 160,
+      getQuickFilterText: (p: { data: Invoice }) => `${p.data.number} ${p.data.project}`,
+      ...(isWorkspace
+        ? {
+            cellRenderer: (p: { data: Invoice }) =>
+              p.data.final
+                ? `<span class="cbf-grid-idcell">${p.data.number}<span class="cbf-grid-status">${finalHTML}</span></span>`
+                : p.data.number,
+          }
+        : {}),
+    };
+
+    const amountCol = {
+      headerName: 'Amount', field: 'amount', colId: 'amount',
+      type: 'numericColumn', headerClass: 'cbf-grid-num', cellClass: 'cbf-grid-num',
+      minWidth: 130, valueFormatter: (p: { value: number }) => usd.format(p.value),
+    };
+    const statusCol = {
+      headerName: 'Status', field: 'stage', colId: 'stage', minWidth: 150,
+      cellRenderer: (p: { value: string }) => `<span class="cbf-grid-status">${stageHTML.get(p.value) ?? p.value}</span>`,
+    };
+
+    // Trim min-widths in the workspace so the full set fits ~1350px without
+    // horizontal scroll — the Asset Suite column stays in view. The review
+    // variant keeps its original min-widths (and its Review by + Final? columns).
+    const vendorMin = isWorkspace ? 170 : 200;
+    const contractMin = isWorkspace ? 170 : 200;
+    const vendorCol = { headerName: 'Vendor', field: 'vendor', colId: 'vendor', flex: 2, minWidth: vendorMin };
+    const contractCol = { headerName: 'Contract', field: 'contract', colId: 'contract', flex: 2, minWidth: contractMin };
+
+    // Review-variant-only columns: the review-by date + the standalone Final flag.
+    const reviewOnlyCols = isWorkspace
+      ? []
+      : [
+          { headerName: 'Final?', field: 'final', colId: 'final', minWidth: 100, sortable: true,
+            cellRenderer: (p: { value: boolean }) => (p.value ? `<span class="cbf-grid-status">${finalHTML}</span>` : '') },
+        ];
+    const reviewByCol = isWorkspace
+      ? []
+      : [{ headerName: 'Review by', field: 'reviewBy', colId: 'reviewBy', minWidth: 130 }];
+
+    // Workspace-variant-only columns: Asset Suite processing pill + aging column.
+    const workspaceCols = isWorkspace
+      ? [
+          {
+            headerName: 'Asset Suite', field: 'assetSuite', colId: 'assetSuite',
+            flex: 2, minWidth: 180,
+            cellRenderer: (p: { data: Invoice }) => assetBadge(p.data),
+          },
+          {
+            headerName: 'In status', field: 'inStatusDays', colId: 'inStatusDays',
+            minWidth: 110,
+            valueFormatter: (p: { value: number }) => `${p.value ?? 0} days`,
+          },
+        ]
+      : [];
+
+    // Column order:
+    //  review    → Days left · Review by · Invoice # · Vendor · Contract · Amount · Final? · Status  (8)
+    //  workspace → Days left · Invoice # · Vendor · Contract · Amount · Status · Asset Suite · In status  (8)
+    //
+    // Workspace: add flex:1 to the five non-flex columns so all 8 columns fill the
+    // viewport exactly, with minWidths still guarding narrow cases. The review
+    // variant's column objects are left byte-identical — flex is applied via a
+    // spread-override at the point where the workspace array is assembled.
+    const columnDefs = isWorkspace
+      ? [
+          { ...daysLeftCol, flex: 1 },
+          { ...invoiceNumCol, flex: 1 },
+          vendorCol,
+          contractCol,
+          { ...amountCol, flex: 1 },
+          { ...statusCol, flex: 1 },
+          ...workspaceCols.map((col, i) => (i === 1 ? { ...col, flex: 1 } : col)), // In status gets flex:1; Asset Suite already has flex:2
+        ]
+      : [
+          daysLeftCol,
+          ...reviewByCol,
+          invoiceNumCol,
+          vendorCol,
+          contractCol,
+          amountCol,
+          ...reviewOnlyCols,
+          statusCol,
+        ];
 
     const gridApi = createGrid(gridHost, {
       theme: cbfTheme,
@@ -825,36 +924,17 @@ const { invoices = defaultQueue } = Astro.props;
       animateRows: false,
       suppressCellFocus: true,
       defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true },
-      columnDefs: [
-        {
-          headerName: 'Days left', field: 'daysRemaining', colId: 'daysRemaining',
-          minWidth: 150, sort: 'asc',
-          cellRenderer: (p: { data: Invoice }) => urgencyBadge(p.data),
-        },
-        { headerName: 'Review by', field: 'reviewBy', colId: 'reviewBy', minWidth: 130 },
-        {
-          headerName: 'Invoice #', field: 'number', colId: 'number',
-          cellClass: 'cbf-grid-id', minWidth: 160,
-          getQuickFilterText: (p) => `${p.data.number} ${p.data.project}`,
-        },
-        { headerName: 'Vendor', field: 'vendor', colId: 'vendor', flex: 2, minWidth: 200 },
-        { headerName: 'Contract', field: 'contract', colId: 'contract', flex: 2, minWidth: 200 },
-        {
-          headerName: 'Amount', field: 'amount', colId: 'amount',
-          type: 'numericColumn', headerClass: 'cbf-grid-num', cellClass: 'cbf-grid-num',
-          minWidth: 130, valueFormatter: (p) => usd.format(p.value as number),
-        },
-        {
-          headerName: 'Final?', field: 'final', colId: 'final', minWidth: 100, sortable: true,
-          cellRenderer: (p: { value: boolean }) => (p.value ? `<span class="cbf-grid-status">${finalHTML}</span>` : ''),
-        },
-        {
-          headerName: 'Status', field: 'stage', colId: 'stage', minWidth: 150,
-          cellRenderer: (p: { value: string }) => `<span class="cbf-grid-status">${stageHTML.get(p.value) ?? p.value}</span>`,
-        },
-      ],
-      isExternalFilterPresent: () => stageValue !== '',
-      doesExternalFilterPass: (node) => node.data.stage === stageValue,
+      columnDefs,
+      // Two external filters, ANDed: the status chip (stageValue) and the
+      // metrics-strip "overdue only" toggle (overdueOnly). Overdue mirrors the
+      // urgency pill's rule — open stage AND past the review-by clock.
+      isExternalFilterPresent: () => stageValue !== '' || overdueOnly,
+      doesExternalFilterPass: (node) => {
+        const inv = node.data as Invoice;
+        if (stageValue !== '' && inv.stage !== stageValue) return false;
+        if (overdueOnly && !(isOpenStage(inv.stage) && inv.daysRemaining < 0)) return false;
+        return true;
+      },
       onModelUpdated: () => {
         const shown = gridApi.getDisplayedRowCount();
         if (count) count.textContent = `Showing ${shown} of ${total} invoices`;
@@ -872,7 +952,24 @@ const { invoices = defaultQueue } = Astro.props;
       gridApi.onFilterChanged();
     });
 
+    // Metrics-strip bridge: the "Overdue" toggle (a sibling component) dispatches
+    // cbf:queue-filter { overdue }, forwarded onto this root by the section wrapper.
+    // Apply it as the overdue-only external filter.
+    root.addEventListener('cbf:queue-filter', (e) => {
+      const detail = (e as CustomEvent<{ overdue?: boolean }>).detail ?? {};
+      overdueOnly = Boolean(detail.overdue);
+      gridApi.onFilterChanged();
+    });
+
     openDetail = bindReview(root, gridApi, stageHTML, urgencyHTML);
+
+    // Public opener for the tab console: open the detail overlay for a given
+    // invoice number (same code path as a row click). Unknown number → no-op.
+    const openByNumber = (number: string) => {
+      const inv = data.find((d) => d.number === number);
+      if (inv) openDetail(inv);
+    };
+    return { openByNumber, gridApi };
   }
 
   // Bind the review overlay once; returns an opener that populates + shows it.
@@ -889,34 +986,29 @@ const { invoices = defaultQueue } = Astro.props;
     const badgeWith = (html: string, label: string) => {
       const t = document.createElement('div');
       t.innerHTML = html;
-      const el = t.querySelector('.esa-badge__text') ?? t.firstElementChild ?? t;
+      const el = t.querySelector('.esa-pill__label') ?? t.firstElementChild ?? t;
       el.textContent = label;
       return t.innerHTML;
     };
 
-    // Decisions persist across prev/next within the session (prototype-local).
-    const decisions = new Map<string, Decision>();
-
-    const result = $('[data-review-result]');
-    const resultText = $('[data-result-text]');
-    const actions = $('[data-actions]');
-    const def = $('[data-actions-default]');
-    const approveBox = $('[data-actions-approve]');
-    const returnBox = $('[data-actions-return]');
-    const reason = $<HTMLElement & { value: string }>('[data-return-reason]');
     const statusSlot = $('[data-f-status]');
     const prevWrap = $('[data-review-prev]');
     const nextWrap = $('[data-review-next]');
     const prevBtn = prevWrap?.querySelector('button') ?? null;
     const nextBtn = nextWrap?.querySelector('button') ?? null;
+    // "Process invoice" — esa-button rendered as a link; its href points at the
+    // current invoice's own processing page, set per record in populate().
+    const processLink = dialog.querySelector<HTMLAnchorElement>('[data-process] a');
 
     // Attachments: list element + the cloneable download-button markup (the
-    // server-rendered esa-icon-button lego, reused verbatim per row).
+    // server-rendered esa-icon-button lego, reused verbatim per row). This overlay
+    // is a preview — backups download only; viewing them (side by side with the
+    // invoice) happens on the Process page.
     const attachList = $('[data-f-attachments]');
     const attachTitle = $('[data-f-attach-title]');
     const dlBtnHTML = $('[data-dl-template]')?.querySelector('button')?.outerHTML ?? '';
     const escAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    // The files for the currently shown invoice (invoice doc first, then supporting).
+    // The backup-documentation files for the currently shown invoice.
     let currentFiles: string[] = [];
     let currentNumber = '';
 
@@ -928,40 +1020,34 @@ const { invoices = defaultQueue } = Astro.props;
 
     let current = -1;
 
-    const showActionMode = (mode: 'default' | 'approve' | 'return' | 'done', dec?: Decision) => {
-      if (def) def.hidden = mode !== 'default';
-      if (approveBox) approveBox.hidden = mode !== 'approve';
-      if (returnBox) returnBox.hidden = mode !== 'return';
-      if (actions) actions.hidden = mode === 'done';
-      if (result) result.hidden = mode !== 'done';
-      if (mode === 'done' && dec && result && resultText) {
-        const box = result.querySelector('.esa-alert-box');
-        if (box) {
-          box.classList.remove('esa-alert-box--success', 'esa-alert-box--danger', 'esa-alert-box--info', 'esa-alert-box--warning');
-          box.classList.add(`esa-alert-box--${dec.variant}`);
-          const titleEl = box.querySelector('.esa-alert-box__title');
-          if (titleEl) titleEl.textContent = dec.title;
-        }
-        resultText.textContent = dec.text;
-      }
-    };
-
     const setText = (sel: string, value: string) => { const el = $(sel); if (el) el.textContent = value; };
 
     const populate = (inv: Invoice) => {
       const list = displayed();
       current = list.findIndex((d) => d.number === inv.number);
-      dialog.heading = inv.number;
+      dialog.heading = inv.number; // aria-label
+      setText('[data-f-dialog-title]', inv.number); // visible custom-header title
 
-      // Status badge (decided stage overrides the queue stage).
-      const decided = decisions.get(inv.number);
-      const shownStage = decided ? decided.badge : inv.stage;
-      if (statusSlot) statusSlot.innerHTML = `<span class="cbf-grid-status">${stageHTML.get(shownStage) ?? shownStage}</span>`;
+      // Status badge — the preview keeps it so the COR sees where the invoice sits
+      // in the pipeline (the detail page drops it, since there you're already acting).
+      if (statusSlot) statusSlot.innerHTML = `<span class="cbf-grid-status">${stageHTML.get(inv.stage) ?? inv.stage}</span>`;
 
-      // Clock + urgency.
+      // Submission & review deadline. The date uses the standard color, going red
+      // ONLY when overdue; the urgency alert shows only while the invoice is open.
+      setText('[data-f-submitted]', inv.submitted);
+      setText('[data-f-net-terms]', inv.netTerms);
       setText('[data-f-reviewby]', inv.reviewBy);
+      const open = isOpenStage(inv.stage);
+      const bucket = urgencyOf(inv.daysRemaining);
+      const reviewByEl = $('[data-f-reviewby]');
+      if (reviewByEl) {
+        reviewByEl.className = 'cbf-review-deadline__date'
+          + (open && bucket === 'overdue' ? ' cbf-review-deadline__date--overdue' : '');
+      }
       const urg = $('[data-f-urgency]');
-      if (urg) urg.innerHTML = `<span class="cbf-grid-status">${badgeWith(urgencyHTML.get(urgencyOf(inv.daysRemaining)) ?? '', daysLabel(inv.daysRemaining))}</span>`;
+      if (urg) urg.innerHTML = open
+        ? `<span class="cbf-grid-status">${badgeWith(urgencyHTML.get(bucket) ?? '', daysLabel(inv.daysRemaining))}</span>`
+        : '';
 
       // Final-invoice notice + document stamp.
       const finalAlert = $('[data-f-final-alert]');
@@ -969,34 +1055,32 @@ const { invoices = defaultQueue } = Astro.props;
       const stamp = $('[data-f-stamp]');
       if (stamp) stamp.hidden = !inv.final;
 
-      // Hero: the billed amount (exact) + the one line of context that frames it.
-      setText('[data-f-amount-hero]', usd.format(inv.amount));
-      // Amount copies as raw cents (3960.00) for paste into a numeric field.
-      const amtCopy = $('[data-f-amount-copy]');
-      if (amtCopy) amtCopy.dataset.copyValue = inv.amount.toFixed(2);
-      const pct = inv.remaining > 0 ? Math.round((inv.amount / inv.remaining) * 100) : 0;
-      setText('[data-f-pct]', `${pct}% of the ${usdCompact.format(inv.remaining)} remaining on this contract`);
-
-      // Supporting context (compact figures).
-      setText('[data-f-contractvalue]', usdCompact.format(inv.contractValue));
-      setText('[data-f-expended]', usdCompact.format(inv.expended));
-      setText('[data-f-asof]', `Expended · ${inv.asOf}`);
-      setText('[data-f-remaining]', usdCompact.format(inv.remaining));
-
-      // Budget impact (exact figures so the before − invoice = after reconciles).
-      const remAfter = inv.remaining - inv.amount;
-      setText('[data-f-rem-before]', usd.format(inv.remaining));
-      setText('[data-f-rem-delta]', `− ${usd.format(inv.amount)}`);
-      setText('[data-f-rem-after]', usd.format(remAfter));
-
-      // Spec fields. Performance is split into start/end so each is copyable.
+      // Invoice information.
       setText('[data-f-number-panel]', inv.number);
       setText('[data-f-vendor-panel]', inv.vendor);
-      setText('[data-f-contract]', inv.contract);
-      setText('[data-f-project]', inv.project);
+      // Contract & project: the reference NUMBER leads, the name is a quiet sub, and
+      // the copy control carries the number (the ID transcribed into other systems).
+      setText('[data-f-contract-num]', inv.contractNumber);
+      setText('[data-f-contract-name]', inv.contract);
+      const contractCopy = $('[data-f-contract-copy]');
+      if (contractCopy) contractCopy.dataset.copyValue = inv.contractNumber || inv.contract;
+      setText('[data-f-project-num]', inv.projectNumber);
+      setText('[data-f-project-name]', inv.project);
+      const projectCopy = $('[data-f-project-copy]');
+      if (projectCopy) projectCopy.dataset.copyValue = inv.projectNumber || inv.project;
       setText('[data-f-perf-start]', inv.perfStart);
-      setText('[data-f-perf-end]', inv.perfEnd);
-      setText('[data-f-submitted]', inv.submitted);
+      setText('[data-f-perf-end-date]', inv.perfEnd);
+      setText('[data-f-contract-end]', `Contract ends ${inv.contractEnd} · ${contractEndGap(inv.perfEnd, inv.contractEnd)}`);
+      const perfEndCopy = $('[data-f-perf-end-copy]');
+      if (perfEndCopy) perfEndCopy.dataset.copyValue = inv.perfEnd;
+
+      // Amount information.
+      setText('[data-f-amount-hero]', usd.format(inv.amount));
+      const amtCopy = $('[data-f-amount-copy]');
+      if (amtCopy) amtCopy.dataset.copyValue = inv.amount.toFixed(2);
+      setText('[data-f-remaining-val]', usdCompact.format(inv.remaining));
+      const remAfter = inv.remaining - inv.amount;
+      setText('[data-f-rem-after]', `${usdCompact.format(remAfter)} after this invoice`);
 
       // Document.
       setText('[data-f-vendor-doc]', inv.vendor);
@@ -1021,19 +1105,24 @@ const { invoices = defaultQueue } = Astro.props;
       setText('[data-f-memo]', inv.notes ?? '');
       setText('[data-f-pdf]', `Submitted document · ${inv.pdfName}`);
 
-      // Attachments: the invoice document first, then the supporting files.
-      currentFiles = [inv.pdfName, ...inv.supportingDocs];
+      // Backup documentation: the supporting files the vendor uploaded (the invoice
+      // itself lives in the document pane, not this list). Each row carries a view
+      // control (renders the file in the pane) and a download control.
+      currentFiles = [...inv.supportingDocs];
       currentNumber = inv.number;
-      if (attachTitle) attachTitle.textContent = `Attachments (${currentFiles.length})`;
+      if (attachTitle) attachTitle.textContent = `Backup documentation (${currentFiles.length})`;
+      const attachAll = $('[data-attach-all]');
+      if (attachAll) attachAll.hidden = currentFiles.length === 0;
       if (attachList) {
-        attachList.innerHTML = currentFiles
-          .map((name, i) => `<li class="cbf-review-attach" data-primary="${i === 0}">
+        attachList.innerHTML = currentFiles.length
+          ? currentFiles
+              .map((name) => `<li class="cbf-review-attach">
             <span class="cbf-review-attach__name" title="${escAttr(name)}">${escAttr(name)}</span>
-            ${i === 0 ? '<span class="cbf-review-attach__role">Invoice</span>' : ''}
             <span class="cbf-review-attach__dl" data-attach-dl data-file="${escAttr(name)}">${dlBtnHTML}</span>
           </li>`)
-          .join('');
-        // Give each cloned download control a file-specific accessible name.
+              .join('')
+          : '<li class="cbf-review-attach cbf-review-attach--empty"><span class="cbf-review-attach__name">No backup documentation was submitted with this invoice.</span></li>';
+        // Give each cloned control a file-specific accessible name.
         attachList.querySelectorAll<HTMLElement>('[data-attach-dl]').forEach((slot) => {
           const file = slot.dataset.file ?? '';
           const btn = slot.querySelector('button');
@@ -1041,13 +1130,9 @@ const { invoices = defaultQueue } = Astro.props;
         });
       }
 
-      // Approve-confirm copy.
-      setText('[data-f-num-approve]', inv.number);
-      setText('[data-f-amount-approve]', usd.format(inv.amount));
-      if (reason) reason.value = '';
-
-      // Action state: decided → done; else default.
-      showActionMode(decided ? 'done' : 'default', decided);
+      // Process link → the invoice's own processing page (documents + Line Item
+      // Budget + approve/return live there, not in this preview).
+      if (processLink) processLink.href = `${import.meta.env.BASE_URL}invoice-review/${encodeURIComponent(inv.number)}`;
 
       // Nav.
       setText('[data-f-position]', `Invoice ${current + 1} of ${list.length}`);
@@ -1056,36 +1141,6 @@ const { invoices = defaultQueue } = Astro.props;
     };
 
     const step = (dir: Dir) => { const t = displayed()[current + dir]; if (t) populate(t); };
-    const currentInv = () => displayed()[current];
-
-    // Wire actions (delegated to wrapper spans like the rest of the spoke).
-    $('[data-act-approve]')?.addEventListener('click', () => showActionMode('approve'));
-    $('[data-act-return]')?.addEventListener('click', () => showActionMode('return'));
-    $('[data-act-approve-cancel]')?.addEventListener('click', () => showActionMode('default'));
-    $('[data-act-return-cancel]')?.addEventListener('click', () => showActionMode('default'));
-
-    $('[data-act-approve-confirm]')?.addEventListener('click', () => {
-      const inv = currentInv(); if (!inv) return;
-      const dec: Decision = {
-        variant: 'success', title: 'Approved', badge: 'Approved',
-        text: 'This invoice has been approved and routed to the Contracting Officer for payment.',
-      };
-      decisions.set(inv.number, dec);
-      if (statusSlot) statusSlot.innerHTML = `<span class="cbf-grid-status">${stageHTML.get('Approved') ?? 'Approved'}</span>`;
-      showActionMode('done', dec);
-    });
-
-    $('[data-act-return-confirm]')?.addEventListener('click', () => {
-      const inv = currentInv(); if (!inv) return;
-      const note = (reason?.value ?? '').trim();
-      const dec: Decision = {
-        variant: 'danger', title: 'Returned for revision', badge: 'Returned',
-        text: note ? `Returned to the vendor with your comments: “${note}”` : 'Returned to the vendor for revision.',
-      };
-      decisions.set(inv.number, dec);
-      if (statusSlot) statusSlot.innerHTML = `<span class="cbf-grid-status">${stageHTML.get('Returned') ?? 'Returned'}</span>`;
-      showActionMode('done', dec);
-    });
 
     prevWrap?.addEventListener('click', () => step(-1));
     nextWrap?.addEventListener('click', () => step(1));
@@ -1150,5 +1205,43 @@ const { invoices = defaultQueue } = Astro.props;
     return (inv: Invoice) => { populate(inv); dialog.show(); };
   }
 
-  document.querySelectorAll<HTMLElement>('.cbf-invoice-review-queue').forEach(initQueue);
+  // Per-root setup. The queue is reused inside an esa-tab-layout panel, which
+  // only slots the ACTIVE panel — an inactive panel is unslotted (zero width),
+  // and AG Grid must never init at zero width (flex columns + autoHeight break).
+  // So: attach the open API immediately (works before the grid exists via a
+  // pending-open), init synchronously when already visible (byte-for-byte the
+  // old eager behavior), and otherwise defer init until the panel first sizes.
+  type QueueApi = ReturnType<typeof initQueue>;
+  function setup(root: HTMLElement) {
+    let api: QueueApi | undefined;
+    let pendingOpen: string | null = null;
+
+    // PINNED CONTRACT: the tab console dispatches CustomEvent 'cbf:open-invoice'
+    // with detail { number } on THIS root element. Attach before init so a
+    // pre-init event is honored once the grid comes up.
+    root.addEventListener('cbf:open-invoice', (e) => {
+      const number = (e as CustomEvent<{ number: string }>).detail?.number;
+      if (!number) return;
+      if (api) api.openByNumber(number);
+      else pendingOpen = number;
+    });
+
+    if (root.clientWidth > 0) {
+      // Visible at load — preserve today's behavior exactly (synchronous init).
+      api = initQueue(root);
+      if (pendingOpen && api) { api.openByNumber(pendingOpen); pendingOpen = null; }
+      return;
+    }
+
+    // Hidden tab panel: wait for the first nonzero width, then init once.
+    const ro = new ResizeObserver(() => {
+      if (root.clientWidth <= 0) return;
+      ro.disconnect();
+      api = initQueue(root);
+      if (pendingOpen && api) { api.openByNumber(pendingOpen); pendingOpen = null; }
+    });
+    ro.observe(root);
+  }
+
+  document.querySelectorAll<HTMLElement>('.cbf-invoice-review-queue').forEach(setup);
 </script>

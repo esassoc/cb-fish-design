@@ -103,13 +103,22 @@ export function initInvoiceWizard(): void {
   // Prototype-only testing helper so the review/confirmation screens can be reached
   // without hand-filling the form. Wired to the dev-bar "Autofill → Review" button
   // and exposed on window for console use (vendorInvoiceAutofill()).
+  // A minimal but *valid* one-page PDF (base64). A bare "%PDF-1.4" header with no
+  // objects/xref/trailer is NOT a renderable PDF — Chrome's PDF engine shows a
+  // blank viewer for it — so the demo file must be a real document to preview.
+  const DEMO_PDF_BASE64 =
+    'JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiA+PiA+PiAvQ29udGVudHMgNSAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago1IDAgb2JqCjw8IC9MZW5ndGggNjAgPj4Kc3RyZWFtCkJUIC9GMSAyMiBUZiA3MiA3MDAgVGQgKERlbW8gaW52b2ljZSBcMjI2IGZvciB0ZXN0aW5nKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU4IDAwMDAwIG4gCjAwMDAwMDAxMTUgMDAwMDAgbiAKMDAwMDAwMDI0MSAwMDAwMCBuIAowMDAwMDAwMzExIDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKNDIxCiUlRU9GCg==';
+
+  function makeDemoInvoiceFile(): File {
+    const bytes = Uint8Array.from(atob(DEMO_PDF_BASE64), (c) => c.charCodeAt(0));
+    return new File([bytes], 'demo-invoice.pdf', { type: 'application/pdf' });
+  }
+
   function devAutofill(): void {
-    // A placeholder PDF unlocks the form (pdfEverLoaded) and shows the panel.
+    // A valid demo PDF unlocks the form (pdfEverLoaded), shows the panel, and
+    // actually renders in the viewer.
     if (!uploadedFile) {
-      const demo = new File(['%PDF-1.4\n% demo invoice for testing\n'], 'demo-invoice.pdf', {
-        type: 'application/pdf',
-      });
-      showFile(demo);
+      showFile(makeDemoInvoiceFile());
     }
     const fill = (selector: string, value: string): void => {
       const el = wizard.querySelector<any>(selector);
@@ -152,9 +161,6 @@ export function initInvoiceWizard(): void {
     if (t.closest('[data-dev-autofill]')) devAutofill();
   });
 
-  // Show panel immediately on load (step 0)
-  syncPdfPanel();
-
   // ---- Combobox initialization ----
   // esa-combobox takes options as a JS property, not slotted HTML.
   // We encode the options as JSON on a data attribute at build time and assign here.
@@ -165,9 +171,18 @@ export function initInvoiceWizard(): void {
   // ---- PDF panel sync ----
 
   function syncPdfPanel(): void {
-    const show = current === 0;
+    // The panel rides alongside BOTH the details form (step 0) and the review
+    // summary (step 1) so the layout stays consistent across the two steps.
+    const onReview = current === 1;
+    const show = current === 0 || onReview;
     pdfPanel?.toggleAttribute('hidden', !show);
     cardBody?.classList.toggle('has-pdf', show);
+    // Remove is a step-0 edit action; on review the viewer is a read-only preview
+    // the vendor can switch between the invoice and each supporting document.
+    wizard.querySelector<HTMLElement>('[data-upload-remove]')?.toggleAttribute('hidden', onReview);
+    // Whenever the panel (re)opens, reset the viewer to the main invoice so a
+    // leftover supporting-doc preview doesn't carry across step changes.
+    if (show && uploadedFile) previewMainInvoice();
   }
 
   // ---- Validation ----
@@ -271,6 +286,44 @@ export function initInvoiceWizard(): void {
   const pdfViewer = wizard.querySelector<HTMLElement>('[data-pdf-viewer]')!;
 
   let pdfObjectUrl: string | null = null;
+  // Object URL for a supporting-doc preview (kept separate from pdfObjectUrl so
+  // switching previews never revokes the main invoice's URL).
+  let activePreviewUrl: string | null = null;
+
+  // Highlight whichever review "view" button matches the doc now on screen.
+  function setActiveViewRow(name: string): void {
+    wizard.querySelectorAll<HTMLElement>('[data-view-invoice],[data-view-doc]').forEach((b) => {
+      b.classList.toggle('is-active', b.getAttribute('data-view-name') === name);
+    });
+  }
+
+  // Point the viewer back at the main invoice PDF.
+  function previewMainInvoice(): void {
+    if (activePreviewUrl) { URL.revokeObjectURL(activePreviewUrl); activePreviewUrl = null; }
+    if (pdfFrame && pdfObjectUrl) pdfFrame.src = pdfObjectUrl;
+    if (pdfFilenameEl && uploadedFile) pdfFilenameEl.textContent = uploadedFile.name;
+    setActiveViewRow(uploadedFile?.name ?? '');
+  }
+
+  // Point the viewer at a supporting document (PDF or image renders inline).
+  function previewDoc(file: File): void {
+    if (activePreviewUrl) { URL.revokeObjectURL(activePreviewUrl); activePreviewUrl = null; }
+    activePreviewUrl = URL.createObjectURL(file);
+    if (pdfFrame) pdfFrame.src = activePreviewUrl;
+    if (pdfFilenameEl) pdfFilenameEl.textContent = file.name;
+    setActiveViewRow(file.name);
+  }
+
+  // Only PDFs and images preview inline in the iframe; office docs can't be shown.
+  function isPreviewable(file: File): boolean {
+    return file.type === 'application/pdf'
+      || file.type.startsWith('image/')
+      || /\.(pdf|png|jpe?g)$/i.test(file.name);
+  }
+
+  // Show the panel immediately on load (step 0). Deferred to here so syncPdfPanel's
+  // uploadedFile read runs after that binding is initialized (no TDZ at init).
+  syncPdfPanel();
 
   // Upload size cap — mirrors the "Max 25 MB" hint shown on the drop zones.
   const MAX_FILE_BYTES = 25 * 1024 * 1024;
@@ -410,6 +463,17 @@ export function initInvoiceWizard(): void {
     if (!btn) return;
     supportingDocs.splice(Number(btn.dataset.docRemove), 1);
     renderDocs();
+  });
+
+  // Review step: "view" buttons swap which document the PDF panel is showing.
+  wizard.querySelector<HTMLElement>('[data-review-content]')?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-view-invoice]')) { previewMainInvoice(); return; }
+    const docBtn = target.closest<HTMLElement>('[data-view-doc]');
+    if (docBtn) {
+      const doc = supportingDocs[Number(docBtn.dataset.viewDoc)];
+      if (doc) previewDoc(doc);
+    }
   });
 
   wizard.querySelector('[data-upload-browse]')?.addEventListener('click', () => uploadInput.click());
@@ -703,8 +767,12 @@ export function initInvoiceWizard(): void {
   // instances exist (page step + modal), so fill is scoped to one root container.
   const fileRowSvg =
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+  const eyeSvg =
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
 
-  function fillReviewSummary(root: HTMLElement | null): void {
+  // withViewer: only the page-step review sits beside the PDF panel, so only it
+  // renders the "view" buttons. The modal review has no panel to drive.
+  function fillReviewSummary(root: HTMLElement | null, withViewer = false): void {
     if (!root) return;
     const set = (key: string, value: string): void => {
       const el = root.querySelector<HTMLElement>(`[data-review="${key}"]`);
@@ -713,6 +781,14 @@ export function initInvoiceWizard(): void {
 
     set('file-name', uploadedFile?.name ?? '(no file)');
     set('file-size', uploadedFile ? formatBytes(uploadedFile.size) : '');
+
+    // Main-invoice "view" button — shown only beside the panel; tag it with the
+    // filename so setActiveViewRow can highlight it when it's the one on screen.
+    const invViewBtn = root.querySelector<HTMLElement>('[data-view-invoice]');
+    if (invViewBtn) {
+      invViewBtn.toggleAttribute('hidden', !withViewer || !uploadedFile);
+      invViewBtn.setAttribute('data-view-name', uploadedFile?.name ?? '');
+    }
 
     set('invoice-number', fieldVal('[data-field="invoice-number"]') || 'No invoice number');
     // Label-left review layout: show the full contract / project identifiers as values.
@@ -735,11 +811,14 @@ export function initInvoiceWizard(): void {
     // Supporting documents — rows are plain data (not legos); toggle the card.
     const docsList = root.querySelector<HTMLElement>('[data-review="docs-list"]');
     if (docsList) {
-      docsList.innerHTML = supportingDocs.map((f) => `
+      docsList.innerHTML = supportingDocs.map((f, i) => `
         <div class="cbf-review-row">
           ${fileRowSvg}
           <span>${escHtml(f.name)}</span>
           <span class="cbf-review-meta">${formatBytes(f.size)}</span>
+          ${withViewer && isPreviewable(f)
+            ? `<button type="button" class="cbf-doc-view" data-view-doc="${i}" data-view-name="${escHtml(f.name)}" aria-label="Preview ${escHtml(f.name)}">${eyeSvg}</button>`
+            : ''}
         </div>`).join('');
     }
     root.querySelector<HTMLElement>('[data-review="docs-card"]')
@@ -753,7 +832,7 @@ export function initInvoiceWizard(): void {
   }
 
   function populateReview(): void {
-    fillReviewSummary(wizard.querySelector<HTMLElement>('[data-review-content]'));
+    fillReviewSummary(wizard.querySelector<HTMLElement>('[data-review-content]'), true);
   }
 
   function populateModalReview(): void {
