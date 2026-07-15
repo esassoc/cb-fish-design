@@ -44,7 +44,7 @@ export const prototypes: Prototype[] = [
     slug: 'vendor-dashboard',
     title: 'Vendor dashboard',
     description:
-      'Vendor’s invoices & financial-outlook view — cross-contract money position, a needs-attention strip, and a sortable invoices grid with a click-through detail drawer.',
+      "Vendor’s invoices & financial-outlook view — cross-contract money position, a needs-attention strip, and a sortable invoices grid with a click-through detail drawer.",
     route: '/vendor-dashboard',
     createdAt: '2026-06-15',
     status: 'in-progress',
@@ -59,12 +59,12 @@ export const prototypes: Prototype[] = [
     status: 'in-progress',
   },
   {
-    slug: 'invoice-review',
-    title: 'Invoice review (COR)',
+    slug: 'my-work',
+    title: 'Dashboard (COR landing)',
     description:
-      'The reviewer’s side: an urgency-triaged queue of invoices assigned across contracts, and a split-view detail — submitted document beside the contract context — to QA/QC then Approve or Return for revision.',
-    route: '/invoice-review',
-    createdAt: '2026-06-22',
+      'The COR landing console — a tabbed case-management surface: the action queue and at-risk band, the invoice workspace with Asset Suite status, and a portfolio health view. Tab badges carry urgent counts everywhere.',
+    route: '/my-work',
+    createdAt: '2026-07-13',
     status: 'in-progress',
   },
   {

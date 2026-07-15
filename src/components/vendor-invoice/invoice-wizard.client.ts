@@ -103,13 +103,22 @@ export function initInvoiceWizard(): void {
   // Prototype-only testing helper so the review/confirmation screens can be reached
   // without hand-filling the form. Wired to the dev-bar "Autofill → Review" button
   // and exposed on window for console use (vendorInvoiceAutofill()).
+  // A minimal but *valid* one-page PDF (base64). A bare "%PDF-1.4" header with no
+  // objects/xref/trailer is NOT a renderable PDF — Chrome's PDF engine shows a
+  // blank viewer for it — so the demo file must be a real document to preview.
+  const DEMO_PDF_BASE64 =
+    'JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiA+PiA+PiAvQ29udGVudHMgNSAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago1IDAgb2JqCjw8IC9MZW5ndGggNjAgPj4Kc3RyZWFtCkJUIC9GMSAyMiBUZiA3MiA3MDAgVGQgKERlbW8gaW52b2ljZSBcMjI2IGZvciB0ZXN0aW5nKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU4IDAwMDAwIG4gCjAwMDAwMDAxMTUgMDAwMDAgbiAKMDAwMDAwMDI0MSAwMDAwMCBuIAowMDAwMDAwMzExIDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKNDIxCiUlRU9GCg==';
+
+  function makeDemoInvoiceFile(): File {
+    const bytes = Uint8Array.from(atob(DEMO_PDF_BASE64), (c) => c.charCodeAt(0));
+    return new File([bytes], 'demo-invoice.pdf', { type: 'application/pdf' });
+  }
+
   function devAutofill(): void {
-    // A placeholder PDF unlocks the form (pdfEverLoaded) and shows the panel.
+    // A valid demo PDF unlocks the form (pdfEverLoaded), shows the panel, and
+    // actually renders in the viewer.
     if (!uploadedFile) {
-      const demo = new File(['%PDF-1.4\n% demo invoice for testing\n'], 'demo-invoice.pdf', {
-        type: 'application/pdf',
-      });
-      showFile(demo);
+      showFile(makeDemoInvoiceFile());
     }
     const fill = (selector: string, value: string): void => {
       const el = wizard.querySelector<any>(selector);

@@ -35,5 +35,5 @@ export const system: NavLink[] = [
 ];
 
 export const quick: NavLink[] = [
-  { label: 'Recent', href: '#' }, { label: 'Dashboard', href: '#' },
+  { label: 'Recent', href: '#' }, { label: 'Dashboard', href: '/my-work' },
 ];

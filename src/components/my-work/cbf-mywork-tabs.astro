@@ -1,0 +1,157 @@
+---
+// cbf-mywork-tabs — the tabbed work-console shell for the "My Work" COR landing page.
+//
+// Wraps esa-tab-layout (Lit) with three tabs — My Tasks / My Invoices / My Portfolio —
+// carrying urgent-count badges, a per-role default tab (?role=), hash deep-linking
+// (#tasks/#invoices/#portfolio), and the task→invoice bridge event.
+//
+// The tab bodies are three named slots (tasks / invoices / portfolio) that the page
+// fills with the section components. esa-tab-layout renders ONLY the active panel's
+// slot, so the bridge below must switch to the invoices tab BEFORE forwarding the
+// open-invoice event to the queue (whose grid may still be deferred until visible).
+//
+// This is pure composition of the esa-tab-layout lego — no bespoke tab/panel chrome.
+// The only CSS is a pre-upgrade FOUC guard and the min-width:0 needed so the AG Grid
+// inside the invoices panel scrolls instead of clipping the flex/grid track.
+interface Props {
+  taskCount: number;
+  invoiceBadge: string;
+  portfolioBadge?: string | number;
+  /**
+   * When set, the page header title (.esa-page-header__title) and the document
+   * title track the active tab as `${titlePrefix}: ${tabLabel}` — e.g. the
+   * Dashboard page reads "Dashboard: My Invoices". Omit to leave titles static.
+   */
+  titlePrefix?: string;
+}
+const { taskCount, invoiceBadge, portfolioBadge, titlePrefix } = Astro.props;
+
+// A zero / empty / undefined count is noise — OMIT the badge key entirely so
+// esa-tab-layout (which renders a badge only when `tab.badge != null`) shows none.
+type TabDef = { label: string; badge?: string | number };
+const tabs: TabDef[] = [
+  { label: 'My Tasks', ...(taskCount ? { badge: taskCount } : {}) },
+  { label: 'My Invoices', ...(invoiceBadge ? { badge: invoiceBadge } : {}) },
+  { label: 'My Portfolio', ...(portfolioBadge ? { badge: portfolioBadge } : {}) },
+];
+---
+
+<esa-tab-layout
+  class="cbf-mywork-tabs"
+  size="lg"
+  appearance="segmented"
+  active-index="0"
+  tabs={JSON.stringify(tabs)}
+  data-title-prefix={titlePrefix}
+>
+  <div slot="panel-0" class="cbf-mywork-tabs__panel stack" data-gap="lg">
+    <slot name="tasks" />
+  </div>
+  <div slot="panel-1" class="cbf-mywork-tabs__panel stack" data-gap="lg">
+    <slot name="invoices" />
+  </div>
+  <div slot="panel-2" class="cbf-mywork-tabs__panel stack" data-gap="lg">
+    <slot name="portfolio" />
+  </div>
+</esa-tab-layout>
+
+<style>
+  /* Pre-upgrade FOUC guard: before esa-tab-layout defines, there is no shadow DOM
+     and all three panel slots render stacked in document order. Hide them until the
+     custom element upgrades and takes over active-panel switching. */
+  esa-tab-layout:not(:defined) > [slot^='panel-'] {
+    display: none;
+  }
+  /* An AG Grid lives in the invoices panel; min-width:0 lets it scroll horizontally
+     instead of clipping / forcing the flex track wider than the viewport. */
+  .cbf-mywork-tabs__panel {
+    min-width: 0;
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-tab-layout';
+
+  type TabEl = HTMLElement & { activeIndex: number; updateComplete: Promise<unknown> };
+
+  const HASH_TO_INDEX: Record<string, number> = {
+    '#tasks': 0,
+    '#invoices': 1,
+    '#portfolio': 2,
+  };
+  const INDEX_TO_HASH = ['#tasks', '#invoices', '#portfolio'] as const;
+  // Per-role default tab: COR → My Tasks; invoice team / vendor → My Invoices.
+  const ROLE_TO_INDEX: Record<string, number> = {
+    cor: 0,
+    'invoice-team': 1,
+    vendor: 1,
+  };
+
+  function resolveInitialIndex(): number {
+    // Hash deep-link overrides role; role overrides the hard default (0).
+    const fromHash = HASH_TO_INDEX[window.location.hash];
+    if (fromHash != null) return fromHash;
+    const role = new URLSearchParams(window.location.search).get('role') ?? '';
+    return ROLE_TO_INDEX[role] ?? 0;
+  }
+
+  function setup(root: HTMLElement): void {
+    const tabEl = root as TabEl;
+
+    // Per-tab title sync (opt-in via data-title-prefix). The page header title and
+    // the document title become `${prefix}: ${activeTabLabel}` — e.g. "Dashboard:
+    // My Invoices". Labels come from the reflected `tabs` attribute so this stays
+    // in lockstep with what the bar renders.
+    const titlePrefix = root.dataset.titlePrefix;
+    let labels: string[] = [];
+    try {
+      labels = (JSON.parse(root.getAttribute('tabs') ?? '[]') as { label: string }[]).map((t) => t.label);
+    } catch { /* leave labels empty → titles stay static */ }
+    const titleEl = document.querySelector<HTMLElement>('.esa-page-header__title');
+    // Preserve the "— Site Name" suffix already in the document title, if any.
+    const docSuffix = document.title.includes('—') ? document.title.slice(document.title.indexOf('—')) : '';
+    const applyTitle = (index: number): void => {
+      if (!titlePrefix) return;
+      const label = labels[index];
+      const full = label ? `${titlePrefix}: ${label}` : titlePrefix;
+      if (titleEl) titleEl.textContent = full;
+      document.title = docSuffix ? `${full} ${docSuffix}` : full;
+    };
+
+    // 1 + 3. Set the active index from (hash ?? role) at/before upgrade so there's no
+    // tab flicker. The reflected `active-index` attribute is present in SSR markup;
+    // assigning the property here wins once the element upgrades.
+    tabEl.activeIndex = resolveInitialIndex();
+    applyTitle(tabEl.activeIndex);
+
+    // 2. On tabchange, replaceState the matching hash (no history entry, no scroll)
+    //    and retitle the page for the newly active tab.
+    tabEl.addEventListener('tabchange', (e) => {
+      const index = (e as CustomEvent<{ index: number }>).detail?.index;
+      const hash = INDEX_TO_HASH[index];
+      if (hash) history.replaceState(null, '', hash);
+      if (typeof index === 'number') applyTitle(index);
+    });
+
+    // 4. The task→invoice bridge (PINNED CONTRACT — a sibling task-queue component
+    // dispatches a bubbling `cbf:open-invoice` with detail { number }). Switch to the
+    // My Invoices tab, wait for the panel to slot in, then forward the event to the
+    // queue root so its (pre-init) pending-open path opens the review overlay.
+    const queueSelector = '.cbf-invoice-review-queue';
+    root.addEventListener('cbf:open-invoice', async (e) => {
+      const evt = e as CustomEvent<{ number: string }>;
+      // Guard against re-forwarding the event we ourselves dispatch to the queue.
+      if ((evt.target as Element | null)?.closest?.(queueSelector)) return;
+
+      tabEl.activeIndex = 1;
+      await tabEl.updateComplete;
+      root
+        .querySelector<HTMLElement>(queueSelector)
+        ?.dispatchEvent(new CustomEvent('cbf:open-invoice', { detail: evt.detail }));
+    });
+  }
+
+  document
+    .querySelectorAll<HTMLElement>('.cbf-mywork-tabs')
+    .forEach(setup);
+</script>

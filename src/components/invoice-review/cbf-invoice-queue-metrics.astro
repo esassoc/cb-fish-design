@@ -1,0 +1,135 @@
+---
+// cbf-invoice-queue-metrics — the triage strip above the My Invoices grid. Four
+// glanceable facets of the COR's review pile, answering the questions a COR opens
+// this page to answer:
+//   1. Awaiting my review — how big is my pile (the single most useful number).
+//   2. Overdue           — how many are late on MY clock (the SIG-B trigger).
+//                          A toggle: click to filter the grid to just those rows.
+//   3. Oldest waiting    — my worst one has been sitting N days (beats an average).
+//   4. Final in queue    — FINAL triggers closeout, so it earns its own count.
+//
+// The Overdue metric dispatches a bubbling cbf:queue-filter { overdue } event; the
+// section wrapper (cbf-my-invoices) forwards it to the sibling queue, which applies
+// it as an external "overdue only" filter. Same bridge shape as cbf:open-invoice.
+//
+// bcn-lego-checked: esa-stat is the single-metric lego — composed here in a .cluster
+// row exactly like cbf-vendor-financial-outlook. No esa-* lego makes a stat
+// clickable, so the Overdue stat is wrapped in a native <button> (reset styles +
+// aria-pressed for the active state) — an interaction wrapper, not a reinvented
+// primitive. The danger tint on the Overdue value is applied through esa-stat's
+// public --stat-value-color token, not bespoke text markup. The row uses the
+// .cluster layout primitive; no hand-rolled flex.
+import EsaStat from '@esa/ecology/esa-stat.astro';
+
+interface Metrics {
+  awaitingReview: number;
+  overdue: number;
+  oldestWaiting: number;
+  finalInQueue: number;
+}
+interface Props {
+  metrics: Metrics;
+}
+const { metrics } = Astro.props;
+const { awaitingReview, overdue, oldestWaiting, finalInQueue } = metrics;
+
+const dayUnit = (n: number) => (n === 1 ? '1 day in queue' : `${n} days in queue`);
+---
+<section class="cbf-invoice-queue-metrics" aria-label="Invoice review summary">
+  <div class="cbf-invoice-queue-metrics__row cluster" data-gap="xl">
+    <EsaStat
+      value={awaitingReview}
+      label="Awaiting my review"
+      sub="Submitted or in review"
+    />
+
+    {overdue > 0 ? (
+      <button
+        type="button"
+        class="cbf-invoice-queue-metrics__trigger cbf-invoice-queue-metrics__overdue"
+        data-overdue-toggle
+        aria-pressed="false"
+      >
+        <EsaStat value={overdue} label="Overdue" sub="Filter the queue →" />
+      </button>
+    ) : (
+      <EsaStat value={0} label="Overdue" sub="None past the clock" />
+    )}
+
+    <EsaStat
+      value={oldestWaiting}
+      label="Oldest waiting"
+      sub={dayUnit(oldestWaiting)}
+    />
+
+    <EsaStat
+      value={finalInQueue}
+      label="Final in queue"
+      sub="Triggers closeout"
+      accent={finalInQueue > 0}
+    />
+  </div>
+</section>
+
+<style>
+  .cbf-invoice-queue-metrics {
+    padding-bottom: var(--spacing-500);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-invoice-queue-metrics__row {
+    /* Top-align the stats instead of the .cluster default (center). */
+    --align: flex-start;
+    row-gap: var(--spacing-400);
+  }
+
+  /* Overdue metric is a filter toggle — reset the button chrome and let the
+     esa-stat inside carry the visuals. Negative margins offset the hit-area
+     padding so the value baseline still aligns with the sibling stats. */
+  .cbf-invoice-queue-metrics__trigger {
+    appearance: none;
+    border: 0;
+    background: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    margin: calc(-1 * var(--spacing-200)) calc(-1 * var(--spacing-300));
+    padding: var(--spacing-200) var(--spacing-300);
+    border-radius: var(--radius-200);
+    transition: background-color 120ms ease;
+  }
+  /* Overdue is a payment-timeliness alarm — tint its value danger when non-zero. */
+  .cbf-invoice-queue-metrics__overdue {
+    --stat-value-color: var(--color-danger, #b42318);
+    --stat-accent-color: var(--color-danger, #b42318);
+  }
+  .cbf-invoice-queue-metrics__trigger:hover {
+    background: color-mix(in srgb, var(--color-danger, #b42318) 8%, transparent);
+  }
+  .cbf-invoice-queue-metrics__trigger:focus-visible {
+    outline: 2px solid var(--color-danger, #b42318);
+    outline-offset: 2px;
+  }
+  .cbf-invoice-queue-metrics__trigger[aria-pressed='true'] {
+    background: color-mix(in srgb, var(--color-danger, #b42318) 14%, transparent);
+  }
+</style>
+
+<script>
+  // Toggle the Overdue filter and broadcast it. The event bubbles to the section
+  // wrapper, which forwards it to the sibling queue root (same bridge pattern as
+  // cbf:open-invoice). Purely a UI toggle — the wrapper owns the forward.
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-overdue-toggle]')
+    .forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const next = btn.getAttribute('aria-pressed') !== 'true';
+        btn.setAttribute('aria-pressed', String(next));
+        btn.dispatchEvent(
+          new CustomEvent('cbf:queue-filter', {
+            bubbles: true,
+            detail: { overdue: next },
+          }),
+        );
+      });
+    });
+</script>
