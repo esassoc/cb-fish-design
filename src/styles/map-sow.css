@@ -402,7 +402,8 @@
 #draw-done-btn {
   display: none;
   position: absolute;
-  top: 52px; /* sits below #map-hint which occupies ~10–46px */
+  top: 66px; /* fallback only — repositionMapOverlays() in map-sow.js sets this dynamically,
+                below the map-hint and top corner controls, once the map has initialized */
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
@@ -422,10 +423,15 @@
 .drawing #draw-done-btn { display: block; }
 .editing #draw-done-btn { display: none !important; }
 #map-hint {
+  /* top is raised by setMapHint() to clear whatever Leaflet corner controls (search box,
+     zoom control, layer toggle cluster) occupy the top band — see the JS. The 10px here
+     is just the fallback before JS measures anything. */
   position: absolute;
   top: 10px;
   left: 50%;
   transform: translateX(-50%);
+  max-width: 480px;
+  text-align: center;
   background: color-mix(in srgb, var(--color-primary) 92%, transparent);
   color: var(--color-text-inverse, #fff);
   padding: 5px 14px;
@@ -434,7 +440,7 @@
   pointer-events: none;
   z-index: 999;
   display: none;
-  white-space: nowrap;
+  white-space: normal;
 }
 #map-legend {
   position: absolute;
@@ -747,7 +753,8 @@ button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline: 3px s
 #edit-done-bar {
   display: none;
   position: absolute;
-  top: 52px; /* sits below #map-hint which occupies ~10–46px */
+  top: 66px; /* fallback only — repositionMapOverlays() in map-sow.js sets this dynamically,
+                below the map-hint and top corner controls, once the map has initialized */
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;
