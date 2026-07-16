@@ -1,3 +1,34 @@
+/* bcn-lego-checked: this stylesheet mostly skins markup that public/scripts/map-sow.js
+   generates via innerHTML strings for a large, organically-grown prototype (wizard
+   steps, sidebar metric rows, map legend, etc.) — that render layer predates the
+   component-first gates and isn't being rewritten in this pass. Migrated off bespoke
+   CSS so far: the modal shells (we-modal/sowmodal/welcome-modal) -> esa-dialog, the 7
+   native <select> sites -> esa-select, #inner-tabbar -> esa-tab-layout (tab strip only
+   — its .panel has no flex/scroll support and exposes no `part`, so #pp-side/#work-side
+   stay as plain siblings, see cbf-msow-sidebar.astro), #sidebar-empty -> esa-empty-state,
+   all type="text" inputs and the min/step-free type="number" inputs -> esa-text-field
+   (see the map-sow.js header comment for exactly which number fields stayed raw and
+   why), and the two dead WE-panel/nav components (removed). Still bespoke by necessity:
+   type="number" fields relying on min/step (esa-text-field has no passthrough for
+   those), #map-search-input (a map-surface search control, not a form field), and the
+   pp-badge count, which lost its amber "incomplete" tint when it moved into
+   esa-tab-layout's built-in badge slot (no color-variant knob exposed there) — the
+   count text still conveys it. */
+
+/* Leaflet stacks its own panes up to z-index 700 (Map._initPanes: tilePane 200,
+   overlayPane 400, shadowPane 500, markerPane 600, popupPane 700), and .leaflet-map-pane
+   carries a CSS transform (used for pan/zoom), which opens its own stacking context.
+   esa-dialog's default --z-modal-backdrop/--z-modal tokens (300/400) sit at or below
+   that ceiling, so the map rendered on top of the modal backdrop instead of being
+   dimmed behind it — the dialog box itself still showed correctly (it ties leaflet's
+   400 and wins on DOM order), only the backdrop dimming was invisible. Override both
+   tokens per-instance, comfortably above every z-index already in this page (max 1000,
+   excluding the 9999 skip-link which never overlaps a modal in practice). */
+#we-modal, #sowmodal, #welcome-modal {
+  --z-modal-backdrop: 2000;
+  --z-modal: 2001;
+}
+
 /* ── Habitat Design Tool — CB Fish token skin ────────────────────────────────
    Hardcoded hex → CB Fish design tokens (theme-cb-fish.css):
      UI greens (#2a7a5c)      → var(--color-primary)            #1e5386
@@ -55,60 +86,6 @@
 /* ── LAYOUT ──────────────────────────────────────────────────────────────── */
 #msow-layout { display: flex; flex: 1; overflow: hidden; min-height: 0; }
 
-/* ── LEFT PANEL — WE list (light, matches vendor-invoice rail) ───────────── */
-#we-panel {
-  width: 220px;
-  flex-shrink: 0;
-  background: var(--color-surface-sunken);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border-right: 1px solid var(--color-border);
-}
-#we-panel-head { padding: 12px; border-bottom: 1px solid var(--color-border); flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; }
-#we-panel-head .we-title {
-  font-size: 11px;
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-secondary);
-  margin-bottom: 0;
-}
-/* Contract metadata: compact muted text below the panel title */
-.msow-we-meta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 3px;
-  font-size: 11px;
-  color: var(--color-text-muted);
-  line-height: 1.4;
-}
-.msow-we-meta-sep { color: var(--color-border-strong); }
-/* Add WE button — esa-button stretched full-width */
-.msow-we-add-wrap { display: block; }
-.msow-we-add-wrap .esa-button { display: block; }
-#we-list { flex: 1; overflow-y: auto; padding: 8px; }
-.we-item {
-  background: var(--color-surface);
-  border-radius: var(--radius-100);
-  margin-bottom: 4px;
-  cursor: pointer;
-  border: 1px solid var(--color-border);
-  transition: border-color 0.12s, background 0.12s;
-  overflow: hidden;
-}
-.we-item:hover { background: var(--color-primary-subtle); border-color: var(--color-border-strong); }
-.we-item.active { border-color: var(--color-primary); background: var(--color-primary-subtle); }
-.we-item-head { padding: 7px 9px; display: flex; align-items: flex-start; gap: 6px; }
-.we-item-num { font-size: 10px; font-weight: var(--font-weight-bold); color: var(--color-primary); white-space: nowrap; margin-top: 1px; }
-.we-item-name { font-size: 12px; font-weight: var(--font-weight-semibold); color: var(--color-text-primary); flex: 1; word-break: break-word; line-height: 1.3; }
-.we-item-gear { color: var(--color-text-muted); cursor: pointer; font-size: 13px; flex-shrink: 0; padding: 1px 2px; }
-.we-item-gear:hover { color: var(--color-text-primary); }
-.we-item-del { color: var(--color-text-muted); cursor: pointer; font-size: 12px; flex-shrink: 0; padding: 1px 2px; margin-left: 2px; }
-.we-item-del:hover { color: var(--color-danger, #ef4444); }
-.we-item-types { padding: 0 9px 7px; display: flex; gap: 4px; flex-wrap: wrap; }
-.we-type-chip { font-size: 11px; padding: 1px 5px; border-radius: 6px; color: var(--color-text-inverse, #fff); font-weight: var(--font-weight-semibold); }
-.we-empty { color: var(--color-text-muted); font-size: 11px; font-style: italic; text-align: center; padding: 16px 8px; }
-
 /* ── SIDEBAR — metrics / work ────────────────────────────────────────────── */
 #sidebar {
   width: 300px;
@@ -119,54 +96,25 @@
   flex-direction: column;
   overflow: hidden;
 }
+/* Wrapper only — centers the esa-empty-state within the available sidebar space. */
 #sidebar-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   flex: 1;
-  color: var(--color-text-muted);
-  text-align: center;
-  padding: 20px;
-  gap: 8px;
 }
-#sidebar-empty .big { font-size: 32px; }
-#sidebar-empty p { font-size: 12px; line-height: 1.5; }
 
-/* Tab bar within sidebar — hidden until a WE is selected (JS sets style.display='flex') */
+/* Tab bar within sidebar — esa-tab-layout; hidden until a WE is selected (JS sets
+   style.display='flex'). Tab/badge chrome now comes from the component itself. */
 #inner-tabbar {
-  height: 34px;
-  background: var(--color-primary-subtle);
-  border-bottom: 2px solid var(--color-border);
   display: none;
-  align-items: flex-end;
-  padding: 0 10px;
-  gap: 3px;
   flex-shrink: 0;
 }
-.itab {
-  padding: 5px 12px;
-  border-radius: 4px 4px 0 0;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-tertiary);
-  background: var(--color-border-light);
-  border: 1px solid var(--color-border);
-  border-bottom: none;
+#inner-tabbar::part(tabs) {
+  background: var(--color-primary-subtle);
+  padding-inline: 10px;
 }
-.itab.active { background: var(--color-surface); color: var(--color-surface-inverse); }
-.badge {
-  display: inline-block;
-  background: var(--color-primary);
-  color: var(--color-text-inverse, #fff);
-  border-radius: 8px;
-  font-size: 11px;
-  padding: 1px 6px;
-  margin-left: 4px;
-  font-weight: var(--font-weight-bold);
-}
-.badge.warn { background: var(--cbf-amber-attention); }
 
 /* PP side */
 #pp-side { display: none; flex-direction: column; flex: 1; overflow: hidden; }
@@ -195,6 +143,8 @@
 .pm-tag { font-size: 11px; color: var(--color-text-inverse, #fff); padding: 1px 5px; border-radius: 6px; }
 .pm-desc { font-size: 10px; color: var(--color-text-muted); margin-bottom: 6px; font-style: italic; }
 .pm-input { width: 100%; border: 1px solid var(--color-border); border-radius: 3px; padding: 4px 7px; font-size: 12px; color: var(--color-text-primary); margin-bottom: 4px; }
+/* esa-select/esa-text-field render their own bordered input in shadow DOM — the host only needs sizing. */
+esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; padding: 0; margin-bottom: 4px; }
 .pm-meas-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; min-height: 26px; }
 .pm-draw-btn {
   display: inline-flex;
@@ -276,7 +226,7 @@
   font-weight: var(--font-weight-medium);
   margin-bottom: 4px;
 }
-.f-row input, .f-row select, .struct-type-sel {
+.f-row input {
   width: 100%;
   border: 1px solid var(--color-border);
   border-radius: 3px;
@@ -284,6 +234,8 @@
   font-size: 12px;
   color: var(--color-text-primary);
 }
+/* esa-select renders its own bordered input in its shadow DOM — the host only needs sizing. */
+.struct-type-sel { width: 100%; }
 .f-calc { background: #edf7f2; border: 1px solid #aaddc4; border-radius: 3px; padding: 4px 8px; font-size: 11px; color: #0f6849; font-weight: var(--font-weight-bold); }
 .draw-btn {
   display: inline-flex;
@@ -467,20 +419,7 @@
 .leg-point { width: 10px; height: 10px; flex-shrink: 0; border-radius: 50%; border: 1.5px solid #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.2); }
 
 /* ── WE setup modal ──────────────────────────────────────────────────────── */
-#we-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; align-items: center; justify-content: center; }
-#we-modal-box { background: var(--color-surface); width: 420px; border-radius: var(--radius-100); overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.25); }
-.we-modal-head {
-  background: var(--color-primary);
-  color: var(--color-text-inverse, #fff);
-  padding: 12px 16px;
-  font-size: 13px;
-  font-weight: var(--font-weight-bold);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.we-modal-head button { background: none; border: none; color: rgba(255,255,255,0.55); cursor: pointer; font-size: 16px; }
-.we-modal-body { padding: 16px; }
+/* Shell (backdrop/head/foot) is now esa-dialog — only the slotted content is styled here. */
 .we-modal-field { margin-bottom: 14px; }
 .we-modal-field label {
   display: block;
@@ -489,7 +428,6 @@
   font-weight: var(--font-weight-medium);
   margin-bottom: 5px;
 }
-.we-modal-field input[type=text] { width: 100%; border: 1px solid var(--color-border); border-radius: 3px; padding: 7px 9px; font-size: 13px; color: var(--color-text-primary); }
 .we-type-check { display: flex; flex-direction: column; gap: 8px; }
 .we-type-opt { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1.5px solid var(--color-border); border-radius: 4px; cursor: pointer; transition: border-color 0.1s, background 0.1s; }
 .we-type-opt:hover { background: var(--color-primary-subtle); border-color: var(--color-border-strong); }
@@ -497,12 +435,6 @@
 .we-type-opt input[type=checkbox] { accent-color: var(--color-primary); width: 14px; height: 14px; cursor: pointer; }
 .we-type-opt-label { font-size: 12px; font-weight: var(--font-weight-semibold); color: var(--color-text-primary); }
 .we-type-opt-desc { font-size: 10px; color: var(--color-text-muted); margin-top: 1px; }
-.we-modal-foot { padding: 12px 16px; background: var(--color-surface-sunken); border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 8px; }
-.we-modal-foot button { border: none; padding: 7px 18px; border-radius: 3px; cursor: pointer; font-size: 12px; font-weight: var(--font-weight-bold); }
-.wm-save { background: var(--color-primary); color: var(--color-text-inverse, #fff); }
-.wm-save:hover { background: var(--color-primary-hover); }
-.wm-cancel { background: var(--color-border-light); color: var(--color-text-secondary); }
-.wm-cancel:hover { background: var(--color-border); }
 .wm-err { font-size: 11px; color: var(--color-danger, #ef4444); margin-top: 8px; display: none; }
 
 /* ── Elevation profile ───────────────────────────────────────────────────── */
@@ -705,10 +637,7 @@
 .wz-btn-next.skip:hover { background: var(--color-primary-subtle); }
 
 /* ── SOW export modal ────────────────────────────────────────────────────── */
-#sowmodal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
-#sowbox { background: var(--color-surface); width: 800px; max-height: 86vh; border-radius: var(--radius-100); display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.25); }
-.sowhead { background: var(--color-surface-inverse); color: var(--color-text-inverse, #fff); padding: 11px 15px; font-size: 14px; font-weight: var(--font-weight-bold); display: flex; justify-content: space-between; align-items: center; }
-.sowhead button { background: none; border: none; color: rgba(255,255,255,0.55); cursor: pointer; font-size: 17px; }
+/* Shell (backdrop/head/foot) is now esa-dialog — only the slotted content is styled here. */
 #sowbody { padding: 15px; overflow-y: auto; flex: 1; font-size: 12px; }
 #sowbody h2 { font-size: 13px; font-weight: var(--font-weight-bold); color: var(--color-text-inverse, #fff); background: var(--color-surface-inverse); padding: 6px 10px; border-radius: 3px; margin: 14px 0 8px; }
 #sowbody h2:first-child { margin-top: 0; }
@@ -720,34 +649,18 @@
 #sowbody th { background: var(--color-primary-subtle); color: var(--color-surface-inverse); font-weight: var(--font-weight-bold); text-align: left; padding: 4px 7px; border: 1px solid var(--color-border); font-size: 11px; }
 #sowbody td { padding: 3px 7px; border: 1px solid var(--color-border-light); color: var(--color-text-primary); font-size: 11px; }
 #sowbody tr:nth-child(even) td { background: var(--color-surface-sunken); }
-.sowfoot { padding: 9px 15px; background: var(--color-surface-sunken); border-top: 1px solid var(--color-border); display: flex; justify-content: flex-end; gap: 8px; }
-.sowfoot button { border: none; padding: 6px 16px; border-radius: 3px; cursor: pointer; font-size: 12px; font-weight: var(--font-weight-semibold); }
-.sowprint { background: var(--color-primary); color: var(--color-text-inverse, #fff); }
-.sowprint:hover { background: var(--color-primary-hover); }
-.sowclose { background: var(--color-surface-inverse); color: rgba(255,255,255,0.8); }
-.sowclose:hover { background: var(--color-primary); }
 
 /* ── Accessibility ───────────────────────────────────────────────────────── */
 .skip-link { position: absolute; top: -40px; left: 0; background: var(--color-secondary); color: var(--color-text-inverse, #fff); padding: 8px 12px; z-index: 9999; font-size: 13px; font-weight: var(--font-weight-bold); border-radius: 0 0 4px 0; transition: top 0.1s; }
 .skip-link:focus { top: 0; }
 :focus-visible { outline: 3px solid var(--cbf-blue-500); outline-offset: 2px; }
 button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--cbf-blue-500); outline-offset: 2px; border-radius: 3px; }
-.pm-not-drawn, .pm-redraw, .pm-result, .pp-prog-pct, .we-type-opt-desc, .badge,
+.pm-not-drawn, .pm-redraw, .pm-result, .pp-prog-pct, .we-type-opt-desc,
 .wz-tip, .wz-step-num, .leg-item, .wz-metric-label { font-size: 11px !important; }
 [role="alert"] { border-left: 3px solid var(--color-danger, #ef4444); padding-left: 8px; }
 [role="tab"] { cursor: pointer; }
 [role="tab"]:focus-visible { outline: 3px solid var(--cbf-blue-500); outline-offset: -2px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-.we-item-gear, .we-item-del { min-width: 24px; min-height: 24px; display: inline-flex; align-items: center; justify-content: center; }
-
-/* Welcome modal action column — full-width stacked esa-buttons */
-.msow-welcome-actions { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 8px; }
-.msow-welcome-btn { display: block; }
-.msow-welcome-btn .esa-button { display: block; }
-
-/* Modal footer tweaks — remove old custom button padding now using esa-button */
-.we-modal-foot { gap: var(--spacing-300); }
-.sowfoot { gap: var(--spacing-300); }
 
 /* ── Edit-done-bar (B1) — map overlay editing toolbar ────────────────────── */
 #edit-done-bar {
@@ -789,33 +702,7 @@ button:focus-visible, a:focus-visible, [tabindex]:focus-visible { outline: 3px s
 }
 
 /* ── Welcome modal classes (B2) ──────────────────────────────────────────── */
-.msow-welcome-card {
-  background: var(--color-surface);
-  width: 440px;
-  border-radius: var(--radius-100);
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-}
-.msow-welcome-head {
-  background: var(--color-primary);
-  padding: var(--spacing-500) var(--spacing-600);
-  border-bottom: 3px solid var(--color-primary-hover);
-}
-.msow-welcome-title {
-  color: var(--color-text-inverse, #fff);
-  font-size: 15px;
-  font-weight: var(--font-weight-bold);
-  margin: 0;
-}
-.msow-welcome-subtitle {
-  color: var(--cbf-blue-500);
-  font-size: 11px;
-  margin-top: var(--spacing-050, 2px);
-}
-.msow-welcome-body {
-  padding: var(--spacing-500) var(--spacing-600) var(--spacing-500);
-}
-.msow-welcome-icon { font-size: 28px; margin-bottom: var(--spacing-400); }
+/* Shell (backdrop/card/header) is now esa-dialog — only the slotted body text is styled here. */
 .msow-welcome-heading {
   font-size: 14px;
   font-weight: var(--font-weight-bold);

@@ -1,0 +1,156 @@
+---
+// Toolbar: H1 + contract metadata | (WE selector — hidden for now, see below) | actions.
+// Buttons use esa-button via a <span onclick> wrapper — click events bubble up from the
+// inner native button to the outer span, firing the onclick handler (esa-button.astro has
+// no onclick prop). Extracted from map-sow.astro so the page manifest can resolve this
+// section to a real component instead of inline markup.
+import EsaButton from '@esa/ecology/esa-button.astro';
+
+interface Props {
+  contractNum: string;
+  cor: string;
+  fy: string;
+}
+const { contractNum, cor, fy } = Astro.props;
+---
+<div class="msow-toolbar">
+
+  <div class="msow-toolbar-identity">
+    <h1 class="msow-tool-title">Habitat Design Tool</h1>
+    <div class="msow-contract-meta">
+      <span>#{contractNum}</span>
+      <span class="msow-meta-sep">·</span>
+      <span>FY {fy}</span>
+      <span class="msow-meta-sep">·</span>
+      <span>{cor}</span>
+    </div>
+  </div>
+
+  <!-- bcn-lego-checked: the block below is commented-out reference markup, not live UI —
+       the WE selector is disabled per product decision (kept for easy restore). When
+       restored, rebuild it with esa-select and esa-icon-button rather than the raw
+       select/button shown here.
+  <div class="msow-we-selector">
+    <select
+      id="msow-we-dropdown"
+      class="msow-we-select"
+      onchange="selectWEFromDropdown(this.value)"
+      aria-label="Select work element"
+    >
+      <option value="">— No work elements yet —</option>
+    </select>
+    <button
+      id="we-edit-btn"
+      class="msow-we-action-btn"
+      onclick="openWEModal(activeWEId)"
+      title="Edit work element"
+      disabled
+    >&#9998;</button>
+    <button
+      id="we-delete-btn"
+      class="msow-we-action-btn msow-we-action-btn--danger"
+      onclick="deleteWE(activeWEId)"
+      title="Delete work element"
+      disabled
+    >&#10005;</button>
+    <span onclick="openWEModal(null)">
+      <EsaButton color="primary" size="sm" icon="plus">Add WE</EsaButton>
+    </span>
+  </div>
+  -->
+
+  <div class="msow-toolbar-actions">
+    <span onclick="clearAll()">
+      <EsaButton color="ghost" appearance="outline" size="sm">Clear All</EsaButton>
+    </span>
+    <span onclick="openSOW()">
+      <EsaButton color="primary" size="sm">Export Metrics</EsaButton>
+    </span>
+  </div>
+
+</div>
+
+<style>
+  .msow-toolbar {
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--spacing-300) var(--spacing-600);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-600);
+  }
+
+  .msow-toolbar-identity {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .msow-tool-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: var(--font-weight-bold);
+    font-family: var(--font-display, var(--font-sans));
+    color: var(--color-surface-inverse);
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+  .msow-contract-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-100);
+    font-size: 11px;
+    color: var(--color-text-muted);
+  }
+  .msow-meta-sep { color: var(--color-border-strong); }
+
+  .msow-we-selector {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-200);
+    flex: 1;
+  }
+  .msow-we-select {
+    flex: 1;
+    max-width: 280px;
+    min-width: 160px;
+    height: var(--form-height-sm, 32px);
+    border: 1px solid var(--color-border);
+    border-radius: var(--form-radius-sm, 4px);
+    padding: 0 var(--form-padding-x-sm, 12px);
+    font-size: var(--form-font-size-sm, 12px);
+    font-family: var(--font-sans, system-ui, sans-serif);
+    color: var(--color-text-primary);
+    background: var(--color-surface);
+    cursor: pointer;
+  }
+  .msow-we-select:focus { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+
+  .msow-we-action-btn {
+    height: var(--form-height-sm, 32px);
+    width: var(--form-height-sm, 32px);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--form-radius-sm, 4px);
+    background: transparent;
+    color: var(--color-text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 150ms ease, color 150ms ease;
+    flex-shrink: 0;
+  }
+  .msow-we-action-btn:hover:not(:disabled) { background: var(--color-primary-subtle); color: var(--color-primary); }
+  .msow-we-action-btn--danger:hover:not(:disabled) { background: color-mix(in srgb, var(--color-danger, #ef4444) 8%, transparent); color: var(--color-danger, #ef4444); border-color: var(--color-danger, #ef4444); }
+  .msow-we-action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .msow-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-200);
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+</style>
