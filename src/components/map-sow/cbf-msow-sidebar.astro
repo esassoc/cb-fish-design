@@ -3,6 +3,16 @@
 // #wizard-panel (the stepper) lives in map-sow.astro as a separate left column.
 // When wizard is active: #wizard-body-panel shows, #expert-panel hides.
 // When expert mode: #expert-panel shows, #wizard-body-panel hides.
+//
+// bcn-lego-checked: the Pre-Project/Habitat Work tab strip is esa-tab-layout, used for
+// the tab strip only (tabs array, keyboard nav, ARIA) — map-sow.js drives it via
+// .tabs/.activeIndex (Lit properties, not attributes) and listens for its `tabchange`
+// event (see showInnerTab()/window.onload). #pp-side/#work-side stay as plain sibling
+// panels toggled by style.display exactly as before, rather than slotted inside the
+// component: esa-tab-layout's internal .panel wrapper is plain block layout with no
+// flex/scroll support and exposes no `part` for it, so it can't host our
+// height-constrained, independently-scrolling panels without breaking their scrolling.
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 ---
 <div id="sidebar" role="complementary" aria-label="Work element details">
 
@@ -13,35 +23,17 @@
   <div id="expert-panel">
 
     <div id="sidebar-empty" aria-live="polite">
-      <div class="big" aria-hidden="true">&#9998;</div>
-      <p>Add a work element to begin entering pre-project metrics and habitat work details.</p>
+      <EsaEmptyState
+        title="No work element selected"
+        description="Add a work element to begin entering pre-project metrics and habitat work details."
+        size="sm"
+      />
     </div>
 
-    <div id="inner-tabbar" role="tablist" aria-label="Work element sections">
-      <div
-        class="itab active"
-        id="itab-pp"
-        role="tab"
-        aria-selected="true"
-        aria-controls="pp-side"
-        tabindex="0"
-        onclick="showInnerTab('pp')"
-        onkeydown="if(event.key==='Enter'||event.key===' ')showInnerTab('pp')"
-      >Pre-Project <span class="badge warn" id="pp-badge">0/11</span></div>
-      <div
-        class="itab"
-        id="itab-work"
-        role="tab"
-        aria-selected="false"
-        aria-controls="work-side"
-        tabindex="-1"
-        onclick="showInnerTab('work')"
-        onkeydown="if(event.key==='Enter'||event.key===' ')showInnerTab('work')"
-      >Habitat Work</div>
-    </div>
+    <esa-tab-layout id="inner-tabbar" size="sm" aria-label="Work element sections"></esa-tab-layout>
 
-    <div id="pp-side" role="tabpanel" aria-labelledby="itab-pp"></div>
-    <div id="work-side" role="tabpanel" aria-labelledby="itab-work"></div>
+    <div id="pp-side" role="tabpanel"></div>
+    <div id="work-side" role="tabpanel"></div>
 
   </div>
 </div>
