@@ -7,6 +7,13 @@
 // "2020 CRS Commitments" DROPDOWN tab holding the 3 pages this spoke has
 // actually built. CRS habitat / FCRPS BiOp / Related items (the live strip's
 // other tabs) aren't built either and are omitted rather than stubbed.
+//
+// The "2020 CRS Commitments" tab is a STATIC folder label, not a selected
+// value — like the live site, it never carries `active` itself (a folder icon
+// doesn't change appearance based on which file inside is open). Only the
+// individual item you're actually on is marked active, inside the flyout.
+// Item labels drop the "2020 CRS" prefix — the parent tab already carries
+// that context, so every child repeating it read like a broken-record menu.
 import { withBase } from '../../lib/base';
 
 export type CrsReportTabKey = 'grid' | 'dashboard' | 'documents';
@@ -16,20 +23,19 @@ export function crsReportTabs(active: CrsReportTabKey) {
     { label: 'Summary', href: '#' },
     {
       label: '2020 CRS Commitments',
-      active: true,
       items: [
         {
-          label: '2020 CRS Commitments',
+          label: 'Commitments',
           href: withBase('/crs-commitments'),
           active: active === 'grid',
         },
         {
-          label: '2020 CRS Commitments Dashboard',
+          label: 'Dashboard',
           href: withBase('/crs-commitments/dashboard'),
           active: active === 'dashboard',
         },
         {
-          label: '2020 CRS Document Library',
+          label: 'Document Library',
           href: withBase('/crs-commitments/documents'),
           active: active === 'documents',
         },
