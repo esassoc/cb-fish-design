@@ -40,24 +40,35 @@
 //     body, so the SAME content renders under every tab and the client just
 //     re-filters. `tabchange` drives the filter. Per-tab `badge` = bucket size.
 //   - esa-stat + esa-badge  → each stat is a colored status dot beside an esa-stat.
-//   - esa-chip-group (Lit) + cbf-search-field → the external filter pair, matching
-//     the sibling cbf-crs-commitments-grid convention.
+//   - cbf-search-field      → the search half of the filter pair.
 //   - esa-icon (file-text)  → the per-year document indicator (unchanged from the
 //     dot version, just repositioned onto its own grid row under the bar).
 //   - esa-empty-state       → the zero-match state.
 //   - esa-button            → the Document Library link out to the sibling page.
 //
-// bcn-lego-checked: the only bespoke CSS is layout scaffolding + the timeline-bar
-// segments themselves — a two-column row grid, a fixed 15-column year grid shared
-// by the axis/bar/document row, and plain colored <span> segments reading the SAME
-// semantic tokens esa-badge's variants read (--color-info/--color-warning/
-// --color-success/--color-secondary) so segment color is pixel-identical to the
-// dots it replaced, never a reinvented palette. No esa- lego renders a merged-
-// duration timeline bar; checked the full node_modules/@esa/ecology/src/components
-// catalog (esa-card/pill/badge/stat are atoms) and Beacon is not on this machine.
-// The quiet tag pair is the real esa-badge lego re-toned via its PUBLIC component
-// tokens (--badge-bg/--badge-text-color), not a hand-rolled tag. This component is
-// the reusable home.
+// The status filter is NOT esa-chip-group (see bcn-lego-checked below) — it's a
+// custom radiogroup of <button>s carrying the same swatch used by the timeline
+// bar/legend, so the filter row doubles as the color legend (consolidating what
+// used to be two separate rows independently repeating the same 6-7 status
+// names — requested after that repetition was flagged as noise).
+//
+// bcn-lego-checked: two bespoke pieces, both checked against the hub source, not
+// just the docs. (1) The timeline-bar segments/layout — a two-column row grid, a
+// fixed 15-column year grid shared by the axis/bar/document row, and plain colored
+// <span> segments reading the SAME semantic tokens esa-badge's variants read
+// (--color-info/--color-warning/--color-success/--color-secondary) so segment
+// color is pixel-identical to the dots it replaced, never a reinvented palette. No
+// esa- lego renders a merged-duration timeline bar. (2) The status-filter chips —
+// esa-chip-group.ts's `tone` prop only colors a chip once ACTIVE
+// (`.chip--active.chip--*`); every option renders plain gray-on-white at rest, so
+// it can't carry a persistent swatch and serve as the legend too. The custom chips
+// mirror esa-chip-group's own resting/hover/active token chain and ARIA shape
+// (role="radiogroup"/"radio" + aria-checked) so they read and behave like the same
+// chip family, just with a swatch slot the lego's markup has no room for. Checked
+// the full node_modules/@esa/ecology/src/components catalog (esa-card/pill/badge/
+// stat are atoms) and Beacon is not on this machine for both. The quiet tag pair is
+// the real esa-badge lego re-toned via its PUBLIC component tokens (--badge-bg/
+// --badge-text-color), not a hand-rolled tag. This component is the reusable home.
 import '@esa/tokens/layouts.css';
 import '@esa/tokens/type-roles.css';
 import EsaBadge from '@esa/ecology/esa-badge.astro';
@@ -134,22 +145,6 @@ function timelineSummary(segments: Segment[]): string {
   return segments.map(segmentLabel).join('; ');
 }
 
-// Legend derived straight from STATUS_DOT (grouped by variant) so it can't drift
-// from the dots it explains. Order puts the three active states first, the quiet
-// bucket last.
-const legendOrder: CommitmentStatus[] = [
-  'In Progress', 'Delayed', 'Complete', 'Not Started', 'Future', 'Closed',
-];
-const legendByVariant = new Map<BadgeVariant, string[]>();
-for (const status of legendOrder) {
-  const variant = statusDot[status];
-  legendByVariant.set(variant, [...(legendByVariant.get(variant) ?? []), status]);
-}
-const legend = [...legendByVariant].map(([variant, statuses]) => ({
-  variant,
-  label: statuses.join(' / '),
-}));
-
 // Document markers — a second, independent signal from the year-status dots:
 // whether a due-date deliverable for that year has a document on file.
 // Derived from documentYearMarkers() per row (see the row loop below); this is
@@ -200,17 +195,19 @@ const tabs = tabLabels.map((label, i) => ({
   badge: commitments.filter(tabPredicates[i]).length,
 }));
 
-// Status chip filter — single-select, "All" escape first, canonical lifecycle
-// order (Delayed carries the amber tone to mirror its warning dot). Offers Future
-// separately even though the stat row folds it — the filter stays granular.
-const statusFilterOptions = [
-  { value: '', label: 'All' },
-  { value: 'Not Started', label: 'Not Started' },
-  { value: 'In Progress', label: 'In Progress' },
-  { value: 'Delayed', label: 'Delayed', tone: 'amber' as const },
-  { value: 'Future', label: 'Future' },
-  { value: 'Complete', label: 'Complete' },
-  { value: 'Closed', label: 'Closed' },
+// Status filter chips ALSO serve as the color legend — each chip carries its
+// STATUS_DOT swatch (see the custom radiogroup below; esa-chip-group's `tone`
+// only colors the ACTIVE chip, not every option at rest, so it can't stay a
+// legend while nothing is selected). Replaces what used to be two separate
+// rows independently repeating the same 6-7 status names. Single-select,
+// "All" escape first, canonical lifecycle order; "All" has no swatch (it
+// isn't a status). Offers Future separately even though the stat row folds
+// it — the filter stays granular.
+const statusFilterChips: Array<{ value: string; label: string; variant: BadgeVariant | null }> = [
+  { value: '', label: 'All', variant: null },
+  ...(['Not Started', 'In Progress', 'Delayed', 'Future', 'Complete', 'Closed'] as CommitmentStatus[]).map(
+    (status) => ({ value: status, label: status, variant: statusDot[status] })
+  ),
 ];
 
 const year2 = (year: number) => String(year).slice(2);
@@ -248,18 +245,39 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
         ))}
       </div>
 
-      <!-- Filters — applied on top of the active tab's subset. -->
+      <!-- Filters — applied on top of the active tab's subset. The status
+           filter doubles as the color legend (each chip carries its swatch),
+           so there's no separate "Status" legend row repeating these names. -->
       <div class="cbf-crs-dashboard__controls repel">
-        <label class="cbf-crs-dashboard__filter">
+        <div class="cbf-crs-dashboard__filter">
           <span class="type-caption">Status</span>
-          <esa-chip-group
+          <div
+            class="cbf-crs-dashboard__status-filter cluster"
+            data-gap="sm"
+            role="radiogroup"
+            aria-label="Filter by status"
             data-crs-status-filter
-            size="sm"
-            label="Filter by status"
-            value=""
-            options={JSON.stringify(statusFilterOptions)}
-          ></esa-chip-group>
-        </label>
+          >
+            {statusFilterChips.map((chip) => (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={chip.value === ''}
+                class="cbf-crs-dashboard__status-chip"
+                data-value={chip.value}
+              >
+                {chip.variant && (
+                  <span
+                    class="cbf-crs-dashboard__segment cbf-crs-dashboard__segment--swatch"
+                    data-variant={chip.variant}
+                    aria-hidden="true"
+                  />
+                )}
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div class="cbf-crs-dashboard__search">
           <CbfSearchField
             placeholder="Search title or number…"
@@ -270,16 +288,10 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
         </div>
       </div>
 
-      <!-- One shared legend for the whole list (not per-row); derived from STATUS_DOT. -->
-      <div class="cbf-crs-dashboard__legend cluster" data-gap="md" aria-label="Status legend">
-        <span class="type-label cbf-crs-dashboard__legend-lead">Status</span>
-        {legend.map((l) => (
-          <span class="cbf-crs-dashboard__legend-item">
-            <span class="cbf-crs-dashboard__segment cbf-crs-dashboard__segment--swatch" data-variant={l.variant} />
-            <span class="type-label">{l.label}</span>
-          </span>
-        ))}
-        <span class="cbf-crs-dashboard__legend-divider" aria-hidden="true" />
+      <!-- Document legend — the status legend above folded into the status
+           filter chips, so only the document markers need their own key. -->
+      <div class="cbf-crs-dashboard__legend cluster" data-gap="md" aria-label="Document legend">
+        <span class="type-label cbf-crs-dashboard__legend-lead">Documents</span>
         {docLegend.map((d) => (
           <span class="cbf-crs-dashboard__legend-item">
             <span class:list={['cbf-crs-dashboard__docmark', `cbf-crs-dashboard__docmark--${d.state}`]}>
@@ -422,6 +434,49 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
     color: var(--color-text-muted);
     white-space: nowrap;
   }
+
+  /* Custom status-filter chip — NOT esa-chip-group. Checked the hub source
+     (esa-chip-group.ts): its `tone` prop only colors a chip once ACTIVE
+     (.chip--active.chip--*), every option is plain gray-on-white at rest, so
+     it can't carry a persistent swatch and double as the color legend this
+     consolidation needs. Styled to match esa-chip-group's own resting/hover/
+     active tokens (same --color-border/--color-surface-sunken/etc. chain) so
+     it reads as the same "chip" family, just with a swatch slot esa-chip-
+     group's markup has no room for. */
+  .cbf-crs-dashboard__status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-100);
+    padding: var(--spacing-150) var(--spacing-300);
+    border-radius: var(--radius-100);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      background-color var(--transition-fast, 150ms ease),
+      border-color var(--transition-fast, 150ms ease),
+      color var(--transition-fast, 150ms ease);
+  }
+  .cbf-crs-dashboard__status-chip:hover {
+    background: var(--color-surface-sunken);
+    border-color: var(--color-border-strong);
+    color: var(--color-text-primary);
+  }
+  .cbf-crs-dashboard__status-chip[aria-checked='true'] {
+    background: var(--color-surface-sunken);
+    border-color: var(--color-border-strong);
+    color: var(--color-text-primary);
+  }
+  .cbf-crs-dashboard__status-chip:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 var(--focus-ring-width, 2px) var(--focus-ring-color, var(--color-primary));
+  }
+
   .cbf-crs-dashboard__search {
     flex: 1 1 260px;
     max-width: 380px;
@@ -644,11 +699,6 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
     color: var(--color-danger);
   }
 
-  .cbf-crs-dashboard__legend-divider {
-    width: 1px;
-    align-self: stretch;
-    background: var(--color-border);
-  }
 
   /* Hidden rows (client-filtered) collapse the grid row entirely. */
   .cbf-crs-dashboard__row[hidden] {
@@ -658,7 +708,6 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
 
 <script>
   import '@esa/ecology/esa-tab-layout';
-  import '@esa/ecology/esa-chip-group';
 
   type CommitmentFields = { category: string; subcategory: string; commitmentType: string };
 
@@ -688,7 +737,7 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
 
   function initDashboard(root: HTMLElement): void {
     const tabEl = root.querySelector<HTMLElement>('[data-crs-tabs]');
-    const statusFilter = root.querySelector<HTMLElement & { value: string }>('[data-crs-status-filter]');
+    const statusChips = Array.from(root.querySelectorAll<HTMLButtonElement>('.cbf-crs-dashboard__status-chip'));
     const search = root.querySelector<HTMLInputElement>('[data-crs-search]');
     const rows = Array.from(root.querySelectorAll<HTMLElement>('[data-crs-row]'));
     const scroll = root.querySelector<HTMLElement>('.cbf-crs-dashboard__scroll');
@@ -747,9 +796,17 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
         recompute();
       }
     });
-    statusFilter?.addEventListener('change', () => {
-      statusValue = statusFilter.value ?? '';
-      recompute();
+    // Custom radiogroup (see the frontmatter note on esa-chip-group's tone
+    // limitation): each chip is its own tab-stop rather than a proper roving-
+    // tabindex radiogroup, a deliberate simplification — every chip stays
+    // keyboard-reachable and Enter/Space-activatable via native <button>
+    // behavior, just without arrow-key roving between options.
+    statusChips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        statusValue = chip.dataset.value ?? '';
+        statusChips.forEach((c) => c.setAttribute('aria-checked', String(c === chip)));
+        recompute();
+      });
     });
     search?.addEventListener('input', () => {
       query = search.value ?? '';
