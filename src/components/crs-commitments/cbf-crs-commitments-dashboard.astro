@@ -26,9 +26,14 @@
 //   - JUDGMENT CALL 3 (current-year marker): the old per-year-dot version tinted
 //     every row's current-year CELL. A segment can now span straight through
 //     that year, so tinting part of one shape would misread as "this whole
-//     span is happening now." Dropped the per-row tint; the axis header's own
-//     bold + tinted year label (unchanged) is the one "you are here" reference,
-//     shared by every row beneath it.
+//     span is happening now." Dropped the per-row tint in favor of a thin
+//     vertical "today" line (cbf-crs-dashboard__now-line) drawn OVER every
+//     row's bar, independent of segment color — a position marker, not a
+//     status signal. Scoped to the bar only, NOT the document row below it:
+//     an earlier version spanned both and cut straight through document
+//     marker icons when one fell on the current year, which read as broken
+//     rather than intentional. Positioned via nowLinePct (derived from
+//     CURRENT_YEAR's index, not a hardcoded %).
 //
 // Composition — every control is a lego, no reinvented primitive:
 //   - esa-tab-layout (Lit)  → the category tab bar; its default slot holds the
@@ -209,6 +214,13 @@ const statusFilterOptions = [
 ];
 
 const year2 = (year: number) => String(year).slice(2);
+
+// Horizontal position (as a % of the 15-column bar track) of the CURRENT_YEAR
+// column's center — drives the vertical "today" line drawn over every row's
+// bar + document row. Derived from YEARS/CURRENT_YEAR rather than a hardcoded
+// percentage so it can't silently drift if either ever changes.
+const currentYearIndex = YEARS.indexOf(CURRENT_YEAR);
+const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
 ---
 <section class="cbf-crs-dashboard stack" data-gap="lg">
   <esa-tab-layout
@@ -333,6 +345,15 @@ const year2 = (year: number) => String(year).slice(2);
                       title={segmentLabel(seg)}
                     />
                   ))}
+                  <!-- "Today" reference line — scoped to the bar only (not the
+                       document row below), so it can never sit over a document
+                       marker. A position marker, not a status signal. -->
+                  <span
+                    class="cbf-crs-dashboard__now-line"
+                    style={`left: ${nowLinePct}%;`}
+                    aria-hidden="true"
+                    title={`Current year: ${CURRENT_YEAR}`}
+                  />
                 </div>
                 <div class="cbf-crs-dashboard__docrow">
                   {YEARS.map((year, i) => {
@@ -513,6 +534,7 @@ const year2 = (year: number) => String(year).slice(2);
      rounding only the bar's outer ends (first/last segment) reads as one
      continuous bar made of colored zones, not a row of separate chips. */
   .cbf-crs-dashboard__bar {
+    position: relative; /* positions the "today" line below, scoped to the bar only */
     display: grid;
     grid-template-columns: repeat(15, minmax(1.1rem, 1fr));
     column-gap: 2px;
@@ -572,6 +594,28 @@ const year2 = (year: number) => String(year).slice(2);
     grid-template-columns: repeat(15, minmax(1.1rem, 1fr));
     column-gap: 2px;
     min-height: 18px;
+  }
+
+  /* A quiet position marker, NOT a status color — deliberately muted (a
+     neutral border tone at reduced opacity, not --color-primary at full
+     strength) so it reads as a reference line, not another signal competing
+     with the segment colors it sits over. Scoped to the bar's own height
+     only (positioned relative to .cbf-crs-dashboard__bar, not the timeline
+     as a whole) so it never crosses into the document row below and can't
+     sit on top of a document marker. `left` set per-instance via inline
+     style (nowLinePct, computed once from CURRENT_YEAR's index — see
+     frontmatter). */
+  .cbf-crs-dashboard__now-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    /* `left` is set per-instance via inline style (nowLinePct) — deliberately
+       not `inset: 0` here, which would set left too and conflict with it. */
+    width: 2px;
+    margin-left: -1px; /* center the line on its computed left offset */
+    background: var(--color-border-strong);
+    opacity: 0.6;
+    pointer-events: none;
   }
 
   /* Per-year document indicator — a small outlined file icon, independent of
