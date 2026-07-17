@@ -1,0 +1,237 @@
+---
+// cbf-crs-documents-grid — the "2020 CRS Commitments Document Library": a
+// scannable, searchable, filterable table of every document/due-date attached to
+// any tracked CRS commitment, cross-referenced back to its parent commitment.
+// A cross-commitment, read-only companion to cbf-crs-commitments-grid (its
+// closest reference): same AG Grid + search + chip-filter + CSV-export +
+// record-count-footer conventions — minus the "Create new" CTA (this is a
+// library view, not a create flow).
+//
+// The commitment columns (title/source/category/subcategory/type) are joined in
+// at build time via findCommitment rather than duplicated into the documents
+// array, so the two datasets can never drift apart.
+//
+// bcn-lego-checked: ecology has NO table/grid/data-grid lego (checked the full
+// node_modules/@esa/ecology/src/components catalog — esa-card/esa-pill/esa-badge
+// are atoms, none render a sortable, filterable tabular data surface) and Beacon
+// is not on this machine. The tabular surface is AG Grid Community
+// (ag-grid-community), the same explicit dependency the sibling commitments grid
+// chose for sort/quick-search/CSV export over a hand-rolled <table>; this bcn-
+// component is its reusable home. Every other control is a lego: the search input
+// reuses cbf-search-field, the Category filter uses esa-chip-group, the CSV
+// download uses esa-icon-button.
+import CbfSearchField from '../search/cbf-search-field.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import './cbf-crs-data-grid-chrome.css';
+import { documents as defaultDocuments, findCommitment } from '../../data/crs-commitments.mjs';
+
+interface CrsDocument {
+  commitmentNumber: string;
+  dueDate?: string;
+  category: 'CRS Commitment Deliverable' | 'CRS Commitment Supporting Document';
+  type: string;
+  title: string;
+  description: string;
+  filename: string;
+  uploadDate: string;
+  uploadUser: string;
+}
+
+interface Props {
+  documents?: CrsDocument[];
+}
+
+const { documents = defaultDocuments } = Astro.props;
+
+// Denormalize the parent commitment onto each row at build time — the join lives
+// here, not in the data module, so the documents array stays lean and the two
+// datasets can't drift.
+const rows = documents.map((doc) => ({
+  ...doc,
+  commitment: findCommitment(doc.commitmentNumber),
+}));
+
+// Category chip filter — single-select, "All" escape first. Options derived from
+// the data so the control never lists an empty bucket.
+const categories = Array.from(new Set(documents.map((d) => d.category))).sort();
+const categoryFilters = [
+  { value: '', label: 'All' },
+  ...categories.map((c) => ({ value: c, label: c })),
+];
+---
+<section class="cbf-crs-docs stack" data-gap="md">
+  <header class="cbf-crs-data-grid__header repel">
+    <span class="type-caption cbf-crs-data-grid__count-label">All documents</span>
+  </header>
+
+  <div class="cbf-crs-data-grid__controls repel">
+    <div class="cbf-crs-data-grid__filters cluster" data-gap="lg">
+      <label class="cbf-crs-data-grid__filter">
+        <span class="type-caption">Document category</span>
+        <esa-chip-group
+          data-crs-category-filter
+          size="sm"
+          label="Filter by document category"
+          value=""
+          options={JSON.stringify(categoryFilters)}
+        ></esa-chip-group>
+      </label>
+    </div>
+    <div class="cbf-crs-data-grid__search">
+      <CbfSearchField
+        placeholder="Search title, filename or commitment…"
+        iconSize={18}
+        data-crs-search
+        aria-label="Search documents"
+      />
+    </div>
+  </div>
+
+  <!-- AG Grid mounts here. autoHeight grows with rows so the page (not an inner
+       pane) owns vertical scroll; the wrapper owns the framed surface. -->
+  <div class="cbf-crs-data-grid__grid" data-crs-grid></div>
+
+  <footer class="cbf-crs-data-grid__footer repel">
+    <span class="type-caption" data-crs-count>
+      Showing {rows.length} of {rows.length} documents
+    </span>
+    <EsaIconButton icon="download" label="Download CSV" size="sm" data-crs-csv />
+  </footer>
+
+  <!-- Row data for the grid (documents joined to their parent commitment),
+       serialized so the client module (which imports ag-grid-community) hydrates
+       without a second fetch. -->
+  <script type="application/json" data-crs-data set:html={JSON.stringify(rows)}></script>
+</section>
+
+<script>
+  import { createGrid, ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
+  import '@esa/ecology/esa-chip-group';
+  import { withBase } from '../../lib/base';
+  import { cbfGridTheme as cbfTheme, gridDateFormatter as dateFmt, asGridDate as asDate, escGridHtml as esc } from './grid-chrome';
+
+  ModuleRegistry.registerModules([AllCommunityModule]);
+
+  type Commitment = {
+    number: string; title: string; source: string;
+    category: string; subcategory: string; commitmentType: string;
+  };
+  type DocRow = {
+    commitmentNumber: string; dueDate?: string; category: string; type: string;
+    title: string; description: string; filename: string; uploadDate: string;
+    uploadUser: string; commitment?: Commitment;
+  };
+
+  // Missing dates (one-off uploads with no due date) sort/render blank via asDate.
+
+  function initDocuments(root: HTMLElement) {
+    const gridHost = root.querySelector<HTMLElement>('[data-crs-grid]');
+    const dataEl = root.querySelector<HTMLScriptElement>('[data-crs-data]');
+    if (!gridHost || !dataEl) return;
+
+    const data: DocRow[] = JSON.parse(dataEl.textContent ?? '[]');
+    const total = data.length;
+
+    const search = root.querySelector<HTMLInputElement>('[data-crs-search]');
+    const categoryFilter = root.querySelector<HTMLElement & { value: string }>('[data-crs-category-filter]');
+    const count = root.querySelector<HTMLElement>('[data-crs-count]');
+    const csvBtn = root.querySelector<HTMLElement>('[data-crs-csv]');
+
+    // External (chip-driven) filter — kept out of the column filter UI so the
+    // esa-chip-group stays the single control surface.
+    let categoryValue = '';
+
+    // Only title/filename/commitment-title feed quick search (Document category
+    // has its own chip filter) — defaultColDef opts every column out, the three
+    // opt back in.
+    const gridApi = createGrid(gridHost, {
+      theme: cbfTheme,
+      rowData: data,
+      domLayout: 'autoHeight',
+      animateRows: false,
+      suppressCellFocus: true,
+      defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true, getQuickFilterText: () => '' },
+      columnDefs: [
+        {
+          headerName: 'Due date', field: 'dueDate', colId: 'dueDate', minWidth: 120,
+          cellDataType: 'date',
+          valueGetter: (p) => asDate(p.data?.dueDate),
+          valueFormatter: (p) => (p.value instanceof Date ? dateFmt.format(p.value) : ''),
+        },
+        { headerName: 'Document category', field: 'category', colId: 'category', minWidth: 200 },
+        { headerName: 'Document type', field: 'type', colId: 'type', minWidth: 150 },
+        {
+          headerName: 'Document title', field: 'title', colId: 'title', flex: 2, minWidth: 240,
+          getQuickFilterText: (p) => p.data?.title ?? '',
+        },
+        {
+          headerName: 'Description', field: 'description', colId: 'description', flex: 3, minWidth: 280,
+        },
+        {
+          headerName: 'Filename', field: 'filename', colId: 'filename', minWidth: 200,
+          getQuickFilterText: (p) => p.data?.filename ?? '',
+        },
+        {
+          headerName: 'Upload date', field: 'uploadDate', colId: 'uploadDate', minWidth: 130,
+          cellDataType: 'date',
+          valueGetter: (p) => asDate(p.data?.uploadDate),
+          valueFormatter: (p) => (p.value instanceof Date ? dateFmt.format(p.value) : ''),
+        },
+        { headerName: 'Upload user', field: 'uploadUser', colId: 'uploadUser', minWidth: 150 },
+        {
+          headerName: 'Commitment', colId: 'commitment', flex: 2, minWidth: 260,
+          valueGetter: (p) => p.data?.commitment?.title ?? '',
+          getQuickFilterText: (p) => p.data?.commitment?.title ?? '',
+          cellRenderer: (p: { value: string; data: DocRow }) => {
+            const num = p.data.commitment?.number;
+            if (!num) return esc(p.value ?? '');
+            return `<a class="cbf-grid-link" href="${esc(withBase('/crs-commitments/' + num))}">${esc(p.value)}</a>`;
+          },
+        },
+        {
+          headerName: 'Commitment source', colId: 'commitmentSource', flex: 2, minWidth: 200,
+          valueGetter: (p) => p.data?.commitment?.source ?? '',
+        },
+        {
+          headerName: 'Commitment category', colId: 'commitmentCategory', minWidth: 160,
+          valueGetter: (p) => p.data?.commitment?.category ?? '',
+        },
+        {
+          headerName: 'Commitment subcategory', colId: 'commitmentSubcategory', minWidth: 180,
+          valueGetter: (p) => p.data?.commitment?.subcategory ?? '',
+        },
+        {
+          headerName: 'Commitment type', colId: 'commitmentType', minWidth: 150,
+          valueGetter: (p) => p.data?.commitment?.commitmentType ?? '',
+        },
+      ],
+      isExternalFilterPresent: () => categoryValue !== '',
+      doesExternalFilterPass: (node) => categoryValue === '' || node.data.category === categoryValue,
+      onModelUpdated: () => {
+        let shown = 0;
+        gridApi.forEachNodeAfterFilterAndSort(() => { shown += 1; });
+        if (count) count.textContent = `Showing ${shown} of ${total} documents`;
+      },
+    });
+
+    // Search → AG Grid quick filter (title/filename/commitment-title only, per getQuickFilterText).
+    search?.addEventListener('input', () => {
+      gridApi.setGridOption('quickFilterText', (search.value ?? '').trim());
+    });
+
+    // Category chips → external filter.
+    categoryFilter?.addEventListener('change', () => {
+      categoryValue = categoryFilter.value ?? '';
+      gridApi.onFilterChanged();
+    });
+
+    // Download CSV → AG Grid's built-in export of the currently filtered + sorted rows.
+    csvBtn?.addEventListener('click', () => {
+      gridApi.exportDataAsCsv({ fileName: '2020-crs-commitment-documents.csv' });
+    });
+  }
+
+  document
+    .querySelectorAll<HTMLElement>('.cbf-crs-docs')
+    .forEach(initDocuments);
+</script>

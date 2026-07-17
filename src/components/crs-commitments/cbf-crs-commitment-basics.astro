@@ -1,0 +1,135 @@
+---
+// cbf-crs-commitment-basics — the read-only "Basics" panel of a single CRS
+// commitment (fish/wildlife mitigation obligation) summary page. Every field of
+// the record laid out as scannable label/value pairs, grouped into two labeled
+// subsections (Overview, Responsible parties), with the current status shown as
+// a pill in the card header. Replaces the legacy 25-row bespoke key/value table.
+//
+// The .grid / .stack layout primitives and .type-* roles ship from @esa/tokens as
+// separate CSS modules (not bundled into tokens.css), so import them here to stay
+// self-contained. STATUS_TONE (status -> esa-pill variant) lives with the data.
+//
+// bcn-lego-checked: the panel SURFACE is esa-card and the status chip is esa-pill
+// — no reinvented card/badge/pill. Field pairs sit on the .grid primitive; the
+// only component-internal CSS is a full-row span for long free-text fields and
+// label/value color+rhythm — legal per CLAUDE.md (a spoke section owns its layout).
+import '@esa/tokens/layouts.css';
+import '@esa/tokens/type-roles.css';
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaPill from '@esa/ecology/esa-pill.astro';
+import { STATUS_TONE } from '../../data/crs-commitments.mjs';
+import type { CrsCommitment } from '../../data/crs-commitments.mjs';
+
+interface Props {
+  commitment: CrsCommitment;
+}
+const { commitment } = Astro.props;
+
+// Field descriptors — human label, record key, and whether the value is long
+// free-text that should span the full row (short fields pack two-up on the grid).
+interface Field {
+  label: string;
+  key: keyof CrsCommitment;
+  wide?: boolean;
+}
+
+const overviewFields: Field[] = [
+  { label: 'Commitment #', key: 'number' },
+  { label: 'Title', key: 'title', wide: true },
+  { label: 'Source', key: 'source', wide: true },
+  { label: 'Section', key: 'sectionNumber' },
+  { label: 'Page', key: 'pageNumber' },
+  { label: 'Category', key: 'category' },
+  { label: 'Subcategory', key: 'subcategory' },
+  { label: 'Commitment type', key: 'commitmentType' },
+  { label: 'Frequency', key: 'frequency' },
+  { label: 'Description', key: 'description', wide: true },
+  { label: 'Interpretation', key: 'interpretation', wide: true },
+  { label: 'Implementation', key: 'implementation', wide: true },
+  { label: 'Notes', key: 'notes', wide: true },
+  { label: 'Start date', key: 'startDate' },
+  { label: 'End date', key: 'endDate' },
+  { label: 'Deliverable', key: 'deliverable' },
+  { label: 'Deliverable frequency', key: 'deliverableFrequency' },
+  { label: 'Document due date', key: 'documentDueDate' },
+];
+
+const partyFields: Field[] = [
+  { label: 'Lead agency', key: 'leadAgency' },
+  { label: 'Partner agency', key: 'partnerAgency' },
+  { label: 'Partner POC', key: 'partnerPOC' },
+  { label: 'Policy lead', key: 'policyLead' },
+  { label: 'BiOp SME', key: 'biopSME' },
+  { label: 'COR', key: 'cor' },
+  { label: 'NMFS POC', key: 'nmfsPOC' },
+  { label: 'Associated projects', key: 'associatedProjects' },
+];
+
+// Notes is genuinely optional — omit the row when the record carries none. Every
+// other field ("N/A" included) is meaningful and is rendered verbatim.
+const overview = overviewFields.filter(
+  (f) => f.key !== 'notes' || (commitment.notes ?? '') !== '',
+);
+---
+<EsaCard title="Basics" variant="outlined" padding="default">
+  <EsaPill
+    slot="actions"
+    label={commitment.status}
+    variant={STATUS_TONE[commitment.status]}
+    size="sm"
+    removable={false}
+  />
+
+  <div class="cbf-basics stack" data-gap="xl">
+    <section class="stack" data-gap="sm">
+      <h3 class="type-section-title">Overview</h3>
+      <dl class="cbf-basics__fields grid" data-gap="md">
+        {overview.map((f) => (
+          <div class:list={['cbf-basics__pair', { 'cbf-basics__pair--full': f.wide }]}>
+            <dt class="type-label cbf-basics__label">{f.label}</dt>
+            <dd class="type-body cbf-basics__value">{commitment[f.key]}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+
+    <section class="stack" data-gap="sm">
+      <h3 class="type-section-title">Responsible parties</h3>
+      <dl class="cbf-basics__fields grid" data-gap="md">
+        {partyFields.map((f) => (
+          <div class="cbf-basics__pair">
+            <dt class="type-label cbf-basics__label">{f.label}</dt>
+            <dd class="type-body cbf-basics__value">{commitment[f.key]}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  </div>
+</EsaCard>
+
+<style>
+  /* Short fields pack two-up; the grid never overflows a narrow card. */
+  .cbf-basics__fields {
+    --grid-min: 15rem;
+    margin: 0;
+  }
+  /* Long free-text fields (title/source/description/…) span the full row. */
+  .cbf-basics__pair--full {
+    grid-column: 1 / -1;
+  }
+  .cbf-basics__pair {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-050);
+  }
+  /* Labels: quiet supporting metadata. Values: full-strength text — darkened,
+     never grayed, as they shrink to the dense record floor. */
+  .cbf-basics__label {
+    color: var(--color-text-secondary);
+  }
+  .cbf-basics__value {
+    color: var(--color-text-primary);
+    /* free-text values can carry hard breaks / long tokens gracefully */
+    overflow-wrap: anywhere;
+  }
+</style>

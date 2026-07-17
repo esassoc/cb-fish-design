@@ -1,0 +1,132 @@
+---
+// cbf-crs-commitment-timeline — the "Commitment status by year" section of a CRS
+// Commitment Summary detail page. For one commitment record it shows the tracked
+// status for each year of the 15-year CRS reporting horizon (2021–2035).
+//
+// The legacy CBFish page rendered each year as a dashed/solid colored square — a
+// reinvented, banned status-indicator pattern. This recreates the same one-status-
+// per-year information using the design system's real status convention: esa-pill,
+// colored by the shared STATUS_TONE map so color (never a border or icon) conveys
+// state. The current year is distinguished only by a very light sunken tint + a
+// bold label — no saturated fill, per the "containers stay neutral" rule.
+//
+// YEARS / CURRENT_YEAR / STATUS_TONE are imported from the single-source data
+// module so the row and the legend can never drift out of sync (both read the same
+// map). Only the per-commitment statusByYear arrives via Props.
+//
+// layouts.css / type-roles.css ship as separate @esa/tokens CSS modules (not
+// bundled into tokens.css), so import them here to stay self-contained.
+//
+// bcn-lego-checked: the status chips ARE esa-pill and the surface IS esa-card — no
+// reinvented pill/card. The only bespoke CSS is layout scaffolding (a .grid of
+// centered year columns) + a light current-year tint reading --color-surface-sunken;
+// no esa- lego lays out a fixed year-column strip. Checked Beacon (no timeline
+// widget). cbf-crs-commitment-timeline is the reusable home for the section.
+import '@esa/tokens/layouts.css';
+import '@esa/tokens/type-roles.css';
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaPill from '@esa/ecology/esa-pill.astro';
+import { YEARS, CURRENT_YEAR, STATUS_TONE } from '../../data/crs-commitments.mjs';
+
+type PillVariant = 'default' | 'primary' | 'success' | 'warning' | 'danger' | 'info';
+
+interface Props {
+  statusByYear: Record<number, string>;
+}
+const { statusByYear } = Astro.props;
+
+const tone = STATUS_TONE as Record<string, PillVariant>;
+// Legend rows derive from the same STATUS_TONE map that colors the row above.
+const legend = Object.keys(STATUS_TONE) as string[];
+---
+<EsaCard title="Commitment status by year" variant="outlined" padding="default">
+  <div class="cbf-timeline">
+    <div class="cbf-timeline__years grid" role="list" aria-label="Status by year">
+      {YEARS.map((year) => {
+        const status = statusByYear[year];
+        const isCurrent = year === CURRENT_YEAR;
+        return (
+          <div
+            class:list={['cbf-timeline__year', { 'is-current': isCurrent }]}
+            role="listitem"
+          >
+            <span class="cbf-timeline__label type-label">
+              {year}{isCurrent && <span class="cbf-timeline__now">now</span>}
+            </span>
+            {status ? (
+              <EsaPill label={status} variant={tone[status] ?? 'default'} size="sm" removable={false} />
+            ) : (
+              <span class="cbf-timeline__none" aria-label="No status tracked">—</span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+
+    <div class="cbf-timeline__legend cluster" data-gap="sm" aria-label="Status legend">
+      <span class="cbf-timeline__legend-lead type-label">Status</span>
+      {legend.map((status) => (
+        <EsaPill label={status} variant={tone[status] ?? 'default'} size="sm" removable={false} />
+      ))}
+    </div>
+  </div>
+</EsaCard>
+
+<style>
+  .cbf-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-500);
+  }
+
+  /* A fixed strip of equal year-columns that wraps to a second row on narrow
+     viewports rather than overflowing. */
+  .cbf-timeline__years {
+    --grid-min: 5rem;
+    --gap: var(--spacing-200);
+  }
+
+  .cbf-timeline__year {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-100);
+    padding: var(--spacing-200) var(--spacing-100);
+    border-radius: var(--radius-300);
+    text-align: center;
+  }
+
+  /* Current year: quiet tint + a bold label — subtle, no saturated block. */
+  .cbf-timeline__year.is-current {
+    background: var(--color-surface-sunken);
+  }
+  .cbf-timeline__year.is-current .cbf-timeline__label {
+    font-weight: var(--font-weight-bold);
+  }
+
+  .cbf-timeline__label {
+    color: var(--color-text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-100);
+  }
+
+  .cbf-timeline__now {
+    font-size: var(--type-size-150);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-primary);
+  }
+
+  .cbf-timeline__none {
+    color: var(--color-text-muted);
+    line-height: 1;
+  }
+
+  .cbf-timeline__legend {
+    padding-top: var(--spacing-400);
+    border-top: 1px solid var(--color-border);
+  }
+  .cbf-timeline__legend-lead {
+    color: var(--color-text-secondary);
+  }
+</style>

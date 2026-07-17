@@ -1,0 +1,68 @@
+---
+// cbf-crs-commitment-documents — the "Commitment Documents" section of the legacy
+// CBFish Commitment Summary detail page, lift-and-shifted for ONE commitment record.
+// It lists the due dates and documents attached to that specific commitment.
+//
+// In the current mock dataset none of the invented commitments carry documents yet, so
+// the live render is the per-commitment EMPTY STATE (the full cross-commitment Document
+// Library grid is a separate future page and is intentionally NOT built here). The
+// component is written so that if `documents` is ever passed in, it renders a short,
+// correct list — future-proofing, not the focus of this pass.
+//
+// Composition: esa-card (section chrome) > esa-empty-state (the empty branch, with two
+// esa-button actions in its default slot) OR a .stack list of rows (the populated
+// branch). No bespoke card/empty/button primitives — all three are esa-* legos. The
+// row dividers are the component's own CSS reading the --color-border-light token.
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+
+interface Props {
+  documents?: Array<{ title: string; dueDate?: string; category?: string; uploadDate?: string }>;
+}
+const { documents = [] } = Astro.props;
+
+const hasDocuments = documents.length > 0;
+---
+<EsaCard title="Commitment documents">
+  {hasDocuments ? (
+    <div class="cbf-crs-commitment-documents__list stack" data-gap="none">
+      {documents.map((doc) => {
+        const dateLabel = doc.dueDate
+          ? `Due ${doc.dueDate}`
+          : doc.uploadDate
+            ? `Uploaded ${doc.uploadDate}`
+            : null;
+        return (
+          <div class="cbf-crs-commitment-documents__row repel">
+            <div class="stack" data-gap="3xs">
+              <span class="type-body">{doc.title}</span>
+              {doc.category && <span class="type-label">{doc.category}</span>}
+            </div>
+            {dateLabel && <span class="type-label">{dateLabel}</span>}
+          </div>
+        );
+      })}
+    </div>
+  ) : (
+    <EsaEmptyState
+      title="No due dates or documents yet"
+      description="Add a recurring or discrete due date, or upload a document that doesn't need one."
+    >
+      <div class="cluster" data-gap="sm">
+        <EsaButton color="primary" icon="calendar-plus" href="#">Add due date</EsaButton>
+        <EsaButton color="secondary" appearance="outline" icon="upload" href="#">Upload document</EsaButton>
+      </div>
+    </EsaEmptyState>
+  )}
+</EsaCard>
+
+<style>
+  .cbf-crs-commitment-documents__row {
+    padding-block: var(--spacing-300, 0.75rem);
+  }
+  /* Dividers between rows only — a lightweight list, not a bespoke table. */
+  .cbf-crs-commitment-documents__row + .cbf-crs-commitment-documents__row {
+    border-top: 1px solid var(--color-border-light, #efefef);
+  }
+</style>

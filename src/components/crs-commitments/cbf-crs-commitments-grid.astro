@@ -1,0 +1,277 @@
+---
+// cbf-crs-commitments-grid — the "2020 CRS Commitments" index: a scannable,
+// searchable, filterable table of every tracked CRS BiOp commitment, each row
+// linking to its detail page at /crs-commitments/<number>. A curated view of
+// the legacy 29-column wall — only the columns that matter for scanning live
+// here (number, title, source, category, subcategory, type, frequency, dates,
+// lead agency, current-year status); the full record is on the detail page.
+//
+// bcn-lego-checked: ecology has NO table/grid/data-grid lego (checked the full
+// node_modules/@esa/ecology/src/components catalog — esa-card/esa-pill/esa-badge
+// are atoms, none render a sortable, filterable tabular data surface) and Beacon
+// is not on this machine. The tabular surface is AG Grid Community
+// (ag-grid-community), the same explicit dependency the vendor-dashboard invoices
+// grid chose for sort/quick-search/CSV export over a hand-rolled <table>; this
+// bcn- component is its reusable home. Every other control is a lego: the Status
+// cell reuses the real esa-pill markup (server-rendered once per status into a
+// hidden template, cloned into grid cells so the design-system styling is
+// identical — never reinvented), the search input reuses cbf-search-field, the
+// Category + Status filters use esa-chip-group, the "Create new" CTA and the
+// CSV download use esa-button / esa-icon-button.
+import CbfSearchField from '../search/cbf-search-field.astro';
+import EsaPill from '@esa/ecology/esa-pill.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import './cbf-crs-data-grid-chrome.css';
+import { commitments as defaultCommitments, STATUS_TONE } from '../../data/crs-commitments.mjs';
+
+type CommitmentStatus = keyof typeof STATUS_TONE;
+
+interface CrsCommitment {
+  number: string;
+  title: string;
+  source: string;
+  category: string;
+  subcategory: string;
+  commitmentType: string;
+  frequency: string;
+  startDate: string;
+  endDate: string;
+  leadAgency: string;
+  status: CommitmentStatus;
+}
+
+interface Props {
+  commitments?: CrsCommitment[];
+}
+
+const { commitments = defaultCommitments } = Astro.props;
+
+// Category chip filter — single-select, "All" escape first. Options derived from
+// the data so the control never lists an empty bucket.
+const categories = Array.from(new Set(commitments.map((c) => c.category))).sort();
+const categoryFilters = [
+  { value: '', label: 'All' },
+  ...categories.map((c) => ({ value: c, label: c })),
+];
+
+// Status chip filter — same convention. Canonical lifecycle order (not alpha) so
+// the control reads Not Started → … → Closed; Delayed gets the amber tone so the
+// off-track state stands out in the control, mirroring its esa-pill warning tone.
+const statusOrder: CommitmentStatus[] = [
+  'Not Started', 'In Progress', 'Delayed', 'Future', 'Complete', 'Closed',
+];
+const presentStatuses = statusOrder.filter((s) => commitments.some((c) => c.status === s));
+const statusFilters = [
+  { value: '', label: 'All' },
+  ...presentStatuses.map((s) => ({
+    value: s,
+    label: s,
+    ...(s === 'Delayed' ? { tone: 'amber' as const } : {}),
+  })),
+];
+---
+<section class="cbf-crs-grid stack" data-gap="md">
+  <header class="cbf-crs-data-grid__header repel">
+    <span class="type-caption cbf-crs-data-grid__count-label">All commitments</span>
+    <EsaButton href="#" color="primary" icon="plus">Create new CRS Commitment</EsaButton>
+  </header>
+
+  <div class="cbf-crs-data-grid__controls repel">
+    <div class="cbf-crs-data-grid__filters cluster" data-gap="lg">
+      <label class="cbf-crs-data-grid__filter">
+        <span class="type-caption">Category</span>
+        <esa-chip-group
+          data-crs-category-filter
+          size="sm"
+          label="Filter by category"
+          value=""
+          options={JSON.stringify(categoryFilters)}
+        ></esa-chip-group>
+      </label>
+      <label class="cbf-crs-data-grid__filter">
+        <span class="type-caption">Status</span>
+        <esa-chip-group
+          data-crs-status-filter
+          size="sm"
+          label="Filter by status"
+          value=""
+          options={JSON.stringify(statusFilters)}
+        ></esa-chip-group>
+      </label>
+    </div>
+    <div class="cbf-crs-data-grid__search">
+      <CbfSearchField
+        placeholder="Search number, title or source…"
+        iconSize={18}
+        data-crs-search
+        aria-label="Search commitments"
+      />
+    </div>
+  </div>
+
+  <!-- AG Grid mounts here. autoHeight grows with rows so the page (not an inner
+       pane) owns vertical scroll; the wrapper owns the framed surface. -->
+  <div class="cbf-crs-data-grid__grid" data-crs-grid></div>
+
+  <footer class="cbf-crs-data-grid__footer repel">
+    <span class="type-caption" data-crs-count>
+      Showing {commitments.length} of {commitments.length} commitments
+    </span>
+    <EsaIconButton icon="download" label="Download CSV" size="sm" data-crs-csv />
+  </footer>
+
+  <!-- The real esa-pill lego, server-rendered once per status with the design-
+       system scope hash intact. The grid's Status cell renderer clones the
+       matching template's markup — so those chips are byte-identical to the
+       lego, never a hand-rolled copy. removable=false: a status indicator, not
+       a removable filter chip. -->
+  <div class="cbf-crs-grid__badge-templates" data-crs-badge-templates hidden aria-hidden="true">
+    {presentStatuses.map((s) => (
+      <span data-status={s}>
+        <EsaPill label={s} variant={STATUS_TONE[s]} size="sm" removable={false} />
+      </span>
+    ))}
+  </div>
+
+  <!-- Row data for the grid, serialized so the client module (which imports
+       ag-grid-community) hydrates without a second fetch. -->
+  <script type="application/json" data-crs-data set:html={JSON.stringify(commitments)}></script>
+</section>
+
+<script>
+  import { createGrid, ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
+  import '@esa/ecology/esa-chip-group';
+  import { withBase } from '../../lib/base';
+  import { cbfGridTheme as cbfTheme, gridDateFormatter as dateFmt, asGridDate as asDate, escGridHtml as esc } from './grid-chrome';
+
+  ModuleRegistry.registerModules([AllCommunityModule]);
+
+  type Commitment = {
+    number: string; title: string; source: string; category: string;
+    subcategory: string; commitmentType: string; frequency: string;
+    startDate: string; endDate: string; leadAgency: string; status: string;
+  };
+
+  // Canonical lifecycle order → a status comparator that sorts by workflow stage
+  // rather than alphabetically.
+  const STATUS_ORDER = ['Not Started', 'In Progress', 'Delayed', 'Future', 'Complete', 'Closed'];
+  const statusRank = (s: string) => {
+    const i = STATUS_ORDER.indexOf(s);
+    return i === -1 ? STATUS_ORDER.length : i;
+  };
+
+  function initCommitments(root: HTMLElement) {
+    const gridHost = root.querySelector<HTMLElement>('[data-crs-grid]');
+    const dataEl = root.querySelector<HTMLScriptElement>('[data-crs-data]');
+    if (!gridHost || !dataEl) return;
+
+    const data: Commitment[] = JSON.parse(dataEl.textContent ?? '[]');
+    const total = data.length;
+
+    const search = root.querySelector<HTMLInputElement>('[data-crs-search]');
+    const categoryFilter = root.querySelector<HTMLElement & { value: string }>('[data-crs-category-filter]');
+    const statusFilter = root.querySelector<HTMLElement & { value: string }>('[data-crs-status-filter]');
+    const count = root.querySelector<HTMLElement>('[data-crs-count]');
+    const csvBtn = root.querySelector<HTMLElement>('[data-crs-csv]');
+
+    // Pre-clone the real esa-pill markup per status (server-rendered with the
+    // design-system scope hash) so grid cells reuse the lego verbatim.
+    const badgeHTML = new Map<string, string>();
+    root.querySelectorAll<HTMLElement>('[data-crs-badge-templates] [data-status]').forEach((el) => {
+      badgeHTML.set(el.dataset.status ?? '', el.innerHTML);
+    });
+
+    // External (chip-driven) filters — kept out of the column filter UI so the
+    // esa-chip-groups stay the single control surface.
+    let categoryValue = '';
+    let statusValue = '';
+
+    // Only number/title/source feed quick search (category/status have their own
+    // chip filters) — defaultColDef opts every column out, the three opt back in.
+    const gridApi = createGrid(gridHost, {
+      theme: cbfTheme,
+      rowData: data,
+      domLayout: 'autoHeight',
+      animateRows: false,
+      suppressCellFocus: true,
+      defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true, getQuickFilterText: () => '' },
+      columnDefs: [
+        {
+          headerName: 'Number', field: 'number', colId: 'number',
+          cellClass: 'cbf-grid-id', minWidth: 130,
+          getQuickFilterText: (p) => p.data?.number ?? '',
+          cellRenderer: (p: { value: string }) =>
+            `<a class="cbf-grid-link" href="${esc(withBase('/crs-commitments/' + p.value))}">${esc(p.value)}</a>`,
+        },
+        {
+          headerName: 'Commitment', field: 'title', colId: 'title', flex: 3, minWidth: 260,
+          getQuickFilterText: (p) => p.data?.title ?? '',
+          cellRenderer: (p: { value: string; data: Commitment }) =>
+            `<a class="cbf-grid-link" href="${esc(withBase('/crs-commitments/' + p.data.number))}">${esc(p.value)}</a>`,
+        },
+        {
+          headerName: 'Source', field: 'source', colId: 'source', flex: 2, minWidth: 200,
+          getQuickFilterText: (p) => p.data?.source ?? '',
+        },
+        { headerName: 'Category', field: 'category', colId: 'category', minWidth: 130 },
+        { headerName: 'Subcategory', field: 'subcategory', colId: 'subcategory', minWidth: 140 },
+        { headerName: 'Type', field: 'commitmentType', colId: 'commitmentType', minWidth: 120 },
+        { headerName: 'Frequency', field: 'frequency', colId: 'frequency', minWidth: 120 },
+        {
+          headerName: 'Start', field: 'startDate', colId: 'startDate', minWidth: 120,
+          cellDataType: 'date',
+          valueGetter: (p) => asDate(p.data?.startDate),
+          valueFormatter: (p) => (p.value instanceof Date ? dateFmt.format(p.value) : ''),
+        },
+        {
+          headerName: 'End', field: 'endDate', colId: 'endDate', minWidth: 120,
+          cellDataType: 'date',
+          valueGetter: (p) => asDate(p.data?.endDate),
+          valueFormatter: (p) => (p.value instanceof Date ? dateFmt.format(p.value) : ''),
+        },
+        { headerName: 'Lead agency', field: 'leadAgency', colId: 'leadAgency', minWidth: 130 },
+        {
+          headerName: 'Status', field: 'status', colId: 'status', minWidth: 140,
+          comparator: (a: string, b: string) => statusRank(a) - statusRank(b),
+          cellRenderer: (p: { value: string }) =>
+            `<span class="cbf-grid-status">${badgeHTML.get(p.value) ?? esc(p.value)}</span>`,
+        },
+      ],
+      isExternalFilterPresent: () => categoryValue !== '' || statusValue !== '',
+      doesExternalFilterPass: (node) =>
+        (categoryValue === '' || node.data.category === categoryValue) &&
+        (statusValue === '' || node.data.status === statusValue),
+      onModelUpdated: () => {
+        let shown = 0;
+        gridApi.forEachNodeAfterFilterAndSort(() => { shown += 1; });
+        if (count) count.textContent = `Showing ${shown} of ${total} commitments`;
+      },
+    });
+
+    // Search → AG Grid quick filter (number/title/source only, per getQuickFilterText).
+    search?.addEventListener('input', () => {
+      gridApi.setGridOption('quickFilterText', (search.value ?? '').trim());
+    });
+
+    // Category / Status chips → external filter.
+    categoryFilter?.addEventListener('change', () => {
+      categoryValue = categoryFilter.value ?? '';
+      gridApi.onFilterChanged();
+    });
+    statusFilter?.addEventListener('change', () => {
+      statusValue = statusFilter.value ?? '';
+      gridApi.onFilterChanged();
+    });
+
+    // Download CSV → AG Grid's built-in export of the currently filtered + sorted
+    // rows. Status exports as the raw status string (not the pill markup).
+    csvBtn?.addEventListener('click', () => {
+      gridApi.exportDataAsCsv({ fileName: '2020-crs-commitments.csv' });
+    });
+  }
+
+  document
+    .querySelectorAll<HTMLElement>('.cbf-crs-grid')
+    .forEach(initCommitments);
+</script>

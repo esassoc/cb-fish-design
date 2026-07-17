@@ -1,0 +1,48 @@
+---
+// /crs-commitments/documents — the "2020 CRS Commitments Document Library".
+// A cross-commitment grid of every document/due-date attached to any tracked
+// commitment, each row cross-referenced back to its parent commitment. Lift-
+// and-shift of the legacy CBFish BiologicalOpinionCommitmentDocumentsIndex page.
+// Thin assembler: chrome from cbf-* shared components, content from the grid.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CbfPublicNav from '../../components/shared/cbf-public-nav.astro';
+import CbfAppPanel from '../../components/shared/cbf-app-panel.astro';
+import CbfPageHeading from '../../components/shared/cbf-page-heading.astro';
+import CbfCrsDocumentsGrid from '../../components/crs-commitments/cbf-crs-documents-grid.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import { withBase } from '../../lib/base';
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+
+const crumbs = [
+  { label: 'Home', href: withBase('/home'), icon: homeIcon },
+  { label: '2020 CRS Commitments', href: withBase('/crs-commitments') },
+  { label: 'Document Library' },
+];
+---
+<!-- manifest:
+  layout: esa-container > cbf-app-panel
+  sections:
+    - top nav       -> cbf-public-nav
+    - page frame    -> esa-container
+    - page heading  -> cbf-page-heading
+    - documents grid -> cbf-crs-documents-grid
+-->
+<BaseLayout title="2020 CRS Commitments Document Library — Columbia Basin Fish &amp; Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <CbfAppPanel crumbs={crumbs}>
+        <CbfPageHeading title="2020 CRS Commitments Document Library" />
+        <CbfCrsDocumentsGrid />
+      </CbfAppPanel>
+    </EsaContainer>
+  </main>
+</BaseLayout>
+
+<style>
+  /* page-level outer rhythm only — every section is a component (manifest above) */
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+</style>
