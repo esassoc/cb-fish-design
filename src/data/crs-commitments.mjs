@@ -555,7 +555,7 @@ export function findCommitment(number) {
 /**
  * @typedef {{
  *   commitmentNumber: string; dueDate?: string; category: 'CRS Commitment Deliverable' | 'CRS Commitment Supporting Document';
- *   type: string; title: string; description: string; filename: string; uploadDate: string; uploadUser: string;
+ *   type: string; title: string; description: string; filename?: string; uploadDate?: string; uploadUser?: string;
  * }} CrsDocument
  */
 
@@ -563,6 +563,10 @@ export function findCommitment(number) {
 // its title/source/category — the document library grid joins against
 // `commitments` via `findCommitment` so the two can never drift apart. Roughly
 // a third of commitments have at least one document; the rest are still open.
+// A document with a `dueDate` but no `uploadDate`/`uploadUser`/`filename` is a
+// tracked due date nothing has been submitted against yet (mirrors the live
+// CBFish model, where a due date and an uploaded document are related but
+// distinct records) — used by the dashboard's per-year document indicator.
 /** @type {CrsDocument[]} */
 export const documents = [
   {
@@ -602,6 +606,14 @@ export const documents = [
     filename: 'tributary-habitat-2025.pdf', uploadDate: '2/10/2026', uploadUser: 'Sean Ostrander',
   },
   {
+    // Next year's cycle of the same recurring report — due, nothing uploaded
+    // yet. No filename/uploadDate/uploadUser: this due date has no document
+    // attached to it yet.
+    commitmentNumber: 'CRS-Com-31', dueDate: '2/15/2027', category: 'CRS Commitment Deliverable',
+    type: 'Annual Report', title: 'Tributary Habitat Implementation — 2026',
+    description: 'Project-by-project status for the Snake River and upper Columbia habitat pipeline.',
+  },
+  {
     commitmentNumber: 'CRS-Com-33', dueDate: '2/15/2025', category: 'CRS Commitment Deliverable',
     type: 'Annual Report', title: 'Tributary Habitat Implementation Progress Report — 2024',
     description: 'Annual summary of completed and underway tributary projects.',
@@ -632,6 +644,12 @@ export const documents = [
     filename: 'klickitat-om-renewal-letter.pdf', uploadDate: '10/3/2025', uploadUser: 'Todd Whitfield',
   },
   {
+    // Overdue: due date has passed with nothing uploaded against it.
+    commitmentNumber: 'CRS-Com-52', dueDate: '9/30/2025', category: 'CRS Commitment Deliverable',
+    type: 'Annual Report', title: 'Klickitat Hatchery O&M Summary — FY2025',
+    description: 'Fiscal-year O&M summary and production totals for the Klickitat safety-net program.',
+  },
+  {
     commitmentNumber: 'CRS-Com-63', category: 'CRS Commitment Supporting Document',
     type: 'Data Summary', title: 'Pikeminnow Removal Totals — 2025 Season',
     description: 'Sport-reward and commercial fishery removal counts by reach.',
@@ -653,4 +671,23 @@ export const documents = [
 
 export function documentsFor(commitmentNumber) {
   return documents.filter((d) => d.commitmentNumber === commitmentNumber);
+}
+
+/**
+ * Per-year document tracking for one commitment, derived from `documents`:
+ * every entry with a `dueDate` marks that year 'received' (an uploadDate is on
+ * file) or 'pending' (the due date has no document attached yet). Years with
+ * no tracked due date are absent from the returned map. Powers the dashboard's
+ * small per-year document indicator, which sits alongside the status dot.
+ * @returns {Record<number, 'received' | 'pending'>}
+ */
+export function documentYearMarkers(commitmentNumber) {
+  const markers = {};
+  for (const doc of documentsFor(commitmentNumber)) {
+    if (!doc.dueDate) continue;
+    const year = new Date(doc.dueDate).getFullYear();
+    if (Number.isNaN(year)) continue;
+    markers[year] = doc.uploadDate ? 'received' : 'pending';
+  }
+  return markers;
 }

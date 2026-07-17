@@ -38,6 +38,7 @@ import '@esa/tokens/layouts.css';
 import '@esa/tokens/type-roles.css';
 import EsaBadge from '@esa/ecology/esa-badge.astro';
 import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaIcon from '@esa/ecology/esa-icon.astro';
 import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 import CbfSearchField from '../search/cbf-search-field.astro';
 import {
@@ -45,6 +46,7 @@ import {
   YEARS,
   CURRENT_YEAR,
   STATUS_DOT,
+  documentYearMarkers,
 } from '../../data/crs-commitments.mjs';
 import { withBase } from '../../lib/base';
 
@@ -89,6 +91,15 @@ const legend = [...legendByVariant].map(([variant, statuses]) => ({
   variant,
   label: statuses.join(' / '),
 }));
+
+// Document markers — a second, independent signal from the year-status dots:
+// whether a due-date deliverable for that year has a document on file.
+// Derived from documentYearMarkers() per row (see the row loop below); this is
+// just the shared legend explaining the two tones.
+const docLegend = [
+  { state: 'received' as const, label: 'Document received' },
+  { state: 'pending' as const, label: 'Document due' },
+];
 
 // The six-stat summary. JUDGMENT CALL 1 (Future / Not Started): the requested row
 // is fixed at six entries and lists "Not Started" but not "Future", so Future's
@@ -198,6 +209,15 @@ const year2 = (year: number) => String(year).slice(2);
             <span class="type-label">{l.label}</span>
           </span>
         ))}
+        <span class="cbf-crs-dashboard__legend-divider" aria-hidden="true" />
+        {docLegend.map((d) => (
+          <span class="cbf-crs-dashboard__legend-item">
+            <span class:list={['cbf-crs-dashboard__docmark', `cbf-crs-dashboard__docmark--${d.state}`]}>
+              <EsaIcon name="file-text" size="xs" />
+            </span>
+            <span class="type-label">{d.label}</span>
+          </span>
+        ))}
       </div>
 
       <!-- The list. A shared year axis sits above aligned rows; the current-year
@@ -215,7 +235,9 @@ const year2 = (year: number) => String(year).slice(2);
             </div>
           </div>
 
-          {commitments.map((c) => (
+          {commitments.map((c) => {
+            const docMarkers = documentYearMarkers(c.number);
+            return (
             <article
               class="cbf-crs-dashboard__row"
               data-crs-row
@@ -242,20 +264,28 @@ const year2 = (year: number) => String(year).slice(2);
                 {YEARS.map((year) => {
                   const status = c.statusByYear[year];
                   const isCurrent = year === CURRENT_YEAR;
+                  const docState = docMarkers[year];
+                  const docLabel = docState === 'received' ? 'document received' : 'document due, not yet received';
                   return (
                     <span
                       class:list={['cbf-crs-dashboard__cell', { 'is-current': isCurrent }]}
                       role="listitem"
-                      title={`${year}: ${status ?? 'No status'}`}
-                      aria-label={`${year}: ${status ?? 'No status'}`}
+                      title={`${year}: ${status ?? 'No status'}${docState ? `, ${docLabel}` : ''}`}
+                      aria-label={`${year}: ${status ?? 'No status'}${docState ? `, ${docLabel}` : ''}`}
                     >
                       <EsaBadge dot={true} variant={statusDot[status] ?? 'secondary'} size="md" />
+                      {docState && (
+                        <span class:list={['cbf-crs-dashboard__docmark', `cbf-crs-dashboard__docmark--${docState}`]}>
+                          <EsaIcon name="file-text" size="xs" />
+                        </span>
+                      )}
                     </span>
                   );
                 })}
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -385,8 +415,10 @@ const year2 = (year: number) => String(year).slice(2);
   }
   .cbf-crs-dashboard__cell {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: var(--spacing-050);
     padding-block: var(--spacing-100);
     border-radius: var(--radius-100);
   }
@@ -402,6 +434,32 @@ const year2 = (year: number) => String(year).slice(2);
   .cbf-crs-dashboard__cell--year.is-current .cbf-crs-dashboard__yearlabel {
     color: var(--color-primary);
     font-weight: var(--font-weight-bold);
+  }
+
+  /* Per-year document indicator — a small outlined file icon under the status
+     dot, independent of it: whether a due-date deliverable for that year has a
+     document on file. Color is the only signal (success = received, danger =
+     due/not received), matching this repo's "color conveys state" rule. */
+  .cbf-crs-dashboard__docmark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-050, 2px);
+    border: 1px solid currentColor;
+  }
+  .cbf-crs-dashboard__docmark--received {
+    color: var(--color-success);
+  }
+  .cbf-crs-dashboard__docmark--pending {
+    color: var(--color-danger);
+  }
+
+  .cbf-crs-dashboard__legend-divider {
+    width: 1px;
+    align-self: stretch;
+    background: var(--color-border);
   }
 
   /* Hidden rows (client-filtered) collapse the grid row entirely. */
