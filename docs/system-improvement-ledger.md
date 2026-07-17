@@ -36,3 +36,14 @@ hub fix. Surface these for promotion via `/request-lego` or a hub PR.
   for `secondary`), and reconsider re-pointing `--color-info` to something
   other than `--color-secondary` in `theme-cb-fish.css` if two visually
   identical "brand blue" tones was never the intent.
+
+  Same file, same root cause, a second instance: `--color-success` resolves to
+  `#bdee63`, a pale yellow-green (confirmed via `getComputedStyle`) that's hard
+  to see at a small fill/icon size — a user testing the prototype flagged this
+  directly ("hard for me to see well"). Worked around by reading
+  `--color-green-11` (the hub's own darker "accessible foreground" step of the
+  same green ramp — a real existing token, not invented) for both the
+  "Complete" timeline segment and the document-received marker. Proposed hub
+  fix: reconsider whether `--color-success` should default to a step this pale,
+  or whether `theme-cb-fish.css` should re-point it the way it already re-points
+  `--color-primary`/`--color-secondary`.

@@ -525,19 +525,27 @@ const year2 = (year: number) => String(year).slice(2);
     border-top-right-radius: var(--radius-100);
     border-bottom-right-radius: var(--radius-100);
   }
-  /* Color is the only signal — reads the same semantic tokens esa-badge's
-     variants read, EXCEPT 'secondary': this theme re-points --color-info to
-     --color-secondary (they're both the brand blue, #2770b2 — verified in the
-     browser, not just in the source), so an "In Progress" segment sitting next
-     to a "Not Started/Future/Closed" segment would be visually seamless and
-     erase the exact transition this bar exists to show. --color-text-muted is
-     a genuinely distinct neutral gray for the quiet bucket — the same kind of
-     escape used by the quiet tag pair below (a public-token override) when the
-     variant system itself doesn't have a neutral tone (no esa-badge variant
-     is a plain gray either; logged to the ledger). */
+  /* Color is the only signal, but NOT read straight off esa-badge's own
+     variants — two of the four collide with this brand's tuning:
+     - 'secondary': this theme re-points --color-info to --color-secondary
+       (they're both the brand blue, #2770b2 — verified in the browser, not
+       just in the source), so an "In Progress" segment sitting next to a
+       "Not Started/Future/Closed" segment would be visually seamless and
+       erase the exact transition this bar exists to show. --color-text-muted
+       is a genuinely distinct neutral gray for the quiet bucket.
+     - 'success': --color-success resolves to #bdee63, a pale yellow-green
+       (verified in the browser) that's hard to see at this small a fill size
+       and reads too close to the neutral gray. --color-green-11 is the hub's
+       own darker "accessible foreground" step of the SAME green ramp (the
+       step --color-primary-strong itself defaults to for text-on-surface,
+       before cb-fish re-points it) — a legitimate existing token, not an
+       invented value, just a stronger step of the same hue.
+     Both are the same kind of escape the quiet tag pair below uses (a public-
+     token override) for when the variant system itself doesn't give this
+     brand what it needs; logged to the ledger. */
   .cbf-crs-dashboard__segment[data-variant='info'] { background: var(--color-info); }
   .cbf-crs-dashboard__segment[data-variant='warning'] { background: var(--color-warning); }
-  .cbf-crs-dashboard__segment[data-variant='success'] { background: var(--color-success); }
+  .cbf-crs-dashboard__segment[data-variant='success'] { background: var(--color-green-11); }
   .cbf-crs-dashboard__segment[data-variant='secondary'] { background: var(--color-text-muted); }
   /* Legend swatch: the identical segment styling outside the grid track — first-
      child AND last-child both match here, so it renders fully rounded. */
@@ -572,7 +580,9 @@ const year2 = (year: number) => String(year).slice(2);
     border: 1px solid currentColor;
   }
   .cbf-crs-dashboard__docmark--received {
-    color: var(--color-success);
+    /* --color-success resolves to a pale yellow-green here (#bdee63) that's
+       hard to see at icon size — same fix as the Complete segment above. */
+    color: var(--color-green-11);
   }
   .cbf-crs-dashboard__docmark--pending {
     color: var(--color-danger);
