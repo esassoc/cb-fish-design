@@ -10,6 +10,8 @@ import CbfPublicNav from '../../components/shared/cbf-public-nav.astro';
 import CbfAppPanel from '../../components/shared/cbf-app-panel.astro';
 import CbfPageHeading from '../../components/shared/cbf-page-heading.astro';
 import CbfCrsCommitmentsDashboard from '../../components/crs-commitments/cbf-crs-commitments-dashboard.astro';
+import CbfReportTabs from '../../components/shared/cbf-report-tabs.astro';
+import { crsReportTabs } from '../../components/crs-commitments/report-tabs';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import { withBase } from '../../lib/base';
 
@@ -28,6 +30,7 @@ const crumbs = [
     - top nav    -> cbf-public-nav
     - page frame -> esa-container
     - page heading -> cbf-page-heading
+    - sub-nav tabs -> cbf-report-tabs
     - dashboard  -> cbf-crs-commitments-dashboard
 -->
 <BaseLayout title="2020 CRS Commitments Dashboard — Columbia Basin Fish &amp; Wildlife Program">
@@ -37,6 +40,7 @@ const crumbs = [
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
         <CbfPageHeading title="2020 CRS Commitments Dashboard" />
+        <CbfReportTabs tabs={crsReportTabs('dashboard')} ariaLabel="2020 CRS Commitments sections" />
         <CbfCrsCommitmentsDashboard />
       </CbfAppPanel>
     </EsaContainer>

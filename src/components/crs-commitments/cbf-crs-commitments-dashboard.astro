@@ -38,7 +38,6 @@ import '@esa/tokens/layouts.css';
 import '@esa/tokens/type-roles.css';
 import EsaBadge from '@esa/ecology/esa-badge.astro';
 import EsaStat from '@esa/ecology/esa-stat.astro';
-import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 import CbfSearchField from '../search/cbf-search-field.astro';
 import {
@@ -148,19 +147,6 @@ const statusFilterOptions = [
 const year2 = (year: number) => String(year).slice(2);
 ---
 <section class="cbf-crs-dashboard stack" data-gap="lg">
-  <header class="cbf-crs-dashboard__header repel">
-    <span class="type-caption cbf-crs-dashboard__eyebrow">2020 CRS Commitments Dashboard</span>
-    <!-- Sits beside the tab region (top-right), NOT a tab: links to the sibling
-         cross-commitment document grid built in parallel on another page. -->
-    <EsaButton
-      href={withBase('/crs-commitments/documents')}
-      color="ghost"
-      appearance="outline"
-      size="sm"
-      icon="file-text"
-    >Document Library</EsaButton>
-  </header>
-
   <esa-tab-layout
     class="cbf-crs-dashboard__tabs"
     data-crs-tabs
@@ -287,15 +273,6 @@ const year2 = (year: number) => String(year).slice(2);
 <style>
   /* Pre-upgrade: keep the body visible (progressive enhancement) — only the tab
      strip is missing until esa-tab-layout defines. */
-  .cbf-crs-dashboard__header {
-    align-items: center;
-    gap: var(--spacing-400);
-    flex-wrap: wrap;
-  }
-  .cbf-crs-dashboard__eyebrow {
-    color: var(--color-text-muted);
-  }
-
   /* Confine any tab-strip overflow to the strip itself (9 tabs), never the panel. */
   .cbf-crs-dashboard__tabs::part(tabs) {
     overflow-x: auto;

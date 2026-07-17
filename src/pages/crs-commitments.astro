@@ -11,8 +11,9 @@ import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
 import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
 import CbfPageHeading from '../components/shared/cbf-page-heading.astro';
 import CbfCrsCommitmentsGrid from '../components/crs-commitments/cbf-crs-commitments-grid.astro';
+import CbfReportTabs from '../components/shared/cbf-report-tabs.astro';
+import { crsReportTabs } from '../components/crs-commitments/report-tabs';
 import EsaContainer from '@esa/ecology/esa-container.astro';
-import EsaButton from '@esa/ecology/esa-button.astro';
 import { withBase } from '../lib/base';
 
 const homeIcon =
@@ -29,6 +30,7 @@ const crumbs = [
     - top nav          -> cbf-public-nav
     - page frame       -> esa-container
     - page heading     -> cbf-page-heading
+    - sub-nav tabs     -> cbf-report-tabs
     - commitments grid -> cbf-crs-commitments-grid
 -->
 <BaseLayout title="2020 CRS Commitments — Columbia Basin Fish &amp; Wildlife Program">
@@ -38,22 +40,7 @@ const crumbs = [
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
         <CbfPageHeading title="2020 CRS Commitments" />
-        <div class="cluster" data-gap="sm">
-          <EsaButton
-            href={withBase('/crs-commitments/dashboard')}
-            color="secondary"
-            appearance="outline"
-            size="sm"
-            icon="layout-dashboard"
-          >Dashboard</EsaButton>
-          <EsaButton
-            href={withBase('/crs-commitments/documents')}
-            color="secondary"
-            appearance="outline"
-            size="sm"
-            icon="file-text"
-          >Document Library</EsaButton>
-        </div>
+        <CbfReportTabs tabs={crsReportTabs('grid')} ariaLabel="2020 CRS Commitments sections" />
         <CbfCrsCommitmentsGrid />
       </CbfAppPanel>
     </EsaContainer>

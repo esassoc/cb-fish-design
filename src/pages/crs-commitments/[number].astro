@@ -11,8 +11,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import CbfPublicNav from '../../components/shared/cbf-public-nav.astro';
 import CbfAppPanel from '../../components/shared/cbf-app-panel.astro';
 import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
-import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
+import CbfReportTabs from '../../components/shared/cbf-report-tabs.astro';
+import { crsReportTabs } from '../../components/crs-commitments/report-tabs';
 import CbfCrsCommitmentBasics from '../../components/crs-commitments/cbf-crs-commitment-basics.astro';
 import CbfCrsCommitmentTimeline from '../../components/crs-commitments/cbf-crs-commitment-timeline.astro';
 import CbfCrsCommitmentDocuments from '../../components/crs-commitments/cbf-crs-commitment-documents.astro';
@@ -53,6 +54,7 @@ const crumbs = [
     - top nav        -> cbf-public-nav
     - page frame     -> esa-container
     - page header    -> esa-page-header
+    - sub-nav tabs   -> cbf-report-tabs
     - basics panel   -> cbf-crs-commitment-basics
     - status timeline -> cbf-crs-commitment-timeline
     - documents      -> cbf-crs-commitment-documents
@@ -63,17 +65,8 @@ const crumbs = [
   <main class="cbf-page">
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
-        <EsaPageHeader eyebrow={commitment.number} title={commitment.title}>
-          <EsaButton
-            slot="actions"
-            href={withBase('/crs-commitments')}
-            color="secondary"
-            appearance="outline"
-            icon="arrow-left"
-          >
-            Back to 2020 CRS Commitments
-          </EsaButton>
-        </EsaPageHeader>
+        <EsaPageHeader eyebrow={commitment.number} title={commitment.title} />
+        <CbfReportTabs tabs={crsReportTabs('grid')} ariaLabel="2020 CRS Commitments sections" />
 
         <div class="cbf-crs-summary stack" data-gap="lg">
           <CbfCrsCommitmentBasics commitment={commitment} />
