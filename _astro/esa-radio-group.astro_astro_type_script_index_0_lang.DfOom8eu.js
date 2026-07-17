@@ -1,32 +1,26 @@
-import{i as n,b as s,a as d}from"./lit-element.C8p3bJxG.js";let c=0;class p extends n{constructor(){super(),this.warnedNoName=!1,this.selectOption=e=>{e.disabled||(this.value=e.value,this.internals.setFormValue(this.value),this.dispatchEvent(new CustomEvent("change",{detail:{value:this.value},bubbles:!0,composed:!0})))},this.onKeydown=(e,i)=>{(e.key===" "||e.key==="Enter")&&(e.preventDefault(),this.selectOption(i))},this.options=[],this.label="",this.ariaLabel=null,this.size="md",this.orientation="vertical",this.value=null,this.internals=this.attachInternals(),this.uid=`esa-radio-${++c}`}static{this.formAssociated=!0}static{this.properties={options:{type:Array},label:{type:String},ariaLabel:{type:String,attribute:"aria-label"},size:{type:String,reflect:!0},orientation:{type:String,reflect:!0},value:{type:String}}}willUpdate(e){if(e.has("options")&&typeof this.options=="string")try{this.options=JSON.parse(this.options)}catch{this.options=[]}!this.warnedNoName&&!this.label&&!this.ariaLabel&&(this.warnedNoName=!0,console.warn("<esa-radio-group> has no accessible name. Set `label` (visible) or `aria-label` (invisible) so screen readers announce the group."))}connectedCallback(){super.connectedCallback(),this.internals.setFormValue(this.value)}isSelected(e){return this.value===e}render(){const e=`${this.uid}-label`;return s`
-      ${this.label?s`<span class="group-label" id=${e}>${this.label}</span>`:null}
-      <div
-        class="items"
-        role="radiogroup"
-        aria-labelledby=${this.label?e:void 0}
-        aria-label=${!this.label&&this.ariaLabel?this.ariaLabel:void 0}
-      >
-        ${this.options.map((i,o)=>{const t=this.isSelected(i.value),a=i.disabled??!1,r=`${this.uid}-option-${o}`;return s`
+import{i as a,b as t,a as o}from"./lit-element.C8p3bJxG.js";class l extends a{constructor(){super(),this.selectOption=e=>{e.disabled||(this.value=e.value,this.internals.setFormValue(this.value),this.dispatchEvent(new CustomEvent("change",{detail:{value:this.value},bubbles:!0,composed:!0})))},this.onKeydown=(e,i)=>{(e.key===" "||e.key==="Enter")&&(e.preventDefault(),this.selectOption(i))},this.options=[],this.label="",this.size="md",this.orientation="vertical",this.value=null,this.internals=this.attachInternals()}static{this.formAssociated=!0}static{this.properties={options:{type:Array},label:{type:String},size:{type:String,reflect:!0},orientation:{type:String,reflect:!0},value:{type:String}}}willUpdate(e){if(e.has("options")&&typeof this.options=="string")try{this.options=JSON.parse(this.options)}catch{this.options=[]}}connectedCallback(){super.connectedCallback(),this.internals.setFormValue(this.value)}isSelected(e){return this.value===e}render(){return t`
+      ${this.label?t`<span class="group-label">${this.label}</span>`:null}
+      <div class="items" role="radiogroup" aria-label=${this.label}>
+        ${this.options.map(e=>{const i=this.isSelected(e.value),s=e.disabled??!1;return t`
             <label
-              class="item ${a?"item--disabled":""}"
-              @keydown=${l=>this.onKeydown(l,i)}
-              @click=${()=>this.selectOption(i)}
+              class="item ${s?"item--disabled":""}"
+              @keydown=${r=>this.onKeydown(r,e)}
+              @click=${()=>this.selectOption(e)}
             >
               <span
-                class="circle ${t?"circle--selected":""}"
+                class="circle ${i?"circle--selected":""}"
                 role="radio"
-                aria-checked=${String(t)}
-                aria-disabled=${String(a)}
-                aria-labelledby=${r}
-                tabindex=${a?-1:0}
+                aria-checked=${String(i)}
+                aria-disabled=${String(s)}
+                tabindex=${s?-1:0}
               >
                 <span class="dot"></span>
               </span>
-              <span class="item-label" id=${r}>${i.label}</span>
+              <span class="item-label">${e.label}</span>
             </label>
           `})}
       </div>
-    `}static{this.styles=d`
+    `}static{this.styles=o`
     :host {
       --_radio-size: 20px;
       --_radio-dot-size: 10px;
@@ -122,4 +116,4 @@ import{i as n,b as s,a as d}from"./lit-element.C8p3bJxG.js";let c=0;class p exte
       color: var(--color-text-primary, #171717);
       line-height: 1.4;
     }
-  `}}customElements.get("esa-radio-group")||customElements.define("esa-radio-group",p);
+  `}}customElements.get("esa-radio-group")||customElements.define("esa-radio-group",l);

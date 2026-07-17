@@ -1,1 +1,0 @@
-import"./esa-side-dialog.IokBMo7o.js";import"./lit-element.C8p3bJxG.js";import"./static.CxNnSrf9.js";const e=document.querySelector("[data-nav-drawer]");document.querySelector("[data-nav-toggle]")?.addEventListener("click",()=>e?.show());e?.addEventListener("click",t=>{t.target.closest("a")&&e.close()});

@@ -1,26 +1,26 @@
-import{i as p,b as l,a as v}from"./lit-element.C8p3bJxG.js";class u extends p{constructor(){super(),this.onKeydown=(t,a)=>{let e=null;switch(t.key){case"ArrowRight":e=this.findNextEnabledTab(a,1);break;case"ArrowLeft":e=this.findNextEnabledTab(a,-1);break;case"Home":e=this.findNextEnabledTab(-1,1);break;case"End":e=this.findNextEnabledTab(this.tabs.length,-1);break;default:return}e!==null&&(t.preventDefault(),this.selectTab(e),t.target.parentElement?.children[e]?.focus())},this.tabs=[],this.activeIndex=0,this.size="md",this.variant="underline",this.appearance="underline"}static{this.properties={tabs:{type:Array},activeIndex:{type:Number,attribute:"active-index"},size:{type:String,reflect:!0},variant:{type:String,reflect:!0},appearance:{type:String,reflect:!0}}}selectTab(t){this.tabs[t]?.disabled||(this.activeIndex=t,this.dispatchEvent(new CustomEvent("tabchange",{detail:{index:t},bubbles:!0,composed:!0})))}findNextEnabledTab(t,a){let e=t+a;for(;e>=0&&e<this.tabs.length;){if(!this.tabs[e].disabled)return e;e+=a}return null}render(){return l`
+import{i as o,b as r,a as s}from"./lit-element.C8p3bJxG.js";class n extends o{constructor(){super(),this.onKeydown=(a,e)=>{let t=null;switch(a.key){case"ArrowRight":t=this.findNextEnabledTab(e,1);break;case"ArrowLeft":t=this.findNextEnabledTab(e,-1);break;case"Home":t=this.findNextEnabledTab(-1,1);break;case"End":t=this.findNextEnabledTab(this.tabs.length,-1);break;default:return}t!==null&&(a.preventDefault(),this.selectTab(t),a.target.parentElement?.children[t]?.focus())},this.tabs=[],this.activeIndex=0,this.size="md",this.variant="underline",this.appearance="underline"}static{this.properties={tabs:{type:Array},activeIndex:{type:Number,attribute:"active-index"},size:{type:String,reflect:!0},variant:{type:String,reflect:!0},appearance:{type:String,reflect:!0}}}selectTab(a){this.tabs[a]?.disabled||(this.activeIndex=a,this.dispatchEvent(new CustomEvent("tabchange",{detail:{index:a},bubbles:!0,composed:!0})))}findNextEnabledTab(a,e){let t=a+e;for(;t>=0&&t<this.tabs.length;){if(!this.tabs[t].disabled)return t;t+=e}return null}render(){return r`
       <div class="layout">
         <div class="tabs" part="tabs" role="tablist">
-          ${this.tabs.map((t,a)=>{const e=this.activeIndex===a;return l`<button
-              class="tab ${e?"tab--active":""} ${t.disabled?"tab--disabled":""}"
+          ${this.tabs.map((a,e)=>{const t=this.activeIndex===e;return r`<button
+              class="tab ${t?"tab--active":""} ${a.disabled?"tab--disabled":""}"
               type="button"
               role="tab"
-              aria-selected=${e}
-              tabindex=${e?0:-1}
-              ?disabled=${t.disabled}
-              @click=${()=>this.selectTab(a)}
-              @keydown=${s=>this.onKeydown(s,a)}
+              aria-selected=${t}
+              tabindex=${t?0:-1}
+              ?disabled=${a.disabled}
+              @click=${()=>this.selectTab(e)}
+              @keydown=${i=>this.onKeydown(i,e)}
             >
-              ${t.icon?l`<span class="icon" .innerHTML=${t.icon}></span>`:null}
-              <span>${t.label}</span>
-              ${t.badge!=null?l`<span class="badge">${t.badge}</span>`:null}
+              ${a.icon?r`<span class="icon" .innerHTML=${a.icon}></span>`:null}
+              <span>${a.label}</span>
+              ${a.badge!=null?r`<span class="badge">${a.badge}</span>`:null}
             </button>`})}
         </div>
         <div class="panel" role="tabpanel">
           <slot name="panel-${this.activeIndex}"><slot></slot></slot>
         </div>
       </div>
-    `}static{this.styles=v`
+    `}static{this.styles=s`
     :host {
       --_tab-height: var(--tab-layout-height-md, 44px);
       --_tab-font-size: var(--type-size-200, 0.875rem);
@@ -140,4 +140,4 @@ import{i as p,b as l,a as v}from"./lit-element.C8p3bJxG.js";class u extends p{co
     :host([variant='pill']) .tab--active::after { display: none; }
 
     .panel { padding-top: var(--spacing-400, 16px); }
-  `}}customElements.get("esa-tab-layout")||customElements.define("esa-tab-layout",u);const h={"#tasks":0,"#invoices":1,"#portfolio":2},g=["#tasks","#invoices","#portfolio"],f={cor:0,"invoice-team":1,vendor:1};function x(){const i=h[window.location.hash];if(i!=null)return i;const t=new URLSearchParams(window.location.search).get("role")??"";return f[t]??0}function m(i){const t=i,a=i.dataset.titlePrefix;let e=[];try{e=JSON.parse(i.getAttribute("tabs")??"[]").map(o=>o.label)}catch{}const s=document.querySelector(".esa-page-header__title"),c=document.title.includes("—")?document.title.slice(document.title.indexOf("—")):"",d=o=>{if(!a)return;const r=e[o],n=r?`${a}: ${r}`:a;s&&(s.textContent=n),document.title=c?`${n} ${c}`:n};t.activeIndex=x(),d(t.activeIndex),t.addEventListener("tabchange",o=>{const r=o.detail?.index,n=g[r];n&&history.replaceState(null,"",n),typeof r=="number"&&d(r)});const b=".cbf-invoice-review-queue";i.addEventListener("cbf:open-invoice",async o=>{const r=o;r.target?.closest?.(b)||(t.activeIndex=1,await t.updateComplete,i.querySelector(b)?.dispatchEvent(new CustomEvent("cbf:open-invoice",{detail:r.detail})))})}document.querySelectorAll(".cbf-mywork-tabs").forEach(m);
+  `}}customElements.get("esa-tab-layout")||customElements.define("esa-tab-layout",n);

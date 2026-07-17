@@ -1,3 +1,17 @@
+// bcn-lego-checked: this is the render layer for a large, organically-grown prototype —
+// most sidebar/wizard markup is built as innerHTML strings (predates component-first).
+// All type="text" fields (descriptions, names) and the type="number" fields that don't
+// need min/max/step (fInput() and its callers) are now esa-text-field. Native
+// type="number" fields that DO rely on min/step (piece counts, depths, widths, etc.)
+// are intentionally left raw: esa-text-field has no min/max/step passthrough at all
+// (checked its render() — only type/value/placeholder/disabled/required reach the
+// internal input), and dropping that validation/spinner affordance on quantity fields
+// is a real functional loss, not just a style change. #map-search-input (a Leaflet
+// map-surface search control, not a form field) is also intentionally left raw — an
+// esa-text-field's bordered/padded chrome doesn't fit a transparent control embedded
+// in a compact toolbar row next to an icon button. Don't take this comment as blanket
+// cover for new bespoke input markup.
+
 // ── PP metric definitions ─────────────────────────────────────────────────
 var PP_DEFS = [
   {id:'perimeter', label:'Project Perimeter',           geo:'polygon', method:'measured', multi:0, segment:false, desc:'Generalized boundary of the project footprint.'},
@@ -50,8 +64,30 @@ var chuPendingPoolDownId = null; // ID of downstream piece from first split
 var chuDrawPts = [];    // pts being drawn for current split line
 var chuSnapDist = 15;   // px snap distance to area_ch boundary
 
+// Leaflet's map panning (and any Leaflet-draggable marker) treats a mousedown+mouseup
+// as a real click only if the pointer moved less than this many px — default is 3,
+// which is easy to exceed by accident (trackpad jitter, a slightly-shaky click) and
+// silently drops the click instead of, say, placing a drawn vertex. Raising it globally
+// via mergeOptions (Leaflet's supported way to change a class's defaults) makes clicks
+// more forgiving everywhere without touching the custom vertex-edit-handle drag code,
+// which uses its own raw mousemove/mouseup listeners rather than L.Draggable.
+L.Draggable.mergeOptions({ clickTolerance: 10 });
+
 // ── Init ──────────────────────────────────────────────────────────────────
 window.onload = function() {
+  // Welcome modal is open by default (see the `open` attribute in
+  // cbf-msow-modals.astro). Dismissing it any way — the Continue button, Esc,
+  // or a backdrop click — should still land the user on a default work element.
+  document.getElementById('welcome-modal').addEventListener('close', function() {
+    createDefaultWE();
+  }, { once: true });
+
+  // esa-tab-layout only updates its own internal active-tab state on click — it
+  // doesn't know about #pp-side/#work-side, so route its event into showInnerTab().
+  document.getElementById('inner-tabbar').addEventListener('tabchange', function(e) {
+    showInnerTab(e.detail.index === 0 ? 'pp' : 'work');
+  });
+
   map = L.map('map', {center:[46.5,-120.5], zoom:7, doubleClickZoom:false});
   L.control.scale({imperial:true, metric:true, position:'bottomright'}).addTo(map);
 
@@ -318,7 +354,8 @@ function newWEData() {
 function openWEModal(editId) {
   weModalEditId = editId;
   var we = editId ? getWE(editId) : null;
-  document.getElementById('we-modal-title').textContent = editId ? 'Edit Work Element' : 'New Work Element';
+  var dialog = document.getElementById('we-modal');
+  dialog.heading = editId ? 'Edit Work Element' : 'New Work Element';
   var nameField = document.querySelector('#we-modal esa-text-field');
   if (nameField) nameField.value = we ? we.name : '';
   ['pc','fp','rr'].forEach(function(t) {
@@ -327,12 +364,12 @@ function openWEModal(editId) {
     document.getElementById('opt-'+t).classList.toggle('selected', sel);
   });
   document.getElementById('we-modal-err').style.display = 'none';
-  document.getElementById('we-modal').style.display = 'flex';
+  dialog.show();
   setTimeout(function(){if (nameField) nameField.focus();}, 50);
 }
 
 function closeWEModal() {
-  document.getElementById('we-modal').style.display = 'none';
+  document.getElementById('we-modal').close();
   // Restore focus to add button
   var btn = document.getElementById('add-we-btn');
   if (btn) btn.focus();
@@ -699,14 +736,8 @@ function allWELayers(we) {
 // ── Inner tab ─────────────────────────────────────────────────────────────
 function showInnerTab(t) {
   activeInnerTab = t;
-  var ppTab  = document.getElementById('itab-pp');
-  var wkTab  = document.getElementById('itab-work');
-  ppTab.classList.toggle('active', t==='pp');
-  wkTab.classList.toggle('active', t==='work');
-  ppTab.setAttribute('aria-selected', t==='pp' ? 'true' : 'false');
-  wkTab.setAttribute('aria-selected', t==='work' ? 'true' : 'false');
-  ppTab.setAttribute('tabindex', t==='pp' ? '0' : '-1');
-  wkTab.setAttribute('tabindex', t==='work' ? '0' : '-1');
+  var tabbar = document.getElementById('inner-tabbar');
+  if (tabbar) tabbar.activeIndex = (t === 'pp') ? 0 : 1;
   var ppEl  = document.getElementById('pp-side');
   var wkEl  = document.getElementById('work-side');
   if (t === 'pp') {
@@ -850,7 +881,7 @@ function renderPMRow(m) {
     if (m.inputType==='select') {
       h+='<select class="pm-input" onchange="ppSetVal(\''+m.id+'\',this.value)">'+(m.opts||[]).map(function(o){return '<option'+(o===val?' selected':'')+'>'+o+'</option>';}).join('')+'</select>';
     } else {
-      h+='<input type="'+m.inputType+'" class="pm-input" value="'+(val||'')+'" placeholder="Enter value..." onchange="ppSetVal(\''+m.id+'\',this.value)"/>';
+      h+='<esa-text-field type="'+m.inputType+'" class="pm-input" value="'+(val||'')+'" placeholder="Enter value..." size="sm" onchange="ppSetVal(\''+m.id+'\',this.value)"></esa-text-field>';
     }
     if (val) h+='<span class="pm-result">&#10003; '+val+'</span>';
   } else if (m.method==='measured') {
@@ -1574,13 +1605,21 @@ function clipRingToPerimeter(ring, perimPts) {
 
 // Clip drawn points to the project perimeter (if one exists).
 // geo: 'line'|'segment' → clipLineToPolygon; 'polygon' → clipRingToPerimeter.
-// Returns original pts unchanged when no perimeter is drawn yet.
+// Returns original pts unchanged when no perimeter is drawn yet. Returns null when the
+// drawn shape is genuinely entirely outside the perimeter — callers must reject that
+// rather than committing whatever this function returns.
 function clipPtsToPerimeter(we, pts, geo) {
   var perimD = we && we.ppData['perimeter'];
   if (!perimD || !perimD.layer) return pts;
   var perimLLs = perimD.layer.getLatLngs();
   if (perimLLs.length && Array.isArray(perimLLs[0])) perimLLs = perimLLs[0];
   if (!perimLLs || perimLLs.length < 3) return pts;
+
+  // Check this BEFORE attempting to clip — clipRingToPerimeter in particular falls back
+  // to returning the original (unclipped) ring internally when it can't produce a clean
+  // result, which would otherwise mask a shape that's genuinely entirely outside.
+  var anyInside = pts.some(function(p){ return ptOnOrInsidePoly(p, perimLLs); });
+  if (!anyInside) return null;
 
   if (geo === 'polygon') {
     var cp = clipRingToPerimeter(pts, perimLLs);
@@ -1589,6 +1628,18 @@ function clipPtsToPerimeter(we, pts, geo) {
     var cl = clipLineToPolygon(pts, perimLLs);
     return (cl && cl.length >= 2) ? cl : pts;
   }
+}
+
+// Point placements (structures, gravel, etc.) can't be clipped like a line/polygon —
+// there's nothing to trim to, so reject the click outright instead. Returns true when
+// there's no perimeter drawn yet (nothing to bound against).
+function isPtInsidePerimeter(we, latlng) {
+  var perimD = we && we.ppData['perimeter'];
+  if (!perimD || !perimD.layer) return true;
+  var perimLLs = perimD.layer.getLatLngs();
+  if (perimLLs.length && Array.isArray(perimLLs[0])) perimLLs = perimLLs[0];
+  if (!perimLLs || perimLLs.length < 3) return true;
+  return ptOnOrInsidePoly(latlng, perimLLs);
 }
 
 // Re-clip the primary channel (pc-reach SOW layer) to the current perimeter.
@@ -2027,8 +2078,8 @@ function updatePPProgress() {
   var pct=total?Math.round(done/total*100):0;
   var pb=document.getElementById('pp-prog'); if(pb)pb.style.width=pct+'%';
   var pp=document.getElementById('pp-prog-pct'); if(pp)pp.textContent=pct+'%';
-  document.getElementById('pp-badge').textContent=done+'/'+total;
-  document.getElementById('pp-badge').className='badge'+(pct===100?'':' warn');
+  var tabbar=document.getElementById('inner-tabbar');
+  if (tabbar) tabbar.tabs = [{label:'Pre-Project', badge:done+'/'+total}, {label:'Habitat Work'}];
   updatePPSteps();
   wizardRefreshIfActive();
 }
@@ -2202,6 +2253,42 @@ function flipReachDirection(weArg) {
 
   var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
   renderPMRow(m); rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
+}
+
+// Manual override for the primary (designed) channel's own flow direction — same
+// rationale as flipReachDirection() above, but for the pc-reach line drawn in the
+// Primary Channel section rather than the pre-project reach.
+function flipPCReachDirection(weArg) {
+  var we = weArg || getActiveWE();
+  var pc = we && getActivePC(we);
+  var sl = pc && pc.sowLayers['pc-reach'];
+  if (!sl || !sl.layer) return;
+  var pts = sl.layer.getLatLngs();
+  if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+  pts = pts.slice().reverse();
+  map.removeLayer(sl.layer);
+  var col = pcChannelColor(we, we.activePCId);
+  var tipLabel = sl.label || 'Primary Channel';
+  if (we.primaryChannels.length > 1) tipLabel += ' (' + pc.name + ')';
+  sl.layer = L.polyline(pts, {color:col, weight:2.5, interactive:true}).bindTooltip(tipLabel).addTo(map);
+
+  // Keep an already-computed elevation profile in sync with the new direction.
+  var sd = pc.sowElev;
+  if (sd && sd._profile) {
+    sd._profile = sd._profile.slice().reverse();
+    var tmp = sd._upstreamElev; sd._upstreamElev = sd._downstreamElev; sd._downstreamElev = tmp;
+    sd._elevChangeM = sd._upstreamElev - sd._downstreamElev;
+    var reachLenM = sl.valueM || 1;
+    sd._slopePct = (sd._elevChangeM / reachLenM) * 100;
+    sd._slopeDeg = Math.atan(sd._elevChangeM / reachLenM) * (180 / Math.PI);
+    if (!pc.sowLayers['pc-slope']) pc.sowLayers['pc-slope'] = {};
+    pc.sowLayers['pc-slope'].value = sd._slopeDeg.toFixed(3);
+  }
+
+  addPCReachArrow(we);
+  updatePCBuffer(we);
+  rerenderCalcs(); updateSOWCalcs();
+  if (wizardMode) wizardRefreshIfActive();
 }
 
 function drawElevChart(canvasId, elevs) {
@@ -2385,6 +2472,15 @@ function finishPPDraw() {
   var pts=drawPts.slice();drawPts=[];
   var NO_CLIP_PP = {perimeter:1, ch_width:1};
   if(!NO_CLIP_PP[m.id]) pts=clipPtsToPerimeter(we,pts,m.geo);
+  if (!pts) {
+    ppDrawing=null;
+    clearPreview();
+    document.getElementById('mapwrap').classList.remove('drawing');
+    setMapHint('That falls entirely outside your project boundary — not saved. Try drawing again inside the boundary.');
+    renderPMRow(m);
+    if (wizardMode) wizardRefreshIfActive();
+    return;
+  }
   var col=PP_COLOR[m.geo]||'#c07820';
   if(m.id==='fp_left') col='#2a7a5c';
   if(m.id==='fp_right') col='#5c2a7a';
@@ -2725,7 +2821,7 @@ function fRow(label, id, geo, drawLabel) {
     '<div id="dr-'+id+'"></div></div>';
 }
 function fInput(label, id) {
-  return '<div class="f-row"><label>'+label+'</label><input type="number" id="f-'+id+'" placeholder="0" oninput="onFInputChange(\''+id+'\',this.value)"/></div>';
+  return '<div class="f-row"><esa-text-field label="'+label+'" type="number" id="f-'+id+'" placeholder="0" size="sm" onchange="onFInputChange(\''+id+'\',this.value)"></esa-text-field></div>';
 }
 function fCalc(label, id) {
   return '<div class="f-row"><label>'+label+'</label><div class="f-calc" id="calc-'+id+'">—</div></div>';
@@ -2829,6 +2925,7 @@ function startSOWDraw(id,geo,label) {
   var we=getActiveWE();if(!we)return;
   var owner=sowOwner(we,id);
   if(lineEditing){cancelLineEdit();}
+  if(wetlandAutoDetecting){cancelWetlandAutoDetect();}
   if(owner.sowLayers[id]&&owner.sowLayers[id].layer)map.removeLayer(owner.sowLayers[id].layer);
   if(owner.sowLayers[id]&&owner.sowLayers[id]._labelMarker)map.removeLayer(owner.sowLayers[id]._labelMarker);
   sowDrawing={id:id,geo:geo,label:label,weId:activeWEId};
@@ -2879,8 +2976,14 @@ function clipDrawnPolygonToExistingWetlands(we, pts) {
 
 function finishSOWDraw() {
   if(!sowDrawing)return;
+  var d=sowDrawing;
+  // Mirror finishPPDraw's vertex-count guard — without it, finishing a draw with too few
+  // points (e.g. clicking Done right after starting, or right after a stray reset) falls
+  // through to clipPtsToPerimeter with an empty/too-short array and throws.
+  if((d.geo==='line'||d.geo==='segment')&&drawPts.length<2)return;
+  if(d.geo==='polygon'&&drawPts.length<3)return;
   var we=getWE(sowDrawing.weId);if(!we)return;
-  var d=sowDrawing,col=SOW_COLOR[d.geo]||'#1a3a5c';
+  var col=SOW_COLOR[d.geo]||'#1a3a5c';
   // Color primary-channel geometry per channel so multiple channels stay distinguishable
   if (d.id && d.id.substring(0,2)==='pc') col = pcChannelColor(we, we.activePCId);
   // Wetlands get their own dedicated colors (see WETLAND_COLOR) rather than the
@@ -2891,6 +2994,26 @@ function finishSOWDraw() {
   var pts=drawPts.slice();drawPts=[];clearPreview();
   var NO_CLIP_SOW = {pcw1:1,pcw2:1,pcw3:1};
   if(!NO_CLIP_SOW[d.id]) pts=clipPtsToPerimeter(we,pts,d.geo);
+  if (!pts) {
+    sowDrawing=null;
+    document.getElementById('mapwrap').classList.remove('drawing');
+    setMapHint('That falls entirely outside your project boundary — not saved. Try drawing again inside the boundary.');
+    if (we.sowLayers[d.id]) {
+      // This was a "redo" of a previously-successful shape — startSOWDraw already
+      // removed the old layer/marker from the map in anticipation of a new one, so
+      // don't leave stale acreage/length sitting here referring to geometry that's
+      // no longer actually on the map.
+      delete we.sowLayers[d.id];
+    } else if (enhRef) {
+      // Brand-new multi-entry item (wetland, road removal, etc.) that never got real
+      // geometry — undo the optimistic push from wizardAddFPMultiItem so no permanent
+      // "not drawn" phantom row lingers and inflates every later item's number.
+      we.fpMulti[enhRef.key] = we.fpMulti[enhRef.key].filter(function(x){ return x.id !== d.id; });
+      renumberFPMultiLabels(we, enhRef.key);
+    }
+    if (wizardMode) wizardRefreshIfActive();
+    return;
+  }
 
   // Wetland Enhancement polygons get clipped to existing wetland extent instead of
   // being committed as a plain drawn polygon — handle that here and return early.
@@ -3201,8 +3324,18 @@ function renumberFPMultiLabels(we, key) {
   var items = (we.fpMulti && we.fpMulti[key]) || [];
   items.forEach(function(item, i) {
     var sl = we.sowLayers[item.id];
-    if (sl && sl._labelMarker) {
+    if (!sl) return;
+    if (sl._labelMarker) {
       sl._labelMarker.setIcon(fpMultiLabelIcon(i + 1, sl._labelMarker._fpLabelColor));
+    }
+    // The layer's own hover tooltip and stored label were baked in with whatever number
+    // the item had at draw time — regenerate both so hovering the shape doesn't show a
+    // stale number once items get deleted/reordered.
+    var base = (sl.label || '').replace(/\s+\d+$/, '');
+    if (base) {
+      var newLabel = base + ' ' + (i + 1);
+      sl.label = newLabel;
+      if (sl.layer && sl.layer.setTooltipContent) sl.layer.setTooltipContent(newLabel);
     }
   });
 }
@@ -3307,7 +3440,7 @@ function renderFPStructures() {
       + '</span></div>'
       + '<div class="f-row"><label>Structure type</label>'+typeSelect+'</div>'
       + '<div class="f-row"><label>Location</label>'+locHTML+'</div>'
-      + '<div class="f-row"><label>Description</label><input type="text" value="'+s.desc+'" placeholder="e.g. Engineered log jam" oninput="updateFPStructure(\''+s.id+'\',\'desc\',this.value)"/></div>'
+      + '<div class="f-row"><esa-text-field label="Description" value="'+s.desc+'" placeholder="e.g. Engineered log jam" size="sm" onchange="updateFPStructure(\''+s.id+'\',\'desc\',this.value)"></esa-text-field></div>'
       + '<div class="f-row"><label># Large pieces (&gt;12&quot; dia)</label><input type="number" value="'+s.large+'" placeholder="0" oninput="updateFPStructure(\''+s.id+'\',\'large\',+this.value)"/></div>'
       + '<div class="f-row"><label># Small pieces (&lt;12&quot; dia)</label><input type="number" value="'+s.small+'" placeholder="0" oninput="updateFPStructure(\''+s.id+'\',\'small\',+this.value)"/></div>';
     el.appendChild(div);
@@ -3415,7 +3548,7 @@ function renderAllStructures() {
       + '</span></div>'
       + '<div class="f-row"><label>Structure type</label>'+typeSelect+'</div>'
       + '<div class="f-row"><label>Location</label>'+locHTML+'</div>'
-      + '<div class="f-row"><label>Description</label><input type="text" value="'+s.desc+'" placeholder="e.g. Single-key LWD jam" oninput="updateStructFlat(\''+s.id+'\',\'desc\',this.value)"/></div>'
+      + '<div class="f-row"><esa-text-field label="Description" value="'+s.desc+'" placeholder="e.g. Single-key LWD jam" size="sm" onchange="updateStructFlat(\''+s.id+'\',\'desc\',this.value)"></esa-text-field></div>'
       + '<div class="f-row"><label># Large pieces (&gt;12&quot; dia)</label><input type="number" value="'+s.large+'" placeholder="0" oninput="updateStructFlat(\''+s.id+'\',\'large\',+this.value)"/></div>'
       + '<div class="f-row"><label># Small pieces (&lt;12&quot; dia)</label><input type="number" value="'+s.small+'" placeholder="0" oninput="updateStructFlat(\''+s.id+'\',\'small\',+this.value)"/></div>';
     el.appendChild(div);
@@ -3507,7 +3640,7 @@ function renderStructures(type) {
     div.innerHTML='<div class="multi-entry-head">Structure '+globalNum+'<span style="display:flex;gap:6px;align-items:center"><span class="multi-entry-clone" title="Clone" onclick="cloneStructure(\''+type+'\',\''+s.id+'\')">&#10064;</span><span class="multi-entry-del" onclick="delStructure(\''+type+'\',\''+s.id+'\')">&#10005;</span></span></div>'+
       '<div class="f-row"><label>Structure type</label>'+typeSelect+'</div>'+
       '<div class="f-row"><label>Location</label>'+locHTML+'</div>'+
-      '<div class="f-row"><label>Description</label><input type="text" value="'+s.desc+'" placeholder="e.g. Single-key LWD jam" oninput="updateStructure(\''+type+'\',\''+s.id+'\',\'desc\',this.value)"/></div>'+
+      '<div class="f-row"><esa-text-field label="Description" value="'+s.desc+'" placeholder="e.g. Single-key LWD jam" size="sm" onchange="updateStructure(\''+type+'\',\''+s.id+'\',\'desc\',this.value)"></esa-text-field></div>'+
       '<div class="f-row"><label># Large pieces (&gt;12&quot; dia)</label><input type="number" value="'+s.large+'" placeholder="0" oninput="updateStructure(\''+type+'\',\''+s.id+'\',\'large\',+this.value)"/></div>'+
       '<div class="f-row"><label># Small pieces (&lt;12&quot; dia)</label><input type="number" value="'+s.small+'" placeholder="0" oninput="updateStructure(\''+type+'\',\''+s.id+'\',\'small\',+this.value)"/></div>';
     el.appendChild(div);
@@ -3576,6 +3709,10 @@ function replaceStructPoint(type,id) {
 function placeStructPoint(latlng) {
   if(!pendingStructPoint)return;
   var we=getWE(pendingStructPoint.weId);if(!we)return;
+  if (!isPtInsidePerimeter(we, latlng)) {
+    setMapHint('That\'s outside your project boundary — click map to place structure location');
+    return;
+  }
   var type=pendingStructPoint.type,id=pendingStructPoint.id;
   var owner=structOwner(we,type);
   var s = (owner.structs && owner.structs.filter(function(x){return x.id===id;})[0])
@@ -3621,6 +3758,7 @@ function startPolyEdit(id) {
     buildPolyEditHandles(d.layer, d._pts.slice());
     document.getElementById('edit-done-bar').style.display='flex';
     document.getElementById('mapwrap').classList.add('editing');
+    repositionMapOverlays();
     if (wizardMode) renderWizardStep();
     return;
   }
@@ -3636,6 +3774,7 @@ function startPolyEdit(id) {
     buildPolyEditHandles(d.layer, d._pts.slice());
     document.getElementById('edit-done-bar').style.display='flex';
     document.getElementById('mapwrap').classList.add('editing');
+    repositionMapOverlays();
     if (wizardMode) renderWizardStep();
     return;
   }
@@ -3668,7 +3807,7 @@ function startPolyEdit(id) {
   var ring = d.layer.getLatLngs();
   if (ring.length && Array.isArray(ring[0])) ring = ring[0];
   buildPolyEditHandles(d.layer, ring);
-  document.getElementById('edit-done-bar').style.display = 'flex'; document.getElementById('mapwrap').classList.add('editing');
+  document.getElementById('edit-done-bar').style.display = 'flex'; document.getElementById('mapwrap').classList.add('editing'); repositionMapOverlays();
   renderPMRow(m);
 }
 
@@ -3793,7 +3932,7 @@ function startLineEdit(type, id) {
   lineEditing = {type: type, id: id, weId: activeWEId, layer: layer};
   buildEditHandles(layer);
   setMapHint('');
-  document.getElementById('edit-done-bar').style.display = 'flex'; document.getElementById('mapwrap').classList.add('editing');
+  document.getElementById('edit-done-bar').style.display = 'flex'; document.getElementById('mapwrap').classList.add('editing'); repositionMapOverlays();
   var ddb = document.getElementById('draw-done-btn'); if (ddb) ddb.style.display = 'none';
   // Hide reach arrows during editing — recalculated on commit
   if (id === 'reach_len') { var _weE=getWE(activeWEId); var _rdE=_weE&&_weE.ppData['reach_len']; if(_rdE&&_rdE._arrowMarkers) _rdE._arrowMarkers.forEach(function(a){if(a)a.setOpacity(0);}); }
@@ -4268,6 +4407,10 @@ function startGravelPoint(placementId) {
 function placeGravelPoint(latlng) {
   if (!pendingGravelPoint) return;
   var we = getWE(pendingGravelPoint.weId); if (!we) return;
+  if (!isPtInsidePerimeter(we, latlng)) {
+    setMapHint('That\'s outside your project boundary — click map to place gravel placement location');
+    return;
+  }
   var p = getActivePC(we).gravelPlacements.filter(function(x){return x.id===pendingGravelPoint.placementId;})[0];
   pendingGravelPoint = null;
   document.getElementById('mapwrap').classList.remove('drawing');
@@ -4821,7 +4964,12 @@ var reachAutoLayers = []; // temp highlight layers for detected streams
 function startReachAutoDetect() {
   var we = getActiveWE(); if (!we) return;
   if (lineEditing) cancelLineEdit();
+  // Cancel any in-progress manual draw fully — nulling the flags alone leaves stale
+  // clicked vertices and a dangling preview line on the map (same class of bug fixed
+  // for the wetland step's Auto-Detect/+Add conflict).
   ppDrawing = null; sowDrawing = null; chuDrawing = false;
+  drawPts = []; clearPreview();
+  document.querySelectorAll('.draw-btn').forEach(function(b){b.classList.remove('active');});
   // Clear any existing manually-drawn reach before re-detecting
   if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
   var rd = we.ppData['reach_len'];
@@ -4979,12 +5127,16 @@ function loadNHDPreview() {
     '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects' +
     '&outFields=gnisidlabel&returnGeometry=true&outSR=4326&f=json';
 
+  // Each fetch swallows its own failure into an empty-features fallback (so one bad
+  // service doesn't kill the other), but tags _failed so the combined handler below can
+  // still tell "genuinely no candidates nearby" apart from "couldn't reach the service".
   Promise.all([
-    fetch(url).then(function(r){ return r.json(); }).catch(function(){ return {features:[]}; }),
-    fetch(wbUrl).then(function(r){ return r.json(); }).catch(function(){ return {features:[]}; })
+    fetch(url).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).catch(function(){ return {features:[], _failed:true}; }),
+    fetch(wbUrl).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).catch(function(){ return {features:[], _failed:true}; })
   ]).then(function(results) {
     if (!reachAutoDetecting) return;
     var data = results[0], wbData = results[1];
+    var anyFailed = data._failed || wbData._failed || data.error || wbData.error;
     if (data.error) { data = {features:[]}; }
     if (wbData.error) { wbData = {features:[]}; }
 
@@ -5002,15 +5154,19 @@ function loadNHDPreview() {
           var lyr = L.polyline(pts, {
             color: isMajor ? '#1a9abf' : '#4a8abf',
             weight: isMajor ? 5 : 3,
-            opacity: 0.7, interactive: true
+            opacity: 0.7, interactive: false
           });
-          lyr.bindTooltip(feat.attributes.gnisidlabel || 'Unnamed stream', {sticky: true});
-          lyr.on('click', function(e) {
+          layers.push(lyr);
+          // Invisible, much wider companion carries the actual hover/click — the
+          // thin visible line above is too precise a target to click reliably.
+          var hitLyr = L.polyline(pts, {weight: 20, opacity: 0.001, interactive: true});
+          hitLyr.bindTooltip(feat.attributes.gnisidlabel || 'Unnamed stream', {sticky: true});
+          hitLyr.on('click', function(e) {
             L.DomEvent.stop(e);
             if (!reachAutoDetecting) return;
             reachAutoClickFeature(feat, e.latlng);
           });
-          layers.push(lyr);
+          layers.push(hitLyr);
         });
       });
     }
@@ -5064,7 +5220,9 @@ function loadNHDPreview() {
     }
 
     if (!layers.length && !wbLayers.length) {
-      setMapHint('Click on or near a stream to auto-detect it');
+      setMapHint(anyFailed
+        ? 'Couldn\'t reach the NHD stream service — it may be temporarily down. Try again shortly, or draw manually.'
+        : 'Click on or near a stream to auto-detect it');
       return;
     }
     // Add each layer directly to map (not via layerGroup) so click events work reliably
@@ -5076,7 +5234,8 @@ function loadNHDPreview() {
     setMapHint('Click a highlighted stream to select it');
   }).catch(function(err) {
     console.warn('[NHDPreview] fetch failed:', err);
-    setMapHint('Click on or near a stream to auto-detect it');
+    if (!reachAutoDetecting) return;
+    setMapHint('Couldn\'t reach the NHD stream service — it may be temporarily down. Try again shortly, or draw manually.');
   });
 }
 
@@ -5254,6 +5413,14 @@ function clearWetlandAutoLayers() {
 
 function startWetlandAutoDetect() {
   var we = getActiveWE(); if (!we) return;
+  // Cancel any in-progress manual polygon draw first (e.g. from "+ Add Wetland area") —
+  // otherwise both modes stay active at once and the user gets stuck with no way to
+  // finish either one.
+  if (sowDrawing) {
+    sowDrawing = null; drawPts = []; clearPreview();
+    document.getElementById('mapwrap').classList.remove('drawing');
+    document.querySelectorAll('.draw-btn').forEach(function(b){b.classList.remove('active');});
+  }
   wetlandAutoDetecting = true;
   if (wizardMode) renderWizardStep();
   loadWetlandPreview();
@@ -5273,6 +5440,7 @@ function loadWetlandPreview() {
   // and the service returns too many (or zero, once past its record cap) features.
   if (zoom < 11) {
     setMapHint('Zoom in to level 11+ (currently '+zoom+'), then click Auto-Detect again');
+    if (wizardMode) wizardRefreshIfActive();
     return;
   }
   var bounds = map.getBounds();
@@ -5297,10 +5465,14 @@ function loadWetlandPreview() {
     '&returnGeometry=true&outSR=4326&f=json';
 
   setMapHint('Loading NWI wetlands...');
-  fetch(url).then(function(r){ return r.json(); }).then(function(data) {
+  fetch(url).then(function(r){
+    if (!r.ok) throw new Error('NWI service returned HTTP ' + r.status);
+    return r.json();
+  }).then(function(data) {
     if (!wetlandAutoDetecting) return;
     if (data.error || !data.features || !data.features.length) {
-      setMapHint(data.error ? 'NWI query failed — try a smaller area or draw manually' : 'No mapped wetlands found in this view');
+      setMapHint(data.error ? 'NWI service returned an error — try a smaller area, try again shortly, or draw manually' : 'No mapped wetlands found in this view');
+      if (wizardMode) wizardRefreshIfActive();
       return;
     }
     data.features.forEach(function(feat) {
@@ -5323,9 +5495,15 @@ function loadWetlandPreview() {
       wetlandAutoLayers.push(lyr);
     });
     setMapHint(wetlandAutoLayers.length ? 'Click a highlighted wetland to add it' : 'No mapped wetlands found in this view');
+    if (wizardMode) wizardRefreshIfActive();
   }).catch(function(err) {
     console.warn('[NWI] fetch failed:', err);
-    setMapHint('NWI query failed — try again or draw manually');
+    if (!wetlandAutoDetecting) return;
+    // A blocked/rejected fetch (network error, CORS, or the service itself down) all
+    // surface identically as a generic TypeError here — the browser hides the actual
+    // status once a response is blocked, so we can't say more specifically what failed.
+    setMapHint('Couldn\'t reach the NWI wetlands service — it may be temporarily down. Try again shortly, or draw manually.');
+    if (wizardMode) wizardRefreshIfActive();
   });
 }
 
@@ -5580,10 +5758,13 @@ function processAutoDetectResults(we, data, latlng, envelope, wbName) {
 
     if (primaryChain) {
       var name = targetName || wbName || 'Stream';
-      var layer = L.polyline(primaryChain.pts, {color:'#1a9abf', weight:4, opacity:0.8, interactive:true})
-        .bindTooltip(name + ' (' + primaryChain.features.length + ' segments)').addTo(map);
-      layer.on('click', function(e){ L.DomEvent.stop(e); acceptAutoReach(0); });
+      var layer = L.polyline(primaryChain.pts, {color:'#1a9abf', weight:4, opacity:0.8, interactive:false}).addTo(map);
       reachAutoLayers.push(layer);
+      // Invisible, wider companion carries the click/hover — see note above.
+      var hitLine = L.polyline(primaryChain.pts, {weight:20, opacity:0.001, interactive:true})
+        .bindTooltip(name + ' (' + primaryChain.features.length + ' segments)').addTo(map);
+      hitLine.on('click', function(e){ L.DomEvent.stop(e); acceptAutoReach(0); });
+      reachAutoLayers.push(hitLine);
       results.push({name: name, pts: primaryChain.pts, layer: layer});
     }
 
@@ -5675,6 +5856,17 @@ function reachExtendClick(latlng) {
     var dStartToStart= reachStart.distanceTo(newStart);
     var dStartToEnd  = reachStart.distanceTo(newEnd);
     var minD = Math.min(dEndToStart, dEndToEnd, dStartToStart, dStartToEnd);
+    // The clicked segment is just whatever NHD feature has a vertex nearest the click —
+    // it may not actually touch the reach at all. Unlike buildConnectedChains() (which
+    // only stitches segments within its SNAP tolerance), this used to concatenate
+    // regardless of distance, drawing a straight "phantom" line to whichever endpoint
+    // was least-far when nothing genuinely connects.
+    var MAX_CONNECT_M = 50;
+    if (minD > MAX_CONNECT_M) {
+      clearReachAutoLayers();
+      setMapHint('That segment doesn\'t connect to your reach — click a segment nearer the end you want to extend');
+      return;
+    }
     var combinedPts;
     if (minD === dEndToStart)   combinedPts = existPts.concat(newPts);
     else if (minD === dEndToEnd)   combinedPts = existPts.concat(newPts.slice().reverse());
@@ -5683,12 +5875,15 @@ function reachExtendClick(latlng) {
 
     // Show preview
     var name = (bestFeat.attributes.gnisidlabel||'segment');
-    var preview = L.polyline(newPts, {color:'#c07820', weight:3, dashArray:'6,3', interactive:true})
-      .bindTooltip('Append "'+name+'" — click to confirm').addTo(map);
+    var preview = L.polyline(newPts, {color:'#c07820', weight:3, dashArray:'6,3', interactive:false}).addTo(map);
     reachAutoLayers.push(preview);
+    // Invisible, wider companion carries the click/hover — see note above.
+    var previewHit = L.polyline(newPts, {weight:20, opacity:0.001, interactive:true})
+      .bindTooltip('Append "'+name+'" — click to confirm').addTo(map);
+    reachAutoLayers.push(previewHit);
 
     // Confirm on click of preview
-    preview.on('click', function(e) {
+    previewHit.on('click', function(e) {
       L.DomEvent.stop(e);
       clearReachAutoLayers();
       // Rebuild reach with combined pts
@@ -5890,7 +6085,7 @@ function renderChannelReaches() {
     h += '</span></div>';
 
     if (!r.collapsed) {
-      h += '<div class="f-row"><label>Name</label><input type="text" value="'+r.name+'" placeholder="e.g. Main Channel" style="font-size:12px" oninput="updateCRName(&apos;'+r.id+'&apos;,this.value)"/></div>';
+      h += '<div class="f-row"><esa-text-field label="Name" value="'+r.name+'" placeholder="e.g. Main Channel" size="sm" onchange="updateCRName(&apos;'+r.id+'&apos;,this.value)"></esa-text-field></div>';
 
       // Reach Length
       var rl = r.sowLayers['pc-reach'];
@@ -6073,7 +6268,7 @@ var crDrawing = null; // {reachId, key, geo, label}
 function startCRDraw(reachId, key, geo, label) {
   var we = getActiveWE(); if (!we) return;
   if (lineEditing) cancelLineEdit();
-  if (sowDrawing) { sowDrawing = null; }
+  ppDrawing = null; sowDrawing = null;
   crDrawing = {reachId: reachId, key: key, geo: geo, label: label, weId: we.id};
   drawPts = [];
   document.getElementById('mapwrap').classList.add('drawing');
@@ -6091,6 +6286,12 @@ function finishCRDraw() {
   var pts = drawPts.slice(); drawPts = [];
   var NO_CLIP_CR = {pcw1:1,pcw2:1,pcw3:1};
   if(!NO_CLIP_CR[crDrawing.key]) pts = clipPtsToPerimeter(we, pts, geo);
+  if (!pts) {
+    crDrawing = null;
+    document.getElementById('mapwrap').classList.remove('drawing');
+    setMapHint('That falls entirely outside your project boundary — not saved.');
+    return;
+  }
   var key = crDrawing.key;
   var label = crDrawing.label;
   var noDisplay = {pcw1:1, pcw2:1, pcw3:1};
@@ -6235,6 +6436,7 @@ function startCRPolyEdit(reachId) {
   lineEditing = {type:'cr-poly', id:'pc-area', reachId:reachId, weId:we.id, layer:sl.layer};
   buildPolyEditHandles(sl.layer);
   document.getElementById('edit-done-bar').style.display='flex'; document.getElementById('mapwrap').classList.add('editing');
+  repositionMapOverlays();
 }
 
 function fetchCRElevProfile(reachId) {
@@ -6308,7 +6510,7 @@ function startCRGravelDraw(reachId, idx) {
     return;
   }
   if (lineEditing) cancelLineEdit();
-  if (sowDrawing) sowDrawing = null;
+  ppDrawing = null; sowDrawing = null;
   crDrawing = {reachId: reachId, key: 'pc-gravel', geo: 'gravel-perp', label: 'Gravel Placement', weId: we.id, gravelIdx: idx, clicks: []};
   drawPts = [];
   document.getElementById('mapwrap').classList.add('drawing');
@@ -6445,7 +6647,7 @@ function enterPreTrimStep(pts, skipFit) {
   if (reachTrimLayer) map.removeLayer(reachTrimLayer);
   reachTrimLayer = L.polyline(pts, {color:'#1a9abf', weight:3, dashArray:'6,4', interactive:false}).addTo(map);
   if (!skipFit) map.fitBounds(L.polyline(pts).getBounds(), {padding:[60,60]});
-  setMapHint('Wrong stream? Click <b>Re-detect</b> in the sidebar. Otherwise extend if needed, then click <b>Pick endpoints</b>');
+  setMapHint('Wrong stream? Click <b>Try different stream</b> in the sidebar. Otherwise extend if needed, then click <b>Pick endpoints</b>');
   // Refresh sidebar to show the pre-trim panel
   var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
   var we = getActiveWE(); if (!we) return;
@@ -6506,6 +6708,14 @@ function preTrimExtendClick(latlng) {
     var dES = reachEnd.distanceTo(newStart), dEE = reachEnd.distanceTo(newEnd);
     var dSS = reachStart.distanceTo(newStart), dSE = reachStart.distanceTo(newEnd);
     var minD = Math.min(dES, dEE, dSS, dSE);
+    // See note in reachExtendClick() — reject segments that don't actually touch the
+    // reach instead of drawing a straight phantom line to the nearest endpoint.
+    var MAX_CONNECT_M = 50;
+    if (minD > MAX_CONNECT_M) {
+      clearReachAutoLayers();
+      setMapHint('That segment doesn\'t connect to your reach — click a segment nearer the end you want to extend');
+      return;
+    }
     var combinedPts;
     if (minD === dES)      combinedPts = existPts.concat(newPts);
     else if (minD === dEE) combinedPts = existPts.concat(newPts.slice().reverse());
@@ -6513,11 +6723,14 @@ function preTrimExtendClick(latlng) {
     else                   combinedPts = newPts.slice().reverse().concat(existPts);
 
     var name = bestFeat.attributes.gnisidlabel || 'segment';
-    var preview = L.polyline(newPts, {color:'#c07820', weight:3, dashArray:'6,3', interactive:true})
-      .bindTooltip('Append "'+name+'" — click to confirm').addTo(map);
+    var preview = L.polyline(newPts, {color:'#c07820', weight:3, dashArray:'6,3', interactive:false}).addTo(map);
     reachAutoLayers.push(preview);
+    // Invisible, wider companion carries the click/hover — see note above.
+    var previewHit = L.polyline(newPts, {weight:20, opacity:0.001, interactive:true})
+      .bindTooltip('Append "'+name+'" — click to confirm').addTo(map);
+    reachAutoLayers.push(previewHit);
 
-    preview.on('click', function(e) {
+    previewHit.on('click', function(e) {
       L.DomEvent.stop(e);
       clearReachAutoLayers();
       preReachPts = combinedPts;
@@ -6553,7 +6766,7 @@ function cancelPreTrimExtend() {
   preReachExtend = false;
   clearReachAutoLayers();
   document.getElementById('mapwrap').classList.remove('drawing');
-  setMapHint('Wrong stream? Click <b>Re-detect</b> in the sidebar. Otherwise extend if needed, then click <b>Pick endpoints</b>');
+  setMapHint('Wrong stream? Click <b>Try different stream</b> in the sidebar. Otherwise extend if needed, then click <b>Pick endpoints</b>');
   var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
   var we = getActiveWE(); if (!we) return;
   we.ppData['reach_len']._preTrimExtending = false;
@@ -6766,7 +6979,12 @@ function nearestParamOnLine(pts, latlng) {
 function commitAutoReach(pts) {
   var we = getActiveWE(); if (!we) return;
   if (we.ppData['reach_len'] && we.ppData['reach_len'].layer && !confirmReachChange(we)) return;
-  pts = clipPtsToPerimeter(we, pts, 'line');
+  var clipped = clipPtsToPerimeter(we, pts, 'line');
+  if (!clipped) {
+    setMapHint('That stream falls entirely outside your project boundary — not saved.');
+    return;
+  }
+  pts = clipped;
   if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
   if (we.ppData['reach_len'].layer) map.removeLayer(we.ppData['reach_len'].layer);
   var layer = L.polyline(pts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
@@ -6873,12 +7091,10 @@ function clipLineToPolygon(linePts, polyPts) {
 }
 
 // Global keyboard handler
+// Note: we-modal / sowmodal / welcome-modal are esa-dialog elements, which handle
+// Escape (and focus restore) internally — no manual check needed here for them.
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
-    var weModal = document.getElementById('we-modal');
-    if (weModal && weModal.style.display !== 'none') { closeWEModal(); return; }
-    var sowModal = document.getElementById('sow-modal');
-    if (sowModal && sowModal.style.display !== 'none') { sowModal.style.display='none'; return; }
     if (lineEditing) { cancelLineEdit(); return; }
     if (reachTrimming) { cancelReachTrimMode(); return; }
     if (preReachExtend) { cancelPreTrimExtend(); return; }
@@ -7052,7 +7268,42 @@ function geoArea(pts){return geoAreaM2(pts)*0.000247105;}
 function geoAreaM2(pts){var R=6378137,toRad=function(x){return x*Math.PI/180;},area=0,n=pts.length;for(var i=0;i<n;i++){var j=(i+1)%n;area+=toRad(pts[j].lng-pts[i].lng)*(2+Math.sin(toRad(pts[i].lat))+Math.sin(toRad(pts[j].lat)));}return Math.abs(area*R*R/2);}
 
 // ── Misc ──────────────────────────────────────────────────────────────────
-function setMapHint(msg){var el=document.getElementById('map-hint');el.innerHTML=msg;el.style.display=msg?'block':'none';}
+function setMapHint(msg){
+  var el=document.getElementById('map-hint');
+  el.innerHTML=msg;
+  el.style.display=msg?'block':'none';
+  repositionMapOverlays();
+}
+// Drop the hint (and, below that, the draw-done/edit-done overlay buttons) under whichever
+// top corner control stack — search box + zoom control on the left, layer toggle cluster on
+// the right — extends furthest down, so a long/wrapped message never renders under either one.
+// Called whenever the hint text changes, and also whenever edit-done-bar is shown directly
+// (entering vertex-edit mode doesn't always go through setMapHint).
+function repositionMapOverlays(){
+  var el = document.getElementById('map-hint');
+  var mapEl = document.getElementById('map');
+  if (!el || !mapEl) return;
+  var msg = el.innerHTML;
+  var mapTop = mapEl.getBoundingClientRect().top;
+  var topLeft = document.querySelector('.leaflet-top.leaflet-left');
+  var topRight = document.querySelector('.leaflet-top.leaflet-right');
+  var belowY = 10;
+  [topLeft, topRight].forEach(function(c){
+    if (c) belowY = Math.max(belowY, c.getBoundingClientRect().bottom - mapTop);
+  });
+  belowY += 8;
+  if (msg && el.style.display !== 'none') {
+    el.style.top = belowY + 'px';
+    belowY += el.getBoundingClientRect().height + 8;
+  }
+  var doneBtn = document.getElementById('draw-done-btn');
+  var editBar = document.getElementById('edit-done-bar');
+  if (doneBtn) doneBtn.style.top = belowY + 'px';
+  if (editBar) editBar.style.top = belowY + 'px';
+}
+// A narrower window rewraps the hint to more lines without any of the setMapHint()/
+// edit-done-bar call sites firing, which left draw-done-btn's stale top overlapping it.
+window.addEventListener('resize', repositionMapOverlays);
 function toggleSec(head){var body=head.nextElementSibling;var open=body.classList.toggle('open');head.querySelector('span').textContent=open?'▾':'▸';}
 
 // ── Wizard Mode ────────────────────────────────────────────────────────────
@@ -7638,6 +7889,11 @@ function wizardStepBody(we, step, idx) {
       h += '<div class="wz-step-desc">Identify any wetland areas already present on the site, before project work begins. Check the National Wetlands Inventory for candidates, or draw manually. Add as many as needed — or skip if none are present.</div>';
       if (wetlandAutoDetecting) {
         h += '<div class="wz-status pending">&#9654; Click a highlighted wetland on the map to add it — click <span style="text-decoration:underline;cursor:pointer" onclick="cancelWetlandAutoDetect()">done</span> when finished.</div>';
+        // No candidates currently shown means the last query failed or came back empty —
+        // offer a one-click retry instead of making the user cancel and re-click Auto-Detect.
+        if (!wetlandAutoLayers.length) {
+          h += '<button class="wz-action-btn secondary" onclick="loadWetlandPreview();renderWizardStep()">&#8635; Retry NWI Query</button>';
+        }
       } else {
         h += '<button class="wz-action-btn secondary" onclick="startWetlandAutoDetect()">&#127760; Auto-Detect from Map (NWI)</button>';
       }
@@ -7848,6 +8104,8 @@ function wizardStepBody(we, step, idx) {
         h += buildSOWElevChartHTML(we);
         h += '<button class="wz-action-btn secondary" style="margin-top:8px" onclick="startSOWDraw(\'pc-reach\',\'line\',\'Primary Channel\');renderWizardStep()">&#128207; Redraw</button>';
         h += '<button class="wz-action-btn secondary" onclick="startLineEdit(\'sow\',\'pc-reach\');renderWizardStep()">&#9998; Edit Vertices</button>';
+        h += '<button class="wz-action-btn secondary" onclick="flipPCReachDirection();renderWizardStep()">&#8646; Flip Flow Direction</button>';
+        h += '<div class="wz-tip">Flow direction is normally set from elevation data — flip it manually if that\'s unavailable or looks wrong.</div>';
       } else {
         h += '<button class="wz-action-btn" onclick="startSOWDraw(\'pc-reach\',\'line\',\'Primary Channel\');renderWizardStep()">&#128207; Draw Primary Channel</button>';
         h += '<div class="wz-tip">Draw the designed channel centerline — this is different from the existing reach and represents where the channel will be after restoration.</div>';
@@ -8003,9 +8261,9 @@ function wizardStepBody(we, step, idx) {
           h += '<button class="pm-draw-btn'+(isWaiting?' active':'')+'" style="width:100%;height:auto;padding:5px;margin-bottom:4px" ';
           h += 'onclick="startStructPoint(\''+t+'\',\''+s.id+'\')">&#9679; '+(isWaiting?'Click map to place…':'Place on map')+'</button>';
         }
-        h += '<input type="text" placeholder="Description (e.g. Single-key LWD jam)" ';
-        h += 'value="'+(s.desc||'')+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:4px 6px;border-radius:3px;font-size:11px;margin-bottom:4px" ';
-        h += 'oninput="updateStructure(\''+t+'\',\''+s.id+'\',\'desc\',this.value)">';
+        h += '<esa-text-field placeholder="Description (e.g. Single-key LWD jam)" style="display:block;margin-bottom:4px" ';
+        h += 'value="'+(s.desc||'')+'" size="sm" ';
+        h += 'onchange="updateStructure(\''+t+'\',\''+s.id+'\',\'desc\',this.value)"></esa-text-field>';
         h += '<div style="display:flex;gap:8px">';
         h += '<div style="flex:1"><div style="font-size:11px;color:#7c7c7c;margin-bottom:2px">Large pieces (&gt;12")</div>';
         h += '<input type="number" min="0" placeholder="0" value="'+(s.large||'')+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" ';
@@ -8143,7 +8401,7 @@ function wizardStepBody(we, step, idx) {
         } else {
           h += '<button class="pm-draw-btn'+(isWaiting?' active':'')+'" style="width:100%;height:auto;padding:5px;margin-bottom:4px" onclick="startStructPoint(\''+t+'\',\''+s.id+'\')">&#9679; '+(isWaiting?'Click map to place…':'Place on map')+'</button>';
         }
-        h += '<input type="text" placeholder="Description (e.g. Engineered log jam)" value="'+(s.desc||'')+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:4px 6px;border-radius:3px;font-size:11px;margin-bottom:4px" oninput="updateFPStructure(\''+s.id+'\',\'desc\',this.value)">';
+        h += '<esa-text-field placeholder="Description (e.g. Engineered log jam)" value="'+(s.desc||'')+'" style="display:block;margin-bottom:4px" size="sm" onchange="updateFPStructure(\''+s.id+'\',\'desc\',this.value)"></esa-text-field>';
         h += '<div style="display:flex;gap:8px">';
         h += '<div style="flex:1"><div style="font-size:11px;color:#7c7c7c;margin-bottom:2px">Large pieces (&gt;12")</div><input type="number" min="0" placeholder="0" value="'+(s.large||'')+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" oninput="updateFPStructure(\''+s.id+'\',\'large\',+this.value)"></div>';
         h += '<div style="flex:1"><div style="font-size:11px;color:#7c7c7c;margin-bottom:2px">Small pieces (&lt;12")</div><input type="number" min="0" placeholder="0" value="'+(s.small||'')+'" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" oninput="updateFPStructure(\''+s.id+'\',\'small\',+this.value)"></div>';
@@ -8331,13 +8589,40 @@ function wizardSkip() {
   if (wizardStep < vis.length - 1) { wizardStep++; syncActivePCForStep(wizardStep); renderWizardStep(); wizardAutoActivate(); }
 }
 
+// Cancels every interactive map mode (manual draws, auto-detects, vertex editing) at
+// once. Called whenever the wizard switches steps — previously only ppDrawing and
+// wetlandAutoDetecting were reset here, so a draw/detect left in progress on the old
+// step (e.g. mid manual-line-draw, mid CHU pool split, mid reach auto-detect) survived
+// the step change and silently fed the next map click into the wrong handler.
+// exceptStepId lets a mode survive if the wizard is (re-)landing on the very step that
+// mode belongs to, matching the wetland behavior this replaces.
+function cancelAllDrawModes(exceptStepId) {
+  if (ppDrawing) { ppDrawing = null; drawPts = []; clearPreview(); }
+  if (sowDrawing) { sowDrawing = null; drawPts = []; clearPreview(); }
+  if (crDrawing) { crDrawing = null; drawPts = []; clearPreview(); }
+  pendingStructPoint = null;
+  pendingGravelPoint = null;
+  if (chuDrawing) cancelCHUSplit();
+  if (chuPoolMode) { chuPoolMode = false; chuPoolPhase = 0; chuPendingPoolUpId = null; chuPendingPoolDownId = null; }
+  if (lineEditing) cancelLineEdit();
+  if (exceptStepId !== 'reach') {
+    if (reachAutoDetecting) cancelReachAutoDetect();
+    if (reachExtending) cancelReachExtend();
+    if (reachTrimming) cancelReachTrimMode();
+    var we = getActiveWE();
+    if (we && we.ppData['reach_len'] && we.ppData['reach_len']._preTrim) cancelPreTrimStep();
+  }
+  if (exceptStepId !== 'pp_wetland' && wetlandAutoDetecting) cancelWetlandAutoDetect();
+  document.getElementById('mapwrap').classList.remove('drawing');
+  document.querySelectorAll('.draw-btn').forEach(function(b){ b.classList.remove('active'); });
+}
+
 function wizardAutoActivate() {
   var vis = getVisibleSteps();
   var step = vis[wizardStep];
   if (!step) return;
   var we = getActiveWE();
-  if (ppDrawing) { ppDrawing = null; drawPts = []; clearPreview(); document.getElementById('mapwrap').classList.remove('drawing'); }
-  if (wetlandAutoDetecting && step.id !== 'pp_wetland') { wetlandAutoDetecting = false; clearWetlandAutoLayers(); }
+  cancelAllDrawModes(step.id);
   // Clear any hint left over from whichever step we were just on — only a couple of
   // step cases below set their own hint, so without this it stays stuck on screen
   // (e.g. leaving Stream Reach for another step used to leave its hint banner up).
@@ -8648,8 +8933,10 @@ function wizardRefreshIfActive() {
     // Skip re-render if user is actively focused on an input inside the wizard body
     var active = document.activeElement;
     var bp = document.getElementById('wizard-body-panel');
+    // document.activeElement retargets to the host when focus is inside an open shadow
+    // root, so a focused esa-text-field's internal input reports as ESA-TEXT-FIELD here.
     if (active && bp && bp.contains(active) &&
-        (active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT')) return;
+        (active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT'||active.tagName==='ESA-TEXT-FIELD')) return;
     renderWizardStep();
   }, 80);
 }
@@ -8974,7 +9261,7 @@ function openSOW() {
   });
 
   document.getElementById('sowbody').innerHTML=h;
-  document.getElementById('sowmodal').style.display='flex';
+  document.getElementById('sowmodal').show();
 }
 
-function closeSOW(){document.getElementById('sowmodal').style.display='none';}
+function closeSOW(){document.getElementById('sowmodal').close();}
