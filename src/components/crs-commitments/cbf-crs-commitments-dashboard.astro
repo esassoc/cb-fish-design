@@ -530,14 +530,17 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
 
   /* The segmented status timeline bar — same 15-column track as the axis, but
      each item SPANS the column range of a merged run of years (computeSegments
-     in frontmatter) instead of one item per column. A small column-gap plus
-     rounding only the bar's outer ends (first/last segment) reads as one
-     continuous bar made of colored zones, not a row of separate chips. */
+     in frontmatter) instead of one item per column. Segments touch directly
+     (no column-gap) and only the bar's outer ends (first/last segment) round
+     — reads as one continuous bar made of colored zones, not a row of
+     separate chips, and leaves the "today" line as the only vertical break. */
   .cbf-crs-dashboard__bar {
     position: relative; /* positions the "today" line below, scoped to the bar only */
     display: grid;
     grid-template-columns: repeat(15, minmax(1.1rem, 1fr));
-    column-gap: 2px;
+    /* No column-gap: segments touch directly (a color change at the boundary
+       is signal enough), so the "today" line is the only vertical break in
+       the bar instead of competing with a white gap at every transition. */
     height: 22px;
   }
   .cbf-crs-dashboard__segment {
