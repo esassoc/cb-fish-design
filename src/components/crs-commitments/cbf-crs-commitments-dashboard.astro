@@ -552,12 +552,16 @@ const year2 = (year: number) => String(year).slice(2);
   .cbf-crs-dashboard__segment[data-variant='warning'] { background: var(--color-warning); }
   .cbf-crs-dashboard__segment[data-variant='success'] { background: var(--color-green-11); }
   .cbf-crs-dashboard__segment[data-variant='secondary'] { background: var(--color-text-muted); }
-  /* Legend swatch: the identical segment styling outside the grid track — first-
-     child AND last-child both match here, so it renders fully rounded. */
+  /* Legend / stat-row swatch: the identical segment coloring outside the grid
+     track, but NOT the bar's first/last-child partial rounding — a standalone
+     swatch sits before a text label (never truly "last-child"), so the
+     first/last-child rules above would round only its left side and read as
+     lopsided. Round all four corners here instead. */
   .cbf-crs-dashboard__segment--swatch {
     display: inline-block;
     width: 16px;
     height: 16px;
+    border-radius: var(--radius-100);
   }
 
   /* Document-marker row: its own 15-column track directly under the bar, one
