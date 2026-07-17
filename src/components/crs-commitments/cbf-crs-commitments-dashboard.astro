@@ -225,7 +225,12 @@ const year2 = (year: number) => String(year).slice(2);
       <div class="cbf-crs-dashboard__stats grid" role="group" aria-label="Status summary for the current view">
         {statEntries.map((s, i) => (
           <div class="cbf-crs-dashboard__stat" data-stat-key={s.key}>
-            {s.dot && <EsaBadge dot={true} variant={s.variant} size="md" />}
+            {/* The same swatch element as the legend and bar segments (not
+                esa-badge's own dot) — esa-badge's info/secondary/success
+                variants read tokens this theme doesn't tune for legibility
+                (see the segment CSS below), so a badge dot here would drift
+                out of sync with the legend/bar it's meant to match. */}
+            {s.dot && <span class="cbf-crs-dashboard__segment cbf-crs-dashboard__segment--swatch" data-variant={s.variant} />}
             <EsaStat value={initialCounts[i]} label={s.label} />
           </div>
         ))}
