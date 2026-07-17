@@ -1,22 +1,33 @@
 ---
 // cbf-report-tabs — the Report Center "summary page" sub-navigation strip.
 // A horizontal row of <a> links between the sub-pages of a report area
-// (Summary + its detail views), with a trailing "Related items" disclosure that
-// lists the related report links. Mirrors the live CBFish accruals/expenditures
-// summary pages. First used by /project-budgets; promoted to components/shared/
-// once the 2020 CRS Commitments area became its second consumer.
+// (Summary + its detail views). Any tab can instead be a DROPDOWN (pass
+// `items` instead of `href`) when that section itself has multiple pages —
+// e.g. the live CBFish "BiOp reporting" strip's "2020 CRS commitments ▾" tab,
+// which opens onto its grid/dashboard/document-library pages. A trailing
+// "Related items" disclosure (the `related` prop) lists sibling report links.
+// Mirrors the live CBFish accruals/expenditures + BiOp reporting summary
+// pages. First used by /project-budgets; promoted to components/shared/ once
+// the 2020 CRS Commitments area became its second consumer.
 //
 // bcn-lego-checked: this is a NAVIGATION link strip — distinct routes, not
-// panels — so a semantic <nav> of <a> links is correct, not esa-tab-layout
-// (a panel-SWITCHING control), same rationale as cbf-pubs-tabs. The trailing
-// "Related items" menu is a native <details>/<summary> disclosure (a browser
-// disclosure primitive, no JS), NOT esa-nav-dropdown — that lego is app-bar
-// chrome (an icon-link trigger + floating panel tuned for the bar), not an
-// inline tab-strip menu. Checked Beacon (report sub-nav). No reinvented control.
+// panels — so a semantic <nav> of <a> links (and native <details>/<summary>
+// disclosures for the dropdown tabs) is correct, not esa-tab-layout (a panel-
+// SWITCHING control), same rationale as cbf-pubs-tabs. NOT esa-nav-dropdown
+// either — that lego is app-bar chrome (an icon-link trigger + floating panel
+// tuned for the bar), not an inline tab-strip menu. Checked Beacon (report
+// sub-nav). No reinvented control.
+interface TabItem {
+  label: string;
+  href?: string;
+  active?: boolean;
+}
 interface Tab {
   label: string;
   href?: string;
   active?: boolean;
+  /** When set, this tab renders as a dropdown of sub-pages instead of a plain link. */
+  items?: TabItem[];
 }
 interface RelatedItem {
   title: string;
@@ -33,11 +44,31 @@ const chevron =
 ---
 <nav class="cbf-report-tabs" aria-label={ariaLabel}>
   {tabs.map((t) => (
-    <a
-      class:list={['cbf-report-tabs__tab', t.active && 'is-active']}
-      href={t.href ?? '#'}
-      aria-current={t.active ? 'page' : undefined}
-    >{t.label}</a>
+    t.items && t.items.length > 0 ? (
+      <details class="cbf-report-tabs__dropdown">
+        <summary
+          class:list={['cbf-report-tabs__tab', 'cbf-report-tabs__dropdown-trigger', t.active && 'is-active']}
+        >
+          {t.label}<span class="cbf-report-tabs__chev" set:html={chevron} />
+        </summary>
+        <div class="cbf-report-tabs__menu" role="menu">
+          {t.items.map((item) => (
+            <a
+              class:list={['cbf-report-tabs__menu-item', item.active && 'is-active']}
+              role="menuitem"
+              href={item.href ?? '#'}
+              aria-current={item.active ? 'page' : undefined}
+            >{item.label}</a>
+          ))}
+        </div>
+      </details>
+    ) : (
+      <a
+        class:list={['cbf-report-tabs__tab', t.active && 'is-active']}
+        href={t.href ?? '#'}
+        aria-current={t.active ? 'page' : undefined}
+      >{t.label}</a>
+    )
   ))}
 
   {related.length > 0 && (
@@ -91,6 +122,22 @@ const chevron =
     background: var(--color-surface, #fff);
   }
 
+  /* A per-tab dropdown (e.g. "2020 CRS commitments ▾") — same tab look as a
+     plain link, just a <details>/<summary> disclosure instead of an <a>, with
+     its own floating menu of sub-pages. Sits inline in the tab row (unlike the
+     trailing "related" disclosure, this one is NOT pushed to the right). */
+  .cbf-report-tabs__dropdown {
+    position: relative;
+  }
+  .cbf-report-tabs__dropdown-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-150);
+    list-style: none; /* drop the default disclosure marker */
+    cursor: pointer;
+  }
+  .cbf-report-tabs__dropdown-trigger::-webkit-details-marker { display: none; }
+
   /* Related-items disclosure — native <details>; the menu floats over the
      content below without reflowing the strip. */
   .cbf-report-tabs__related {
@@ -109,11 +156,12 @@ const chevron =
     display: inline-flex;
     transition: transform 0.12s ease;
   }
+  .cbf-report-tabs__dropdown[open] .cbf-report-tabs__chev,
   .cbf-report-tabs__related[open] .cbf-report-tabs__chev { transform: rotate(180deg); }
   .cbf-report-tabs__menu {
     position: absolute;
     top: calc(100% + var(--spacing-150));
-    right: 0;
+    left: 0;
     z-index: 20;
     min-width: 220px;
     display: flex;
@@ -123,6 +171,10 @@ const chevron =
     border: 1px solid var(--color-border);
     border-radius: var(--radius-100);
     box-shadow: 0 4px 14px color-mix(in srgb, var(--color-surface-inverse) 14%, transparent);
+  }
+  .cbf-report-tabs__related .cbf-report-tabs__menu {
+    left: auto;
+    right: 0;
   }
   .cbf-report-tabs__menu-item {
     padding: var(--spacing-200) var(--spacing-300);
@@ -135,11 +187,17 @@ const chevron =
     background: var(--color-primary-subtle);
     color: var(--color-primary);
   }
+  /* The sub-page currently open — same quiet selection cue as an active tab. */
+  .cbf-report-tabs__menu-item.is-active {
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+  }
 
   /* On a wrapped (narrow) strip the auto margin would orphan the disclosure on
      its own row; let it sit inline with the tabs instead. */
   @media (max-width: 640px) {
     .cbf-report-tabs__related { margin-left: 0; }
-    .cbf-report-tabs__menu { right: auto; left: 0; }
+    .cbf-report-tabs__related .cbf-report-tabs__menu { right: auto; left: 0; }
   }
 </style>
