@@ -44,7 +44,9 @@
 //   - esa-icon (file-text)  → the per-year document indicator (unchanged from the
 //     dot version, just repositioned onto its own grid row under the bar).
 //   - esa-empty-state       → the zero-match state.
-//   - esa-button            → the Document Library link out to the sibling page.
+//   - esa-button            → the Document Library link out to the sibling page,
+//     the "Enter/Leave Edit Status Mode" toggle, and the edit dialog's footer.
+//   - esa-dialog            → the status-edit dialog (see below).
 //
 // The status filter is NOT esa-chip-group (see bcn-lego-checked below) — it's a
 // custom radiogroup of <button>s carrying the same swatch used by the timeline
@@ -52,7 +54,23 @@
 // used to be two separate rows independently repeating the same 6-7 status
 // names — requested after that repetition was flagged as noise).
 //
-// bcn-lego-checked: two bespoke pieces, both checked against the hub source, not
+// Edit Status Mode — ported from prod's real dashboard (checked directly at
+// cbfish.org's BiologicalOpinionCommitmentDashboard/OverallProgress): a toggle
+// button puts every commitment row's timeline into an editable state; clicking
+// a year opens a small dialog to set that one commitment's status for that one
+// year, exactly like prod. The one deliberate divergence: prod's dashboard is a
+// per-year DOT grid, so each dot IS a click target. This dashboard's bar merges
+// same-status runs into one shape (see above) — there is no discrete per-year
+// element to click. Rather than force a click-position→year calculation, each
+// row's bar carries an invisible, inert 15-column overlay of hit-target
+// buttons (cbf-crs-dashboard__edit-overlay) that becomes visible (dashed
+// outlines) and clickable only once edit mode is on — same per-year precision
+// as prod, layered on top of the nicer merged visual instead of replacing it.
+// Like the rest of this static-site spoke, edits are in-memory for the
+// session only (see cbf-password-gate.astro's note on the same constraint) —
+// there is no backend to persist to.
+//
+// bcn-lego-checked: three bespoke pieces, all checked against the hub source, not
 // just the docs. (1) The timeline-bar segments/layout — a two-column row grid, a
 // fixed 15-column year grid shared by the axis/bar/document row, and plain colored
 // <span> segments reading the SAME semantic tokens esa-badge's variants read
@@ -64,9 +82,14 @@
 // it can't carry a persistent swatch and serve as the legend too. The custom chips
 // mirror esa-chip-group's own resting/hover/active token chain and ARIA shape
 // (role="radiogroup"/"radio" + aria-checked) so they read and behave like the same
-// chip family, just with a swatch slot the lego's markup has no room for. Checked
-// the full node_modules/@esa/ecology/src/components catalog (esa-card/pill/badge/
-// stat are atoms) and Beacon is not on this machine for both. The quiet tag pair is
+// chip family, just with a swatch slot the lego's markup has no room for. (3) The
+// status-edit dialog's status <select> — esa-select never renders in this spoke's
+// dev server (esassoc/ecology#5, confirmed live at
+// /design-system/components/esa-select), same reason map-sow reverted to native
+// <select> in commit b5a60d6 and cbf-crs-create-commitment-dialog.astro does the
+// same; styled to match the surrounding lego field chrome. Checked the full
+// node_modules/@esa/ecology/src/components catalog (esa-card/pill/badge/stat are
+// atoms) and Beacon is not on this machine for all three. The quiet tag pair is
 // the real esa-badge lego re-toned via its PUBLIC component tokens (--badge-bg/
 // --badge-text-color), not a hand-rolled tag. This component is the reusable home.
 import '@esa/tokens/layouts.css';
@@ -75,6 +98,7 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
 import EsaStat from '@esa/ecology/esa-stat.astro';
 import EsaIcon from '@esa/ecology/esa-icon.astro';
 import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
 import CbfSearchField from '../search/cbf-search-field.astro';
 import {
   commitments as defaultCommitments,
@@ -232,8 +256,19 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
     <div class="cbf-crs-dashboard__body stack" data-gap="lg">
       <!-- Stat row — recomputed over the visible subset by the client script.
            Labeled with CURRENT_YEAR so it can't be mistaken for a lifetime/
-           all-years count now that the bar below shows the full timeline. -->
-      <p class="type-caption cbf-crs-dashboard__stats-caption">{CURRENT_YEAR} CRS Commitments Status</p>
+           all-years count now that the bar below shows the full timeline.
+           The edit-mode toggle sits alongside it, matching prod's placement. -->
+      <div class="cbf-crs-dashboard__stats-header repel">
+        <p class="type-caption cbf-crs-dashboard__stats-caption">{CURRENT_YEAR} CRS Commitments Status</p>
+        <EsaButton
+          color="ghost"
+          appearance="outline"
+          size="sm"
+          data-crs-edit-toggle
+          data-label-enter="Enter Edit Status Mode"
+          data-label-leave="Leave Edit Status Mode"
+        >Enter Edit Status Mode</EsaButton>
+      </div>
       <div class="cbf-crs-dashboard__stats grid" role="group" aria-label={`${CURRENT_YEAR} status summary for the current view`}>
         {statEntries.map((s, i) => (
           <div class="cbf-crs-dashboard__stat" data-stat-key={s.key}>
@@ -327,10 +362,13 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
             <article
               class="cbf-crs-dashboard__row"
               data-crs-row
+              data-number={c.number}
+              data-title={c.title}
               data-category={c.category}
               data-subcategory={c.subcategory}
               data-type={c.commitmentType}
               data-status={c.status}
+              data-status-by-year={JSON.stringify(c.statusByYear)}
               data-search={`${c.number} ${c.title}`.toLowerCase()}
             >
               <div class="cbf-crs-dashboard__info stack" data-gap="2xs">
@@ -349,6 +387,7 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
               <div class="cbf-crs-dashboard__timeline stack" data-gap="2xs">
                 <div
                   class="cbf-crs-dashboard__bar"
+                  data-crs-bar
                   role="img"
                   aria-label={`Status timeline for ${c.number}: ${timelineSummary(segments)}`}
                 >
@@ -369,6 +408,22 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
                     aria-hidden="true"
                     title={`Current year: ${CURRENT_YEAR}`}
                   />
+                  <!-- Per-year edit hit-targets — invisible and inert until edit
+                       mode is on (see the client script), matching prod's "Enter
+                       Edit Status Mode" behavior at the precise per-year
+                       granularity prod offers, even though the bar above shows
+                       merged segments rather than one dot per year. -->
+                  <div class="cbf-crs-dashboard__edit-overlay" data-crs-edit-overlay aria-hidden="true">
+                    {YEARS.map((year, i) => (
+                      <button
+                        type="button"
+                        class="cbf-crs-dashboard__edit-cell"
+                        style={`grid-column: ${i + 1};`}
+                        data-year={year}
+                        tabindex="-1"
+                      ></button>
+                    ))}
+                  </div>
                 </div>
                 <div class="cbf-crs-dashboard__docrow">
                   {YEARS.map((year, i) => {
@@ -402,6 +457,33 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
       </div>
     </div>
   </esa-tab-layout>
+
+  <!-- Shared status-edit dialog — one instance for the whole grid, re-targeted
+       per click (see the client script) rather than one dialog per cell. -->
+  <esa-dialog size="xs" show-close-button heading="Edit status" data-crs-edit-dialog>
+    <p class="type-body" data-crs-edit-desc></p>
+    <label class="cbf-crs-dashboard__edit-field">
+      <span class="type-label">Status</span>
+      <select data-crs-edit-select>
+        <option value="Complete">Complete</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Not Started">Not Started</option>
+        <option value="Future">Future</option>
+        <option value="Closed">Closed</option>
+        <option value="Delayed">Delayed</option>
+        <option value="">Unset</option>
+      </select>
+    </label>
+
+    <div slot="footer">
+      <span data-crs-edit-cancel>
+        <EsaButton color="ghost" appearance="outline">Cancel</EsaButton>
+      </span>
+      <span data-crs-edit-save>
+        <EsaButton color="primary">Save</EsaButton>
+      </span>
+    </div>
+  </esa-dialog>
 </section>
 
 <style>
@@ -412,6 +494,9 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
     overflow-x: auto;
   }
 
+  .cbf-crs-dashboard__stats-header {
+    align-items: center;
+  }
   .cbf-crs-dashboard__stats-caption {
     margin: 0;
     color: var(--color-text-muted);
@@ -684,6 +769,37 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
     pointer-events: none;
   }
 
+  /* Per-year edit hit-targets — same 15-column track as the bar, absolutely
+     layered over it. Inert and invisible at rest so normal browsing is
+     unaffected; the client script toggles .is-edit-mode on the section root
+     when "Enter Edit Status Mode" is pressed, which is the ONLY thing that
+     turns pointer-events on and reveals the dashed cell outlines (prod's own
+     edit-mode affordance). Each cell targets one YEAR regardless of which
+     merged segment it visually sits inside of. */
+  .cbf-crs-dashboard__edit-overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: repeat(15, minmax(1.1rem, 1fr));
+  }
+  .cbf-crs-dashboard__edit-cell {
+    pointer-events: none;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: default;
+  }
+  .cbf-crs-dashboard.is-edit-mode .cbf-crs-dashboard__edit-cell {
+    pointer-events: auto;
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-050, 2px);
+    cursor: pointer;
+  }
+  .cbf-crs-dashboard.is-edit-mode .cbf-crs-dashboard__edit-cell:hover {
+    background: var(--color-primary-subtle);
+    border-color: var(--color-primary);
+  }
+
   /* Per-year document indicator — a small outlined file icon, independent of
      the status bar above it: whether a due-date deliverable for that year has
      a document on file. Color is the only signal (success = received, danger =
@@ -712,12 +828,94 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
   .cbf-crs-dashboard__row[hidden] {
     display: none;
   }
+
+  /* Status-edit dialog field. Native <select> — see cbf-crs-create-commitment-
+     dialog.astro's header note: esa-select never renders in this spoke's dev
+     server (esassoc/ecology#5), confirmed live, same reason map-sow reverted
+     to native <select> in commit b5a60d6. Styled to match the surrounding
+     lego field chrome. */
+  .cbf-crs-dashboard__edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-100);
+  }
+  .cbf-crs-dashboard__edit-field select {
+    height: var(--form-height-md, 40px);
+    padding-inline: var(--form-padding-x-md, 16px);
+    border: var(--form-border-width, 1px) solid var(--form-border-color, #d4d4d4);
+    border-radius: var(--form-radius-md, 8px);
+    font-size: var(--form-font-size-md, 14px);
+    font-family: var(--font-sans);
+    color: var(--form-text-color, var(--color-text-primary));
+    background: var(--form-bg, var(--color-surface));
+  }
+  .cbf-crs-dashboard__edit-field select:focus {
+    outline: none;
+    border-color: var(--form-border-color-focus, var(--color-primary));
+    box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+  }
 </style>
 
 <script>
   import '@esa/ecology/esa-tab-layout';
+  import '@esa/ecology/esa-dialog';
+  import { YEARS, CURRENT_YEAR, STATUS_DOT } from '../../data/crs-commitments.mjs';
 
   type CommitmentFields = { category: string; subcategory: string; commitmentType: string };
+
+  // Same computeSegments/segmentLabel logic as the frontmatter (functions can't
+  // cross the SSR boundary) — used to rebuild one row's bar after a status edit.
+  type ClientSegment = { status: string; startIndex: number; endIndex: number; span: number };
+  function computeSegmentsClient(statusByYear: Record<string, string>): ClientSegment[] {
+    const segments: ClientSegment[] = [];
+    YEARS.forEach((year: number, i: number) => {
+      const status = statusByYear[String(year)];
+      const last = segments[segments.length - 1];
+      if (last && last.status === status) {
+        last.endIndex = i;
+        last.span += 1;
+      } else {
+        segments.push({ status, startIndex: i, endIndex: i, span: 1 });
+      }
+    });
+    return segments;
+  }
+  function segmentLabelClient(seg: ClientSegment): string {
+    const startYear = YEARS[seg.startIndex];
+    const endYear = YEARS[seg.endIndex];
+    const label = seg.status || 'Unset';
+    return seg.span > 1 ? `${startYear}–${endYear}: ${label}` : `${startYear}: ${label}`;
+  }
+
+  // Rebuild one row's segment spans after its statusByYear changes — same
+  // markup shape the frontmatter renders, minus the now-line/edit-overlay
+  // (kept in place, never removed).
+  function rebuildBar(bar: HTMLElement, statusByYear: Record<string, string>): void {
+    bar.querySelectorAll(':scope > .cbf-crs-dashboard__segment').forEach((el) => el.remove());
+    const nowLine = bar.querySelector('.cbf-crs-dashboard__now-line');
+    // Astro's scoped <style> only matches elements carrying its per-component
+    // data-astro-cid-* attribute — a span built via createElement doesn't get
+    // one automatically, so a fresh segment renders with no color at all
+    // (the class matches nothing). Copy the hash off an existing scoped
+    // element (the bar itself) onto each new segment.
+    const scopeAttr = bar.getAttributeNames().find((n) => n.startsWith('data-astro-cid-'));
+    const segments = computeSegmentsClient(statusByYear);
+    segments.forEach((seg) => {
+      const span = document.createElement('span');
+      span.className = 'cbf-crs-dashboard__segment';
+      span.dataset.variant = (STATUS_DOT as Record<string, string>)[seg.status] ?? 'secondary';
+      span.style.gridColumn = `${seg.startIndex + 1} / ${seg.endIndex + 2}`;
+      span.title = segmentLabelClient(seg);
+      if (scopeAttr) span.setAttribute(scopeAttr, '');
+      if (nowLine) bar.insertBefore(span, nowLine);
+      else bar.appendChild(span);
+    });
+    const number = bar.closest<HTMLElement>('[data-crs-row]')?.dataset.number ?? '';
+    bar.setAttribute(
+      'aria-label',
+      `Status timeline for ${number}: ${segments.map(segmentLabelClient).join('; ')}`,
+    );
+  }
 
   // Same tab→predicate list as the frontmatter (functions can't cross the SSR
   // boundary), keyed by tab index.
@@ -819,6 +1017,75 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
     search?.addEventListener('input', () => {
       query = search.value ?? '';
       recompute();
+    });
+
+    // Edit Status Mode — ported from prod (see the header note). Toggling adds
+    // .is-edit-mode to the section root, which is the only thing that reveals
+    // and enables the per-year hit-target overlay cells (CSS above).
+    const editToggle = root.querySelector<HTMLButtonElement>('[data-crs-edit-toggle]');
+    const editDialog = root.querySelector<HTMLElement & { show: () => void; close: () => void }>('[data-crs-edit-dialog]');
+    const editDesc = root.querySelector<HTMLElement>('[data-crs-edit-desc]');
+    const editSelect = root.querySelector<HTMLSelectElement>('[data-crs-edit-select]');
+    const editCancel = root.querySelector<HTMLElement>('[data-crs-edit-cancel]');
+    const editSave = root.querySelector<HTMLElement>('[data-crs-edit-save]');
+    const editCells = Array.from(root.querySelectorAll<HTMLButtonElement>('.cbf-crs-dashboard__edit-cell'));
+
+    let editModeOn = false;
+    let editTarget: { row: HTMLElement; year: number } | null = null;
+
+    editToggle?.addEventListener('click', () => {
+      editModeOn = !editModeOn;
+      root.classList.toggle('is-edit-mode', editModeOn);
+      editCells.forEach((cell) => { cell.tabIndex = editModeOn ? 0 : -1; });
+      const label = editModeOn ? editToggle.dataset.labelLeave : editToggle.dataset.labelEnter;
+      const labelEl = editToggle.querySelector<HTMLElement>('.esa-button__label');
+      if (labelEl && label) labelEl.textContent = label;
+    });
+
+    editCells.forEach((cell) => {
+      cell.addEventListener('click', () => {
+        const row = cell.closest<HTMLElement>('[data-crs-row]');
+        const year = Number(cell.dataset.year);
+        if (!row || !Number.isFinite(year)) return;
+        const statusByYear: Record<string, string> = JSON.parse(row.dataset.statusByYear || '{}');
+        editTarget = { row, year };
+        if (editDesc) {
+          editDesc.textContent = `${row.dataset.title ?? ''} (${row.dataset.number ?? ''}) — status for ${year}`;
+        }
+        if (editSelect) editSelect.value = statusByYear[String(year)] ?? '';
+        editDialog?.show();
+      });
+    });
+
+    editCancel?.addEventListener('click', () => {
+      editDialog?.close();
+      editTarget = null;
+    });
+
+    editSave?.addEventListener('click', () => {
+      if (!editTarget || !editSelect) return;
+      const { row, year } = editTarget;
+      const statusByYear: Record<string, string> = JSON.parse(row.dataset.statusByYear || '{}');
+      const newStatus = editSelect.value;
+      if (newStatus === '') delete statusByYear[String(year)];
+      else statusByYear[String(year)] = newStatus;
+      row.dataset.statusByYear = JSON.stringify(statusByYear);
+
+      const bar = row.querySelector<HTMLElement>('[data-crs-bar]');
+      if (bar) rebuildBar(bar, statusByYear);
+
+      // .status mirrors statusByYear[CURRENT_YEAR] — keep the stat row / status
+      // filter in sync only when the edited year is the one they key off of.
+      if (year === CURRENT_YEAR) {
+        row.dataset.status = newStatus;
+        recompute();
+      }
+
+      const snackbar = document.querySelector<HTMLElement & { success?: (msg: string, cfg?: unknown) => void }>('[data-snackbar]');
+      snackbar?.success?.(`${row.dataset.number}: ${year} status set to ${newStatus || 'Unset'}.`, { duration: 4000 });
+
+      editDialog?.close();
+      editTarget = null;
     });
 
     recompute();
