@@ -1,0 +1,89 @@
+---
+// /crs-commitments/<number> — the Commitment Summary detail page. One page per
+// tracked commitment (getStaticPaths over the CRS commitments dataset). Lift-
+// and-shift of the legacy CBFish CommitmentSummary page: the full record (every
+// field the grid curated away), the multi-year status timeline, and the
+// commitment's own documents/due-dates sub-section.
+//
+// Thin assembler: esa-container + cbf-app-panel chrome, esa-page-header for the
+// title, and three cbf-crs-commitment-* sections for the body.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CbfPublicNav from '../../components/shared/cbf-public-nav.astro';
+import CbfAppPanel from '../../components/shared/cbf-app-panel.astro';
+import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import CbfReportTabs from '../../components/shared/cbf-report-tabs.astro';
+import CbfPasswordGate from '../../components/shared/cbf-password-gate.astro';
+import { crsReportTabs } from '../../components/crs-commitments/report-tabs';
+import { CRS_GATE_PASSWORD } from '../../components/crs-commitments/gate-password';
+import CbfCrsCommitmentBasics from '../../components/crs-commitments/cbf-crs-commitment-basics.astro';
+import CbfCrsCommitmentTimeline from '../../components/crs-commitments/cbf-crs-commitment-timeline.astro';
+import CbfCrsCommitmentDocuments from '../../components/crs-commitments/cbf-crs-commitment-documents.astro';
+import { withBase } from '../../lib/base';
+import { commitments, documentsFor } from '../../data/crs-commitments.mjs';
+
+// One static page per commitment in the dataset.
+export function getStaticPaths() {
+  return commitments.map((commitment) => ({
+    params: { number: commitment.number },
+    props: { commitment },
+  }));
+}
+
+const { commitment } = Astro.props;
+
+// Denormalized doc fields (type -> a readable subtitle, uploadDate/dueDate as-is)
+// mapped onto the documents section's generic { title, dueDate, category, uploadDate } shape.
+const documents = documentsFor(commitment.number).map((d) => ({
+  title: d.title,
+  dueDate: d.dueDate,
+  category: d.type,
+  uploadDate: d.uploadDate,
+}));
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+
+const crumbs = [
+  { label: 'Home', href: withBase('/home'), icon: homeIcon },
+  { label: '2020 CRS Commitments', href: withBase('/crs-commitments') },
+  { label: commitment.number },
+];
+---
+<!-- manifest:
+  layout: esa-container > cbf-app-panel > stack
+  sections:
+    - top nav        -> cbf-public-nav
+    - page frame     -> esa-container
+    - password gate  -> cbf-password-gate
+    - page header    -> esa-page-header
+    - sub-nav tabs   -> cbf-report-tabs
+    - basics panel   -> cbf-crs-commitment-basics
+    - status timeline -> cbf-crs-commitment-timeline
+    - documents      -> cbf-crs-commitment-documents
+-->
+<BaseLayout title={`${commitment.number}: ${commitment.title} — Columbia Basin Fish & Wildlife Program`}>
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <CbfAppPanel crumbs={crumbs}>
+        <CbfPasswordGate password={CRS_GATE_PASSWORD}>
+          <EsaPageHeader eyebrow={commitment.number} title={commitment.title} />
+          <CbfReportTabs tabs={crsReportTabs('grid')} ariaLabel="2020 CRS Commitments sections" />
+
+          <div class="cbf-crs-summary stack" data-gap="lg">
+            <CbfCrsCommitmentBasics commitment={commitment} />
+            <CbfCrsCommitmentTimeline statusByYear={commitment.statusByYear} />
+            <CbfCrsCommitmentDocuments documents={documents} />
+          </div>
+        </CbfPasswordGate>
+      </CbfAppPanel>
+    </EsaContainer>
+  </main>
+</BaseLayout>
+
+<style>
+  /* page-level outer rhythm only — every section is a component (manifest above) */
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+</style>

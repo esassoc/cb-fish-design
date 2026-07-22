@@ -85,6 +85,15 @@ export const prototypes: Prototype[] = [
     createdAt: '2026-06-22',
     status: 'in-progress',
   },
+  {
+    slug: 'crs-commitments',
+    title: 'Basin Fish Passage Commitments',
+    description:
+      'A scannable grid of every tracked fish/wildlife mitigation commitment, filterable by category and status, drilling into a per-commitment summary with its full record and multi-year status timeline.',
+    route: '/crs-commitments',
+    createdAt: '2026-07-16',
+    status: 'in-progress',
+  },
 ];
 
 /** Newest first — the order the index table renders. */

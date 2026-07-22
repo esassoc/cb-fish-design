@@ -1,0 +1,830 @@
+---
+// cbf-crs-commitments-dashboard — the "2020 CRS Commitments Dashboard": a
+// category-tabbed, filterable overview of every tracked CRS BiOp commitment.
+// Top to bottom: a tab bar bucketing commitments into categories, a status stat
+// row scoped to whatever the active tab + filters currently show, a search +
+// status-chip filter pair, and one row per matching commitment carrying a quiet
+// type/category tag pair, a title link, and a segmented status TIMELINE BAR.
+//
+// Timeline bar, not a per-year dot grid: consecutive years sharing a status are
+// merged into one colored segment (computeSegments()), so a run like "In
+// Progress 2022-2026" reads as a single shape instead of five identical dots
+// the reader has to count. Requested after the original per-year-dot version
+// (still used one lego-tier down, on the single-commitment detail page's
+// cbf-crs-commitment-timeline) proved hard to scan at 16+ rows. Segments still
+// align to the shared 15-column year grid (same track as the axis header and
+// the document-marker row below the bar), so comparing a single year straight
+// down a column still works.
+//
+// Interaction model (deliberate for this rebuild, documented where it diverges
+// from the ambiguous legacy page):
+//   - The stat row ALWAYS describes what is on screen — it recomputes over the
+//     visible subset (active tab AND search AND status filter) on every change.
+//   - Everything is fixed on CURRENT_YEAR (2026): each commitment's `.status` is
+//     its 2026 status. OUT OF SCOPE for this pass: the legacy year-picker that
+//     re-pointed the stats to a chosen year. Not built.
+//   - JUDGMENT CALL 3 (current-year marker): the old per-year-dot version tinted
+//     every row's current-year CELL. A segment can now span straight through
+//     that year, so tinting part of one shape would misread as "this whole
+//     span is happening now." Dropped the per-row tint in favor of a thin
+//     vertical "today" line (cbf-crs-dashboard__now-line) drawn OVER every
+//     row's bar, independent of segment color — a position marker, not a
+//     status signal. Scoped to the bar only, NOT the document row below it:
+//     an earlier version spanned both and cut straight through document
+//     marker icons when one fell on the current year, which read as broken
+//     rather than intentional. Positioned via nowLinePct (derived from
+//     CURRENT_YEAR's index, not a hardcoded %).
+//
+// Composition — every control is a lego, no reinvented primitive:
+//   - esa-tab-layout (Lit)  → the category tab bar; its default slot holds the
+//     body, so the SAME content renders under every tab and the client just
+//     re-filters. `tabchange` drives the filter. Per-tab `badge` = bucket size.
+//   - esa-stat + esa-badge  → each stat is a colored status dot beside an esa-stat.
+//   - cbf-search-field      → the search half of the filter pair.
+//   - esa-icon (file-text)  → the per-year document indicator (unchanged from the
+//     dot version, just repositioned onto its own grid row under the bar).
+//   - esa-empty-state       → the zero-match state.
+//   - esa-button            → the Document Library link out to the sibling page.
+//
+// The status filter is NOT esa-chip-group (see bcn-lego-checked below) — it's a
+// custom radiogroup of <button>s carrying the same swatch used by the timeline
+// bar/legend, so the filter row doubles as the color legend (consolidating what
+// used to be two separate rows independently repeating the same 6-7 status
+// names — requested after that repetition was flagged as noise).
+//
+// bcn-lego-checked: two bespoke pieces, both checked against the hub source, not
+// just the docs. (1) The timeline-bar segments/layout — a two-column row grid, a
+// fixed 15-column year grid shared by the axis/bar/document row, and plain colored
+// <span> segments reading the SAME semantic tokens esa-badge's variants read
+// (--color-info/--color-warning/--color-success/--color-secondary) so segment
+// color is pixel-identical to the dots it replaced, never a reinvented palette. No
+// esa- lego renders a merged-duration timeline bar. (2) The status-filter chips —
+// esa-chip-group.ts's `tone` prop only colors a chip once ACTIVE
+// (`.chip--active.chip--*`); every option renders plain gray-on-white at rest, so
+// it can't carry a persistent swatch and serve as the legend too. The custom chips
+// mirror esa-chip-group's own resting/hover/active token chain and ARIA shape
+// (role="radiogroup"/"radio" + aria-checked) so they read and behave like the same
+// chip family, just with a swatch slot the lego's markup has no room for. Checked
+// the full node_modules/@esa/ecology/src/components catalog (esa-card/pill/badge/
+// stat are atoms) and Beacon is not on this machine for both. The quiet tag pair is
+// the real esa-badge lego re-toned via its PUBLIC component tokens (--badge-bg/
+// --badge-text-color), not a hand-rolled tag. This component is the reusable home.
+import '@esa/tokens/layouts.css';
+import '@esa/tokens/type-roles.css';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaIcon from '@esa/ecology/esa-icon.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import CbfSearchField from '../search/cbf-search-field.astro';
+import {
+  commitments as defaultCommitments,
+  YEARS,
+  CURRENT_YEAR,
+  STATUS_DOT,
+  documentYearMarkers,
+} from '../../data/crs-commitments.mjs';
+import { withBase } from '../../lib/base';
+
+type BadgeVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
+type CommitmentStatus =
+  | 'Not Started' | 'In Progress' | 'Delayed' | 'Future' | 'Complete' | 'Closed';
+
+interface CrsCommitment {
+  number: string;
+  title: string;
+  category: string;
+  subcategory: string;
+  commitmentType: string;
+  status: CommitmentStatus;
+  statusByYear: Record<number, CommitmentStatus>;
+}
+
+interface Props {
+  commitments?: CrsCommitment[];
+}
+
+const { commitments = defaultCommitments as CrsCommitment[] } = Astro.props;
+
+// STATUS_DOT (status -> esa-badge dot variant) is imported from the shared data
+// module, co-located beside STATUS_TONE (the sibling esa-pill variant map) so
+// the two palettes can't silently drift as statuses change. See the module for
+// the full rationale on the dot-vs-pill tone grouping.
+const statusDot = STATUS_DOT as Record<CommitmentStatus, BadgeVariant>;
+
+interface Segment {
+  status: CommitmentStatus;
+  startIndex: number;
+  endIndex: number;
+  span: number;
+}
+
+// Merge consecutive years sharing a status into one segment — a run like
+// 2022-2026 "In Progress" becomes one shape instead of five identical dots.
+function computeSegments(statusByYear: Record<number, CommitmentStatus>): Segment[] {
+  const segments: Segment[] = [];
+  YEARS.forEach((year, i) => {
+    const status = statusByYear[year];
+    const last = segments[segments.length - 1];
+    if (last && last.status === status) {
+      last.endIndex = i;
+      last.span += 1;
+    } else {
+      segments.push({ status, startIndex: i, endIndex: i, span: 1 });
+    }
+  });
+  return segments;
+}
+
+function segmentLabel(seg: Segment): string {
+  const startYear = YEARS[seg.startIndex];
+  const endYear = YEARS[seg.endIndex];
+  return seg.span > 1 ? `${startYear}–${endYear}: ${seg.status}` : `${startYear}: ${seg.status}`;
+}
+
+function timelineSummary(segments: Segment[]): string {
+  return segments.map(segmentLabel).join('; ');
+}
+
+// Document markers — a second, independent signal from the year-status dots:
+// whether a due-date deliverable for that year has a document on file.
+// Derived from documentYearMarkers() per row (see the row loop below); this is
+// just the shared legend explaining the two tones.
+const docLegend = [
+  { state: 'received' as const, label: 'Document received' },
+  { state: 'pending' as const, label: 'Document due' },
+];
+
+// The six-stat summary. JUDGMENT CALL 1 (Future / Not Started): the requested row
+// is fixed at six entries and lists "Not Started" but not "Future", so Future's
+// count is FOLDED into the Not started bucket (both are "no active work yet" and
+// both are near-zero at CURRENT_YEAR anyway). Total gets no dot — it is the
+// aggregate, not a status. Counts are computed by each commitment's CURRENT_YEAR
+// `.status`.
+type StatEntry = { key: string; label: string; variant: BadgeVariant; dot: boolean; statuses: CommitmentStatus[] | null };
+const statEntries: StatEntry[] = [
+  { key: 'total',       label: 'Total commitments', variant: 'primary',   dot: false, statuses: null },
+  { key: 'in-progress', label: 'In progress',       variant: 'info',      dot: true,  statuses: ['In Progress'] },
+  { key: 'not-started', label: 'Not started',       variant: 'secondary', dot: true,  statuses: ['Not Started', 'Future'] },
+  { key: 'delayed',     label: 'Delayed',           variant: 'warning',   dot: true,  statuses: ['Delayed'] },
+  { key: 'complete',    label: 'Complete',          variant: 'success',   dot: true,  statuses: ['Complete'] },
+  { key: 'closed',      label: 'Closed',            variant: 'secondary', dot: true,  statuses: ['Closed'] },
+];
+const countFor = (list: CrsCommitment[], statuses: CommitmentStatus[] | null) =>
+  statuses === null ? list.length : list.filter((c) => statuses.includes(c.status)).length;
+const initialCounts = statEntries.map((s) => countFor(commitments, s.statuses));
+
+// Tab → filter predicate. Declared here to compute each tab's bucket badge; the
+// client script re-declares the same list (functions can't cross the SSR boundary).
+const tabPredicates: ((c: CrsCommitment) => boolean)[] = [
+  () => true,
+  (c) => c.commitmentType === 'Reporting',
+  (c) => c.category === 'Habitat' && c.subcategory === 'Tributary',
+  (c) => c.category === 'Habitat' && c.subcategory === 'Estuary',
+  (c) => c.category === 'Above Anadromy',
+  (c) => c.category === 'Hatchery',
+  (c) => c.category === 'Predation',
+  (c) => c.category === 'Hydro',
+  (c) => c.subcategory === 'RM&E',
+];
+const tabLabels = [
+  'Overall Progress', 'BiOp Reporting', 'Tributary Habitat', 'Estuary Habitat',
+  'Above Anadromy', 'Hatchery', 'Predation', 'Hydro', 'RM&E',
+];
+const tabs = tabLabels.map((label, i) => ({
+  label,
+  badge: commitments.filter(tabPredicates[i]).length,
+}));
+
+// Status filter chips ALSO serve as the color legend — each chip carries its
+// STATUS_DOT swatch (see the custom radiogroup below; esa-chip-group's `tone`
+// only colors the ACTIVE chip, not every option at rest, so it can't stay a
+// legend while nothing is selected). Replaces what used to be two separate
+// rows independently repeating the same 6-7 status names. Single-select,
+// "All" escape first, canonical lifecycle order; "All" has no swatch (it
+// isn't a status). Offers Future separately even though the stat row folds
+// it — the filter stays granular.
+const statusFilterChips: Array<{ value: string; label: string; variant: BadgeVariant | null }> = [
+  { value: '', label: 'All', variant: null },
+  ...(['Not Started', 'In Progress', 'Delayed', 'Future', 'Complete', 'Closed'] as CommitmentStatus[]).map(
+    (status) => ({ value: status, label: status, variant: statusDot[status] })
+  ),
+];
+
+const year2 = (year: number) => String(year).slice(2);
+
+// Horizontal position (as a % of the 15-column bar track) of the CURRENT_YEAR
+// column's center — drives the vertical "today" line drawn over every row's
+// bar + document row. Derived from YEARS/CURRENT_YEAR rather than a hardcoded
+// percentage so it can't silently drift if either ever changes.
+const currentYearIndex = YEARS.indexOf(CURRENT_YEAR);
+const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
+---
+<section class="cbf-crs-dashboard stack" data-gap="lg">
+  <esa-tab-layout
+    class="cbf-crs-dashboard__tabs"
+    data-crs-tabs
+    active-index="0"
+    tabs={JSON.stringify(tabs)}
+  >
+    <!-- Body lives in the DEFAULT slot: esa-tab-layout renders its active panel
+         slot with the default slot as fallback, so this content shows under every
+         tab and the client script just re-filters in place. -->
+    <div class="cbf-crs-dashboard__body stack" data-gap="lg">
+      <!-- Stat row — recomputed over the visible subset by the client script.
+           Labeled with CURRENT_YEAR so it can't be mistaken for a lifetime/
+           all-years count now that the bar below shows the full timeline. -->
+      <p class="type-caption cbf-crs-dashboard__stats-caption">{CURRENT_YEAR} CRS Commitments Status</p>
+      <div class="cbf-crs-dashboard__stats grid" role="group" aria-label={`${CURRENT_YEAR} status summary for the current view`}>
+        {statEntries.map((s, i) => (
+          <div class="cbf-crs-dashboard__stat" data-stat-key={s.key}>
+            {/* The same swatch element as the legend and bar segments (not
+                esa-badge's own dot) — esa-badge's info/secondary/success
+                variants read tokens this theme doesn't tune for legibility
+                (see the segment CSS below), so a badge dot here would drift
+                out of sync with the legend/bar it's meant to match. */}
+            {s.dot && <span class="cbf-crs-dashboard__segment cbf-crs-dashboard__segment--swatch" data-variant={s.variant} />}
+            <EsaStat value={initialCounts[i]} label={s.label} />
+          </div>
+        ))}
+      </div>
+
+      <!-- Filters — applied on top of the active tab's subset. The status
+           filter doubles as the color legend (each chip carries its swatch),
+           so there's no separate "Status" legend row repeating these names. -->
+      <div class="cbf-crs-dashboard__controls repel">
+        <div class="cbf-crs-dashboard__filter">
+          <span class="type-caption">Status</span>
+          <div
+            class="cbf-crs-dashboard__status-filter cluster"
+            data-gap="sm"
+            role="radiogroup"
+            aria-label="Filter by status"
+            data-crs-status-filter
+          >
+            {statusFilterChips.map((chip) => (
+              <button
+                type="button"
+                role="radio"
+                aria-checked={chip.value === ''}
+                class="cbf-crs-dashboard__status-chip"
+                data-value={chip.value}
+              >
+                {chip.variant && (
+                  <span
+                    class="cbf-crs-dashboard__segment cbf-crs-dashboard__segment--swatch"
+                    data-variant={chip.variant}
+                    aria-hidden="true"
+                  />
+                )}
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div class="cbf-crs-dashboard__search">
+          <CbfSearchField
+            placeholder="Search title or number…"
+            iconSize={18}
+            data-crs-search
+            aria-label="Search commitments"
+          />
+        </div>
+      </div>
+
+      <!-- Document legend — the status legend above folded into the status
+           filter chips, so only the document markers need their own key. -->
+      <div class="cbf-crs-dashboard__legend cluster" data-gap="md" aria-label="Document legend">
+        <span class="type-label cbf-crs-dashboard__legend-lead">Documents</span>
+        {docLegend.map((d) => (
+          <span class="cbf-crs-dashboard__legend-item">
+            <span class:list={['cbf-crs-dashboard__docmark', `cbf-crs-dashboard__docmark--${d.state}`]}>
+              <EsaIcon name="file-text" size="xs" />
+            </span>
+            <span class="type-label">{d.label}</span>
+          </span>
+        ))}
+      </div>
+
+      <!-- The list. A shared year axis sits above aligned rows; the current-year
+           column is tinted in the axis and every row to read as one vertical band. -->
+      <div class="cbf-crs-dashboard__scroll">
+        <div class="cbf-crs-dashboard__list" data-crs-list>
+          <div class="cbf-crs-dashboard__row cbf-crs-dashboard__row--axis" aria-hidden="true">
+            <div class="cbf-crs-dashboard__info"></div>
+            <div class="cbf-crs-dashboard__strip">
+              {YEARS.map((year) => (
+                <span class:list={['cbf-crs-dashboard__cell', 'cbf-crs-dashboard__cell--year', { 'is-current': year === CURRENT_YEAR }]}>
+                  <span class="type-label cbf-crs-dashboard__yearlabel">&rsquo;{year2(year)}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {commitments.map((c) => {
+            const docMarkers = documentYearMarkers(c.number);
+            const segments = computeSegments(c.statusByYear);
+            return (
+            <article
+              class="cbf-crs-dashboard__row"
+              data-crs-row
+              data-category={c.category}
+              data-subcategory={c.subcategory}
+              data-type={c.commitmentType}
+              data-status={c.status}
+              data-search={`${c.number} ${c.title}`.toLowerCase()}
+            >
+              <div class="cbf-crs-dashboard__info stack" data-gap="2xs">
+                <div class="cbf-crs-dashboard__tags cluster" data-gap="2xs">
+                  {/* No variant → base esa-badge, whose --_badge-bg reads the
+                      --badge-bg token we override on the container below. A named
+                      variant (e.g. secondary) would re-set --_badge-bg and ignore it. */}
+                  <EsaBadge value={c.commitmentType} size="sm" />
+                  <EsaBadge value={c.category} size="sm" />
+                </div>
+                <a class="type-body cbf-crs-dashboard__title" href={withBase(`/crs-commitments/${c.number}`)}>
+                  {c.title}
+                </a>
+                <span class="type-label cbf-crs-dashboard__number">{c.number}</span>
+              </div>
+              <div class="cbf-crs-dashboard__timeline stack" data-gap="2xs">
+                <div
+                  class="cbf-crs-dashboard__bar"
+                  role="img"
+                  aria-label={`Status timeline for ${c.number}: ${timelineSummary(segments)}`}
+                >
+                  {segments.map((seg) => (
+                    <span
+                      class="cbf-crs-dashboard__segment"
+                      data-variant={statusDot[seg.status] ?? 'secondary'}
+                      style={`grid-column: ${seg.startIndex + 1} / ${seg.endIndex + 2};`}
+                      title={segmentLabel(seg)}
+                    />
+                  ))}
+                  <!-- "Today" reference line — scoped to the bar only (not the
+                       document row below), so it can never sit over a document
+                       marker. A position marker, not a status signal. -->
+                  <span
+                    class="cbf-crs-dashboard__now-line"
+                    style={`left: ${nowLinePct}%;`}
+                    aria-hidden="true"
+                    title={`Current year: ${CURRENT_YEAR}`}
+                  />
+                </div>
+                <div class="cbf-crs-dashboard__docrow">
+                  {YEARS.map((year, i) => {
+                    const docState = docMarkers[year];
+                    if (!docState) return null;
+                    const docLabel = docState === 'received' ? 'document received' : 'document due, not yet received';
+                    return (
+                      <span
+                        class:list={['cbf-crs-dashboard__docmark', `cbf-crs-dashboard__docmark--${docState}`]}
+                        style={`grid-column: ${i + 1};`}
+                        title={`${year}: ${docLabel}`}
+                      >
+                        <EsaIcon name="file-text" size="xs" label={`${year}: ${docLabel}`} />
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            </article>
+            );
+          })}
+        </div>
+      </div>
+
+      <div class="cbf-crs-dashboard__empty" data-crs-empty hidden>
+        <EsaEmptyState
+          title="No commitments match these filters"
+          description="Try a different category tab, clear the status filter, or change your search."
+          size="sm"
+        />
+      </div>
+    </div>
+  </esa-tab-layout>
+</section>
+
+<style>
+  /* Pre-upgrade: keep the body visible (progressive enhancement) — only the tab
+     strip is missing until esa-tab-layout defines. */
+  /* Confine any tab-strip overflow to the strip itself (9 tabs), never the panel. */
+  .cbf-crs-dashboard__tabs::part(tabs) {
+    overflow-x: auto;
+  }
+
+  .cbf-crs-dashboard__stats-caption {
+    margin: 0;
+    color: var(--color-text-muted);
+  }
+
+  /* Stat row: responsive auto-fit track; each stat is a dot + esa-stat. */
+  .cbf-crs-dashboard__stats {
+    --grid-min: 8.5rem;
+    align-items: center;
+  }
+  .cbf-crs-dashboard__stat {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-300);
+  }
+
+  .cbf-crs-dashboard__controls {
+    align-items: flex-end;
+    gap: var(--spacing-400);
+    flex-wrap: wrap;
+  }
+  .cbf-crs-dashboard__filter {
+    display: inline-flex;
+    flex-direction: column;
+    gap: var(--spacing-150);
+  }
+  .cbf-crs-dashboard__filter .type-caption {
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  /* Custom status-filter chip — NOT esa-chip-group. Checked the hub source
+     (esa-chip-group.ts): its `tone` prop only colors a chip once ACTIVE
+     (.chip--active.chip--*), every option is plain gray-on-white at rest, so
+     it can't carry a persistent swatch and double as the color legend this
+     consolidation needs. Styled to match esa-chip-group's own resting/hover/
+     active tokens (same --color-border/--color-surface-sunken/etc. chain) so
+     it reads as the same "chip" family, just with a swatch slot esa-chip-
+     group's markup has no room for. */
+  .cbf-crs-dashboard__status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-100);
+    padding: var(--spacing-150) var(--spacing-300);
+    border-radius: var(--radius-100);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      background-color var(--transition-fast, 150ms ease),
+      border-color var(--transition-fast, 150ms ease),
+      color var(--transition-fast, 150ms ease);
+  }
+  .cbf-crs-dashboard__status-chip:hover {
+    background: var(--color-surface-sunken);
+    border-color: var(--color-border-strong);
+    color: var(--color-text-primary);
+  }
+  .cbf-crs-dashboard__status-chip[aria-checked='true'] {
+    background: var(--color-surface-sunken);
+    border-color: var(--color-border-strong);
+    color: var(--color-text-primary);
+  }
+  .cbf-crs-dashboard__status-chip:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 var(--focus-ring-width, 2px) var(--focus-ring-color, var(--color-primary));
+  }
+
+  .cbf-crs-dashboard__search {
+    flex: 1 1 260px;
+    max-width: 380px;
+    min-width: 200px;
+  }
+
+  .cbf-crs-dashboard__legend {
+    align-items: center;
+    row-gap: var(--spacing-200);
+    padding-bottom: var(--spacing-200);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-crs-dashboard__legend-lead {
+    color: var(--color-text-secondary);
+  }
+  .cbf-crs-dashboard__legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-150);
+    color: var(--color-text-secondary);
+  }
+
+  /* On narrow viewports the aligned strip can't compress past its min column, so
+     the whole list scrolls horizontally rather than crushing the dots. */
+  .cbf-crs-dashboard__scroll {
+    overflow-x: auto;
+  }
+  .cbf-crs-dashboard__list {
+    min-width: 44rem;
+  }
+
+  /* Two-column row: commitment info + the aligned year strip. The axis header
+     reuses the same grid so its year labels sit directly above each column. */
+  .cbf-crs-dashboard__row {
+    display: grid;
+    grid-template-columns: minmax(13rem, 20rem) minmax(0, 1fr);
+    gap: var(--spacing-400);
+    align-items: center;
+    padding: var(--spacing-300) 0;
+    border-bottom: 1px solid var(--color-border-light, var(--color-border));
+  }
+  .cbf-crs-dashboard__row--axis {
+    padding-block: var(--spacing-100) var(--spacing-200);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .cbf-crs-dashboard__title {
+    color: var(--color-primary-strong, var(--color-primary));
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+  }
+  .cbf-crs-dashboard__title:hover {
+    text-decoration: underline;
+  }
+  .cbf-crs-dashboard__title:focus-visible {
+    outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--color-primary));
+    outline-offset: 2px;
+    border-radius: var(--radius-050, 2px);
+  }
+  .cbf-crs-dashboard__number {
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Quiet tag pair: the real esa-badge lego, re-toned to a neutral surface via its
+     PUBLIC component tokens (design-principles: tags are quiet 4px badges, not fills). */
+  .cbf-crs-dashboard__tags {
+    --badge-bg: var(--color-surface-sunken);
+    --badge-text-color: var(--color-text-secondary);
+    flex-wrap: wrap;
+  }
+
+  /* Fixed 15-column axis strip: column N aligns with the same column in every
+     row's timeline bar + document row below, so the year labels sit directly
+     above the right span. Axis-only now — data rows use .cbf-crs-dashboard__bar
+     / __docrow (own rule set below), sharing this exact column template. */
+  .cbf-crs-dashboard__strip {
+    display: grid;
+    grid-template-columns: repeat(15, minmax(1.1rem, 1fr));
+    gap: var(--spacing-050);
+    align-items: center;
+  }
+  .cbf-crs-dashboard__cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-050);
+    padding-block: var(--spacing-100);
+    border-radius: var(--radius-100);
+  }
+  /* Current year, axis header only (see JUDGMENT CALL 3 in the file header): a
+     quiet tint (no saturated fill), matching the sibling
+     cbf-crs-commitment-timeline's "containers stay neutral" rule. */
+  .cbf-crs-dashboard__cell.is-current {
+    background: var(--color-primary-subtle);
+  }
+  .cbf-crs-dashboard__cell--year .cbf-crs-dashboard__yearlabel {
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-crs-dashboard__cell--year.is-current .cbf-crs-dashboard__yearlabel {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-bold);
+  }
+
+  /* The segmented status timeline bar — same 15-column track as the axis, but
+     each item SPANS the column range of a merged run of years (computeSegments
+     in frontmatter) instead of one item per column. Segments touch directly
+     (no column-gap) and only the bar's outer ends (first/last segment) round
+     — reads as one continuous bar made of colored zones, not a row of
+     separate chips, and leaves the "today" line as the only vertical break. */
+  .cbf-crs-dashboard__bar {
+    position: relative; /* positions the "today" line below, scoped to the bar only */
+    display: grid;
+    grid-template-columns: repeat(15, minmax(1.1rem, 1fr));
+    /* No column-gap: segments touch directly (a color change at the boundary
+       is signal enough), so the "today" line is the only vertical break in
+       the bar instead of competing with a white gap at every transition. */
+    height: 22px;
+  }
+  .cbf-crs-dashboard__segment {
+    align-self: center;
+    height: 16px;
+  }
+  .cbf-crs-dashboard__segment:first-child {
+    border-top-left-radius: var(--radius-100);
+    border-bottom-left-radius: var(--radius-100);
+  }
+  .cbf-crs-dashboard__segment:last-child {
+    border-top-right-radius: var(--radius-100);
+    border-bottom-right-radius: var(--radius-100);
+  }
+  /* Color is the only signal, but NOT read straight off esa-badge's own
+     variants — two of the four collide with this brand's tuning:
+     - 'secondary': this theme re-points --color-info to --color-secondary
+       (they're both the brand blue, #2770b2 — verified in the browser, not
+       just in the source), so an "In Progress" segment sitting next to a
+       "Not Started/Future/Closed" segment would be visually seamless and
+       erase the exact transition this bar exists to show. --color-text-muted
+       is a genuinely distinct neutral gray for the quiet bucket.
+     - 'success': --color-success resolves to #bdee63, a pale yellow-green
+       (verified in the browser) that's hard to see at this small a fill size
+       and reads too close to the neutral gray. --color-green-11 is the hub's
+       own darker "accessible foreground" step of the SAME green ramp (the
+       step --color-primary-strong itself defaults to for text-on-surface,
+       before cb-fish re-points it) — a legitimate existing token, not an
+       invented value, just a stronger step of the same hue.
+     Both are the same kind of escape the quiet tag pair below uses (a public-
+     token override) for when the variant system itself doesn't give this
+     brand what it needs; logged to the ledger. */
+  .cbf-crs-dashboard__segment[data-variant='info'] { background: var(--color-info); }
+  .cbf-crs-dashboard__segment[data-variant='warning'] { background: var(--color-warning); }
+  .cbf-crs-dashboard__segment[data-variant='success'] { background: var(--color-green-11); }
+  .cbf-crs-dashboard__segment[data-variant='secondary'] { background: var(--color-text-muted); }
+  /* Legend / stat-row swatch: the identical segment coloring outside the grid
+     track, but NOT the bar's first/last-child partial rounding — a standalone
+     swatch sits before a text label (never truly "last-child"), so the
+     first/last-child rules above would round only its left side and read as
+     lopsided. Round all four corners here instead. */
+  .cbf-crs-dashboard__segment--swatch {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: var(--radius-100);
+  }
+
+  /* Document-marker row: its own 15-column track directly under the bar, one
+     icon per year that actually has a tracked due date — a year with no marker
+     renders nothing, so this row costs nothing when a commitment has none. */
+  .cbf-crs-dashboard__docrow {
+    display: grid;
+    grid-template-columns: repeat(15, minmax(1.1rem, 1fr));
+    column-gap: 2px;
+    min-height: 18px;
+  }
+
+  /* A quiet position marker, NOT a status color — deliberately muted (a
+     neutral border tone at reduced opacity, not --color-primary at full
+     strength) so it reads as a reference line, not another signal competing
+     with the segment colors it sits over. Scoped to the bar's own height
+     only (positioned relative to .cbf-crs-dashboard__bar, not the timeline
+     as a whole) so it never crosses into the document row below and can't
+     sit on top of a document marker. `left` set per-instance via inline
+     style (nowLinePct, computed once from CURRENT_YEAR's index — see
+     frontmatter). */
+  .cbf-crs-dashboard__now-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    /* `left` is set per-instance via inline style (nowLinePct) — deliberately
+       not `inset: 0` here, which would set left too and conflict with it. */
+    width: 2px;
+    margin-left: -1px; /* center the line on its computed left offset */
+    background: var(--color-border-strong);
+    opacity: 0.6;
+    pointer-events: none;
+  }
+
+  /* Per-year document indicator — a small outlined file icon, independent of
+     the status bar above it: whether a due-date deliverable for that year has
+     a document on file. Color is the only signal (success = received, danger =
+     due/not received), matching this repo's "color conveys state" rule. */
+  .cbf-crs-dashboard__docmark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: center;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-050, 2px);
+    border: 1px solid currentColor;
+  }
+  .cbf-crs-dashboard__docmark--received {
+    /* --color-success resolves to a pale yellow-green here (#bdee63) that's
+       hard to see at icon size — same fix as the Complete segment above. */
+    color: var(--color-green-11);
+  }
+  .cbf-crs-dashboard__docmark--pending {
+    color: var(--color-danger);
+  }
+
+
+  /* Hidden rows (client-filtered) collapse the grid row entirely. */
+  .cbf-crs-dashboard__row[hidden] {
+    display: none;
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-tab-layout';
+
+  type CommitmentFields = { category: string; subcategory: string; commitmentType: string };
+
+  // Same tab→predicate list as the frontmatter (functions can't cross the SSR
+  // boundary), keyed by tab index.
+  const TAB_PREDICATES: ((d: CommitmentFields) => boolean)[] = [
+    () => true,
+    (d) => d.commitmentType === 'Reporting',
+    (d) => d.category === 'Habitat' && d.subcategory === 'Tributary',
+    (d) => d.category === 'Habitat' && d.subcategory === 'Estuary',
+    (d) => d.category === 'Above Anadromy',
+    (d) => d.category === 'Hatchery',
+    (d) => d.category === 'Predation',
+    (d) => d.category === 'Hydro',
+    (d) => d.subcategory === 'RM&E',
+  ];
+
+  // Stat bucket → the statuses it tallies. Future folds into Not started; Total = all.
+  const STAT_BUCKETS: Record<string, string[] | null> = {
+    'total': null,
+    'in-progress': ['In Progress'],
+    'not-started': ['Not Started', 'Future'],
+    'delayed': ['Delayed'],
+    'complete': ['Complete'],
+    'closed': ['Closed'],
+  };
+
+  function initDashboard(root: HTMLElement): void {
+    const tabEl = root.querySelector<HTMLElement>('[data-crs-tabs]');
+    const statusChips = Array.from(root.querySelectorAll<HTMLButtonElement>('.cbf-crs-dashboard__status-chip'));
+    const search = root.querySelector<HTMLInputElement>('[data-crs-search]');
+    const rows = Array.from(root.querySelectorAll<HTMLElement>('[data-crs-row]'));
+    const scroll = root.querySelector<HTMLElement>('.cbf-crs-dashboard__scroll');
+    const empty = root.querySelector<HTMLElement>('[data-crs-empty]');
+
+    // Cache each stat's value element — we rewrite its text, never rebuild the lego.
+    const statValueEls = new Map<string, HTMLElement>();
+    root.querySelectorAll<HTMLElement>('[data-stat-key]').forEach((el) => {
+      const v = el.querySelector<HTMLElement>('.esa-stat__value');
+      if (v) statValueEls.set(el.dataset.statKey ?? '', v);
+    });
+
+    let tabIndex = 0;
+    let statusValue = '';
+    let query = '';
+
+    function recompute(): void {
+      const pred = TAB_PREDICATES[tabIndex] ?? (() => true);
+      const q = query.trim().toLowerCase();
+      const visibleStatuses: string[] = [];
+
+      for (const row of rows) {
+        const fields: CommitmentFields = {
+          category: row.dataset.category ?? '',
+          subcategory: row.dataset.subcategory ?? '',
+          commitmentType: row.dataset.type ?? '',
+        };
+        const status = row.dataset.status ?? '';
+        const pass =
+          pred(fields) &&
+          (statusValue === '' || status === statusValue) &&
+          (q === '' || (row.dataset.search ?? '').includes(q));
+        row.hidden = !pass;
+        if (pass) visibleStatuses.push(status);
+      }
+
+      // Stats always describe what's on screen.
+      for (const [key, statuses] of Object.entries(STAT_BUCKETS)) {
+        const count = statuses === null
+          ? visibleStatuses.length
+          : visibleStatuses.filter((s) => statuses.includes(s)).length;
+        const el = statValueEls.get(key);
+        if (el) el.textContent = String(count);
+      }
+
+      const anyVisible = visibleStatuses.length > 0;
+      if (empty) empty.hidden = anyVisible;
+      // Hide the whole list (incl. the lone year axis) when nothing matches.
+      if (scroll) scroll.hidden = !anyVisible;
+    }
+
+    tabEl?.addEventListener('tabchange', (e) => {
+      const index = (e as CustomEvent<{ index: number }>).detail?.index;
+      if (typeof index === 'number') {
+        tabIndex = index;
+        recompute();
+      }
+    });
+    // Custom radiogroup (see the frontmatter note on esa-chip-group's tone
+    // limitation): each chip is its own tab-stop rather than a proper roving-
+    // tabindex radiogroup, a deliberate simplification — every chip stays
+    // keyboard-reachable and Enter/Space-activatable via native <button>
+    // behavior, just without arrow-key roving between options.
+    statusChips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        statusValue = chip.dataset.value ?? '';
+        statusChips.forEach((c) => c.setAttribute('aria-checked', String(c === chip)));
+        recompute();
+      });
+    });
+    search?.addEventListener('input', () => {
+      query = search.value ?? '';
+      recompute();
+    });
+
+    recompute();
+  }
+
+  document
+    .querySelectorAll<HTMLElement>('.cbf-crs-dashboard')
+    .forEach(initDashboard);
+</script>
