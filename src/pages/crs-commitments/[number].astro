@@ -13,7 +13,9 @@ import CbfAppPanel from '../../components/shared/cbf-app-panel.astro';
 import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import CbfReportTabs from '../../components/shared/cbf-report-tabs.astro';
+import CbfPasswordGate from '../../components/shared/cbf-password-gate.astro';
 import { crsReportTabs } from '../../components/crs-commitments/report-tabs';
+import { CRS_GATE_PASSWORD } from '../../components/crs-commitments/gate-password';
 import CbfCrsCommitmentBasics from '../../components/crs-commitments/cbf-crs-commitment-basics.astro';
 import CbfCrsCommitmentTimeline from '../../components/crs-commitments/cbf-crs-commitment-timeline.astro';
 import CbfCrsCommitmentDocuments from '../../components/crs-commitments/cbf-crs-commitment-documents.astro';
@@ -53,6 +55,7 @@ const crumbs = [
   sections:
     - top nav        -> cbf-public-nav
     - page frame     -> esa-container
+    - password gate  -> cbf-password-gate
     - page header    -> esa-page-header
     - sub-nav tabs   -> cbf-report-tabs
     - basics panel   -> cbf-crs-commitment-basics
@@ -65,14 +68,16 @@ const crumbs = [
   <main class="cbf-page">
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
-        <EsaPageHeader eyebrow={commitment.number} title={commitment.title} />
-        <CbfReportTabs tabs={crsReportTabs('grid')} ariaLabel="2020 CRS Commitments sections" />
+        <CbfPasswordGate password={CRS_GATE_PASSWORD}>
+          <EsaPageHeader eyebrow={commitment.number} title={commitment.title} />
+          <CbfReportTabs tabs={crsReportTabs('grid')} ariaLabel="2020 CRS Commitments sections" />
 
-        <div class="cbf-crs-summary stack" data-gap="lg">
-          <CbfCrsCommitmentBasics commitment={commitment} />
-          <CbfCrsCommitmentTimeline statusByYear={commitment.statusByYear} />
-          <CbfCrsCommitmentDocuments documents={documents} />
-        </div>
+          <div class="cbf-crs-summary stack" data-gap="lg">
+            <CbfCrsCommitmentBasics commitment={commitment} />
+            <CbfCrsCommitmentTimeline statusByYear={commitment.statusByYear} />
+            <CbfCrsCommitmentDocuments documents={documents} />
+          </div>
+        </CbfPasswordGate>
       </CbfAppPanel>
     </EsaContainer>
   </main>

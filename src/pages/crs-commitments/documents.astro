@@ -10,7 +10,9 @@ import CbfAppPanel from '../../components/shared/cbf-app-panel.astro';
 import CbfPageHeading from '../../components/shared/cbf-page-heading.astro';
 import CbfCrsDocumentsGrid from '../../components/crs-commitments/cbf-crs-documents-grid.astro';
 import CbfReportTabs from '../../components/shared/cbf-report-tabs.astro';
+import CbfPasswordGate from '../../components/shared/cbf-password-gate.astro';
 import { crsReportTabs } from '../../components/crs-commitments/report-tabs';
+import { CRS_GATE_PASSWORD } from '../../components/crs-commitments/gate-password';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import { withBase } from '../../lib/base';
 
@@ -28,6 +30,7 @@ const crumbs = [
   sections:
     - top nav       -> cbf-public-nav
     - page frame    -> esa-container
+    - password gate -> cbf-password-gate
     - page heading  -> cbf-page-heading
     - sub-nav tabs  -> cbf-report-tabs
     - documents grid -> cbf-crs-documents-grid
@@ -38,9 +41,11 @@ const crumbs = [
   <main class="cbf-page">
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
-        <CbfPageHeading title="Document Library" />
-        <CbfReportTabs tabs={crsReportTabs('documents')} ariaLabel="2020 CRS Commitments sections" />
-        <CbfCrsDocumentsGrid />
+        <CbfPasswordGate password={CRS_GATE_PASSWORD}>
+          <CbfPageHeading title="Document Library" />
+          <CbfReportTabs tabs={crsReportTabs('documents')} ariaLabel="2020 CRS Commitments sections" />
+          <CbfCrsDocumentsGrid />
+        </CbfPasswordGate>
       </CbfAppPanel>
     </EsaContainer>
   </main>
