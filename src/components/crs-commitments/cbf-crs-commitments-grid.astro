@@ -1,10 +1,12 @@
 ---
 // cbf-crs-commitments-grid — the "2020 CRS Commitments" index: a scannable,
 // searchable, filterable table of every tracked CRS BiOp commitment, each row
-// linking to its detail page at /crs-commitments/<number>. A curated view of
-// the legacy 29-column wall — only the columns that matter for scanning live
-// here (number, title, source, category, subcategory, type, frequency, dates,
-// lead agency, current-year status); the full record is on the detail page.
+// linking to its detail page at /crs-commitments/<number>. Column set (and
+// order) was checked directly against prod's real
+// BiologicalOpinionCommitmentsIndex grid and matches it field-for-field (minus
+// the Documents icon column, which the separate document-library page already
+// covers) — this is the same wide, horizontally-scrolling table pattern prod
+// uses, not a narrowed scan view.
 //
 // bcn-lego-checked: ecology has NO table/grid/data-grid lego (checked the full
 // node_modules/@esa/ecology/src/components catalog — esa-card/esa-pill/esa-badge
@@ -22,24 +24,12 @@ import CbfSearchField from '../search/cbf-search-field.astro';
 import EsaPill from '@esa/ecology/esa-pill.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import CbfCrsCreateCommitmentDialog from './cbf-crs-create-commitment-dialog.astro';
 import './cbf-crs-data-grid-chrome.css';
 import { commitments as defaultCommitments, STATUS_TONE } from '../../data/crs-commitments.mjs';
+import type { CrsCommitment } from '../../data/crs-commitments.mjs';
 
 type CommitmentStatus = keyof typeof STATUS_TONE;
-
-interface CrsCommitment {
-  number: string;
-  title: string;
-  source: string;
-  category: string;
-  subcategory: string;
-  commitmentType: string;
-  frequency: string;
-  startDate: string;
-  endDate: string;
-  leadAgency: string;
-  status: CommitmentStatus;
-}
 
 interface Props {
   commitments?: CrsCommitment[];
@@ -70,12 +60,27 @@ const statusFilters = [
     ...(s === 'Delayed' ? { tone: 'amber' as const } : {}),
   })),
 ];
+
+// Option lists for the "Create new CRS Commitment" dialog's native <select>s
+// (see the dialog's bcn-lego-checked note for why they're native, not esa-select).
+const subcategories = Array.from(new Set(commitments.map((c) => c.subcategory))).sort();
+const commitmentTypes = Array.from(new Set(commitments.map((c) => c.commitmentType))).sort();
+const frequencies = Array.from(new Set(commitments.map((c) => c.frequency))).sort();
+const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliverableFrequency))).sort();
 ---
 <section class="cbf-crs-grid stack" data-gap="md">
   <header class="cbf-crs-data-grid__header repel">
     <span class="type-caption cbf-crs-data-grid__count-label">All commitments</span>
-    <EsaButton href="#" color="primary" icon="plus">Create new CRS Commitment</EsaButton>
+    <EsaButton color="primary" icon="plus" data-crs-create-open>Create new CRS Commitment</EsaButton>
   </header>
+
+  <CbfCrsCreateCommitmentDialog
+    categories={categories}
+    subcategories={subcategories}
+    types={commitmentTypes}
+    frequencies={frequencies}
+    deliverableFrequencies={deliverableFrequencies}
+  />
 
   <div class="cbf-crs-data-grid__controls repel">
     <div class="cbf-crs-data-grid__filters cluster" data-gap="lg">
@@ -125,9 +130,11 @@ const statusFilters = [
        system scope hash intact. The grid's Status cell renderer clones the
        matching template's markup — so those chips are byte-identical to the
        lego, never a hand-rolled copy. removable=false: a status indicator, not
-       a removable filter chip. -->
+       a removable filter chip. Pre-renders all 6 lifecycle statuses (not just
+       presentStatuses) so a newly-created commitment's default "Not Started"
+       status has a matching pill even though no existing row uses it today. -->
   <div class="cbf-crs-grid__badge-templates" data-crs-badge-templates hidden aria-hidden="true">
-    {presentStatuses.map((s) => (
+    {statusOrder.map((s) => (
       <span data-status={s}>
         <EsaPill label={s} variant={STATUS_TONE[s]} size="sm" removable={false} />
       </span>
@@ -148,9 +155,15 @@ const statusFilters = [
   ModuleRegistry.registerModules([AllCommunityModule]);
 
   type Commitment = {
-    number: string; title: string; source: string; category: string;
-    subcategory: string; commitmentType: string; frequency: string;
-    startDate: string; endDate: string; leadAgency: string; status: string;
+    number: string; title: string; source: string; sectionNumber: string; pageNumber: string;
+    category: string; subcategory: string; commitmentType: string; frequency: string;
+    description: string; interpretation: string; implementation: string;
+    notes?: string; otherAssociatedCommitments?: string;
+    startDate: string; endDate: string;
+    deliverable: string; deliverableFrequency: string; documentDueDate: string;
+    leadAgency: string; partnerAgency: string; partnerPOC: string; policyLead: string;
+    biopSME: string; cor: string; nmfsPOC: string; associatedProjects: string;
+    status: string;
   };
 
   // Canonical lifecycle order → a status comparator that sorts by workflow stage
@@ -167,7 +180,7 @@ const statusFilters = [
     if (!gridHost || !dataEl) return;
 
     const data: Commitment[] = JSON.parse(dataEl.textContent ?? '[]');
-    const total = data.length;
+    let total = data.length;
 
     const search = root.querySelector<HTMLInputElement>('[data-crs-search]');
     const categoryFilter = root.querySelector<HTMLElement & { value: string }>('[data-crs-category-filter]');
@@ -214,10 +227,20 @@ const statusFilters = [
           headerName: 'Source', field: 'source', colId: 'source', flex: 2, minWidth: 200,
           getQuickFilterText: (p) => p.data?.source ?? '',
         },
+        { headerName: 'Section', field: 'sectionNumber', colId: 'sectionNumber', minWidth: 100 },
+        { headerName: 'Page', field: 'pageNumber', colId: 'pageNumber', minWidth: 90 },
         { headerName: 'Category', field: 'category', colId: 'category', minWidth: 130 },
         { headerName: 'Subcategory', field: 'subcategory', colId: 'subcategory', minWidth: 140 },
         { headerName: 'Type', field: 'commitmentType', colId: 'commitmentType', minWidth: 120 },
         { headerName: 'Frequency', field: 'frequency', colId: 'frequency', minWidth: 120 },
+        { headerName: 'Description', field: 'description', colId: 'description', minWidth: 220 },
+        { headerName: 'Interpretation', field: 'interpretation', colId: 'interpretation', minWidth: 220 },
+        { headerName: 'Implementation', field: 'implementation', colId: 'implementation', minWidth: 220 },
+        { headerName: 'Notes', field: 'notes', colId: 'notes', minWidth: 180 },
+        {
+          headerName: 'Other associated commitments', field: 'otherAssociatedCommitments',
+          colId: 'otherAssociatedCommitments', minWidth: 200,
+        },
         {
           headerName: 'Start', field: 'startDate', colId: 'startDate', minWidth: 120,
           cellDataType: 'date',
@@ -230,7 +253,17 @@ const statusFilters = [
           valueGetter: (p) => asDate(p.data?.endDate),
           valueFormatter: (p) => (p.value instanceof Date ? dateFmt.format(p.value) : ''),
         },
+        { headerName: 'Deliverable', field: 'deliverable', colId: 'deliverable', minWidth: 180 },
+        { headerName: 'Deliverable frequency', field: 'deliverableFrequency', colId: 'deliverableFrequency', minWidth: 160 },
+        { headerName: 'Document due', field: 'documentDueDate', colId: 'documentDueDate', minWidth: 120 },
         { headerName: 'Lead agency', field: 'leadAgency', colId: 'leadAgency', minWidth: 130 },
+        { headerName: 'Partner agency', field: 'partnerAgency', colId: 'partnerAgency', minWidth: 140 },
+        { headerName: 'Partner POC', field: 'partnerPOC', colId: 'partnerPOC', minWidth: 150 },
+        { headerName: 'Policy lead', field: 'policyLead', colId: 'policyLead', minWidth: 150 },
+        { headerName: 'BiOp SME', field: 'biopSME', colId: 'biopSME', minWidth: 150 },
+        { headerName: 'COR', field: 'cor', colId: 'cor', minWidth: 150 },
+        { headerName: 'NMFS POC', field: 'nmfsPOC', colId: 'nmfsPOC', minWidth: 150 },
+        { headerName: 'Associated projects', field: 'associatedProjects', colId: 'associatedProjects', minWidth: 180 },
         {
           headerName: 'Status', field: 'status', colId: 'status', minWidth: 140,
           comparator: (a: string, b: string) => statusRank(a) - statusRank(b),
@@ -268,6 +301,89 @@ const statusFilters = [
     // rows. Status exports as the raw status string (not the pill markup).
     csvBtn?.addEventListener('click', () => {
       gridApi.exportDataAsCsv({ fileName: '2020-crs-commitments.csv' });
+    });
+
+    // "Create new CRS Commitment" → open the dialog, add the row client-side on
+    // submit. This spoke has no backend to persist to (see the dialog's own
+    // header note) — the row lives only in this grid's in-memory rowData.
+    const createOpenBtn = root.querySelector<HTMLElement>('[data-crs-create-open]');
+    const createDialog = root.querySelector<HTMLElement & { show: () => void; close: () => void }>('[data-crs-create-dialog]');
+    const createForm = root.querySelector<HTMLFormElement>('[data-crs-create-form]');
+    const createCancelBtn = root.querySelector<HTMLElement>('[data-crs-create-cancel]');
+    const createSubmitBtn = root.querySelector<HTMLElement>('[data-crs-create-submit]');
+    const createError = root.querySelector<HTMLElement & { hidden: boolean }>('[data-crs-create-error]');
+
+    const createField = (name: string): (HTMLElement & { value?: string }) | null =>
+      createForm?.querySelector<HTMLElement & { value?: string }>(`[data-field="${name}"]`) ?? null;
+    const createFieldValue = (name: string): string => (createField(name)?.value ?? '').trim();
+
+    function resetCreateForm(): void {
+      createForm?.querySelectorAll<HTMLElement & { value?: string }>('[data-field]').forEach((el) => {
+        if ('value' in el) el.value = '';
+      });
+      if (createError) createError.hidden = true;
+    }
+
+    createOpenBtn?.addEventListener('click', () => createDialog?.show());
+    createCancelBtn?.addEventListener('click', () => {
+      createDialog?.close();
+      resetCreateForm();
+    });
+
+    createSubmitBtn?.addEventListener('click', () => {
+      const title = createFieldValue('title');
+      const category = createFieldValue('category');
+      if (!title || !category) {
+        if (createError) createError.hidden = false;
+        return;
+      }
+
+      // Next number in the existing CRS-Com-<n> series.
+      const nextN = data.reduce((max, c) => {
+        const n = Number(c.number.replace(/^CRS-Com-/, ''));
+        return Number.isFinite(n) ? Math.max(max, n) : max;
+      }, 0) + 1;
+
+      const row: Commitment = {
+        number: `CRS-Com-${nextN}`,
+        title,
+        source: createFieldValue('source'),
+        sectionNumber: createFieldValue('sectionNumber'),
+        pageNumber: createFieldValue('pageNumber'),
+        category,
+        subcategory: createFieldValue('subcategory'),
+        commitmentType: createFieldValue('commitmentType') || 'Functional',
+        frequency: createFieldValue('frequency') || 'Recurring',
+        description: createFieldValue('description'),
+        interpretation: createFieldValue('interpretation'),
+        implementation: createFieldValue('implementation'),
+        notes: createFieldValue('notes'),
+        otherAssociatedCommitments: createFieldValue('otherAssociatedCommitments'),
+        startDate: createFieldValue('startDate'),
+        endDate: createFieldValue('endDate'),
+        deliverable: createFieldValue('deliverable'),
+        deliverableFrequency: createFieldValue('deliverableFrequency') || 'N/A',
+        documentDueDate: createFieldValue('documentDueDate'),
+        leadAgency: createFieldValue('leadAgency'),
+        partnerAgency: createFieldValue('partnerAgency'),
+        partnerPOC: createFieldValue('partnerPOC'),
+        policyLead: createFieldValue('policyLead'),
+        biopSME: createFieldValue('biopSME'),
+        cor: createFieldValue('cor'),
+        nmfsPOC: createFieldValue('nmfsPOC'),
+        associatedProjects: createFieldValue('associatedProjects'),
+        status: 'Not Started',
+      };
+
+      data.unshift(row);
+      total += 1;
+      gridApi.applyTransaction({ add: [row], addIndex: 0 });
+
+      const snackbar = document.querySelector<HTMLElement & { success?: (msg: string, cfg?: unknown) => void }>('[data-snackbar]');
+      snackbar?.success?.(`${row.number} created.`, { duration: 5000 });
+
+      createDialog?.close();
+      resetCreateForm();
     });
   }
 

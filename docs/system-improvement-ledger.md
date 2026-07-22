@@ -47,3 +47,27 @@ hub fix. Surface these for promotion via `/request-lego` or a hub PR.
   fix: reconsider whether `--color-success` should default to a step this pale,
   or whether `theme-cb-fish.css` should re-point it the way it already re-points
   `--color-primary`/`--color-secondary`.
+
+- **`esa-select` and `esa-textarea` never render in this spoke's dev server**
+  (esassoc/ecology#5 for `esa-select`; `esa-textarea` shows the identical
+  symptom and is very likely the same bug). Confirmed live at
+  `/design-system/components/esa-select` and `/design-system/components/esa-textarea`
+  — the Preview/Sizes/States boxes render completely empty, no console error.
+  Isolated the cause to the *import path*, not the component itself: a raw
+  `import('/node_modules/@esa/ecology/src/components/esa-select.ts')` (direct
+  file path) renders the element correctly with a live shadow root; the normal
+  bare-specifier `import '@esa/ecology/esa-select'` a real page uses does not —
+  the custom element is simply never defined, silently. Other Lit legos
+  imported the same bare-specifier way in this spoke (`esa-text-field`,
+  `esa-date-picker`, `esa-dialog`, `esa-chip-group`, `esa-snackbar-container`)
+  all work fine, so this isn't a spoke-wide Vite resolution problem — something
+  specific to how these two components' modules are structured/registered
+  breaks under the bare-specifier resolution path. Worked around both times by
+  falling back to native `<select>`/`<textarea>`, styled to match the
+  surrounding field chrome (map-sow commit `b5a60d6`;
+  `cbf-crs-create-commitment-dialog.astro` here). Proposed hub fix: reproduce
+  the bare-specifier import path (not a direct file import) in a spoke dev
+  server and find what's different about `esa-select`/`esa-textarea`'s module
+  vs. the working components — likely worth checking for a duplicate/shadowed
+  `customElements.define` registration or a top-level import that throws
+  silently inside a try/catch.

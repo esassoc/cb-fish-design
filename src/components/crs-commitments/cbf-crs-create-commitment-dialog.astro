@@ -1,0 +1,245 @@
+---
+// cbf-crs-create-commitment-dialog — the "Create new CRS Commitment" modal
+// launched from the commitments grid's header CTA. Collects the fields a
+// Commitment Administrator sets when standing up a new tracked commitment —
+// grouped into the same "Overview" / "Responsible parties" sections as
+// cbf-crs-commitment-basics.astro's read view, so create and view share one
+// mental model of the record. This spoke builds to static HTML with no
+// backend (see cbf-password-gate.astro's security note for the same
+// constraint) — Create adds the row to the grid's in-memory AG Grid table and
+// confirms with a toast; nothing persists past a page reload.
+//
+// Field coverage was checked directly against prod (cbfish.org's real "New CRS
+// Commitment" form) — every field prod collects has a home here, EXCEPT prod's
+// tag-adding comboboxes for Source/Category/Subcategory (multi-value pickers)
+// and its rich-text Description editor, which are simplified to a single value
+// / plain textarea respectively — this is a demo prototype, not a byte-for-
+// byte port, and no lego provides a multi-select-with-existing-tags widget or
+// an RTE. Commitment Number is auto-generated here (prod takes it as manual
+// text) to avoid a duplicate-number entry mistake in the demo.
+//
+// bcn-lego-checked: two components never render in this spoke's dev server —
+// esa-select (esassoc/ecology#5, confirmed live at
+// /design-system/components/esa-select — Preview/Sizes/States all render
+// empty; same reason map-sow reverted to native <select> in commit b5a60d6)
+// and esa-textarea (same silent-failure symptom, confirmed live at
+// /design-system/components/esa-textarea — logged as a second instance of the
+// same class of gap in docs/system-improvement-ledger.md). Category /
+// Subcategory / Type / Frequency / Deliverable frequency use native <select>,
+// and Description / Interpretation / Implementation / Notes use native
+// <textarea>, both styled to match the surrounding lego field chrome. Every
+// other control IS a lego: esa-dialog (modal chrome), esa-text-field (single-
+// line text), esa-date-picker (start/end date, confirmed rendering
+// correctly), esa-button (footer actions). Checked the full
+// node_modules/@esa/ecology/src/components catalog; Beacon is not on this
+// machine.
+import EsaButton from '@esa/ecology/esa-button.astro';
+
+interface Props {
+  categories: string[];
+  subcategories: string[];
+  types: string[];
+  frequencies: string[];
+  deliverableFrequencies: string[];
+}
+
+const { categories, subcategories, types, frequencies, deliverableFrequencies } = Astro.props;
+---
+<esa-dialog heading="Create new CRS Commitment" show-close-button size="lg" data-crs-create-dialog>
+  <form class="cbf-crs-create-form stack" data-gap="lg" data-crs-create-form>
+    <section class="stack" data-gap="md">
+      <h3 class="type-section-title">Overview</h3>
+
+      <esa-text-field
+        label="Title"
+        placeholder="e.g. Continue adult fish counts at mainstem dams"
+        required
+        data-field="title"
+      ></esa-text-field>
+
+      <esa-text-field
+        label="Source"
+        placeholder="e.g. Basin Fish Passage Biological Assessment - Proposed Action"
+        data-field="source"
+      ></esa-text-field>
+
+      <div class="cbf-crs-create-form__row">
+        <esa-text-field label="Section" placeholder="e.g. 2.7.1.1" data-field="sectionNumber"></esa-text-field>
+        <esa-text-field label="Page" placeholder="e.g. 2-118" data-field="pageNumber"></esa-text-field>
+      </div>
+
+      <div class="cbf-crs-create-form__row">
+        <label class="cbf-native-select">
+          <span class="type-label">Category<span class="cbf-native-select__required" aria-hidden="true"> *</span></span>
+          <select required data-field="category">
+            <option value="">Select…</option>
+            {categories.map((c) => <option value={c}>{c}</option>)}
+          </select>
+        </label>
+        <label class="cbf-native-select">
+          <span class="type-label">Subcategory</span>
+          <select data-field="subcategory">
+            <option value="">Select…</option>
+            {subcategories.map((s) => <option value={s}>{s}</option>)}
+          </select>
+        </label>
+      </div>
+
+      <div class="cbf-crs-create-form__row">
+        <label class="cbf-native-select">
+          <span class="type-label">Type</span>
+          <select data-field="commitmentType">
+            {types.map((t) => <option value={t}>{t}</option>)}
+          </select>
+        </label>
+        <label class="cbf-native-select">
+          <span class="type-label">Frequency</span>
+          <select data-field="frequency">
+            {frequencies.map((f) => <option value={f}>{f}</option>)}
+          </select>
+        </label>
+      </div>
+
+      <label class="cbf-native-textarea">
+        <span class="type-label">Description</span>
+        <textarea rows="2" placeholder="What the commitment requires" data-field="description"></textarea>
+      </label>
+      <label class="cbf-native-textarea">
+        <span class="type-label">Interpretation</span>
+        <textarea rows="2" placeholder="How the Action Agencies read this requirement" data-field="interpretation"></textarea>
+      </label>
+      <label class="cbf-native-textarea">
+        <span class="type-label">Implementation</span>
+        <textarea rows="2" placeholder="Who does the work and how" data-field="implementation"></textarea>
+      </label>
+      <label class="cbf-native-textarea">
+        <span class="type-label">Notes</span>
+        <textarea rows="2" placeholder="Optional" data-field="notes"></textarea>
+      </label>
+
+      <esa-text-field
+        label="Other associated commitments"
+        placeholder="Optional"
+        data-field="otherAssociatedCommitments"
+      ></esa-text-field>
+
+      <div class="cbf-crs-create-form__row">
+        <esa-date-picker label="Start date" data-field="startDate"></esa-date-picker>
+        <esa-date-picker label="End date" data-field="endDate"></esa-date-picker>
+      </div>
+
+      <div class="cbf-crs-create-form__row">
+        <esa-text-field label="Deliverable" placeholder="e.g. Annual Count Summary" data-field="deliverable"></esa-text-field>
+        <label class="cbf-native-select">
+          <span class="type-label">Deliverable frequency</span>
+          <select data-field="deliverableFrequency">
+            {deliverableFrequencies.map((f) => <option value={f}>{f}</option>)}
+          </select>
+        </label>
+      </div>
+
+      <esa-text-field
+        label="Document due date"
+        placeholder="e.g. 3/1 or 12/31/2024"
+        data-field="documentDueDate"
+      ></esa-text-field>
+    </section>
+
+    <section class="stack" data-gap="md">
+      <h3 class="type-section-title">Responsible parties</h3>
+
+      <div class="cbf-crs-create-form__row">
+        <esa-text-field label="Lead agency" placeholder="e.g. BPA" data-field="leadAgency"></esa-text-field>
+        <esa-text-field label="Partner agency" placeholder="e.g. USACE" data-field="partnerAgency"></esa-text-field>
+      </div>
+
+      <div class="cbf-crs-create-form__row">
+        <esa-text-field label="Partner POC" placeholder="Name" data-field="partnerPOC"></esa-text-field>
+        <esa-text-field label="Policy lead" placeholder="Name" data-field="policyLead"></esa-text-field>
+      </div>
+
+      <div class="cbf-crs-create-form__row">
+        <esa-text-field label="BiOp SME" placeholder="Name" data-field="biopSME"></esa-text-field>
+        <esa-text-field label="COR" placeholder="Name" data-field="cor"></esa-text-field>
+      </div>
+
+      <div class="cbf-crs-create-form__row">
+        <esa-text-field label="NMFS POC" placeholder="Name" data-field="nmfsPOC"></esa-text-field>
+        <esa-text-field label="Associated projects" placeholder="e.g. PRJ-2016-041" data-field="associatedProjects"></esa-text-field>
+      </div>
+    </section>
+
+    <p class="type-caption cbf-crs-create-form__error" data-crs-create-error hidden>
+      Enter a title and choose a category to continue.
+    </p>
+  </form>
+
+  <div slot="footer">
+    <span data-crs-create-cancel>
+      <EsaButton color="ghost" appearance="outline">Cancel</EsaButton>
+    </span>
+    <span data-crs-create-submit>
+      <EsaButton color="primary" icon="plus">Create commitment</EsaButton>
+    </span>
+  </div>
+</esa-dialog>
+
+<style>
+  .cbf-crs-create-form__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-400);
+  }
+
+  .cbf-native-select,
+  .cbf-native-textarea {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-100);
+  }
+
+  .cbf-native-select__required {
+    color: var(--color-danger-strong);
+  }
+
+  /* Matches esa-text-field / esa-date-picker's field chrome so the native
+     <select>/<textarea> read as siblings of the lego controls, not foreign
+     elements — see the header note for why they're native here. */
+  .cbf-native-select select,
+  .cbf-native-textarea textarea {
+    padding-inline: var(--form-padding-x-md, 16px);
+    border: var(--form-border-width, 1px) solid var(--form-border-color, #d4d4d4);
+    border-radius: var(--form-radius-md, 8px);
+    font-size: var(--form-font-size-md, 14px);
+    font-family: var(--font-sans);
+    color: var(--form-text-color, var(--color-text-primary));
+    background: var(--form-bg, var(--color-surface));
+  }
+
+  .cbf-native-select select {
+    height: var(--form-height-md, 40px);
+  }
+
+  .cbf-native-textarea textarea {
+    padding-block: var(--form-padding-y-md, 8px);
+    resize: vertical;
+    font-family: var(--font-sans);
+  }
+
+  .cbf-native-select select:focus,
+  .cbf-native-textarea textarea:focus {
+    outline: none;
+    border-color: var(--form-border-color-focus, var(--color-primary));
+    box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+  }
+
+  .cbf-crs-create-form__error {
+    color: var(--color-danger-strong);
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-date-picker';
+</script>

@@ -3,8 +3,9 @@
 // Administrator lands here to browse every tracked fish/wildlife mitigation
 // commitment, filter by category or status, and open one to read its full
 // record. Lift-and-shift of the legacy CBFish BiologicalOpinionCommitmentsIndex
-// page, re-scoped to a curated scannable column set (see the grid component's
-// bcn-lego-checked note) with the full 25+ field record moved to the detail page.
+// page — the grid matches prod's column set field-for-field (see the grid
+// component's header note); the detail page still holds the same full record
+// laid out for reading rather than scanning.
 // Thin assembler: chrome from cbf-* shared components, content from the grid.
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
@@ -51,7 +52,13 @@ const crumbs = [
       </CbfAppPanel>
     </EsaContainer>
   </main>
+
+  <esa-snackbar-container data-snackbar></esa-snackbar-container>
 </BaseLayout>
+
+<script>
+  import '@esa/ecology/esa-snackbar-container';
+</script>
 
 <style>
   /* page-level outer rhythm only — every section is a component (manifest above) */
