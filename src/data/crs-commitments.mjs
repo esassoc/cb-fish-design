@@ -4,6 +4,18 @@
 //
 // Deterministic, fictional, domain-credible mock data — titles, descriptions,
 // and people are invented, NOT derived from any client document or live system.
+//
+// Deliberately anonymized past the usual "domain-credible" bar: dam/river
+// names (e.g. Fernbridge Dam, Talus Ridge Dam, Sentinel Falls Dam, Wolverine
+// River), named programs (Outmigration Monitoring Program, Estuary Habitat
+// Restoration Program/EHRP, Basin Predator Removal Program), and project
+// numbers (PRJ-YYYY-###) are all fully invented and DELIBERATELY do not match
+// any real Columbia Basin dam, river, program, or BPA project-number format —
+// flagged as a sensitivity concern for this specific engagement, since a
+// commitment-tracking feature like this one plausibly displays real
+// regulatory content in production. Generic domain vocabulary (species names,
+// agency abbreviations like BPA/USACE/NMFS, category labels) is left as-is —
+// only specific named entities were in scope for this pass.
 
 /**
  * @typedef {'Not Started' | 'In Progress' | 'Delayed' | 'Future' | 'Complete' | 'Closed'} CommitmentStatus
@@ -105,12 +117,12 @@ export const commitments = [
     biopSME: 'Priya Nair',
     cor: 'N/A',
     nmfsPOC: 'Alan Cho',
-    associatedProjects: '1987-041-00, 1994-018-00',
+    associatedProjects: 'PRJ-2016-041, PRJ-2019-018',
     timeline: 'N I I I I I F F F F F F F F F',
   }),
   commitment({
     number: 'CRS-Com-9',
-    title: 'Upgrade PIT-tag detection arrays at Bonneville Dam',
+    title: 'Upgrade PIT-tag detection arrays at Fernbridge Dam',
     source: '2020 CRS Biological Assessment - Proposed Action',
     sectionNumber: '2.7.1.2',
     pageNumber: '2-120',
@@ -118,7 +130,7 @@ export const commitments = [
     subcategory: 'RM&E',
     commitmentType: 'Functional',
     frequency: 'Discrete',
-    description: 'Add PIT-tag detection capability to two additional fish ladders at Bonneville Dam.',
+    description: 'Add PIT-tag detection capability to two additional fish ladders at Fernbridge Dam.',
     interpretation: 'Install and commission detection arrays capable of reading existing tag formats.',
     implementation: 'BPA funds equipment procurement; the Corps installs and maintains the arrays.',
     notes: 'Commissioning completed ahead of schedule in 2024.',
@@ -134,12 +146,12 @@ export const commitments = [
     biopSME: 'Dana Iverson',
     cor: 'Todd Whitfield',
     nmfsPOC: 'Alan Cho',
-    associatedProjects: '1994-018-00',
+    associatedProjects: 'PRJ-2019-018',
     timeline: 'N I I C C C C C C C C C C C C',
   }),
   commitment({
     number: 'CRS-Com-12',
-    title: 'Annual water temperature monitoring below Grand Coulee',
+    title: 'Annual water temperature monitoring below Talus Ridge Dam',
     source: '2020 CRS Biological Assessment - Proposed Action',
     sectionNumber: '2.7.1.4',
     pageNumber: '2-123',
@@ -147,7 +159,7 @@ export const commitments = [
     subcategory: 'RM&E',
     commitmentType: 'Functional',
     frequency: 'Recurring',
-    description: 'Record river temperature at index stations below Grand Coulee Dam through the summer months.',
+    description: 'Record river temperature at index stations below Talus Ridge Dam through the summer months.',
     interpretation: 'Deploy loggers at three index stations from May through September each year.',
     implementation:
       'BPA funds logger deployment and data QA/QC; results are published to the regional temperature database.',
@@ -164,7 +176,7 @@ export const commitments = [
     biopSME: 'Priya Nair',
     cor: 'N/A',
     nmfsPOC: 'Alan Cho',
-    associatedProjects: '1990-014-00',
+    associatedProjects: 'PRJ-2015-014',
     timeline: 'I I I I I I F F F F F F F F F',
   }),
   commitment({
@@ -193,12 +205,12 @@ export const commitments = [
     biopSME: 'Dana Iverson',
     cor: 'N/A',
     nmfsPOC: 'Alan Cho',
-    associatedProjects: '1987-041-00, 2003-011-00',
+    associatedProjects: 'PRJ-2016-041, PRJ-2021-011',
     timeline: 'N N I D I I F F F F F F F F F',
   }),
   commitment({
     number: 'CRS-Com-22',
-    title: 'Fund the Smolt Monitoring Program',
+    title: 'Fund the Outmigration Monitoring Program',
     source: '2020 CRS Biological Assessment - Proposed Action',
     sectionNumber: '2.7.1.1',
     pageNumber: '2-119',
@@ -206,7 +218,7 @@ export const commitments = [
     subcategory: 'RM&E',
     commitmentType: 'Functional',
     frequency: 'Recurring',
-    description: 'Continue funding the basin-wide Smolt Monitoring Program at index juvenile bypass facilities.',
+    description: 'Continue funding the basin-wide Outmigration Monitoring Program at index juvenile bypass facilities.',
     interpretation: 'Support monitoring of abundance, timing, and condition of outmigrating juvenile salmonids.',
     implementation: 'BPA funds field crews and data management through the regional monitoring cooperative.',
     notes: '',
@@ -222,7 +234,7 @@ export const commitments = [
     biopSME: 'Priya Nair',
     cor: 'N/A',
     nmfsPOC: 'Alan Cho',
-    associatedProjects: '1987-041-00',
+    associatedProjects: 'PRJ-2016-041',
     timeline: 'I I I I I I F F F F F F F F F',
   }),
   commitment({
@@ -235,7 +247,7 @@ export const commitments = [
     subcategory: 'Tributary',
     commitmentType: 'Functional',
     frequency: 'Recurring',
-    description: 'Fund priority tributary habitat restoration projects in Snake River and upper Columbia populations.',
+    description: 'Fund priority tributary habitat restoration projects in Wolverine River and upper Cascade Basin populations.',
     interpretation: 'Direct habitat investment toward populations prioritized by the Tributary Habitat Steering Committee.',
     implementation: 'Project sponsors design and construct actions with BPA and Corps funding support.',
     notes: 'Two 2026 projects postponed to 2027 pending permitting.',
@@ -251,7 +263,7 @@ export const commitments = [
     biopSME: 'Priya Nair',
     cor: 'N/A',
     nmfsPOC: 'Alan Cho',
-    associatedProjects: '1996-040-00, 2007-224-00',
+    associatedProjects: 'PRJ-2017-040, PRJ-2020-224',
     timeline: 'I I I I D I F F F F F F F F F',
   }),
   commitment({
@@ -315,7 +327,7 @@ export const commitments = [
   }),
   commitment({
     number: 'CRS-Com-41',
-    title: 'Implement the Columbia Estuary Ecosystem Restoration Program',
+    title: 'Implement the Estuary Habitat Restoration Program',
     source: '2020 CRS Biological Assessment - Proposed Action',
     sectionNumber: '2.6.1.5',
     pageNumber: '2-100',
@@ -323,8 +335,8 @@ export const commitments = [
     subcategory: 'Estuary',
     commitmentType: 'Functional',
     frequency: 'Recurring',
-    description: 'Fund construction and monitoring of estuary habitat restoration actions under CEERP.',
-    interpretation: 'Advance the CEERP project pipeline toward acreage and function targets.',
+    description: 'Fund construction and monitoring of estuary habitat restoration actions under EHRP.',
+    interpretation: 'Advance the EHRP project pipeline toward acreage and function targets.',
     implementation: 'BPA and the Corps jointly fund construction; project sponsors report annually.',
     notes: '',
     startDate: '10/1/2020',
@@ -339,7 +351,7 @@ export const commitments = [
     biopSME: 'Dana Iverson',
     cor: 'N/A',
     nmfsPOC: 'Alan Cho',
-    associatedProjects: '2007-224-00',
+    associatedProjects: 'PRJ-2020-224',
     timeline: 'I I I I I I F F F F F F F F F',
   }),
   commitment({
@@ -373,7 +385,7 @@ export const commitments = [
   }),
   commitment({
     number: 'CRS-Com-52',
-    title: 'Fund O&M of the Klickitat Hatchery safety-net program',
+    title: 'Fund O&M of the Alder Creek Hatchery safety-net program',
     source: '2020 CRS Biological Assessment - Proposed Action',
     sectionNumber: '2.6.2.1',
     pageNumber: '2-104',
@@ -381,7 +393,7 @@ export const commitments = [
     subcategory: 'Hatchery',
     commitmentType: 'Functional',
     frequency: 'Recurring',
-    description: 'Continue funding operations and maintenance for the Klickitat safety-net hatchery program.',
+    description: 'Continue funding operations and maintenance for the Alder Creek safety-net hatchery program.',
     interpretation: 'Support production consistent with the levels identified in the proposed action.',
     implementation: 'BPA funds O&M through an annual contract with the operating co-manager.',
     notes: '',
@@ -397,7 +409,7 @@ export const commitments = [
     biopSME: 'N/A',
     cor: 'Todd Whitfield',
     nmfsPOC: 'Alan Cho',
-    associatedProjects: '1988-115-00',
+    associatedProjects: 'PRJ-2014-115',
     timeline: 'I I I I I I F F F F F F F F F',
   }),
   commitment({
@@ -431,7 +443,7 @@ export const commitments = [
   }),
   commitment({
     number: 'CRS-Com-63',
-    title: 'Fund the Northern Pikeminnow Management Program',
+    title: 'Fund the Basin Predator Removal Program',
     source: '2020 CRS Biological Assessment - Proposed Action',
     sectionNumber: '2.6.3.1',
     pageNumber: '2-110',
@@ -439,7 +451,7 @@ export const commitments = [
     subcategory: 'Predation',
     commitmentType: 'Functional',
     frequency: 'Recurring',
-    description: 'Continue funding the sport-reward and commercial fishery components of the pikeminnow removal program.',
+    description: 'Continue funding the sport-reward and commercial fishery components of the predator removal program.',
     interpretation: 'Sustain removal effort at levels sufficient to hold predation impact below the program target.',
     implementation: 'BPA funds program administration; contracted crews conduct removal fisheries.',
     notes: '',
@@ -455,7 +467,7 @@ export const commitments = [
     biopSME: 'Dana Iverson',
     cor: 'N/A',
     nmfsPOC: 'Alan Cho',
-    associatedProjects: '1990-077-00',
+    associatedProjects: 'PRJ-2015-077',
     timeline: 'I I I I I I F F F F F F F F F',
   }),
   commitment({
@@ -489,7 +501,7 @@ export const commitments = [
   }),
   commitment({
     number: 'CRS-Com-71',
-    title: "Fund the Kootenai River sturgeon conservation aquaculture program",
+    title: "Fund the Cedar Fork River sturgeon conservation aquaculture program",
     source: '2020 CRS Biological Assessment - Proposed Action',
     sectionNumber: '2.6.4.1',
     pageNumber: '2-113',
@@ -497,7 +509,7 @@ export const commitments = [
     subcategory: 'Above Anadromy',
     commitmentType: 'Functional',
     frequency: 'Recurring',
-    description: "Provide funding for the Kootenai Tribe's sturgeon conservation aquaculture program.",
+    description: "Provide funding for the regional Tribal co-manager's sturgeon conservation aquaculture program.",
     interpretation: 'Fund production consistent with the terms of the existing conservation agreement.',
     implementation: 'BPA funds the program per an interagency memorandum of agreement.',
     notes: '',
@@ -513,12 +525,12 @@ export const commitments = [
     biopSME: 'N/A',
     cor: 'N/A',
     nmfsPOC: 'N/A',
-    associatedProjects: '1988-064-00',
+    associatedProjects: 'PRJ-2013-064',
     timeline: 'I I I I I I F F F F F F F F F',
   }),
   commitment({
     number: 'CRS-Com-8',
-    title: 'Study bull trout entrainment at Chief Joseph Dam',
+    title: 'Study bull trout entrainment at Sentinel Falls Dam',
     source: '2020 CRS Biological Assessment - Proposed Action',
     sectionNumber: '2.6.5.2',
     pageNumber: '2-115',
@@ -526,7 +538,7 @@ export const commitments = [
     subcategory: 'RM&E',
     commitmentType: 'Functional',
     frequency: 'Discrete',
-    description: 'Investigate bull trout entrainment rates at Chief Joseph Dam spillway.',
+    description: 'Investigate bull trout entrainment rates at Sentinel Falls Dam spillway.',
     interpretation: 'Estimate entrainment using PIT-tag detections and targeted netting surveys.',
     implementation:
       'BPA funded a two-year study; results were incorporated into the 2023 biological assessment update.',
@@ -543,7 +555,7 @@ export const commitments = [
     biopSME: 'Priya Nair',
     cor: 'N/A',
     nmfsPOC: 'Alan Cho',
-    associatedProjects: '1994-018-00',
+    associatedProjects: 'PRJ-2019-018',
     timeline: 'N C C X X X X X X X X X X X X',
   }),
 ];
@@ -583,15 +595,15 @@ export const documents = [
   },
   {
     commitmentNumber: 'CRS-Com-9', dueDate: '12/31/2024', category: 'CRS Commitment Deliverable',
-    type: 'Final Report', title: 'Bonneville PIT Array Installation Report',
+    type: 'Final Report', title: 'Fernbridge PIT Array Installation Report',
     description: 'As-built documentation for the two new ladder detection arrays.',
-    filename: 'bon-pit-array-install-report.pdf', uploadDate: '12/18/2024', uploadUser: 'Todd Whitfield',
+    filename: 'fernbridge-pit-array-install-report.pdf', uploadDate: '12/18/2024', uploadUser: 'Todd Whitfield',
   },
   {
     commitmentNumber: 'CRS-Com-12', dueDate: '11/15/2025', category: 'CRS Commitment Deliverable',
-    type: 'Annual Report', title: 'Grand Coulee Temperature Monitoring — 2025',
+    type: 'Annual Report', title: 'Talus Ridge Temperature Monitoring — 2025',
     description: 'Summer index-station temperature records and exceedance summary.',
-    filename: 'grand-coulee-temp-2025.pdf', uploadDate: '11/10/2025', uploadUser: 'Priya Nair',
+    filename: 'talus-ridge-temp-2025.pdf', uploadDate: '11/10/2025', uploadUser: 'Priya Nair',
   },
   {
     commitmentNumber: 'CRS-Com-18', category: 'CRS Commitment Supporting Document',
@@ -602,7 +614,7 @@ export const documents = [
   {
     commitmentNumber: 'CRS-Com-31', dueDate: '2/15/2026', category: 'CRS Commitment Deliverable',
     type: 'Annual Report', title: 'Tributary Habitat Implementation — 2025',
-    description: 'Project-by-project status for the Snake River and upper Columbia habitat pipeline.',
+    description: 'Project-by-project status for the Wolverine River and upper Cascade Basin habitat pipeline.',
     filename: 'tributary-habitat-2025.pdf', uploadDate: '2/10/2026', uploadUser: 'Sean Ostrander',
   },
   {
@@ -611,7 +623,7 @@ export const documents = [
     // attached to it yet.
     commitmentNumber: 'CRS-Com-31', dueDate: '2/15/2027', category: 'CRS Commitment Deliverable',
     type: 'Annual Report', title: 'Tributary Habitat Implementation — 2026',
-    description: 'Project-by-project status for the Snake River and upper Columbia habitat pipeline.',
+    description: 'Project-by-project status for the Wolverine River and upper Cascade Basin habitat pipeline.',
   },
   {
     commitmentNumber: 'CRS-Com-33', dueDate: '2/15/2025', category: 'CRS Commitment Deliverable',
@@ -627,9 +639,9 @@ export const documents = [
   },
   {
     commitmentNumber: 'CRS-Com-41', dueDate: '2/1/2026', category: 'CRS Commitment Deliverable',
-    type: 'Annual Report', title: 'CEERP Implementation Plan — 2026',
+    type: 'Annual Report', title: 'EHRP Implementation Plan — 2026',
     description: 'Construction and monitoring plan for the coming water year.',
-    filename: 'ceerp-implementation-plan-2026.pdf', uploadDate: '1/28/2026', uploadUser: 'Dana Iverson',
+    filename: 'ehrp-implementation-plan-2026.pdf', uploadDate: '1/28/2026', uploadUser: 'Dana Iverson',
   },
   {
     commitmentNumber: 'CRS-Com-44', category: 'CRS Commitment Supporting Document',
@@ -639,21 +651,21 @@ export const documents = [
   },
   {
     commitmentNumber: 'CRS-Com-52', category: 'CRS Commitment Supporting Document',
-    type: 'Correspondence', title: 'Klickitat Hatchery O&M Contract Renewal Letter',
+    type: 'Correspondence', title: 'Alder Creek Hatchery O&M Contract Renewal Letter',
     description: "Co-manager correspondence confirming FY26 O&M scope and funding level.",
-    filename: 'klickitat-om-renewal-letter.pdf', uploadDate: '10/3/2025', uploadUser: 'Todd Whitfield',
+    filename: 'alder-creek-om-renewal-letter.pdf', uploadDate: '10/3/2025', uploadUser: 'Todd Whitfield',
   },
   {
     // Overdue: due date has passed with nothing uploaded against it.
     commitmentNumber: 'CRS-Com-52', dueDate: '9/30/2025', category: 'CRS Commitment Deliverable',
-    type: 'Annual Report', title: 'Klickitat Hatchery O&M Summary — FY2025',
-    description: 'Fiscal-year O&M summary and production totals for the Klickitat safety-net program.',
+    type: 'Annual Report', title: 'Alder Creek Hatchery O&M Summary — FY2025',
+    description: 'Fiscal-year O&M summary and production totals for the Alder Creek safety-net program.',
   },
   {
     commitmentNumber: 'CRS-Com-63', category: 'CRS Commitment Supporting Document',
-    type: 'Data Summary', title: 'Pikeminnow Removal Totals — 2025 Season',
+    type: 'Data Summary', title: 'Predator Removal Totals — 2025 Season',
     description: 'Sport-reward and commercial fishery removal counts by reach.',
-    filename: 'pikeminnow-removal-totals-2025.xlsx', uploadDate: '11/20/2025', uploadUser: 'Dana Iverson',
+    filename: 'predator-removal-totals-2025.xlsx', uploadDate: '11/20/2025', uploadUser: 'Dana Iverson',
   },
   {
     commitmentNumber: 'CRS-Com-67', dueDate: '3/31/2026', category: 'CRS Commitment Deliverable',
@@ -663,9 +675,9 @@ export const documents = [
   },
   {
     commitmentNumber: 'CRS-Com-8', dueDate: '9/30/2022', category: 'CRS Commitment Deliverable',
-    type: 'Final Report', title: 'Chief Joseph Bull Trout Entrainment Study',
+    type: 'Final Report', title: 'Sentinel Falls Bull Trout Entrainment Study',
     description: 'Final entrainment estimates from PIT detections and netting surveys.',
-    filename: 'chief-joseph-entrainment-study.pdf', uploadDate: '9/25/2022', uploadUser: 'Priya Nair',
+    filename: 'sentinel-falls-entrainment-study.pdf', uploadDate: '9/25/2022', uploadUser: 'Priya Nair',
   },
 ];
 
