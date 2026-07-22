@@ -230,8 +230,11 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
          slot with the default slot as fallback, so this content shows under every
          tab and the client script just re-filters in place. -->
     <div class="cbf-crs-dashboard__body stack" data-gap="lg">
-      <!-- Stat row — recomputed over the visible subset by the client script. -->
-      <div class="cbf-crs-dashboard__stats grid" role="group" aria-label="Status summary for the current view">
+      <!-- Stat row — recomputed over the visible subset by the client script.
+           Labeled with CURRENT_YEAR so it can't be mistaken for a lifetime/
+           all-years count now that the bar below shows the full timeline. -->
+      <p class="type-caption cbf-crs-dashboard__stats-caption">{CURRENT_YEAR} CRS Commitments Status</p>
+      <div class="cbf-crs-dashboard__stats grid" role="group" aria-label={`${CURRENT_YEAR} status summary for the current view`}>
         {statEntries.map((s, i) => (
           <div class="cbf-crs-dashboard__stat" data-stat-key={s.key}>
             {/* The same swatch element as the legend and bar segments (not
@@ -407,6 +410,11 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
   /* Confine any tab-strip overflow to the strip itself (9 tabs), never the panel. */
   .cbf-crs-dashboard__tabs::part(tabs) {
     overflow-x: auto;
+  }
+
+  .cbf-crs-dashboard__stats-caption {
+    margin: 0;
+    color: var(--color-text-muted);
   }
 
   /* Stat row: responsive auto-fit track; each stat is a dot + esa-stat. */
