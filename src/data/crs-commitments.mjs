@@ -91,7 +91,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-4',
     title: 'Continue adult fish counts at mainstem dams',
-    source: '2020 CRS Biological Assessment - Proposed Action',
+    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
     sectionNumber: '2.7.1.1',
     pageNumber: '2-118',
     category: 'Hydro',
@@ -123,7 +123,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-9',
     title: 'Upgrade PIT-tag detection arrays at Fernbridge Dam',
-    source: '2020 CRS Biological Assessment - Proposed Action',
+    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
     sectionNumber: '2.7.1.2',
     pageNumber: '2-120',
     category: 'Hydro',
@@ -152,7 +152,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-12',
     title: 'Annual water temperature monitoring below Talus Ridge Dam',
-    source: '2020 CRS Biological Assessment - Proposed Action',
+    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
     sectionNumber: '2.7.1.4',
     pageNumber: '2-123',
     category: 'Hydro',
@@ -182,7 +182,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-18',
     title: 'Evaluate juvenile bypass screening efficiency',
-    source: '2020 CRS BiOp',
+    source: 'Basin Fish Passage Biological Opinion',
     sectionNumber: '2.17.4(1)(H)',
     pageNumber: '1401',
     category: 'Hydro',
@@ -211,7 +211,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-22',
     title: 'Fund the Outmigration Monitoring Program',
-    source: '2020 CRS Biological Assessment - Proposed Action',
+    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
     sectionNumber: '2.7.1.1',
     pageNumber: '2-119',
     category: 'Hydro',
@@ -240,7 +240,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-31',
     title: 'Implement tributary habitat enhancement actions',
-    source: '2020 CRS Biological Assessment - Proposed Action',
+    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
     sectionNumber: '2.6.1.4',
     pageNumber: '2-96',
     category: 'Habitat',
@@ -269,7 +269,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-33',
     title: 'Report annually on tributary habitat implementation',
-    source: '2020 CRS BiOp',
+    source: 'Basin Fish Passage Biological Opinion',
     sectionNumber: '2.17.4(2)(F)',
     pageNumber: '1404',
     category: 'Habitat',
@@ -298,7 +298,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-38',
     title: 'Develop 5-year tributary habitat implementation plan',
-    source: '2020 CRS Biological Assessment - Proposed Action',
+    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
     sectionNumber: '2.6.1.4',
     pageNumber: '2-98',
     category: 'Habitat',
@@ -328,7 +328,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-41',
     title: 'Implement the Estuary Habitat Restoration Program',
-    source: '2020 CRS Biological Assessment - Proposed Action',
+    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
     sectionNumber: '2.6.1.5',
     pageNumber: '2-100',
     category: 'Habitat',
@@ -357,7 +357,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-44',
     title: 'Submit estuary habitat synthesis memorandum',
-    source: '2020 CRS BiOp',
+    source: 'Basin Fish Passage Biological Opinion',
     sectionNumber: '2.17.4(2)(G)',
     pageNumber: '1405',
     category: 'Habitat',
@@ -386,7 +386,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-52',
     title: 'Fund O&M of the Alder Creek Hatchery safety-net program',
-    source: '2020 CRS Biological Assessment - Proposed Action',
+    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
     sectionNumber: '2.6.2.1',
     pageNumber: '2-104',
     category: 'Hatchery',
@@ -415,7 +415,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-58',
     title: 'Discuss basin-wide hatchery monitoring needs',
-    source: '2020 CRS Biological Assessment - Proposed Action',
+    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
     sectionNumber: '2.6.2.3',
     pageNumber: '2-107',
     category: 'Hatchery',
@@ -444,7 +444,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-63',
     title: 'Fund the Basin Predator Removal Program',
-    source: '2020 CRS Biological Assessment - Proposed Action',
+    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
     sectionNumber: '2.6.3.1',
     pageNumber: '2-110',
     category: 'Predation',
@@ -473,7 +473,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-67',
     title: 'Evaluate avian predation monitoring results',
-    source: '2020 CRS BiOp',
+    source: 'Basin Fish Passage Biological Opinion',
     sectionNumber: '2.17.4(1)(K)',
     pageNumber: '1406',
     category: 'Predation',
@@ -502,7 +502,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-71',
     title: "Fund the Cedar Fork River sturgeon conservation aquaculture program",
-    source: '2020 CRS Biological Assessment - Proposed Action',
+    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
     sectionNumber: '2.6.4.1',
     pageNumber: '2-113',
     category: 'Above Anadromy',
@@ -531,7 +531,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-8',
     title: 'Study bull trout entrainment at Sentinel Falls Dam',
-    source: '2020 CRS Biological Assessment - Proposed Action',
+    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
     sectionNumber: '2.6.5.2',
     pageNumber: '2-115',
     category: 'Hydro',
@@ -566,7 +566,7 @@ export function findCommitment(number) {
 
 /**
  * @typedef {{
- *   commitmentNumber: string; dueDate?: string; category: 'CRS Commitment Deliverable' | 'CRS Commitment Supporting Document';
+ *   commitmentNumber: string; dueDate?: string; category: 'Commitment Deliverable' | 'Commitment Supporting Document';
  *   type: string; title: string; description: string; filename?: string; uploadDate?: string; uploadUser?: string;
  * }} CrsDocument
  */
@@ -582,37 +582,37 @@ export function findCommitment(number) {
 /** @type {CrsDocument[]} */
 export const documents = [
   {
-    commitmentNumber: 'CRS-Com-4', dueDate: '3/1/2025', category: 'CRS Commitment Deliverable',
+    commitmentNumber: 'CRS-Com-4', dueDate: '3/1/2025', category: 'Commitment Deliverable',
     type: 'Annual Report', title: 'Adult Count Summary — 2024 Migration Season',
     description: 'Ladder count totals and methodology notes for the 2024 spring and fall runs.',
     filename: 'adult-count-summary-2024.pdf', uploadDate: '2/26/2025', uploadUser: 'Renee Ashford',
   },
   {
-    commitmentNumber: 'CRS-Com-4', dueDate: '3/1/2026', category: 'CRS Commitment Deliverable',
+    commitmentNumber: 'CRS-Com-4', dueDate: '3/1/2026', category: 'Commitment Deliverable',
     type: 'Annual Report', title: 'Adult Count Summary — 2025 Migration Season',
     description: 'Ladder count totals and methodology notes for the 2025 spring and fall runs.',
     filename: 'adult-count-summary-2025.pdf', uploadDate: '2/24/2026', uploadUser: 'Renee Ashford',
   },
   {
-    commitmentNumber: 'CRS-Com-9', dueDate: '12/31/2024', category: 'CRS Commitment Deliverable',
+    commitmentNumber: 'CRS-Com-9', dueDate: '12/31/2024', category: 'Commitment Deliverable',
     type: 'Final Report', title: 'Fernbridge PIT Array Installation Report',
     description: 'As-built documentation for the two new ladder detection arrays.',
     filename: 'fernbridge-pit-array-install-report.pdf', uploadDate: '12/18/2024', uploadUser: 'Todd Whitfield',
   },
   {
-    commitmentNumber: 'CRS-Com-12', dueDate: '11/15/2025', category: 'CRS Commitment Deliverable',
+    commitmentNumber: 'CRS-Com-12', dueDate: '11/15/2025', category: 'Commitment Deliverable',
     type: 'Annual Report', title: 'Talus Ridge Temperature Monitoring — 2025',
     description: 'Summer index-station temperature records and exceedance summary.',
     filename: 'talus-ridge-temp-2025.pdf', uploadDate: '11/10/2025', uploadUser: 'Priya Nair',
   },
   {
-    commitmentNumber: 'CRS-Com-18', category: 'CRS Commitment Supporting Document',
+    commitmentNumber: 'CRS-Com-18', category: 'Commitment Supporting Document',
     type: 'Study Plan', title: 'Revised Acoustic Tag Study Design',
     description: 'Updated paired-release study design reviewed after the 2024 delay.',
     filename: 'bypass-screening-study-plan-rev2.pdf', uploadDate: '1/15/2025', uploadUser: 'Dana Iverson',
   },
   {
-    commitmentNumber: 'CRS-Com-31', dueDate: '2/15/2026', category: 'CRS Commitment Deliverable',
+    commitmentNumber: 'CRS-Com-31', dueDate: '2/15/2026', category: 'Commitment Deliverable',
     type: 'Annual Report', title: 'Tributary Habitat Implementation — 2025',
     description: 'Project-by-project status for the Wolverine River and upper Cascade Basin habitat pipeline.',
     filename: 'tributary-habitat-2025.pdf', uploadDate: '2/10/2026', uploadUser: 'Sean Ostrander',
@@ -621,60 +621,60 @@ export const documents = [
     // Next year's cycle of the same recurring report — due, nothing uploaded
     // yet. No filename/uploadDate/uploadUser: this due date has no document
     // attached to it yet.
-    commitmentNumber: 'CRS-Com-31', dueDate: '2/15/2027', category: 'CRS Commitment Deliverable',
+    commitmentNumber: 'CRS-Com-31', dueDate: '2/15/2027', category: 'Commitment Deliverable',
     type: 'Annual Report', title: 'Tributary Habitat Implementation — 2026',
     description: 'Project-by-project status for the Wolverine River and upper Cascade Basin habitat pipeline.',
   },
   {
-    commitmentNumber: 'CRS-Com-33', dueDate: '2/15/2025', category: 'CRS Commitment Deliverable',
+    commitmentNumber: 'CRS-Com-33', dueDate: '2/15/2025', category: 'Commitment Deliverable',
     type: 'Annual Report', title: 'Tributary Habitat Implementation Progress Report — 2024',
     description: 'Annual summary of completed and underway tributary projects.',
     filename: 'tributary-implementation-progress-2024.pdf', uploadDate: '2/12/2025', uploadUser: 'Sean Ostrander',
   },
   {
-    commitmentNumber: 'CRS-Com-38', dueDate: '9/30/2022', category: 'CRS Commitment Deliverable',
+    commitmentNumber: 'CRS-Com-38', dueDate: '9/30/2022', category: 'Commitment Deliverable',
     type: 'Final Report', title: '5-Year Tributary Habitat Implementation Plan',
     description: 'Priority populations, target metrics, and the anticipated project pipeline through 2027.',
     filename: 'tributary-5yr-plan-2022.pdf', uploadDate: '9/22/2022', uploadUser: 'Sean Ostrander',
   },
   {
-    commitmentNumber: 'CRS-Com-41', dueDate: '2/1/2026', category: 'CRS Commitment Deliverable',
+    commitmentNumber: 'CRS-Com-41', dueDate: '2/1/2026', category: 'Commitment Deliverable',
     type: 'Annual Report', title: 'EHRP Implementation Plan — 2026',
     description: 'Construction and monitoring plan for the coming water year.',
     filename: 'ehrp-implementation-plan-2026.pdf', uploadDate: '1/28/2026', uploadUser: 'Dana Iverson',
   },
   {
-    commitmentNumber: 'CRS-Com-44', category: 'CRS Commitment Supporting Document',
+    commitmentNumber: 'CRS-Com-44', category: 'Commitment Supporting Document',
     type: 'Data Summary', title: 'Estuary Synthesis Memo #3 — Draft Data Tables',
     description: 'Preliminary effectiveness monitoring tables for the third synthesis memorandum.',
     filename: 'estuary-synthesis-3-draft-tables.xlsx', uploadDate: '6/2/2026', uploadUser: 'Dana Iverson',
   },
   {
-    commitmentNumber: 'CRS-Com-52', category: 'CRS Commitment Supporting Document',
+    commitmentNumber: 'CRS-Com-52', category: 'Commitment Supporting Document',
     type: 'Correspondence', title: 'Alder Creek Hatchery O&M Contract Renewal Letter',
     description: "Co-manager correspondence confirming FY26 O&M scope and funding level.",
     filename: 'alder-creek-om-renewal-letter.pdf', uploadDate: '10/3/2025', uploadUser: 'Todd Whitfield',
   },
   {
     // Overdue: due date has passed with nothing uploaded against it.
-    commitmentNumber: 'CRS-Com-52', dueDate: '9/30/2025', category: 'CRS Commitment Deliverable',
+    commitmentNumber: 'CRS-Com-52', dueDate: '9/30/2025', category: 'Commitment Deliverable',
     type: 'Annual Report', title: 'Alder Creek Hatchery O&M Summary — FY2025',
     description: 'Fiscal-year O&M summary and production totals for the Alder Creek safety-net program.',
   },
   {
-    commitmentNumber: 'CRS-Com-63', category: 'CRS Commitment Supporting Document',
+    commitmentNumber: 'CRS-Com-63', category: 'Commitment Supporting Document',
     type: 'Data Summary', title: 'Predator Removal Totals — 2025 Season',
     description: 'Sport-reward and commercial fishery removal counts by reach.',
     filename: 'predator-removal-totals-2025.xlsx', uploadDate: '11/20/2025', uploadUser: 'Dana Iverson',
   },
   {
-    commitmentNumber: 'CRS-Com-67', dueDate: '3/31/2026', category: 'CRS Commitment Deliverable',
+    commitmentNumber: 'CRS-Com-67', dueDate: '3/31/2026', category: 'Commitment Deliverable',
     type: 'Annual Report', title: 'Avian Predation Monitoring Report — 2025',
     description: 'Colony deterrence outcomes and tagged-fish loss estimates for 2025.',
     filename: 'avian-predation-report-2025.pdf', uploadDate: '4/21/2026', uploadUser: 'Dana Iverson',
   },
   {
-    commitmentNumber: 'CRS-Com-8', dueDate: '9/30/2022', category: 'CRS Commitment Deliverable',
+    commitmentNumber: 'CRS-Com-8', dueDate: '9/30/2022', category: 'Commitment Deliverable',
     type: 'Final Report', title: 'Sentinel Falls Bull Trout Entrainment Study',
     description: 'Final entrainment estimates from PIT detections and netting surveys.',
     filename: 'sentinel-falls-entrainment-study.pdf', uploadDate: '9/25/2022', uploadUser: 'Priya Nair',
