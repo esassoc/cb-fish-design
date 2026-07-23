@@ -879,7 +879,7 @@ function renderPMRow(m) {
   if (m.method==='entered') {
     var val = d.value||'';
     if (m.inputType==='select') {
-      h+='<select class="pm-input" onchange="ppSetVal(\''+m.id+'\',this.value)">'+(m.opts||[]).map(function(o){return '<option'+(o===val?' selected':'')+'>'+o+'</option>';}).join('')+'</select>';
+      h+='<esa-select class="pm-input" size="sm" onchange="ppSetVal(\''+m.id+'\',this.value)"></esa-select>';
     } else {
       h+='<esa-text-field type="'+m.inputType+'" class="pm-input" value="'+(val||'')+'" placeholder="Enter value..." size="sm" onchange="ppSetVal(\''+m.id+'\',this.value)"></esa-text-field>';
     }
@@ -1052,6 +1052,13 @@ function renderPMRow(m) {
     }
   }
   row.innerHTML=h;
+  if (m.method==='entered' && m.inputType==='select') {
+    var pmSel = row.querySelector('esa-select.pm-input');
+    if (pmSel) {
+      pmSel.options = (m.opts||[]).map(function(o){ return {label:o, value:o}; });
+      pmSel.value = d.value||'';
+    }
+  }
   // Draw elevation chart immediately after DOM update (canvas exists now)
   if (m.id === 'avg_slope') {
     var sd2 = we.ppData['avg_slope'] || {};
@@ -3427,10 +3434,7 @@ function renderFPStructures() {
     var locHTML = s.latlng
       ? '<span class="drawn-result">&#10003; '+s.latlng.lat.toFixed(4)+', '+s.latlng.lng.toFixed(4)+'</span><span class="drawn-redo" onclick="replaceStructPoint(\''+type+'\',\''+s.id+'\')">redo</span>'
       : '<button class="draw-btn'+(isWaiting?' active':'')+'" style="background:'+(isWaiting?'#c07820':col)+';margin-bottom:0" onclick="startStructPoint(\''+type+'\',\''+s.id+'\')">&#9679; Place on map</button>';
-    var typeSelect = '<select class="struct-type-sel" onchange="changeFPStructType(\''+s.id+'\',this.value)">'
-      + '<option value="fps"'+(type==='fps'?' selected':'')+'>Floodplain Structure</option>'
-      + '<option value="scs"'+(type==='scs'?' selected':'')+'>Side Channel Structure</option>'
-      + '</select>';
+    var typeSelect = '<esa-select class="struct-type-sel" size="sm" onchange="changeFPStructType(\''+s.id+'\',this.value)"></esa-select>';
     var div = document.createElement('div');
     div.className = 'multi-entry';
     div.innerHTML = '<div class="multi-entry-head">Structure '+(i+1)
@@ -3444,6 +3448,9 @@ function renderFPStructures() {
       + '<div class="f-row"><label># Large pieces (&gt;12&quot; dia)</label><input type="number" value="'+s.large+'" placeholder="0" oninput="updateFPStructure(\''+s.id+'\',\'large\',+this.value)"/></div>'
       + '<div class="f-row"><label># Small pieces (&lt;12&quot; dia)</label><input type="number" value="'+s.small+'" placeholder="0" oninput="updateFPStructure(\''+s.id+'\',\'small\',+this.value)"/></div>';
     el.appendChild(div);
+    var fpTypeSel = div.querySelector('esa-select.struct-type-sel');
+    fpTypeSel.options = [{label:'Floodplain Structure', value:'fps'}, {label:'Side Channel Structure', value:'scs'}];
+    fpTypeSel.value = type;
   });
   updateLogTotals();
 }
@@ -3534,11 +3541,7 @@ function renderAllStructures() {
     var locHTML = s.latlng
       ? '<span class="drawn-result">&#10003; '+s.latlng.lat.toFixed(4)+', '+s.latlng.lng.toFixed(4)+'</span><span class="drawn-redo" onclick="replaceStructPoint(\''+type+'\',\''+s.id+'\')">redo</span>'
       : '<button class="draw-btn'+(isWaiting?' active':'')+'" style="background:'+(isWaiting?'#c07820':col)+';margin-bottom:0" onclick="startStructPoint(\''+type+'\',\''+s.id+'\')">&#9679; Place on map</button>';
-    var typeSelect = '<select class="struct-type-sel" onchange="changeStructType(null,\''+s.id+'\',this.value)">'
-      + '<option value="cms"'+(type==='cms'?' selected':'')+'>Channel Margin</option>'
-      + '<option value="mcs"'+(type==='mcs'?' selected':'')+'>Mid Channel</option>'
-      + '<option value="css"'+(type==='css'?' selected':'')+'>Channel Spanning</option>'
-      + '</select>';
+    var typeSelect = '<esa-select class="struct-type-sel" size="sm" onchange="changeStructType(null,\''+s.id+'\',this.value)"></esa-select>';
     var div = document.createElement('div');
     div.className = 'multi-entry';
     div.innerHTML = '<div class="multi-entry-head">Structure '+(i+1)
@@ -3552,6 +3555,9 @@ function renderAllStructures() {
       + '<div class="f-row"><label># Large pieces (&gt;12&quot; dia)</label><input type="number" value="'+s.large+'" placeholder="0" oninput="updateStructFlat(\''+s.id+'\',\'large\',+this.value)"/></div>'
       + '<div class="f-row"><label># Small pieces (&lt;12&quot; dia)</label><input type="number" value="'+s.small+'" placeholder="0" oninput="updateStructFlat(\''+s.id+'\',\'small\',+this.value)"/></div>';
     el.appendChild(div);
+    var typeSel = div.querySelector('esa-select.struct-type-sel');
+    typeSel.options = [{label:'Channel Margin', value:'cms'}, {label:'Mid Channel', value:'mcs'}, {label:'Channel Spanning', value:'css'}];
+    typeSel.value = type;
   });
   updateLogTotals();
 }
@@ -3632,11 +3638,7 @@ function renderStructures(type) {
     var div=document.createElement('div');div.className='multi-entry';
     var isWaiting=pendingStructPoint&&pendingStructPoint.type===type&&pendingStructPoint.id===s.id;
     var locHTML=s.latlng?'<span class="drawn-result">&#10003; '+s.latlng.lat.toFixed(4)+', '+s.latlng.lng.toFixed(4)+'</span><span class="drawn-redo" onclick="replaceStructPoint(\''+type+'\',\''+s.id+'\')">redo</span>':'<button class="draw-btn'+(isWaiting?' active':'')+'" style="background:'+(isWaiting?'#c07820':col)+';margin-bottom:0" onclick="startStructPoint(\''+type+'\',\''+s.id+'\')">&#9679; Place on map</button>';
-    var typeSelect = '<select class="struct-type-sel" onchange="changeStructType(\''+type+'\',\''+s.id+'\',this.value)">' +
-      '<option value="cms"'+(type==='cms'?' selected':'')+'>Channel Margin</option>' +
-      '<option value="mcs"'+(type==='mcs'?' selected':'')+'>Mid Channel</option>' +
-      '<option value="css"'+(type==='css'?' selected':'')+'>Channel Spanning</option>' +
-      '</select>';
+    var typeSelect = '<esa-select class="struct-type-sel" size="sm" onchange="changeStructType(\''+type+'\',\''+s.id+'\',this.value)"></esa-select>';
     div.innerHTML='<div class="multi-entry-head">Structure '+globalNum+'<span style="display:flex;gap:6px;align-items:center"><span class="multi-entry-clone" title="Clone" onclick="cloneStructure(\''+type+'\',\''+s.id+'\')">&#10064;</span><span class="multi-entry-del" onclick="delStructure(\''+type+'\',\''+s.id+'\')">&#10005;</span></span></div>'+
       '<div class="f-row"><label>Structure type</label>'+typeSelect+'</div>'+
       '<div class="f-row"><label>Location</label>'+locHTML+'</div>'+
@@ -3644,6 +3646,9 @@ function renderStructures(type) {
       '<div class="f-row"><label># Large pieces (&gt;12&quot; dia)</label><input type="number" value="'+s.large+'" placeholder="0" oninput="updateStructure(\''+type+'\',\''+s.id+'\',\'large\',+this.value)"/></div>'+
       '<div class="f-row"><label># Small pieces (&lt;12&quot; dia)</label><input type="number" value="'+s.small+'" placeholder="0" oninput="updateStructure(\''+type+'\',\''+s.id+'\',\'small\',+this.value)"/></div>';
     el.appendChild(div);
+    var typeSel2 = div.querySelector('esa-select.struct-type-sel');
+    typeSel2.options = [{label:'Channel Margin', value:'cms'}, {label:'Mid Channel', value:'mcs'}, {label:'Channel Spanning', value:'css'}];
+    typeSel2.value = type;
   });
   updateLogTotals();
 }
@@ -7678,6 +7683,32 @@ function renderWizardStep() {
   var bodyPanel = document.getElementById('wizard-body-panel');
   if (bodyPanel) {
     bodyPanel.innerHTML = '<div class="wz-body">' + bodyHtml + '</div><div class="wz-footer">' + footerHtml + '</div>';
+    // esa-select instances above are inserted with no options/value (Lit properties,
+    // not attributes) — wire them up now that they're in the DOM.
+    if (step.id === 'substrate' && we) {
+      var subSel = bodyPanel.querySelector('esa-select.wz-substrate-sel');
+      if (subSel) {
+        subSel.options = ['', 'Silt', 'Sand', 'Gravel', 'Cobble', 'Boulders', 'Bedrock']
+          .map(function(o){ return {label: o || '— Select —', value: o}; });
+        var subD = we.ppData['substrate'];
+        subSel.value = (subD && subD.value) || '';
+      }
+    } else if (step.id === 'structures' && we) {
+      var pcForSel = getActivePC(we);
+      var structsForSel = (pcForSel && pcForSel.structs) || [];
+      bodyPanel.querySelectorAll('esa-select.wz-struct-type-sel').forEach(function(sel){
+        var s = structsForSel.filter(function(x){ return x.id === sel.dataset.structId; })[0];
+        sel.options = [{label:'Channel Margin', value:'cms'}, {label:'Mid Channel', value:'mcs'}, {label:'Channel Spanning', value:'css'}];
+        sel.value = (s && s.structType) || 'cms';
+      });
+    } else if (step.id === 'sc_draw' && we) {
+      var scReachesForSel = we.scReaches || [];
+      bodyPanel.querySelectorAll('esa-select.wz-sc-flow-sel').forEach(function(sel){
+        var r = scReachesForSel.filter(function(x){ return x.id === sel.dataset.reachId; })[0];
+        sel.options = [{label:'— Select —', value:''}, {label:'Perennial', value:'Perennial'}, {label:'Seasonal', value:'Seasonal'}];
+        sel.value = (r && r.flowType) || '';
+      });
+    }
     // Draw elevation chart canvas if reach step is showing it
     if (step.id === 'reach' && we) {
       var _sd = we.ppData['avg_slope'] || {};
@@ -7813,10 +7844,7 @@ function wizardStepBody(we, step, idx) {
       var subOpts = ['', 'Silt', 'Sand', 'Gravel', 'Cobble', 'Boulders', 'Bedrock'];
       h += '<div class="wz-step-desc">Select the dominant substrate material for this reach based on the prioritization data layer or field observation.</div>';
       h += '<div class="wz-metric-row"><span class="wz-metric-label">Dominant substrate</span>';
-      h += '<select style="background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:4px 8px;border-radius:3px;font-size:12px;font-family:inherit" ';
-      h += 'onchange="ppSetVal(\'substrate\',this.value);renderWizardStep()">';
-      subOpts.forEach(function(o){ h += '<option'+(o===subVal?' selected':'')+'>'+o+'</option>'; });
-      h += '</select></div>';
+      h += '<esa-select class="wz-substrate-sel" size="sm" onchange="ppSetVal(\'substrate\',this.value);renderWizardStep()"></esa-select></div>';
       if (subVal) {
         h += '<div class="wz-status done">&#10003; Substrate recorded: <b>'+subVal+'</b></div>';
       } else {
@@ -8247,12 +8275,7 @@ function wizardStepBody(we, step, idx) {
         var isWaiting = pendingStructPoint && pendingStructPoint.id === s.id;
         h += '<div style="background:#fff;border:1px solid #dcdcdc;border-radius:5px;padding:8px;margin-bottom:6px">';
         h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
-        var typeSelect2 = '<select style="font-size:11px;border:1px solid var(--color-border);border-radius:3px;padding:2px 4px;background:var(--color-surface);color:var(--color-text-primary);font-family:var(--font-sans,system-ui)" onchange="changeStructType(null,\''+s.id+'\',this.value)">';
-        typeSelect2 += '<option value="cms"'+(t==='cms'?' selected':'')+'>Channel Margin</option>';
-        typeSelect2 += '<option value="mcs"'+(t==='mcs'?' selected':'')+'>Mid Channel</option>';
-        typeSelect2 += '<option value="css"'+(t==='css'?' selected':'')+'>Channel Spanning</option>';
-        typeSelect2 += '</select>';
-        h += typeSelect2;
+        h += '<esa-select class="wz-struct-type-sel" size="xs" data-struct-id="'+s.id+'" onchange="changeStructType(null,\''+s.id+'\',this.value)"></esa-select>';
         h += '<span style="cursor:pointer;color:#ef4444;font-size:12px" onclick="wizardDelStructure(\''+t+'\',\''+s.id+'\')">&#10005;</span>';
         h += '</div>';
         if (s.latlng) {
@@ -8332,11 +8355,7 @@ function wizardStepBody(we, step, idx) {
           h += '</div>';
           h += '<div style="display:flex;align-items:center;gap:8px">';
           h += '<label style="font-size:11px;color:var(--color-text-secondary);white-space:nowrap;min-width:70px">Flow type:</label>';
-          h += '<select onchange="setSCReachFlowType(\''+r.id+'\',this.value)" style="border:1px solid var(--color-border);border-radius:4px;padding:3px 7px;font-size:12px;font-family:var(--font-sans);background:var(--color-surface)">';
-          h += '<option value="">— Select —</option>';
-          h += '<option value="Perennial"'+(r.flowType==='Perennial'?' selected':'')+'>Perennial</option>';
-          h += '<option value="Seasonal"'+(r.flowType==='Seasonal'?' selected':'')+'>Seasonal</option>';
-          h += '</select>';
+          h += '<esa-select class="wz-sc-flow-sel" size="sm" data-reach-id="'+r.id+'" onchange="setSCReachFlowType(\''+r.id+'\',this.value)"></esa-select>';
           h += '</div>';
           h += '</div>';
           h += '</div>';
@@ -8934,9 +8953,9 @@ function wizardRefreshIfActive() {
     var active = document.activeElement;
     var bp = document.getElementById('wizard-body-panel');
     // document.activeElement retargets to the host when focus is inside an open shadow
-    // root, so a focused esa-text-field's internal input reports as ESA-TEXT-FIELD here.
+    // root, so a focused esa-select's internal input reports as ESA-SELECT here.
     if (active && bp && bp.contains(active) &&
-        (active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT'||active.tagName==='ESA-TEXT-FIELD')) return;
+        (active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT'||active.tagName==='ESA-SELECT')) return;
     renderWizardStep();
   }, 80);
 }
