@@ -1,0 +1,940 @@
+---
+// cbf-lib-pi-documents — the working surface of /lib-pi-editing (CBF-8204): the
+// contract's Documents, Workflow, and Email archive tabs, plus the two dialogs
+// (edit properties / COR notification) and the client state machine that applies
+// the three rule tiers from src/data/lib-pi-editing.mjs. The demo controls strip
+// (cbf-doc-demo-controls) and rules panel (cbf-doc-rules-panel) live outside this
+// component; the script here reads/decorates them via data hooks.
+//
+// bcn-lego-checked: ecology has NO table/grid lego (checked the full catalog —
+// nothing renders a tabular surface; AG Grid is only warranted for sortable/
+// filterable data grids, and these are two small static-shape tables whose CELLS
+// the script mutates in place). The documents table + Document Approval grid are
+// therefore semantic <table>s that faithfully port the real CBFish tables from
+// the CBF-8204 screenshots. The email "envelope" card is likewise bespoke — no
+// esa-* models a rendered email preview, and Beacon is not on this machine.
+// Everything else IS a lego: tabs = esa-tab-layout; row menus = esa-dropdown-menu
+// (trigger esa-icon-button); dialogs = esa-dialog; banners/warnings =
+// esa-alert-box; replace-upload = esa-file-upload; Title/Description =
+// esa-text-field/esa-textarea; SOW revision = esa-select; buttons = esa-button;
+// empty archive = esa-empty-state; badges = esa-badge.
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import {
+  contract,
+  documents,
+  workflowHistory,
+  APPROVAL_COLS,
+  CHECK_SVG,
+} from '../../data/lib-pi-editing.mjs';
+
+const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${d.subtype}` : d.type);
+const gridDocs = documents.filter((d) => d.workflowRow);
+---
+<section class="cbf-lipd stack" data-gap="md" data-lipd>
+  <!-- ── The "fully explained" banner: one of three states, toggled by the script ── -->
+  <div data-banner="allowed" hidden>
+    <EsaAlertBox variant="success" title="You can edit LIB & Property Inventory documents right now">
+      <span data-banner-text></span>
+    </EsaAlertBox>
+  </div>
+  <div data-banner="restricted" hidden>
+    <EsaAlertBox variant="warning" title="Editing is restricted for your role right now">
+      <span data-banner-text></span>
+    </EsaAlertBox>
+  </div>
+  <div data-banner="locked" hidden>
+    <EsaAlertBox variant="info" title="Documents are locked">
+      <span data-banner-text></span>
+    </EsaAlertBox>
+  </div>
+
+  <esa-tab-layout data-lipd-tabs active-index="0" size="md" appearance="underline">
+    <!-- ═══════════════ Tab 0 — Documents ═══════════════ -->
+    <div slot="panel-0" class="cbf-lipd__panel stack" data-gap="md">
+      <p class="cbf-lipd__intro">
+        Use this area to store and manage document attachments relevant to this contract. Refer to
+        the <strong>Email archive</strong> tab to review system-generated notifications for this
+        contract.
+      </p>
+
+      <div class="cbf-lipd__toolbar repel">
+        <span class="type-caption">
+          Viewing {documents.length} of {contract.totalDocs} attached documents — filtered to
+          Line Item Budget &amp; Property Inventory (the transmittal memo is shown for contrast).
+        </span>
+        <span data-add-doc>
+          <EsaButton color="primary" size="sm" icon="plus">Add…</EsaButton>
+        </span>
+      </div>
+
+      <div class="cbf-lipd__scroll">
+        <table class="cbf-doc-table">
+          <thead>
+            <tr>
+              <th class="cbf-doc-table__menu-col"><span class="visually-hidden">Actions</span></th>
+              <th>Title</th>
+              <th>File</th>
+              <th>Size</th>
+              <th>Type</th>
+              <th>Uploaded</th>
+              <th>Uploaded by</th>
+              <th>COR approval</th>
+            </tr>
+          </thead>
+          <tbody>
+            {documents.map((d) => (
+              <tr data-doc-row={d.id}>
+                <td class="cbf-doc-table__menu-col">
+                  <esa-dropdown-menu data-doc-menu={d.id} position="below-start">
+                    <EsaIconButton icon="menu" label={`Actions for ${d.title}`} size="sm" />
+                  </esa-dropdown-menu>
+                </td>
+                <td class="cbf-doc-table__title" data-cell="title">{d.title}</td>
+                <td><a class="cbf-doc-link" href="#" data-cell="file">{d.file}</a></td>
+                <td class="cbf-num" data-cell="size">{d.size}</td>
+                <td>{typeLabel(d)}</td>
+                <td data-cell="uploaded">{d.uploaded}</td>
+                <td data-cell="uploadedBy">{d.uploadedBy}</td>
+                <td data-cell="cor">
+                  {d.approvals.cotr ? (
+                    <span class="cbf-check"><Fragment set:html={CHECK_SVG} /> {d.approvals.cotr}</span>
+                  ) : (
+                    <span class="cbf-none">–</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════ Tab 1 — Workflow ═══════════════ -->
+    <div slot="panel-1" class="cbf-lipd__panel stack" data-gap="md">
+      <div class="cbf-lipd__status repel">
+        <div class="cbf-lipd__status-facts">
+          <span>Contract status: <strong data-contract-status>Pending</strong></span>
+          <span>Last SOW action: <span data-last-action>09/09/2025, DocumentAttached</span></span>
+        </div>
+        <div class="cbf-lipd__status-rev">
+          <esa-select data-sow-rev label="SOW revision" size="sm"></esa-select>
+        </div>
+      </div>
+
+      <h3 class="type-section-title">Document approval</h3>
+      <div class="cbf-lipd__scroll">
+        <table class="cbf-appr-table">
+          <thead>
+            <tr>
+              <th>Required documents</th>
+              <th>Attached date</th>
+              {APPROVAL_COLS.map((c) => <th>{c.label}</th>)}
+              <th>Last modified</th>
+            </tr>
+          </thead>
+          <tbody>
+            {gridDocs.map((d) => (
+              <tr data-appr-row={d.id}>
+                <th scope="row">
+                  {d.workflowRow}
+                  <span class="cbf-reappr" data-appr-flag={d.id} hidden>Needs re-approval</span>
+                </th>
+                <td>{d.uploaded}</td>
+                {APPROVAL_COLS.map((c) => (
+                  <td data-appr={`${d.id}:${c.key}`}>
+                    {d.approvals[c.key] ? (
+                      <span class="cbf-check"><Fragment set:html={CHECK_SVG} /> {d.approvals[c.key]}</span>
+                    ) : (
+                      <span class="cbf-none">–</span>
+                    )}
+                  </td>
+                ))}
+                <td data-appr-last={d.id}>{d.lastUpload}</td>
+              </tr>
+            ))}
+            <tr>
+              <th scope="row">SOW 0, 0</th>
+              <td>05/15/2025</td>
+              <td><span class="cbf-check"><Fragment set:html={CHECK_SVG} /> 5/22/2025</span></td>
+              <td><span class="cbf-check"><Fragment set:html={CHECK_SVG} /> 5/22/2025</span></td>
+              <td><span class="cbf-check"><Fragment set:html={CHECK_SVG} /> 5/19/2025</span></td>
+              <td><span class="cbf-check"><Fragment set:html={CHECK_SVG} /> 8/6/2025</span></td>
+              <td>08/06/2025</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="type-section-title">Workflow history</h3>
+      <div class="cbf-lipd__scroll">
+        <table class="cbf-hist-table">
+          <thead>
+            <tr><th>Date</th><th>Step</th><th>From</th><th>To</th><th>Document status</th></tr>
+          </thead>
+          <tbody data-history>
+            {workflowHistory.map((h) => (
+              <tr>
+                <td>{h.date}</td>
+                <td>{h.step}</td>
+                <td>{h.from}</td>
+                <td>{h.to}</td>
+                <td class="cbf-hist-table__status">{h.docStatus}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══════════════ Tab 2 — Email archive ═══════════════ -->
+    <div slot="panel-2" class="cbf-lipd__panel stack" data-gap="md">
+      <p class="cbf-lipd__intro">
+        System-generated notifications for this contract. When someone replaces a document the COR
+        had already approved, the notice lands here (and in the COR's inbox).
+      </p>
+      <div data-email-empty>
+        <EsaEmptyState
+          title="No notifications yet"
+          description="Replace a COR-approved document on the Documents tab — the notification sent to the COR will appear here."
+          size="sm"
+        />
+      </div>
+      <div class="cbf-email-list stack" data-gap="md" data-email-list></div>
+    </div>
+  </esa-tab-layout>
+
+  <!-- ── Edit-properties dialog (the real modal, with the supportive fixes) ── -->
+  <esa-dialog data-edit-dialog size="lg" heading="View and edit the properties of this attachment">
+    <div class="cbf-edit stack" data-gap="md">
+      <p class="cbf-edit__lede">
+        Replace the file or adjust its properties. Everything you don't change is kept exactly as
+        it is — including approvals, unless you upload a new file.
+      </p>
+
+      <section class="cbf-edit__section">
+        <span class="cbf-edit__num" aria-hidden="true">1</span>
+        <div class="cbf-edit__fields">
+          <div class="cbf-edit__specs">
+            <div><span class="cbf-edit__label">Type</span><strong data-ed-type></strong></div>
+            <div><span class="cbf-edit__label">Subtype</span><strong data-ed-subtype></strong></div>
+          </div>
+          <p class="cbf-edit__guidance type-caption" data-ed-guidance></p>
+        </div>
+      </section>
+
+      <section class="cbf-edit__section">
+        <span class="cbf-edit__num" aria-hidden="true">2</span>
+        <div class="cbf-edit__fields stack" data-gap="sm">
+          <p class="cbf-edit__file">
+            Current file: <a href="#" class="cbf-doc-link" data-ed-file></a>
+            <span class="type-caption" data-ed-size></span>
+          </p>
+          <div data-ed-upload-slot>
+            <esa-file-upload
+              data-ed-upload
+              label="Replace the file"
+              accept=".xls,.xlsx,.doc,.docx,.pdf"
+              max-size-mb="5"
+            ></esa-file-upload>
+          </div>
+          <p class="type-caption">
+            Uploading a new file replaces the current one when you save — the title, type, authors,
+            and sharing below all stay put.
+          </p>
+          <p class="cbf-edit__newfile" data-ed-newfile hidden></p>
+          <div data-ed-warning hidden>
+            <EsaAlertBox variant="warning" title="Replacing this file clears its approvals">
+              <span data-ed-warning-text></span>
+            </EsaAlertBox>
+          </div>
+        </div>
+      </section>
+
+      <section class="cbf-edit__section">
+        <span class="cbf-edit__num" aria-hidden="true">3</span>
+        <div class="cbf-edit__fields stack" data-gap="sm">
+          <esa-text-field data-ed-title label="Title"></esa-text-field>
+          <esa-textarea data-ed-desc label="Description" rows="3"></esa-textarea>
+          <div class="cbf-edit__specs">
+            <div><span class="cbf-edit__label">Primary author</span><strong data-ed-author></strong></div>
+            <div><span class="cbf-edit__label">Doc ID</span><strong data-ed-docid></strong></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="cbf-edit__section">
+        <span class="cbf-edit__num" aria-hidden="true">4</span>
+        <div class="cbf-edit__fields">
+          <div class="cbf-edit__specs">
+            <div><span class="cbf-edit__label">View permission</span><strong data-ed-perm></strong></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="cbf-edit__history">
+        <div><span class="cbf-edit__label">Original upload</span><span data-ed-orig></span></div>
+        <div><span class="cbf-edit__label">Original uploaded by</span><span data-ed-origby></span></div>
+        <div><span class="cbf-edit__label">Last upload</span><span data-ed-last></span></div>
+        <div><span class="cbf-edit__label">Last uploaded by</span><span data-ed-lastby></span></div>
+      </div>
+    </div>
+
+    <div slot="footer" class="cbf-edit__footer">
+      <span class="type-caption" data-save-hint>
+        Nothing to save yet — replace the file or edit a property to enable Save.
+      </span>
+      <span data-ed-cancel><EsaButton color="secondary" appearance="outline">Cancel</EsaButton></span>
+      <span data-ed-save><EsaButton color="primary" disabled>Save</EsaButton></span>
+    </div>
+  </esa-dialog>
+
+  <!-- ── "Why is editing locked?" dialog ── -->
+  <esa-dialog data-why-dialog size="sm" heading="Why can't I edit this document?">
+    <div class="stack" data-gap="sm">
+      <p data-why-reason></p>
+      <p class="type-caption">
+        The full picture is in “Who can edit LIB &amp; Property Inventory documents, and when?”
+        beneath the tables.
+      </p>
+    </div>
+    <div slot="footer" class="cbf-edit__footer">
+      <span data-why-close><EsaButton color="secondary" appearance="outline">Close</EsaButton></span>
+    </div>
+  </esa-dialog>
+
+  <!-- ── COR notification dialog (shows the email that was just sent) ── -->
+  <esa-dialog data-email-dialog size="md" heading="The COR has been notified">
+    <div class="stack" data-gap="sm">
+      <p>
+        Because <strong data-em-doc-title></strong> was already approved by the COR, replacing it
+        cleared that approval — this email went out automatically:
+      </p>
+      <div data-em-preview></div>
+    </div>
+    <div slot="footer" class="cbf-edit__footer">
+      <span data-em-archive><EsaButton color="secondary" appearance="outline">Open Email archive</EsaButton></span>
+      <span data-em-close><EsaButton color="primary">Done</EsaButton></span>
+    </div>
+  </esa-dialog>
+
+  <!-- Cloneable email envelope — the single source of the email-card markup. -->
+  <template data-email-template>
+    <article class="cbf-email">
+      <header class="cbf-email__head">
+        <div><span class="cbf-email__label">From</span><span data-em-from></span></div>
+        <div><span class="cbf-email__label">To</span><span data-em-to></span></div>
+        <div><span class="cbf-email__label">Sent</span><span data-em-sent></span></div>
+        <div class="cbf-email__subject"><span class="cbf-email__label">Subject</span><strong data-em-subject></strong></div>
+      </header>
+      <div class="cbf-email__body">
+        <p data-em-p1></p>
+        <p data-em-p2></p>
+        <p class="cbf-email__meta" data-em-meta></p>
+      </div>
+      <footer class="cbf-email__foot type-caption">
+        System-generated notification · cbfish.org · do not reply
+      </footer>
+    </article>
+  </template>
+</section>
+
+<script>
+  import '@esa/ecology/esa-tab-layout';
+  import '@esa/ecology/esa-dropdown-menu';
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-textarea';
+  import '@esa/ecology/esa-file-upload';
+  import '@esa/ecology/esa-button-toggle';
+  import {
+    contract,
+    documents,
+    workflowHistory,
+    sowRevisions,
+    AWARD_STATES,
+    ROLES,
+    ROLE_PEOPLE,
+    APPROVAL_COLS,
+    CHECK_SVG,
+    editRule,
+  } from '../../data/lib-pi-editing.mjs';
+
+  const root = document.querySelector<HTMLElement>('[data-lipd]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    // ── Live state ─────────────────────────────────────────────────────────
+    const state = { award: 'pending', role: 'cm' };
+    const docs = documents.map((d: any) => ({ ...d, approvals: { ...d.approvals }, resetInfo: null }));
+    const history = [...workflowHistory];
+    const emails: any[] = [];
+    let editingDoc: any = null;
+    let pendingFile: { name: string; size: string } | null = null;
+    let propsDirty = false;
+
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string, scope: ParentNode = document) =>
+      scope.querySelector<T>(sel);
+    const $$ = (sel: string, scope: ParentNode = document) =>
+      Array.from(scope.querySelectorAll<HTMLElement>(sel));
+    const docById = (id: string) => docs.find((d: any) => d.id === id);
+    const roleLabel = () => ROLES.find((r: any) => r.value === state.role)!.label;
+    const stateLabel = () => AWARD_STATES.find((s: any) => s.value === state.award)!.label;
+    const actor = () => (ROLE_PEOPLE as any)[state.role];
+    const toast = (msg: string) => {
+      const sb = $('[data-snackbar]') as any;
+      (sb?.info ?? sb?.success)?.call(sb, msg, { duration: 4000 });
+    };
+    const fmtNow = () => {
+      const d = new Date();
+      let h = d.getHours();
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      const mins = String(d.getMinutes()).padStart(2, '0');
+      return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()} ${h}:${mins} ${ampm}`;
+    };
+    const shortDate = () => {
+      const d = new Date();
+      return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+    };
+    const checkHtml = (date: string) => `<span class="cbf-check">${CHECK_SVG} ${date}</span>`;
+
+    // ── Demo controls (in cbf-doc-demo-controls, outside this component) ────
+    const awardToggle = $('[data-demo-award]') as any;
+    const roleToggle = $('[data-demo-role]') as any;
+    if (awardToggle) {
+      awardToggle.options = AWARD_STATES.map((s: any) => ({ label: s.label, value: s.value }));
+      awardToggle.value = state.award;
+      awardToggle.addEventListener('change', () => { state.award = awardToggle.value; update(); });
+    }
+    if (roleToggle) {
+      roleToggle.options = ROLES.map((r: any) => ({ label: r.label, value: r.value }));
+      roleToggle.value = state.role;
+      roleToggle.addEventListener('change', () => { state.role = roleToggle.value; update(); });
+    }
+
+    // ── Tabs ────────────────────────────────────────────────────────────────
+    const tabsEl = $('[data-lipd-tabs]', root) as any;
+    const setTabs = () => {
+      tabsEl.tabs = [
+        { label: 'Documents' },
+        { label: 'Workflow' },
+        { label: 'Email archive', badge: emails.length || undefined },
+      ];
+    };
+    setTabs();
+
+    // ── SOW revision select (context flavor only) ───────────────────────────
+    const revSelect = $('[data-sow-rev]', root) as any;
+    if (revSelect) {
+      revSelect.options = sowRevisions;
+      revSelect.value = 'rev2';
+    }
+
+    const LAST_ACTION: Record<string, string> = {
+      pending: '09/09/2025, DocumentAttached',
+      review: '07/30/2025, SubmitToApprover',
+      approved: '08/01/2025, ApprovedInAssetSuite',
+      signature: '08/12/2025, SentForSignature',
+      issued: '08/15/2025, IssuedInAssetSuite',
+    };
+
+    // ── Dialog plumbing ─────────────────────────────────────────────────────
+    const editDialog = $('[data-edit-dialog]', root) as any;
+    const whyDialog = $('[data-why-dialog]', root) as any;
+    const emailDialog = $('[data-email-dialog]', root) as any;
+    const saveBtnWrap = $('[data-ed-save]', root)!;
+    const saveBtn = saveBtnWrap.querySelector('button')!;
+    const saveHint = $('[data-save-hint]', root)!;
+
+    const setSaveEnabled = (enabled: boolean, hint: string) => {
+      saveBtn.disabled = !enabled;
+      saveBtnWrap.querySelector('.esa-button')?.classList.toggle('esa-button--disabled', !enabled);
+      saveHint.textContent = hint;
+    };
+
+    /** esa-file-upload keeps its file list internal — swap in a fresh element. */
+    const resetFileUpload = () => {
+      const slot = $('[data-ed-upload-slot]', root)!;
+      const old = slot.firstElementChild as HTMLElement;
+      const fresh = document.createElement('esa-file-upload');
+      fresh.setAttribute('data-ed-upload', '');
+      fresh.setAttribute('label', 'Replace the file');
+      fresh.setAttribute('accept', '.xls,.xlsx,.doc,.docx,.pdf');
+      fresh.setAttribute('max-size-mb', '5');
+      old.replaceWith(fresh);
+    };
+
+    const openEdit = (doc: any) => {
+      editingDoc = doc;
+      pendingFile = null;
+      propsDirty = false;
+      $('[data-ed-type]', root)!.textContent = doc.type;
+      $('[data-ed-subtype]', root)!.textContent = doc.subtype || '—';
+      $('[data-ed-guidance]', root)!.textContent = doc.guidance;
+      $('[data-ed-file]', root)!.textContent = doc.file;
+      $('[data-ed-size]', root)!.textContent = `(${doc.size})`;
+      ($('[data-ed-title]', root) as any).value = doc.title;
+      ($('[data-ed-desc]', root) as any).value = '';
+      $('[data-ed-author]', root)!.textContent = doc.primaryAuthor;
+      $('[data-ed-docid]', root)!.textContent = doc.docId;
+      $('[data-ed-perm]', root)!.textContent = doc.viewPermission;
+      $('[data-ed-orig]', root)!.textContent = doc.originalUpload;
+      $('[data-ed-origby]', root)!.textContent = doc.originalUploadedBy;
+      $('[data-ed-last]', root)!.textContent = doc.lastUpload;
+      $('[data-ed-lastby]', root)!.textContent = doc.lastUploadedBy;
+      $('[data-ed-newfile]', root)!.hidden = true;
+      $('[data-ed-warning]', root)!.hidden = true;
+      setSaveEnabled(false, 'Nothing to save yet — replace the file or edit a property to enable Save.');
+      editDialog.show();
+    };
+
+    // New file chosen (composed change event from esa-file-upload, delegated so
+    // the swapped-in fresh element needs no rebinding).
+    root.addEventListener('change', (e: any) => {
+      // Composed events retarget to the esa-file-upload host, which lives in the slot.
+      const fromUpload = (e.target as HTMLElement).closest?.('[data-ed-upload-slot]');
+      if (!fromUpload || !editingDoc) return;
+      const files: File[] = e.detail?.files ?? [];
+      if (!files.length) return;
+      const f = files[0];
+      pendingFile = { name: f.name, size: `${(f.size / 1024).toFixed(1)} KB` };
+      const newfileEl = $('[data-ed-newfile]', root)!;
+      newfileEl.hidden = false;
+      newfileEl.textContent = `New file “${pendingFile.name}” will replace “${editingDoc.file}” when you save.`;
+      const hadAny = Object.values(editingDoc.approvals).some(Boolean);
+      const warnEl = $('[data-ed-warning]', root)!;
+      warnEl.hidden = !hadAny;
+      if (hadAny) {
+        const parts: string[] = [];
+        if (editingDoc.approvals.cotr)
+          parts.push(`${contract.cor} (COR) approved this document on ${editingDoc.approvals.cotr} — they will be notified by email and asked to re-approve.`);
+        const others = APPROVAL_COLS.filter((c: any) => c.key !== 'cotr' && editingDoc.approvals[c.key]);
+        if (others.length)
+          parts.push(`${others.map((c: any) => c.label).join(', ')} approval${others.length > 1 ? 's' : ''} will also be cleared.`);
+        if (state.role === 'qc')
+          parts.push('Since you are QC, your own QC approval is re-applied to your edit automatically.');
+        $('[data-ed-warning-text]', root)!.textContent = parts.join(' ');
+      }
+      setSaveEnabled(true, 'Ready to save — the file is replaced and every specification is kept.');
+    });
+
+    // Title/description edits also arm Save (input events are composed).
+    editDialog.addEventListener('input', (e: any) => {
+      if (!editingDoc) return;
+      if ((e.target as HTMLElement).closest('[data-ed-title], [data-ed-desc]')) {
+        propsDirty = true;
+        if (!pendingFile) setSaveEnabled(true, 'Ready to save your property changes.');
+      }
+    });
+
+    const closeEdit = () => {
+      editDialog.close();
+      editingDoc = null;
+      pendingFile = null;
+      propsDirty = false;
+      resetFileUpload();
+    };
+
+    $('[data-ed-cancel]', root)!.querySelector('button')!.addEventListener('click', closeEdit);
+    saveBtn.addEventListener('click', () => {
+      if (!editingDoc || saveBtn.disabled) return;
+      const doc = editingDoc;
+      const who = actor();
+      const now = fmtNow();
+      const newTitle = (($('[data-ed-title]', root) as any).value || '').trim();
+      if (newTitle) doc.title = newTitle;
+
+      if (pendingFile) {
+        const hadCotr = !!doc.approvals.cotr;
+        const prevCotrDate = doc.approvals.cotr;
+        const hadAny = Object.values(doc.approvals).some(Boolean);
+        doc.file = pendingFile.name;
+        doc.size = pendingFile.size;
+        doc.uploaded = now;
+        doc.uploadedBy = who;
+        doc.lastUpload = now;
+        doc.lastUploadedBy = who;
+        doc.approvals = { ec: null, cotr: null, qc: state.role === 'qc' ? shortDate() : null, fw: null };
+        doc.resetInfo = hadAny ? { by: who, at: now } : null;
+
+        history.unshift({
+          date: now,
+          step: 'DocumentReplaced',
+          from: who,
+          to: hadCotr ? contract.cor : '',
+          docStatus:
+            `${doc.type} - Replaced by ${roleLabel()} - COTR Approval = NotSet` +
+            (state.role === 'qc' ? '; QC Approval = Green (own edit)' : ''),
+        });
+
+        if (hadCotr) {
+          const email = {
+            from: 'donotreply@cbfish.org',
+            to: `${contract.cor} (COR)`,
+            sent: now,
+            subject: `Action required: ${doc.type} replaced on Contract ${contract.number} (${contract.action})`,
+            p1: `${who} (${roleLabel()}) replaced the file on “${doc.title}” while the SOW was ${stateLabel()}. All document specifications were retained.`,
+            p2: `Your approval of this document (given ${prevCotrDate}) no longer applies. Please review the new file and re-approve it on the contract's Workflow tab.`,
+            meta: `Contract ${contract.number} · ${contract.action} · ${doc.file}`,
+            docTitle: doc.title,
+          };
+          emails.unshift(email);
+          showEmailDialog(email);
+        } else {
+          toast(`File replaced — all specifications for “${doc.title}” were retained.`);
+        }
+      } else if (propsDirty) {
+        toast(`Properties of “${doc.title}” saved.`);
+      }
+      closeEdit();
+      update();
+    });
+
+    $('[data-why-close]', root)!.querySelector('button')!.addEventListener('click', () => whyDialog.close());
+
+    // ── Email preview / archive ────────────────────────────────────────────
+    const emailTemplate = $('[data-email-template]', root) as unknown as HTMLTemplateElement;
+    const renderEmailCard = (email: any) => {
+      const node = emailTemplate.content.firstElementChild!.cloneNode(true) as HTMLElement;
+      const set = (sel: string, text: string) => { node.querySelector(sel)!.textContent = text; };
+      set('[data-em-from]', email.from);
+      set('[data-em-to]', email.to);
+      set('[data-em-sent]', email.sent);
+      set('[data-em-subject]', email.subject);
+      set('[data-em-p1]', email.p1);
+      set('[data-em-p2]', email.p2);
+      set('[data-em-meta]', email.meta);
+      return node;
+    };
+    const showEmailDialog = (email: any) => {
+      $('[data-em-doc-title]', root)!.textContent = email.docTitle;
+      const preview = $('[data-em-preview]', root)!;
+      preview.replaceChildren(renderEmailCard(email));
+      emailDialog.show();
+    };
+    $('[data-em-close]', root)!.querySelector('button')!.addEventListener('click', () => emailDialog.close());
+    $('[data-em-archive]', root)!.querySelector('button')!.addEventListener('click', () => {
+      emailDialog.close();
+      tabsEl.activeIndex = 2;
+    });
+
+    // ── Context menus ───────────────────────────────────────────────────────
+    root.addEventListener('menu-action', (e: any) => {
+      const menu = (e.target as HTMLElement).closest('[data-doc-menu]');
+      if (!menu) return;
+      const doc = docById(menu.getAttribute('data-doc-menu')!);
+      if (!doc) return;
+      switch (e.detail) {
+        case 'view':
+          toast('Viewing documents is unchanged by this story — out of scope for the prototype.');
+          break;
+        case 'copy':
+          toast('Attachment link copied (prototype).');
+          break;
+        case 'delete':
+          toast('Deleting attachments is unchanged by this story — and no longer the only way to swap a file.');
+          break;
+        case 'why': {
+          const rule = editRule(state.award, state.role, doc.kind);
+          $('[data-why-reason]', root)!.textContent = rule.reason;
+          whyDialog.show();
+          break;
+        }
+        case 'edit':
+          openEdit(doc);
+          break;
+      }
+    });
+
+    $('[data-add-doc]')?.querySelector('button')?.addEventListener('click', () =>
+      toast('Adding attachments is unchanged by this story — out of scope for the prototype.'),
+    );
+
+    // ── Rendering ───────────────────────────────────────────────────────────
+    const renderBanner = () => {
+      const rule = editRule(state.award, state.role, 'lib');
+      const which = rule.allowed ? 'allowed' : rule.tier === 3 ? 'locked' : 'restricted';
+      $$('[data-banner]', root).forEach((b) => { b.hidden = b.dataset.banner !== which; });
+      const active = $(`[data-banner="${which}"] [data-banner-text]`, root)!;
+      active.textContent = `Acting as ${actor()} (${roleLabel()}) · award state ${stateLabel()}. ${rule.reason}`;
+    };
+
+    const renderMenus = () => {
+      docs.forEach((doc: any) => {
+        const menu = $(`[data-doc-menu="${doc.id}"]`, root) as any;
+        if (!menu) return;
+        const rule = editRule(state.award, state.role, doc.kind);
+        const locked = editRule(state.award, state.role, 'other'); // tier-3 lock applies to all actions
+        menu.items = [
+          { label: 'View Document', action: 'view' },
+          { label: 'Edit Properties', action: 'edit', disabled: !rule.allowed },
+          { label: 'Delete Attachment', action: 'delete', variant: 'danger', disabled: !locked.allowed },
+          { label: 'Copy Attachment Link', action: 'copy' },
+          ...(!rule.allowed
+            ? [{ divider: true }, { label: 'Why is editing locked?', action: 'why' }]
+            : []),
+        ];
+      });
+    };
+
+    const corCellHtml = (doc: any) =>
+      doc.approvals.cotr
+        ? checkHtml(doc.approvals.cotr)
+        : doc.resetInfo
+          ? '<span class="cbf-reappr">Needs re-approval</span>'
+          : '<span class="cbf-none">–</span>';
+
+    const renderDocRows = () => {
+      docs.forEach((doc: any) => {
+        const row = $(`[data-doc-row="${doc.id}"]`, root);
+        if (!row) return;
+        $('[data-cell="title"]', row)!.textContent = doc.title;
+        $('[data-cell="file"]', row)!.textContent = doc.file;
+        $('[data-cell="size"]', row)!.textContent = doc.size;
+        $('[data-cell="uploaded"]', row)!.textContent = doc.uploaded;
+        $('[data-cell="uploadedBy"]', row)!.textContent = doc.uploadedBy;
+        $('[data-cell="cor"]', row)!.innerHTML = corCellHtml(doc);
+      });
+    };
+
+    const renderApprovalGrid = () => {
+      docs.forEach((doc: any) => {
+        if (!doc.workflowRow) return;
+        APPROVAL_COLS.forEach((c: any) => {
+          const cell = $(`[data-appr="${doc.id}:${c.key}"]`, root);
+          if (!cell) return;
+          cell.innerHTML = doc.approvals[c.key]
+            ? checkHtml(doc.approvals[c.key])
+            : '<span class="cbf-none">–</span>';
+        });
+        const last = $(`[data-appr-last="${doc.id}"]`, root);
+        if (last) last.textContent = doc.lastUpload;
+        const rowEl = $(`[data-appr-row="${doc.id}"]`, root);
+        rowEl?.classList.toggle('is-reset', !!doc.resetInfo);
+        const flag = $(`[data-appr-flag="${doc.id}"]`, root);
+        if (flag) flag.hidden = !doc.resetInfo;
+      });
+    };
+
+    const renderHistory = () => {
+      const tbody = $('[data-history]', root)!;
+      tbody.replaceChildren(
+        ...history.map((h: any) => {
+          const tr = document.createElement('tr');
+          [h.date, h.step, h.from, h.to, h.docStatus].forEach((v, i) => {
+            const td = document.createElement('td');
+            td.textContent = v;
+            if (i === 4) td.className = 'cbf-hist-table__status';
+            tr.appendChild(td);
+          });
+          if (h.step === 'DocumentReplaced') tr.classList.add('is-new');
+          return tr;
+        }),
+      );
+    };
+
+    const renderEmails = () => {
+      $('[data-email-empty]', root)!.hidden = emails.length > 0;
+      const list = $('[data-email-list]', root)!;
+      list.replaceChildren(...emails.map(renderEmailCard));
+      setTabs();
+    };
+
+    const renderRulesPanel = () => {
+      const tier = (AWARD_STATES.find((s: any) => s.value === state.award) as any).tier;
+      $$('[data-rule-tier]').forEach((el) => {
+        const active = Number(el.dataset.ruleTier) === tier;
+        el.classList.toggle('is-active', active);
+        const cur = el.querySelector<HTMLElement>('[data-rule-current]');
+        if (cur) cur.hidden = !active;
+      });
+    };
+
+    const update = () => {
+      renderBanner();
+      renderMenus();
+      renderDocRows();
+      renderApprovalGrid();
+      renderHistory();
+      renderEmails();
+      renderRulesPanel();
+      $('[data-contract-status]', root)!.textContent = stateLabel();
+      $('[data-last-action]', root)!.textContent = LAST_ACTION[state.award];
+    };
+
+    update();
+  }
+</script>
+
+<style>
+  .cbf-lipd__panel { padding-block-start: var(--spacing-400); }
+  .cbf-lipd__intro { margin: 0; color: var(--color-text-secondary); max-width: 90ch; }
+  .cbf-lipd__toolbar { align-items: center; }
+  .cbf-lipd__scroll { overflow-x: auto; }
+
+  /* ── Tables (ported from the CBFish contract-documents / workflow tables) ── */
+  table { width: 100%; border-collapse: collapse; font-size: var(--type-size-200, 0.9375rem); }
+  thead th {
+    text-align: left;
+    padding: var(--spacing-300) var(--spacing-400);
+    background: var(--color-surface-sunken, #f4f4f4);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+  }
+  tbody td, tbody th[scope='row'] {
+    padding: var(--spacing-300) var(--spacing-400);
+    border-bottom: 1px solid var(--color-border-light, var(--color-border));
+    vertical-align: top;
+    text-align: left;
+  }
+  tbody th[scope='row'] { font-weight: var(--font-weight-semibold); white-space: nowrap; }
+  .cbf-doc-table__menu-col { width: 48px; }
+  .cbf-doc-table__title { font-weight: var(--font-weight-medium); }
+  .cbf-doc-link { color: var(--color-primary); text-decoration: underline; }
+  .cbf-hist-table__status { white-space: pre-line; color: var(--color-text-secondary); }
+
+  .cbf-lipd :global(.cbf-check) {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-100);
+    color: var(--color-success, #15803d);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+  }
+  .cbf-lipd :global(.cbf-none) { color: var(--color-text-muted); }
+  .cbf-lipd :global(.cbf-reappr) {
+    display: inline-block;
+    margin-inline-start: var(--spacing-200);
+    padding: 2px var(--spacing-200);
+    border-radius: var(--radius-full, 9999px);
+    background: color-mix(in srgb, var(--color-warning, #b45309) 14%, var(--color-surface));
+    color: var(--color-warning, #b45309);
+    font-size: var(--type-size-100, 0.8125rem);
+    font-weight: var(--font-weight-semibold);
+    white-space: nowrap;
+  }
+  .cbf-appr-table :global(tr.is-reset) th[scope='row'],
+  .cbf-appr-table :global(tr.is-reset) td {
+    background: color-mix(in srgb, var(--color-warning, #b45309) 6%, var(--color-surface));
+  }
+  .cbf-hist-table :global(tr.is-new) td {
+    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface));
+  }
+
+  /* ── Workflow status strip ── */
+  .cbf-lipd__status { align-items: end; gap: var(--spacing-400); flex-wrap: wrap; }
+  .cbf-lipd__status-facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-500);
+    color: var(--color-text-secondary);
+  }
+  .cbf-lipd__status-rev { min-width: 320px; }
+
+  /* ── Edit dialog ── */
+  .cbf-edit__lede { margin: 0; color: var(--color-text-secondary); }
+  .cbf-edit__section {
+    display: flex;
+    gap: var(--spacing-400);
+    padding-block: var(--spacing-300);
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+  }
+  .cbf-edit__num {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full, 9999px);
+    background: var(--color-surface-sunken, #f4f4f4);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+  }
+  .cbf-edit__fields { flex: 1; min-width: 0; }
+  .cbf-edit__specs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--spacing-300) var(--spacing-500);
+  }
+  .cbf-edit__specs > div { display: flex; flex-direction: column; gap: 2px; }
+  .cbf-edit__label {
+    font-size: var(--type-size-100, 0.8125rem);
+    color: var(--color-text-muted);
+  }
+  .cbf-edit__guidance { margin: var(--spacing-300) 0 0; color: var(--color-text-muted); }
+  .cbf-edit__file { margin: 0; }
+  .cbf-edit__newfile {
+    margin: 0;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-primary);
+  }
+  .cbf-edit__history {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--spacing-300) var(--spacing-500);
+    padding: var(--spacing-400);
+    border-radius: var(--radius-200);
+    background: var(--color-surface-sunken, #f4f4f4);
+  }
+  .cbf-edit__history > div { display: flex; flex-direction: column; gap: 2px; }
+  .cbf-edit__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--spacing-300);
+    width: 100%;
+  }
+  .cbf-edit__footer [data-save-hint] { margin-inline-end: auto; color: var(--color-text-muted); }
+
+  /* ── Email envelope ── */
+  .cbf-lipd :global(.cbf-email) {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    background: var(--color-surface);
+    overflow: hidden;
+  }
+  .cbf-lipd :global(.cbf-email__head) {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-200) var(--spacing-500);
+    padding: var(--spacing-400) var(--spacing-500);
+    background: var(--color-surface-sunken, #f4f4f4);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-lipd :global(.cbf-email__head > div) { display: flex; flex-direction: column; gap: 2px; }
+  .cbf-lipd :global(.cbf-email__subject) { grid-column: 1 / -1; }
+  .cbf-lipd :global(.cbf-email__label) {
+    font-size: var(--type-size-100, 0.8125rem);
+    color: var(--color-text-muted);
+  }
+  .cbf-lipd :global(.cbf-email__body) {
+    padding: var(--spacing-400) var(--spacing-500);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-300);
+  }
+  .cbf-lipd :global(.cbf-email__body p) { margin: 0; }
+  .cbf-lipd :global(.cbf-email__meta) { color: var(--color-text-muted); }
+  .cbf-lipd :global(.cbf-email__foot) {
+    padding: var(--spacing-200) var(--spacing-500);
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+    color: var(--color-text-muted);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+</style>

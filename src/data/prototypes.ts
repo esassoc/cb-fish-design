@@ -22,6 +22,16 @@ export interface Prototype {
 
 export const prototypes: Prototype[] = [
   {
+    slug: 'lib-pi-editing',
+    title: 'LIB & PI document editing',
+    description:
+      'A supportive, fully explained process for unlocking Line Item Budget and Property Inventory document edits under select business conditions — replace a file in place with all specifications retained, approvals reset, and the COR notified when an already-approved document changes.',
+    route: '/lib-pi-editing',
+    createdAt: '2026-07-23',
+    ticket: 'CBF-8204',
+    status: 'in-progress',
+  },
+  {
     slug: 'home',
     title: 'CBFish homepage',
     description:

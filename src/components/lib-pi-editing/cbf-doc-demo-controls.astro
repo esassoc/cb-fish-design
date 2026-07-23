@@ -1,0 +1,53 @@
+---
+// cbf-doc-demo-controls — PROTOTYPE-ONLY control strip for /lib-pi-editing.
+// Two segmented toggles (award state × acting role) let a stakeholder flip the
+// CBF-8204 rule tiers live and watch the documents table, context menus, and
+// workflow grid respond. Visually set apart (dashed border + pill) so nobody
+// mistakes it for product UI. The toggles' options/values are assigned by the
+// page's orchestration script (esa-button-toggle takes `options` as a property).
+//
+// bcn-lego-checked: the two controls ARE legos (esa-button-toggle); this wrapper
+// is only the demo-chrome strip around them — a labeled flex row with a dashed
+// border. No esa-* models "prototype-only demo chrome"; checked the catalog, and
+// Beacon has no equivalent (prod apps don't ship demo switchers).
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+---
+<aside class="cbf-demo-controls" aria-label="Prototype demo controls">
+  <div class="cbf-demo-controls__flag">
+    <EsaBadge value="Prototype controls" variant="warning" size="lg" />
+    <p class="type-caption">
+      Not part of the product — flip the award state and your role to see the editing rules change.
+    </p>
+  </div>
+  <div class="cbf-demo-controls__toggles">
+    <esa-button-toggle data-demo-award label="Award state" size="sm"></esa-button-toggle>
+    <esa-button-toggle data-demo-role label="Acting as" size="sm"></esa-button-toggle>
+  </div>
+</aside>
+
+<style>
+  .cbf-demo-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    padding: var(--spacing-400) var(--spacing-500);
+    border: 1px dashed var(--color-warning, #b45309);
+    border-radius: var(--radius-200);
+    background: color-mix(in srgb, var(--color-warning, #b45309) 5%, var(--color-surface));
+  }
+  .cbf-demo-controls__flag {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-200);
+    max-width: 34ch;
+  }
+  .cbf-demo-controls__flag p { margin: 0; color: var(--color-text-muted); }
+  .cbf-demo-controls__toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-500);
+    align-items: flex-end;
+  }
+</style>
