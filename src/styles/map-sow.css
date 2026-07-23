@@ -2,21 +2,18 @@
    generates via innerHTML strings for a large, organically-grown prototype (wizard
    steps, sidebar metric rows, map legend, etc.) — that render layer predates the
    component-first gates and isn't being rewritten in this pass. Migrated off bespoke
-   CSS so far: the modal shells (we-modal/sowmodal/welcome-modal) -> esa-dialog,
-   #inner-tabbar -> esa-tab-layout (tab strip only — its .panel has no flex/scroll
-   support and exposes no `part`, so #pp-side/#work-side stay as plain siblings, see
-   cbf-msow-sidebar.astro), #sidebar-empty -> esa-empty-state, all type="text" inputs
-   and the min/step-free type="number" inputs -> esa-text-field (see the map-sow.js
-   header comment for exactly which number fields stayed raw and why), and the two
-   dead WE-panel/nav components (removed). Still bespoke by necessity: the 7 native
-   <select> sites — an esa-select swap was tried and reverted; esa-select never
-   renders in this spoke's dev server (esassoc/ecology#5, a hub-side class-field-
-   shadowing bug), so the swap is parked on feature/map-sow-esa-select until that
-   ships — type="number" fields relying on min/step (esa-text-field has no
-   passthrough for those), #map-search-input (a map-surface search control, not a
-   form field), and the pp-badge count, which lost its amber "incomplete" tint when
-   it moved into esa-tab-layout's built-in badge slot (no color-variant knob exposed
-   there) — the count text still conveys it. */
+   CSS so far: the modal shells (we-modal/sowmodal/welcome-modal) -> esa-dialog, the 7
+   native <select> sites -> esa-select, #inner-tabbar -> esa-tab-layout (tab strip only
+   — its .panel has no flex/scroll support and exposes no `part`, so #pp-side/#work-side
+   stay as plain siblings, see cbf-msow-sidebar.astro), #sidebar-empty -> esa-empty-state,
+   all type="text" inputs and the min/step-free type="number" inputs -> esa-text-field
+   (see the map-sow.js header comment for exactly which number fields stayed raw and
+   why), and the two dead WE-panel/nav components (removed). Still bespoke by necessity:
+   type="number" fields relying on min/step (esa-text-field has no passthrough for
+   those), #map-search-input (a map-surface search control, not a form field), and the
+   pp-badge count, which lost its amber "incomplete" tint when it moved into
+   esa-tab-layout's built-in badge slot (no color-variant knob exposed there) — the
+   count text still conveys it. */
 
 /* Leaflet stacks its own panes up to z-index 700 (Map._initPanes: tilePane 200,
    overlayPane 400, shadowPane 500, markerPane 600, popupPane 700), and .leaflet-map-pane
@@ -146,8 +143,8 @@
 .pm-tag { font-size: 11px; color: var(--color-text-inverse, #fff); padding: 1px 5px; border-radius: 6px; }
 .pm-desc { font-size: 10px; color: var(--color-text-muted); margin-bottom: 6px; font-style: italic; }
 .pm-input { width: 100%; border: 1px solid var(--color-border); border-radius: 3px; padding: 4px 7px; font-size: 12px; color: var(--color-text-primary); margin-bottom: 4px; }
-/* esa-text-field renders its own bordered input in its shadow DOM — the host only needs sizing. */
-esa-text-field.pm-input { width: 100%; border: none; padding: 0; margin-bottom: 4px; }
+/* esa-select/esa-text-field render their own bordered input in shadow DOM — the host only needs sizing. */
+esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; padding: 0; margin-bottom: 4px; }
 .pm-meas-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; min-height: 26px; }
 .pm-draw-btn {
   display: inline-flex;
@@ -229,7 +226,7 @@ esa-text-field.pm-input { width: 100%; border: none; padding: 0; margin-bottom: 
   font-weight: var(--font-weight-medium);
   margin-bottom: 4px;
 }
-.f-row input, .f-row select, .struct-type-sel {
+.f-row input {
   width: 100%;
   border: 1px solid var(--color-border);
   border-radius: 3px;
@@ -237,6 +234,8 @@ esa-text-field.pm-input { width: 100%; border: none; padding: 0; margin-bottom: 
   font-size: 12px;
   color: var(--color-text-primary);
 }
+/* esa-select renders its own bordered input in its shadow DOM — the host only needs sizing. */
+.struct-type-sel { width: 100%; }
 .f-calc { background: #edf7f2; border: 1px solid #aaddc4; border-radius: 3px; padding: 4px 8px; font-size: 11px; color: #0f6849; font-weight: var(--font-weight-bold); }
 .draw-btn {
   display: inline-flex;
