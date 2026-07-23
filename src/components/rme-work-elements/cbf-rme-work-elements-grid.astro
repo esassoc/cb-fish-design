@@ -44,9 +44,6 @@ const { rows = defaultRows } = Astro.props;
 <section class="cbf-rme-grid stack" data-gap="md">
   <header class="cbf-data-grid__header repel">
     <span class="type-caption cbf-data-grid__count-label">All work statement elements</span>
-  </header>
-
-  <div class="cbf-data-grid__controls repel">
     <div class="cbf-data-grid__search">
       <CbfSearchField
         placeholder="Search project, contractor, contract, or title…"
@@ -55,11 +52,7 @@ const { rows = defaultRows } = Astro.props;
         aria-label="Search work statement elements"
       />
     </div>
-  </div>
-
-  <p class="type-caption cbf-rme-grid__hint">
-    Double-click a Primary/Secondary RM&E Type or Focal Area cell (shaded) to edit it.
-  </p>
+  </header>
 
   <!-- AG Grid mounts here. autoHeight grows with rows so the page (not an inner
        pane) owns vertical scroll; the wrapper owns the framed surface. -->
@@ -81,10 +74,6 @@ const { rows = defaultRows } = Astro.props;
 </section>
 
 <style>
-  .cbf-rme-grid__hint {
-    color: var(--color-text-muted);
-  }
-
   /* Quiet persistent affordance for the 4 editable columns — a faint tint,
      not a bold fill, matching design-principles' "containers stay neutral"
      rule. Discoverability for an always-on double-click-to-edit cell, since
