@@ -7,7 +7,6 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
 import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
-import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import CbfDocDemoControls from '../components/lib-pi-editing/cbf-doc-demo-controls.astro';
 import CbfLibPiDocuments from '../components/lib-pi-editing/cbf-lib-pi-documents.astro';
@@ -30,9 +29,8 @@ const crumbs = [
   layout: esa-container > [prototype settings bar] + cbf-app-panel
   sections:
     - nav              -> cbf-public-nav
-    - prototype bar    -> cbf-doc-demo-controls   (prototype-only — sits ABOVE the app frame)
-    - contract frame   -> cbf-app-panel            (breadcrumbs + page header + tabs, the real app chrome)
-    - page header      -> esa-page-header
+    - prototype bar    -> cbf-doc-demo-controls   (prototype-only — sits ABOVE the app frame; holds the editing-state explainer)
+    - contract frame   -> cbf-app-panel            (breadcrumbs + tabs, the real app chrome)
     - docs + workflow  -> cbf-lib-pi-documents    (contract tabs, tables, dialogs, email mock)
 -->
 <BaseLayout title="LIB &amp; PI document editing — Columbia Basin Fish &amp; Wildlife Program">
@@ -45,11 +43,6 @@ const crumbs = [
       <CbfDocDemoControls />
 
       <CbfAppPanel crumbs={crumbs}>
-        <EsaPageHeader
-          eyebrow={contract.label}
-          title="LIB & PI document editing"
-          lede="Replace a Line Item Budget or Property Inventory file without deleting it and re-entering its specifications. What you can do depends on where the award is in its lifecycle — and the COR is notified whenever an already-approved document changes."
-        />
         <CbfLibPiDocuments />
       </CbfAppPanel>
     </EsaContainer>

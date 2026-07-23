@@ -4,43 +4,72 @@
 // number/name, tabs) so nobody mistakes it for application UI: it's framed as a
 // distinct "prototype settings" strip (dashed border + warning badge). Two
 // segmented toggles let a stakeholder flip who is viewing the pages and what
-// state the CR/CCR is in, then watch the contract respond. The toggles'
-// options/values are assigned by the page's orchestration script
-// (esa-button-toggle takes `options` as a property).
+// state the CR/CCR is in; the explainer beneath them states, in plain language,
+// whether editing is allowed for that combination and why. All of this is
+// prototype scaffolding — none of it belongs inside the real contract, where
+// LIB/PI editing is a rare (~1%) action. The toggles' options/values and the
+// explainer text are assigned by the page's orchestration script.
 //
-// bcn-lego-checked: the two controls ARE legos (esa-button-toggle); this wrapper
-// is only the demo-chrome strip around them — a labeled flex row with a dashed
-// border. No esa-* models "prototype-only demo chrome"; checked the catalog, and
-// Beacon has no equivalent (prod apps don't ship demo switchers).
+// bcn-lego-checked: the toggles ARE legos (esa-button-toggle) and the explainer
+// IS a lego (esa-alert-box, variant-swapped by the script); this wrapper is only
+// the demo-chrome strip around them — a labeled column with a dashed border. No
+// esa-* models "prototype-only demo chrome"; checked the catalog, and Beacon has
+// no equivalent (prod apps don't ship demo switchers).
 import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 ---
 <aside class="cbf-demo-controls" aria-label="Prototype settings">
-  <div class="cbf-demo-controls__flag">
-    <div class="cbf-demo-controls__flag-head">
+  <div class="cbf-demo-controls__row">
+    <div class="cbf-demo-controls__flag">
       <EsaBadge value="Prototype settings" variant="warning" size="lg" />
+      <p class="type-caption">
+        This bar is not part of the application. Use it to set who is viewing the
+        pages and what state the CR/CCR is in — the contract below updates to match.
+      </p>
     </div>
-    <p class="type-caption">
-      This bar is not part of the application. Use it to set who is viewing the
-      pages and what state the CR/CCR is in — the contract below updates to match.
-    </p>
+    <div class="cbf-demo-controls__toggles">
+      <esa-button-toggle data-demo-role label="Who is viewing" size="sm"></esa-button-toggle>
+      <esa-button-toggle data-demo-award label="CR / CCR state" size="sm"></esa-button-toggle>
+    </div>
   </div>
-  <div class="cbf-demo-controls__toggles">
-    <esa-button-toggle data-demo-role label="Who is viewing" size="sm"></esa-button-toggle>
-    <esa-button-toggle data-demo-award label="CR / CCR state" size="sm"></esa-button-toggle>
+
+  <!-- Editing-state explainer: which of the three the script shows (and its text)
+       depends on the toggles above. It lives here, not in the contract. -->
+  <div class="cbf-demo-controls__explain">
+    <div data-banner="allowed" hidden>
+      <EsaAlertBox variant="success" title="Editing is available for this combination">
+        <span data-banner-text></span>
+      </EsaAlertBox>
+    </div>
+    <div data-banner="restricted" hidden>
+      <EsaAlertBox variant="warning" title="Editing is restricted for this role right now">
+        <span data-banner-text></span>
+      </EsaAlertBox>
+    </div>
+    <div data-banner="locked" hidden>
+      <EsaAlertBox variant="info" title="Documents are locked in this state">
+        <span data-banner-text></span>
+      </EsaAlertBox>
+    </div>
   </div>
 </aside>
 
 <style>
   .cbf-demo-controls {
     display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    justify-content: space-between;
+    flex-direction: column;
     gap: var(--spacing-400);
     padding: var(--spacing-400) var(--spacing-500);
     border: 1px dashed var(--color-warning-strong, #b45309);
     border-radius: var(--radius-200);
     background: color-mix(in srgb, var(--color-warning-strong, #b45309) 6%, var(--color-surface));
+  }
+  .cbf-demo-controls__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--spacing-400);
   }
   .cbf-demo-controls__flag {
     display: flex;
