@@ -48,26 +48,33 @@ hub fix. Surface these for promotion via `/request-lego` or a hub PR.
   or whether `theme-cb-fish.css` should re-point it the way it already re-points
   `--color-primary`/`--color-secondary`.
 
-- **`esa-select` and `esa-textarea` never render in this spoke's dev server**
-  (esassoc/ecology#5 for `esa-select`; `esa-textarea` shows the identical
-  symptom and is very likely the same bug). Confirmed live at
-  `/design-system/components/esa-select` and `/design-system/components/esa-textarea`
-  — the Preview/Sizes/States boxes render completely empty, no console error.
-  Isolated the cause to the *import path*, not the component itself: a raw
-  `import('/node_modules/@esa/ecology/src/components/esa-select.ts')` (direct
-  file path) renders the element correctly with a live shadow root; the normal
-  bare-specifier `import '@esa/ecology/esa-select'` a real page uses does not —
-  the custom element is simply never defined, silently. Other Lit legos
-  imported the same bare-specifier way in this spoke (`esa-text-field`,
-  `esa-date-picker`, `esa-dialog`, `esa-chip-group`, `esa-snackbar-container`)
-  all work fine, so this isn't a spoke-wide Vite resolution problem — something
-  specific to how these two components' modules are structured/registered
-  breaks under the bare-specifier resolution path. Worked around both times by
-  falling back to native `<select>`/`<textarea>`, styled to match the
-  surrounding field chrome (map-sow commit `b5a60d6`;
-  `cbf-crs-create-commitment-dialog.astro` here). Proposed hub fix: reproduce
-  the bare-specifier import path (not a direct file import) in a spoke dev
-  server and find what's different about `esa-select`/`esa-textarea`'s module
-  vs. the working components — likely worth checking for a duplicate/shadowed
-  `customElements.define` registration or a top-level import that throws
-  silently inside a try/catch.
+- **RESOLVED — `esa-select` never rendered in this spoke's dev server**
+  (esassoc/ecology#5). Root cause turned out to be class-field shadowing:
+  `esa-select.ts` declared its internal state (`_search`/`_selected`/`_open`/
+  `_active`) as real TS class fields instead of ambient `declare` fields, which
+  shadowed the reactive accessor Lit installs on the prototype — Lit's dev-mode
+  build throws on the very first `performUpdate()`, before `render()` ever
+  runs, so the element silently never defines. Fixed on the hub in commit
+  `a915170` ("Fix class-field shadowing that breaks rendering in 4 Lit
+  components" — `esa-select`, `esa-input-tag`, `esa-file-upload`,
+  `esa-sidebar-nav` all had the same anti-pattern). Pulled into this spoke,
+  tokens rebuilt, verified live at `/design-system/components/esa-select` and
+  in the map-sow wizard's Substrate step — renders and selects correctly now.
+  The native `<select>` workaround in map-sow (commit `b5a60d6`) was reverted
+  back to `esa-select` in `feature/restore-map-sow-esa-select`. **Still using
+  native `<select>` as of this writing**: `cbf-crs-create-commitment-dialog.astro`
+  and `cbf-crs-commitments-dashboard.astro`'s status-edit dialog (added after
+  the bug but before this fix was pulled) — safe to revert back to `esa-select`
+  whenever that work is picked up.
+
+  **Correction to an earlier entry in this file**: `esa-textarea` was
+  previously logged here as "very likely the same bug" based on its
+  design-system preview also rendering empty. That diagnosis was wrong —
+  `esa-textarea.ts`'s reactive fields were already correctly `declare`d (no
+  shadowing), and re-testing after a clean dev-server restart showed it
+  rendering fine. The empty preview was a stale Vite `optimizeDeps` cache in
+  that session, not a component bug. Lesson: an empty design-system preview
+  with no console error is consistent with BOTH a real component bug and a
+  transient dev-server cache/pre-bundling issue — a full server restart
+  (`rm -rf node_modules/.vite`, restart, let it settle before testing) is
+  worth ruling out before concluding it's a hub-side bug.
