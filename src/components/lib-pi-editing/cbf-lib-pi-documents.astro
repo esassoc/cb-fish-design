@@ -19,9 +19,7 @@
 // esa-text-field/esa-textarea; SOW revision = esa-select; buttons = esa-button;
 // empty archive = esa-empty-state; badges = esa-badge.
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
-import EsaBadge from '@esa/ecology/esa-badge.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
-import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
 import {
   contract,
@@ -52,13 +50,16 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     </EsaAlertBox>
   </div>
 
-  <esa-tab-layout data-lipd-tabs active-index="0" size="md" appearance="underline">
-    <!-- ═══════════════ Tab 0 — Documents ═══════════════ -->
-    <div slot="panel-0" class="cbf-lipd__panel stack" data-gap="md">
+  <!-- The full contract tab strip is built by the script from CONTRACT_TABS; only
+       Documents & Workflow are enabled, and the two panels below are re-slotted to
+       their live index (it shifts when a contract manager loses the COR-only tabs). -->
+  <esa-tab-layout data-lipd-tabs active-index="7" size="md" appearance="underline">
+    <!-- ═══════════════ Documents (enabled) ═══════════════ -->
+    <div data-panel="documents" slot="panel-7" class="cbf-lipd__panel stack" data-gap="md">
       <p class="cbf-lipd__intro">
-        Use this area to store and manage document attachments relevant to this contract. Refer to
-        the <strong>Email archive</strong> tab to review system-generated notifications for this
-        contract.
+        Use this area to store and manage document attachments relevant to this contract. When a
+        replacement clears an approval the Contracting Officer's Representative (COR) has given, the
+        COR is notified by email automatically.
       </p>
 
       <div class="cbf-lipd__toolbar repel">
@@ -113,8 +114,8 @@ const gridDocs = documents.filter((d) => d.workflowRow);
       </div>
     </div>
 
-    <!-- ═══════════════ Tab 1 — Workflow ═══════════════ -->
-    <div slot="panel-1" class="cbf-lipd__panel stack" data-gap="md">
+    <!-- ═══════════════ Workflow (enabled) ═══════════════ -->
+    <div data-panel="workflow" slot="panel-5" class="cbf-lipd__panel stack" data-gap="md">
       <div class="cbf-lipd__status repel">
         <div class="cbf-lipd__status-facts">
           <span>Contract status: <strong data-contract-status>Pending</strong></span>
@@ -188,22 +189,6 @@ const gridDocs = documents.filter((d) => d.workflowRow);
           </tbody>
         </table>
       </div>
-    </div>
-
-    <!-- ═══════════════ Tab 2 — Email archive ═══════════════ -->
-    <div slot="panel-2" class="cbf-lipd__panel stack" data-gap="md">
-      <p class="cbf-lipd__intro">
-        System-generated notifications for this contract. When someone replaces a document the COR
-        had already approved, the notice lands here (and in the COR's inbox).
-      </p>
-      <div data-email-empty>
-        <EsaEmptyState
-          title="No notifications yet"
-          description="Replace a COR-approved document on the Documents tab — the notification sent to the COR will appear here."
-          size="sm"
-        />
-      </div>
-      <div class="cbf-email-list stack" data-gap="md" data-email-list></div>
     </div>
   </esa-tab-layout>
 
@@ -296,10 +281,6 @@ const gridDocs = documents.filter((d) => d.workflowRow);
   <esa-dialog data-why-dialog size="sm" heading="Why can't I edit this document?">
     <div class="stack" data-gap="sm">
       <p data-why-reason></p>
-      <p class="type-caption">
-        The full picture is in “Who can edit LIB &amp; Property Inventory documents, and when?”
-        beneath the tables.
-      </p>
     </div>
     <div slot="footer" class="cbf-edit__footer">
       <span data-why-close><EsaButton color="secondary" appearance="outline">Close</EsaButton></span>
@@ -316,7 +297,6 @@ const gridDocs = documents.filter((d) => d.workflowRow);
       <div data-em-preview></div>
     </div>
     <div slot="footer" class="cbf-edit__footer">
-      <span data-em-archive><EsaButton color="secondary" appearance="outline">Open Email archive</EsaButton></span>
       <span data-em-close><EsaButton color="primary">Done</EsaButton></span>
     </div>
   </esa-dialog>
@@ -362,6 +342,7 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     APPROVAL_COLS,
     CHECK_SVG,
     editRule,
+    contractTabsFor,
   } from '../../data/lib-pi-editing.mjs';
 
   const root = document.querySelector<HTMLElement>('[data-lipd]');
@@ -372,7 +353,6 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     const state = { award: 'pending', role: 'cm' };
     const docs = documents.map((d: any) => ({ ...d, approvals: { ...d.approvals }, resetInfo: null }));
     const history = [...workflowHistory];
-    const emails: any[] = [];
     let editingDoc: any = null;
     let pendingFile: { name: string; size: string } | null = null;
     let propsDirty = false;
@@ -385,6 +365,18 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     const roleLabel = () => ROLES.find((r: any) => r.value === state.role)!.label;
     const stateLabel = () => AWARD_STATES.find((s: any) => s.value === state.award)!.label;
     const actor = () => (ROLE_PEOPLE as any)[state.role];
+    // Reflect the selected persona in the header's logged-in-user menu so "who is
+    // viewing" is consistent everywhere. Replace only the button's text node so the
+    // circle-user + chevron icons (and any impersonation markup) are left intact.
+    const setNavUser = (name: string) => {
+      const btn = document.querySelector('[data-omni-user]');
+      if (!btn || btn.classList.contains('is-impersonating')) return;
+      const textNode = Array.from(btn.childNodes).find(
+        (n) => n.nodeType === Node.TEXT_NODE && n.textContent!.trim().length > 0,
+      );
+      if (textNode) textNode.textContent = ` ${name} `;
+      else btn.insertBefore(document.createTextNode(` ${name} `), btn.lastElementChild);
+    };
     const toast = (msg: string) => {
       const sb = $('[data-snackbar]') as any;
       (sb?.info ?? sb?.success)?.call(sb, msg, { duration: 4000 });
@@ -414,19 +406,34 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     if (roleToggle) {
       roleToggle.options = ROLES.map((r: any) => ({ label: r.label, value: r.value }));
       roleToggle.value = state.role;
-      roleToggle.addEventListener('change', () => { state.role = roleToggle.value; update(); });
+      // Role also gates which contract tabs are visible, so rebuild the strip.
+      roleToggle.addEventListener('change', () => { state.role = roleToggle.value; buildTabs(); update(); });
     }
 
-    // ── Tabs ────────────────────────────────────────────────────────────────
+    // ── Tabs — the full contract strip, mirroring the live app ───────────────
+    // Only Documents & Workflow are enabled; the rest render disabled for context.
+    // Contract managers don't see the COR-only tabs, so the visible set (and the two
+    // live panels' slot indices) shift with the role — rebuild on every change.
     const tabsEl = $('[data-lipd-tabs]', root) as any;
-    const setTabs = () => {
-      tabsEl.tabs = [
-        { label: 'Documents' },
-        { label: 'Workflow' },
-        { label: 'Email archive', badge: emails.length || undefined },
-      ];
+    const docPanel = $('[data-panel="documents"]', root)!;
+    const wfPanel = $('[data-panel="workflow"]', root)!;
+    let activeKey = 'documents';
+
+    const buildTabs = () => {
+      const vis = contractTabsFor(state.role);
+      tabsEl.tabs = vis.map((t: any) => ({ label: t.label, disabled: !t.panel }));
+      const docIdx = vis.findIndex((t: any) => t.key === 'documents');
+      const wfIdx = vis.findIndex((t: any) => t.key === 'workflow');
+      docPanel.setAttribute('slot', `panel-${docIdx}`);
+      wfPanel.setAttribute('slot', `panel-${wfIdx}`);
+      // Keep whichever enabled tab was active selected across the rebuild.
+      tabsEl.activeIndex = vis.findIndex((t: any) => t.key === activeKey);
     };
-    setTabs();
+    tabsEl.addEventListener('tabchange', (e: any) => {
+      const t = contractTabsFor(state.role)[e.detail.index];
+      if (t?.panel) activeKey = t.key;
+    });
+    buildTabs();
 
     // ── SOW revision select (context flavor only) ───────────────────────────
     const revSelect = $('[data-sow-rev]', root) as any;
@@ -583,7 +590,6 @@ const gridDocs = documents.filter((d) => d.workflowRow);
             meta: `Contract ${contract.number} · ${contract.action} · ${doc.file}`,
             docTitle: doc.title,
           };
-          emails.unshift(email);
           showEmailDialog(email);
         } else {
           toast(`File replaced — all specifications for “${doc.title}” were retained.`);
@@ -618,10 +624,6 @@ const gridDocs = documents.filter((d) => d.workflowRow);
       emailDialog.show();
     };
     $('[data-em-close]', root)!.querySelector('button')!.addEventListener('click', () => emailDialog.close());
-    $('[data-em-archive]', root)!.querySelector('button')!.addEventListener('click', () => {
-      emailDialog.close();
-      tabsEl.activeIndex = 2;
-    });
 
     // ── Context menus ───────────────────────────────────────────────────────
     root.addEventListener('menu-action', (e: any) => {
@@ -738,31 +740,13 @@ const gridDocs = documents.filter((d) => d.workflowRow);
       );
     };
 
-    const renderEmails = () => {
-      $('[data-email-empty]', root)!.hidden = emails.length > 0;
-      const list = $('[data-email-list]', root)!;
-      list.replaceChildren(...emails.map(renderEmailCard));
-      setTabs();
-    };
-
-    const renderRulesPanel = () => {
-      const tier = (AWARD_STATES.find((s: any) => s.value === state.award) as any).tier;
-      $$('[data-rule-tier]').forEach((el) => {
-        const active = Number(el.dataset.ruleTier) === tier;
-        el.classList.toggle('is-active', active);
-        const cur = el.querySelector<HTMLElement>('[data-rule-current]');
-        if (cur) cur.hidden = !active;
-      });
-    };
-
     const update = () => {
       renderBanner();
       renderMenus();
       renderDocRows();
       renderApprovalGrid();
       renderHistory();
-      renderEmails();
-      renderRulesPanel();
+      setNavUser(actor());
       $('[data-contract-status]', root)!.textContent = stateLabel();
       $('[data-last-action]', root)!.textContent = LAST_ACTION[state.award];
     };
@@ -800,29 +784,33 @@ const gridDocs = documents.filter((d) => d.workflowRow);
   .cbf-doc-link { color: var(--color-primary); text-decoration: underline; }
   .cbf-hist-table__status { white-space: pre-line; color: var(--color-text-secondary); }
 
+  /* --color-success (#22c55e) is a bright FILL, not a text color (~2.3:1 on white,
+     fails WCAG). Use the -strong text token (#15803d, ~4.6:1) for the check + date. */
   .cbf-lipd :global(.cbf-check) {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-100);
-    color: var(--color-success, #15803d);
+    color: var(--color-success-strong, #15803d);
     font-weight: var(--font-weight-semibold);
     white-space: nowrap;
   }
-  .cbf-lipd :global(.cbf-none) { color: var(--color-text-muted); }
+  .cbf-lipd :global(.cbf-none) { color: var(--color-text-secondary); }
+  /* Solid burnt-amber chip with white text (#b45309 vs #fff ≈ 4.9:1, AA-compliant).
+     The old pale-amber-on-pale-amber treatment was well under WCAG minimums. */
   .cbf-lipd :global(.cbf-reappr) {
     display: inline-block;
     margin-inline-start: var(--spacing-200);
     padding: 2px var(--spacing-200);
     border-radius: var(--radius-full, 9999px);
-    background: color-mix(in srgb, var(--color-warning, #b45309) 14%, var(--color-surface));
-    color: var(--color-warning, #b45309);
+    background: var(--color-warning-strong, #b45309);
+    color: var(--color-text-inverse, #fff);
     font-size: var(--type-size-100, 0.8125rem);
     font-weight: var(--font-weight-semibold);
     white-space: nowrap;
   }
   .cbf-appr-table :global(tr.is-reset) th[scope='row'],
   .cbf-appr-table :global(tr.is-reset) td {
-    background: color-mix(in srgb, var(--color-warning, #b45309) 6%, var(--color-surface));
+    background: color-mix(in srgb, var(--color-warning-strong, #b45309) 8%, var(--color-surface));
   }
   .cbf-hist-table :global(tr.is-new) td {
     background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface));
