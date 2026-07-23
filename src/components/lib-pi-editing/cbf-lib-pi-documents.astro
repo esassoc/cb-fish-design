@@ -57,7 +57,7 @@ const gridDocs = documents.filter((d) => d.workflowRow);
         </span>
       </div>
 
-      <div class="cbf-lipd__scroll">
+      <div class="cbf-lipd__doctable">
         <table class="cbf-doc-table">
           <thead>
             <tr>
@@ -756,7 +756,18 @@ const gridDocs = documents.filter((d) => d.workflowRow);
   .cbf-lipd__panel { padding-block-start: var(--spacing-400); }
   .cbf-lipd__intro { margin: 0; color: var(--color-text-secondary); max-width: 90ch; }
   .cbf-lipd__toolbar { align-items: center; }
+  /* Wide workflow tables scroll horizontally. NB: overflow-x:auto forces overflow-y
+     to compute to auto too, so this ALSO clips vertically — fine for these tables
+     (no popovers), but see .cbf-lipd__doctable below. */
   .cbf-lipd__scroll { overflow-x: auto; }
+  /* The documents table carries a row-actions dropdown (esa-dropdown-menu positions
+     absolutely and can't escape a clipping ancestor). It fits without horizontal
+     scroll at desktop widths, so keep overflow visible here and let the menu spill
+     over the rows below. Only narrow viewports fall back to horizontal scrolling. */
+  .cbf-lipd__doctable { overflow: visible; }
+  @media (max-width: 1024px) {
+    .cbf-lipd__doctable { overflow-x: auto; }
+  }
 
   /* ── Tables (ported from the CBFish contract-documents / workflow tables) ── */
   table { width: 100%; border-collapse: collapse; font-size: var(--type-size-200, 0.9375rem); }

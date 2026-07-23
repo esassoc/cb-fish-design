@@ -60,4 +60,10 @@ const crumbs = [
   .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
   /* Space the prototype-settings bar off the contract frame beneath it. */
   .cbf-page :global(.cbf-demo-controls) { margin-block-end: var(--spacing-500); }
+  /* cbf-app-panel clips with overflow:hidden (rounded-corner card). That clips the
+     row-actions dropdown on the lower document rows, since esa-dropdown-menu positions
+     absolutely and can't escape a clipping ancestor. Let the panel overflow on THIS
+     page only (page-scoped; the 4px corner rounding is imperceptible) so the menu shows
+     in full. Scoped selector keeps /search and /publications untouched. */
+  .cbf-page :global(.cbf-app-panel) { overflow: visible; }
 </style>
