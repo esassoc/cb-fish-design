@@ -21,6 +21,30 @@ export const sowRevisions = [
   { value: 'rev2', label: '2. Amendment 001 (05/01/2024 - 04/30/2026)' },
 ];
 
+/**
+ * The contract view's full tab strip, mirroring the live app (in order). Only the
+ * two tabs flagged `panel` are interactive in this prototype — the rest render as
+ * disabled context so the contract frame reads like the real thing. `corOnly` tabs
+ * are hidden from contract managers, who see a narrower set.
+ */
+export const CONTRACT_TABS = [
+  { key: 'summary', label: 'Summary' },
+  { key: 'sow', label: 'SOW' },
+  { key: 'we-budgets', label: 'WE Budgets' },
+  { key: 'status-reports', label: 'Status Reports' },
+  { key: 'pre-award', label: 'Pre-Award' },
+  { key: 'workflow', label: 'Workflow', panel: true },
+  { key: 'review-sow', label: 'Review SOW' },
+  { key: 'email-archive', label: 'Email Archive', corOnly: true },
+  { key: 'internal-notes', label: 'Internal Notes', corOnly: true },
+  { key: 'documents', label: 'Documents', panel: true },
+  { key: 'cor-file', label: 'COR File', corOnly: true },
+];
+
+/** The tabs a given role sees. Contract managers don't get the COR-only tabs. */
+export const contractTabsFor = (role) =>
+  CONTRACT_TABS.filter((t) => (role === 'cm' ? !t.corOnly : true));
+
 /** Award lifecycle states, in order. `tier` groups them into the three rule tiers. */
 export const AWARD_STATES = [
   { value: 'pending', label: 'Pending', tier: 1 },

@@ -11,7 +11,6 @@ import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import CbfDocDemoControls from '../components/lib-pi-editing/cbf-doc-demo-controls.astro';
 import CbfLibPiDocuments from '../components/lib-pi-editing/cbf-lib-pi-documents.astro';
-import CbfDocRulesPanel from '../components/lib-pi-editing/cbf-doc-rules-panel.astro';
 import { withBase } from '../lib/base';
 import { contract } from '../data/lib-pi-editing.mjs';
 
@@ -28,28 +27,30 @@ const crumbs = [
 ];
 ---
 <!-- manifest:
-  layout: esa-container > cbf-app-panel
+  layout: esa-container > [prototype settings bar] + cbf-app-panel
   sections:
     - nav              -> cbf-public-nav
+    - prototype bar    -> cbf-doc-demo-controls   (prototype-only — sits ABOVE the app frame)
+    - contract frame   -> cbf-app-panel            (breadcrumbs + page header + tabs, the real app chrome)
     - page header      -> esa-page-header
-    - demo switcher    -> cbf-doc-demo-controls   (prototype-only)
-    - docs + workflow  -> cbf-lib-pi-documents    (tabs, tables, dialogs, email mock)
-    - rules explainer  -> cbf-doc-rules-panel
+    - docs + workflow  -> cbf-lib-pi-documents    (contract tabs, tables, dialogs, email mock)
 -->
 <BaseLayout title="LIB &amp; PI document editing — Columbia Basin Fish &amp; Wildlife Program">
   <CbfPublicNav />
 
   <main class="cbf-page">
     <EsaContainer maxWidth="1920px">
+      <!-- Prototype settings live OUTSIDE the contract frame below, so it's clear
+           these switches configure the demo, not the application. -->
+      <CbfDocDemoControls />
+
       <CbfAppPanel crumbs={crumbs}>
         <EsaPageHeader
           eyebrow={contract.label}
           title="LIB & PI document editing"
           lede="Replace a Line Item Budget or Property Inventory file without deleting it and re-entering its specifications. What you can do depends on where the award is in its lifecycle — and the COR is notified whenever an already-approved document changes."
         />
-        <CbfDocDemoControls />
         <CbfLibPiDocuments />
-        <CbfDocRulesPanel />
       </CbfAppPanel>
     </EsaContainer>
   </main>
@@ -64,4 +65,6 @@ const crumbs = [
 
 <style>
   .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+  /* Space the prototype-settings bar off the contract frame beneath it. */
+  .cbf-page :global(.cbf-demo-controls) { margin-block-end: var(--spacing-500); }
 </style>
