@@ -70,7 +70,7 @@
 // session only (see cbf-password-gate.astro's note on the same constraint) —
 // there is no backend to persist to.
 //
-// bcn-lego-checked: three bespoke pieces, all checked against the hub source, not
+// bcn-lego-checked: two bespoke pieces, both checked against the hub source, not
 // just the docs. (1) The timeline-bar segments/layout — a two-column row grid, a
 // fixed 15-column year grid shared by the axis/bar/document row, and plain colored
 // <span> segments reading the SAME semantic tokens esa-badge's variants read
@@ -82,14 +82,12 @@
 // it can't carry a persistent swatch and serve as the legend too. The custom chips
 // mirror esa-chip-group's own resting/hover/active token chain and ARIA shape
 // (role="radiogroup"/"radio" + aria-checked) so they read and behave like the same
-// chip family, just with a swatch slot the lego's markup has no room for. (3) The
-// status-edit dialog's status <select> — esa-select never renders in this spoke's
-// dev server (esassoc/ecology#5, confirmed live at
-// /design-system/components/esa-select), same reason map-sow reverted to native
-// <select> in commit b5a60d6 and cbf-crs-create-commitment-dialog.astro does the
-// same; styled to match the surrounding lego field chrome. Checked the full
-// node_modules/@esa/ecology/src/components catalog (esa-card/pill/badge/stat are
-// atoms) and Beacon is not on this machine for all three. The quiet tag pair is
+// chip family, just with a swatch slot the lego's markup has no room for. Checked
+// the full node_modules/@esa/ecology/src/components catalog (esa-card/pill/badge/
+// stat are atoms) and Beacon is not on this machine for both. The status-edit
+// dialog's status field is esa-select — it previously fell back to a native
+// <select> (esassoc/ecology#5, a class-field-shadowing bug), now fixed upstream
+// (ecology commit a915170) and confirmed live. The quiet tag pair is
 // the real esa-badge lego re-toned via its PUBLIC component tokens (--badge-bg/
 // --badge-text-color), not a hand-rolled tag. This component is the reusable home.
 import '@esa/tokens/layouts.css';
@@ -462,18 +460,19 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
        per click (see the client script) rather than one dialog per cell. -->
   <esa-dialog size="xs" show-close-button heading="Edit status" data-crs-edit-dialog>
     <p class="type-body" data-crs-edit-desc></p>
-    <label class="cbf-crs-dashboard__edit-field">
-      <span class="type-label">Status</span>
-      <select data-crs-edit-select>
-        <option value="Complete">Complete</option>
-        <option value="In Progress">In Progress</option>
-        <option value="Not Started">Not Started</option>
-        <option value="Future">Future</option>
-        <option value="Closed">Closed</option>
-        <option value="Delayed">Delayed</option>
-        <option value="">Unset</option>
-      </select>
-    </label>
+    <esa-select
+      label="Status"
+      options={JSON.stringify([
+        { label: 'Complete', value: 'Complete' },
+        { label: 'In Progress', value: 'In Progress' },
+        { label: 'Not Started', value: 'Not Started' },
+        { label: 'Future', value: 'Future' },
+        { label: 'Closed', value: 'Closed' },
+        { label: 'Delayed', value: 'Delayed' },
+        { label: 'Unset', value: '' },
+      ])}
+      data-crs-edit-select
+    ></esa-select>
 
     <div slot="footer">
       <span data-crs-edit-cancel>
@@ -829,36 +828,12 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
     display: none;
   }
 
-  /* Status-edit dialog field. Native <select> — see cbf-crs-create-commitment-
-     dialog.astro's header note: esa-select never renders in this spoke's dev
-     server (esassoc/ecology#5), confirmed live, same reason map-sow reverted
-     to native <select> in commit b5a60d6. Styled to match the surrounding
-     lego field chrome. */
-  .cbf-crs-dashboard__edit-field {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-100);
-  }
-  .cbf-crs-dashboard__edit-field select {
-    height: var(--form-height-md, 40px);
-    padding-inline: var(--form-padding-x-md, 16px);
-    border: var(--form-border-width, 1px) solid var(--form-border-color, #d4d4d4);
-    border-radius: var(--form-radius-md, 8px);
-    font-size: var(--form-font-size-md, 14px);
-    font-family: var(--font-sans);
-    color: var(--form-text-color, var(--color-text-primary));
-    background: var(--form-bg, var(--color-surface));
-  }
-  .cbf-crs-dashboard__edit-field select:focus {
-    outline: none;
-    border-color: var(--form-border-color-focus, var(--color-primary));
-    box-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
-  }
 </style>
 
 <script>
   import '@esa/ecology/esa-tab-layout';
   import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-select';
   import { YEARS, CURRENT_YEAR, STATUS_DOT } from '../../data/crs-commitments.mjs';
 
   type CommitmentFields = { category: string; subcategory: string; commitmentType: string };
@@ -1025,7 +1000,7 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
     const editToggle = root.querySelector<HTMLButtonElement>('[data-crs-edit-toggle]');
     const editDialog = root.querySelector<HTMLElement & { show: () => void; close: () => void }>('[data-crs-edit-dialog]');
     const editDesc = root.querySelector<HTMLElement>('[data-crs-edit-desc]');
-    const editSelect = root.querySelector<HTMLSelectElement>('[data-crs-edit-select]');
+    const editSelect = root.querySelector<HTMLElement & { value: string }>('[data-crs-edit-select]');
     const editCancel = root.querySelector<HTMLElement>('[data-crs-edit-cancel]');
     const editSave = root.querySelector<HTMLElement>('[data-crs-edit-save]');
     const editCells = Array.from(root.querySelectorAll<HTMLButtonElement>('.cbf-crs-dashboard__edit-cell'));

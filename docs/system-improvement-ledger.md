@@ -61,11 +61,13 @@ hub fix. Surface these for promotion via `/request-lego` or a hub PR.
   tokens rebuilt, verified live at `/design-system/components/esa-select` and
   in the map-sow wizard's Substrate step — renders and selects correctly now.
   The native `<select>` workaround in map-sow (commit `b5a60d6`) was reverted
-  back to `esa-select` in `feature/restore-map-sow-esa-select`. **Still using
-  native `<select>` as of this writing**: `cbf-crs-create-commitment-dialog.astro`
-  and `cbf-crs-commitments-dashboard.astro`'s status-edit dialog (added after
-  the bug but before this fix was pulled) — safe to revert back to `esa-select`
-  whenever that work is picked up.
+  back to `esa-select` in `feature/restore-map-sow-esa-select`, and the two
+  CRS Commitments components that added their own native `<select>`/
+  `<textarea>` fallback after this bug but before the fix landed
+  (`cbf-crs-create-commitment-dialog.astro`, `cbf-crs-commitments-dashboard.astro`'s
+  status-edit dialog) have also been reverted back to `esa-select`/
+  `esa-textarea` — no known remaining native-control workarounds for this bug
+  in this spoke.
 
   **Correction to an earlier entry in this file**: `esa-textarea` was
   previously logged here as "very likely the same bug" based on its
