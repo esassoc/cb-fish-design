@@ -7,10 +7,12 @@ hub fix. Surface these for promotion via `/request-lego` or a hub PR.
 
 - **Missing token: `--color-surface-subtle`.** Referenced (always with a
   fallback, e.g. `var(--color-surface-subtle, var(--color-primary-subtle))`)
-  in AG Grid `rowHoverColor` theming across 4+ components now
-  (`cbf-crs-commitments-grid`, `cbf-crs-documents-grid`, and pre-existing
+  in AG Grid `rowHoverColor` theming. Originally duplicated per-component;
+  now defined once in the shared `components/shared/grid-chrome.ts` theme
+  every AG Grid data grid in this spoke imports (`cbf-crs-commitments-grid`,
+  `cbf-crs-documents-grid`, `cbf-rme-work-elements-grid`, and pre-existing
   `cbf-invoice-review-queue`, `cbf-vendor-dashboard-invoices`,
-  `cbf-portfolio-explorer`) but never actually defined in `@esa/tokens`. The
+  `cbf-portfolio-explorer`), but never actually defined in `@esa/tokens`. The
   fallback keeps it from breaking, but the recurrence across independently-
   built components suggests every author expects this token to exist. Proposed
   fix: either define `--color-surface-subtle` as a real semantic token in the

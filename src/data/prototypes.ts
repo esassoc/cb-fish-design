@@ -94,6 +94,15 @@ export const prototypes: Prototype[] = [
     createdAt: '2026-07-16',
     status: 'in-progress',
   },
+  {
+    slug: 'rme-work-elements',
+    title: 'RM&E Work Elements Report',
+    description:
+      'Every Work Statement Element carrying RM&E work, field-for-field with the legacy report, with a new twist: Primary/Secondary RM&E Type and Focal Area are editable right in the grid instead of a multi-click path to a separate metrics tab.',
+    route: '/rme-work-elements',
+    createdAt: '2026-07-23',
+    status: 'in-progress',
+  },
 ];
 
 /** Newest first — the order the index table renders. */

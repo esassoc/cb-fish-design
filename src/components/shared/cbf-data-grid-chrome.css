@@ -1,48 +1,49 @@
 /*
- * Shared chrome for the CRS Commitments area's two data grids
- * (cbf-crs-commitments-grid, cbf-crs-documents-grid): the header/controls/
- * footer frame and the AG Grid cell classes every themed grid in this area
- * renders (link cells, status cells, tabular-figure ids). Both components
- * import this file directly (a plain CSS import, same pattern as
- * @esa/tokens/layouts.css) instead of each carrying an identical scoped
- * style block, extracted by the /design-qa decomposition review to stop the
- * two grids' chrome from drifting apart as they're edited independently.
+ * Shared chrome for this spoke's themed AG Grid data grids: the
+ * header/controls/footer frame and the AG Grid cell classes every themed grid
+ * renders (link cells, status cells, tabular-figure ids). Every consumer
+ * imports this file directly (a plain CSS import, same pattern as
+ * @esa/tokens/layouts.css) instead of carrying an identical scoped style
+ * block. Promoted from crs-commitments/ to shared/ when
+ * cbf-rme-work-elements-grid became a second feature area to consume it
+ * (originally extracted for the CRS Commitments area's two grids by the
+ * /design-qa decomposition review, to stop their chrome from drifting apart).
  *
  * Each component keeps its own distinct outer class (cbf-crs-grid /
- * cbf-crs-docs) on its root section, used only by its own script's
- * querySelectorAll bootstrap so the two grids' client init never cross-fire.
+ * cbf-crs-docs / cbf-rme-grid / …) on its root section, used only by its own
+ * script's querySelectorAll bootstrap so grids' client init never cross-fire.
  * Every descendant element below that root uses the shared
- * cbf-crs-data-grid__* classes this file styles.
+ * cbf-data-grid__* classes this file styles.
  */
 
-.cbf-crs-data-grid__header {
+.cbf-data-grid__header {
   align-items: center;
   gap: var(--spacing-400);
   flex-wrap: wrap;
 }
-.cbf-crs-data-grid__count-label {
+.cbf-data-grid__count-label {
   color: var(--color-text-muted);
 }
 
-.cbf-crs-data-grid__controls {
+.cbf-data-grid__controls {
   align-items: flex-end;
   gap: var(--spacing-400);
   flex-wrap: wrap;
 }
-.cbf-crs-data-grid__filters {
+.cbf-data-grid__filters {
   align-items: flex-end;
   row-gap: var(--spacing-300);
 }
-.cbf-crs-data-grid__filter {
+.cbf-data-grid__filter {
   display: inline-flex;
   flex-direction: column;
   gap: var(--spacing-150);
 }
-.cbf-crs-data-grid__filter .type-caption {
+.cbf-data-grid__filter .type-caption {
   color: var(--color-text-muted);
   white-space: nowrap;
 }
-.cbf-crs-data-grid__search {
+.cbf-data-grid__search {
   flex: 1 1 260px;
   max-width: 380px;
   min-width: 200px;
@@ -50,39 +51,39 @@
 
 /* The grid wrapper owns the framed surface; AG Grid's own border is disabled
    via the theme so the frame reads like the rest of the spoke's data cards. */
-.cbf-crs-data-grid__grid {
+.cbf-data-grid__grid {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-200);
   overflow: hidden;
   background: var(--color-surface);
 }
 
-.cbf-crs-data-grid__footer {
+.cbf-data-grid__footer {
   align-items: center;
   color: var(--color-text-muted);
 }
 
 /* AG Grid status cell: a cloned esa-pill sits in a flex cell so it centers
    vertically without disturbing the lego's own box. */
-.cbf-crs-data-grid__grid .cbf-grid-status {
+.cbf-data-grid__grid .cbf-grid-status {
   display: inline-flex;
   align-items: center;
   height: 100%;
 }
 /* IDs/counts read as data - tabular figures. */
-.cbf-crs-data-grid__grid .cbf-grid-id {
+.cbf-data-grid__grid .cbf-grid-id {
   font-variant-numeric: tabular-nums;
 }
 /* Row links to a detail page - brand-colored, underline on hover. */
-.cbf-crs-data-grid__grid .cbf-grid-link {
+.cbf-data-grid__grid .cbf-grid-link {
   color: var(--color-primary-strong, var(--color-primary));
   text-decoration: none;
   font-weight: var(--font-weight-medium);
 }
-.cbf-crs-data-grid__grid .cbf-grid-link:hover {
+.cbf-data-grid__grid .cbf-grid-link:hover {
   text-decoration: underline;
 }
-.cbf-crs-data-grid__grid .cbf-grid-link:focus-visible {
+.cbf-data-grid__grid .cbf-grid-link:focus-visible {
   outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--color-primary));
   outline-offset: 2px;
   border-radius: var(--radius-050, 2px);
