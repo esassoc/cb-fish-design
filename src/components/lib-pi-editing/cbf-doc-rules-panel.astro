@@ -1,0 +1,104 @@
+---
+// cbf-doc-rules-panel — the "fully explained" layer of /lib-pi-editing: a
+// disclosure spelling out the three CBF-8204 rule tiers in plain language, plus
+// the approval-reset / COR-notification consequence. The page script highlights
+// the tier that matches the demo's current award state (data-rule-tier hooks).
+//
+// bcn-lego-checked: the disclosure IS the esa-collapsible lego; inside it, the
+// tier rows are a definition list (content, not controls) — no esa-* models a
+// static rules/eligibility table, and Beacon has no equivalent pattern. The
+// active-tier highlight is a class the client script toggles.
+import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+
+const tiers = [
+  {
+    tier: 1,
+    states: ['Pending'],
+    who: 'Any user',
+    note:
+      'Replace the file from the context menu; every specification (type, title, authors, sharing) is retained. Replacing clears any existing approval of the document.',
+  },
+  {
+    tier: 2,
+    states: ['Review', 'Approved'],
+    who: 'BPA writers, COR, Approver, CO, QC',
+    note:
+      'Editing narrows to the award team. Contract managers and other users see the option disabled, with the reason.',
+  },
+  {
+    tier: 3,
+    states: ['Signature', 'Issued'],
+    who: 'No one',
+    note: 'Documents are locked — the existing behavior, unchanged.',
+  },
+];
+---
+<div class="cbf-doc-rules" data-rules-panel>
+  <EsaCollapsible title="Who can edit LIB & Property Inventory documents, and when?" icon="info">
+    <div class="cbf-doc-rules__body">
+      <ol class="cbf-doc-rules__tiers">
+        {tiers.map((t) => (
+          <li class="cbf-doc-rules__tier" data-rule-tier={t.tier}>
+            <span class="cbf-doc-rules__states">
+              {t.states.map((s) => <EsaBadge value={s} variant="secondary" size="lg" />)}
+            </span>
+            <strong class="cbf-doc-rules__who">{t.who}</strong>
+            <span class="cbf-doc-rules__note">{t.note}</span>
+            <span class="cbf-doc-rules__current type-caption" data-rule-current hidden>
+              ← the demo is here now
+            </span>
+          </li>
+        ))}
+      </ol>
+      <p class="cbf-doc-rules__consequence">
+        <strong>When an already-approved document is replaced,</strong> its approvals are cleared and
+        the COR is notified by email so they can re-approve. A QC editor's own approval is re-applied
+        to their edit automatically.
+      </p>
+    </div>
+  </EsaCollapsible>
+</div>
+
+<style>
+  .cbf-doc-rules__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-400);
+  }
+  .cbf-doc-rules__tiers {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-200);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cbf-doc-rules__tier {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-300);
+    padding: var(--spacing-300) var(--spacing-400);
+    border-radius: var(--radius-200);
+    border: 1px solid transparent;
+  }
+  .cbf-doc-rules__tier.is-active {
+    border-color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface));
+  }
+  .cbf-doc-rules__states { display: inline-flex; gap: var(--spacing-200); }
+  .cbf-doc-rules__who { min-width: 22ch; }
+  .cbf-doc-rules__note {
+    flex: 1;
+    min-width: 30ch;
+    color: var(--color-text-secondary);
+  }
+  .cbf-doc-rules__current { color: var(--color-primary); font-weight: var(--font-weight-semibold); }
+  .cbf-doc-rules__consequence {
+    margin: 0;
+    padding-top: var(--spacing-300);
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+    color: var(--color-text-secondary);
+  }
+</style>
