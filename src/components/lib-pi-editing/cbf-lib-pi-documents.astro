@@ -33,23 +33,8 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
 const gridDocs = documents.filter((d) => d.workflowRow);
 ---
 <section class="cbf-lipd stack" data-gap="md" data-lipd>
-  <!-- ── The "fully explained" banner: one of three states, toggled by the script ── -->
-  <div data-banner="allowed" hidden>
-    <EsaAlertBox variant="success" title="You can edit LIB & Property Inventory documents right now">
-      <span data-banner-text></span>
-    </EsaAlertBox>
-  </div>
-  <div data-banner="restricted" hidden>
-    <EsaAlertBox variant="warning" title="Editing is restricted for your role right now">
-      <span data-banner-text></span>
-    </EsaAlertBox>
-  </div>
-  <div data-banner="locked" hidden>
-    <EsaAlertBox variant="info" title="Documents are locked">
-      <span data-banner-text></span>
-    </EsaAlertBox>
-  </div>
-
+  <!-- The editing-state banner lives in the Prototype settings bar (cbf-doc-demo-controls),
+       not here — LIB/PI editing is a rare action and shouldn't occupy the contract. -->
   <!-- The full contract tab strip is built by the script from CONTRACT_TABS; only
        Documents & Workflow are enabled, and the two panels below are re-slotted to
        their live index (it shifts when a contract manager loses the COR-only tabs). -->
@@ -419,6 +404,15 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     const wfPanel = $('[data-panel="workflow"]', root)!;
     let activeKey = 'documents';
 
+    // Keep the trailing breadcrumb in step with the selected tab: "Documents" on the
+    // Documents tab, "Workflow" on the Workflow tab. (The current crumb is the sole
+    // .esa-breadcrumbs__current span rendered by the breadcrumbs lego.)
+    const CRUMB_LABEL: Record<string, string> = { documents: 'Documents', workflow: 'Workflow' };
+    const syncCrumb = () => {
+      const cur = document.querySelector('.esa-breadcrumbs__current');
+      if (cur && CRUMB_LABEL[activeKey]) cur.textContent = CRUMB_LABEL[activeKey];
+    };
+
     const buildTabs = () => {
       const vis = contractTabsFor(state.role);
       tabsEl.tabs = vis.map((t: any) => ({ label: t.label, disabled: !t.panel }));
@@ -428,10 +422,11 @@ const gridDocs = documents.filter((d) => d.workflowRow);
       wfPanel.setAttribute('slot', `panel-${wfIdx}`);
       // Keep whichever enabled tab was active selected across the rebuild.
       tabsEl.activeIndex = vis.findIndex((t: any) => t.key === activeKey);
+      syncCrumb();
     };
     tabsEl.addEventListener('tabchange', (e: any) => {
       const t = contractTabsFor(state.role)[e.detail.index];
-      if (t?.panel) activeKey = t.key;
+      if (t?.panel) { activeKey = t.key; syncCrumb(); }
     });
     buildTabs();
 
@@ -658,12 +653,14 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     );
 
     // ── Rendering ───────────────────────────────────────────────────────────
+    // The editing-state banner lives in the Prototype settings bar (outside `root`),
+    // so it's queried against the whole document.
     const renderBanner = () => {
       const rule = editRule(state.award, state.role, 'lib');
       const which = rule.allowed ? 'allowed' : rule.tier === 3 ? 'locked' : 'restricted';
-      $$('[data-banner]', root).forEach((b) => { b.hidden = b.dataset.banner !== which; });
-      const active = $(`[data-banner="${which}"] [data-banner-text]`, root)!;
-      active.textContent = `Acting as ${actor()} (${roleLabel()}) · award state ${stateLabel()}. ${rule.reason}`;
+      $$('[data-banner]').forEach((b) => { b.hidden = b.dataset.banner !== which; });
+      const active = $(`[data-banner="${which}"] [data-banner-text]`)!;
+      active.textContent = `Acting as ${actor()} (${roleLabel()}) · CR/CCR state ${stateLabel()}. ${rule.reason}`;
     };
 
     const renderMenus = () => {

@@ -11,8 +11,9 @@ export const contract = {
   number: '84055 REL 11',
   project: '2002-002-00',
   action: 'CR-365847',
-  /** The COTR of record — who gets notified when an approved doc is replaced. */
-  cor: 'Jonathan Flannery',
+  /** The COR of record — who gets notified when an approved doc is replaced.
+   *  From the contract's contacts (84055 REL 11). */
+  cor: 'Elizabeth Santana',
   totalDocs: 60,
 };
 
@@ -58,17 +59,16 @@ export const ROLES = [
   { value: 'cm', label: 'Contract manager' },
   { value: 'cor', label: 'COR (COTR)' },
   { value: 'qc', label: 'QC' },
-  { value: 'bpa', label: 'BPA writer / Approver / CO' },
-  { value: 'other', label: 'Other user' },
+  { value: 'bpa', label: 'F&W Approver' },
 ];
 
-/** Sample person acting in each role — used for "uploaded by" and email copy. */
+/** The person in each role, from the contract's contacts (84055 REL 11) —
+ *  used for "acting as", the header user menu, and the notification email copy. */
 export const ROLE_PEOPLE = {
-  cm: 'Elizabeth Santana',
-  cor: 'Jonathan Flannery',
-  qc: 'David Kaplowe',
-  bpa: 'Shawn Young',
-  other: 'Virgil Watts III',
+  cm: 'Brandon Diller',
+  cor: 'Elizabeth Santana',
+  qc: 'Jonathan Flannery',
+  bpa: 'David Kaplowe',
 };
 
 /** Roles allowed to edit LIB/PI while the award is in Review or Approved. */
@@ -112,7 +112,7 @@ export function editRule(award, role, kind) {
   return {
     allowed: false,
     tier: 2,
-    reason: `The award is in ${label} — only BPA writers, the COR, the Approver, the CO, or QC may edit LIB and Property Inventory documents now.`,
+    reason: `The award is in ${label} — only the COR, QC, or the F&W Approver may edit LIB and Property Inventory documents now.`,
   };
 }
 
