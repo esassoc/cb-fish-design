@@ -1,0 +1,60 @@
+---
+// /rme-work-elements — the "RM&E Work Elements Report". A modernized port of
+// the legacy CBFish RM&E Work Elements Reports page
+// (Contract.mvc/RmeWseSowReports), checked directly against prod. Lets a
+// Program RM&E SME scan every Work Statement Element carrying RM&E work,
+// and — new in this port — edit its Primary/Secondary RM&E Type and Focal
+// Area right in the grid, instead of the multi-click path prod uses today.
+// Thin assembler: chrome from cbf-* shared components, content from the grid.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
+import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import CbfRmeWorkElementsGrid from '../components/rme-work-elements/cbf-rme-work-elements-grid.astro';
+import { withBase } from '../lib/base';
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+
+const crumbs = [
+  { label: 'Home', href: withBase('/home'), icon: homeIcon },
+  { label: 'RM&E Work Elements Report' },
+];
+---
+<!-- manifest:
+  layout: esa-container > cbf-app-panel
+  sections:
+    - top nav    -> cbf-public-nav
+    - page frame -> esa-container
+    - page header -> esa-page-header
+    - grid       -> cbf-rme-work-elements-grid
+    - toasts     -> esa-snackbar-container  # not decorative: the grid's
+      #   inline-edit confirmations call document.querySelector('[data-snackbar]')
+-->
+<BaseLayout title="RM&amp;E Work Elements Report — Columbia Basin Fish &amp; Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <CbfAppPanel crumbs={crumbs}>
+        <EsaPageHeader
+          title="RM&E Work Elements Report"
+          lede="Every Work Statement Element carrying RM&E work, with each project's RM&E Type and Focal Area classifications. Double-click a Primary/Secondary Type or Focal Area cell (shaded) to edit it directly."
+        />
+        <CbfRmeWorkElementsGrid />
+      </CbfAppPanel>
+    </EsaContainer>
+  </main>
+
+  <esa-snackbar-container data-snackbar></esa-snackbar-container>
+</BaseLayout>
+
+<script>
+  import '@esa/ecology/esa-snackbar-container';
+</script>
+
+<style>
+  /* page-level outer rhythm only — every section is a component (manifest above) */
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+</style>

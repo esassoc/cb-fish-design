@@ -25,7 +25,7 @@ import EsaPill from '@esa/ecology/esa-pill.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
 import CbfCrsCreateCommitmentDialog from './cbf-crs-create-commitment-dialog.astro';
-import './cbf-crs-data-grid-chrome.css';
+import '../shared/cbf-data-grid-chrome.css';
 import { commitments as defaultCommitments, STATUS_TONE } from '../../data/crs-commitments.mjs';
 import type { CrsCommitment } from '../../data/crs-commitments.mjs';
 
@@ -61,16 +61,15 @@ const statusFilters = [
   })),
 ];
 
-// Option lists for the "Create new CRS Commitment" dialog's native <select>s
-// (see the dialog's bcn-lego-checked note for why they're native, not esa-select).
+// Option lists for the "Create new CRS Commitment" dialog's esa-select fields.
 const subcategories = Array.from(new Set(commitments.map((c) => c.subcategory))).sort();
 const commitmentTypes = Array.from(new Set(commitments.map((c) => c.commitmentType))).sort();
 const frequencies = Array.from(new Set(commitments.map((c) => c.frequency))).sort();
 const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliverableFrequency))).sort();
 ---
 <section class="cbf-crs-grid stack" data-gap="md">
-  <header class="cbf-crs-data-grid__header repel">
-    <span class="type-caption cbf-crs-data-grid__count-label">All commitments</span>
+  <header class="cbf-data-grid__header repel">
+    <span class="type-caption cbf-data-grid__count-label">All commitments</span>
     <EsaButton color="primary" icon="plus" data-crs-create-open>Create new CRS Commitment</EsaButton>
   </header>
 
@@ -82,9 +81,9 @@ const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliv
     deliverableFrequencies={deliverableFrequencies}
   />
 
-  <div class="cbf-crs-data-grid__controls repel">
-    <div class="cbf-crs-data-grid__filters cluster" data-gap="lg">
-      <label class="cbf-crs-data-grid__filter">
+  <div class="cbf-data-grid__controls repel">
+    <div class="cbf-data-grid__filters cluster" data-gap="lg">
+      <label class="cbf-data-grid__filter">
         <span class="type-caption">Category</span>
         <esa-chip-group
           data-crs-category-filter
@@ -94,7 +93,7 @@ const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliv
           options={JSON.stringify(categoryFilters)}
         ></esa-chip-group>
       </label>
-      <label class="cbf-crs-data-grid__filter">
+      <label class="cbf-data-grid__filter">
         <span class="type-caption">Status</span>
         <esa-chip-group
           data-crs-status-filter
@@ -105,7 +104,7 @@ const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliv
         ></esa-chip-group>
       </label>
     </div>
-    <div class="cbf-crs-data-grid__search">
+    <div class="cbf-data-grid__search">
       <CbfSearchField
         placeholder="Search number, title or source…"
         iconSize={18}
@@ -117,9 +116,9 @@ const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliv
 
   <!-- AG Grid mounts here. autoHeight grows with rows so the page (not an inner
        pane) owns vertical scroll; the wrapper owns the framed surface. -->
-  <div class="cbf-crs-data-grid__grid" data-crs-grid></div>
+  <div class="cbf-data-grid__grid" data-crs-grid></div>
 
-  <footer class="cbf-crs-data-grid__footer repel">
+  <footer class="cbf-data-grid__footer repel">
     <span class="type-caption" data-crs-count>
       Showing {commitments.length} of {commitments.length} commitments
     </span>
@@ -147,12 +146,9 @@ const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliv
 </section>
 
 <script>
-  import { createGrid, ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
   import '@esa/ecology/esa-chip-group';
   import { withBase } from '../../lib/base';
-  import { cbfGridTheme as cbfTheme, gridDateFormatter as dateFmt, asGridDate as asDate, escGridHtml as esc } from './grid-chrome';
-
-  ModuleRegistry.registerModules([AllCommunityModule]);
+  import { gridDateFormatter as dateFmt, asGridDate as asDate, escGridHtml as esc, wireDataGrid } from '../shared/grid-chrome';
 
   type Commitment = {
     number: string; title: string; source: string; sectionNumber: string; pageNumber: string;
@@ -175,18 +171,8 @@ const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliv
   };
 
   function initCommitments(root: HTMLElement) {
-    const gridHost = root.querySelector<HTMLElement>('[data-crs-grid]');
-    const dataEl = root.querySelector<HTMLScriptElement>('[data-crs-data]');
-    if (!gridHost || !dataEl) return;
-
-    const data: Commitment[] = JSON.parse(dataEl.textContent ?? '[]');
-    let total = data.length;
-
-    const search = root.querySelector<HTMLInputElement>('[data-crs-search]');
     const categoryFilter = root.querySelector<HTMLElement & { value: string }>('[data-crs-category-filter]');
     const statusFilter = root.querySelector<HTMLElement & { value: string }>('[data-crs-status-filter]');
-    const count = root.querySelector<HTMLElement>('[data-crs-count]');
-    const csvBtn = root.querySelector<HTMLElement>('[data-crs-csv]');
 
     // Pre-clone the real esa-pill markup per status (server-rendered with the
     // design-system scope hash) so grid cells reuse the lego verbatim.
@@ -202,13 +188,16 @@ const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliv
 
     // Only number/title/source feed quick search (category/status have their own
     // chip filters) — defaultColDef opts every column out, the three opt back in.
-    const gridApi = createGrid(gridHost, {
-      theme: cbfTheme,
-      rowData: data,
-      domLayout: 'autoHeight',
-      animateRows: false,
+    const handle = wireDataGrid<Commitment>({
+      root,
+      gridSelector: '[data-crs-grid]',
+      dataSelector: '[data-crs-data]',
+      searchSelector: '[data-crs-search]',
+      countSelector: '[data-crs-count]',
+      csvSelector: '[data-crs-csv]',
+      countNoun: 'commitments',
+      csvFileName: '2020-crs-commitments.csv',
       suppressCellFocus: true,
-      defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true, getQuickFilterText: () => '' },
       columnDefs: [
         {
           headerName: 'Number', field: 'number', colId: 'number',
@@ -271,21 +260,15 @@ const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliv
             `<span class="cbf-grid-status">${badgeHTML.get(p.value) ?? esc(p.value)}</span>`,
         },
       ],
-      isExternalFilterPresent: () => categoryValue !== '' || statusValue !== '',
-      doesExternalFilterPass: (node) =>
-        (categoryValue === '' || node.data.category === categoryValue) &&
-        (statusValue === '' || node.data.status === statusValue),
-      onModelUpdated: () => {
-        let shown = 0;
-        gridApi.forEachNodeAfterFilterAndSort(() => { shown += 1; });
-        if (count) count.textContent = `Showing ${shown} of ${total} commitments`;
+      gridOptions: {
+        isExternalFilterPresent: () => categoryValue !== '' || statusValue !== '',
+        doesExternalFilterPass: (node) =>
+          (categoryValue === '' || node.data?.category === categoryValue) &&
+          (statusValue === '' || node.data?.status === statusValue),
       },
     });
-
-    // Search → AG Grid quick filter (number/title/source only, per getQuickFilterText).
-    search?.addEventListener('input', () => {
-      gridApi.setGridOption('quickFilterText', (search.value ?? '').trim());
-    });
+    if (!handle) return;
+    const { gridApi, data, countState } = handle;
 
     // Category / Status chips → external filter.
     categoryFilter?.addEventListener('change', () => {
@@ -295,12 +278,6 @@ const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliv
     statusFilter?.addEventListener('change', () => {
       statusValue = statusFilter.value ?? '';
       gridApi.onFilterChanged();
-    });
-
-    // Download CSV → AG Grid's built-in export of the currently filtered + sorted
-    // rows. Status exports as the raw status string (not the pill markup).
-    csvBtn?.addEventListener('click', () => {
-      gridApi.exportDataAsCsv({ fileName: '2020-crs-commitments.csv' });
     });
 
     // "Create new CRS Commitment" → open the dialog, add the row client-side on
@@ -376,7 +353,7 @@ const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliv
       };
 
       data.unshift(row);
-      total += 1;
+      countState.total += 1;
       gridApi.applyTransaction({ add: [row], addIndex: 0 });
 
       const snackbar = document.querySelector<HTMLElement & { success?: (msg: string, cfg?: unknown) => void }>('[data-snackbar]');

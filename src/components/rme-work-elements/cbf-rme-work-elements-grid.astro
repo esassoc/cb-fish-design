@@ -1,0 +1,211 @@
+---
+// cbf-rme-work-elements-grid — the "RM&E Work Elements Report": a modernized
+// port of the legacy CBFish RM&E Work Elements Reports page
+// (Contract.mvc/RmeWseSowReports), checked directly against prod. Full
+// 31-column field parity with prod (no curated/narrowed subset — same
+// decision the CRS Commitments grid ended up at after review), same AG Grid
+// + search + record-count-footer conventions as that grid (its closest
+// reference in this spoke).
+//
+// NEW feature beyond prod: Primary/Secondary RM&E Type and Primary/Secondary
+// RM&E Focal Area are editable directly in the grid (double-click a cell),
+// instead of the multi-click path prod uses today (Contract > SOW > Work
+// Element Summary > Metrics tab). Uses AG Grid's built-in
+// agSelectCellEditor with the same two option lists prod's real edit UI
+// offers — checked live at WorkStatementElement.mvc/ManageMetrics, not
+// guessed (see src/data/rme-work-elements.mjs). A native grid capability,
+// not a custom overlay — this report has no per-cell precision problem the
+// CRS Commitments dashboard's merged-segment bar had, so no overlay
+// technique is needed here.
+//
+// bcn-lego-checked: ecology has NO table/grid/data-grid lego (checked the
+// full node_modules/@esa/ecology/src/components catalog — esa-card/pill/
+// badge are atoms, none render a sortable, filterable, editable tabular data
+// surface) and Beacon is not on this machine. AG Grid Community
+// (ag-grid-community) is the same explicit dependency this spoke's other
+// data grids use, including its built-in cell editors — this bcn- component
+// is the reusable home for this report. Every other control is a lego:
+// cbf-search-field for search, esa-icon-button for the CSV download.
+import CbfSearchField from '../search/cbf-search-field.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import '../shared/cbf-data-grid-chrome.css';
+import {
+  rmeWorkElements as defaultRows,
+  RME_TYPE_OPTIONS,
+  RME_FOCAL_AREA_OPTIONS,
+} from '../../data/rme-work-elements.mjs';
+
+interface Props {
+  rows?: typeof defaultRows;
+}
+
+const { rows = defaultRows } = Astro.props;
+---
+<section class="cbf-rme-grid stack" data-gap="md">
+  <header class="cbf-data-grid__header repel">
+    <span class="type-caption cbf-data-grid__count-label">All work statement elements</span>
+    <div class="cbf-data-grid__search">
+      <CbfSearchField
+        placeholder="Search project, contractor, contract, or title…"
+        iconSize={18}
+        data-rme-search
+        aria-label="Search work statement elements"
+      />
+    </div>
+  </header>
+
+  <!-- AG Grid mounts here. autoHeight grows with rows so the page (not an inner
+       pane) owns vertical scroll; the wrapper owns the framed surface. -->
+  <div class="cbf-data-grid__grid" data-rme-grid></div>
+
+  <footer class="cbf-data-grid__footer repel">
+    <span class="type-caption" data-rme-count>
+      Showing {rows.length} of {rows.length} work statement elements
+    </span>
+    <EsaIconButton icon="download" label="Download CSV" size="sm" data-rme-csv />
+  </footer>
+
+  <!-- Row data + the two edit dropdowns' option lists, serialized so the
+       client module (which imports ag-grid-community) hydrates without a
+       second fetch. -->
+  <script type="application/json" data-rme-data set:html={JSON.stringify(rows)}></script>
+  <script type="application/json" data-rme-type-options set:html={JSON.stringify(RME_TYPE_OPTIONS)}></script>
+  <script type="application/json" data-rme-focal-options set:html={JSON.stringify(RME_FOCAL_AREA_OPTIONS)}></script>
+</section>
+
+<style>
+  /* Quiet persistent affordance for the 4 editable columns — a faint tint,
+     not a bold fill, matching design-principles' "containers stay neutral"
+     rule. Discoverability for an always-on double-click-to-edit cell, since
+     (unlike the CRS dashboard's Edit Status Mode) there's no separate toggle
+     announcing which cells are interactive. */
+  .cbf-data-grid__grid :global(.cbf-rme-editable-cell) {
+    background: var(--color-primary-subtle);
+  }
+</style>
+
+<script>
+  import type { ColDef, ValueGetterParams, ValueFormatterParams } from 'ag-grid-community';
+  import { gridDateFormatter as dateFmt, asGridDate as asDate, wireDataGrid } from '../shared/grid-chrome';
+
+  type RmeRow = {
+    projectNumber: string; projectTitle: string; contractContractor: string;
+    contractStartDate: string; contractNumber: string; fyStarted: number;
+    weId: number; wseId: number; wseStart: string; wseEnd: string;
+    title: string; description: string; wseEffectiveBudget: number;
+    primaryRmeType: string; secondaryRmeType: string;
+    primaryRmeFocalArea: string; secondaryRmeFocalArea: string;
+    primaryFocalSpecies: string; secondaryFocalSpecies: string;
+    protocolName: string; protocolStateName: string; studyPlanName: string;
+    sampleDesignName: string; dataRepositories: string; cotr: string;
+    projectSMEs: string; contractSponsors: string; annualReport: string;
+    rmePriorityIdList: string; rmePriorityTitleList: string;
+  };
+
+  const currencyFmt = new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0,
+  });
+
+  function initRmeGrid(root: HTMLElement) {
+    const typeOptionsEl = root.querySelector<HTMLScriptElement>('[data-rme-type-options]');
+    const focalOptionsEl = root.querySelector<HTMLScriptElement>('[data-rme-focal-options]');
+    if (!typeOptionsEl || !focalOptionsEl) return;
+
+    const typeOptions: string[] = JSON.parse(typeOptionsEl.textContent ?? '[]');
+    const focalOptions: string[] = JSON.parse(focalOptionsEl.textContent ?? '[]');
+
+    const dateCol = (headerName: string, field: keyof RmeRow, minWidth = 120): ColDef => ({
+      headerName, field, colId: field, minWidth,
+      cellDataType: 'date',
+      valueGetter: (p: ValueGetterParams) => asDate((p.data as RmeRow | undefined)?.[field] as string | undefined),
+      valueFormatter: (p: ValueFormatterParams) => (p.value instanceof Date ? dateFmt.format(p.value) : ''),
+    });
+
+    const editableSelectCol = (headerName: string, field: keyof RmeRow, values: string[]): ColDef => ({
+      headerName, field, colId: field, minWidth: 190,
+      editable: true,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: { values },
+      cellClass: 'cbf-rme-editable-cell',
+    });
+
+    const handle = wireDataGrid<RmeRow>({
+      root,
+      gridSelector: '[data-rme-grid]',
+      dataSelector: '[data-rme-data]',
+      searchSelector: '[data-rme-search]',
+      countSelector: '[data-rme-count]',
+      csvSelector: '[data-rme-csv]',
+      countNoun: 'work statement elements',
+      csvFileName: 'rme-work-elements.csv',
+      columnDefs: [
+        {
+          headerName: 'Project Number', field: 'projectNumber', colId: 'projectNumber', minWidth: 140,
+          getQuickFilterText: (p) => p.data?.projectNumber ?? '',
+        },
+        {
+          headerName: 'Project Title', field: 'projectTitle', colId: 'projectTitle', flex: 2, minWidth: 260,
+          getQuickFilterText: (p) => p.data?.projectTitle ?? '',
+        },
+        {
+          headerName: 'Contract Contractor', field: 'contractContractor', colId: 'contractContractor', minWidth: 220,
+          getQuickFilterText: (p) => p.data?.contractContractor ?? '',
+        },
+        dateCol('Contract Start Date', 'contractStartDate', 150),
+        {
+          headerName: 'Contract Number', field: 'contractNumber', colId: 'contractNumber', minWidth: 150,
+          getQuickFilterText: (p) => p.data?.contractNumber ?? '',
+        },
+        { headerName: 'SOW Reports', colId: 'sowReports', minWidth: 130, valueGetter: () => 'SOW Report' },
+        { headerName: 'FY Started', field: 'fyStarted', colId: 'fyStarted', minWidth: 110 },
+        { headerName: 'WE ID', field: 'weId', colId: 'weId', minWidth: 90 },
+        { headerName: 'WSE ID', field: 'wseId', colId: 'wseId', minWidth: 100 },
+        dateCol('WSE Start', 'wseStart', 120),
+        dateCol('WSE End', 'wseEnd', 120),
+        {
+          headerName: 'Title', field: 'title', colId: 'title', flex: 3, minWidth: 300,
+          getQuickFilterText: (p) => p.data?.title ?? '',
+        },
+        { headerName: 'Description', field: 'description', colId: 'description', flex: 3, minWidth: 300 },
+        {
+          headerName: 'WSE Effective Budget', field: 'wseEffectiveBudget', colId: 'wseEffectiveBudget', minWidth: 170,
+          valueFormatter: (p) => (typeof p.value === 'number' ? currencyFmt.format(p.value) : ''),
+        },
+        editableSelectCol('Primary RM&E Type', 'primaryRmeType', typeOptions),
+        editableSelectCol('Secondary RM&E Type', 'secondaryRmeType', typeOptions),
+        editableSelectCol('Primary RM&E Focal Area', 'primaryRmeFocalArea', focalOptions),
+        editableSelectCol('Secondary RM&E Focal Area', 'secondaryRmeFocalArea', focalOptions),
+        { headerName: 'Primary Focal Species', field: 'primaryFocalSpecies', colId: 'primaryFocalSpecies', minWidth: 160 },
+        { headerName: 'Secondary Focal Species', field: 'secondaryFocalSpecies', colId: 'secondaryFocalSpecies', minWidth: 170 },
+        { headerName: 'Protocol Name', field: 'protocolName', colId: 'protocolName', minWidth: 220 },
+        { headerName: 'Protocol State Name', field: 'protocolStateName', colId: 'protocolStateName', minWidth: 160 },
+        { headerName: 'Study Plan Name', field: 'studyPlanName', colId: 'studyPlanName', minWidth: 220 },
+        { headerName: 'Sample Design Name', field: 'sampleDesignName', colId: 'sampleDesignName', minWidth: 220 },
+        { headerName: 'Data Repositories', field: 'dataRepositories', colId: 'dataRepositories', minWidth: 200 },
+        { headerName: 'COTR', field: 'cotr', colId: 'cotr', minWidth: 150 },
+        { headerName: 'Project SME(s)', field: 'projectSMEs', colId: 'projectSMEs', minWidth: 150 },
+        { headerName: 'Contract Sponsor(s)', field: 'contractSponsors', colId: 'contractSponsors', minWidth: 160 },
+        { headerName: 'Annual Report', field: 'annualReport', colId: 'annualReport', minWidth: 160 },
+        { headerName: 'RME Priority ID List', field: 'rmePriorityIdList', colId: 'rmePriorityIdList', minWidth: 150 },
+        { headerName: 'RME Priority Title List', field: 'rmePriorityTitleList', colId: 'rmePriorityTitleList', minWidth: 220 },
+      ],
+      gridOptions: {
+        // In-memory edit only — this static site has no backend to persist to
+        // (see cbf-password-gate.astro's note on the same constraint), matching
+        // this spoke's other inline-edit flows (cbf-crs-commitments-dashboard's
+        // Edit Status Mode). AG Grid already wrote the new value into rowData;
+        // this just confirms it.
+        onCellValueChanged: (e) => {
+          const snackbar = document.querySelector<HTMLElement & { success?: (msg: string, cfg?: unknown) => void }>('[data-snackbar]');
+          const fieldLabel = e.colDef.headerName ?? String(e.colDef.field ?? '');
+          snackbar?.success?.(`WSE ${e.data?.wseId}: ${fieldLabel} set to ${e.newValue}.`, { duration: 4000 });
+        },
+      },
+    });
+    if (!handle) return;
+  }
+
+  document
+    .querySelectorAll<HTMLElement>('.cbf-rme-grid')
+    .forEach(initRmeGrid);
+</script>
