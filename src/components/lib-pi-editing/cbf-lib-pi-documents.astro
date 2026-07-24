@@ -25,13 +25,12 @@ import CbfContractSummary from './cbf-contract-summary.astro';
 import {
   contract,
   documents,
-  workflowHistory,
   APPROVAL_COLS,
   CHECK_SVG,
+  LAST_SOW_ACTION,
 } from '../../data/lib-pi-editing.mjs';
 
 const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${d.subtype}` : d.type);
-const gridDocs = documents.filter((d) => d.workflowRow);
 ---
 <section class="cbf-lipd stack" data-gap="md" data-lipd>
   <!-- The editing-state banner lives in the Prototype settings bar (cbf-doc-demo-controls),
@@ -109,8 +108,8 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     <div data-panel="workflow" slot="panel-5" class="cbf-lipd__panel stack" data-gap="md">
       <div class="cbf-lipd__status repel">
         <div class="cbf-lipd__status-facts">
-          <span>Contract status: <strong data-contract-status>Pending</strong></span>
-          <span>Last SOW action: <span data-last-action>09/09/2025, DocumentAttached</span></span>
+          <span>Contract status: <strong>Issued</strong></span>
+          <span>Last SOW action: <span>{LAST_SOW_ACTION}</span></span>
         </div>
         <div class="cbf-lipd__status-rev">
           <esa-select data-sow-rev label="SOW revision" size="sm"></esa-select>
@@ -118,6 +117,11 @@ const gridDocs = documents.filter((d) => d.workflowRow);
       </div>
 
       <h3 class="type-section-title">Document approval</h3>
+      <div data-appr-readonly hidden>
+        <EsaAlertBox variant="info" title="Original requisition — read-only">
+          These approvals are the finalized record of the original contract requisition (SOW revision 1) and can't be changed. Switch to the CCR revision to work the current documents.
+        </EsaAlertBox>
+      </div>
       <div class="cbf-lipd__scroll">
         <table class="cbf-appr-table">
           <thead>
@@ -128,36 +132,7 @@ const gridDocs = documents.filter((d) => d.workflowRow);
               <th>Last modified</th>
             </tr>
           </thead>
-          <tbody>
-            {gridDocs.map((d) => (
-              <tr data-appr-row={d.id}>
-                <th scope="row">
-                  {d.workflowRow}
-                  <span class="cbf-reappr" data-appr-flag={d.id} hidden>Needs re-approval</span>
-                </th>
-                <td>{d.uploaded}</td>
-                {APPROVAL_COLS.map((c) => (
-                  <td data-appr={`${d.id}:${c.key}`}>
-                    {d.approvals[c.key] ? (
-                      <span class="cbf-check" title={`Approved by ${c.label} on ${d.approvals[c.key]}`}><Fragment set:html={CHECK_SVG} /> {d.approvals[c.key]}</span>
-                    ) : (
-                      <span class="cbf-none" title={`Not yet approved by ${c.label}`}>–</span>
-                    )}
-                  </td>
-                ))}
-                <td data-appr-last={d.id}>{d.lastUpload}</td>
-              </tr>
-            ))}
-            <tr>
-              <th scope="row">SOW 0, 0</th>
-              <td>05/15/2025</td>
-              <td><span class="cbf-check" title="Approved by EC on 5/22/2025"><Fragment set:html={CHECK_SVG} /> 5/22/2025</span></td>
-              <td><span class="cbf-check" title="Approved by COTR on 5/22/2025"><Fragment set:html={CHECK_SVG} /> 5/22/2025</span></td>
-              <td><span class="cbf-check" title="Approved by QC on 5/19/2025"><Fragment set:html={CHECK_SVG} /> 5/19/2025</span></td>
-              <td><span class="cbf-check" title="Approved by F&amp;W Approver on 8/6/2025"><Fragment set:html={CHECK_SVG} /> 8/6/2025</span></td>
-              <td>08/06/2025</td>
-            </tr>
-          </tbody>
+          <tbody data-appr-body></tbody>
         </table>
       </div>
 
@@ -167,17 +142,7 @@ const gridDocs = documents.filter((d) => d.workflowRow);
           <thead>
             <tr><th>Date</th><th>Step</th><th>From</th><th>To</th><th>Document status</th></tr>
           </thead>
-          <tbody data-history>
-            {workflowHistory.map((h) => (
-              <tr>
-                <td>{h.date}</td>
-                <td>{h.step}</td>
-                <td>{h.from}</td>
-                <td>{h.to}</td>
-                <td class="cbf-hist-table__status">{h.docStatus}</td>
-              </tr>
-            ))}
-          </tbody>
+          <tbody data-history></tbody>
         </table>
       </div>
     </div>
@@ -315,7 +280,6 @@ const gridDocs = documents.filter((d) => d.workflowRow);
   import {
     contract,
     documents,
-    workflowHistory,
     sowRevisions,
     AWARD_STATES,
     ROLES,
@@ -324,6 +288,10 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     CHECK_SVG,
     editRule,
     contractTabsFor,
+    WORKFLOW_ROWS,
+    REV1_APPROVALS,
+    SOW_REV2_APPROVALS,
+    HISTORY_BY_REVISION,
   } from '../../data/lib-pi-editing.mjs';
 
   const root = document.querySelector<HTMLElement>('[data-lipd]');
@@ -333,7 +301,11 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     // ── Live state ─────────────────────────────────────────────────────────
     const state = { award: 'pending', role: 'cm' };
     const docs = documents.map((d: any) => ({ ...d, approvals: { ...d.approvals }, resetInfo: null }));
-    const history = [...workflowHistory];
+    // Workflow History is per SOW revision; the replace flow prepends to the CCR (rev 2) trail.
+    const historyByRev: Record<string, any[]> = {
+      rev1: [...HISTORY_BY_REVISION.rev1],
+      rev2: [...HISTORY_BY_REVISION.rev2],
+    };
     let editingDoc: any = null;
     let pendingFile: { name: string; size: string } | null = null;
     let propsDirty = false;
@@ -380,6 +352,9 @@ const gridDocs = documents.filter((d) => d.workflowRow);
       `<span class="cbf-check" title="Approved by ${who} on ${date}">${CHECK_SVG} ${date}</span>`;
     const noneHtml = (who: string) =>
       `<span class="cbf-none" title="Not yet approved by ${who}">–</span>`;
+    // Locked (read-only) check for the original requisition — muted, can't be changed.
+    const lockedCheckHtml = (date: string, who: string) =>
+      `<span class="cbf-check cbf-check--locked" title="Approved by ${who} on ${date} — original requisition (read-only)">${CHECK_SVG} ${date}</span>`;
 
     // ── Demo controls (in cbf-doc-demo-controls, outside this component) ────
     const awardToggle = $('[data-demo-award]') as any;
@@ -439,20 +414,15 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     });
     buildTabs();
 
-    // ── SOW revision select (context flavor only) ───────────────────────────
+    // ── SOW revision select — drives the approval grid + history per revision ──
+    // rev1 = original requisition (locked); rev2 = the CCR (live, editable).
     const revSelect = $('[data-sow-rev]', root) as any;
+    const currentRev = () => (revSelect?.value === 'rev1' ? 'rev1' : 'rev2');
     if (revSelect) {
       revSelect.options = sowRevisions;
       revSelect.value = 'rev2';
+      revSelect.addEventListener('change', () => update());
     }
-
-    const LAST_ACTION: Record<string, string> = {
-      pending: '09/09/2025, DocumentAttached',
-      review: '07/30/2025, SubmitToApprover',
-      approved: '08/01/2025, ApprovedInAssetSuite',
-      signature: '08/12/2025, SentForSignature',
-      issued: '08/15/2025, IssuedInAssetSuite',
-    };
 
     // ── Dialog plumbing ─────────────────────────────────────────────────────
     const editDialog = $('[data-edit-dialog]', root) as any;
@@ -572,13 +542,13 @@ const gridDocs = documents.filter((d) => d.workflowRow);
         doc.approvals = { ec: null, cotr: null, qc: state.role === 'qc' ? shortDate() : null, fw: null };
         doc.resetInfo = hadAny ? { by: who, at: now } : null;
 
-        history.unshift({
+        historyByRev.rev2.unshift({
           date: now,
           step: 'DocumentReplaced',
           from: who,
           to: hadCotr ? contract.cor : '',
           docStatus:
-            `${doc.type} - Replaced by ${roleLabel()} - COTR Approval = NotSet` +
+            `${doc.type} - Replaced by ${roleLabel()} - COR Approval = NotSet` +
             (state.role === 'qc' ? '; QC Approval = Green (own edit)' : ''),
         });
 
@@ -726,29 +696,56 @@ const gridDocs = documents.filter((d) => d.workflowRow);
       });
     };
 
+    // Approvals for a workflow row under the selected revision. rev1 = the locked
+    // original-requisition snapshot; rev2 = the CCR — live doc approvals (which the
+    // replace flow clears) for attached rows, static full set for the SOW row.
+    const approvalsFor = (row: any, rev: string) => {
+      if (rev === 'rev1') return (REV1_APPROVALS as any)[row.key];
+      if (row.docId) return docById(row.docId)!.approvals;
+      return SOW_REV2_APPROVALS;
+    };
+
     const renderApprovalGrid = () => {
-      docs.forEach((doc: any) => {
-        if (!doc.workflowRow) return;
-        APPROVAL_COLS.forEach((c: any) => {
-          const cell = $(`[data-appr="${doc.id}:${c.key}"]`, root);
-          if (!cell) return;
-          cell.innerHTML = doc.approvals[c.key]
-            ? checkHtml(doc.approvals[c.key], c.label)
+      const rev = currentRev();
+      const locked = rev === 'rev1';
+      const readonlyNote = $('[data-appr-readonly]', root);
+      if (readonlyNote) readonlyNote.hidden = !locked;
+
+      const rows = WORKFLOW_ROWS.map((row: any) => {
+        const appr = approvalsFor(row, rev);
+        const doc = row.docId ? docById(row.docId) : null;
+        // Only the live CCR (rev2) doc rows can be reset by a replacement.
+        const reset = !locked && !!doc?.resetInfo;
+        const attached = !locked && doc ? doc.uploaded : row.attached;
+        const lastMod = !locked && doc ? doc.lastUpload : row.lastModified;
+
+        const cells = APPROVAL_COLS.map((c: any) => {
+          const date = appr[c.key];
+          const html = date
+            ? locked
+              ? lockedCheckHtml(date, c.label)
+              : checkHtml(date, c.label)
             : noneHtml(c.label);
-        });
-        const last = $(`[data-appr-last="${doc.id}"]`, root);
-        if (last) last.textContent = doc.lastUpload;
-        const rowEl = $(`[data-appr-row="${doc.id}"]`, root);
-        rowEl?.classList.toggle('is-reset', !!doc.resetInfo);
-        const flag = $(`[data-appr-flag="${doc.id}"]`, root);
-        if (flag) flag.hidden = !doc.resetInfo;
+          return `<td>${html}</td>`;
+        }).join('');
+
+        const flag = reset
+          ? ' <span class="cbf-reappr" title="A replacement cleared the COR\'s approval — the COR has been notified and must re-approve">Needs re-approval</span>'
+          : '';
+        return (
+          `<tr class="${reset ? 'is-reset' : ''}">` +
+          `<th scope="row">${row.label}${flag}</th>` +
+          `<td>${attached || '—'}</td>${cells}<td>${lastMod || '—'}</td>` +
+          `</tr>`
+        );
       });
+      $('[data-appr-body]', root)!.innerHTML = rows.join('');
     };
 
     const renderHistory = () => {
       const tbody = $('[data-history]', root)!;
       tbody.replaceChildren(
-        ...history.map((h: any) => {
+        ...historyByRev[currentRev()].map((h: any) => {
           const tr = document.createElement('tr');
           [h.date, h.step, h.from, h.to, h.docStatus].forEach((v, i) => {
             const td = document.createElement('td');
@@ -769,8 +766,6 @@ const gridDocs = documents.filter((d) => d.workflowRow);
       renderApprovalGrid();
       renderHistory();
       setNavUser(actor());
-      $('[data-contract-status]', root)!.textContent = stateLabel();
-      $('[data-last-action]', root)!.textContent = LAST_ACTION[state.award];
     };
 
     update();
@@ -828,6 +823,9 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     white-space: nowrap;
   }
   .cbf-lipd :global(.cbf-none) { color: var(--color-text-secondary); }
+  /* Locked (read-only) approval — the original requisition. Muted grey to read as
+     disabled; contrast minimums don't apply to disabled/inactive content. */
+  .cbf-lipd :global(.cbf-check--locked) { color: var(--color-text-muted); font-weight: var(--font-weight-medium); }
   /* Solid burnt-amber chip with white text (#b45309 vs #fff ≈ 4.9:1, AA-compliant).
      The old pale-amber-on-pale-amber treatment was well under WCAG minimums. */
   .cbf-lipd :global(.cbf-reappr) {

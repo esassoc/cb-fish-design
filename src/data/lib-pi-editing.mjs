@@ -180,13 +180,19 @@ export function editRule(award, role, kind) {
 export const CHECK_SVG =
   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 
-/** Columns of the Workflow tab's Document Approval grid. */
+/** Columns of the Workflow tab's Document Approval grid. (Data key stays `cotr`
+ *  internally; the column is labelled COR per the contract's terminology.) */
 export const APPROVAL_COLS = [
   { key: 'ec', label: 'EC' },
-  { key: 'cotr', label: 'COTR' },
+  { key: 'cotr', label: 'COR' },
   { key: 'qc', label: 'QC' },
   { key: 'fw', label: 'F&W Approver' },
 ];
+
+/** Approval date stamps for the current CCR revision (rev 2) — the live working set. */
+const REV2 = { ec: '5/12/2025', cotr: '5/15/2025', qc: '5/13/2025', fw: '5/16/2025' };
+/** Approval date stamps for the original requisition (rev 1) — the locked record. */
+const REV1 = { ec: '5/22/2024', cotr: '5/22/2024', qc: '5/19/2024', fw: '5/24/2024' };
 
 /**
  * The attached documents (the filtered LIB/PI view of the 60 on the contract,
@@ -216,7 +222,7 @@ export const documents = [
     guidance:
       "A BPA contracting requirement that breaks down the Primary contractor's budget into individual line items. Used to justify the contract amount. May include subcontractor budgets. Max File Size: 5 MB, File Types Allowed: XLS, DOC, PDF, XLSX, DOCX. Other Restrictions: Limited to 5 per SOW revision.",
     workflowRow: 'Line Item Budget',
-    approvals: { ec: null, cotr: '5/22/2025', qc: '5/19/2025', fw: null },
+    approvals: { ...REV2 },
   },
   {
     id: 'pi-inventory',
@@ -239,7 +245,7 @@ export const documents = [
     guidance:
       'An inventory of government-furnished and contractor-acquired property held under the contract. Required when property is transferred, disposed of, or reported annually. Max File Size: 5 MB, File Types Allowed: XLS, XLSX, PDF.',
     workflowRow: 'Property Inventory',
-    approvals: { ec: null, cotr: null, qc: null, fw: null },
+    approvals: { ...REV2 },
   },
   {
     id: 'lib-transfer',
@@ -284,32 +290,69 @@ export const documents = [
     viewPermission: 'Contacts Only',
     guidance: 'The transmittal memo routed with the award package.',
     workflowRow: 'Transmittal Memo',
-    approvals: { ec: null, cotr: '7/30/2025', qc: '7/30/2025', fw: '8/6/2025' },
+    approvals: { ec: null, cotr: REV2.cotr, qc: REV2.qc, fw: REV2.fw },
   },
 ];
 
-/** Initial Workflow History rows (mirrors the real Workflow tab). */
-export const workflowHistory = [
-  {
-    date: '08/15/2025 3:02 AM',
-    step: 'IssuedInAssetSuite',
-    from: 'System Account',
-    to: '',
-    docStatus: '',
-  },
-  {
-    date: '08/01/2025 3:02 AM',
-    step: 'ApprovedInAssetSuite',
-    from: 'System Account',
-    to: '',
-    docStatus: '',
-  },
-  {
-    date: '07/30/2025 4:07 PM',
-    step: 'SubmitToApprover',
-    from: 'Jonathan Flannery',
-    to: 'David Kaplowe; Elizabeth Santana; Jonathan Flannery',
-    docStatus:
-      'Transmittal Memo - Attached - COTR Approval = Green\nLine Item Budget - Attached - COTR Approval = Green\nProperty Inventory - Attached - COTR Approval = NotSet',
-  },
+/**
+ * Rows of the Document Approval grid (Workflow tab), in display order. `docId` links
+ * a row to an attached document so the CCR revision (rev 2) reflects that document's
+ * live approvals — and clears them when the file is replaced. The SOW row has no
+ * attachment. `ec: false` = the row never carries an EC approval (transmittal memo).
+ */
+export const WORKFLOW_ROWS = [
+  { key: 'lib', label: 'Line Item Budget', docId: 'lib-budget', ec: true, attached: '3/19/2024 11:00 AM', lastModified: '3/19/2024 11:00 AM' },
+  { key: 'pi', label: 'Property Inventory', docId: 'pi-inventory', ec: true, attached: '5/15/2025 3:20 PM', lastModified: '5/15/2025 3:20 PM' },
+  { key: 'sow', label: 'SOW', docId: null, ec: true, attached: '05/15/2025', lastModified: '05/16/2025' },
+  { key: 'transmittal', label: 'Transmittal Memo', docId: 'transmittal', ec: false, attached: '7/30/2025 4:07 PM', lastModified: '8/6/2025' },
 ];
+
+/** Approval snapshot for the ORIGINAL requisition (rev 1) — fully approved, locked.
+ *  Keyed by workflow-row key; transmittal has no EC. */
+export const REV1_APPROVALS = {
+  lib:         { ec: REV1.ec, cotr: REV1.cotr, qc: REV1.qc, fw: REV1.fw },
+  pi:          { ec: REV1.ec, cotr: REV1.cotr, qc: REV1.qc, fw: REV1.fw },
+  sow:         { ec: REV1.ec, cotr: REV1.cotr, qc: REV1.qc, fw: REV1.fw },
+  transmittal: { ec: null,    cotr: REV1.cotr, qc: REV1.qc, fw: REV1.fw },
+};
+
+/** The SOW row's approvals for the CCR revision (rev 2) — static full set (there's no
+ *  SOW attachment to replace, so it never clears). */
+export const SOW_REV2_APPROVALS = { ec: REV2.ec, cotr: REV2.cotr, qc: REV2.qc, fw: REV2.fw };
+
+/** Workflow History audit trail per SOW revision. The replace flow prepends
+ *  DocumentReplaced rows to the CCR (rev 2) trail. */
+export const HISTORY_BY_REVISION = {
+  rev1: [
+    { date: '08/15/2024 3:02 AM', step: 'IssuedInAssetSuite', from: 'System Account', to: '', docStatus: '' },
+    { date: '08/01/2024 3:02 AM', step: 'ApprovedInAssetSuite', from: 'System Account', to: '', docStatus: '' },
+    {
+      date: '05/22/2024 4:07 PM',
+      step: 'SubmitToApprover',
+      from: 'Elizabeth Santana',
+      to: 'David Kaplowe; Jonathan Flannery',
+      docStatus:
+        'Line Item Budget - Attached - COR Approval = Green\nProperty Inventory - Attached - COR Approval = Green\nSOW - Attached - COR Approval = Green',
+    },
+  ],
+  rev2: [
+    {
+      date: '05/15/2025 3:20 PM',
+      step: 'SubmitToCOR',
+      from: 'Brandon Diller',
+      to: 'Elizabeth Santana',
+      docStatus:
+        'Line Item Budget - Attached - COR Approval = Green\nProperty Inventory - Attached - COR Approval = Green\nTransmittal Memo - Attached - COR Approval = Green',
+    },
+    {
+      date: '05/13/2025 9:41 AM',
+      step: 'DocumentAttached',
+      from: 'Brandon Diller',
+      to: '',
+      docStatus: '',
+    },
+  ],
+};
+
+/** Last SOW action shown in the Workflow status strip. */
+export const LAST_SOW_ACTION = 'SubmitToCOR by Brandon Diller, 5/15/2025';
