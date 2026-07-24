@@ -17,6 +17,13 @@
 // either — that lego is app-bar chrome (an icon-link trigger + floating panel
 // tuned for the bar), not an inline tab-strip menu. Checked Beacon (report
 // sub-nav). No reinvented control.
+//
+// Every dropdown/related <details> shares the same `name` attribute — the
+// native HTML mechanism for a mutually-exclusive accordion group, so opening
+// one auto-closes any other left open. Without it, independent <details>
+// elements don't know about each other and can pile up open at once (only
+// visible once a strip has 2+ dropdowns, e.g. BiOp reporting's CRS habitat +
+// FCRPS BiOp).
 interface TabItem {
   label: string;
   href?: string;
@@ -45,7 +52,7 @@ const chevron =
 <nav class="cbf-report-tabs" aria-label={ariaLabel}>
   {tabs.map((t) => (
     t.items && t.items.length > 0 ? (
-      <details class="cbf-report-tabs__dropdown">
+      <details class="cbf-report-tabs__dropdown" name="cbf-report-tabs-menu">
         <summary
           class:list={['cbf-report-tabs__tab', 'cbf-report-tabs__dropdown-trigger', t.active && 'is-active']}
         >
@@ -72,7 +79,7 @@ const chevron =
   ))}
 
   {related.length > 0 && (
-    <details class="cbf-report-tabs__related">
+    <details class="cbf-report-tabs__related" name="cbf-report-tabs-menu">
       <summary class="cbf-report-tabs__tab cbf-report-tabs__related-trigger">
         Related items<span class="cbf-report-tabs__chev" set:html={chevron} />
       </summary>

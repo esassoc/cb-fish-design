@@ -33,10 +33,17 @@ interface Props {
   id?: string;
 }
 const { items, heading = 'Related items', id = 'related-items' } = Astro.props;
+// The .grid primitive's auto-fit track sizing is 1fr — great for 2+ items
+// (they split the row evenly, as on /project-budgets), but a SINGLE item has
+// no sibling track to share with, so it stretches edge-to-edge. Cap the card's
+// own width only in that case, matching the live CBFish summary pages (a lone
+// related item there is a compact box, not a full-width one) — 2+ items keep
+// today's full-stretch layout untouched.
+const isSingle = items.length === 1;
 ---
 <section class="cbf-related-items" id={id} aria-label={heading}>
   <h2 class="cbf-related-items__head type-section-title">{heading}</h2>
-  <div class="cbf-related-items__grid grid">
+  <div class:list={['cbf-related-items__grid', 'grid', isSingle && 'cbf-related-items__grid--single']}>
     {items.map((item) => (
       <EsaCard title={item.title} variant="outlined" padding="default">
         <div class="cbf-related-items__card">
@@ -70,6 +77,12 @@ const { items, heading = 'Related items', id = 'related-items' } = Astro.props;
   }
   .cbf-related-items__grid {
     --grid-min: 20rem;
+  }
+  /* Single-item case: cap the card instead of letting the lone 1fr track
+     stretch it edge-to-edge. max-width overrides the grid item's default
+     stretch alignment, so it renders compact and left-aligned. */
+  .cbf-related-items__grid--single > :global(.esa-card) {
+    max-width: 24rem;
   }
   /* Card body interior: overview + meta stacked. */
   .cbf-related-items__card {

@@ -14,7 +14,7 @@ import CbfPageHeading from '../components/shared/cbf-page-heading.astro';
 import CbfCrsCommitmentsGrid from '../components/crs-commitments/cbf-crs-commitments-grid.astro';
 import CbfReportTabs from '../components/shared/cbf-report-tabs.astro';
 import CbfPasswordGate from '../components/shared/cbf-password-gate.astro';
-import { crsReportTabs } from '../components/crs-commitments/report-tabs';
+import { biopReportingTabs } from '../components/shared/biop-reporting-tabs';
 import { CRS_GATE_PASSWORD } from '../components/crs-commitments/gate-password';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import { withBase } from '../lib/base';
@@ -46,7 +46,7 @@ const crumbs = [
       <CbfAppPanel crumbs={crumbs}>
         <CbfPasswordGate password={CRS_GATE_PASSWORD}>
           <CbfPageHeading title="Commitments" />
-          <CbfReportTabs tabs={crsReportTabs('grid')} ariaLabel="2020 CRS Commitments sections" />
+          <CbfReportTabs tabs={biopReportingTabs('grid')} ariaLabel="2020 CRS Commitments sections" />
           <CbfCrsCommitmentsGrid />
         </CbfPasswordGate>
       </CbfAppPanel>
