@@ -22,6 +22,65 @@ export const sowRevisions = [
   { value: 'rev2', label: '2. Amendment 001 (05/01/2024 - 04/30/2026)' },
 ];
 
+/** The contract's Summary-tab "Basics" section (mirrors the live Contract Summary). */
+export const contractSummary = {
+  lastModifiedBy: 'Virgil Watts III',
+  lastModifiedAt: '03/13/2024 12:56 PM',
+  projectNumber: '2002-002-00',
+  projectTitle: 'Kootenai River Habitat Restoration Program',
+  bpaPm: 'Elizabeth Santana',
+  projectStage: 'Implementation',
+  projectArea: { province: 'Mountain Columbia', subbasin: 'Kootenai', pct: '100.00%' },
+  contractNumber: '84055 REL 11',
+  contractTitle: '2002-002-00 EXP ENHANCE WHITE STURGEON HABITAT',
+  continuation: {
+    previous: '84055 REL 3: 2002-002-00 EXP ENHANCE WHITE STURGEON HABITAT',
+    willBeRenewed: 'Yes',
+    next: '84055 REL 20: 2002-002-00 ENHANCE WHITE STURGEON HABITAT',
+  },
+  status: 'Issued',
+  descriptionLede: 'Kootenai River Habitat Restoration Program (KRHRP) - Project 200200200',
+  description:
+    "During FY 2024/2025, KTOI plans to partner with USFWS Kootenai National Wildlife Refuge (NWR) to reconnect floodplain habitat. As part of a large scale habitat restoration project across the Kootenai NWR, improvements to Riverside Road, including raising the elevation, must be addressed to allow the greater habitat restoration to occur. KTOI has proposed that BPA allow use of KTOI's mitigation portfolio to fund the Riverside Road Improvement Project with the Federal Highways and Boundary County. With the combined package of Riverside Road and the habitat restoration project across the Refuge, KTOI, USFWS, Federal Highways, and Boundary County are now working together under and Memorandum of Agreement to bring the project to full implementation in 2025. All road design and construction requirements will be under the direction of Federal Highways and Boundary County.",
+  accountTypes: 'Expense',
+  startDate: '05/01/2024',
+  endDate: '04/30/2026',
+  currentValue: '$17,461,219',
+  expenditures: '$16,835,615',
+  expendituresNote: 'Expenditures data includes accruals and are based on data through 30-Jun-2026.',
+  bpaCo: 'Daniel Affonso',
+  bpaCor: 'Elizabeth Santana',
+  envComplianceLead: 'Edward Gresh',
+  contractor: 'Kootenai Tribe - KOOTENAI00',
+  workOrderTasks: 'WO: 00103073, Task: 1',
+  contractType: 'Coop',
+  accrualCategory: 'Habitat Improvement',
+  pricingMethod: 'Cost Reimbursement (CNF)',
+};
+
+/** Contract Contacts (Summary-tab section) — the people on 84055 REL 11. */
+export const contractContacts = [
+  { role: 'BPA COR', name: 'Elizabeth Santana' },
+  { role: 'BPA CO', name: 'Daniel Affonso' },
+  { role: 'Contract manager', name: 'Brandon Diller' },
+  { role: 'QC', name: 'Jonathan Flannery' },
+  { role: 'F&W Approver', name: 'David Kaplowe' },
+  { role: 'Env. compliance lead', name: 'Edward Gresh' },
+];
+
+/** The collapsed Summary-tab sections beneath Basics — each a short prototype stand-in
+ *  (collapsed by default; the live app fills these with their own detail). */
+export const summarySections = [
+  { key: 'photos', title: 'Photos', icon: 'image', note: 'No photos have been added to this contract.' },
+  { key: 'contacts', title: 'Contract Contacts', icon: 'users' },
+  { key: 'sow', title: 'Statement Of Work (SOW)', icon: 'file-text', note: 'The full statement of work is on the SOW tab.' },
+  { key: 'deliverables', title: 'Deliverable Status', icon: 'clipboard-check', note: 'Deliverable tracking is out of scope for this prototype.' },
+  { key: 'metrics', title: 'Metrics', icon: 'chart-column', note: 'Environmental and implementation metrics are out of scope for this prototype.' },
+  { key: 'focal-species', title: 'Focal Species', icon: 'fish', note: 'White Sturgeon (Kootenai River population); Burbot.' },
+  { key: 'env-compliance', title: 'Environmental Compliance', icon: 'shield-check', note: 'Environmental compliance detail is out of scope for this prototype.' },
+  { key: 'reports', title: 'Reports', icon: 'file-chart-column', note: 'Contract reports are out of scope for this prototype.' },
+];
+
 /**
  * The contract view's full tab strip, mirroring the live app (in order). Only the
  * two tabs flagged `panel` are interactive in this prototype — the rest render as
@@ -29,7 +88,7 @@ export const sowRevisions = [
  * are hidden from contract managers, who see a narrower set.
  */
 export const CONTRACT_TABS = [
-  { key: 'summary', label: 'Summary' },
+  { key: 'summary', label: 'Summary', panel: true },
   { key: 'sow', label: 'SOW' },
   { key: 'we-budgets', label: 'WE Budgets' },
   { key: 'status-reports', label: 'Status Reports' },

@@ -21,6 +21,7 @@
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import CbfContractSummary from './cbf-contract-summary.astro';
 import {
   contract,
   documents,
@@ -38,9 +39,14 @@ const gridDocs = documents.filter((d) => d.workflowRow);
   <!-- The full contract tab strip is built by the script from CONTRACT_TABS; only
        Documents & Workflow are enabled, and the two panels below are re-slotted to
        their live index (it shifts when a contract manager loses the COR-only tabs). -->
-  <esa-tab-layout data-lipd-tabs active-index="7" size="md" appearance="underline">
+  <esa-tab-layout data-lipd-tabs active-index="0" size="md" appearance="underline">
+    <!-- ═══════════════ Summary (enabled — default) ═══════════════ -->
+    <div data-panel="summary" slot="panel-0" class="cbf-lipd__panel stack" data-gap="md">
+      <CbfContractSummary />
+    </div>
+
     <!-- ═══════════════ Documents (enabled) ═══════════════ -->
-    <div data-panel="documents" slot="panel-7" class="cbf-lipd__panel stack" data-gap="md">
+    <div data-panel="documents" slot="panel-9" class="cbf-lipd__panel stack" data-gap="md">
       <p class="cbf-lipd__intro">
         Use this area to store and manage document attachments relevant to this contract. When a
         replacement clears an approval the Contracting Officer's Representative (COR) has given, the
@@ -395,14 +401,18 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     // Contract managers don't see the COR-only tabs, so the visible set (and the two
     // live panels' slot indices) shift with the role — rebuild on every change.
     const tabsEl = $('[data-lipd-tabs]', root) as any;
+    const summaryPanel = $('[data-panel="summary"]', root)!;
     const docPanel = $('[data-panel="documents"]', root)!;
     const wfPanel = $('[data-panel="workflow"]', root)!;
-    let activeKey = 'documents';
+    let activeKey = 'summary';
 
-    // Keep the trailing breadcrumb in step with the selected tab: "Documents" on the
-    // Documents tab, "Workflow" on the Workflow tab. (The current crumb is the sole
-    // .esa-breadcrumbs__current span rendered by the breadcrumbs lego.)
-    const CRUMB_LABEL: Record<string, string> = { documents: 'Documents', workflow: 'Workflow' };
+    // Keep the trailing breadcrumb in step with the selected tab. (The current crumb
+    // is the last .esa-breadcrumbs__item rendered by the breadcrumbs lego.)
+    const CRUMB_LABEL: Record<string, string> = {
+      summary: 'Contract Summary',
+      workflow: 'Workflow',
+      documents: 'Documents',
+    };
     // Update ONLY the trailing crumb. The breadcrumbs lego marks every href-less
     // item as .esa-breadcrumbs__current, so target the last crumb explicitly rather
     // than the first match (which would clobber "Projects").
@@ -415,10 +425,10 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     const buildTabs = () => {
       const vis = contractTabsFor(state.role);
       tabsEl.tabs = vis.map((t: any) => ({ label: t.label, disabled: !t.panel }));
-      const docIdx = vis.findIndex((t: any) => t.key === 'documents');
-      const wfIdx = vis.findIndex((t: any) => t.key === 'workflow');
-      docPanel.setAttribute('slot', `panel-${docIdx}`);
-      wfPanel.setAttribute('slot', `panel-${wfIdx}`);
+      const idx = (key: string) => vis.findIndex((t: any) => t.key === key);
+      summaryPanel.setAttribute('slot', `panel-${idx('summary')}`);
+      docPanel.setAttribute('slot', `panel-${idx('documents')}`);
+      wfPanel.setAttribute('slot', `panel-${idx('workflow')}`);
       // Keep whichever enabled tab was active selected across the rebuild.
       tabsEl.activeIndex = vis.findIndex((t: any) => t.key === activeKey);
       syncCrumb();

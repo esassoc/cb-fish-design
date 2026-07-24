@@ -1,0 +1,218 @@
+---
+// cbf-contract-summary — the contract's Summary tab (the default view), mirroring
+// the live Contract Summary page: a title row with report/expand controls, an
+// expanded "Basics" section (contract facts + a location-map placeholder), and a
+// stack of collapsed sections (Photos, Contract Contacts, SOW, Deliverable Status,
+// Metrics, Focal Species, Environmental Compliance, Reports).
+//
+// bcn-lego-checked: the disclosures ARE the esa-collapsible lego, the header
+// controls ARE esa-button, and the empty Photos state IS esa-empty-state. What's
+// left is pure CONTENT — a facts definition-list, two little fact sub-tables
+// (Project Area / Contract Continuation), and a contacts table — none of which any
+// esa-* models (there's no "detail/spec list" lego; the removed rules panel used
+// the same content dl). Beacon renders these as plain Angular tables/markup too.
+// The map is a static placeholder: Google Maps can't be embedded here, and no
+// esa-* provides a map surface.
+import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import { contractSummary as s, contractContacts, summarySections } from '../../data/lib-pi-editing.mjs';
+
+const pinSvg =
+  '<svg viewBox="0 0 24 24" width="26" height="26" fill="var(--color-primary)" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg>';
+---
+<div class="cbf-summary stack" data-gap="md" data-contract-summary>
+  <!-- Title + report/expand controls (mirrors the live Summary header row) -->
+  <div class="cbf-summary__head">
+    <h2 class="cbf-summary__title">Contract {s.contractNumber}: {s.contractTitle}</h2>
+    <div class="cbf-summary__actions">
+      <span data-sow-report><EsaButton color="secondary" appearance="outline" size="sm">SOW Report</EsaButton></span>
+      <span data-expand-all><EsaButton color="secondary" appearance="ghost" size="sm">Expand All</EsaButton></span>
+      <span data-collapse-all><EsaButton color="secondary" appearance="ghost" size="sm">Collapse All</EsaButton></span>
+    </div>
+  </div>
+
+  <!-- ═══ Basics (expanded) ═══ -->
+  <EsaCollapsible title="Basics" open>
+    <p class="cbf-summary__modified type-caption">Last modified by {s.lastModifiedBy}, {s.lastModifiedAt}</p>
+    <div class="cbf-summary__basics">
+      <div class="cbf-summary__basics-main">
+        <dl class="cbf-summary__dl">
+          <dt>Project Number</dt><dd><a class="cbf-doc-link" href="#">{s.projectNumber}</a></dd>
+          <dt>Project Title</dt><dd>{s.projectTitle}</dd>
+          <dt>BPA PM</dt><dd>{s.bpaPm}</dd>
+          <dt>Project Stage</dt><dd>{s.projectStage}</dd>
+          <dt>Project Area</dt>
+          <dd>
+            <table class="cbf-summary__subtable">
+              <thead><tr><th>Province</th><th>Subbasin</th><th>%</th></tr></thead>
+              <tbody><tr><td>{s.projectArea.province}</td><td>{s.projectArea.subbasin}</td><td>{s.projectArea.pct}</td></tr></tbody>
+            </table>
+          </dd>
+          <dt>Contract Number</dt><dd>{s.contractNumber}</dd>
+          <dt>Contract Title</dt><dd>{s.contractTitle}</dd>
+          <dt>Contract Continuation</dt>
+          <dd>
+            <table class="cbf-summary__subtable">
+              <thead><tr><th>Previous</th><th>Will be renewed</th><th>Next</th></tr></thead>
+              <tbody><tr>
+                <td><a class="cbf-doc-link" href="#">{s.continuation.previous}</a></td>
+                <td>{s.continuation.willBeRenewed}</td>
+                <td><a class="cbf-doc-link" href="#">{s.continuation.next}</a></td>
+              </tr></tbody>
+            </table>
+          </dd>
+          <dt>Contract Status</dt><dd>{s.status}</dd>
+          <dt>Contract Description</dt>
+          <dd><p class="cbf-summary__desc-lede">{s.descriptionLede}</p><p class="cbf-summary__desc">{s.description}</p></dd>
+          <dt>Account Type(s)</dt><dd>{s.accountTypes}</dd>
+          <dt>Contract Start Date</dt><dd>{s.startDate}</dd>
+          <dt>Contract End Date</dt><dd>{s.endDate}</dd>
+          <dt>Current Contract Value</dt><dd>{s.currentValue}</dd>
+          <dt>Expenditures</dt>
+          <dd>{s.expenditures}<span class="type-caption cbf-summary__note">* {s.expendituresNote}</span></dd>
+          <dt>BPA CO</dt><dd><a class="cbf-doc-link" href="#">{s.bpaCo}</a></dd>
+          <dt>BPA COR</dt><dd><a class="cbf-doc-link" href="#">{s.bpaCor}</a></dd>
+          <dt>Env. Compliance Lead</dt><dd><a class="cbf-doc-link" href="#">{s.envComplianceLead}</a></dd>
+          <dt>Contract Contractor</dt><dd><a class="cbf-doc-link" href="#">{s.contractor}</a></dd>
+          <dt>Work Order Task(s)</dt><dd><a class="cbf-doc-link" href="#">{s.workOrderTasks}</a></dd>
+          <dt>Contract Type</dt><dd>{s.contractType}</dd>
+          <dt>Accrual category</dt><dd>{s.accrualCategory}</dd>
+          <dt>Pricing Method</dt><dd>{s.pricingMethod}</dd>
+        </dl>
+      </div>
+      <div class="cbf-summary__map" aria-hidden="true">
+        <div class="cbf-summary__map-canvas"><Fragment set:html={pinSvg} /></div>
+        <p class="cbf-summary__map-cap type-caption">Click the map to see this Contract's location details.</p>
+      </div>
+    </div>
+  </EsaCollapsible>
+
+  <!-- ═══ Collapsed sections ═══ -->
+  {summarySections.map((sec) => (
+    <EsaCollapsible title={sec.title}>
+      {sec.key === 'photos' && (
+        <EsaEmptyState title="No photos" description={sec.note} size="sm" />
+      )}
+      {sec.key === 'contacts' && (
+        <table class="cbf-summary__contacts">
+          <thead><tr><th>Role</th><th>Name</th></tr></thead>
+          <tbody>
+            {contractContacts.map((c) => (
+              <tr><td>{c.role}</td><td><a class="cbf-doc-link" href="#">{c.name}</a></td></tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {sec.key !== 'photos' && sec.key !== 'contacts' && (
+        <p class="cbf-summary__section-note">{sec.note}</p>
+      )}
+    </EsaCollapsible>
+  ))}
+</div>
+
+<script>
+  // Expand All / Collapse All toggle every disclosure in the Summary tab; SOW Report
+  // is a prototype stub. esa-collapsible is a native <details>, so open = the attr.
+  const root = document.querySelector<HTMLElement>('[data-contract-summary]');
+  if (root) {
+    const all = () => Array.from(root.querySelectorAll<HTMLDetailsElement>('details.esa-collapsible'));
+    root.querySelector('[data-expand-all] button')?.addEventListener('click', () =>
+      all().forEach((d) => (d.open = true)),
+    );
+    root.querySelector('[data-collapse-all] button')?.addEventListener('click', () =>
+      all().forEach((d) => (d.open = false)),
+    );
+    root.querySelector('[data-sow-report] button')?.addEventListener('click', () => {
+      const sb = document.querySelector('[data-snackbar]') as any;
+      (sb?.info ?? sb?.success)?.call(sb, 'The SOW Report is out of scope for this prototype.', { duration: 4000 });
+    });
+  }
+</script>
+
+<style>
+  .cbf-summary__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-300);
+  }
+  .cbf-summary__title {
+    margin: 0;
+    font-size: var(--type-size-400, 1.125rem);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-summary__actions { display: flex; flex-wrap: wrap; gap: var(--spacing-200); }
+
+  .cbf-summary__modified { margin: 0 0 var(--spacing-300); color: var(--color-text-muted); }
+
+  .cbf-summary__basics { display: flex; flex-wrap: wrap; gap: var(--spacing-500); align-items: flex-start; }
+  .cbf-summary__basics-main { flex: 1; min-width: min(100%, 420px); }
+
+  /* Facts list — label column right-aligned, value column, row rules (table look). */
+  .cbf-summary__dl { display: grid; grid-template-columns: 210px 1fr; margin: 0; }
+  .cbf-summary__dl > dt {
+    grid-column: 1;
+    text-align: right;
+    padding: var(--spacing-300) var(--spacing-400);
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+  }
+  .cbf-summary__dl > dd {
+    grid-column: 2;
+    margin: 0;
+    padding: var(--spacing-300) var(--spacing-400);
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+    min-width: 0;
+  }
+  .cbf-summary__dl > dt:first-of-type,
+  .cbf-summary__dl > dt:first-of-type + dd { border-top: 0; }
+
+  .cbf-summary__desc-lede { margin: 0 0 var(--spacing-200); }
+  .cbf-summary__desc { margin: 0; color: var(--color-text-secondary); max-width: 80ch; }
+  .cbf-summary__note { display: block; margin-top: 2px; color: var(--color-text-muted); }
+
+  .cbf-summary__subtable { width: 100%; border-collapse: collapse; }
+  .cbf-summary__subtable th, .cbf-summary__subtable td {
+    text-align: left;
+    padding: var(--spacing-200) var(--spacing-300);
+    border: 1px solid var(--color-border);
+    font-size: var(--type-size-150, 0.875rem);
+    vertical-align: top;
+  }
+  .cbf-summary__subtable th { background: var(--color-surface-sunken, #f4f4f4); font-weight: var(--font-weight-semibold); white-space: nowrap; }
+
+  /* Location map — static placeholder (no external map embed). */
+  .cbf-summary__map { width: 320px; flex: none; }
+  .cbf-summary__map-canvas {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 220px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    background:
+      repeating-linear-gradient(0deg, transparent 0 23px, color-mix(in srgb, var(--color-primary) 6%, transparent) 23px 24px),
+      repeating-linear-gradient(90deg, transparent 0 23px, color-mix(in srgb, var(--color-primary) 6%, transparent) 23px 24px),
+      color-mix(in srgb, var(--color-success-strong, #15803d) 8%, var(--color-surface));
+  }
+  .cbf-summary__map-cap { margin: var(--spacing-200) 0 0; font-style: italic; color: var(--color-text-muted); }
+
+  .cbf-summary__contacts, .cbf-summary__section-note { margin: 0; }
+  .cbf-summary__contacts { width: 100%; border-collapse: collapse; }
+  .cbf-summary__contacts th, .cbf-summary__contacts td {
+    text-align: left;
+    padding: var(--spacing-200) var(--spacing-400);
+    border-bottom: 1px solid var(--color-border-light, var(--color-border));
+  }
+  .cbf-summary__contacts th { background: var(--color-surface-sunken, #f4f4f4); font-weight: var(--font-weight-semibold); }
+  .cbf-summary__section-note { color: var(--color-text-secondary); }
+
+  .cbf-summary :global(.cbf-doc-link) { color: var(--color-primary); text-decoration: underline; }
+
+  /* Space the stacked disclosures. */
+  .cbf-summary :global(.esa-collapsible + .esa-collapsible) { margin-top: var(--spacing-300); }
+</style>
