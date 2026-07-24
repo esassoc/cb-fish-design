@@ -97,10 +97,10 @@ export const prototypes: Prototype[] = [
   },
   {
     slug: 'crs-commitments',
-    title: 'Basin Fish Passage Commitments',
+    title: 'BiOp landing page',
     description:
-      'A scannable grid of every tracked fish/wildlife mitigation commitment, filterable by category and status, drilling into a per-commitment summary with its full record and multi-year status timeline.',
-    route: '/crs-commitments',
+      "The landing page for the BiOp Reporting area — what BPA's biological opinion consultation work is and why it exists, then a sub-nav into the reporting views underneath it.",
+    route: '/biop-reporting',
     createdAt: '2026-07-16',
     status: 'in-progress',
   },

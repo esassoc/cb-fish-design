@@ -1,0 +1,84 @@
+---
+// /biop-reporting — the "BiOp reporting: Summary" area landing page. Lands a
+// BiOp Commitment Administrator (or anyone browsing Reporting) on what the
+// area is for, then branches into its sub-areas via the tab strip: 2020 CRS
+// Commitments (built — grid/dashboard/document library), CRS habitat and
+// FCRPS BiOp (both live-site menu items, deliberately left as placeholders —
+// not built this pass), and the Reclamation uploader related item. Content
+// (headline + body) is lifted verbatim from the live CBFish BiOp reporting
+// summary page (BiOpReporting.mvc/Index), checked directly against prod —
+// this is real ESA/BiOp program description, not invented mock copy. Mirrors
+// /project-budgets, the sibling Report Center summary page this pattern
+// (tab strip + photo/prose intro + Related items grid) was first built for.
+// Thin assembler: chrome from cbf-* shared components, content from cbf-* sections.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
+import CbfPageHeading from '../components/shared/cbf-page-heading.astro';
+import CbfReportTabs from '../components/shared/cbf-report-tabs.astro';
+import CbfReportIntro from '../components/shared/cbf-report-intro.astro';
+import CbfRelatedItems from '../components/shared/cbf-related-items.astro';
+import CbfPasswordGate from '../components/shared/cbf-password-gate.astro';
+import { biopReportingTabs, biopRelatedItems } from '../components/shared/biop-reporting-tabs';
+import { CRS_GATE_PASSWORD } from '../components/crs-commitments/gate-password';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import { withBase } from '../lib/base';
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+const crumbs = [
+  { label: 'Home', href: withBase('/home'), icon: homeIcon },
+  { label: 'Reporting' },
+  { label: 'BiOp reporting' },
+];
+
+// "Related items" — the one card the live strip and summary page both show.
+// The tab-strip disclosure uses the plain {title, href} shape (biopRelatedItems,
+// shared with the other area pages); this page's card section adds the overview
+// copy, lifted verbatim from prod.
+const related = biopRelatedItems.map((r) => ({
+  ...r,
+  overview: 'Upload XLSX files containing Biological Opinion Reclamation data.',
+}));
+
+const intro = {
+  image: {
+    src: withBase('/biop-reporting-hero.png'),
+    alt: 'A forested stream in the Columbia Basin',
+  },
+  lede: 'Under the Endangered Species Act (ESA), BPA consults with the United States Fish and Wildlife Service (USFWS) and the National Marine Fisheries Service (NMFS) to protect ESA-listed species affected by the operation and maintenance of the power system through the ESA Section 7 interagency process.',
+  body: "In BPA's service territory, the USFWS holds jurisdiction over terrestrial and freshwater species, while NMFS holds jurisdiction over marine mammals and anadromous salmon and steelhead. BPA works with NMFS and USFWS to make collaboration as efficient as possible through the identification and tracking of programmatic biological opinions (BiOps) for BPA's Fish and Wildlife Program. The Habitat Improvement Program Biological Opinion, or HIP4, is a BiOp that provides ESA compliance for most of the habitat improvement activities that BPA funds, and has created a streamlined process, saving time and money for federal agencies while accelerating habitat improvement project implementation. Several iterations of this BiOp have been published, and efforts have been tracked in accordance with each iteration.",
+};
+---
+<!-- manifest:
+  layout: esa-container > cbf-app-panel
+  sections:
+    - top nav       -> cbf-public-nav
+    - page frame    -> esa-container
+    - password gate -> cbf-password-gate
+    - page heading  -> cbf-page-heading
+    - sub-nav tabs  -> cbf-report-tabs
+    - intro band    -> cbf-report-intro
+    - related items -> cbf-related-items
+-->
+<BaseLayout title="BiOp reporting: Summary — Columbia Basin Fish &amp; Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <CbfAppPanel crumbs={crumbs}>
+        <CbfPasswordGate password={CRS_GATE_PASSWORD}>
+          <CbfPageHeading title="BiOp reporting: Summary" />
+          <CbfReportTabs tabs={biopReportingTabs('summary')} related={biopRelatedItems} ariaLabel="BiOp reporting sections" />
+          <CbfReportIntro image={intro.image} lede={intro.lede} body={intro.body} />
+          <CbfRelatedItems items={related} />
+        </CbfPasswordGate>
+      </CbfAppPanel>
+    </EsaContainer>
+  </main>
+</BaseLayout>
+
+<style>
+  /* page-level outer rhythm only — every section is a component (manifest above) */
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+</style>
