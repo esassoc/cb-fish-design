@@ -55,7 +55,8 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
       <div class="cbf-lipd__toolbar repel">
         <span class="type-caption">
           Viewing {documents.length} of {contract.totalDocs} attached documents — filtered to
-          Line Item Budget &amp; Property Inventory (the transmittal memo is shown for contrast).
+          Line Item Budget &amp; Property Inventory (the transmittal memo and design report are shown
+          for contrast).
         </span>
         <span data-add-doc>
           <EsaButton color="primary" size="sm" icon="plus">Add…</EsaButton>
@@ -91,7 +92,9 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
                 <td data-cell="uploaded">{d.uploaded}</td>
                 <td data-cell="uploadedBy">{d.uploadedBy}</td>
                 <td data-cell="cor">
-                  {d.approvals.cotr ? (
+                  {d.approvalNA ? (
+                    <span class="cbf-na" title="COR approval does not apply to this document">N/A</span>
+                  ) : d.approvals.cotr ? (
                     <span class="cbf-check" title={`Approved by the COR on ${d.approvals.cotr}`}><Fragment set:html={CHECK_SVG} /> {d.approvals.cotr}</span>
                   ) : (
                     <span class="cbf-none" title="Not yet approved by the COR">–</span>
@@ -162,6 +165,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
           <div class="cbf-edit__specs">
             <div><span class="cbf-edit__label">Type</span><strong data-ed-type></strong></div>
             <div><span class="cbf-edit__label">Subtype</span><strong data-ed-subtype></strong></div>
+            <div><span class="cbf-edit__label">WE ref</span><strong data-ed-weref></strong></div>
           </div>
           <p class="cbf-edit__guidance type-caption" data-ed-guidance></p>
         </div>
@@ -455,6 +459,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
       propsDirty = false;
       $('[data-ed-type]', root)!.textContent = doc.type;
       $('[data-ed-subtype]', root)!.textContent = doc.subtype || '—';
+      $('[data-ed-weref]', root)!.textContent = doc.weRef || '—';
       $('[data-ed-guidance]', root)!.textContent = doc.guidance;
       $('[data-ed-file]', root)!.textContent = doc.file;
       $('[data-ed-size]', root)!.textContent = `(${doc.size})`;
@@ -677,11 +682,13 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     };
 
     const corCellHtml = (doc: any) =>
-      doc.approvals.cotr
-        ? checkHtml(doc.approvals.cotr, 'the COR')
-        : doc.resetInfo
-          ? '<span class="cbf-reappr" title="A replacement cleared the COR\'s approval — the COR has been notified and must re-approve">Needs re-approval</span>'
-          : noneHtml('the COR');
+      doc.approvalNA
+        ? '<span class="cbf-na" title="COR approval does not apply to this document">N/A</span>'
+        : doc.approvals.cotr
+          ? checkHtml(doc.approvals.cotr, 'the COR')
+          : doc.resetInfo
+            ? '<span class="cbf-reappr" title="A replacement cleared the COR\'s approval — the COR has been notified and must re-approve">Needs re-approval</span>'
+            : noneHtml('the COR');
 
     const renderDocRows = () => {
       docs.forEach((doc: any) => {
@@ -823,6 +830,8 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     white-space: nowrap;
   }
   .cbf-lipd :global(.cbf-none) { color: var(--color-text-secondary); }
+  /* Not-applicable approval (e.g. a design report doesn't route through the COR). */
+  .cbf-lipd :global(.cbf-na) { color: var(--color-text-muted); font-style: italic; }
   /* Locked (read-only) approval — the original requisition. Muted grey to read as
      disabled; contrast minimums don't apply to disabled/inactive content. */
   .cbf-lipd :global(.cbf-check--locked) { color: var(--color-text-muted); font-weight: var(--font-weight-medium); }
