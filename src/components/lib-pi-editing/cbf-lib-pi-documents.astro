@@ -87,9 +87,9 @@ const gridDocs = documents.filter((d) => d.workflowRow);
                 <td data-cell="uploadedBy">{d.uploadedBy}</td>
                 <td data-cell="cor">
                   {d.approvals.cotr ? (
-                    <span class="cbf-check"><Fragment set:html={CHECK_SVG} /> {d.approvals.cotr}</span>
+                    <span class="cbf-check" title={`Approved by the COR on ${d.approvals.cotr}`}><Fragment set:html={CHECK_SVG} /> {d.approvals.cotr}</span>
                   ) : (
-                    <span class="cbf-none">–</span>
+                    <span class="cbf-none" title="Not yet approved by the COR">–</span>
                   )}
                 </td>
               </tr>
@@ -133,9 +133,9 @@ const gridDocs = documents.filter((d) => d.workflowRow);
                 {APPROVAL_COLS.map((c) => (
                   <td data-appr={`${d.id}:${c.key}`}>
                     {d.approvals[c.key] ? (
-                      <span class="cbf-check"><Fragment set:html={CHECK_SVG} /> {d.approvals[c.key]}</span>
+                      <span class="cbf-check" title={`Approved by ${c.label} on ${d.approvals[c.key]}`}><Fragment set:html={CHECK_SVG} /> {d.approvals[c.key]}</span>
                     ) : (
-                      <span class="cbf-none">–</span>
+                      <span class="cbf-none" title={`Not yet approved by ${c.label}`}>–</span>
                     )}
                   </td>
                 ))}
@@ -145,10 +145,10 @@ const gridDocs = documents.filter((d) => d.workflowRow);
             <tr>
               <th scope="row">SOW 0, 0</th>
               <td>05/15/2025</td>
-              <td><span class="cbf-check"><Fragment set:html={CHECK_SVG} /> 5/22/2025</span></td>
-              <td><span class="cbf-check"><Fragment set:html={CHECK_SVG} /> 5/22/2025</span></td>
-              <td><span class="cbf-check"><Fragment set:html={CHECK_SVG} /> 5/19/2025</span></td>
-              <td><span class="cbf-check"><Fragment set:html={CHECK_SVG} /> 8/6/2025</span></td>
+              <td><span class="cbf-check" title="Approved by EC on 5/22/2025"><Fragment set:html={CHECK_SVG} /> 5/22/2025</span></td>
+              <td><span class="cbf-check" title="Approved by COTR on 5/22/2025"><Fragment set:html={CHECK_SVG} /> 5/22/2025</span></td>
+              <td><span class="cbf-check" title="Approved by QC on 5/19/2025"><Fragment set:html={CHECK_SVG} /> 5/19/2025</span></td>
+              <td><span class="cbf-check" title="Approved by F&amp;W Approver on 8/6/2025"><Fragment set:html={CHECK_SVG} /> 8/6/2025</span></td>
               <td>08/06/2025</td>
             </tr>
           </tbody>
@@ -262,16 +262,6 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     </div>
   </esa-dialog>
 
-  <!-- ── "Why is editing locked?" dialog ── -->
-  <esa-dialog data-why-dialog size="sm" heading="Why can't I edit this document?">
-    <div class="stack" data-gap="sm">
-      <p data-why-reason></p>
-    </div>
-    <div slot="footer" class="cbf-edit__footer">
-      <span data-why-close><EsaButton color="secondary" appearance="outline">Close</EsaButton></span>
-    </div>
-  </esa-dialog>
-
   <!-- ── COR notification dialog (shows the email that was just sent) ── -->
   <esa-dialog data-email-dialog size="md" heading="The COR has been notified">
     <div class="stack" data-gap="sm">
@@ -378,7 +368,12 @@ const gridDocs = documents.filter((d) => d.workflowRow);
       const d = new Date();
       return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
     };
-    const checkHtml = (date: string) => `<span class="cbf-check">${CHECK_SVG} ${date}</span>`;
+    // Approval indicators carry an explanatory tooltip (native title) so the check /
+    // dash aren't left to be guessed at. `who` names the approver for that column.
+    const checkHtml = (date: string, who: string) =>
+      `<span class="cbf-check" title="Approved by ${who} on ${date}">${CHECK_SVG} ${date}</span>`;
+    const noneHtml = (who: string) =>
+      `<span class="cbf-none" title="Not yet approved by ${who}">–</span>`;
 
     // ── Demo controls (in cbf-doc-demo-controls, outside this component) ────
     const awardToggle = $('[data-demo-award]') as any;
@@ -408,8 +403,12 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     // Documents tab, "Workflow" on the Workflow tab. (The current crumb is the sole
     // .esa-breadcrumbs__current span rendered by the breadcrumbs lego.)
     const CRUMB_LABEL: Record<string, string> = { documents: 'Documents', workflow: 'Workflow' };
+    // Update ONLY the trailing crumb. The breadcrumbs lego marks every href-less
+    // item as .esa-breadcrumbs__current, so target the last crumb explicitly rather
+    // than the first match (which would clobber "Projects").
     const syncCrumb = () => {
-      const cur = document.querySelector('.esa-breadcrumbs__current');
+      const items = document.querySelectorAll('.esa-breadcrumbs__item');
+      const cur = items[items.length - 1]?.querySelector('.esa-breadcrumbs__current');
       if (cur && CRUMB_LABEL[activeKey]) cur.textContent = CRUMB_LABEL[activeKey];
     };
 
@@ -447,7 +446,6 @@ const gridDocs = documents.filter((d) => d.workflowRow);
 
     // ── Dialog plumbing ─────────────────────────────────────────────────────
     const editDialog = $('[data-edit-dialog]', root) as any;
-    const whyDialog = $('[data-why-dialog]', root) as any;
     const emailDialog = $('[data-email-dialog]', root) as any;
     const saveBtnWrap = $('[data-ed-save]', root)!;
     const saveBtn = saveBtnWrap.querySelector('button')!;
@@ -596,8 +594,6 @@ const gridDocs = documents.filter((d) => d.workflowRow);
       update();
     });
 
-    $('[data-why-close]', root)!.querySelector('button')!.addEventListener('click', () => whyDialog.close());
-
     // ── Email preview / archive ────────────────────────────────────────────
     const emailTemplate = $('[data-email-template]', root) as unknown as HTMLTemplateElement;
     const renderEmailCard = (email: any) => {
@@ -621,6 +617,30 @@ const gridDocs = documents.filter((d) => d.workflowRow);
     $('[data-em-close]', root)!.querySelector('button')!.addEventListener('click', () => emailDialog.close());
 
     // ── Context menus ───────────────────────────────────────────────────────
+    // A disabled "Edit Properties" item can't show a native title tooltip (disabled
+    // buttons don't receive hover). The lego early-returns on click for disabled
+    // items, so we drop only the DOM `disabled` attribute — the item stays inert but
+    // becomes hoverable — and attach the rule reason as its tooltip.
+    const enhanceDisabledEdit = (menu: any) => {
+      const panel = menu.shadowRoot?.querySelector('.esa-dropdown-menu__panel');
+      if (!panel) return;
+      const reason = menu.dataset.editReason;
+      const editBtn = Array.from(panel.querySelectorAll('.esa-dropdown-menu__item')).find(
+        (b: any) => b.textContent.trim().startsWith('Edit Properties'),
+      ) as HTMLElement | undefined;
+      if (editBtn && reason) {
+        editBtn.removeAttribute('disabled');
+        editBtn.setAttribute('aria-disabled', 'true');
+        editBtn.setAttribute('title', reason);
+      }
+    };
+    // Enhance whenever a menu opens (covers pointer and keyboard).
+    $$('[data-doc-menu]').forEach((menu) => {
+      new MutationObserver(() => {
+        if (menu.hasAttribute('open')) setTimeout(() => enhanceDisabledEdit(menu), 0);
+      }).observe(menu, { attributes: true, attributeFilter: ['open'] });
+    });
+
     root.addEventListener('menu-action', (e: any) => {
       const menu = (e.target as HTMLElement).closest('[data-doc-menu]');
       if (!menu) return;
@@ -636,14 +656,8 @@ const gridDocs = documents.filter((d) => d.workflowRow);
         case 'delete':
           toast('Deleting attachments is unchanged by this story — and no longer the only way to swap a file.');
           break;
-        case 'why': {
-          const rule = editRule(state.award, state.role, doc.kind);
-          $('[data-why-reason]', root)!.textContent = rule.reason;
-          whyDialog.show();
-          break;
-        }
         case 'edit':
-          openEdit(doc);
+          if (editRule(state.award, state.role, doc.kind).allowed) openEdit(doc);
           break;
       }
     });
@@ -669,24 +683,25 @@ const gridDocs = documents.filter((d) => d.workflowRow);
         if (!menu) return;
         const rule = editRule(state.award, state.role, doc.kind);
         const locked = editRule(state.award, state.role, 'other'); // tier-3 lock applies to all actions
+        // Stash the reason so a disabled Edit Properties gets an explanatory tooltip
+        // (see enhanceDisabledEdit) — no separate "why?" menu item needed.
+        menu.dataset.editReason = rule.allowed ? '' : rule.reason;
         menu.items = [
           { label: 'View Document', action: 'view' },
           { label: 'Edit Properties', action: 'edit', disabled: !rule.allowed },
           { label: 'Delete Attachment', action: 'delete', variant: 'danger', disabled: !locked.allowed },
           { label: 'Copy Attachment Link', action: 'copy' },
-          ...(!rule.allowed
-            ? [{ divider: true }, { label: 'Why is editing locked?', action: 'why' }]
-            : []),
         ];
+        if (menu.hasAttribute('open')) setTimeout(() => enhanceDisabledEdit(menu), 0);
       });
     };
 
     const corCellHtml = (doc: any) =>
       doc.approvals.cotr
-        ? checkHtml(doc.approvals.cotr)
+        ? checkHtml(doc.approvals.cotr, 'the COR')
         : doc.resetInfo
-          ? '<span class="cbf-reappr">Needs re-approval</span>'
-          : '<span class="cbf-none">–</span>';
+          ? '<span class="cbf-reappr" title="A replacement cleared the COR\'s approval — the COR has been notified and must re-approve">Needs re-approval</span>'
+          : noneHtml('the COR');
 
     const renderDocRows = () => {
       docs.forEach((doc: any) => {
@@ -708,8 +723,8 @@ const gridDocs = documents.filter((d) => d.workflowRow);
           const cell = $(`[data-appr="${doc.id}:${c.key}"]`, root);
           if (!cell) return;
           cell.innerHTML = doc.approvals[c.key]
-            ? checkHtml(doc.approvals[c.key])
-            : '<span class="cbf-none">–</span>';
+            ? checkHtml(doc.approvals[c.key], c.label)
+            : noneHtml(c.label);
         });
         const last = $(`[data-appr-last="${doc.id}"]`, root);
         if (last) last.textContent = doc.lastUpload;
