@@ -16,6 +16,7 @@ import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
 import CbfPageHeading from '../components/shared/cbf-page-heading.astro';
 import CbfReportTabs from '../components/shared/cbf-report-tabs.astro';
 import CbfReportIntro from '../components/shared/cbf-report-intro.astro';
+import { rmeReportingTabs } from '../components/shared/rme-reporting-tabs';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import { withBase } from '../lib/base';
 
@@ -25,13 +26,6 @@ const crumbs = [
   { label: 'Home', href: withBase('/home'), icon: homeIcon },
   { label: 'Reporting' },
   { label: 'RM&E Reporting' },
-];
-
-// Sub-nav: Summary is this page; Work Elements Report is the only sub-page
-// built so far — more RM&E reporting views will add tabs here later.
-const tabs = [
-  { label: 'Summary', active: true },
-  { label: 'RM&E Work Elements Report', href: withBase('/rme-work-elements') },
 ];
 
 const intro = {
@@ -59,7 +53,7 @@ const intro = {
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
         <CbfPageHeading title="RM&E Reporting: Summary" />
-        <CbfReportTabs tabs={tabs} ariaLabel="RM&E reporting sections" />
+        <CbfReportTabs tabs={rmeReportingTabs('summary')} ariaLabel="RM&E reporting sections" />
         <CbfReportIntro image={intro.image} lede={intro.lede} body={intro.body} />
       </CbfAppPanel>
     </EsaContainer>

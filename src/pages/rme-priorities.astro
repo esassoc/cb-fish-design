@@ -1,0 +1,70 @@
+---
+// /rme-priorities — the "Manage RM&E Priorities" report. A modernized port
+// of the legacy CBFish ManageRme.mvc/ManageRme page, checked directly
+// against prod: the RM&E Priority taxonomy itself (cbf-rme-priorities-list),
+// and which priority + SME apply to each project (cbf-project-rme-priorities-grid),
+// with a bulk-edit flow to apply one priority to many projects at once.
+// Thin assembler: chrome from cbf-* shared components, content from the two
+// cbf-* sections.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
+import CbfPageHeading from '../components/shared/cbf-page-heading.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import CbfReportTabs from '../components/shared/cbf-report-tabs.astro';
+import CbfRmePrioritiesList from '../components/rme-priorities/cbf-rme-priorities-list.astro';
+import CbfProjectRmePrioritiesGrid from '../components/rme-priorities/cbf-project-rme-priorities-grid.astro';
+import { rmeReportingTabs } from '../components/shared/rme-reporting-tabs';
+import { withBase } from '../lib/base';
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+
+const crumbs = [
+  { label: 'Home', href: withBase('/home'), icon: homeIcon },
+  { label: 'Reporting' },
+  { label: 'RM&E Reporting', href: withBase('/rme-reporting') },
+  { label: 'Manage Priorities' },
+];
+---
+<!-- manifest:
+  layout: esa-container > cbf-app-panel > stack
+  sections:
+    - top nav        -> cbf-public-nav
+    - page frame     -> esa-container
+    - page heading   -> cbf-page-heading
+    - sub-nav tabs   -> cbf-report-tabs
+    - priorities list -> cbf-rme-priorities-list
+    - project grid   -> cbf-project-rme-priorities-grid
+    - toasts         -> esa-snackbar-container  # not decorative: the
+      #   priorities-list create flow and the project grid's bulk-edit flow
+      #   both call document.querySelector('[data-snackbar]')
+-->
+<BaseLayout title="Manage RM&amp;E Priorities — Columbia Basin Fish &amp; Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <CbfAppPanel crumbs={crumbs}>
+        <CbfPageHeading title="Manage RM&E Priorities" />
+        <CbfReportTabs tabs={rmeReportingTabs('priorities')} ariaLabel="RM&E reporting sections" />
+
+        <div class="cbf-rme-priorities-page stack" data-gap="lg">
+          <CbfRmePrioritiesList />
+          <CbfProjectRmePrioritiesGrid />
+        </div>
+      </CbfAppPanel>
+    </EsaContainer>
+  </main>
+
+  <esa-snackbar-container data-snackbar></esa-snackbar-container>
+</BaseLayout>
+
+<script>
+  import '@esa/ecology/esa-snackbar-container';
+</script>
+
+<style>
+  /* page-level outer rhythm only — every section is a component (manifest above) */
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+</style>

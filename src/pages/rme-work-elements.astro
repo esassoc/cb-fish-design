@@ -13,6 +13,7 @@ import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import CbfReportTabs from '../components/shared/cbf-report-tabs.astro';
 import CbfRmeWorkElementsGrid from '../components/rme-work-elements/cbf-rme-work-elements-grid.astro';
+import { rmeReportingTabs } from '../components/shared/rme-reporting-tabs';
 import { withBase } from '../lib/base';
 
 const homeIcon =
@@ -23,13 +24,6 @@ const crumbs = [
   { label: 'Reporting' },
   { label: 'RM&E Reporting', href: withBase('/rme-reporting') },
   { label: 'Work Elements Report' },
-];
-
-// Sub-nav: Summary links back to the area landing; this page is the only
-// built sub-page so far.
-const tabs = [
-  { label: 'Summary', href: withBase('/rme-reporting') },
-  { label: 'RM&E Work Elements Report', active: true },
 ];
 ---
 <!-- manifest:
@@ -53,7 +47,7 @@ const tabs = [
           title="RM&E Work Elements Report"
           lede="Every Work Statement Element carrying RM&E work, with each project's RM&E Type and Focal Area classifications. Double-click a Primary/Secondary Type or Focal Area cell (shaded) to edit it directly."
         />
-        <CbfReportTabs tabs={tabs} ariaLabel="RM&E reporting sections" />
+        <CbfReportTabs tabs={rmeReportingTabs('work-elements')} ariaLabel="RM&E reporting sections" />
         <CbfRmeWorkElementsGrid />
       </CbfAppPanel>
     </EsaContainer>
