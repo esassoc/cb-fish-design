@@ -4155,7 +4155,7 @@ function createRefImageOverlay(dataUrl, natW, natH, fileName) {
 
   refImage = {
     overlay: overlay, bounds: bounds, opacity: 0.85,
-    fileName: fileName, naturalW: natW, naturalH: natH, locked: true
+    fileName: fileName, naturalW: natW, naturalH: natH, locked: true, visible: true
   };
   attachRefImageBodyDrag();
   enterRefImagePositionMode();
@@ -4305,6 +4305,24 @@ function setRefImageOpacity(v) {
   refImage.overlay.setOpacity(v);
 }
 
+function setRefImageVisible(v) {
+  if (!refImage) return;
+  refImage.visible = v;
+  if (v) {
+    refImage.overlay.addTo(map); // Leaflet rebuilds the <img> on re-add, so re-apply lock state + drag
+    var imgEl = refImage.overlay.getElement();
+    if (imgEl) {
+      imgEl.style.pointerEvents = refImage.locked ? 'none' : 'auto';
+      imgEl.style.cursor = refImage.locked ? '' : 'move';
+    }
+    attachRefImageBodyDrag();
+  } else {
+    if (refImagePositioning) finishRefImagePositioning();
+    map.removeLayer(refImage.overlay);
+  }
+  renderRefImageSection();
+}
+
 function renderRefImageSection() {
   var wrap = document.getElementById('ref-image-section');
   if (!wrap) return;
@@ -4342,10 +4360,18 @@ function renderRefImageSection() {
     return;
   }
 
-  var row = document.createElement('div');
-  row.className = 'ref-img-row';
-  row.textContent = refImage.fileName;
-  row.title = refImage.fileName;
+  var row = document.createElement('label');
+  row.className = 'layer-row ref-img-row';
+  var visCb = document.createElement('input');
+  visCb.type = 'checkbox';
+  visCb.checked = refImage.visible;
+  visCb.onchange = function() { setRefImageVisible(visCb.checked); };
+  row.appendChild(visCb);
+  var nameSpan = document.createElement('span');
+  nameSpan.className = 'ref-img-filename';
+  nameSpan.textContent = refImage.fileName;
+  nameSpan.title = refImage.fileName;
+  row.appendChild(nameSpan);
   wrap.appendChild(row);
 
   var opRow = document.createElement('div');
@@ -4370,6 +4396,7 @@ function renderRefImageSection() {
   repoBtn.textContent = refImagePositioning ? 'Positioning…' : 'Reposition';
   repoBtn.disabled = refImagePositioning;
   repoBtn.onclick = function() {
+    if (!refImage.visible) setRefImageVisible(true);
     enterRefImagePositionMode();
     var panel = document.getElementById('layer-panel');
     if (panel) panel.style.display = 'none';

@@ -303,6 +303,7 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
   padding: 10px 12px;
   margin-top: 4px;
   min-width: 220px;
+  max-width: 260px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 .layer-section-title { font-size: 10px; font-weight: var(--font-weight-bold); color: var(--color-text-inverse, #fff); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
@@ -320,10 +321,10 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
   --color-text-primary: rgba(255,255,255,0.9);
   --color-surface-sunken: rgba(255,255,255,0.08);
 }
-.ref-img-row {
-  font-size: 11px;
-  color: rgba(255,255,255,0.85);
-  padding: 2px 0 8px;
+.ref-img-row { padding-bottom: 6px; }
+.ref-img-filename {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
