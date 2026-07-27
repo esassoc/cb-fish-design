@@ -48,6 +48,9 @@ var STRUCT_LABEL = {cms:'Channel Margin', mcs:'Mid Channel', css:'Channel Spanni
 
 // ── State ─────────────────────────────────────────────────────────────────
 var map;
+var refImage = null;         // {overlay, bounds, opacity, fileName, naturalW, naturalH, locked}
+var refImagePositioning = false;
+var refImageHandles = {};    // {nw,ne,se,sw: L.circleMarker} — only populated while positioning
 var workElements = [];  // [{id, name, types[], ppData{}, sowLayers{}, structures{}, inputVals{}}]
 var activeWEId = null;
 var activeInnerTab = 'pp';
@@ -267,6 +270,10 @@ window.onload = function() {
         };
         row.appendChild(cb); row.appendChild(document.createTextNode(' '+name)); panel.appendChild(row); panel.appendChild(slider);
       });
+
+      var refWrap = document.createElement('div'); refWrap.id = 'ref-image-section';
+      panel.appendChild(refWrap);
+      renderRefImageSection();
     }
     buildLayerPanel();
 
@@ -4115,6 +4122,270 @@ function _panShapeMapMousedown(e) {
   document.addEventListener('mouseup', onUp);
 }
 
+// ── Reference image layer ───────────────────────────────────────────────────
+// A single user-uploaded image (site plan, sketch, aerial photo) used as tracing
+// paper under the drawing tools. No georeferencing — the user drags/resizes it
+// by eye against the basemap, then locks it so map clicks pass through to drawing.
+function handleRefImageFile(file) {
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var dataUrl = e.target.result;
+    var img = new Image();
+    img.onload = function() {
+      createRefImageOverlay(dataUrl, img.naturalWidth, img.naturalHeight, file.name);
+    };
+    img.src = dataUrl;
+  };
+  reader.readAsDataURL(file);
+}
+
+function createRefImageOverlay(dataUrl, natW, natH, fileName) {
+  if (refImage) removeRefImage();
+  var mapSize = map.getSize();
+  var centerPt = map.latLngToContainerPoint(map.getCenter());
+  var targetW = Math.min(mapSize.x, mapSize.y) * 0.6;
+  var targetH = targetW * (natH / natW);
+  var nw = map.containerPointToLatLng(L.point(centerPt.x - targetW / 2, centerPt.y - targetH / 2));
+  var se = map.containerPointToLatLng(L.point(centerPt.x + targetW / 2, centerPt.y + targetH / 2));
+  var bounds = L.latLngBounds(nw, se);
+  var overlay = L.imageOverlay(dataUrl, bounds, {opacity: 0.85, interactive: true}).addTo(map);
+  var imgEl = overlay.getElement();
+  if (imgEl) imgEl.style.pointerEvents = 'none'; // starts locked; enterRefImagePositionMode() opens it up
+
+  refImage = {
+    overlay: overlay, bounds: bounds, opacity: 0.85,
+    fileName: fileName, naturalW: natW, naturalH: natH, locked: true
+  };
+  attachRefImageBodyDrag();
+  enterRefImagePositionMode();
+}
+
+function attachRefImageBodyDrag() {
+  if (!refImage) return;
+  var el = refImage.overlay.getElement();
+  if (!el) return;
+  L.DomEvent.on(el, 'mousedown', function(e) {
+    if (e.button !== 0 || refImage.locked) return;
+    L.DomEvent.stop(e);
+    map.dragging.disable();
+    document.body.style.userSelect = 'none';
+    var start = map.mouseEventToLatLng(e);
+    var onMove = function(domEvt) {
+      var cur = map.mouseEventToLatLng(domEvt);
+      var dLat = cur.lat - start.lat, dLng = cur.lng - start.lng;
+      start = cur;
+      var b = refImage.bounds;
+      var newBounds = L.latLngBounds(
+        L.latLng(b.getSouth() + dLat, b.getWest() + dLng),
+        L.latLng(b.getNorth() + dLat, b.getEast() + dLng)
+      );
+      refImage.bounds = newBounds;
+      refImage.overlay.setBounds(newBounds);
+      positionRefImageHandles();
+    };
+    var onUp = function() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.userSelect = '';
+      map.dragging.enable();
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+var REF_IMG_OPPOSITE_CORNER = {nw: 'se', ne: 'sw', se: 'nw', sw: 'ne'};
+
+function refImageCorners(bounds) {
+  return {
+    nw: L.latLng(bounds.getNorth(), bounds.getWest()),
+    ne: L.latLng(bounds.getNorth(), bounds.getEast()),
+    se: L.latLng(bounds.getSouth(), bounds.getEast()),
+    sw: L.latLng(bounds.getSouth(), bounds.getWest())
+  };
+}
+
+function buildRefImageHandles() {
+  clearRefImageHandles();
+  if (!refImage) return;
+  var corners = refImageCorners(refImage.bounds);
+  Object.keys(corners).forEach(function(key) {
+    var h = L.circleMarker(corners[key], {
+      radius: 7, color: '#1a7abf', weight: 2, fillColor: '#fff', fillOpacity: 1,
+      interactive: true, bubblingMouseEvents: false
+    }).addTo(map);
+    h.bindTooltip('Drag to resize', {sticky: true, className: 'vertex-tip'});
+    h.on('mousedown', function(e) {
+      if (e.originalEvent.button !== 0) return;
+      L.DomEvent.stop(e);
+      map.dragging.disable();
+      document.body.style.userSelect = 'none';
+      var aspect = refImage.naturalW / refImage.naturalH;
+      var onMove = function(domEvt) {
+        var anchorLatLng = refImageCorners(refImage.bounds)[REF_IMG_OPPOSITE_CORNER[key]];
+        var anchorPt = map.latLngToContainerPoint(anchorLatLng);
+        var curPt = map.mouseEventToContainerPoint(domEvt);
+        var dx = curPt.x - anchorPt.x, dy = curPt.y - anchorPt.y;
+        var w = Math.abs(dx), h2 = w / aspect;
+        if (Math.abs(dy) > h2) { h2 = Math.abs(dy); w = h2 * aspect; }
+        var signX = dx < 0 ? -1 : 1, signY = dy < 0 ? -1 : 1;
+        var newCornerLatLng = map.containerPointToLatLng(L.point(anchorPt.x + signX * w, anchorPt.y + signY * h2));
+        var newBounds = L.latLngBounds(anchorLatLng, newCornerLatLng);
+        refImage.bounds = newBounds;
+        refImage.overlay.setBounds(newBounds);
+        positionRefImageHandles();
+      };
+      var onUp = function() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.body.style.userSelect = '';
+        map.dragging.enable();
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+    refImageHandles[key] = h;
+  });
+}
+
+function positionRefImageHandles() {
+  if (!refImage) return;
+  var corners = refImageCorners(refImage.bounds);
+  Object.keys(corners).forEach(function(key) {
+    if (refImageHandles[key]) refImageHandles[key].setLatLng(corners[key]);
+  });
+}
+
+function clearRefImageHandles() {
+  Object.keys(refImageHandles).forEach(function(key) {
+    if (refImageHandles[key]) map.removeLayer(refImageHandles[key]);
+  });
+  refImageHandles = {};
+}
+
+function enterRefImagePositionMode() {
+  if (!refImage) return;
+  refImagePositioning = true;
+  refImage.locked = false;
+  var imgEl = refImage.overlay.getElement();
+  if (imgEl) { imgEl.style.pointerEvents = 'auto'; imgEl.style.cursor = 'move'; }
+  buildRefImageHandles();
+  var bar = document.getElementById('ref-image-position-bar');
+  if (bar) bar.classList.add('visible');
+  document.getElementById('mapwrap').classList.add('positioning-ref-image');
+  repositionMapOverlays();
+  renderRefImageSection();
+}
+
+function finishRefImagePositioning() {
+  if (!refImage) return;
+  refImagePositioning = false;
+  refImage.locked = true;
+  var imgEl = refImage.overlay.getElement();
+  if (imgEl) { imgEl.style.pointerEvents = 'none'; imgEl.style.cursor = ''; }
+  clearRefImageHandles();
+  var bar = document.getElementById('ref-image-position-bar');
+  if (bar) bar.classList.remove('visible');
+  document.getElementById('mapwrap').classList.remove('positioning-ref-image');
+  renderRefImageSection();
+}
+
+function removeRefImage() {
+  if (!refImage) return;
+  if (refImagePositioning) finishRefImagePositioning();
+  map.removeLayer(refImage.overlay);
+  refImage = null;
+  renderRefImageSection();
+}
+
+function setRefImageOpacity(v) {
+  if (!refImage) return;
+  refImage.opacity = v;
+  refImage.overlay.setOpacity(v);
+}
+
+function renderRefImageSection() {
+  var wrap = document.getElementById('ref-image-section');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  var title = document.createElement('div');
+  title.className = 'layer-section-title';
+  title.textContent = 'Reference Image';
+  title.style.marginTop = '8px';
+  wrap.appendChild(title);
+
+  if (!refImage) {
+    var uploader = document.createElement('esa-file-upload');
+    uploader.setAttribute('label', 'Upload reference image');
+    uploader.setAttribute('accept', 'image/png,image/jpeg,image/webp,image/gif');
+    uploader.setAttribute('max-size-mb', '20');
+    // Hub bug workaround (docs/hub-issues.md → esa-file-upload): the lego's private
+    // reactive state compiles to native class fields that shadow Lit's accessors, so
+    // dev-mode Lit rejects the first update. Un-shadow the instance fields and run
+    // the missed update. Remove once the hub applies the `declare` fix.
+    customElements.whenDefined('esa-file-upload').then(function() {
+      if (uploader.hasUpdated) return;
+      ['_isDragging', '_files', '_error'].forEach(function(k) {
+        var v = uploader[k];
+        delete uploader[k];
+        uploader[k] = v;
+      });
+      if (uploader.performUpdate) uploader.performUpdate();
+    });
+    uploader.addEventListener('change', function(e) {
+      var files = e.detail && e.detail.files;
+      if (files && files[0]) handleRefImageFile(files[0]);
+    });
+    wrap.appendChild(uploader);
+    return;
+  }
+
+  var row = document.createElement('div');
+  row.className = 'ref-img-row';
+  row.textContent = refImage.fileName;
+  row.title = refImage.fileName;
+  wrap.appendChild(row);
+
+  var opRow = document.createElement('div');
+  opRow.className = 'ref-img-opacity-row';
+  var opSlider = document.createElement('esa-range-slider');
+  opSlider.setAttribute('min', '0');
+  opSlider.setAttribute('max', '100');
+  opSlider.setAttribute('step', '5');
+  opSlider.setAttribute('size', 'sm');
+  opSlider.setAttribute('label', 'Opacity');
+  opSlider.value = Math.round(refImage.opacity * 100);
+  opSlider.addEventListener('change', function(e) { setRefImageOpacity(e.detail.value / 100); });
+  opRow.appendChild(opSlider);
+  wrap.appendChild(opRow);
+
+  var actions = document.createElement('div');
+  actions.className = 'ref-img-actions-row';
+
+  var repoBtn = document.createElement('button');
+  repoBtn.type = 'button';
+  repoBtn.className = 'ref-img-action-btn';
+  repoBtn.textContent = refImagePositioning ? 'Positioning…' : 'Reposition';
+  repoBtn.disabled = refImagePositioning;
+  repoBtn.onclick = function() {
+    enterRefImagePositionMode();
+    var panel = document.getElementById('layer-panel');
+    if (panel) panel.style.display = 'none';
+  };
+  actions.appendChild(repoBtn);
+
+  var removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.className = 'ref-img-action-btn ref-img-action-btn--danger';
+  removeBtn.textContent = 'Remove';
+  removeBtn.onclick = function() { removeRefImage(); };
+  actions.appendChild(removeBtn);
+
+  wrap.appendChild(actions);
+}
+
 function cancelLineEdit() {
   var wasEditing = lineEditing;
   if (panShapeActive) {
@@ -7303,8 +7574,10 @@ function repositionMapOverlays(){
   }
   var doneBtn = document.getElementById('draw-done-btn');
   var editBar = document.getElementById('edit-done-bar');
+  var refBar = document.getElementById('ref-image-position-bar');
   if (doneBtn) doneBtn.style.top = belowY + 'px';
   if (editBar) editBar.style.top = belowY + 'px';
+  if (refBar) refBar.style.top = belowY + 'px';
 }
 // A narrower window rewraps the hint to more lines without any of the setMapHint()/
 // edit-done-bar call sites firing, which left draw-done-btn's stale top overlapping it.

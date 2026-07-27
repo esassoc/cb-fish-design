@@ -302,13 +302,77 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
   border-radius: 4px;
   padding: 10px 12px;
   margin-top: 4px;
-  min-width: 170px;
+  min-width: 220px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
 .layer-section-title { font-size: 10px; font-weight: var(--font-weight-bold); color: var(--color-text-inverse, #fff); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
 .layer-row { display: flex; align-items: center; gap: 6px; font-size: 11px; color: rgba(255,255,255,0.75); cursor: pointer; padding: 2px 0; user-select: none; }
 .layer-row input[type=radio], .layer-row input[type=checkbox] { accent-color: var(--cbf-blue-500); cursor: pointer; }
 .layer-opacity { width: 100%; margin: 2px 0 5px; accent-color: var(--cbf-blue-500); cursor: pointer; }
+
+/* ── Reference image layer — upload + reposition controls in the Layers panel ── */
+#ref-image-section esa-file-upload {
+  display: block;
+  --form-bg: transparent;
+  --color-surface: transparent;
+  --form-border-color: rgba(255,255,255,0.3);
+  --color-text-muted: rgba(255,255,255,0.6);
+  --color-text-primary: rgba(255,255,255,0.9);
+  --color-surface-sunken: rgba(255,255,255,0.08);
+}
+.ref-img-row {
+  font-size: 11px;
+  color: rgba(255,255,255,0.85);
+  padding: 2px 0 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ref-img-opacity-row {
+  margin-bottom: 8px;
+  --color-text-primary: rgba(255,255,255,0.85);
+  --color-border: rgba(255,255,255,0.25);
+}
+.ref-img-actions-row { display: flex; gap: 6px; }
+.ref-img-action-btn {
+  flex: 1;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.85);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.ref-img-action-btn:hover:not(:disabled) { background: rgba(255,255,255,0.16); }
+.ref-img-action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ref-img-action-btn--danger:hover:not(:disabled) { background: color-mix(in srgb, var(--color-danger, #ef4444) 30%, transparent); border-color: var(--color-danger, #ef4444); }
+
+/* Reference-image positioning toolbar — mirrors #edit-done-bar */
+#ref-image-position-bar {
+  display: none;
+  position: absolute;
+  top: 66px; /* fallback only — repositionMapOverlays() sets this dynamically */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  align-items: center;
+  gap: var(--spacing-200);
+  white-space: nowrap;
+}
+#ref-image-position-bar.visible { display: flex; }
+.ref-img-position-hint {
+  background: var(--color-surface-inverse);
+  color: var(--color-text-inverse, #fff);
+  padding: 6px 14px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: var(--font-weight-bold);
+  font-family: var(--font-sans, system-ui, sans-serif);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  white-space: nowrap;
+}
+.positioning-ref-image #draw-done-btn { display: none !important; }
 .vertex-tip { background: var(--color-primary); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.75); font-size: 10px; padding: 2px 6px; }
 .leaflet-top.leaflet-left { display: flex; flex-direction: row; align-items: flex-start; gap: 6px; }
 .leaflet-top.leaflet-left .leaflet-control { margin-bottom: 0 !important; }

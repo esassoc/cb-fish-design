@@ -22,6 +22,17 @@
     </button>
   </div>
 
+  <!-- bcn-lego-checked: matches the existing #edit-done-bar directly above — a floating
+       pill-shaped control docked to the Leaflet map surface, not a form action. esa-button
+       is sized/padded for form/toolbar contexts and has no floating-pill variant; the sibling
+       bar already establishes .msow-done-btn as the reusable home for this map-overlay control
+       shape, so this reuses that class rather than introducing a new one. -->
+  <!-- Reference image positioning toolbar — shown while placing/resizing an uploaded reference image -->
+  <div id="ref-image-position-bar" role="status" aria-live="assertive">
+    <span class="ref-img-position-hint">Drag the image to move it, drag a corner to resize</span>
+    <button onclick="finishRefImagePositioning()" class="msow-done-btn">&#10003; Done</button>
+  </div>
+
   <!-- Map legend -->
   <div id="map-legend" role="complementary" aria-label="Map legend">
     <div class="leg-title">
