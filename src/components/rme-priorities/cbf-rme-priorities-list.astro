@@ -1,0 +1,194 @@
+---
+// cbf-rme-priorities-list — the "RM&E Priorities" reference list on the
+// Manage RM&E Priorities page: the small, mostly-static taxonomy of RM&E
+// Priority categories (checked directly against prod's ManageRme.mvc/ManageRme),
+// plus a "Create new" flow. A real <table> (not AG Grid) — this is a 6-row
+// reference list, not a sortable/filterable/searchable data surface; the
+// vendor-invoice document sheet's line-items table is this spoke's existing
+// precedent for a plain semantic table over a hand-rolled grid.
+//
+// bcn-lego-checked: the create flow is esa-dialog + esa-text-field + esa-button
+// (same pattern as cbf-crs-create-commitment-dialog, this component's closest
+// reference) — no reinvented modal/form control. Checked Beacon (no matching
+// small-taxonomy-list pattern). cbf-rme-priorities-list is the reusable home.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import { RME_PRIORITIES as defaultPriorities } from '../../data/rme-priorities.mjs';
+
+interface Props {
+  priorities?: typeof defaultPriorities;
+}
+
+const { priorities = defaultPriorities } = Astro.props;
+---
+<section class="cbf-rme-priorities-list stack" data-gap="md">
+  <header class="cbf-rme-priorities-list__header repel">
+    <span class="type-caption cbf-rme-priorities-list__count-label">
+      Viewing {priorities.length} of {priorities.length} RM&E priorities
+    </span>
+    <EsaButton color="primary" icon="plus" data-rme-priority-create-open>Create new RM&E Priority</EsaButton>
+  </header>
+
+  <div class="cbf-rme-priorities-list__table-wrap">
+    <table class="cbf-rme-priorities-list__table" data-rme-priorities-table>
+      <thead>
+        <tr>
+          <th scope="col">RME Priority ID</th>
+          <th scope="col">RME Priority Title</th>
+        </tr>
+      </thead>
+      <tbody>
+        {priorities.map((p) => (
+          <tr>
+            <td class="cbf-rme-priorities-list__id">{p.id}</td>
+            <td>{p.title}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  <esa-dialog heading="Create new RM&E Priority" show-close-button size="sm" data-rme-priority-create-dialog>
+    <form class="stack" data-gap="md" data-rme-priority-create-form>
+      <esa-text-field
+        label="RM&E Priority title"
+        placeholder="e.g. Estuary Habitat Effectiveness"
+        required
+        data-field="title"
+      ></esa-text-field>
+      <p class="type-caption cbf-rme-priorities-list__error" data-rme-priority-create-error hidden>
+        Enter a title to continue.
+      </p>
+    </form>
+
+    <div slot="footer">
+      <span data-rme-priority-create-cancel>
+        <EsaButton color="ghost" appearance="outline">Cancel</EsaButton>
+      </span>
+      <span data-rme-priority-create-submit>
+        <EsaButton color="primary" icon="plus">Create priority</EsaButton>
+      </span>
+    </div>
+  </esa-dialog>
+</section>
+
+<style>
+  .cbf-rme-priorities-list__header {
+    align-items: center;
+    gap: var(--spacing-400);
+    flex-wrap: wrap;
+  }
+  .cbf-rme-priorities-list__count-label {
+    color: var(--color-text-muted);
+  }
+
+  .cbf-rme-priorities-list__table-wrap {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    overflow: hidden;
+    background: var(--color-surface);
+  }
+
+  .cbf-rme-priorities-list__error {
+    color: var(--color-danger-strong);
+  }
+</style>
+
+<style is:global>
+  /* The "Create new" flow appends rows via createElement/innerHTML, so they
+     never carry Astro's per-component scope hash — every rule a JS-created
+     row needs (padding, borders, the id column's muted tabular styling) must
+     live here, global and prefixed by the root class, or a created row
+     silently loses all of it (matches the server-rendered rows' look). */
+  .cbf-rme-priorities-list__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 16px;
+  }
+  .cbf-rme-priorities-list__table th,
+  .cbf-rme-priorities-list__table td {
+    text-align: left;
+    padding: var(--spacing-300) var(--spacing-400);
+  }
+  .cbf-rme-priorities-list__table thead th {
+    background: var(--color-surface-sunken, transparent);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-semibold);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-rme-priorities-list__table tbody tr + tr td {
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+  }
+  .cbf-rme-priorities-list__id {
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-secondary);
+    width: 1%;
+    white-space: nowrap;
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-text-field';
+
+  function initPrioritiesList(root: HTMLElement) {
+    const table = root.querySelector<HTMLTableElement>('[data-rme-priorities-table]');
+    const tbody = table?.querySelector('tbody');
+    const countLabel = root.querySelector<HTMLElement>('.cbf-rme-priorities-list__count-label');
+    if (!table || !tbody) return;
+
+    let total = tbody.querySelectorAll('tr').length;
+
+    const openBtn = root.querySelector<HTMLElement>('[data-rme-priority-create-open]');
+    const dialog = root.querySelector<HTMLElement & { show: () => void; close: () => void }>('[data-rme-priority-create-dialog]');
+    const form = root.querySelector<HTMLFormElement>('[data-rme-priority-create-form]');
+    const cancelBtn = root.querySelector<HTMLElement>('[data-rme-priority-create-cancel]');
+    const submitBtn = root.querySelector<HTMLElement>('[data-rme-priority-create-submit]');
+    const errorEl = root.querySelector<HTMLElement & { hidden: boolean }>('[data-rme-priority-create-error]');
+    const titleField = form?.querySelector<HTMLElement & { value?: string }>('[data-field="title"]');
+
+    function resetForm(): void {
+      if (titleField) titleField.value = '';
+      if (errorEl) errorEl.hidden = true;
+    }
+
+    openBtn?.addEventListener('click', () => dialog?.show());
+    cancelBtn?.addEventListener('click', () => {
+      dialog?.close();
+      resetForm();
+    });
+
+    submitBtn?.addEventListener('click', () => {
+      const title = (titleField?.value ?? '').trim();
+      if (!title) {
+        if (errorEl) errorEl.hidden = false;
+        return;
+      }
+
+      const nextId = Array.from(tbody.querySelectorAll('.cbf-rme-priorities-list__id'))
+        .reduce((max, el) => Math.max(max, Number(el.textContent) || 0), 0) + 1;
+
+      const row = document.createElement('tr');
+      row.innerHTML = `<td class="cbf-rme-priorities-list__id">${nextId}</td><td></td>`;
+      (row.children[1] as HTMLElement).textContent = title;
+      tbody.appendChild(row);
+
+      total += 1;
+      if (countLabel) countLabel.textContent = `Viewing ${total} of ${total} RM&E priorities`;
+
+      const snackbar = document.querySelector<HTMLElement & { success?: (msg: string, cfg?: unknown) => void }>('[data-snackbar]');
+      snackbar?.success?.(`RM&E Priority ${nextId}: ${title} created.`, { duration: 5000 });
+
+      // cbf-project-rme-priorities-grid's bulk-edit dropdown is a sibling
+      // section reading the same taxonomy — notify it so a freshly created
+      // priority is selectable there without a page reload.
+      document.dispatchEvent(new CustomEvent('cbf-rme-priority-created', { detail: { id: nextId, title } }));
+
+      dialog?.close();
+      resetForm();
+    });
+  }
+
+  document
+    .querySelectorAll<HTMLElement>('.cbf-rme-priorities-list')
+    .forEach(initPrioritiesList);
+</script>

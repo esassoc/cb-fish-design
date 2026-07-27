@@ -1,0 +1,237 @@
+---
+// cbf-rme-contract-reports-grid — the "RM&E Contract Reports": a scannable,
+// searchable grid of every Contract requiring RM&E technical-report tracking
+// (Work Elements 156/157/158/162), checked directly against prod
+// (Contract.mvc/RmeContractReports). Prod ships this as TWO near-identical
+// pages differing only by a default Calendar Year filter — RmeContractReports
+// (filtered to the current year) and UnfilteredRmeContractReports (all
+// years). This spoke merges them into one grid with a clearable Calendar
+// Year filter instead of shipping two ~identical grids: "unfiltered" here is
+// simply clearing the filter back to "All years".
+//
+// Same AG Grid + search + filter + CSV-export + record-count-footer
+// conventions as the other RM&E/CRS grids (cbf-rme-work-elements-grid is its
+// closest reference). Field-for-field with prod's real 21-column grid; the
+// "Report" quick-view icon and "Document Link" column are both real prod
+// columns — Report renders a download action (this prototype has no real
+// documents, so it generates a placeholder PDF, same technique
+// cbf-vendor-dashboard-invoices.astro's invoice attachments use) and
+// Document Link shows the filename that action downloads.
+//
+// bcn-lego-checked: ecology has NO table/grid/data-grid lego (checked the
+// full node_modules/@esa/ecology/src/components catalog) and Beacon is not
+// on this machine. AG Grid Community is this spoke's established tabular
+// surface; this bcn- component is its reusable home. Every other control is
+// a lego: cbf-search-field for search, esa-select for the Calendar Year
+// filter, esa-icon-button for the report download action and the CSV
+// download.
+import CbfSearchField from '../search/cbf-search-field.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import '../shared/cbf-data-grid-chrome.css';
+import {
+  rmeContractReports as defaultRows,
+  CALENDAR_YEARS,
+} from '../../data/rme-contract-reports.mjs';
+
+interface Props {
+  rows?: typeof defaultRows;
+}
+
+const { rows = defaultRows } = Astro.props;
+
+// "All years" first (the "Unfiltered" prod page's equivalent), then each
+// year present in the data, newest first.
+const yearOptions = [
+  { value: '', label: 'All years' },
+  ...CALENDAR_YEARS.map((y) => ({ value: String(y), label: String(y) })),
+];
+---
+<section class="cbf-rme-contract-reports stack" data-gap="md">
+  <header class="cbf-data-grid__header repel">
+    <span class="type-caption cbf-data-grid__count-label">All contract reports</span>
+  </header>
+
+  <div class="cbf-data-grid__controls repel">
+    <div class="cbf-data-grid__filters cluster" data-gap="lg">
+      <label class="cbf-data-grid__filter">
+        <span class="type-caption">Calendar year</span>
+        <esa-select
+          data-rme-year-filter
+          size="sm"
+          placeholder="All years"
+          value=""
+          options={JSON.stringify(yearOptions)}
+        ></esa-select>
+      </label>
+    </div>
+    <div class="cbf-data-grid__search">
+      <CbfSearchField
+        placeholder="Search project, contract, or contractor…"
+        iconSize={18}
+        data-rme-contract-search
+        aria-label="Search contract reports"
+      />
+    </div>
+  </div>
+
+  <!-- AG Grid mounts here. autoHeight grows with rows so the page (not an inner
+       pane) owns vertical scroll; the wrapper owns the framed surface. -->
+  <div class="cbf-data-grid__grid" data-rme-contract-grid></div>
+
+  <footer class="cbf-data-grid__footer repel">
+    <span class="type-caption" data-rme-contract-count>
+      Showing {rows.length} of {rows.length} contract reports
+    </span>
+    <EsaIconButton icon="download" label="Download CSV" size="sm" data-rme-contract-csv />
+  </footer>
+
+  <!-- Row data, serialized so the client module (which imports ag-grid-community)
+       hydrates without a second fetch. -->
+  <script type="application/json" data-rme-contract-data set:html={JSON.stringify(rows)}></script>
+
+  <!-- The real esa-icon-button lego, server-rendered once with the design-
+       system scope hash intact. The grid's "Report" cell renderer clones this
+       markup (never hand-rolled) for every row that has a document. -->
+  <div class="cbf-rme-contract-reports__templates" data-report-btn-template hidden aria-hidden="true">
+    <EsaIconButton icon="download" label="Download report" size="sm" />
+  </div>
+</section>
+
+<script>
+  import '@esa/ecology/esa-select';
+  import { gridDateFormatter as dateFmt, asGridDate as asDate, wireDataGrid } from '../shared/grid-chrome';
+  import { downloadPlaceholderPdf } from '../../lib/placeholder-pdf';
+  import type { ColDef } from 'ag-grid-community';
+
+  type ContractReport = {
+    hasReport: boolean; projectNumber: string; projectTitle: string;
+    contractNumber: string; contractContractor: string; workElements: string;
+    we132Id: number; calendarYear: number;
+    plannedMetricStart: string; plannedMetricEnd: string;
+    wseStart: string; wseEnd: string;
+    weOriginalDueDate?: string; weCompletionDate?: string;
+    reportUploadDate?: string; reportPeriodStart?: string; reportPeriodEnd?: string;
+    coveredContracts?: string; reportType?: string; documentFileName?: string;
+    projectSme: string; rmePriorityId: number; rmePriorityTitle: string;
+  };
+
+  const naFmt = (p: { value: unknown }) => (p.value == null || p.value === '' ? 'n/a' : String(p.value));
+
+  function initContractReports(root: HTMLElement) {
+    const yearFilter = root.querySelector<HTMLElement & { value: string }>('[data-rme-year-filter]');
+
+    // Pre-cloned real esa-icon-button markup (server-rendered with the design-
+    // system scope hash) so the Report column reuses the lego verbatim.
+    const reportBtnHTML = root.querySelector('[data-report-btn-template]')?.innerHTML ?? '';
+
+    // External (esa-select-driven) filter — kept out of the column filter UI
+    // so the select stays the single control surface.
+    let yearValue = '';
+
+    const dateCol = (headerName: string, field: keyof ContractReport, minWidth = 130): ColDef => ({
+      headerName, field, colId: field, minWidth,
+      cellDataType: 'date',
+      valueGetter: (p) => asDate((p.data as ContractReport | undefined)?.[field] as string | undefined),
+      valueFormatter: (p) => (p.value instanceof Date ? dateFmt.format(p.value) : 'n/a'),
+    });
+
+    const handle = wireDataGrid<ContractReport>({
+      root,
+      gridSelector: '[data-rme-contract-grid]',
+      dataSelector: '[data-rme-contract-data]',
+      searchSelector: '[data-rme-contract-search]',
+      countSelector: '[data-rme-contract-count]',
+      csvSelector: '[data-rme-contract-csv]',
+      countNoun: 'contract reports',
+      csvFileName: 'rme-contract-reports.csv',
+      suppressCellFocus: true,
+      columnDefs: [
+        {
+          headerName: 'Report', colId: 'report', minWidth: 90, sortable: false, filter: false,
+          cellRenderer: (p: { data: ContractReport }) => {
+            if (!p.data.hasReport || !p.data.documentFileName) return '<span class="cbf-rme-contract-reports__na">n/a</span>';
+            const span = document.createElement('span');
+            span.className = 'cbf-rme-contract-reports__report-cell';
+            span.dataset.file = p.data.documentFileName;
+            span.dataset.reportType = p.data.reportType ?? '';
+            span.innerHTML = reportBtnHTML;
+            return span;
+          },
+        },
+        {
+          headerName: 'Project Number', field: 'projectNumber', colId: 'projectNumber', minWidth: 140,
+          getQuickFilterText: (p) => p.data?.projectNumber ?? '',
+        },
+        {
+          headerName: 'Project Title', field: 'projectTitle', colId: 'projectTitle', flex: 2, minWidth: 260,
+          getQuickFilterText: (p) => p.data?.projectTitle ?? '',
+        },
+        {
+          headerName: 'Contract Number', field: 'contractNumber', colId: 'contractNumber', minWidth: 150,
+          getQuickFilterText: (p) => p.data?.contractNumber ?? '',
+        },
+        {
+          headerName: 'Contract Contractor', field: 'contractContractor', colId: 'contractContractor', minWidth: 240,
+          getQuickFilterText: (p) => p.data?.contractContractor ?? '',
+        },
+        { headerName: 'Work Elements', field: 'workElements', colId: 'workElements', minWidth: 130 },
+        { headerName: 'WE 132', field: 'we132Id', colId: 'we132Id', minWidth: 100 },
+        dateCol('Planned Metric Start Date', 'plannedMetricStart'),
+        dateCol('Planned Metric End Date', 'plannedMetricEnd'),
+        dateCol('WSE Start Date', 'wseStart'),
+        dateCol('WSE End Date', 'wseEnd'),
+        dateCol('WE Original Deliverable Due Date', 'weOriginalDueDate', 170),
+        dateCol('WE Deliverable Completion Date', 'weCompletionDate', 170),
+        dateCol('Report Upload Date', 'reportUploadDate'),
+        dateCol('Report Period Start', 'reportPeriodStart'),
+        dateCol('Report Period End', 'reportPeriodEnd'),
+        { headerName: 'Covered Contracts', field: 'coveredContracts', colId: 'coveredContracts', minWidth: 170, valueFormatter: naFmt },
+        { headerName: 'Report Type', field: 'reportType', colId: 'reportType', minWidth: 190, valueFormatter: naFmt },
+        { headerName: 'Document Link', field: 'documentFileName', colId: 'documentFileName', minWidth: 260, valueFormatter: naFmt },
+        { headerName: 'Project SME', field: 'projectSme', colId: 'projectSme', minWidth: 150 },
+        { headerName: 'RME Priority ID List', field: 'rmePriorityId', colId: 'rmePriorityId', minWidth: 150 },
+        { headerName: 'RME Priority Title List', field: 'rmePriorityTitle', colId: 'rmePriorityTitle', minWidth: 260 },
+      ],
+      gridOptions: {
+        isExternalFilterPresent: () => yearValue !== '',
+        doesExternalFilterPass: (node) => yearValue === '' || String(node.data?.calendarYear) === yearValue,
+      },
+    });
+    if (!handle) return;
+    const { gridApi } = handle;
+
+    // Report column: delegate the click to the generated span (no per-row
+    // listeners — one delegated listener on the grid host, same pattern as
+    // the CRS dashboard's Edit Status Mode toggle cells).
+    root.querySelector('[data-rme-contract-grid]')?.addEventListener('click', (e) => {
+      const cell = (e.target as HTMLElement).closest<HTMLElement>('.cbf-rme-contract-reports__report-cell');
+      if (!cell?.dataset.file) return;
+      downloadPlaceholderPdf(cell.dataset.file, `${cell.dataset.reportType || 'RM&E report'} for ${cell.dataset.file}`);
+    });
+
+    // Calendar year select -> external filter.
+    yearFilter?.addEventListener('change', () => {
+      yearValue = yearFilter.value ?? '';
+      gridApi.onFilterChanged();
+    });
+  }
+
+  document
+    .querySelectorAll<HTMLElement>('.cbf-rme-contract-reports')
+    .forEach(initContractReports);
+</script>
+
+<style is:global>
+  /* JS-created cells (the Report column's download icon and the "n/a" dash)
+     carry no Astro scope hash, so their styling is global, prefixed by the
+     component's own root class. */
+  .cbf-rme-contract-reports .cbf-rme-contract-reports__na {
+    color: var(--color-text-muted);
+  }
+  /* The cloned esa-icon-button owns its own box; just center it in the cell. */
+  .cbf-rme-contract-reports .cbf-rme-contract-reports__report-cell {
+    display: inline-flex;
+    align-items: center;
+    height: 100%;
+  }
+</style>

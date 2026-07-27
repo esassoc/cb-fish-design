@@ -106,10 +106,10 @@ export const prototypes: Prototype[] = [
   },
   {
     slug: 'rme-work-elements',
-    title: 'RM&E Work Elements Report',
+    title: 'RM&E landing page',
     description:
-      'Every Work Statement Element carrying RM&E work, field-for-field with the legacy report, with a new twist: Primary/Secondary RM&E Type and Focal Area are editable right in the grid instead of a multi-click path to a separate metrics tab.',
-    route: '/rme-work-elements',
+      "The landing page for the RM&E Reporting area — what BPA's research, monitoring, and evaluation work is and why it exists, then a sub-nav into the reporting views underneath it.",
+    route: '/rme-reporting',
     createdAt: '2026-07-23',
     status: 'in-progress',
   },

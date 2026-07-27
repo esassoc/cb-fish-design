@@ -1,0 +1,57 @@
+---
+// /rme-contract-reports — the "RM&E Contract Reports" report. A modernized
+// port of the legacy CBFish RM&E Contract Reports pages
+// (Contract.mvc/RmeContractReports + Contract.mvc/UnfilteredRmeContractReports),
+// checked directly against prod. Lets a Program RM&E SME see every Contract
+// carrying RM&E technical-report tracking work, whether its report has been
+// uploaded yet, and download it. Merges prod's two near-identical pages
+// (filtered vs. unfiltered by Calendar Year) into one grid with a clearable
+// year filter — see the grid component's header note.
+// Thin assembler: chrome from cbf-* shared components, content from the grid.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
+import CbfPageHeading from '../components/shared/cbf-page-heading.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import CbfReportTabs from '../components/shared/cbf-report-tabs.astro';
+import CbfRmeContractReportsGrid from '../components/rme-contract-reports/cbf-rme-contract-reports-grid.astro';
+import { rmeReportingTabs } from '../components/shared/rme-reporting-tabs';
+import { withBase } from '../lib/base';
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+
+const crumbs = [
+  { label: 'Home', href: withBase('/home'), icon: homeIcon },
+  { label: 'Reporting' },
+  { label: 'RM&E Reporting', href: withBase('/rme-reporting') },
+  { label: 'Contract Reports' },
+];
+---
+<!-- manifest:
+  layout: esa-container > cbf-app-panel
+  sections:
+    - top nav      -> cbf-public-nav
+    - page frame   -> esa-container
+    - page heading -> cbf-page-heading
+    - sub-nav tabs -> cbf-report-tabs
+    - grid         -> cbf-rme-contract-reports-grid
+-->
+<BaseLayout title="RM&amp;E Contract Reports — Columbia Basin Fish &amp; Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <CbfAppPanel crumbs={crumbs}>
+        <CbfPageHeading title="RM&E Contract Reports" />
+        <CbfReportTabs tabs={rmeReportingTabs('contract-reports')} ariaLabel="RM&E reporting sections" />
+        <CbfRmeContractReportsGrid />
+      </CbfAppPanel>
+    </EsaContainer>
+  </main>
+</BaseLayout>
+
+<style>
+  /* page-level outer rhythm only — every section is a component (manifest above) */
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+</style>
