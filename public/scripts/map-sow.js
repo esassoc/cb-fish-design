@@ -260,11 +260,14 @@ window.onload = function() {
       Object.keys(overlays).forEach(function(name) {
         var row = document.createElement('label'); row.className='layer-row';
         var cb = document.createElement('input'); cb.type='checkbox';
-        var slider = document.createElement('input'); slider.type='range'; slider.className='layer-opacity';
-        slider.min='0'; slider.max='1'; slider.step='0.05'; slider.value=String(overlays[name].options.opacity||0.7);
+        var slider = document.createElement('esa-range-slider');
+        slider.className = 'layer-opacity-slider';
+        slider.setAttribute('min', '0'); slider.setAttribute('max', '100'); slider.setAttribute('step', '5');
+        slider.setAttribute('size', 'sm');
+        slider.value = Math.round((overlays[name].options.opacity || 0.7) * 100);
         slider.style.display='none';
         if (name === 'NHD Streams') { cb.checked = true; slider.style.display='block'; }
-        slider.oninput = function(){ overlays[name].setOpacity(parseFloat(slider.value)); };
+        slider.addEventListener('change', function(e){ overlays[name].setOpacity(e.detail.value / 100); });
         cb.onchange = function() {
           if(cb.checked){ overlays[name].addTo(map); slider.style.display='block'; } else { map.removeLayer(overlays[name]); slider.style.display='none'; }
         };
@@ -4374,18 +4377,15 @@ function renderRefImageSection() {
   row.appendChild(nameSpan);
   wrap.appendChild(row);
 
-  var opRow = document.createElement('div');
-  opRow.className = 'ref-img-opacity-row';
   var opSlider = document.createElement('esa-range-slider');
+  opSlider.className = 'layer-opacity-slider';
   opSlider.setAttribute('min', '0');
   opSlider.setAttribute('max', '100');
   opSlider.setAttribute('step', '5');
   opSlider.setAttribute('size', 'sm');
-  opSlider.setAttribute('label', 'Opacity');
   opSlider.value = Math.round(refImage.opacity * 100);
   opSlider.addEventListener('change', function(e) { setRefImageOpacity(e.detail.value / 100); });
-  opRow.appendChild(opSlider);
-  wrap.appendChild(opRow);
+  wrap.appendChild(opSlider);
 
   var actions = document.createElement('div');
   actions.className = 'ref-img-actions-row';

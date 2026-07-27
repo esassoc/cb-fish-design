@@ -309,7 +309,13 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
 .layer-section-title { font-size: 10px; font-weight: var(--font-weight-bold); color: var(--color-text-inverse, #fff); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
 .layer-row { display: flex; align-items: center; gap: 6px; font-size: 11px; color: rgba(255,255,255,0.75); cursor: pointer; padding: 2px 0; user-select: none; }
 .layer-row input[type=radio], .layer-row input[type=checkbox] { accent-color: var(--cbf-blue-500); cursor: pointer; }
-.layer-opacity { width: 100%; margin: 2px 0 5px; accent-color: var(--cbf-blue-500); cursor: pointer; }
+.layer-opacity-slider {
+  display: block;
+  width: 100%;
+  margin: 2px 0 8px;
+  --color-text-primary: rgba(255,255,255,0.85);
+  --color-border: rgba(255,255,255,0.25);
+}
 
 /* ── Reference image layer — upload + reposition controls in the Layers panel ── */
 #ref-image-section esa-file-upload {
@@ -328,11 +334,6 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-.ref-img-opacity-row {
-  margin-bottom: 8px;
-  --color-text-primary: rgba(255,255,255,0.85);
-  --color-border: rgba(255,255,255,0.25);
 }
 .ref-img-actions-row { display: flex; gap: 6px; }
 .ref-img-action-btn {
