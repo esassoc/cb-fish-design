@@ -4802,7 +4802,7 @@ function startCHUPoolDraw() {
   initCHUUnits(we);
   chuPoolMode = true; chuPoolPhase = 1; chuPendingPoolUpId = null; chuPendingPoolDownId = null;
   startCHUSplit();
-  setMapHint('Draw the <b>upstream boundary</b> of the pool — click across the channel');
+  setMapHint('Draw the <b>first boundary</b> of the pool — click across the channel');
 }
 
 function startCHUSplit() {
@@ -5072,7 +5072,7 @@ function commitCHUSplit(we, line) {
       // Stay in drawing mode for second boundary
       chuDrawing = true; chuDrawPts = [];
       document.getElementById('mapwrap').classList.add('drawing');
-      setMapHint('Now draw the <b>other end</b> of the pool — click across the channel');
+      setMapHint('Now draw the <b>second boundary</b> of the pool — click across the channel');
       renderCHUUnits(we); wizardRefreshIfActive();
       return;
     } else if (chuPoolPhase === 2) {
@@ -8491,7 +8491,7 @@ function wizardStepBody(we, step, idx) {
     }
 
     case 'chu_split': {
-      h += '<div class="wz-step-desc">Draw the upstream and downstream boundaries of each pool. Everything outside a pool boundary is treated as riffle.</div>';
+      h += '<div class="wz-step-desc">Draw two boundaries for each pool — in either order, wherever the pool starts and ends. Everything outside a pool boundary is treated as riffle.</div>';
       var chuSplitReady = we && getCHUChannelPts(we);
       if (!chuSplitReady) {
         h += '<div class="wz-status warning">&#9888; Draw the primary channel and enter a width first (steps 8 &amp; 9) to generate the channel area.</div>';
@@ -8500,9 +8500,9 @@ function wizardStepBody(we, step, idx) {
         var pools = units.filter(function(u){return u.type==='pool';});
         var inPoolDraw = chuPoolMode;
         if (inPoolDraw && chuPoolPhase === 1) {
-          h += '<div class="wz-status pending">&#9654; Draw the <b>upstream boundary</b> of the pool on the map…</div>';
+          h += '<div class="wz-status pending">&#9654; Draw the <b>first boundary</b> of the pool on the map…</div>';
         } else if (inPoolDraw && chuPoolPhase === 2) {
-          h += '<div class="wz-status pending">&#9654; Draw the <b>downstream boundary</b> of the pool on the map…</div>';
+          h += '<div class="wz-status pending">&#9654; Draw the <b>second boundary</b> of the pool on the map…</div>';
         } else {
           h += '<button class="wz-action-btn" onclick="showInnerTab(\'work\');startCHUPoolDraw()">&#43; Add Pool</button>';
         }
