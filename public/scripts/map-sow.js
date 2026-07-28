@@ -1962,6 +1962,10 @@ function commitFpSide(we, id, poly, side) {
   if (!we.ppData[finalId]) we.ppData[finalId] = {};
   var d = we.ppData[finalId];
   if (d.layer) map.removeLayer(d.layer);
+  // applyFpSide() (the auto-split path) stashes a colored label pin here — a manual
+  // (re)draw of this side via the wizard's Redraw button only replaced d.layer,
+  // leaving the auto-split's old label pin stranded on the map.
+  if (d.labelMarker) { map.removeLayer(d.labelMarker); d.labelMarker = null; }
   d.layer = L.polygon(poly, {color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true})
     .bindTooltip(label).addTo(map);
   d.valueM = geoAreaM2(poly);
@@ -4445,6 +4449,20 @@ function cancelLineEdit() {
     var m=PP_DEFS.filter(function(x){return x.id===wasEditing.id;})[0];
     if(m) renderPMRow(m);
   }
+  // startLineEdit() hides reach_len/pc-reach's flow arrows (setOpacity(0)) so they
+  // don't clutter the vertex-drag view. commitLineEdit() restores them by rebuilding
+  // via addReachArrow()/addPCReachArrow() for reach_len/pc-reach \u2014 but a true cancel
+  // (no geometry change to rebuild from) never did, leaving the arrows invisible
+  // until the next zoom silently re-fanned them via refreshAllFlowArrows().
+  if (wasEditing && wasEditing.id === 'reach_len') {
+    var _rd = getWE(wasEditing.weId) && getWE(wasEditing.weId).ppData['reach_len'];
+    if (_rd && _rd._arrowMarkers) _rd._arrowMarkers.forEach(function(a){ if(a) a.setOpacity(1); });
+  }
+  if (wasEditing && wasEditing.id === 'pc-reach') {
+    var _weR = getWE(wasEditing.weId);
+    var _slR = _weR && getActivePC(_weR).sowLayers['pc-reach'];
+    if (_slR && _slR._arrowMarkers) _slR._arrowMarkers.forEach(function(a){ if(a) a.setOpacity(1); });
+  }
 }
 
 function commitLineEdit() {
@@ -6206,6 +6224,11 @@ function reachExtendClick(latlng) {
       map.removeLayer(reachD.layer);
       reachD.layer = L.polyline(combinedPts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
       reachD.valueM = geoLen(combinedPts);
+      // Every other reach-replacing path (commitLineEdit, finishPPDraw, acceptAutoReach)
+      // re-fans flow arrows after changing the geometry — this one didn't, so the
+      // arrows stayed at their pre-extension positions until the next zoom silently
+      // rebuilt them via refreshAllFlowArrows().
+      addReachArrow(we);
       cancelReachExtend();
       var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
       renderPMRow(m); rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
