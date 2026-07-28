@@ -2476,6 +2476,11 @@ function finishActiveDraw() {
   else if (sowDrawing)  { finishSOWDraw(); }
   else if (chuDrawing)  { commitCHUSplit(); }
   else if (crDrawing)   { finishCRDraw(); }
+  // The reach pre-trim "extend" step (Step 2) shows the generic #draw-done-btn pill
+  // via the same .drawing class as everything above, but had no case here — clicking
+  // it silently did nothing, and "Pick endpoints" in the sidebar was the only working
+  // way out. Route Done to the same place Pick endpoints goes.
+  else if (preReachExtend) { proceedToTrim(); }
 }
 
 function finishPPDraw() {
@@ -8879,16 +8884,16 @@ function wizardAddPrimaryChannel() {
 // Whether the user has a drawing/edit in progress that wizardAutoActivate()'s
 // cancelAllDrawModes() would silently throw away on a step change: a manual
 // polygon/line with vertices already placed, a CHU split or pool-split flow,
-// vertex-editing on an existing shape, an in-flight reach auto-detect/
-// extend/trim, or actively repositioning the reference image. Armed-but-not-
-// yet-placed states (pendingStructPoint, pendingGravelPoint) aren't included —
-// nothing has been drawn yet to lose.
+// vertex-editing on an existing shape, an in-flight reach auto-detect/extend/
+// trim/pre-trim-extend, or actively repositioning the reference image. Armed-
+// but-not-yet-placed states (pendingStructPoint, pendingGravelPoint) aren't
+// included — nothing has been drawn yet to lose.
 function hasInProgressDraw() {
   return drawPts.length > 0 ||
          (chuDrawing && chuDrawPts.length > 0) ||
          !!chuPoolMode ||
          !!lineEditing ||
-         !!reachAutoDetecting || !!reachExtending || !!reachTrimming ||
+         !!reachAutoDetecting || !!reachExtending || !!reachTrimming || !!preReachExtend ||
          !!refImagePositioning;
 }
 
