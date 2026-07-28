@@ -8876,7 +8876,32 @@ function wizardAddPrimaryChannel() {
   wizardAutoActivate();
 }
 
+// Whether the user has a drawing/edit in progress that wizardAutoActivate()'s
+// cancelAllDrawModes() would silently throw away on a step change: a manual
+// polygon/line with vertices already placed, a CHU split or pool-split flow,
+// vertex-editing on an existing shape, or an in-flight reach auto-detect/
+// extend/trim. Armed-but-not-yet-placed states (pendingStructPoint,
+// pendingGravelPoint) aren't included — nothing has been drawn yet to lose.
+function hasInProgressDraw() {
+  return drawPts.length > 0 ||
+         (chuDrawing && chuDrawPts.length > 0) ||
+         !!chuPoolMode ||
+         !!lineEditing ||
+         !!reachAutoDetecting || !!reachExtending || !!reachTrimming;
+}
+
+// Users reported getting "stuck" while drawing — root cause traced to leaving
+// a step mid-draw (clicking Back/Next/a stepper item) with no warning that the
+// in-progress shape was about to vanish (cancelAllDrawModes() discards it
+// silently). Gate the four navigation entry points so leaving with real
+// progress on the map requires confirming instead of losing work by surprise.
+function confirmLeaveDrawInProgress() {
+  if (!hasInProgressDraw()) return true;
+  return confirm('You have an unfinished drawing on this step. Leaving now will discard it — continue?');
+}
+
 function wizardNext() {
+  if (!confirmLeaveDrawInProgress()) return;
   wzOpenSection = null;
   var vis = getVisibleSteps();
   if (wizardStep < vis.length - 1) {
@@ -8888,11 +8913,13 @@ function wizardNext() {
 }
 
 function wizardBack() {
+  if (!confirmLeaveDrawInProgress()) return;
   wzOpenSection = null;
   if (wizardStep > 0) { wizardStep--; syncActivePCForStep(wizardStep); renderWizardStep(); wizardAutoActivate(); }
 }
 
 function wizardGoToStep(idx) {
+  if (!confirmLeaveDrawInProgress()) return;
   wzOpenSection = null;
   var vis = getVisibleSteps();
   if (idx < 0 || idx >= vis.length) return;
@@ -8903,6 +8930,7 @@ function wizardGoToStep(idx) {
 }
 
 function wizardSkip() {
+  if (!confirmLeaveDrawInProgress()) return;
   wzOpenSection = null;
   var vis = getVisibleSteps();
   if (wizardStep < vis.length - 1) { wizardStep++; syncActivePCForStep(wizardStep); renderWizardStep(); wizardAutoActivate(); }
