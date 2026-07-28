@@ -422,6 +422,19 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
 #map { width: 100%; height: 100%; user-select: none; -webkit-user-select: none; }
 .drawing #map { cursor: crosshair; }
 
+/* While actively drawing, dim everything but the map itself (toolbar, breadcrumb,
+   stepper, step panel) as a visual cue to finish the shape before navigating away —
+   the confirmLeaveDrawInProgress() guard is the functional backstop; this is just the
+   glanceable signal. Still fully interactive (opacity only), so Back/Next etc. keep
+   working and hit that guard rather than being hard-blocked here. */
+.msow-card:has(#mapwrap.drawing) .msow-crumb-strip,
+.msow-card:has(#mapwrap.drawing) .msow-toolbar,
+.msow-card:has(#mapwrap.drawing) #wizard-panel,
+.msow-card:has(#mapwrap.drawing) #sidebar {
+  opacity: 0.4;
+  transition: opacity 200ms ease;
+}
+
 /* Done Drawing button — hidden until drawing mode is active */
 #draw-done-btn {
   display: none;
