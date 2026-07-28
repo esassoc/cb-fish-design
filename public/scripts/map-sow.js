@@ -8887,16 +8887,23 @@ function wizardAddPrimaryChannel() {
 }
 
 // Whether the user has a drawing/edit in progress that wizardAutoActivate()'s
-// cancelAllDrawModes() would silently throw away on a step change: a manual
-// polygon/line with vertices already placed, a CHU split or pool-split flow,
-// vertex-editing on an existing shape, an in-flight reach auto-detect/extend/
-// trim/pre-trim-extend, or actively repositioning the reference image. Armed-
-// but-not-yet-placed states (pendingStructPoint, pendingGravelPoint) aren't
-// included — nothing has been drawn yet to lose.
+// cancelAllDrawModes() would silently throw away on a step change: an active
+// manual polygon/line/cross-section/CHU-split draw mode, a CHU pool-split
+// flow, vertex-editing on an existing shape, an in-flight reach auto-detect/
+// extend/trim/pre-trim-extend, or actively repositioning the reference image.
+//
+// This checks the mode flags directly (ppDrawing/sowDrawing/crDrawing/
+// chuDrawing) rather than "has a vertex actually been placed yet"
+// (drawPts.length > 0) — the same moment these flags go true is the moment
+// #mapwrap gets .drawing and the screen dims, so the guard needs to cover
+// that instant too, not just once a click has landed on the map. This also
+// matters because wizardRedraw() calls clearPPGeom() — which deletes the
+// existing shape immediately — before arming a fresh draw with zero points
+// placed; leaving in that exact window used to lose the old shape with no
+// warning at all, dimmed screen notwithstanding.
 function hasInProgressDraw() {
-  return drawPts.length > 0 ||
-         (chuDrawing && chuDrawPts.length > 0) ||
-         !!chuPoolMode ||
+  return !!ppDrawing || !!sowDrawing || !!crDrawing ||
+         !!chuDrawing || !!chuPoolMode ||
          !!lineEditing ||
          !!reachAutoDetecting || !!reachExtending || !!reachTrimming || !!preReachExtend ||
          !!refImagePositioning;
