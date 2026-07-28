@@ -4431,41 +4431,21 @@ function renderRefImageSection() {
   wrap.appendChild(actions);
 }
 
+// A vertex drag mutates the layer's geometry live \u2014 by the time editing ends there's
+// no snapshot left to revert to, so "cancel" was never a real revert (see commit
+// 8e7e49f). cancelLineEdit() is now a thin wrapper around commitLineEdit(): same
+// teardown, same value/arrow/dependent recalculation, everywhere \u2014 one definition of
+// "an edit ended," instead of two, so the value-sync fix that motivated this doesn't
+// have to be re-applied at each of this function's ~10 other call sites individually.
+// The one thing a true cancel should NOT do is confirmReachChange()'s reach_len
+// dependents gate: that can pop a second confirm dialog and, if declined, re-enter
+// edit mode \u2014 surprising when the user already asked to leave/abort. skipReachConfirm
+// suppresses just that one step; the value still gets synced either way.
 function cancelLineEdit() {
-  var wasEditing = lineEditing;
-  if (panShapeActive) {
-    panShapeActive = false;
-    var btn = document.getElementById('pan-shape-btn');
-    if (btn) { btn.style.background = '#1a3a5c'; btn.textContent = '\u21d5 Pan shape'; }
-    document.getElementById('map').removeEventListener('mousedown', _panShapeMapMousedown);
-    document.getElementById('mapwrap').classList.remove('drawing');
-  }
-  clearEditHandles();
-  map.dragging.enable();
-  lineEditing = null;
-  document.getElementById('edit-done-bar').style.display = 'none'; document.getElementById('mapwrap').classList.remove('editing'); var _ddb=document.getElementById('draw-done-btn'); if(_ddb) _ddb.style.display = '';
-  // Re-render the row that was showing "editing\u2026" so it returns to its normal state
-  if(wasEditing && (wasEditing.type==='pp'||wasEditing.type==='pp-poly')) {
-    var m=PP_DEFS.filter(function(x){return x.id===wasEditing.id;})[0];
-    if(m) renderPMRow(m);
-  }
-  // startLineEdit() hides reach_len/pc-reach's flow arrows (setOpacity(0)) so they
-  // don't clutter the vertex-drag view. commitLineEdit() restores them by rebuilding
-  // via addReachArrow()/addPCReachArrow() for reach_len/pc-reach \u2014 but a true cancel
-  // (no geometry change to rebuild from) never did, leaving the arrows invisible
-  // until the next zoom silently re-fanned them via refreshAllFlowArrows().
-  if (wasEditing && wasEditing.id === 'reach_len') {
-    var _rd = getWE(wasEditing.weId) && getWE(wasEditing.weId).ppData['reach_len'];
-    if (_rd && _rd._arrowMarkers) _rd._arrowMarkers.forEach(function(a){ if(a) a.setOpacity(1); });
-  }
-  if (wasEditing && wasEditing.id === 'pc-reach') {
-    var _weR = getWE(wasEditing.weId);
-    var _slR = _weR && getActivePC(_weR).sowLayers['pc-reach'];
-    if (_slR && _slR._arrowMarkers) _slR._arrowMarkers.forEach(function(a){ if(a) a.setOpacity(1); });
-  }
+  commitLineEdit(true);
 }
 
-function commitLineEdit() {
+function commitLineEdit(skipReachConfirm) {
   if (!lineEditing) return;
   if (panShapeActive) {
     panShapeActive = false;
@@ -4496,7 +4476,7 @@ function commitLineEdit() {
   lineEditing = null;
   document.getElementById('edit-done-bar').style.display = 'none'; document.getElementById('mapwrap').classList.remove('editing'); var _ddb=document.getElementById('draw-done-btn'); if(_ddb) _ddb.style.display = '';
   if (type === 'pp') {
-    if (id === 'reach_len' && !confirmReachChange(we)) {
+    if (id === 'reach_len' && !skipReachConfirm && !confirmReachChange(we)) {
       startLineEdit('pp', id); return;
     }
     // fp_left / fp_right are polygons — store area not line length
@@ -8945,7 +8925,7 @@ function hasInProgressDraw() {
 // lineEditing and refImagePositioning are a different case from the rest: both
 // live-mutate the actual geometry/bounds as you drag, so there's nothing left
 // for leaving to "discard" — it just locks in whatever is currently shown
-// (commitLineEdit() / finishRefImagePositioning() above). Every other state
+// (cancelLineEdit() / finishRefImagePositioning() above). Every other state
 // here (a fresh manual draw, an unconfirmed auto-detect/extend/trim step, a
 // staged-but-unconfirmed reach append) really does lose real work on leaving,
 // since cancelAllDrawModes() removes the preview/candidate rather than saving
@@ -9009,13 +8989,11 @@ function cancelAllDrawModes(exceptStepId) {
   pendingGravelPoint = null;
   if (chuDrawing) cancelCHUSplit();
   if (chuPoolMode) { chuPoolMode = false; chuPoolPhase = 0; chuPendingPoolUpId = null; chuPendingPoolDownId = null; }
-  // commitLineEdit(), not cancelLineEdit(): vertex drags mutate the layer's geometry
-  // live as you drag, so by the time lineEditing is truthy there's nothing left for
-  // "cancel" to revert — cancelLineEdit() just stops the editing UI and leaves the
-  // dragged shape in place without recalculating its stored valueM, silently
-  // desyncing the displayed/exported number from the shape actually on the map.
-  // Committing here keeps them in sync, matching what "Done editing" already does.
-  if (lineEditing) commitLineEdit();
+  // cancelLineEdit() now delegates to commitLineEdit(true) itself, so this keeps the
+  // displayed/exported value in sync with the shape's actual dragged geometry (see
+  // commit 8e7e49f) without the risk of a second confirm-and-possibly-reenter-edit-mode
+  // detour for reach_len — this is a step change the user already agreed to leave.
+  if (lineEditing) cancelLineEdit();
   if (refImagePositioning) finishRefImagePositioning();
   if (exceptStepId !== 'reach') {
     if (reachAutoDetecting) cancelReachAutoDetect();
