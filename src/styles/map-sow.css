@@ -329,6 +329,9 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
   --color-text-muted: rgba(255,255,255,0.6);
   --color-text-primary: rgba(255,255,255,0.9);
   --color-surface-sunken: rgba(255,255,255,0.08);
+  /* the "browse" link color defaults to --color-primary, which on this dark panel is the
+     same token as the panel's own background — swap in the dark-bg accent so it's readable */
+  --color-primary: var(--cbf-blue-500);
 }
 .ref-img-row { padding-bottom: 6px; }
 .ref-img-filename {
