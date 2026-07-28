@@ -422,15 +422,24 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
 #map { width: 100%; height: 100%; user-select: none; -webkit-user-select: none; }
 .drawing #map { cursor: crosshair; }
 
-/* While actively drawing, dim everything but the map itself (toolbar, breadcrumb,
-   stepper, step panel) as a visual cue to finish the shape before navigating away —
-   the confirmLeaveDrawInProgress() guard is the functional backstop; this is just the
-   glanceable signal. Still fully interactive (opacity only), so Back/Next etc. keep
-   working and hit that guard rather than being hard-blocked here. */
+/* While actively drawing OR repositioning the reference image, dim everything but the
+   map itself (toolbar, breadcrumb, stepper, step panel) as a visual cue to finish that
+   task before navigating away — the confirmLeaveDrawInProgress() guard is the functional
+   backstop; this is just the glanceable signal. Still fully interactive (opacity only),
+   so Back/Next etc. keep working and hit that guard rather than being hard-blocked here.
+   Each :has() argument below is kept to a single simple selector rather than a comma
+   list — a comma-separated list inside :has() hit a real Chrome invalidation bug here
+   (selector matched via .matches() but the rule didn't repaint until an unrelated later
+   reflow), where two separate :has() calls joined by the outer selector-list comma do
+   not. */
 .msow-card:has(#mapwrap.drawing) .msow-crumb-strip,
 .msow-card:has(#mapwrap.drawing) .msow-toolbar,
 .msow-card:has(#mapwrap.drawing) #wizard-panel,
-.msow-card:has(#mapwrap.drawing) #sidebar {
+.msow-card:has(#mapwrap.drawing) #sidebar,
+.msow-card:has(#mapwrap.positioning-ref-image) .msow-crumb-strip,
+.msow-card:has(#mapwrap.positioning-ref-image) .msow-toolbar,
+.msow-card:has(#mapwrap.positioning-ref-image) #wizard-panel,
+.msow-card:has(#mapwrap.positioning-ref-image) #sidebar {
   opacity: 0.4;
   transition: opacity 200ms ease;
 }

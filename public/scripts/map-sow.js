@@ -8879,25 +8879,28 @@ function wizardAddPrimaryChannel() {
 // Whether the user has a drawing/edit in progress that wizardAutoActivate()'s
 // cancelAllDrawModes() would silently throw away on a step change: a manual
 // polygon/line with vertices already placed, a CHU split or pool-split flow,
-// vertex-editing on an existing shape, or an in-flight reach auto-detect/
-// extend/trim. Armed-but-not-yet-placed states (pendingStructPoint,
-// pendingGravelPoint) aren't included — nothing has been drawn yet to lose.
+// vertex-editing on an existing shape, an in-flight reach auto-detect/
+// extend/trim, or actively repositioning the reference image. Armed-but-not-
+// yet-placed states (pendingStructPoint, pendingGravelPoint) aren't included —
+// nothing has been drawn yet to lose.
 function hasInProgressDraw() {
   return drawPts.length > 0 ||
          (chuDrawing && chuDrawPts.length > 0) ||
          !!chuPoolMode ||
          !!lineEditing ||
-         !!reachAutoDetecting || !!reachExtending || !!reachTrimming;
+         !!reachAutoDetecting || !!reachExtending || !!reachTrimming ||
+         !!refImagePositioning;
 }
 
 // Users reported getting "stuck" while drawing — root cause traced to leaving
 // a step mid-draw (clicking Back/Next/a stepper item) with no warning that the
 // in-progress shape was about to vanish (cancelAllDrawModes() discards it
 // silently). Gate the four navigation entry points so leaving with real
-// progress on the map requires confirming instead of losing work by surprise.
+// progress on the map — including an in-progress reference-image reposition —
+// requires confirming instead of losing work by surprise.
 function confirmLeaveDrawInProgress() {
   if (!hasInProgressDraw()) return true;
-  return confirm('You have an unfinished drawing on this step. Leaving now will discard it — continue?');
+  return confirm('You have an unfinished drawing or repositioning task on this step. Leaving now will interrupt it — continue?');
 }
 
 function wizardNext() {
@@ -8952,6 +8955,7 @@ function cancelAllDrawModes(exceptStepId) {
   if (chuDrawing) cancelCHUSplit();
   if (chuPoolMode) { chuPoolMode = false; chuPoolPhase = 0; chuPendingPoolUpId = null; chuPendingPoolDownId = null; }
   if (lineEditing) cancelLineEdit();
+  if (refImagePositioning) finishRefImagePositioning();
   if (exceptStepId !== 'reach') {
     if (reachAutoDetecting) cancelReachAutoDetect();
     if (reachExtending) cancelReachExtend();
