@@ -315,6 +315,9 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
   margin: 2px 0 8px;
   --color-text-primary: rgba(255,255,255,0.85);
   --color-border: rgba(255,255,255,0.25);
+  /* the filled portion of the track + thumb border default to --color-primary, which is
+     this dark panel's own background — swap in the dark-bg accent so the fill is visible */
+  --color-primary: var(--cbf-blue-500);
 }
 
 /* ── Reference image layer — upload + reposition controls in the Layers panel ── */
