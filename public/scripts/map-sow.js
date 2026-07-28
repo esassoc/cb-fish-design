@@ -4360,19 +4360,6 @@ function renderRefImageSection() {
     uploader.setAttribute('label', 'Upload reference image');
     uploader.setAttribute('accept', 'image/png,image/jpeg,image/webp,image/gif');
     uploader.setAttribute('max-size-mb', '20');
-    // Hub bug workaround (docs/hub-issues.md → esa-file-upload): the lego's private
-    // reactive state compiles to native class fields that shadow Lit's accessors, so
-    // dev-mode Lit rejects the first update. Un-shadow the instance fields and run
-    // the missed update. Remove once the hub applies the `declare` fix.
-    customElements.whenDefined('esa-file-upload').then(function() {
-      if (uploader.hasUpdated) return;
-      ['_isDragging', '_files', '_error'].forEach(function(k) {
-        var v = uploader[k];
-        delete uploader[k];
-        uploader[k] = v;
-      });
-      if (uploader.performUpdate) uploader.performUpdate();
-    });
     uploader.addEventListener('change', function(e) {
       var files = e.detail && e.detail.files;
       if (files && files[0]) handleRefImageFile(files[0]);
