@@ -781,7 +781,7 @@ function setPPLayerVisibility(we, show) {
     if (d.bufferLayer) applyLayer(d.bufferLayer);
     if (d.lines) d.lines.forEach(function(ln){ if(ln&&ln.layer) applyLayer(ln.layer); });
     // reach direction arrows
-    if (m.id==='reach_len' && d._arrowMarkers) d._arrowMarkers.forEach(function(a){ if(a) a.setOpacity(opacity); });
+    if (m.id==='reach_len') setFlowArrowOpacity(d, opacity);
     // hide/show fp_left and fp_right label markers
     if (d.labelMarker) d.labelMarker.setOpacity(show ? 1 : 0);
   });
@@ -2704,10 +2704,29 @@ function buildFlowArrowMarkers(reachLayer, widthD, colorHex) {
   return markers;
 }
 
+// Flow-direction arrows are stashed on their owning shape two ways: the full
+// array (_arrowMarkers, the actual Leaflet layers on the map) and a single
+// legacy reference (_arrowMarker) some older call sites still read. The same
+// bug — clearing one but not the other, leaving arrows stranded on the map —
+// recurred three times (commits 5ce5bef, 624b15e) before landing here as the
+// one place that owns both fields together. Safe to call on any holder,
+// including one that never had arrows (no-op).
+function clearFlowArrows(holder) {
+  if (!holder) return;
+  if (holder._arrowMarkers) { holder._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); holder._arrowMarkers = null; }
+  if (holder._arrowMarker) { map.removeLayer(holder._arrowMarker); holder._arrowMarker = null; }
+}
+
+// Fans a shape's already-built flow arrows to a given opacity without rebuilding
+// them — for hiding them during vertex-drag edits (0) and restoring afterward (1),
+// or fading with the rest of the pre-project layers (any value in between).
+function setFlowArrowOpacity(holder, opacity) {
+  if (holder && holder._arrowMarkers) holder._arrowMarkers.forEach(function(a){ if(a) a.setOpacity(opacity); });
+}
+
 function addReachArrow(we) {
   var rd = we && we.ppData['reach_len'];
-  if(rd && rd._arrowMarkers) { rd._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); rd._arrowMarkers = null; }
-  if(rd && rd._arrowMarker){ map.removeLayer(rd._arrowMarker); rd._arrowMarker = null; }
+  clearFlowArrows(rd);
   if(!rd || !rd.layer) return;
   var markers = buildFlowArrowMarkers(rd.layer, we.ppData['area_ch'], '#c07820');
   if (!markers.length) return;
@@ -2722,7 +2741,7 @@ function addReachArrow(we) {
 
 function addPCReachArrow(we) {
   var sl = we && getActivePC(we).sowLayers['pc-reach'];
-  if (sl && sl._arrowMarkers) { sl._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); sl._arrowMarkers = null; }
+  clearFlowArrows(sl);
   if (!sl || !sl.layer) return;
   sl._arrowMarkers = buildFlowArrowMarkers(sl.layer, getActivePC(we).sowLayers['pc-area'], '#2a7a5c');
 }
@@ -2747,7 +2766,7 @@ function clearPPGeom(id) {
   var we=getActiveWE();if(!we)return;var d=ppOwner(we,id).ppData[id];if(!d)return;
   if(id==='reach_len' && d.layer && !confirmReachChange(we)) return;
   if(d.layer){map.removeLayer(d.layer);d.layer=null;d.valueM=0;}
-  if(id==='reach_len' && d._arrowMarkers){ d._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); d._arrowMarkers=null; d._arrowMarker=null; }
+  if(id==='reach_len') clearFlowArrows(d);
   if(id==='area_ch'){d.userDrawn=false;updateAreaChBuffer(we);updateAreaFpBuffer(we);}
   if(id==='area_fp'){
     d.userDrawn=false;
@@ -2954,10 +2973,9 @@ function startSOWDraw(id,geo,label) {
   if(wetlandAutoDetecting){cancelWetlandAutoDetect();}
   if(owner.sowLayers[id]&&owner.sowLayers[id].layer)map.removeLayer(owner.sowLayers[id].layer);
   if(owner.sowLayers[id]&&owner.sowLayers[id]._labelMarker)map.removeLayer(owner.sowLayers[id]._labelMarker);
-  // addPCReachArrow() stashes pc-reach's flow-direction markers here — clearing the
-  // line without also clearing these left the old flow arrows stranded on the map
-  // on Redraw (harmless/no-op for every other id, which never has _arrowMarkers).
-  if(owner.sowLayers[id]&&owner.sowLayers[id]._arrowMarkers){owner.sowLayers[id]._arrowMarkers.forEach(function(m){if(m)map.removeLayer(m);});owner.sowLayers[id]._arrowMarkers=null;}
+  // addPCReachArrow() stashes pc-reach's flow-direction markers here — harmless
+  // no-op for every other id, which never has them.
+  clearFlowArrows(owner.sowLayers[id]);
   sowDrawing={id:id,geo:geo,label:label,weId:activeWEId};
   ppDrawing=null;pendingStructPoint=null;drawPts=[];clearPreview();
   document.getElementById('mapwrap').classList.add('drawing');
@@ -3968,8 +3986,8 @@ function startLineEdit(type, id) {
   document.getElementById('edit-done-bar').style.display = 'flex'; document.getElementById('mapwrap').classList.add('editing'); repositionMapOverlays();
   var ddb = document.getElementById('draw-done-btn'); if (ddb) ddb.style.display = 'none';
   // Hide reach arrows during editing — recalculated on commit
-  if (id === 'reach_len') { var _weE=getWE(activeWEId); var _rdE=_weE&&_weE.ppData['reach_len']; if(_rdE&&_rdE._arrowMarkers) _rdE._arrowMarkers.forEach(function(a){if(a)a.setOpacity(0);}); }
-  if (id === 'pc-reach') { var _wePC=getWE(activeWEId); var _slPC=_wePC&&getActivePC(_wePC).sowLayers['pc-reach']; if(_slPC&&_slPC._arrowMarkers) _slPC._arrowMarkers.forEach(function(a){if(a)a.setOpacity(0);}); }
+  if (id === 'reach_len') { var _weE=getWE(activeWEId); setFlowArrowOpacity(_weE&&_weE.ppData['reach_len'], 0); }
+  if (id === 'pc-reach') { var _wePC=getWE(activeWEId); setFlowArrowOpacity(_wePC&&getActivePC(_wePC).sowLayers['pc-reach'], 0); }
   // reflect editing state in sidebar
   if (type === 'pp') {
     var m = PP_DEFS.filter(function(x){return x.id===id;})[0];
@@ -5270,12 +5288,7 @@ function startReachAutoDetect() {
   if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
   var rd = we.ppData['reach_len'];
   if (rd.layer) { map.removeLayer(rd.layer); rd.layer = null; rd.valueM = 0; }
-  // addReachArrow() tracks both the full marker array (_arrowMarkers, the actual map
-  // layers) and a single legacy reference (_arrowMarker) — clearing only the latter
-  // left the former's markers stranded on the map when switching from a manual draw
-  // to auto-detect.
-  if (rd._arrowMarkers) { rd._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); rd._arrowMarkers = null; }
-  if (rd._arrowMarker) { map.removeLayer(rd._arrowMarker); rd._arrowMarker = null; }
+  clearFlowArrows(rd);
   reachAutoDetecting = true;
   rd._autoDetecting = true;
   rd._autoResults = null;
