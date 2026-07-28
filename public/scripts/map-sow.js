@@ -3265,22 +3265,14 @@ function updateSOWCalcs() {
   var avgFW=avgWidths(we,['fpw1','fpw2','fpw3']);
   var cf=document.getElementById('calc-fp-width');if(cf)cf.textContent=avgFW?Math.round(avgFW)+' ft':'—';
 
-  // ── Channel excavation volume — reach length × channel width × bank height,
-  // treating the channel as a simple rectangular prism (ft³ → CY). Uses
-  // pcChannelWidthFt()/inputVals['pc-bank-height'] — what the pc_width wizard
-  // step actually writes. The avgW/sowLayers['pc-bankht'] pairing this used to
-  // read only ever gets populated by the retired cross-section (pcw1/2/3)
-  // Expert-mode flow, so for every wizard user widthFt/bankHtFt were always 0
-  // and excavCY was always null — this calc was silently dead. (avgW is also
-  // reassigned above at line ~3196 without the pc-width fallback the first
-  // assignment had, so even that fallback never reached here.)
-  var reachFt = getActivePC(we).sowLayers['pc-reach'] ? getActivePC(we).sowLayers['pc-reach'].valueM * 3.28084 : 0;
-  var excavWidthFt = pcChannelWidthFt(we) || 0;
-  var excavBankHtFt = getActivePC(we).inputVals['pc-bank-height'] || 0;
-  var excavCY = (reachFt && excavWidthFt && excavBankHtFt) ? Math.round(reachFt * excavWidthFt * excavBankHtFt / 27) : null;
+  // ── Channel excavation volume — pcExcavationCY() is the pure calculation;
+  // this just caches the result on inputVals for openSOW()'s per-PC export loop
+  // (which iterates every primary channel, not just the active one — see the
+  // comment on pcExcavationCY) and refreshes the retired Expert view's DOM node.
+  var excavCY = pcExcavationCY(we);
   getActivePC(we).inputVals['pc-excavation-vol'] = excavCY;
   var ce = document.getElementById('calc-pc-excav');
-  if (ce) ce.textContent = excavCY !== null ? excavCY.toLocaleString() + ' CY' : (reachFt && excavWidthFt ? 'Enter bank height to calculate' : '—');
+  if (ce) ce.textContent = excavCY !== null ? excavCY.toLocaleString() + ' CY' : (getActivePC(we).sowLayers['pc-reach'] && pcChannelWidthFt(we) ? 'Enter bank height to calculate' : '—');
   var cl=document.getElementById('calc-large-logs');var cs2=document.getElementById('calc-small-logs');
   if(cl||cs2)updateLogTotals();
 }
@@ -4655,6 +4647,22 @@ function pcChannelWidthFt(we) {
   if (w) return w;
   if (getActivePC(we).inputVals['pc-width']) return getActivePC(we).inputVals['pc-width'];
   return null;
+}
+
+// Excavation volume for the active primary channel — reach length x channel width
+// x bank height, treating the channel as a simple rectangular prism (ft3 -> CY).
+// A pure calculation (like pcChannelWidthFt above): reads live inputs, no DOM
+// writes, no caching — callers that need the number ask for it fresh every time.
+// Like pcChannelWidthFt, this reads getActivePC(we), so it's only correct for
+// we's CURRENTLY ACTIVE primary channel — callers iterating every primary channel
+// of a WE (e.g. openSOW()'s export loop) can't use this for a non-active `pc` and
+// still read the inputVals['pc-excavation-vol'] snapshot updateSOWCalcs() caches.
+function pcExcavationCY(we) {
+  var reachSL = we && getActivePC(we).sowLayers['pc-reach'];
+  var reachFt = reachSL && reachSL.valueM ? reachSL.valueM * 3.28084 : 0;
+  var widthFt = pcChannelWidthFt(we) || 0;
+  var bankHtFt = (we && getActivePC(we).inputVals['pc-bank-height']) || 0;
+  return (reachFt && widthFt && bankHtFt) ? Math.round(reachFt * widthFt * bankHtFt / 27) : null;
 }
 
 function wizardAddGravelPlacement() {
@@ -7733,8 +7741,7 @@ function wizardStepStatus(we, stepId) {
       return corePP.every(function(id){ return wizardStepStatus(we, id) === 'done'; }) ? 'done' : 'pending';
     }
     case 'pc_metrics': {
-      var pcmEV = getActivePC(we).inputVals['pc-excavation-vol'];
-      return (pcmEV !== undefined && pcmEV !== null && pcmEV !== '') ? 'done' : 'pending';
+      return (pcExcavationCY(we) !== null) ? 'done' : 'pending';
     }
     case 'pc_gravel': {
       var anyGravelPlaced = (getActivePC(we).gravelPlacements||[]).some(function(p){ return !!p.latlng; });
@@ -8335,8 +8342,7 @@ function wizardStepBody(we, step, idx) {
       break;
 
     case 'pc_metrics': {
-      updateSOWCalcs(); // ensure the auto-calculated excavation volume reflects the latest reach/width/bank height
-      var pcmEV = we && getActivePC(we).inputVals['pc-excavation-vol'];
+      var pcmEV = pcExcavationCY(we); // derived fresh — no cached/stale value, no render-time side effect
       h += '<div class="wz-step-desc">Additional complexity metrics for the primary channel.</div>';
       var pcmReachSL = getActivePC(we).sowLayers['pc-reach'];
       var pcmStreamMi = pcmReachSL && pcmReachSL.valueM ? (pcmReachSL.valueM * 0.000621371).toFixed(3)+' mi' : null;
