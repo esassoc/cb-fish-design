@@ -8903,9 +8903,21 @@ function hasInProgressDraw() {
 // silently). Gate the four navigation entry points so leaving with real
 // progress on the map — including an in-progress reference-image reposition —
 // requires confirming instead of losing work by surprise.
+//
+// lineEditing and refImagePositioning are a different case from the rest: both
+// live-mutate the actual geometry/bounds as you drag, so there's nothing left
+// for leaving to "discard" — it just locks in whatever is currently shown
+// (commitLineEdit() / finishRefImagePositioning() above). Every other state
+// here (a fresh manual draw, an unconfirmed auto-detect/extend/trim step, a
+// staged-but-unconfirmed reach append) really does lose real work on leaving,
+// since cancelAllDrawModes() removes the preview/candidate rather than saving
+// it. Word the prompt to match which one is actually true.
 function confirmLeaveDrawInProgress() {
   if (!hasInProgressDraw()) return true;
-  return confirm('You have an unfinished drawing or repositioning task on this step. Leaving now will interrupt it — continue?');
+  if (lineEditing || refImagePositioning) {
+    return confirm('Your edit on this step is still in progress. Leaving now will save it as currently shown — continue?');
+  }
+  return confirm('You have an unfinished drawing on this step. Leaving now will discard it — continue?');
 }
 
 function wizardNext() {
@@ -8959,7 +8971,13 @@ function cancelAllDrawModes(exceptStepId) {
   pendingGravelPoint = null;
   if (chuDrawing) cancelCHUSplit();
   if (chuPoolMode) { chuPoolMode = false; chuPoolPhase = 0; chuPendingPoolUpId = null; chuPendingPoolDownId = null; }
-  if (lineEditing) cancelLineEdit();
+  // commitLineEdit(), not cancelLineEdit(): vertex drags mutate the layer's geometry
+  // live as you drag, so by the time lineEditing is truthy there's nothing left for
+  // "cancel" to revert — cancelLineEdit() just stops the editing UI and leaves the
+  // dragged shape in place without recalculating its stored valueM, silently
+  // desyncing the displayed/exported number from the shape actually on the map.
+  // Committing here keeps them in sync, matching what "Done editing" already does.
+  if (lineEditing) commitLineEdit();
   if (refImagePositioning) finishRefImagePositioning();
   if (exceptStepId !== 'reach') {
     if (reachAutoDetecting) cancelReachAutoDetect();
