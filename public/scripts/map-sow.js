@@ -5282,6 +5282,11 @@ function startReachAutoDetect() {
   if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
   var rd = we.ppData['reach_len'];
   if (rd.layer) { map.removeLayer(rd.layer); rd.layer = null; rd.valueM = 0; }
+  // addReachArrow() tracks both the full marker array (_arrowMarkers, the actual map
+  // layers) and a single legacy reference (_arrowMarker) — clearing only the latter
+  // left the former's markers stranded on the map when switching from a manual draw
+  // to auto-detect.
+  if (rd._arrowMarkers) { rd._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); rd._arrowMarkers = null; }
   if (rd._arrowMarker) { map.removeLayer(rd._arrowMarker); rd._arrowMarker = null; }
   reachAutoDetecting = true;
   rd._autoDetecting = true;
