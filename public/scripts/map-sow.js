@@ -2950,6 +2950,10 @@ function startSOWDraw(id,geo,label) {
   if(wetlandAutoDetecting){cancelWetlandAutoDetect();}
   if(owner.sowLayers[id]&&owner.sowLayers[id].layer)map.removeLayer(owner.sowLayers[id].layer);
   if(owner.sowLayers[id]&&owner.sowLayers[id]._labelMarker)map.removeLayer(owner.sowLayers[id]._labelMarker);
+  // addPCReachArrow() stashes pc-reach's flow-direction markers here — clearing the
+  // line without also clearing these left the old flow arrows stranded on the map
+  // on Redraw (harmless/no-op for every other id, which never has _arrowMarkers).
+  if(owner.sowLayers[id]&&owner.sowLayers[id]._arrowMarkers){owner.sowLayers[id]._arrowMarkers.forEach(function(m){if(m)map.removeLayer(m);});owner.sowLayers[id]._arrowMarkers=null;}
   sowDrawing={id:id,geo:geo,label:label,weId:activeWEId};
   ppDrawing=null;pendingStructPoint=null;drawPts=[];clearPreview();
   document.getElementById('mapwrap').classList.add('drawing');
