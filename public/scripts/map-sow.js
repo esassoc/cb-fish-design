@@ -781,7 +781,7 @@ function setPPLayerVisibility(we, show) {
     if (d.bufferLayer) applyLayer(d.bufferLayer);
     if (d.lines) d.lines.forEach(function(ln){ if(ln&&ln.layer) applyLayer(ln.layer); });
     // reach direction arrows
-    if (m.id==='reach_len' && d._arrowMarkers) d._arrowMarkers.forEach(function(a){ if(a) a.setOpacity(opacity); });
+    if (m.id==='reach_len') setFlowArrowOpacity(d, opacity);
     // hide/show fp_left and fp_right label markers
     if (d.labelMarker) d.labelMarker.setOpacity(show ? 1 : 0);
   });
@@ -1962,6 +1962,10 @@ function commitFpSide(we, id, poly, side) {
   if (!we.ppData[finalId]) we.ppData[finalId] = {};
   var d = we.ppData[finalId];
   if (d.layer) map.removeLayer(d.layer);
+  // applyFpSide() (the auto-split path) stashes a colored label pin here — a manual
+  // (re)draw of this side via the wizard's Redraw button only replaced d.layer,
+  // leaving the auto-split's old label pin stranded on the map.
+  if (d.labelMarker) { map.removeLayer(d.labelMarker); d.labelMarker = null; }
   d.layer = L.polygon(poly, {color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true})
     .bindTooltip(label).addTo(map);
   d.valueM = geoAreaM2(poly);
@@ -2476,6 +2480,11 @@ function finishActiveDraw() {
   else if (sowDrawing)  { finishSOWDraw(); }
   else if (chuDrawing)  { commitCHUSplit(); }
   else if (crDrawing)   { finishCRDraw(); }
+  // The reach pre-trim "extend" step (Step 2) shows the generic #draw-done-btn pill
+  // via the same .drawing class as everything above, but had no case here — clicking
+  // it silently did nothing, and "Pick endpoints" in the sidebar was the only working
+  // way out. Route Done to the same place Pick endpoints goes.
+  else if (preReachExtend) { proceedToTrim(); }
 }
 
 function finishPPDraw() {
@@ -2695,10 +2704,29 @@ function buildFlowArrowMarkers(reachLayer, widthD, colorHex) {
   return markers;
 }
 
+// Flow-direction arrows are stashed on their owning shape two ways: the full
+// array (_arrowMarkers, the actual Leaflet layers on the map) and a single
+// legacy reference (_arrowMarker) some older call sites still read. The same
+// bug — clearing one but not the other, leaving arrows stranded on the map —
+// recurred three times (commits 5ce5bef, 624b15e) before landing here as the
+// one place that owns both fields together. Safe to call on any holder,
+// including one that never had arrows (no-op).
+function clearFlowArrows(holder) {
+  if (!holder) return;
+  if (holder._arrowMarkers) { holder._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); holder._arrowMarkers = null; }
+  if (holder._arrowMarker) { map.removeLayer(holder._arrowMarker); holder._arrowMarker = null; }
+}
+
+// Fans a shape's already-built flow arrows to a given opacity without rebuilding
+// them — for hiding them during vertex-drag edits (0) and restoring afterward (1),
+// or fading with the rest of the pre-project layers (any value in between).
+function setFlowArrowOpacity(holder, opacity) {
+  if (holder && holder._arrowMarkers) holder._arrowMarkers.forEach(function(a){ if(a) a.setOpacity(opacity); });
+}
+
 function addReachArrow(we) {
   var rd = we && we.ppData['reach_len'];
-  if(rd && rd._arrowMarkers) { rd._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); rd._arrowMarkers = null; }
-  if(rd && rd._arrowMarker){ map.removeLayer(rd._arrowMarker); rd._arrowMarker = null; }
+  clearFlowArrows(rd);
   if(!rd || !rd.layer) return;
   var markers = buildFlowArrowMarkers(rd.layer, we.ppData['area_ch'], '#c07820');
   if (!markers.length) return;
@@ -2713,7 +2741,7 @@ function addReachArrow(we) {
 
 function addPCReachArrow(we) {
   var sl = we && getActivePC(we).sowLayers['pc-reach'];
-  if (sl && sl._arrowMarkers) { sl._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); sl._arrowMarkers = null; }
+  clearFlowArrows(sl);
   if (!sl || !sl.layer) return;
   sl._arrowMarkers = buildFlowArrowMarkers(sl.layer, getActivePC(we).sowLayers['pc-area'], '#2a7a5c');
 }
@@ -2738,7 +2766,7 @@ function clearPPGeom(id) {
   var we=getActiveWE();if(!we)return;var d=ppOwner(we,id).ppData[id];if(!d)return;
   if(id==='reach_len' && d.layer && !confirmReachChange(we)) return;
   if(d.layer){map.removeLayer(d.layer);d.layer=null;d.valueM=0;}
-  if(id==='reach_len' && d._arrowMarkers){ d._arrowMarkers.forEach(function(m){ if(m) map.removeLayer(m); }); d._arrowMarkers=null; d._arrowMarker=null; }
+  if(id==='reach_len') clearFlowArrows(d);
   if(id==='area_ch'){d.userDrawn=false;updateAreaChBuffer(we);updateAreaFpBuffer(we);}
   if(id==='area_fp'){
     d.userDrawn=false;
@@ -2945,6 +2973,9 @@ function startSOWDraw(id,geo,label) {
   if(wetlandAutoDetecting){cancelWetlandAutoDetect();}
   if(owner.sowLayers[id]&&owner.sowLayers[id].layer)map.removeLayer(owner.sowLayers[id].layer);
   if(owner.sowLayers[id]&&owner.sowLayers[id]._labelMarker)map.removeLayer(owner.sowLayers[id]._labelMarker);
+  // addPCReachArrow() stashes pc-reach's flow-direction markers here — harmless
+  // no-op for every other id, which never has them.
+  clearFlowArrows(owner.sowLayers[id]);
   sowDrawing={id:id,geo:geo,label:label,weId:activeWEId};
   ppDrawing=null;pendingStructPoint=null;drawPts=[];clearPreview();
   document.getElementById('mapwrap').classList.add('drawing');
@@ -3234,17 +3265,14 @@ function updateSOWCalcs() {
   var avgFW=avgWidths(we,['fpw1','fpw2','fpw3']);
   var cf=document.getElementById('calc-fp-width');if(cf)cf.textContent=avgFW?Math.round(avgFW)+' ft':'—';
 
-  // ── Channel excavation volume ─────────────────────────────────────────────
-  var reachFt = getActivePC(we).sowLayers['pc-reach'] ? getActivePC(we).sowLayers['pc-reach'].valueM * 3.28084 : 0;
-  var widthFt = avgW || 0; // avg channel width from pcw1/2/3
-  var bankHtSL = getActivePC(we).sowLayers['pc-bankht'];
-  var bankHtFt = bankHtSL && bankHtSL.value ? parseFloat(bankHtSL.value) : 0;
-  var excavCY = (reachFt && widthFt && bankHtFt) ? Math.round(reachFt * widthFt * bankHtFt / 27) : null;
+  // ── Channel excavation volume — pcExcavationCY() is the pure calculation;
+  // this just caches the result on inputVals for openSOW()'s per-PC export loop
+  // (which iterates every primary channel, not just the active one — see the
+  // comment on pcExcavationCY) and refreshes the retired Expert view's DOM node.
+  var excavCY = pcExcavationCY(we);
+  getActivePC(we).inputVals['pc-excavation-vol'] = excavCY;
   var ce = document.getElementById('calc-pc-excav');
-  if (ce) ce.textContent = excavCY !== null ? excavCY.toLocaleString() + ' CY' : (reachFt && widthFt ? 'Enter bank height to calculate' : '—');
-  // Store for SOW export
-  if (!getActivePC(we).sowLayers['pc-excav']) getActivePC(we).sowLayers['pc-excav'] = {};
-  getActivePC(we).sowLayers['pc-excav'].value = excavCY;
+  if (ce) ce.textContent = excavCY !== null ? excavCY.toLocaleString() + ' CY' : (getActivePC(we).sowLayers['pc-reach'] && pcChannelWidthFt(we) ? 'Enter bank height to calculate' : '—');
   var cl=document.getElementById('calc-large-logs');var cs2=document.getElementById('calc-small-logs');
   if(cl||cs2)updateLogTotals();
 }
@@ -3950,8 +3978,8 @@ function startLineEdit(type, id) {
   document.getElementById('edit-done-bar').style.display = 'flex'; document.getElementById('mapwrap').classList.add('editing'); repositionMapOverlays();
   var ddb = document.getElementById('draw-done-btn'); if (ddb) ddb.style.display = 'none';
   // Hide reach arrows during editing — recalculated on commit
-  if (id === 'reach_len') { var _weE=getWE(activeWEId); var _rdE=_weE&&_weE.ppData['reach_len']; if(_rdE&&_rdE._arrowMarkers) _rdE._arrowMarkers.forEach(function(a){if(a)a.setOpacity(0);}); }
-  if (id === 'pc-reach') { var _wePC=getWE(activeWEId); var _slPC=_wePC&&getActivePC(_wePC).sowLayers['pc-reach']; if(_slPC&&_slPC._arrowMarkers) _slPC._arrowMarkers.forEach(function(a){if(a)a.setOpacity(0);}); }
+  if (id === 'reach_len') { var _weE=getWE(activeWEId); setFlowArrowOpacity(_weE&&_weE.ppData['reach_len'], 0); }
+  if (id === 'pc-reach') { var _wePC=getWE(activeWEId); setFlowArrowOpacity(_wePC&&getActivePC(_wePC).sowLayers['pc-reach'], 0); }
   // reflect editing state in sidebar
   if (type === 'pp') {
     var m = PP_DEFS.filter(function(x){return x.id===id;})[0];
@@ -4342,19 +4370,6 @@ function renderRefImageSection() {
     uploader.setAttribute('label', 'Upload reference image');
     uploader.setAttribute('accept', 'image/png,image/jpeg,image/webp,image/gif');
     uploader.setAttribute('max-size-mb', '20');
-    // Hub bug workaround (docs/hub-issues.md → esa-file-upload): the lego's private
-    // reactive state compiles to native class fields that shadow Lit's accessors, so
-    // dev-mode Lit rejects the first update. Un-shadow the instance fields and run
-    // the missed update. Remove once the hub applies the `declare` fix.
-    customElements.whenDefined('esa-file-upload').then(function() {
-      if (uploader.hasUpdated) return;
-      ['_isDragging', '_files', '_error'].forEach(function(k) {
-        var v = uploader[k];
-        delete uploader[k];
-        uploader[k] = v;
-      });
-      if (uploader.performUpdate) uploader.performUpdate();
-    });
     uploader.addEventListener('change', function(e) {
       var files = e.detail && e.detail.files;
       if (files && files[0]) handleRefImageFile(files[0]);
@@ -4413,27 +4428,21 @@ function renderRefImageSection() {
   wrap.appendChild(actions);
 }
 
+// A vertex drag mutates the layer's geometry live \u2014 by the time editing ends there's
+// no snapshot left to revert to, so "cancel" was never a real revert (see commit
+// 8e7e49f). cancelLineEdit() is now a thin wrapper around commitLineEdit(): same
+// teardown, same value/arrow/dependent recalculation, everywhere \u2014 one definition of
+// "an edit ended," instead of two, so the value-sync fix that motivated this doesn't
+// have to be re-applied at each of this function's ~10 other call sites individually.
+// The one thing a true cancel should NOT do is confirmReachChange()'s reach_len
+// dependents gate: that can pop a second confirm dialog and, if declined, re-enter
+// edit mode \u2014 surprising when the user already asked to leave/abort. skipReachConfirm
+// suppresses just that one step; the value still gets synced either way.
 function cancelLineEdit() {
-  var wasEditing = lineEditing;
-  if (panShapeActive) {
-    panShapeActive = false;
-    var btn = document.getElementById('pan-shape-btn');
-    if (btn) { btn.style.background = '#1a3a5c'; btn.textContent = '\u21d5 Pan shape'; }
-    document.getElementById('map').removeEventListener('mousedown', _panShapeMapMousedown);
-    document.getElementById('mapwrap').classList.remove('drawing');
-  }
-  clearEditHandles();
-  map.dragging.enable();
-  lineEditing = null;
-  document.getElementById('edit-done-bar').style.display = 'none'; document.getElementById('mapwrap').classList.remove('editing'); var _ddb=document.getElementById('draw-done-btn'); if(_ddb) _ddb.style.display = '';
-  // Re-render the row that was showing "editing\u2026" so it returns to its normal state
-  if(wasEditing && (wasEditing.type==='pp'||wasEditing.type==='pp-poly')) {
-    var m=PP_DEFS.filter(function(x){return x.id===wasEditing.id;})[0];
-    if(m) renderPMRow(m);
-  }
+  commitLineEdit(true);
 }
 
-function commitLineEdit() {
+function commitLineEdit(skipReachConfirm) {
   if (!lineEditing) return;
   if (panShapeActive) {
     panShapeActive = false;
@@ -4464,7 +4473,7 @@ function commitLineEdit() {
   lineEditing = null;
   document.getElementById('edit-done-bar').style.display = 'none'; document.getElementById('mapwrap').classList.remove('editing'); var _ddb=document.getElementById('draw-done-btn'); if(_ddb) _ddb.style.display = '';
   if (type === 'pp') {
-    if (id === 'reach_len' && !confirmReachChange(we)) {
+    if (id === 'reach_len' && !skipReachConfirm && !confirmReachChange(we)) {
       startLineEdit('pp', id); return;
     }
     // fp_left / fp_right are polygons — store area not line length
@@ -4627,13 +4636,7 @@ function setPCBankHeight(val) {
   if (!we.inputVals) we.inputVals = {};
   var n = parseFloat(val);
   getActivePC(we).inputVals['pc-bank-height'] = (n > 0) ? n : null;
-  if (wizardMode) wizardRefreshIfActive();
-}
-function setPCExcavVol(val) {
-  var we = getActiveWE(); if (!we) return;
-  if (!we.inputVals) we.inputVals = {};
-  var n = parseFloat(val);
-  getActivePC(we).inputVals['pc-excavation-vol'] = (n > 0) ? n : null;
+  updateSOWCalcs(); // keeps the auto-calculated excavation volume in sync
   if (wizardMode) wizardRefreshIfActive();
 }
 // ── Gravel placement (pc_gravel wizard step) ──────────────────────────────
@@ -4644,6 +4647,22 @@ function pcChannelWidthFt(we) {
   if (w) return w;
   if (getActivePC(we).inputVals['pc-width']) return getActivePC(we).inputVals['pc-width'];
   return null;
+}
+
+// Excavation volume for the active primary channel — reach length x channel width
+// x bank height, treating the channel as a simple rectangular prism (ft3 -> CY).
+// A pure calculation (like pcChannelWidthFt above): reads live inputs, no DOM
+// writes, no caching — callers that need the number ask for it fresh every time.
+// Like pcChannelWidthFt, this reads getActivePC(we), so it's only correct for
+// we's CURRENTLY ACTIVE primary channel — callers iterating every primary channel
+// of a WE (e.g. openSOW()'s export loop) can't use this for a non-active `pc` and
+// still read the inputVals['pc-excavation-vol'] snapshot updateSOWCalcs() caches.
+function pcExcavationCY(we) {
+  var reachSL = we && getActivePC(we).sowLayers['pc-reach'];
+  var reachFt = reachSL && reachSL.valueM ? reachSL.valueM * 3.28084 : 0;
+  var widthFt = pcChannelWidthFt(we) || 0;
+  var bankHtFt = (we && getActivePC(we).inputVals['pc-bank-height']) || 0;
+  return (reachFt && widthFt && bankHtFt) ? Math.round(reachFt * widthFt * bankHtFt / 27) : null;
 }
 
 function wizardAddGravelPlacement() {
@@ -4783,7 +4802,7 @@ function startCHUPoolDraw() {
   initCHUUnits(we);
   chuPoolMode = true; chuPoolPhase = 1; chuPendingPoolUpId = null; chuPendingPoolDownId = null;
   startCHUSplit();
-  setMapHint('Draw the <b>upstream boundary</b> of the pool — click across the channel');
+  setMapHint('Draw the <b>first boundary</b> of the pool — click across the channel');
 }
 
 function startCHUSplit() {
@@ -5053,7 +5072,7 @@ function commitCHUSplit(we, line) {
       // Stay in drawing mode for second boundary
       chuDrawing = true; chuDrawPts = [];
       document.getElementById('mapwrap').classList.add('drawing');
-      setMapHint('Now draw the <b>other end</b> of the pool — click across the channel');
+      setMapHint('Now draw the <b>second boundary</b> of the pool — click across the channel');
       renderCHUUnits(we); wizardRefreshIfActive();
       return;
     } else if (chuPoolPhase === 2) {
@@ -5277,7 +5296,7 @@ function startReachAutoDetect() {
   if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
   var rd = we.ppData['reach_len'];
   if (rd.layer) { map.removeLayer(rd.layer); rd.layer = null; rd.valueM = 0; }
-  if (rd._arrowMarker) { map.removeLayer(rd._arrowMarker); rd._arrowMarker = null; }
+  clearFlowArrows(rd);
   reachAutoDetecting = true;
   rd._autoDetecting = true;
   rd._autoResults = null;
@@ -6193,6 +6212,11 @@ function reachExtendClick(latlng) {
       map.removeLayer(reachD.layer);
       reachD.layer = L.polyline(combinedPts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
       reachD.valueM = geoLen(combinedPts);
+      // Every other reach-replacing path (commitLineEdit, finishPPDraw, acceptAutoReach)
+      // re-fans flow arrows after changing the geometry — this one didn't, so the
+      // arrows stayed at their pre-extension positions until the next zoom silently
+      // rebuilt them via refreshAllFlowArrows().
+      addReachArrow(we);
       cancelReachExtend();
       var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
       renderPMRow(m); rerenderCalcs(); updatePPProgress(); updateSOWCalcs();
@@ -7717,8 +7741,7 @@ function wizardStepStatus(we, stepId) {
       return corePP.every(function(id){ return wizardStepStatus(we, id) === 'done'; }) ? 'done' : 'pending';
     }
     case 'pc_metrics': {
-      var pcmEV = getActivePC(we).inputVals['pc-excavation-vol'];
-      return (pcmEV !== undefined && pcmEV !== null && pcmEV !== '') ? 'done' : 'pending';
+      return (pcExcavationCY(we) !== null) ? 'done' : 'pending';
     }
     case 'pc_gravel': {
       var anyGravelPlaced = (getActivePC(we).gravelPlacements||[]).some(function(p){ return !!p.latlng; });
@@ -8319,16 +8342,15 @@ function wizardStepBody(we, step, idx) {
       break;
 
     case 'pc_metrics': {
-      var pcmEV = we && getActivePC(we).inputVals['pc-excavation-vol'];
-      var inputStyle = 'width:100%;box-sizing:border-box;border:1px solid var(--color-border);border-radius:4px;padding:4px 8px;font-size:13px;font-family:var(--font-sans)';
-      var labelStyle = 'display:block;font-size:11px;color:var(--color-text-secondary);margin-bottom:3px';
-      h += '<div class="wz-step-desc">Enter additional complexity metrics for the primary channel.</div>';
+      var pcmEV = pcExcavationCY(we); // derived fresh — no cached/stale value, no render-time side effect
+      h += '<div class="wz-step-desc">Additional complexity metrics for the primary channel.</div>';
       var pcmReachSL = getActivePC(we).sowLayers['pc-reach'];
       var pcmStreamMi = pcmReachSL && pcmReachSL.valueM ? (pcmReachSL.valueM * 0.000621371).toFixed(3)+' mi' : null;
       h += '<div class="wz-metric-row"><span class="wz-metric-label">Stream miles with improved floodplain connectivity</span><span class="wz-metric-val '+(pcmStreamMi?'':'missing')+'">'+(pcmStreamMi||'draw the primary channel to calculate')+'</span></div>';
-      h += '<div style="margin-bottom:8px"><label style="'+labelStyle+'">Excavation volume (CY)</label>';
-      h += '<input type="number" min="0" step="1" placeholder="e.g. 500" value="'+(pcmEV||'')+'"';
-      h += ' style="'+inputStyle+'" onchange="setPCExcavVol(this.value)"></div>';
+      var pcmMissing = !pcmReachSL ? 'draw the primary channel first (step 8)' :
+                        !pcChannelWidthFt(we) ? 'enter channel width first (previous step)' :
+                        !getActivePC(we).inputVals['pc-bank-height'] ? 'enter bank height first (previous step)' : '—';
+      h += '<div class="wz-metric-row"><span class="wz-metric-label">Excavation volume</span><span class="wz-metric-val '+(pcmEV?'':'missing')+'">'+(pcmEV ? pcmEV.toLocaleString()+' CY' : pcmMissing)+'</span></div>';
       break;
     }
 
@@ -8469,7 +8491,7 @@ function wizardStepBody(we, step, idx) {
     }
 
     case 'chu_split': {
-      h += '<div class="wz-step-desc">Draw the upstream and downstream boundaries of each pool. Everything outside a pool boundary is treated as riffle.</div>';
+      h += '<div class="wz-step-desc">Draw two boundaries for each pool — in either order, wherever the pool starts and ends. Everything outside a pool boundary is treated as riffle.</div>';
       var chuSplitReady = we && getCHUChannelPts(we);
       if (!chuSplitReady) {
         h += '<div class="wz-status warning">&#9888; Draw the primary channel and enter a width first (steps 8 &amp; 9) to generate the channel area.</div>';
@@ -8478,9 +8500,9 @@ function wizardStepBody(we, step, idx) {
         var pools = units.filter(function(u){return u.type==='pool';});
         var inPoolDraw = chuPoolMode;
         if (inPoolDraw && chuPoolPhase === 1) {
-          h += '<div class="wz-status pending">&#9654; Draw the <b>upstream boundary</b> of the pool on the map…</div>';
+          h += '<div class="wz-status pending">&#9654; Draw the <b>first boundary</b> of the pool on the map…</div>';
         } else if (inPoolDraw && chuPoolPhase === 2) {
-          h += '<div class="wz-status pending">&#9654; Draw the <b>downstream boundary</b> of the pool on the map…</div>';
+          h += '<div class="wz-status pending">&#9654; Draw the <b>second boundary</b> of the pool on the map…</div>';
         } else {
           h += '<button class="wz-action-btn" onclick="showInnerTab(\'work\');startCHUPoolDraw()">&#43; Add Pool</button>';
         }
@@ -8876,7 +8898,54 @@ function wizardAddPrimaryChannel() {
   wizardAutoActivate();
 }
 
+// Whether the user has a drawing/edit in progress that wizardAutoActivate()'s
+// cancelAllDrawModes() would silently throw away on a step change: an active
+// manual polygon/line/cross-section/CHU-split draw mode, a CHU pool-split
+// flow, vertex-editing on an existing shape, an in-flight reach auto-detect/
+// extend/trim/pre-trim-extend, or actively repositioning the reference image.
+//
+// This checks the mode flags directly (ppDrawing/sowDrawing/crDrawing/
+// chuDrawing) rather than "has a vertex actually been placed yet"
+// (drawPts.length > 0) — the same moment these flags go true is the moment
+// #mapwrap gets .drawing and the screen dims, so the guard needs to cover
+// that instant too, not just once a click has landed on the map. This also
+// matters because wizardRedraw() calls clearPPGeom() — which deletes the
+// existing shape immediately — before arming a fresh draw with zero points
+// placed; leaving in that exact window used to lose the old shape with no
+// warning at all, dimmed screen notwithstanding.
+function hasInProgressDraw() {
+  return !!ppDrawing || !!sowDrawing || !!crDrawing ||
+         !!chuDrawing || !!chuPoolMode ||
+         !!lineEditing ||
+         !!reachAutoDetecting || !!reachExtending || !!reachTrimming || !!preReachExtend ||
+         !!refImagePositioning;
+}
+
+// Users reported getting "stuck" while drawing — root cause traced to leaving
+// a step mid-draw (clicking Back/Next/a stepper item) with no warning that the
+// in-progress shape was about to vanish (cancelAllDrawModes() discards it
+// silently). Gate the four navigation entry points so leaving with real
+// progress on the map — including an in-progress reference-image reposition —
+// requires confirming instead of losing work by surprise.
+//
+// lineEditing and refImagePositioning are a different case from the rest: both
+// live-mutate the actual geometry/bounds as you drag, so there's nothing left
+// for leaving to "discard" — it just locks in whatever is currently shown
+// (cancelLineEdit() / finishRefImagePositioning() above). Every other state
+// here (a fresh manual draw, an unconfirmed auto-detect/extend/trim step, a
+// staged-but-unconfirmed reach append) really does lose real work on leaving,
+// since cancelAllDrawModes() removes the preview/candidate rather than saving
+// it. Word the prompt to match which one is actually true.
+function confirmLeaveDrawInProgress() {
+  if (!hasInProgressDraw()) return true;
+  if (lineEditing || refImagePositioning) {
+    return confirm('Your edit on this step is still in progress. Leaving now will save it as currently shown — continue?');
+  }
+  return confirm('You have an unfinished drawing on this step. Leaving now will discard it — continue?');
+}
+
 function wizardNext() {
+  if (!confirmLeaveDrawInProgress()) return;
   wzOpenSection = null;
   var vis = getVisibleSteps();
   if (wizardStep < vis.length - 1) {
@@ -8888,11 +8957,13 @@ function wizardNext() {
 }
 
 function wizardBack() {
+  if (!confirmLeaveDrawInProgress()) return;
   wzOpenSection = null;
   if (wizardStep > 0) { wizardStep--; syncActivePCForStep(wizardStep); renderWizardStep(); wizardAutoActivate(); }
 }
 
 function wizardGoToStep(idx) {
+  if (!confirmLeaveDrawInProgress()) return;
   wzOpenSection = null;
   var vis = getVisibleSteps();
   if (idx < 0 || idx >= vis.length) return;
@@ -8903,6 +8974,7 @@ function wizardGoToStep(idx) {
 }
 
 function wizardSkip() {
+  if (!confirmLeaveDrawInProgress()) return;
   wzOpenSection = null;
   var vis = getVisibleSteps();
   if (wizardStep < vis.length - 1) { wizardStep++; syncActivePCForStep(wizardStep); renderWizardStep(); wizardAutoActivate(); }
@@ -8923,7 +8995,12 @@ function cancelAllDrawModes(exceptStepId) {
   pendingGravelPoint = null;
   if (chuDrawing) cancelCHUSplit();
   if (chuPoolMode) { chuPoolMode = false; chuPoolPhase = 0; chuPendingPoolUpId = null; chuPendingPoolDownId = null; }
+  // cancelLineEdit() now delegates to commitLineEdit(true) itself, so this keeps the
+  // displayed/exported value in sync with the shape's actual dragged geometry (see
+  // commit 8e7e49f) without the risk of a second confirm-and-possibly-reenter-edit-mode
+  // detour for reach_len — this is a step change the user already agreed to leave.
   if (lineEditing) cancelLineEdit();
+  if (refImagePositioning) finishRefImagePositioning();
   if (exceptStepId !== 'reach') {
     if (reachAutoDetecting) cancelReachAutoDetect();
     if (reachExtending) cancelReachExtend();
@@ -9477,7 +9554,7 @@ function openSOW() {
         h += '<tr><td>Average bank height (at riffle)</td><td>entered</td><td>'+pcBHFt2+'</td></tr>';
         h += '<tr><td>Area of restored channel</td><td>measured</td><td>'+pcAreaAc2+'</td></tr>';
         h += '<tr><td>New floodplain area</td><td>measured</td><td>'+pcNewFpAc+'</td></tr>';
-        h += '<tr><td>Primary channel excavation volume</td><td>entered</td><td>'+pcExcav2+'</td></tr>';
+        h += '<tr><td>Primary channel excavation volume</td><td>calculated</td><td>'+pcExcav2+'</td></tr>';
         h += '<tr><td># Gravel placements</td><td>measured</td><td>'+(pcGravelPlaced2.length||'—')+'</td></tr>';
         h += '<tr><td>Length of gravel placement or channel fill</td><td>entered</td><td>'+(pcGravelTotalLenFt>0?Math.round(pcGravelTotalLenFt).toLocaleString()+' ft':'—')+'</td></tr>';
         h += '<tr><td>Average depth of gravel placement</td><td>entered</td><td>'+(pcGravelAvgDepth!==null?pcGravelAvgDepth.toFixed(1)+' ft':'—')+'</td></tr>';
