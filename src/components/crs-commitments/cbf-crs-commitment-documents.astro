@@ -1,68 +1,500 @@
 ---
-// cbf-crs-commitment-documents — the "Commitment Documents" section of the legacy
-// CBFish Commitment Summary detail page, lift-and-shifted for ONE commitment record.
-// It lists the due dates and documents attached to that specific commitment.
+// cbf-crs-commitment-documents — the "Commitment Documents" section of the
+// legacy CBFish Commitment Summary detail page, lift-and-shifted for ONE
+// commitment record. Lists the due dates and documents attached to that
+// specific commitment, and — unlike the read-only cross-commitment Document
+// Library (cbf-crs-documents-grid.astro) — lets a user add/edit/delete them.
 //
-// In the current mock dataset none of the invented commitments carry documents yet, so
-// the live render is the per-commitment EMPTY STATE (the full cross-commitment Document
-// Library grid is a separate future page and is intentionally NOT built here). The
-// component is written so that if `documents` is ever passed in, it renders a short,
-// correct list — future-proofing, not the focus of this pass.
+// Checked live against qa.cbfish.org/BiologicalOpinionCommitment.mvc/
+// CommitmentSummary/<id>: prod splits this into three routes (Add Discrete
+// Due Date, Add Recurring Due Date, Upload Commitment Document) plus a
+// per-row Edit/Delete context menu. Our CrsDocument data model already
+// unifies a due date and its document into one record (a row can carry a
+// dueDate with no filename, meaning "pending" — see
+// src/data/crs-commitments.mjs), so Add Discrete Due Date, Upload Commitment
+// Document, and a row's Edit action all share ONE dialog
+// (cbf-crs-document-dialog.astro); Add Recurring Due Date is genuinely
+// different (first date + repeat-every-N-years) and gets its own
+// (cbf-crs-recurring-due-date-dialog.astro).
 //
-// Composition: esa-card (section chrome) > esa-empty-state (the empty branch, with two
-// esa-button actions in its default slot) OR a .stack list of rows (the populated
-// branch). No bespoke card/empty/button primitives — all three are esa-* legos. The
-// row dividers are the component's own CSS reading the --color-border-light token.
+// bcn-lego-checked: ecology has NO table/grid lego (checked the full catalog).
+// AG Grid (used by the cross-commitment library, 111 rows) is overkill here —
+// a single commitment carries a handful of due dates/documents, not a
+// sortable/filterable multi-row surface. cbf-lib-pi-documents.astro already
+// made this exact call for a similarly-small per-record document table, so
+// this is a semantic <table>, matching that precedent. Every control is a
+// lego: esa-card (section chrome), esa-empty-state (zero-rows branch),
+// esa-button (header actions), esa-dropdown-menu (row actions, trigger
+// esa-icon-button — same "actions menu per table row" pattern already proven
+// in cbf-lib-pi-documents.astro), esa-confirm-dialog (delete confirmation,
+// same lego cbf-baselines-upload.astro uses for its destructive action).
 import EsaCard from '@esa/ecology/esa-card.astro';
 import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import CbfCrsDocumentDialog from './cbf-crs-document-dialog.astro';
+import CbfCrsRecurringDueDateDialog from './cbf-crs-recurring-due-date-dialog.astro';
 
-interface Props {
-  documents?: Array<{ title: string; dueDate?: string; category?: string; uploadDate?: string }>;
+interface CrsDocument {
+  commitmentNumber: string; dueDate?: string; category: string; type: string;
+  title: string; description: string; filename?: string; uploadDate?: string; uploadUser?: string;
 }
-const { documents = [] } = Astro.props;
-
+interface Props {
+  documents?: CrsDocument[];
+  commitmentNumber: string;
+  commitmentEndDate: string;
+}
+const { documents = [], commitmentNumber, commitmentEndDate } = Astro.props;
 const hasDocuments = documents.length > 0;
 ---
 <EsaCard title="Commitment documents">
-  {hasDocuments ? (
-    <div class="cbf-crs-commitment-documents__list stack" data-gap="none">
-      {documents.map((doc) => {
-        const dateLabel = doc.dueDate
-          ? `Due ${doc.dueDate}`
-          : doc.uploadDate
-            ? `Uploaded ${doc.uploadDate}`
-            : null;
-        return (
-          <div class="cbf-crs-commitment-documents__row repel">
-            <div class="stack" data-gap="3xs">
-              <span class="type-body">{doc.title}</span>
-              {doc.category && <span class="type-label">{doc.category}</span>}
-            </div>
-            {dateLabel && <span class="type-label">{dateLabel}</span>}
-          </div>
-        );
-      })}
-    </div>
-  ) : (
+  <div class="cbf-crs-commitment-documents__empty" data-crs-doc-empty hidden={hasDocuments}>
     <EsaEmptyState
       title="No due dates or documents yet"
       description="Add a recurring or discrete due date, or upload a document that doesn't need one."
     >
       <div class="cluster" data-gap="sm">
-        <EsaButton color="primary" icon="calendar-plus" href="#">Add due date</EsaButton>
-        <EsaButton color="secondary" appearance="outline" icon="upload" href="#">Upload document</EsaButton>
+        <span data-crs-doc-add-discrete><EsaButton color="primary" icon="calendar">Add discrete due date</EsaButton></span>
+        <span data-crs-doc-add-recurring><EsaButton color="secondary" appearance="outline" icon="calendar">Add recurring due date</EsaButton></span>
+        <span data-crs-doc-add-upload><EsaButton color="secondary" appearance="outline" icon="upload">Upload document</EsaButton></span>
       </div>
     </EsaEmptyState>
-  )}
+  </div>
+
+  <div class="cbf-crs-commitment-documents__populated stack" data-gap="md" data-crs-doc-populated hidden={!hasDocuments}>
+    <div class="cbf-crs-commitment-documents__toolbar repel">
+      <span class="type-caption" data-crs-doc-count>
+        {documents.length} {documents.length === 1 ? 'due date/document' : 'due dates/documents'}
+      </span>
+      <div class="cluster" data-gap="sm">
+        <span data-crs-doc-add-discrete><EsaButton color="secondary" appearance="outline" icon="calendar" size="sm">Add discrete due date</EsaButton></span>
+        <span data-crs-doc-add-recurring><EsaButton color="secondary" appearance="outline" icon="calendar" size="sm">Add recurring due date</EsaButton></span>
+        <span data-crs-doc-add-upload><EsaButton color="secondary" appearance="outline" icon="upload" size="sm">Upload document</EsaButton></span>
+      </div>
+    </div>
+
+    <div class="cbf-crs-doc-table-wrap">
+      <table class="cbf-crs-doc-table">
+        <thead>
+          <tr>
+            <th class="cbf-crs-doc-table__menu-col">Actions</th>
+            <th>Due Date</th>
+            <th>Category</th>
+            <th>Type</th>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Filename</th>
+            <th>Upload Date</th>
+            <th>Upload User</th>
+          </tr>
+        </thead>
+        <tbody data-crs-doc-rows></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Real esa-icon-button lego, server-rendered once, cloned into each JS-built
+       row's actions cell — same clone-the-lego convention as the status-pill
+       templates in cbf-crs-commitments-dashboard.astro. -->
+  <template data-crs-doc-menu-trigger-template><EsaIconButton icon="menu" label="Actions" size="sm" /></template>
+
+  <CbfCrsDocumentDialog />
+  <CbfCrsRecurringDueDateDialog />
+
+  <esa-confirm-dialog
+    data-crs-doc-delete-confirm
+    heading="Delete this row?"
+    variant="danger"
+    confirm-label="Delete"
+    cancel-label="Cancel"
+  ></esa-confirm-dialog>
+
+  <!-- Row data + the bits the client script needs to build new rows,
+       serialized so it hydrates without a second fetch — same convention as
+       every AG-Grid data component in this spoke. -->
+  <script
+    type="application/json"
+    data-crs-doc-data
+    set:html={JSON.stringify({ documents, commitmentNumber, commitmentEndDate })}
+  ></script>
 </EsaCard>
 
 <style>
-  .cbf-crs-commitment-documents__row {
-    padding-block: var(--spacing-300, 0.75rem);
+  /* Same author-CSS-beats-UA-stylesheet issue cbf-password-gate.astro documents:
+     the global .stack utility's unconditional `display: flex` sits later in the
+     cascade than the UA stylesheet's `[hidden]{display:none}` at equal
+     specificity, so it wins and the "populated" branch stays visible even with
+     the hidden attribute set. Restated here with the attribute in the selector
+     so it actually wins. */
+  .cbf-crs-commitment-documents__populated[hidden],
+  .cbf-crs-commitment-documents__empty[hidden] {
+    display: none;
   }
-  /* Dividers between rows only — a lightweight list, not a bespoke table. */
-  .cbf-crs-commitment-documents__row + .cbf-crs-commitment-documents__row {
-    border-top: 1px solid var(--color-border-light, #efefef);
+
+  .cbf-crs-doc-table-wrap {
+    /* No overflow-x:auto here — confirmed against a real render (an
+       esa-dropdown-menu popup was silently clipped): setting overflow-x to
+       anything but visible forces the UA to compute overflow-y as auto too
+       (a CSS2.1 rule, not a bug), and esa-dropdown-menu's absolutely
+       positioned panel then counts as scrollable content the wrapper clips
+       instead of letting escape. cbf-lib-pi-documents.astro hit the same
+       thing and landed on the same fix: no horizontal-scroll wrapper here —
+       a wide table just widens the section; the popup stays fully visible. */
+    overflow: visible;
+  }
+  .cbf-crs-doc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--type-size-200, 0.9375rem);
+  }
+  .cbf-crs-doc-table th {
+    text-align: left;
+    padding: var(--spacing-200, 0.5rem) var(--spacing-300, 0.75rem);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium, 500);
+    border-bottom: 1px solid var(--color-border);
+    white-space: nowrap;
+  }
+  .cbf-crs-doc-table :global(td) {
+    padding: var(--spacing-200, 0.5rem) var(--spacing-300, 0.75rem);
+    border-bottom: 1px solid var(--color-border-light, #efefef);
+    vertical-align: top;
+  }
+  .cbf-crs-doc-table__menu-col {
+    width: 1%;
+  }
+  .cbf-crs-doc-table :global(tr:last-child td) {
+    border-bottom: none;
   }
 </style>
+
+<script>
+  import '@esa/ecology/esa-dropdown-menu';
+  import '@esa/ecology/esa-confirm-dialog';
+  import { gridDateFormatter as dateFmt, asGridDate as asDate, escGridHtml as esc } from '../shared/grid-chrome';
+
+  interface DocRow {
+    commitmentNumber: string; dueDate?: string; category: string; type: string;
+    title: string; description: string; filename?: string; uploadDate?: string; uploadUser?: string;
+  }
+  type DocField = HTMLElement & { value?: string };
+  type DialogEl = HTMLElement & { show: () => void; close: () => void; heading?: string };
+  type ConfirmDialogEl = HTMLElement & { open: boolean };
+  type MenuEl = HTMLElement & { items: Array<{ label: string; action: string; variant?: string }> };
+
+  const MOCK_USER = 'Angela Zhao';
+  const HORIZON_YEAR = 2035;
+
+  // The mock dataset stores dueDate/uploadDate as "M/D/YYYY" (US format, parsed
+  // in LOCAL time by `new Date()`), but esa-date-picker wraps a native
+  // <input type="date">, which only accepts ISO "YYYY-MM-DD" — anything else is
+  // silently rejected, so an M/D/YYYY value would prefill as blank when editing
+  // an existing row. Normalize to ISO using LOCAL date components (not
+  // toISOString(), which reinterprets through UTC and can shift the day by one
+  // depending on the browser's timezone) so both old and new rows share one
+  // representation.
+  function toISODate(s?: string): string | undefined {
+    if (!s) return undefined;
+    const d = new Date(s);
+    if (Number.isNaN(d.getTime())) return undefined;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  // The reverse conversion, for the picker's output going back INTO storage.
+  // Pure string math (no Date object) on purpose: esa-date-picker's native
+  // <input type="date"> always yields ISO "YYYY-MM-DD", and `new Date()`
+  // parses a date-only ISO string as UTC midnight while `Intl.DateTimeFormat`
+  // (used to display it, in grid-chrome.ts's dateFmt) formats in the LOCAL
+  // timezone — round-tripping through Date objects here shifts the day by one
+  // in any timezone behind UTC. Storing M/D/YYYY (like the rest of the mock
+  // dataset) keeps every date on the same local-parse path.
+  function isoToUSDate(iso?: string): string | undefined {
+    if (!iso) return undefined;
+    const [y, m, d] = iso.split('-').map(Number);
+    if (!y || !m || !d) return undefined;
+    return `${m}/${d}/${y}`;
+  }
+
+  function initDocuments(root: HTMLElement) {
+    const dataEl = root.querySelector<HTMLScriptElement>('[data-crs-doc-data]');
+    if (!dataEl) return;
+    const seed = JSON.parse(dataEl.textContent ?? '{}') as {
+      documents: DocRow[]; commitmentNumber: string; commitmentEndDate: string;
+    };
+    // Storage stays in the mock dataset's "M/D/YYYY" convention throughout
+    // (matches what docSave/recSave write below) — only the date-picker's
+    // <input type="date"> needs ISO, and only transiently, so that conversion
+    // (toISODate) happens at the point of prefilling it in openDocDialog, not
+    // here.
+    const docs: DocRow[] = seed.documents;
+    const commitmentNumber = seed.commitmentNumber;
+    const commitmentEndYear = Number(new Date(seed.commitmentEndDate).getFullYear()) || HORIZON_YEAR;
+
+    const emptyEl = root.querySelector<HTMLElement>('[data-crs-doc-empty]');
+    const populatedEl = root.querySelector<HTMLElement>('[data-crs-doc-populated]');
+    const countEl = root.querySelector<HTMLElement>('[data-crs-doc-count]');
+    const rowsBody = root.querySelector<HTMLTableSectionElement>('[data-crs-doc-rows]');
+    const triggerTemplate = root.querySelector<HTMLTemplateElement>('[data-crs-doc-menu-trigger-template]');
+    if (!emptyEl || !populatedEl || !rowsBody || !triggerTemplate) return;
+    const triggerHTML = triggerTemplate.innerHTML;
+
+    // ── Document dialog (Add Discrete Due Date / Upload Document / Edit) ──
+    const docDialog = root.querySelector<DialogEl>('[data-crs-doc-dialog]');
+    const docForm = root.querySelector<HTMLFormElement>('[data-crs-doc-form]');
+    const docCancel = root.querySelector<HTMLElement>('[data-crs-doc-cancel]');
+    const docSave = root.querySelector<HTMLElement>('[data-crs-doc-save]');
+    const docError = root.querySelector<HTMLElement & { hidden: boolean }>('[data-crs-doc-error]');
+    const docUploadedLine = root.querySelector<HTMLElement & { hidden: boolean }>('[data-crs-doc-uploaded]');
+    const docUploadedName = root.querySelector<HTMLElement>('[data-crs-doc-uploaded-name]');
+    const docFileSlot = root.querySelector<HTMLElement>('[data-crs-doc-file-slot]');
+
+    const docField = (name: string): DocField | null =>
+      docForm?.querySelector<DocField>(`[data-field="${name}"]`) ?? null;
+    const docFieldValue = (name: string): string => (docField(name)?.value ?? '').trim();
+
+    function resetDocFileUpload(): void {
+      if (!docFileSlot) return;
+      const old = docFileSlot.firstElementChild;
+      const fresh = document.createElement('esa-file-upload');
+      fresh.setAttribute('data-crs-doc-file', '');
+      fresh.setAttribute('label', 'File to upload');
+      fresh.setAttribute('accept', '.pdf,.doc,.docx,.xls,.xlsx');
+      fresh.setAttribute('max-size-mb', '10');
+      old ? old.replaceWith(fresh) : docFileSlot.appendChild(fresh);
+    }
+
+    function resetDocForm(): void {
+      docForm?.querySelectorAll<DocField>('[data-field]').forEach((el) => {
+        if ('value' in el) el.value = '';
+      });
+      if (docError) docError.hidden = true;
+      if (docUploadedLine) docUploadedLine.hidden = true;
+      resetDocFileUpload();
+    }
+
+    let editingIndex: number | null = null;
+    let pendingFile: File | null = null;
+
+    root.addEventListener('change', (e) => {
+      const fromDocUpload = (e.target as HTMLElement).closest?.('[data-crs-doc-file-slot]');
+      if (!fromDocUpload) return;
+      const files = (e as CustomEvent).detail?.files ?? [];
+      pendingFile = files[0] ?? null;
+    });
+
+    function openDocDialog(heading: string, index: number | null): void {
+      editingIndex = index;
+      pendingFile = null;
+      resetDocForm();
+      if (docDialog) docDialog.heading = heading;
+      if (index != null) {
+        const doc = docs[index];
+        if (docField('title')) docField('title')!.value = doc.title ?? '';
+        if (docField('dueDate')) docField('dueDate')!.value = toISODate(doc.dueDate) ?? '';
+        if (docField('description')) docField('description')!.value = doc.description ?? '';
+        if (docField('type')) docField('type')!.value = doc.type ?? '';
+        if (docField('category')) docField('category')!.value = doc.category ?? '';
+        if (doc.filename && docUploadedLine && docUploadedName) {
+          docUploadedName.textContent = doc.filename;
+          docUploadedLine.hidden = false;
+        }
+      }
+      docDialog?.show();
+    }
+
+    // Each action button appears twice (empty state + populated toolbar) —
+    // wire every match, not just the first.
+    root.querySelectorAll('[data-crs-doc-add-discrete]').forEach((btn) =>
+      btn.addEventListener('click', () => openDocDialog('Add discrete due date', null)));
+    root.querySelectorAll('[data-crs-doc-add-upload]').forEach((btn) =>
+      btn.addEventListener('click', () => openDocDialog('Upload commitment document', null)));
+
+    docCancel?.addEventListener('click', () => {
+      docDialog?.close();
+      editingIndex = null;
+    });
+
+    docSave?.addEventListener('click', () => {
+      const title = docFieldValue('title');
+      if (!title) {
+        if (docError) docError.hidden = false;
+        return;
+      }
+      const filename = pendingFile?.name ?? (editingIndex != null ? docs[editingIndex].filename : undefined);
+      const uploadedNow = pendingFile != null;
+      const row: DocRow = {
+        commitmentNumber,
+        title,
+        dueDate: isoToUSDate(docFieldValue('dueDate')),
+        description: docFieldValue('description'),
+        type: docFieldValue('type'),
+        category: docFieldValue('category'),
+        filename,
+        uploadDate: uploadedNow
+          ? new Date().toLocaleDateString('en-US')
+          : editingIndex != null ? docs[editingIndex].uploadDate : undefined,
+        uploadUser: uploadedNow
+          ? MOCK_USER
+          : editingIndex != null ? docs[editingIndex].uploadUser : undefined,
+      };
+
+      let message: string;
+      if (editingIndex != null) {
+        docs[editingIndex] = row;
+        message = `${row.title} updated.`;
+      } else {
+        docs.unshift(row);
+        message = `${row.title} added.`;
+      }
+      renderRows();
+      toast(message);
+      docDialog?.close();
+      editingIndex = null;
+    });
+
+    // ── Recurring due date dialog ──
+    const recDialog = root.querySelector<DialogEl>('[data-crs-recurring-dialog]');
+    const recForm = root.querySelector<HTMLFormElement>('[data-crs-recurring-form]');
+    const recCancel = root.querySelector<HTMLElement>('[data-crs-recurring-cancel]');
+    const recSave = root.querySelector<HTMLElement>('[data-crs-recurring-save]');
+    const recError = root.querySelector<HTMLElement & { hidden: boolean }>('[data-crs-recurring-error]');
+
+    const recField = (name: string): DocField | null =>
+      recForm?.querySelector<DocField>(`[data-field="${name}"]`) ?? null;
+    const recFieldValue = (name: string): string => (recField(name)?.value ?? '').trim();
+
+    function resetRecForm(): void {
+      recForm?.querySelectorAll<DocField>('[data-field]').forEach((el) => {
+        if ('value' in el) el.value = '';
+      });
+      if (recField('repeatYears')) recField('repeatYears')!.value = '1';
+      if (recError) recError.hidden = true;
+    }
+
+    root.querySelectorAll('[data-crs-doc-add-recurring]').forEach((btn) =>
+      btn.addEventListener('click', () => {
+        resetRecForm();
+        recDialog?.show();
+      }));
+    recCancel?.addEventListener('click', () => recDialog?.close());
+
+    recSave?.addEventListener('click', () => {
+      const title = recFieldValue('title');
+      const firstDueDate = recFieldValue('firstDueDate');
+      if (!title || !firstDueDate) {
+        if (recError) recError.hidden = false;
+        return;
+      }
+      const step = Math.max(1, Number(recFieldValue('repeatYears')) || 1);
+      const description = recFieldValue('description');
+      const type = recFieldValue('type');
+      const category = recFieldValue('category');
+      const capYear = Math.min(commitmentEndYear, HORIZON_YEAR);
+
+      // Pure calendar-component math — no Date object round-trip. firstDueDate
+      // is ISO ("YYYY-MM-DD") from esa-date-picker; `new Date()` parses a
+      // date-only ISO string as UTC midnight, but its getFullYear()/setFullYear()
+      // read/write LOCAL time, so mutating a parsed Date's year can silently
+      // shift the day in any timezone behind UTC. Working on the Y/M/D
+      // components directly sidesteps that, and storing M/D/YYYY (not ISO)
+      // keeps every generated row on the same local-parse path as the rest of
+      // the mock dataset — see isoToUSDate's comment above.
+      const [firstYear, month, day] = firstDueDate.split('-').map(Number);
+      const generated: DocRow[] = [];
+      for (let year = firstYear; year <= capYear; year += step) {
+        generated.push({
+          commitmentNumber,
+          title: `${title} — ${year}`,
+          dueDate: `${month}/${day}/${year}`,
+          description,
+          type,
+          category,
+        });
+      }
+      docs.unshift(...generated.reverse());
+      renderRows();
+      toast(`${generated.length} due date${generated.length === 1 ? '' : 's'} added.`);
+      recDialog?.close();
+    });
+
+    // ── Delete confirmation ──
+    const deleteConfirm = root.querySelector<ConfirmDialogEl & { message: string }>('[data-crs-doc-delete-confirm]');
+    let deleteIndex: number | null = null;
+
+    deleteConfirm?.addEventListener('confirm', () => {
+      if (deleteIndex == null) return;
+      const [removed] = docs.splice(deleteIndex, 1);
+      deleteIndex = null;
+      renderRows();
+      toast(`${removed.title} deleted.`);
+    });
+
+    // ── Row menu delegation (Edit / Delete) ──
+    rowsBody.addEventListener('menu-action', (e) => {
+      const menu = (e.target as HTMLElement).closest<MenuEl>('[data-crs-doc-menu]');
+      if (!menu) return;
+      const index = Number(menu.getAttribute('data-crs-doc-menu'));
+      if (!Number.isFinite(index)) return;
+      const action = (e as CustomEvent).detail;
+      if (action === 'edit') {
+        openDocDialog('Edit due date / document', index);
+      } else if (action === 'delete') {
+        deleteIndex = index;
+        if (deleteConfirm) deleteConfirm.message = `Delete "${docs[index].title}"? This can't be undone.`;
+        if (deleteConfirm) deleteConfirm.open = true;
+      }
+    });
+
+    // ── Rendering ──
+    function toast(message: string): void {
+      const snackbar = document.querySelector<HTMLElement & { success?: (msg: string, cfg?: unknown) => void }>('[data-snackbar]');
+      snackbar?.success?.(message, { duration: 4000 });
+    }
+
+    function renderRows(): void {
+      const hasDocs = docs.length > 0;
+      emptyEl!.hidden = hasDocs;
+      populatedEl!.hidden = !hasDocs;
+      if (countEl) countEl.textContent = `${docs.length} ${docs.length === 1 ? 'due date/document' : 'due dates/documents'}`;
+
+      rowsBody!.replaceChildren(...docs.map((doc, index) => {
+        const tr = document.createElement('tr');
+        const due = asDate(doc.dueDate);
+        const uploaded = asDate(doc.uploadDate);
+        tr.innerHTML = `
+          <td class="cbf-crs-doc-table__menu-col"></td>
+          <td>${due ? esc(dateFmt.format(due)) : ''}</td>
+          <td>${esc(doc.category ?? '')}</td>
+          <td>${esc(doc.type ?? '')}</td>
+          <td>${esc(doc.title ?? '')}</td>
+          <td>${esc(doc.description ?? '')}</td>
+          <td>${esc(doc.filename ?? '')}</td>
+          <td>${uploaded ? esc(dateFmt.format(uploaded)) : ''}</td>
+          <td>${esc(doc.uploadUser ?? '')}</td>
+        `;
+        const menu = document.createElement('esa-dropdown-menu') as MenuEl;
+        menu.setAttribute('position', 'below-start');
+        menu.setAttribute('data-crs-doc-menu', String(index));
+        menu.innerHTML = triggerHTML;
+        menu.items = [
+          { label: 'Edit', action: 'edit' },
+          { label: 'Delete', action: 'delete', variant: 'danger' },
+        ];
+        tr.firstElementChild!.appendChild(menu);
+        return tr;
+      }));
+    }
+
+    renderRows();
+  }
+
+  document
+    .querySelectorAll<HTMLScriptElement>('[data-crs-doc-data]')
+    .forEach((dataEl) => {
+      const root = dataEl.closest<HTMLElement>('.esa-card');
+      if (root) initDocuments(root);
+    });
+</script>

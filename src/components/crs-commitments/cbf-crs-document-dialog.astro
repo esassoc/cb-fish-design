@@ -1,0 +1,115 @@
+---
+// cbf-crs-document-dialog — the single shared dialog behind "Add Discrete Due
+// Date", "Upload Commitment Document", and a row's "Edit" action on the
+// per-commitment Commitment Documents section (cbf-crs-commitment-documents.astro).
+//
+// The real CBFish CommitmentSummary page (qa.cbfish.org
+// BiologicalOpinionCommitment.mvc/CommitmentSummary/<id>, checked live) splits
+// these into three routes, but all three render the same title/due-date/
+// description/type/category fields — the upload route just adds a file input
+// and an "attach to an existing due date" picker. Our data model already
+// unifies a due date and its document into one CrsDocument record (a row can
+// carry a dueDate with no filename, meaning "pending" — see
+// src/data/crs-commitments.mjs's documentYearMarkers doc comment), so one
+// dialog covers all three entry points here: the caller sets the heading and
+// prefills fields (empty for "add", populated for "edit") right before
+// `.show()`, same single-instance-retargeted-per-click pattern as the
+// dashboard's Edit Status dialog (cbf-crs-commitments-dashboard.astro).
+//
+// bcn-lego-checked: every field is a lego — esa-text-field (title),
+// esa-date-picker (due date), esa-textarea (description), esa-select (type,
+// category), esa-file-upload (the optional attachment). esa-dialog is the
+// modal shell. No bespoke form control anywhere in this component.
+import EsaButton from '@esa/ecology/esa-button.astro';
+
+const documentTypes = [
+  'Communication', 'Assessment/Evaluation', 'Annual Report', 'Five-year Report',
+  'Final Report', 'Decision Document', 'Other',
+].map((v) => ({ label: v, value: v }));
+
+const documentCategories = [
+  'Commitment Deliverable', 'BiOp Reporting Requirement', 'Commitment Supporting Document',
+].map((v) => ({ label: v, value: v }));
+---
+<esa-dialog heading="Add a due date" show-close-button size="lg" data-crs-doc-dialog>
+  <form class="cbf-crs-doc-form stack" data-gap="md" data-crs-doc-form>
+    <esa-text-field
+      label="Document Title"
+      placeholder="e.g. Annual Count Summary — 2027"
+      required
+      data-field="title"
+    ></esa-text-field>
+
+    <esa-date-picker label="Due Date" data-field="dueDate"></esa-date-picker>
+
+    <esa-textarea
+      label="Description"
+      rows="3"
+      placeholder="Optional"
+      data-field="description"
+    ></esa-textarea>
+
+    <div class="cbf-crs-doc-form__row">
+      <esa-select
+        label="Document Type"
+        placeholder="Choose one"
+        options={JSON.stringify(documentTypes)}
+        data-field="type"
+      ></esa-select>
+      <esa-select
+        label="Document Category"
+        placeholder="Choose one"
+        options={JSON.stringify(documentCategories)}
+        data-field="category"
+      ></esa-select>
+    </div>
+
+    <p class="type-caption cbf-crs-doc-form__uploaded" data-crs-doc-uploaded hidden>
+      Uploaded file: <span data-crs-doc-uploaded-name></span>
+    </p>
+    <div data-crs-doc-file-slot>
+      <esa-file-upload
+        data-crs-doc-file
+        label="File to upload"
+        accept=".pdf,.doc,.docx,.xls,.xlsx"
+        max-size-mb="10"
+      ></esa-file-upload>
+    </div>
+
+    <p class="type-caption cbf-crs-doc-form__error" data-crs-doc-error hidden>
+      Enter a document title to continue.
+    </p>
+  </form>
+
+  <div slot="footer">
+    <span data-crs-doc-cancel>
+      <EsaButton color="ghost" appearance="outline">Cancel</EsaButton>
+    </span>
+    <span data-crs-doc-save>
+      <EsaButton color="primary">Save</EsaButton>
+    </span>
+  </div>
+</esa-dialog>
+
+<style>
+  .cbf-crs-doc-form__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-400);
+  }
+  .cbf-crs-doc-form__error {
+    color: var(--color-danger-strong);
+  }
+  .cbf-crs-doc-form__uploaded {
+    color: var(--color-text-secondary);
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-date-picker';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-textarea';
+  import '@esa/ecology/esa-file-upload';
+</script>
