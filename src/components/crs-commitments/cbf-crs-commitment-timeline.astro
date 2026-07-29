@@ -11,8 +11,10 @@
 // bold label — no saturated fill, per the "containers stay neutral" rule.
 //
 // YEARS / CURRENT_YEAR / STATUS_TONE are imported from the single-source data
-// module so the row and the legend can never drift out of sync (both read the same
-// map). Only the per-commitment statusByYear arrives via Props.
+// module, so the pill colors can never drift from the shared status palette.
+// Only the per-commitment statusByYear arrives via Props. (A status legend
+// below the row was removed — six always-visible pills repeating labels
+// already readable on the row above wasn't earning its space.)
 //
 // layouts.css / type-roles.css ship as separate @esa/tokens CSS modules (not
 // bundled into tokens.css), so import them here to stay self-contained.
@@ -36,8 +38,6 @@ interface Props {
 const { statusByYear } = Astro.props;
 
 const tone = STATUS_TONE as Record<string, PillVariant>;
-// Legend rows derive from the same STATUS_TONE map that colors the row above.
-const legend = Object.keys(STATUS_TONE) as string[];
 ---
 <EsaCard title="Commitment status by year" variant="outlined" padding="default">
   <div class="cbf-timeline">
@@ -61,13 +61,6 @@ const legend = Object.keys(STATUS_TONE) as string[];
           </div>
         );
       })}
-    </div>
-
-    <div class="cbf-timeline__legend cluster" data-gap="sm" aria-label="Status legend">
-      <span class="cbf-timeline__legend-lead type-label">Status</span>
-      {legend.map((status) => (
-        <EsaPill label={status} variant={tone[status] ?? 'default'} size="sm" removable={false} />
-      ))}
     </div>
   </div>
 </EsaCard>
@@ -120,13 +113,5 @@ const legend = Object.keys(STATUS_TONE) as string[];
   .cbf-timeline__none {
     color: var(--color-text-muted);
     line-height: 1;
-  }
-
-  .cbf-timeline__legend {
-    padding-top: var(--spacing-400);
-    border-top: 1px solid var(--color-border);
-  }
-  .cbf-timeline__legend-lead {
-    color: var(--color-text-secondary);
   }
 </style>
