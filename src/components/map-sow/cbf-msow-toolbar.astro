@@ -10,8 +10,9 @@ interface Props {
   contractNum: string;
   cor: string;
   fy: string;
+  backHref: string;
 }
-const { contractNum, cor, fy } = Astro.props;
+const { contractNum, cor, fy, backHref } = Astro.props;
 ---
 <div class="msow-toolbar">
 
@@ -60,6 +61,10 @@ const { contractNum, cor, fy } = Astro.props;
   -->
 
   <div class="msow-toolbar-actions">
+    <!-- Modeled on the real CBFish "Back to SOW" button — same placement (leftmost
+         in the action row, ghost/outline), same purpose: return to wherever this
+         tool session was launched from. -->
+    <EsaButton color="ghost" appearance="outline" size="sm" href={backHref}>&larr; Back to Work Element</EsaButton>
     <span onclick="clearAll()">
       <EsaButton color="ghost" appearance="outline" size="sm">Clear All</EsaButton>
     </span>

@@ -1,0 +1,59 @@
+---
+// /work-elements — the "Mitigation work > Work elements" landing page. A
+// scannable list of work statement elements a user would pick from before
+// launching a design tool for one of them — the entry point the Habitat
+// Design Tool prototype was previously missing (it was only reachable via
+// the homepage's Prototypes demo grid). Thin assembler: chrome from cbf-*
+// shared components, each row from cbf-work-element-card.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
+import CbfPageHeading from '../components/shared/cbf-page-heading.astro';
+import CbfWorkElementCard from '../components/work-elements/cbf-work-element-card.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import '@esa/tokens/layouts.css';
+import { workElements } from '../data/work-elements';
+import { withBase } from '../lib/base';
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+const crumbs = [
+  { label: 'Home', href: withBase('/'), icon: homeIcon },
+  { label: 'Mitigation Work' },
+  { label: 'Work Elements' },
+];
+---
+<!-- manifest:
+  layout: esa-container > cbf-app-panel
+  sections:
+    - top nav      -> cbf-public-nav
+    - page frame   -> esa-container
+    - page heading -> cbf-page-heading
+    - WE list      -> cbf-work-element-card (one per work element, on .stack)
+-->
+<BaseLayout title="Work Elements — Columbia Basin Fish &amp; Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1200px">
+      <CbfAppPanel crumbs={crumbs}>
+        <CbfPageHeading title="Work Elements" />
+        <p class="cbf-page-intro">Work statement elements across active contracts. Select one to view its design tool, milestones, and metrics.</p>
+        <div class="stack cbf-we-list">
+          {workElements.map((we) => <CbfWorkElementCard workElement={we} />)}
+        </div>
+      </CbfAppPanel>
+    </EsaContainer>
+  </main>
+</BaseLayout>
+
+<style>
+  /* page-level outer rhythm only — every section is a component (manifest above) */
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+  .cbf-page-intro {
+    margin: 0 0 var(--spacing-500, 20px);
+    font-size: 16px;
+    color: var(--color-text-secondary);
+  }
+  .cbf-we-list { --gap: var(--spacing-400, 16px); }
+</style>
