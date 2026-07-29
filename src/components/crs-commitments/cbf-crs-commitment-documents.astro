@@ -51,7 +51,7 @@ const hasDocuments = documents.length > 0;
   <div class="cbf-crs-commitment-documents__empty" data-crs-doc-empty hidden={hasDocuments}>
     <EsaEmptyState
       title="No due dates or documents yet"
-      description="Add a recurring or discrete due date, or upload a document that doesn't need one."
+      description="Add a recurring due date if this commitment repeats on a schedule, a discrete due date for a one-off deliverable, or upload a document that doesn't need a due date. You can attach or replace a file on any due date later using its Edit action."
     >
       <div class="cluster" data-gap="sm">
         <span data-crs-doc-add-discrete><EsaButton color="primary" icon="calendar">Add discrete due date</EsaButton></span>
@@ -62,6 +62,12 @@ const hasDocuments = documents.length > 0;
   </div>
 
   <div class="cbf-crs-commitment-documents__populated stack" data-gap="md" data-crs-doc-populated hidden={!hasDocuments}>
+    <p class="cbf-crs-commitment-documents__intro type-caption">
+      Add a discrete due date for a one-off deliverable, a recurring due date if this commitment
+      repeats on a schedule, or upload a document that doesn't need a due date. To attach or
+      replace a file on an existing due date, use its Edit action below.
+    </p>
+
     <div class="cbf-crs-commitment-documents__toolbar repel">
       <span class="type-caption" data-crs-doc-count>
         {documents.length} {documents.length === 1 ? 'due date/document' : 'due dates/documents'}
@@ -129,6 +135,12 @@ const hasDocuments = documents.length > 0;
   .cbf-crs-commitment-documents__populated[hidden],
   .cbf-crs-commitment-documents__empty[hidden] {
     display: none;
+  }
+
+  .cbf-crs-commitment-documents__intro {
+    margin: 0;
+    color: var(--color-text-secondary);
+    max-width: 90ch;
   }
 
   .cbf-crs-doc-table-wrap {
