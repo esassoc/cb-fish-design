@@ -566,7 +566,8 @@ export function findCommitment(number) {
 
 /**
  * @typedef {{
- *   commitmentNumber: string; dueDate?: string; category: 'Commitment Deliverable' | 'Commitment Supporting Document';
+ *   commitmentNumber: string; dueDate?: string;
+ *   category: 'Commitment Deliverable' | 'BiOp Reporting Requirement' | 'Commitment Supporting Document';
  *   type: string; title: string; description: string; filename?: string; uploadDate?: string; uploadUser?: string;
  * }} CrsDocument
  */

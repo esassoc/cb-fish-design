@@ -1,0 +1,109 @@
+---
+// cbf-crs-recurring-due-date-dialog — "Add Recurring Due Date" on the
+// per-commitment Commitment Documents section. Kept separate from
+// cbf-crs-document-dialog because its shape is genuinely different (a first
+// due date + a repeat-every-N-years step, no file) — matches the real
+// CBFish NewRecurringDueDate form (checked live, qa.cbfish.org
+// BiologicalOpinionCommitment.mvc/NewRecurringDueDate/<id>): Document Title,
+// First Due Date, Repeat every N years, Description, Document Type,
+// Document Category.
+//
+// This prototype has no backend to lazily regenerate future occurrences
+// against, so on Save the parent script (cbf-crs-commitment-documents.astro)
+// generates every occurrence from First Due Date through the commitment's
+// end date (capped at the tracked YEARS horizon) up front, as ordinary rows —
+// each is then editable/deletable individually just like a discrete due date.
+//
+// bcn-lego-checked: esa-text-field (title, repeat-every-N-years), esa-date-picker
+// (first due date), esa-textarea (description), esa-select (type, category),
+// esa-dialog (modal shell) — no bespoke form control.
+import EsaButton from '@esa/ecology/esa-button.astro';
+
+const documentTypes = [
+  'Communication', 'Assessment/Evaluation', 'Annual Report', 'Five-year Report',
+  'Final Report', 'Decision Document', 'Other',
+].map((v) => ({ label: v, value: v }));
+
+const documentCategories = [
+  'Commitment Deliverable', 'BiOp Reporting Requirement', 'Commitment Supporting Document',
+].map((v) => ({ label: v, value: v }));
+---
+<esa-dialog heading="Add recurring due date" show-close-button size="lg" data-crs-recurring-dialog>
+  <form class="cbf-crs-recurring-form stack" data-gap="md" data-crs-recurring-form>
+    <esa-text-field
+      label="Document Title"
+      placeholder="e.g. Annual Count Summary"
+      required
+      data-field="title"
+    ></esa-text-field>
+
+    <!-- Type/Category lead the form, right after Title — see the matching note in
+         cbf-crs-document-dialog.astro: esa-select's dropdown gets clipped by
+         esa-dialog's own overflow:hidden shell if it opens too close to the
+         bottom edge, and there's no auto-flip-up to rely on. -->
+    <div class="cbf-crs-recurring-form__row">
+      <esa-select
+        label="Document Type"
+        placeholder="Choose one"
+        options={JSON.stringify(documentTypes)}
+        data-field="type"
+      ></esa-select>
+      <esa-select
+        label="Document Category"
+        placeholder="Choose one"
+        options={JSON.stringify(documentCategories)}
+        data-field="category"
+      ></esa-select>
+    </div>
+
+    <div class="cbf-crs-recurring-form__row">
+      <esa-date-picker label="First Due Date" required data-field="firstDueDate"></esa-date-picker>
+      <esa-text-field
+        label="Repeat every"
+        type="number"
+        suffix="years"
+        value="1"
+        data-field="repeatYears"
+      ></esa-text-field>
+    </div>
+
+    <esa-textarea
+      label="Description"
+      rows="3"
+      placeholder="Optional"
+      data-field="description"
+    ></esa-textarea>
+
+    <p class="type-caption cbf-crs-recurring-form__error" data-crs-recurring-error hidden>
+      Enter a document title and first due date to continue.
+    </p>
+  </form>
+
+  <div slot="footer">
+    <span data-crs-recurring-cancel>
+      <EsaButton color="ghost" appearance="outline">Cancel</EsaButton>
+    </span>
+    <span data-crs-recurring-save>
+      <EsaButton color="primary">Save</EsaButton>
+    </span>
+  </div>
+</esa-dialog>
+
+<style>
+  .cbf-crs-recurring-form__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-400);
+  }
+  .cbf-crs-recurring-form__error {
+    color: var(--color-danger-strong);
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-date-picker';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-textarea';
+</script>
