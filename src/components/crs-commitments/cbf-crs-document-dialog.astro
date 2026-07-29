@@ -33,6 +33,22 @@ const documentCategories = [
 ---
 <esa-dialog heading="Add a due date" show-close-button size="lg" data-crs-doc-dialog>
   <form class="cbf-crs-doc-form stack" data-gap="md" data-crs-doc-form>
+    <!-- Upload-entry-point only: lets an uploaded file satisfy a due date that's
+         already tracked (pending, no file yet) instead of creating a new,
+         duplicate row. Hidden for the Add Discrete Due Date / Edit entry points,
+         where there's either no existing row to attach to yet or you're already
+         on one. Picking a due date here prefills the rest of the form from that
+         row and retargets Save to update it, in place of cbf-crs-commitment-
+         documents.astro's row-level "Edit" action — the same underlying
+         operation, reached from the other direction. -->
+    <div data-crs-doc-existing-wrap hidden>
+      <esa-select
+        label="Existing Due Date (optional)"
+        placeholder="None — this document doesn't have one"
+        data-field="existingDueDate"
+      ></esa-select>
+    </div>
+
     <esa-text-field
       label="Document Title"
       placeholder="e.g. Annual Count Summary — 2027"

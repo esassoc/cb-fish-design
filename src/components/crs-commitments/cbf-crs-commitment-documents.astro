@@ -262,6 +262,8 @@ const hasDocuments = documents.length > 0;
     const docUploadedLine = root.querySelector<HTMLElement & { hidden: boolean }>('[data-crs-doc-uploaded]');
     const docUploadedName = root.querySelector<HTMLElement>('[data-crs-doc-uploaded-name]');
     const docFileSlot = root.querySelector<HTMLElement>('[data-crs-doc-file-slot]');
+    const docExistingWrap = root.querySelector<HTMLElement & { hidden: boolean }>('[data-crs-doc-existing-wrap]');
+    const docExistingSelect = root.querySelector<DocField>('[data-field="existingDueDate"]');
 
     const docField = (name: string): DocField | null =>
       docForm?.querySelector<DocField>(`[data-field="${name}"]`) ?? null;
@@ -288,32 +290,69 @@ const hasDocuments = documents.length > 0;
     }
 
     let editingIndex: number | null = null;
+    let pendingExistingIndex: number | null = null;
     let pendingFile: File | null = null;
 
     root.addEventListener('change', (e) => {
       const fromDocUpload = (e.target as HTMLElement).closest?.('[data-crs-doc-file-slot]');
-      if (!fromDocUpload) return;
-      const files = (e as CustomEvent).detail?.files ?? [];
-      pendingFile = files[0] ?? null;
+      if (fromDocUpload) {
+        const files = (e as CustomEvent).detail?.files ?? [];
+        pendingFile = files[0] ?? null;
+        return;
+      }
+      if (e.target === docExistingSelect) {
+        const raw = docExistingSelect?.value ?? '';
+        pendingExistingIndex = raw === '' ? null : Number(raw);
+        if (pendingExistingIndex != null) prefillFromDoc(docs[pendingExistingIndex]);
+        else clearPrefillableFields();
+      }
     });
 
-    function openDocDialog(heading: string, index: number | null): void {
+    function prefillFromDoc(doc: DocRow): void {
+      if (docField('title')) docField('title')!.value = doc.title ?? '';
+      if (docField('dueDate')) docField('dueDate')!.value = toISODate(doc.dueDate) ?? '';
+      if (docField('description')) docField('description')!.value = doc.description ?? '';
+      if (docField('type')) docField('type')!.value = doc.type ?? '';
+      if (docField('category')) docField('category')!.value = doc.category ?? '';
+      if (doc.filename && docUploadedLine && docUploadedName) {
+        docUploadedName.textContent = doc.filename;
+        docUploadedLine.hidden = false;
+      } else if (docUploadedLine) {
+        docUploadedLine.hidden = true;
+      }
+    }
+
+    function clearPrefillableFields(): void {
+      ['title', 'dueDate', 'description', 'type', 'category'].forEach((name) => {
+        if (docField(name)) docField(name)!.value = '';
+      });
+      if (docUploadedLine) docUploadedLine.hidden = true;
+    }
+
+    // Options are this commitment's pending due dates (a dueDate tracked, no
+    // file attached yet) — exactly the rows a fresh upload could satisfy.
+    // Rebuilt fresh on every open since docs can change between opens.
+    function populateExistingDueDateOptions(): void {
+      if (!docExistingSelect) return;
+      const options = docs
+        .map((doc, index) => ({ doc, index }))
+        .filter(({ doc }) => doc.dueDate && !doc.filename)
+        .map(({ doc, index }) => ({
+          label: `${doc.title}${doc.dueDate ? ` (due ${doc.dueDate})` : ''}`,
+          value: String(index),
+        }));
+      (docExistingSelect as unknown as { options: Array<{ label: string; value: string }> }).options = options;
+    }
+
+    function openDocDialog(heading: string, index: number | null, opts: { showExisting?: boolean } = {}): void {
       editingIndex = index;
+      pendingExistingIndex = null;
       pendingFile = null;
       resetDocForm();
       if (docDialog) docDialog.heading = heading;
-      if (index != null) {
-        const doc = docs[index];
-        if (docField('title')) docField('title')!.value = doc.title ?? '';
-        if (docField('dueDate')) docField('dueDate')!.value = toISODate(doc.dueDate) ?? '';
-        if (docField('description')) docField('description')!.value = doc.description ?? '';
-        if (docField('type')) docField('type')!.value = doc.type ?? '';
-        if (docField('category')) docField('category')!.value = doc.category ?? '';
-        if (doc.filename && docUploadedLine && docUploadedName) {
-          docUploadedName.textContent = doc.filename;
-          docUploadedLine.hidden = false;
-        }
-      }
+      if (docExistingWrap) docExistingWrap.hidden = !opts.showExisting;
+      if (opts.showExisting) populateExistingDueDateOptions();
+      if (index != null) prefillFromDoc(docs[index]);
       docDialog?.show();
     }
 
@@ -322,11 +361,12 @@ const hasDocuments = documents.length > 0;
     root.querySelectorAll('[data-crs-doc-add-discrete]').forEach((btn) =>
       btn.addEventListener('click', () => openDocDialog('Add discrete due date', null)));
     root.querySelectorAll('[data-crs-doc-add-upload]').forEach((btn) =>
-      btn.addEventListener('click', () => openDocDialog('Upload commitment document', null)));
+      btn.addEventListener('click', () => openDocDialog('Upload commitment document', null, { showExisting: true })));
 
     docCancel?.addEventListener('click', () => {
       docDialog?.close();
       editingIndex = null;
+      pendingExistingIndex = null;
     });
 
     docSave?.addEventListener('click', () => {
@@ -335,7 +375,8 @@ const hasDocuments = documents.length > 0;
         if (docError) docError.hidden = false;
         return;
       }
-      const filename = pendingFile?.name ?? (editingIndex != null ? docs[editingIndex].filename : undefined);
+      const targetIndex = editingIndex ?? pendingExistingIndex;
+      const filename = pendingFile?.name ?? (targetIndex != null ? docs[targetIndex].filename : undefined);
       const uploadedNow = pendingFile != null;
       const row: DocRow = {
         commitmentNumber,
@@ -347,15 +388,15 @@ const hasDocuments = documents.length > 0;
         filename,
         uploadDate: uploadedNow
           ? new Date().toLocaleDateString('en-US')
-          : editingIndex != null ? docs[editingIndex].uploadDate : undefined,
+          : targetIndex != null ? docs[targetIndex].uploadDate : undefined,
         uploadUser: uploadedNow
           ? MOCK_USER
-          : editingIndex != null ? docs[editingIndex].uploadUser : undefined,
+          : targetIndex != null ? docs[targetIndex].uploadUser : undefined,
       };
 
       let message: string;
-      if (editingIndex != null) {
-        docs[editingIndex] = row;
+      if (targetIndex != null) {
+        docs[targetIndex] = row;
         message = `${row.title} updated.`;
       } else {
         docs.unshift(row);
@@ -365,6 +406,7 @@ const hasDocuments = documents.length > 0;
       toast(message);
       docDialog?.close();
       editingIndex = null;
+      pendingExistingIndex = null;
     });
 
     // ── Recurring due date dialog ──
