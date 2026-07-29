@@ -487,6 +487,21 @@ const hasDocuments = documents.length > 0;
     });
 
     // ── Row menu delegation (Edit / Delete) ──
+    // esa-dropdown-menu always opens downward (`position` is a static prop, no
+    // auto-flip) — fine for most rows, but the last row or two on a page can
+    // open with "Delete" rendered below the viewport, unreachable without
+    // scrolling first. Capture-phase so this runs BEFORE the lego's own
+    // (bubble-phase, shadow-internal) toggle handler opens it, using the
+    // actual space below the trigger at click time rather than a fixed
+    // per-row guess.
+    rowsBody.addEventListener('click', (e) => {
+      const menu = (e.target as HTMLElement).closest<MenuEl>('[data-crs-doc-menu]');
+      if (!menu) return;
+      const spaceBelow = window.innerHeight - menu.getBoundingClientRect().bottom;
+      const menuHeight = 12 + menu.items.length * 36; // panel padding/margin + ~36px per item
+      menu.setAttribute('position', spaceBelow < menuHeight ? 'above-start' : 'below-start');
+    }, true);
+
     rowsBody.addEventListener('menu-action', (e) => {
       const menu = (e.target as HTMLElement).closest<MenuEl>('[data-crs-doc-menu]');
       if (!menu) return;
