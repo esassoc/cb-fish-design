@@ -40,15 +40,12 @@ const documentCategories = [
       data-field="title"
     ></esa-text-field>
 
-    <esa-date-picker label="Due Date" data-field="dueDate"></esa-date-picker>
-
-    <esa-textarea
-      label="Description"
-      rows="3"
-      placeholder="Optional"
-      data-field="description"
-    ></esa-textarea>
-
+    <!-- Type/Category lead the form (right after Title), not trail it: esa-select's
+         dropdown is clipped by esa-dialog's own overflow:hidden shell (keeps its
+         rounded corners crisp) if it opens too close to the bottom edge — there's no
+         auto-flip-up and no CSS override reaches into the dialog's shadow DOM from
+         here. Placing both selects near the top gives their dropdowns the rest of
+         the form's height to open into before they'd ever hit that edge. -->
     <div class="cbf-crs-doc-form__row">
       <esa-select
         label="Document Type"
@@ -63,6 +60,15 @@ const documentCategories = [
         data-field="category"
       ></esa-select>
     </div>
+
+    <esa-date-picker label="Due Date" data-field="dueDate"></esa-date-picker>
+
+    <esa-textarea
+      label="Description"
+      rows="3"
+      placeholder="Optional"
+      data-field="description"
+    ></esa-textarea>
 
     <p class="type-caption cbf-crs-doc-form__uploaded" data-crs-doc-uploaded hidden>
       Uploaded file: <span data-crs-doc-uploaded-name></span>

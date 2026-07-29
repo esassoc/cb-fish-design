@@ -37,6 +37,25 @@ const documentCategories = [
       data-field="title"
     ></esa-text-field>
 
+    <!-- Type/Category lead the form, right after Title — see the matching note in
+         cbf-crs-document-dialog.astro: esa-select's dropdown gets clipped by
+         esa-dialog's own overflow:hidden shell if it opens too close to the
+         bottom edge, and there's no auto-flip-up to rely on. -->
+    <div class="cbf-crs-recurring-form__row">
+      <esa-select
+        label="Document Type"
+        placeholder="Choose one"
+        options={JSON.stringify(documentTypes)}
+        data-field="type"
+      ></esa-select>
+      <esa-select
+        label="Document Category"
+        placeholder="Choose one"
+        options={JSON.stringify(documentCategories)}
+        data-field="category"
+      ></esa-select>
+    </div>
+
     <div class="cbf-crs-recurring-form__row">
       <esa-date-picker label="First Due Date" required data-field="firstDueDate"></esa-date-picker>
       <esa-text-field
@@ -54,21 +73,6 @@ const documentCategories = [
       placeholder="Optional"
       data-field="description"
     ></esa-textarea>
-
-    <div class="cbf-crs-recurring-form__row">
-      <esa-select
-        label="Document Type"
-        placeholder="Choose one"
-        options={JSON.stringify(documentTypes)}
-        data-field="type"
-      ></esa-select>
-      <esa-select
-        label="Document Category"
-        placeholder="Choose one"
-        options={JSON.stringify(documentCategories)}
-        data-field="category"
-      ></esa-select>
-    </div>
 
     <p class="type-caption cbf-crs-recurring-form__error" data-crs-recurring-error hidden>
       Enter a document title and first due date to continue.
