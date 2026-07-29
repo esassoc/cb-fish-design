@@ -488,18 +488,29 @@ const hasDocuments = documents.length > 0;
 
     // ── Row menu delegation (Edit / Delete) ──
     // esa-dropdown-menu always opens downward (`position` is a static prop, no
-    // auto-flip) — fine for most rows, but the last row or two on a page can
-    // open with "Delete" rendered below the viewport, unreachable without
-    // scrolling first. Capture-phase so this runs BEFORE the lego's own
-    // (bubble-phase, shadow-internal) toggle handler opens it, using the
-    // actual space below the trigger at click time rather than a fixed
-    // per-row guess.
+    // auto-flip). A first pass checked window.innerHeight, but that's the
+    // WRONG boundary: esa-card (esa-card.astro's own shadow-free styles) sets
+    // `overflow: hidden` on its own box to keep its rounded corners crisp —
+    // same category of clipping as esa-dialog's shell, just on a different
+    // ancestor. The card's box ends shortly after the table (just its own
+    // padding), almost always far less room than whatever's left in the
+    // viewport below it, so checking the viewport alone let the panel get
+    // clipped by the card even when window.innerHeight said there was plenty
+    // of space. Bound spaceBelow by BOTH the card's bottom edge and the
+    // viewport, and only flip up if that leaves more room than staying put.
     rowsBody.addEventListener('click', (e) => {
       const menu = (e.target as HTMLElement).closest<MenuEl>('[data-crs-doc-menu]');
       if (!menu) return;
-      const spaceBelow = window.innerHeight - menu.getBoundingClientRect().bottom;
+      const card = menu.closest<HTMLElement>('.esa-card');
+      const cardRect = card?.getBoundingClientRect();
+      const clipBottom = Math.min(window.innerHeight, cardRect?.bottom ?? Infinity);
+      const clipTop = Math.max(0, cardRect?.top ?? 0);
+      const rect = menu.getBoundingClientRect();
+      const spaceBelow = clipBottom - rect.bottom;
+      const spaceAbove = rect.top - clipTop;
       const menuHeight = 12 + menu.items.length * 36; // panel padding/margin + ~36px per item
-      menu.setAttribute('position', spaceBelow < menuHeight ? 'above-start' : 'below-start');
+      const flip = spaceBelow < menuHeight && spaceAbove > spaceBelow;
+      menu.setAttribute('position', flip ? 'above-start' : 'below-start');
     }, true);
 
     rowsBody.addEventListener('menu-action', (e) => {
