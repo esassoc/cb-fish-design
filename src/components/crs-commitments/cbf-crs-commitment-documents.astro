@@ -184,6 +184,7 @@ const hasDocuments = documents.length > 0;
   import '@esa/ecology/esa-dropdown-menu';
   import '@esa/ecology/esa-confirm-dialog';
   import { gridDateFormatter as dateFmt, asGridDate as asDate, escGridHtml as esc } from '../shared/grid-chrome';
+  import { toISODate, isoToUSDate } from '../../lib/dates';
 
   interface DocRow {
     commitmentNumber: string; dueDate?: string; category: string; type: string;
@@ -196,39 +197,6 @@ const hasDocuments = documents.length > 0;
 
   const MOCK_USER = 'Angela Zhao';
   const HORIZON_YEAR = 2035;
-
-  // The mock dataset stores dueDate/uploadDate as "M/D/YYYY" (US format, parsed
-  // in LOCAL time by `new Date()`), but esa-date-picker wraps a native
-  // <input type="date">, which only accepts ISO "YYYY-MM-DD" — anything else is
-  // silently rejected, so an M/D/YYYY value would prefill as blank when editing
-  // an existing row. Normalize to ISO using LOCAL date components (not
-  // toISOString(), which reinterprets through UTC and can shift the day by one
-  // depending on the browser's timezone) so both old and new rows share one
-  // representation.
-  function toISODate(s?: string): string | undefined {
-    if (!s) return undefined;
-    const d = new Date(s);
-    if (Number.isNaN(d.getTime())) return undefined;
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  }
-
-  // The reverse conversion, for the picker's output going back INTO storage.
-  // Pure string math (no Date object) on purpose: esa-date-picker's native
-  // <input type="date"> always yields ISO "YYYY-MM-DD", and `new Date()`
-  // parses a date-only ISO string as UTC midnight while `Intl.DateTimeFormat`
-  // (used to display it, in grid-chrome.ts's dateFmt) formats in the LOCAL
-  // timezone — round-tripping through Date objects here shifts the day by one
-  // in any timezone behind UTC. Storing M/D/YYYY (like the rest of the mock
-  // dataset) keeps every date on the same local-parse path.
-  function isoToUSDate(iso?: string): string | undefined {
-    if (!iso) return undefined;
-    const [y, m, d] = iso.split('-').map(Number);
-    if (!y || !m || !d) return undefined;
-    return `${m}/${d}/${y}`;
-  }
 
   function initDocuments(root: HTMLElement) {
     const dataEl = root.querySelector<HTMLScriptElement>('[data-crs-doc-data]');

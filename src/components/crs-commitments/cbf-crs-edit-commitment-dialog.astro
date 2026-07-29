@@ -1,0 +1,207 @@
+---
+// cbf-crs-edit-commitment-dialog — "Edit CRS Commitment", launched from the
+// "Edit" action on the per-commitment detail page's Basics panel
+// (cbf-crs-commitment-basics.astro). Mirrors the real CBFish
+// EditBiologicalOpinionCommitment page's field set for the SAME entity — that
+// page requires an authenticated account to view (confirmed live at
+// qa.cbfish.org: "Continue as anonymous" still lands on a login wall for the
+// Edit route, unlike the read-only Summary page), so this reuses the field
+// set already checked against prod for the sibling "Create new CRS
+// Commitment" form (cbf-crs-create-commitment-dialog.astro) rather than the
+// Edit form specifically — same entity, same fields, and Create's own header
+// comment documents the prod field-coverage check this inherits.
+//
+// This spoke builds to static HTML with no backend (see cbf-password-gate.astro's
+// security note for the same constraint) — Save updates the in-memory commitment
+// record and re-renders the Basics panel's displayed fields; nothing persists
+// past a page reload.
+//
+// bcn-lego-checked: identical control set to cbf-crs-create-commitment-dialog.astro
+// — esa-select (Category/Subcategory/Type/Frequency/Deliverable frequency),
+// esa-textarea (Description/Interpretation/Implementation/Notes), esa-dialog
+// (modal chrome), esa-text-field (single-line text), esa-date-picker (start/end
+// date), esa-button (footer actions). No bespoke form control.
+import EsaButton from '@esa/ecology/esa-button.astro';
+
+interface Props {
+  categories: string[];
+  subcategories: string[];
+  types: string[];
+  frequencies: string[];
+  deliverableFrequencies: string[];
+}
+
+const { categories, subcategories, types, frequencies, deliverableFrequencies } = Astro.props;
+
+const asOptions = (values: string[]) => values.map((v) => ({ label: v, value: v }));
+---
+<esa-dialog heading="Edit CRS Commitment" show-close-button size="lg" data-crs-edit-commitment-dialog>
+  <form class="cbf-crs-edit-commitment-form stack" data-gap="lg" data-crs-edit-commitment-form>
+    <p class="type-caption cbf-crs-edit-commitment-form__number" data-crs-edit-commitment-number></p>
+
+    <section class="stack" data-gap="md">
+      <h3 class="type-section-title">Overview</h3>
+
+      <esa-text-field
+        label="Title"
+        placeholder="e.g. Continue adult fish counts at mainstem dams"
+        required
+        data-field="title"
+      ></esa-text-field>
+
+      <esa-text-field
+        label="Source"
+        placeholder="e.g. Basin Fish Passage Biological Assessment - Proposed Action"
+        data-field="source"
+      ></esa-text-field>
+
+      <div class="cbf-crs-edit-commitment-form__row">
+        <esa-text-field label="Section" placeholder="e.g. 2.7.1.1" data-field="sectionNumber"></esa-text-field>
+        <esa-text-field label="Page" placeholder="e.g. 2-118" data-field="pageNumber"></esa-text-field>
+      </div>
+
+      <div class="cbf-crs-edit-commitment-form__row">
+        <esa-select
+          label="Category"
+          required
+          placeholder="Select…"
+          options={JSON.stringify(asOptions(categories))}
+          data-field="category"
+        ></esa-select>
+        <esa-select
+          label="Subcategory"
+          placeholder="Select…"
+          options={JSON.stringify(asOptions(subcategories))}
+          data-field="subcategory"
+        ></esa-select>
+      </div>
+
+      <div class="cbf-crs-edit-commitment-form__row">
+        <esa-select
+          label="Type"
+          placeholder="Select…"
+          options={JSON.stringify(asOptions(types))}
+          data-field="commitmentType"
+        ></esa-select>
+        <esa-select
+          label="Frequency"
+          placeholder="Select…"
+          options={JSON.stringify(asOptions(frequencies))}
+          data-field="frequency"
+        ></esa-select>
+      </div>
+
+      <esa-textarea
+        label="Description"
+        rows="2"
+        placeholder="What the commitment requires"
+        data-field="description"
+      ></esa-textarea>
+      <esa-textarea
+        label="Interpretation"
+        rows="2"
+        placeholder="How the Action Agencies read this requirement"
+        data-field="interpretation"
+      ></esa-textarea>
+      <esa-textarea
+        label="Implementation"
+        rows="2"
+        placeholder="Who does the work and how"
+        data-field="implementation"
+      ></esa-textarea>
+      <esa-textarea
+        label="Notes"
+        rows="2"
+        placeholder="Optional"
+        data-field="notes"
+      ></esa-textarea>
+
+      <esa-text-field
+        label="Other associated commitments"
+        placeholder="Optional"
+        data-field="otherAssociatedCommitments"
+      ></esa-text-field>
+
+      <div class="cbf-crs-edit-commitment-form__row">
+        <esa-date-picker label="Start date" data-field="startDate"></esa-date-picker>
+        <esa-date-picker label="End date" data-field="endDate"></esa-date-picker>
+      </div>
+
+      <div class="cbf-crs-edit-commitment-form__row">
+        <esa-text-field label="Deliverable" placeholder="e.g. Annual Count Summary" data-field="deliverable"></esa-text-field>
+        <esa-select
+          label="Deliverable frequency"
+          placeholder="Select…"
+          options={JSON.stringify(asOptions(deliverableFrequencies))}
+          data-field="deliverableFrequency"
+        ></esa-select>
+      </div>
+
+      <esa-text-field
+        label="Document due date"
+        placeholder="e.g. 3/1 or 12/31/2024"
+        data-field="documentDueDate"
+      ></esa-text-field>
+    </section>
+
+    <section class="stack" data-gap="md">
+      <h3 class="type-section-title">Responsible parties</h3>
+
+      <div class="cbf-crs-edit-commitment-form__row">
+        <esa-text-field label="Lead agency" placeholder="e.g. BPA" data-field="leadAgency"></esa-text-field>
+        <esa-text-field label="Partner agency" placeholder="e.g. USACE" data-field="partnerAgency"></esa-text-field>
+      </div>
+
+      <div class="cbf-crs-edit-commitment-form__row">
+        <esa-text-field label="Partner POC" placeholder="Name" data-field="partnerPOC"></esa-text-field>
+        <esa-text-field label="Policy lead" placeholder="Name" data-field="policyLead"></esa-text-field>
+      </div>
+
+      <div class="cbf-crs-edit-commitment-form__row">
+        <esa-text-field label="BiOp SME" placeholder="Name" data-field="biopSME"></esa-text-field>
+        <esa-text-field label="COR" placeholder="Name" data-field="cor"></esa-text-field>
+      </div>
+
+      <div class="cbf-crs-edit-commitment-form__row">
+        <esa-text-field label="NMFS POC" placeholder="Name" data-field="nmfsPOC"></esa-text-field>
+        <esa-text-field label="Associated projects" placeholder="e.g. PRJ-2016-041" data-field="associatedProjects"></esa-text-field>
+      </div>
+    </section>
+
+    <p class="type-caption cbf-crs-edit-commitment-form__error" data-crs-edit-commitment-error hidden>
+      Enter a title and choose a category to continue.
+    </p>
+  </form>
+
+  <div slot="footer">
+    <span data-crs-edit-commitment-cancel>
+      <EsaButton color="ghost" appearance="outline">Cancel</EsaButton>
+    </span>
+    <span data-crs-edit-commitment-save>
+      <EsaButton color="primary">Save changes</EsaButton>
+    </span>
+  </div>
+</esa-dialog>
+
+<style>
+  .cbf-crs-edit-commitment-form__row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-400);
+  }
+  .cbf-crs-edit-commitment-form__number {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+  .cbf-crs-edit-commitment-form__error {
+    color: var(--color-danger-strong);
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-date-picker';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-textarea';
+</script>
