@@ -17,6 +17,14 @@
 // different (first date + repeat-every-N-years) and gets its own
 // (cbf-crs-recurring-due-date-dialog.astro).
 //
+// Deleting a row that carries BOTH a dueDate and a filename (a due date
+// that's already been satisfied) only clears the document, reverting the row
+// to pending — the due date itself is not removed, matching prod. Only a row
+// with no filename (a bare due date) or a filename with no dueDate (a
+// standalone upload) has nothing left to keep, so that delete removes the
+// whole row. Deleting a satisfied due date's row entirely is therefore two
+// steps: delete the document, then delete the now-pending row.
+//
 // bcn-lego-checked: ecology has NO table/grid lego (checked the full catalog).
 // AG Grid (used by the cross-commitment library, 111 rows) is overkill here —
 // a single commitment carries a handful of due dates/documents, not a
@@ -443,15 +451,30 @@ const hasDocuments = documents.length > 0;
     });
 
     // ── Delete confirmation ──
-    const deleteConfirm = root.querySelector<ConfirmDialogEl & { message: string }>('[data-crs-doc-delete-confirm]');
+    // A row with both a dueDate and a filename represents a due date that's
+    // already been satisfied — matches prod: deleting it only removes the
+    // uploaded document and reverts the row to "pending" (dueDate persists).
+    // Only a row with no filename (a bare due date) or a filename with no
+    // dueDate (a standalone upload) has nothing left to keep, so THAT delete
+    // removes the whole row. To delete a satisfied due date's row entirely,
+    // a user deletes the document first, then deletes the now-pending row.
+    const deleteConfirm = root.querySelector<ConfirmDialogEl & { message: string; heading: string }>('[data-crs-doc-delete-confirm]');
     let deleteIndex: number | null = null;
 
     deleteConfirm?.addEventListener('confirm', () => {
       if (deleteIndex == null) return;
-      const [removed] = docs.splice(deleteIndex, 1);
+      const doc = docs[deleteIndex];
+      if (doc.filename && doc.dueDate) {
+        doc.filename = undefined;
+        doc.uploadDate = undefined;
+        doc.uploadUser = undefined;
+        toast(`Document removed from ${doc.title}.`);
+      } else {
+        docs.splice(deleteIndex, 1);
+        toast(`${doc.title} deleted.`);
+      }
       deleteIndex = null;
       renderRows();
-      toast(`${removed.title} deleted.`);
     });
 
     // ── Row menu delegation (Edit / Delete) ──
@@ -491,8 +514,15 @@ const hasDocuments = documents.length > 0;
         openDocDialog('Edit due date / document', index);
       } else if (action === 'delete') {
         deleteIndex = index;
-        if (deleteConfirm) deleteConfirm.message = `Delete "${docs[index].title}"? This can't be undone.`;
-        if (deleteConfirm) deleteConfirm.open = true;
+        const doc = docs[index];
+        const documentOnly = !!(doc.filename && doc.dueDate);
+        if (deleteConfirm) {
+          deleteConfirm.heading = documentOnly ? 'Delete this document?' : 'Delete this row?';
+          deleteConfirm.message = documentOnly
+            ? `Delete the uploaded document for "${doc.title}"? The due date will remain. This can't be undone.`
+            : `Delete "${doc.title}"? This can't be undone.`;
+          deleteConfirm.open = true;
+        }
       }
     });
 
@@ -529,7 +559,11 @@ const hasDocuments = documents.length > 0;
         menu.innerHTML = triggerHTML;
         menu.items = [
           { label: 'Edit', action: 'edit' },
-          { label: 'Delete', action: 'delete', variant: 'danger' },
+          {
+            label: doc.filename && doc.dueDate ? 'Delete document' : 'Delete',
+            action: 'delete',
+            variant: 'danger',
+          },
         ];
         tr.firstElementChild!.appendChild(menu);
         return tr;
