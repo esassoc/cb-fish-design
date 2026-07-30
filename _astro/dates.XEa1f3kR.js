@@ -1,0 +1,1 @@
+function o(e){if(!e)return;const t=new Date(e);if(Number.isNaN(t.getTime()))return;const r=t.getFullYear(),n=String(t.getMonth()+1).padStart(2,"0"),i=String(t.getDate()).padStart(2,"0");return`${r}-${n}-${i}`}function a(e){if(!e)return;const[t,r,n]=e.split("-").map(Number);if(!(!t||!r||!n))return`${r}/${n}/${t}`}export{a as i,o as t};
