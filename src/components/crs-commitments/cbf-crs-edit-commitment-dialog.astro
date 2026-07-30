@@ -1,43 +1,36 @@
 ---
-// cbf-crs-create-commitment-dialog — the "Create new CRS Commitment" modal
-// launched from the commitments grid's header CTA. Collects the fields a
-// Commitment Administrator sets when standing up a new tracked commitment —
-// grouped into the same "Overview" / "Responsible parties" sections as
-// cbf-crs-commitment-basics.astro's read view, so create and view share one
-// mental model of the record. This spoke builds to static HTML with no
-// backend (see cbf-password-gate.astro's security note for the same
-// constraint) — Create adds the row to the grid's in-memory AG Grid table and
-// confirms with a toast; nothing persists past a page reload.
+// cbf-crs-edit-commitment-dialog — "Edit CRS Commitment", launched from the
+// "Edit" action on the per-commitment detail page's Basics panel
+// (cbf-crs-commitment-basics.astro). Mirrors the real CBFish
+// EditBiologicalOpinionCommitment page's field set for the SAME entity — that
+// page requires an authenticated account to view (confirmed live at
+// qa.cbfish.org: "Continue as anonymous" still lands on a login wall for the
+// Edit route, unlike the read-only Summary page), so this reuses the field
+// set already checked against prod for the sibling "Create new CRS
+// Commitment" form (cbf-crs-create-commitment-dialog.astro) rather than the
+// Edit form specifically — same entity, same fields, and Create's own header
+// comment documents the prod field-coverage check this inherits.
 //
-// Field coverage was checked directly against prod (cbfish.org's real "New CRS
-// Commitment" form) — every field prod collects has a home here, EXCEPT prod's
-// tag-adding comboboxes for Source/Category/Subcategory (multi-value pickers)
-// and its rich-text Description editor, which are simplified to a single value
-// / plain textarea respectively — this is a demo prototype, not a byte-for-
-// byte port, and no lego provides a multi-select-with-existing-tags widget or
-// an RTE. Commitment Number is auto-generated here (prod takes it as manual
-// text) to avoid a duplicate-number entry mistake in the demo.
+// This spoke builds to static HTML with no backend (see cbf-password-gate.astro's
+// security note for the same constraint) — Save updates the in-memory commitment
+// record and re-renders the Basics panel's displayed fields (plus the sibling
+// timeline component and page heading); nothing persists past a page reload.
 //
-// Responsible-parties fields (Lead/Partner agency, Partner POC, Policy lead,
-// BiOp SME, COR, NMFS POC, Associated projects) are esa-select in `multiple`
-// (chip) mode, not plain text — real prod data confirms more than one value is
-// routine (e.g. two Policy Leads on one commitment), and the mock dataset
-// already stores these as comma-joined lists (src/lib/multi-value.ts is the
-// storage-string <-> selected-array conversion both this dialog's sibling
-// script and cbf-crs-edit-commitment-dialog.astro's use).
+// Also carries a "Status by year" section — ported from the real CBFish Edit
+// page, which lets a user set every tracked year's status right here rather
+// than only through the separate Dashboard's per-year edit mode. One
+// esa-select per tracked year (src/data/crs-commitments.mjs's YEARS), same
+// six-status list cbf-crs-commitments-dashboard.astro's own edit-status dialog
+// uses, plus "Unset" to clear a year entirely.
 //
-// Every control here IS a lego: esa-select (Category/Subcategory/Type/
-// Frequency/Deliverable frequency/Responsible parties), esa-textarea
-// (Description/Interpretation/Implementation/Notes), esa-dialog (modal chrome),
-// esa-text-field (single-line text), esa-date-picker (start/end date),
-// esa-button (footer actions). esa-select and esa-textarea previously never
-// rendered in this spoke's dev server (esassoc/ecology#5 — a class-field-
-// shadowing bug in esa-select; esa-textarea was misdiagnosed as the same bug
-// but was actually a stale Vite cache — see docs/system-improvement-ledger.md)
-// and this component fell back to bare form controls as a result. The hub fix
-// (ecology commit a915170) is confirmed live and pulled in, so both are back
-// to the real legos.
+// bcn-lego-checked: same control set as cbf-crs-create-commitment-dialog.astro
+// (see that file's own note on why Responsible-parties fields are esa-select
+// `multiple` rather than plain text) plus one more esa-select per tracked year
+// for the status-by-year section. esa-dialog (modal chrome), esa-text-field
+// (single-line text), esa-textarea (long text), esa-date-picker (start/end
+// date), esa-button (footer actions). No bespoke form control.
 import EsaButton from '@esa/ecology/esa-button.astro';
+import { YEARS } from '../../data/crs-commitments.mjs';
 
 interface Props {
   categories: string[];
@@ -62,9 +55,20 @@ const {
 } = Astro.props;
 
 const asOptions = (values: string[]) => values.map((v) => ({ label: v, value: v }));
+
+// Canonical lifecycle order (matches cbf-crs-commitments-grid.astro's own
+// STATUS_ORDER and the dashboard's edit-status dialog) plus "Unset" first, so
+// clearing a year is the deliberate top choice rather than mixed in
+// alphabetically among real statuses.
+const yearStatusOptions = [
+  { label: 'Unset', value: '' },
+  ...['Not Started', 'In Progress', 'Delayed', 'Future', 'Complete', 'Closed'].map((s) => ({ label: s, value: s })),
+];
 ---
-<esa-dialog heading="Create new CRS Commitment" show-close-button size="lg" data-crs-create-dialog>
-  <form class="cbf-crs-create-form stack" data-gap="lg" data-crs-create-form>
+<esa-dialog heading="Edit CRS Commitment" show-close-button size="lg" data-crs-edit-commitment-dialog>
+  <form class="cbf-crs-edit-commitment-form stack" data-gap="lg" data-crs-edit-commitment-form>
+    <p class="type-caption cbf-crs-edit-commitment-form__number" data-crs-edit-commitment-number></p>
+
     <section class="stack" data-gap="md">
       <h3 class="type-section-title">Overview</h3>
 
@@ -81,12 +85,12 @@ const asOptions = (values: string[]) => values.map((v) => ({ label: v, value: v 
         data-field="source"
       ></esa-text-field>
 
-      <div class="cbf-crs-create-form__row">
+      <div class="cbf-crs-edit-commitment-form__row">
         <esa-text-field label="Section" placeholder="e.g. 2.7.1.1" data-field="sectionNumber"></esa-text-field>
         <esa-text-field label="Page" placeholder="e.g. 2-118" data-field="pageNumber"></esa-text-field>
       </div>
 
-      <div class="cbf-crs-create-form__row">
+      <div class="cbf-crs-edit-commitment-form__row">
         <esa-select
           label="Category"
           required
@@ -102,7 +106,7 @@ const asOptions = (values: string[]) => values.map((v) => ({ label: v, value: v 
         ></esa-select>
       </div>
 
-      <div class="cbf-crs-create-form__row">
+      <div class="cbf-crs-edit-commitment-form__row">
         <esa-select
           label="Type"
           placeholder="Select…"
@@ -148,12 +152,12 @@ const asOptions = (values: string[]) => values.map((v) => ({ label: v, value: v 
         data-field="otherAssociatedCommitments"
       ></esa-text-field>
 
-      <div class="cbf-crs-create-form__row">
+      <div class="cbf-crs-edit-commitment-form__row">
         <esa-date-picker label="Start date" data-field="startDate"></esa-date-picker>
         <esa-date-picker label="End date" data-field="endDate"></esa-date-picker>
       </div>
 
-      <div class="cbf-crs-create-form__row">
+      <div class="cbf-crs-edit-commitment-form__row">
         <esa-text-field label="Deliverable" placeholder="e.g. Annual Count Summary" data-field="deliverable"></esa-text-field>
         <esa-select
           label="Deliverable frequency"
@@ -173,44 +177,58 @@ const asOptions = (values: string[]) => values.map((v) => ({ label: v, value: v 
     <section class="stack" data-gap="md">
       <h3 class="type-section-title">Responsible parties</h3>
 
-      <div class="cbf-crs-create-form__row">
+      <div class="cbf-crs-edit-commitment-form__row">
         <esa-select label="Lead agency" multiple chip-mode placeholder="Select…" options={JSON.stringify(asOptions(leadAgencies))} data-field="leadAgency"></esa-select>
         <esa-select label="Partner agency" multiple chip-mode placeholder="Select…" options={JSON.stringify(asOptions(partnerAgencies))} data-field="partnerAgency"></esa-select>
       </div>
 
-      <div class="cbf-crs-create-form__row">
+      <div class="cbf-crs-edit-commitment-form__row">
         <esa-select label="Partner POC" multiple chip-mode placeholder="Select…" options={JSON.stringify(asOptions(partnerPOCs))} data-field="partnerPOC"></esa-select>
         <esa-select label="Policy lead" multiple chip-mode placeholder="Select…" options={JSON.stringify(asOptions(policyLeads))} data-field="policyLead"></esa-select>
       </div>
 
-      <div class="cbf-crs-create-form__row">
+      <div class="cbf-crs-edit-commitment-form__row">
         <esa-select label="BiOp SME" multiple chip-mode placeholder="Select…" options={JSON.stringify(asOptions(biopSMEs))} data-field="biopSME"></esa-select>
         <esa-select label="COR" multiple chip-mode placeholder="Select…" options={JSON.stringify(asOptions(cors))} data-field="cor"></esa-select>
       </div>
 
-      <div class="cbf-crs-create-form__row">
+      <div class="cbf-crs-edit-commitment-form__row">
         <esa-select label="NMFS POC" multiple chip-mode placeholder="Select…" options={JSON.stringify(asOptions(nmfsPOCs))} data-field="nmfsPOC"></esa-select>
         <esa-select label="Associated projects" multiple chip-mode placeholder="Select…" options={JSON.stringify(asOptions(associatedProjectsOptions))} data-field="associatedProjects"></esa-select>
       </div>
     </section>
 
-    <p class="type-caption cbf-crs-create-form__error" data-crs-create-error hidden>
+    <section class="stack" data-gap="md">
+      <h3 class="type-section-title">Status by year</h3>
+      <div class="cbf-crs-edit-commitment-form__years grid" data-gap="sm">
+        {YEARS.map((year) => (
+          <esa-select
+            label={String(year)}
+            size="sm"
+            options={JSON.stringify(yearStatusOptions)}
+            data-year-field={year}
+          ></esa-select>
+        ))}
+      </div>
+    </section>
+
+    <p class="type-caption cbf-crs-edit-commitment-form__error" data-crs-edit-commitment-error hidden>
       Enter a title and choose a category to continue.
     </p>
   </form>
 
   <div slot="footer">
-    <span data-crs-create-cancel>
+    <span data-crs-edit-commitment-cancel>
       <EsaButton color="ghost" appearance="outline">Cancel</EsaButton>
     </span>
-    <span data-crs-create-submit>
-      <EsaButton color="primary" icon="plus">Create commitment</EsaButton>
+    <span data-crs-edit-commitment-save>
+      <EsaButton color="primary">Save changes</EsaButton>
     </span>
   </div>
 </esa-dialog>
 
 <style>
-  .cbf-crs-create-form__row {
+  .cbf-crs-edit-commitment-form__row {
     display: grid;
     /* minmax(0, 1fr), not 1fr — a bare 1fr track won't shrink below its
        content's min-content width, so a chip-mode select carrying several
@@ -219,9 +237,19 @@ const asOptions = (values: string[]) => values.map((v) => ({ label: v, value: v 
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: var(--spacing-400);
   }
-
-  .cbf-crs-create-form__error {
+  .cbf-crs-edit-commitment-form__number {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+  .cbf-crs-edit-commitment-form__error {
     color: var(--color-danger-strong);
+  }
+  /* One compact select per tracked year — wraps to as many rows as the dialog
+     width needs rather than one fixed 15-column strip (unlike the read-only
+     timeline/dashboard, this is a form; each select needs room for its own
+     label + dropdown, not just a pill). */
+  .cbf-crs-edit-commitment-form__years {
+    --grid-min: 7rem;
   }
 </style>
 

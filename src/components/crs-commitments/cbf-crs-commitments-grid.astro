@@ -28,6 +28,7 @@ import CbfCrsCreateCommitmentDialog from './cbf-crs-create-commitment-dialog.ast
 import '../shared/cbf-data-grid-chrome.css';
 import { commitments as defaultCommitments, STATUS_TONE } from '../../data/crs-commitments.mjs';
 import type { CrsCommitment } from '../../data/crs-commitments.mjs';
+import { splitMultiValue } from '../../lib/multi-value';
 
 type CommitmentStatus = keyof typeof STATUS_TONE;
 
@@ -66,6 +67,21 @@ const subcategories = Array.from(new Set(commitments.map((c) => c.subcategory)))
 const commitmentTypes = Array.from(new Set(commitments.map((c) => c.commitmentType))).sort();
 const frequencies = Array.from(new Set(commitments.map((c) => c.frequency))).sort();
 const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliverableFrequency))).sort();
+
+// Responsible-parties option lists — these fields carry comma-joined lists in
+// the data (a commitment can have more than one Policy Lead/BiOp SME/associated
+// project — confirmed against real prod data), so options are the individual
+// values split back out of every commitment's field, not the raw field values.
+const uniqueSplitValues = (key: keyof CrsCommitment) =>
+  Array.from(new Set(commitments.flatMap((c) => splitMultiValue(c[key] as string)))).sort();
+const leadAgencies = uniqueSplitValues('leadAgency');
+const partnerAgencies = uniqueSplitValues('partnerAgency');
+const partnerPOCs = uniqueSplitValues('partnerPOC');
+const policyLeads = uniqueSplitValues('policyLead');
+const biopSMEs = uniqueSplitValues('biopSME');
+const cors = uniqueSplitValues('cor');
+const nmfsPOCs = uniqueSplitValues('nmfsPOC');
+const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
 ---
 <section class="cbf-crs-grid stack" data-gap="md">
   <header class="cbf-data-grid__header repel">
@@ -79,6 +95,14 @@ const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliv
     types={commitmentTypes}
     frequencies={frequencies}
     deliverableFrequencies={deliverableFrequencies}
+    leadAgencies={leadAgencies}
+    partnerAgencies={partnerAgencies}
+    partnerPOCs={partnerPOCs}
+    policyLeads={policyLeads}
+    biopSMEs={biopSMEs}
+    cors={cors}
+    nmfsPOCs={nmfsPOCs}
+    associatedProjectsOptions={associatedProjectsOptions}
   />
 
   <div class="cbf-data-grid__controls repel">
@@ -149,6 +173,16 @@ const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliv
   import '@esa/ecology/esa-chip-group';
   import { withBase } from '../../lib/base';
   import { gridDateFormatter as dateFmt, asGridDate as asDate, escGridHtml as esc, wireDataGrid } from '../shared/grid-chrome';
+  import { joinMultiValue } from '../../lib/multi-value';
+
+  // Responsible-parties fields are esa-select multiple (chip-mode) — their
+  // `.value` is a string[], not a string, and clearing one needs `[]`, not
+  // '' (esa-select's setter would otherwise store a single empty-string
+  // "selection" instead of none). Every other data-field is plain text.
+  const MULTI_FIELDS = new Set([
+    'leadAgency', 'partnerAgency', 'partnerPOC', 'policyLead',
+    'biopSME', 'cor', 'nmfsPOC', 'associatedProjects',
+  ]);
 
   type Commitment = {
     number: string; title: string; source: string; sectionNumber: string; pageNumber: string;
@@ -290,13 +324,22 @@ const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliv
     const createSubmitBtn = root.querySelector<HTMLElement>('[data-crs-create-submit]');
     const createError = root.querySelector<HTMLElement & { hidden: boolean }>('[data-crs-create-error]');
 
-    const createField = (name: string): (HTMLElement & { value?: string }) | null =>
-      createForm?.querySelector<HTMLElement & { value?: string }>(`[data-field="${name}"]`) ?? null;
-    const createFieldValue = (name: string): string => (createField(name)?.value ?? '').trim();
+    const createField = (name: string): (HTMLElement & { value?: string | string[] }) | null =>
+      createForm?.querySelector<HTMLElement & { value?: string | string[] }>(`[data-field="${name}"]`) ?? null;
+    const createFieldValue = (name: string): string => {
+      const v = createField(name)?.value;
+      return typeof v === 'string' ? v.trim() : '';
+    };
+    const createMultiFieldValue = (name: string): string => {
+      const v = createField(name)?.value;
+      return joinMultiValue(Array.isArray(v) ? v : []);
+    };
 
     function resetCreateForm(): void {
-      createForm?.querySelectorAll<HTMLElement & { value?: string }>('[data-field]').forEach((el) => {
-        if ('value' in el) el.value = '';
+      createForm?.querySelectorAll<HTMLElement & { value?: string | string[] }>('[data-field]').forEach((el) => {
+        if (!('value' in el)) return;
+        const name = el.getAttribute('data-field') ?? '';
+        el.value = MULTI_FIELDS.has(name) ? [] : '';
       });
       if (createError) createError.hidden = true;
     }
@@ -341,14 +384,14 @@ const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliv
         deliverable: createFieldValue('deliverable'),
         deliverableFrequency: createFieldValue('deliverableFrequency') || 'N/A',
         documentDueDate: createFieldValue('documentDueDate'),
-        leadAgency: createFieldValue('leadAgency'),
-        partnerAgency: createFieldValue('partnerAgency'),
-        partnerPOC: createFieldValue('partnerPOC'),
-        policyLead: createFieldValue('policyLead'),
-        biopSME: createFieldValue('biopSME'),
-        cor: createFieldValue('cor'),
-        nmfsPOC: createFieldValue('nmfsPOC'),
-        associatedProjects: createFieldValue('associatedProjects'),
+        leadAgency: createMultiFieldValue('leadAgency'),
+        partnerAgency: createMultiFieldValue('partnerAgency'),
+        partnerPOC: createMultiFieldValue('partnerPOC'),
+        policyLead: createMultiFieldValue('policyLead'),
+        biopSME: createMultiFieldValue('biopSME'),
+        cor: createMultiFieldValue('cor'),
+        nmfsPOC: createMultiFieldValue('nmfsPOC'),
+        associatedProjects: createMultiFieldValue('associatedProjects'),
         status: 'Not Started',
       };
 
