@@ -11,8 +11,13 @@
 // This prototype has no backend to lazily regenerate future occurrences
 // against, so on Save the parent script (cbf-crs-commitment-documents.astro)
 // generates every occurrence from First Due Date through the commitment's
-// end date (capped at the tracked YEARS horizon) up front, as ordinary rows —
-// each is then editable/deletable individually just like a discrete due date.
+// end date (capped at the tracked YEARS horizon) up front, as ordinary rows,
+// each tagged with a shared recurring-group id. Every occurrence is still
+// editable/deletable individually like a discrete due date, but a row from a
+// series also gets an "Edit recurring due date" action that reopens THIS
+// dialog prefilled with the original rule — Save then regenerates every
+// not-yet-satisfied occurrence in the group from the (possibly changed)
+// rule, leaving any occurrence that already has a document attached alone.
 //
 // bcn-lego-checked: esa-text-field (title, repeat-every-N-years), esa-date-picker
 // (first due date), esa-textarea (description), esa-select (type, category),
