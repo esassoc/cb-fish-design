@@ -16,6 +16,16 @@
 // below the row was removed — six always-visible pills repeating labels
 // already readable on the row above wasn't earning its space.)
 //
+// Also carries a hidden per-status esa-pill template block
+// (data-crs-timeline-badge-templates) and a data-crs-timeline-value hook per
+// year: cbf-crs-commitment-basics.astro's Edit dialog now edits this same
+// statusByYear data, and its script (in that sibling component's root, not
+// this one) re-renders this row after Save by cloning the matching template's
+// markup into the right year's slot — same clone-the-real-lego technique
+// cbf-crs-commitments-grid.astro/cbf-crs-commitments-dashboard.astro already
+// use for their own status pills, so a JS-built cell is never a re-invented
+// pill.
+//
 // layouts.css / type-roles.css ship as separate @esa/tokens CSS modules (not
 // bundled into tokens.css), so import them here to stay self-contained.
 //
@@ -38,29 +48,45 @@ interface Props {
 const { statusByYear } = Astro.props;
 
 const tone = STATUS_TONE as Record<string, PillVariant>;
+const statusOrder = ['Not Started', 'In Progress', 'Delayed', 'Future', 'Complete', 'Closed'];
 ---
 <EsaCard title="Commitment status by year" variant="outlined" padding="default">
-  <div class="cbf-timeline">
-    <div class="cbf-timeline__years grid" role="list" aria-label="Status by year">
-      {YEARS.map((year) => {
-        const status = statusByYear[year];
-        const isCurrent = year === CURRENT_YEAR;
-        return (
-          <div
-            class:list={['cbf-timeline__year', { 'is-current': isCurrent }]}
-            role="listitem"
-          >
-            <span class="cbf-timeline__label type-label">
-              {year}{isCurrent && <span class="cbf-timeline__now">now</span>}
-            </span>
-            {status ? (
-              <EsaPill label={status} variant={tone[status] ?? 'default'} size="sm" removable={false} />
-            ) : (
-              <span class="cbf-timeline__none" aria-label="No status tracked">—</span>
-            )}
-          </div>
-        );
-      })}
+  <!-- esa-card doesn't forward arbitrary attributes to its rendered root (it
+       only destructures its own declared Props), so the cross-component
+       lookup hook has to live on a plain wrapper div here instead. -->
+  <div data-crs-timeline>
+    <div class="cbf-timeline">
+      <div class="cbf-timeline__years grid" role="list" aria-label="Status by year">
+        {YEARS.map((year) => {
+          const status = statusByYear[year];
+          const isCurrent = year === CURRENT_YEAR;
+          return (
+            <div
+              class:list={['cbf-timeline__year', { 'is-current': isCurrent }]}
+              role="listitem"
+            >
+              <span class="cbf-timeline__label type-label">
+                {year}{isCurrent && <span class="cbf-timeline__now">now</span>}
+              </span>
+              <span data-crs-timeline-value={year}>
+                {status ? (
+                  <EsaPill label={status} variant={tone[status] ?? 'default'} size="sm" removable={false} />
+                ) : (
+                  <span class="cbf-timeline__none" aria-label="No status tracked">—</span>
+                )}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+
+    <!-- Real esa-pill lego, server-rendered once per status, cloned into
+         data-crs-timeline-value slots after an edit — see the header note. -->
+    <div class="cbf-timeline__badge-templates" data-crs-timeline-badge-templates hidden aria-hidden="true">
+      {statusOrder.map((s) => (
+        <span data-status={s}><EsaPill label={s} variant={tone[s] ?? 'default'} size="sm" removable={false} /></span>
+      ))}
     </div>
   </div>
 </EsaCard>

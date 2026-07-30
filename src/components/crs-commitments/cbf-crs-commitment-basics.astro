@@ -15,6 +15,13 @@
 // panel's fields; nothing persists past a page reload (cbf-password-gate.astro's
 // security note covers the same no-backend constraint).
 //
+// The edit dialog also carries a "Status by year" section (ported from prod,
+// which lets a user edit every tracked year right from this same modal, not
+// only through the separate Dashboard's per-year edit mode) — Save updates
+// this panel's status pill AND the sibling cbf-crs-commitment-timeline.astro
+// component's per-year pills, even though that's a different component
+// instance elsewhere on the page (see this file's own script for how).
+//
 // The .grid / .stack layout primitives and .type-* roles ship from @esa/tokens as
 // separate CSS modules (not bundled into tokens.css), so import them here to stay
 // self-contained. STATUS_TONE (status -> esa-pill variant) lives with the data.
@@ -31,6 +38,7 @@ import EsaButton from '@esa/ecology/esa-button.astro';
 import CbfCrsEditCommitmentDialog from './cbf-crs-edit-commitment-dialog.astro';
 import { commitments, STATUS_TONE } from '../../data/crs-commitments.mjs';
 import type { CrsCommitment } from '../../data/crs-commitments.mjs';
+import { splitMultiValue } from '../../lib/multi-value';
 
 interface Props {
   commitment: CrsCommitment;
@@ -45,6 +53,20 @@ const subcategories = Array.from(new Set(commitments.map((c) => c.subcategory)))
 const commitmentTypes = Array.from(new Set(commitments.map((c) => c.commitmentType))).sort();
 const frequencies = Array.from(new Set(commitments.map((c) => c.frequency))).sort();
 const deliverableFrequencies = Array.from(new Set(commitments.map((c) => c.deliverableFrequency))).sort();
+
+// Responsible-parties option lists — same "split the comma-joined field back
+// into individual values" technique as cbf-crs-commitments-grid.astro's own
+// Create-dialog options (see src/lib/multi-value.ts).
+const uniqueSplitValues = (key: keyof CrsCommitment) =>
+  Array.from(new Set(commitments.flatMap((c) => splitMultiValue(c[key] as string)))).sort();
+const leadAgencies = uniqueSplitValues('leadAgency');
+const partnerAgencies = uniqueSplitValues('partnerAgency');
+const partnerPOCs = uniqueSplitValues('partnerPOC');
+const policyLeads = uniqueSplitValues('policyLead');
+const biopSMEs = uniqueSplitValues('biopSME');
+const cors = uniqueSplitValues('cor');
+const nmfsPOCs = uniqueSplitValues('nmfsPOC');
+const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
 
 // Field descriptors — human label, record key, and whether the value is long
 // free-text that should span the full row (short fields pack two-up on the grid).
@@ -95,12 +117,14 @@ const notesEmpty = (commitment.notes ?? '') === '';
 ---
 <EsaCard title="Basics" variant="outlined" padding="default">
   <div slot="actions" class="cluster" data-gap="sm">
-    <EsaPill
-      label={commitment.status}
-      variant={STATUS_TONE[commitment.status]}
-      size="sm"
-      removable={false}
-    />
+    <span data-crs-basics-status-pill>
+      <EsaPill
+        label={commitment.status}
+        variant={STATUS_TONE[commitment.status]}
+        size="sm"
+        removable={false}
+      />
+    </span>
     <span data-crs-edit-commitment-open><EsaButton color="secondary" appearance="outline" size="sm" icon="pencil">Edit</EsaButton></span>
   </div>
 
@@ -140,11 +164,18 @@ const notesEmpty = (commitment.notes ?? '') === '';
     types={commitmentTypes}
     frequencies={frequencies}
     deliverableFrequencies={deliverableFrequencies}
+    leadAgencies={leadAgencies}
+    partnerAgencies={partnerAgencies}
+    partnerPOCs={partnerPOCs}
+    policyLeads={policyLeads}
+    biopSMEs={biopSMEs}
+    cors={cors}
+    nmfsPOCs={nmfsPOCs}
+    associatedProjectsOptions={associatedProjectsOptions}
   />
 
-  <!-- Editable fields only (everything the dialog can change) — status/
-       statusByYear/number are NOT edited here, so they're left out rather than
-       risk a stale copy drifting from the timeline section's own data. -->
+  <!-- Every field the dialog can change, including statusByYear (the "Status
+       by year" section) — number is excluded, it's never editable here. -->
   <script
     type="application/json"
     data-crs-basics-data
@@ -163,6 +194,7 @@ const notesEmpty = (commitment.notes ?? '') === '';
       partnerPOC: commitment.partnerPOC, policyLead: commitment.policyLead,
       biopSME: commitment.biopSME, cor: commitment.cor, nmfsPOC: commitment.nmfsPOC,
       associatedProjects: commitment.associatedProjects,
+      statusByYear: commitment.statusByYear,
     })}
   ></script>
 </EsaCard>
@@ -207,18 +239,33 @@ const notesEmpty = (commitment.notes ?? '') === '';
 <script>
   import '@esa/ecology/esa-dialog';
   import { toISODate, isoToUSDate } from '../../lib/dates';
+  import { splitMultiValue, joinMultiValue } from '../../lib/multi-value';
+  import { YEARS, CURRENT_YEAR, STATUS_TONE } from '../../data/crs-commitments.mjs';
 
-  type BasicsField = HTMLElement & { value?: string };
+  type BasicsField = HTMLElement & { value?: string | string[] };
   type DialogEl = HTMLElement & { show: () => void; close: () => void };
+  interface BasicsData {
+    [key: string]: unknown;
+    statusByYear: Record<string, string>;
+  }
 
   // The two record fields that go through esa-date-picker (ISO in the field,
   // "M/D/YYYY" in storage/display) — everything else round-trips as plain text.
   const DATE_FIELDS = new Set(['startDate', 'endDate']);
+  // Responsible-parties fields are esa-select `multiple` (chip-mode) — their
+  // `.value` is a string[], joined/split against the record's comma-list
+  // convention (src/lib/multi-value.ts). See cbf-crs-create-commitment-dialog
+  // .astro's header note on why these carry more than one value in real data.
+  const MULTI_FIELDS = new Set([
+    'leadAgency', 'partnerAgency', 'partnerPOC', 'policyLead',
+    'biopSME', 'cor', 'nmfsPOC', 'associatedProjects',
+  ]);
+  const PILL_VARIANTS = ['default', 'primary', 'success', 'warning', 'danger', 'info'];
 
   function initBasics(root: HTMLElement) {
     const dataEl = root.querySelector<HTMLScriptElement>('[data-crs-basics-data]');
     if (!dataEl) return;
-    let data: Record<string, string> = JSON.parse(dataEl.textContent ?? '{}');
+    let data: BasicsData = JSON.parse(dataEl.textContent ?? '{}');
 
     const numberEl = root.querySelector<HTMLElement>('[data-crs-basics-number]');
     const commitmentNumber = numberEl?.dataset.crsBasicsNumber ?? '';
@@ -232,15 +279,30 @@ const notesEmpty = (commitment.notes ?? '') === '';
 
     const field = (name: string): BasicsField | null =>
       form?.querySelector<BasicsField>(`[data-field="${name}"]`) ?? null;
-    const fieldValue = (name: string): string => (field(name)?.value ?? '').trim();
+    const fieldValue = (name: string): string => {
+      const v = field(name)?.value;
+      return typeof v === 'string' ? v.trim() : '';
+    };
+    const yearField = (year: number): BasicsField | null =>
+      form?.querySelector<BasicsField>(`[data-year-field="${year}"]`) ?? null;
+    const yearFieldValue = (year: number): string => {
+      const v = yearField(year)?.value;
+      return typeof v === 'string' ? v.trim() : '';
+    };
 
     root.querySelector('[data-crs-edit-commitment-open]')?.addEventListener('click', () => {
       if (error) error.hidden = true;
       if (numberDisplay) numberDisplay.textContent = `Commitment # ${commitmentNumber}`;
       Object.entries(data).forEach(([name, value]) => {
+        if (name === 'statusByYear') return;
         const el = field(name);
         if (!el) return;
-        el.value = DATE_FIELDS.has(name) ? (toISODate(value) ?? '') : value;
+        if (MULTI_FIELDS.has(name)) el.value = splitMultiValue(value as string);
+        else el.value = DATE_FIELDS.has(name) ? (toISODate(value as string) ?? '') : (value as string);
+      });
+      YEARS.forEach((year: number) => {
+        const el = yearField(year);
+        if (el) el.value = data.statusByYear[String(year)] ?? '';
       });
       dialog?.show();
     });
@@ -255,16 +317,29 @@ const notesEmpty = (commitment.notes ?? '') === '';
         return;
       }
 
-      const updated: Record<string, string> = {};
+      const updated: BasicsData = { statusByYear: {} };
       for (const name of Object.keys(data)) {
-        const raw = fieldValue(name);
-        updated[name] = DATE_FIELDS.has(name) ? (isoToUSDate(raw) ?? '') : raw;
+        if (name === 'statusByYear') continue;
+        if (MULTI_FIELDS.has(name)) {
+          const v = field(name)?.value;
+          updated[name] = joinMultiValue(Array.isArray(v) ? v : []);
+        } else {
+          const raw = fieldValue(name);
+          updated[name] = DATE_FIELDS.has(name) ? (isoToUSDate(raw) ?? '') : raw;
+        }
       }
+      YEARS.forEach((year: number) => {
+        const v = yearFieldValue(year);
+        // Empty ("Unset") omits the key entirely, matching the dashboard's own
+        // edit-status dialog convention — a year with no tracked status.
+        if (v) updated.statusByYear[String(year)] = v;
+      });
       data = updated;
 
       Object.entries(data).forEach(([name, value]) => {
+        if (name === 'statusByYear') return;
         const valueEl = root.querySelector<HTMLElement>(`[data-crs-basics-value="${name}"]`);
-        if (valueEl) valueEl.textContent = value;
+        if (valueEl) valueEl.textContent = value as string;
         if (name === 'notes') {
           const pair = root.querySelector<HTMLElement & { hidden: boolean }>('[data-crs-basics-pair="notes"]');
           if (pair) pair.hidden = value === '';
@@ -278,6 +353,44 @@ const notesEmpty = (commitment.notes ?? '') === '';
       const pageTitle = document.querySelector<HTMLElement>('.esa-page-header__title');
       if (pageTitle) pageTitle.textContent = title;
       document.title = `${commitmentNumber}: ${title} — Columbia Basin Fish & Wildlife Program`;
+
+      // This record's CURRENT_YEAR status also drives the status pill in this
+      // panel's own header AND the sibling cbf-crs-commitment-timeline.astro
+      // component elsewhere on the page — both re-rendered here since Save
+      // is the one place both go stale together.
+      const newStatus = data.statusByYear[String(CURRENT_YEAR)] ?? '';
+      const tone = (STATUS_TONE as Record<string, string>)[newStatus] ?? 'default';
+
+      const statusPillWrap = root.querySelector<HTMLElement>('[data-crs-basics-status-pill]');
+      const statusPill = statusPillWrap?.querySelector<HTMLElement>('.esa-pill');
+      if (statusPill) {
+        PILL_VARIANTS.forEach((v) => statusPill.classList.remove(`esa-pill--${v}`));
+        statusPill.classList.add(`esa-pill--${tone}`);
+        const label = statusPill.querySelector<HTMLElement>('.esa-pill__label');
+        if (label) label.textContent = newStatus || 'Unset';
+      }
+
+      const timeline = document.querySelector<HTMLElement>('[data-crs-timeline]');
+      const badgeHTML = new Map<string, string>();
+      timeline?.querySelectorAll<HTMLElement>('[data-crs-timeline-badge-templates] [data-status]').forEach((el) => {
+        badgeHTML.set(el.dataset.status ?? '', el.innerHTML);
+      });
+      YEARS.forEach((year: number) => {
+        const slot = timeline?.querySelector<HTMLElement>(`[data-crs-timeline-value="${year}"]`);
+        if (!slot) return;
+        const status = data.statusByYear[String(year)];
+        if (status && badgeHTML.has(status)) {
+          slot.innerHTML = badgeHTML.get(status) as string;
+        } else {
+          // A freshly-built "no status" placeholder needs the timeline
+          // component's own Astro scope hash copied on — otherwise its scoped
+          // .cbf-timeline__none rule (added at build time) won't match a node
+          // built from an innerHTML string, same reasoning as
+          // cbf-crs-commitments-dashboard.astro's rebuildBar().
+          const scopeAttr = slot.getAttributeNames().find((n) => n.startsWith('data-astro-cid-'));
+          slot.innerHTML = `<span class="cbf-timeline__none"${scopeAttr ? ` ${scopeAttr}` : ''} aria-label="No status tracked">—</span>`;
+        }
+      });
 
       const snackbar = document.querySelector<HTMLElement & { success?: (msg: string, cfg?: unknown) => void }>('[data-snackbar]');
       snackbar?.success?.(`${commitmentNumber} updated.`, { duration: 4000 });
