@@ -8,16 +8,22 @@
 // First Due Date, Repeat every N years, Description, Document Type,
 // Document Category.
 //
+// A commitment can only have ONE active recurring due date at a time,
+// matching prod (checked live: prod exposes Modify/Delete for the recurring
+// rule from a banner above the grid, never a per-row action). This dialog is
+// reused for both "Add" and "Modify" — the parent script's banner opens it
+// empty to create the one rule, or prefilled with the existing rule's fields
+// to change it, swapping the heading accordingly.
+//
 // This prototype has no backend to lazily regenerate future occurrences
 // against, so on Save the parent script (cbf-crs-commitment-documents.astro)
 // generates every occurrence from First Due Date through the commitment's
-// end date (capped at the tracked YEARS horizon) up front, as ordinary rows,
-// each tagged with a shared recurring-group id. Every occurrence is still
-// editable/deletable individually like a discrete due date, but a row from a
-// series also gets an "Edit recurring due date" action that reopens THIS
-// dialog prefilled with the original rule — Save then regenerates every
-// not-yet-satisfied occurrence in the group from the (possibly changed)
-// rule, leaving any occurrence that already has a document attached alone.
+// end date (capped at the tracked YEARS horizon) up front, as ordinary rows
+// tagged `isRecurring`. Modifying the rule regenerates every not-yet-
+// satisfied occurrence from the (possibly changed) rule; any occurrence that
+// already has a document attached is left alone. Deleting the rule (also
+// from the banner) removes every not-yet-satisfied occurrence and leaves any
+// satisfied one in place, untagged.
 //
 // bcn-lego-checked: esa-text-field (title, repeat-every-N-years), esa-date-picker
 // (first due date), esa-textarea (description), esa-select (type, category),
