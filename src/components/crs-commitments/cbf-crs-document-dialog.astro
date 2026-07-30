@@ -16,6 +16,13 @@
 // `.show()`, same single-instance-retargeted-per-click pattern as the
 // dashboard's Edit Status dialog (cbf-crs-commitments-dashboard.astro).
 //
+// Due Date is required for a real due date (Add Discrete Due Date, or
+// editing/satisfying a row that already carries one) but not for a
+// standalone document upload with no date — the caller (cbf-crs-commitment-
+// documents.astro's openDocDialog) toggles the field's `required` property
+// and the validation message per open, since the static markup can't know
+// which entry point opened it.
+//
 // bcn-lego-checked: every field is a lego — esa-text-field (title),
 // esa-date-picker (due date), esa-textarea (description), esa-select (type,
 // category), esa-file-upload (the optional attachment). esa-dialog is the
