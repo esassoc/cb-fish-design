@@ -90,10 +90,26 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
 
         <CbfMsowToolbar contractNum={contractNum} cor={cor} fy={fy} backHref={withBase('/legacy/we')} />
 
-        <!-- GIS layout: [wizard column] [sidebar] [map] — wizard only visible when active -->
+        <!-- GIS layout: [wizard column] [collapse rail] [sidebar] [map] — wizard only visible when active -->
         <div class="msow-root">
           <div id="msow-layout">
             <CbfMsowWizardPanel />
+            <!-- bcn-lego-checked: a floating rail-edge control docked to the panel boundary,
+                 not a form action — same exception already established for #edit-done-bar's
+                 .msow-done-btn/.msow-pan-btn and the map legend's #leg-toggle (esa-icon-button
+                 has no docked-to-a-panel-edge variant). A sibling of #wizard-panel (not nested
+                 inside it) so it stays visible and clickable when the panel's width collapses
+                 to 0 and overflow:hidden clips its contents — see toggleWizardPanel() in
+                 map-sow.js. -->
+            <button
+              id="wizard-collapse-toggle"
+              class="msow-wizard-collapse-toggle"
+              onclick="toggleWizardPanel()"
+              aria-label="Collapse steps panel"
+              aria-expanded="true"
+              aria-controls="wizard-panel"
+              title="Collapse steps panel"
+            >&#10094;</button>
             <CbfMsowSidebar />
             <CbfMsowMap />
           </div>
@@ -181,5 +197,23 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
     flex-direction: column;
     overflow: hidden;
     min-height: 0;
+  }
+
+  /* Short-viewport compaction — a laptop's browser chrome plus this page's
+     stacked bars (admin tray + header + page padding + breadcrumb + toolbar)
+     can eat 300px+ before the map itself starts, and this page is
+     height-locked (no page scroll, see the class="msow-page" comment above)
+     so that space has nowhere to overflow to — it just squeezes the map.
+     A HEIGHT breakpoint (not the usual width one) reclaims it specifically
+     when vertical space is tight, leaving the full chrome alone otherwise.
+     Scoped to this page via html:has(.msow-page), same pattern as the
+     overflow:hidden rules above — a single simple selector inside :has(),
+     see the CSS :has() invalidation note elsewhere in this spoke. */
+  @media (max-height: 800px) {
+    html:has(.msow-page) .cbf-app-bar--admin { display: none; }
+    html:has(.msow-page) .cbf-app-bar--header { --app-bar-pad-y: var(--spacing-200, 8px); }
+    html:has(.msow-page) .msow-page { padding-block: var(--spacing-200, 8px); }
+    html:has(.msow-page) .msow-crumb-strip { padding-block: var(--spacing-200, 8px); }
+    html:has(.msow-page) .msow-toolbar { padding-block: var(--spacing-200, 8px); }
   }
 </style>

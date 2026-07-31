@@ -551,6 +551,40 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
 #wizard-body-panel { display: flex; flex-direction: column; height: 100%; overflow: hidden; background: var(--color-surface-sunken); }
 #expert-panel { display: none; flex-direction: column; height: 100%; overflow: hidden; }
 
+/* Collapse toggle — reclaims the wizard panel's 260px for the map (a real
+   request on narrow/laptop screens). Collapsing hides the step list AND the
+   current step's own controls (the "Draw X" button, Back/Next) since they
+   render inside #wizard-panel — this is a deliberate "step away to look at
+   the map" toggle, not meant to stay collapsed while actively drawing.
+   See toggleWizardPanel() in map-sow.js. */
+#msow-layout.wizard-collapsed #wizard-panel {
+  width: 0;
+  border-right: none;
+}
+.msow-wizard-collapse-toggle {
+  flex-shrink: 0;
+  width: 16px;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-sunken);
+  border: none;
+  border-right: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+.msow-wizard-collapse-toggle:hover {
+  background: var(--color-primary-subtle);
+  color: var(--color-primary);
+}
+#msow-layout.wizard-collapsed .msow-wizard-collapse-toggle {
+  transform: scaleX(-1); /* flip the chevron to point the other way when collapsed */
+}
+
 /* Wizard column header */
 .wz-v-header {
   padding: var(--spacing-400) var(--spacing-500) var(--spacing-300);
