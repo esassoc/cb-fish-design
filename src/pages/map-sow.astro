@@ -182,4 +182,22 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
     overflow: hidden;
     min-height: 0;
   }
+
+  /* Short-viewport compaction — a laptop's browser chrome plus this page's
+     stacked bars (admin tray + header + page padding + breadcrumb + toolbar)
+     can eat 300px+ before the map itself starts, and this page is
+     height-locked (no page scroll, see the class="msow-page" comment above)
+     so that space has nowhere to overflow to — it just squeezes the map.
+     A HEIGHT breakpoint (not the usual width one) reclaims it specifically
+     when vertical space is tight, leaving the full chrome alone otherwise.
+     Scoped to this page via html:has(.msow-page), same pattern as the
+     overflow:hidden rules above — a single simple selector inside :has(),
+     see the CSS :has() invalidation note elsewhere in this spoke. */
+  @media (max-height: 800px) {
+    html:has(.msow-page) .cbf-app-bar--admin { display: none; }
+    html:has(.msow-page) .cbf-app-bar--header { --app-bar-pad-y: var(--spacing-200, 8px); }
+    html:has(.msow-page) .msow-page { padding-block: var(--spacing-200, 8px); }
+    html:has(.msow-page) .msow-crumb-strip { padding-block: var(--spacing-200, 8px); }
+    html:has(.msow-page) .msow-toolbar { padding-block: var(--spacing-200, 8px); }
+  }
 </style>
