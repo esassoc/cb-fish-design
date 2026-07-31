@@ -21,8 +21,9 @@ interface Props {
   title: string;
   rows: LegacyWeRow[];
   habitatDesignHref: string;
+  milestonesHref: string;
 }
-const { title, rows, habitatDesignHref } = Astro.props;
+const { title, rows, habitatDesignHref, milestonesHref } = Astro.props;
 
 // weType is stored as "175. Produce Design" — the real grid splits this
 // across two columns: numeric WE ID ("175") and the type label ("Produce
@@ -65,7 +66,7 @@ const splitWeType = (weType: string) => {
           <td>{weType.label}</td>
           <td>{r.we.name}</td>
           <td class="legacy-we-grid__desc">{r.we.description}</td>
-          <td class="legacy-we-grid__num">{r.ms}</td>
+          <td class="legacy-we-grid__num"><a href={milestonesHref} title={`Open Milestones for WE ${r.we.letter}`}>{r.ms}</a></td>
           <td class="legacy-we-grid__dotcell">{r.m && <span class="legacy-dot legacy-dot--filled" />}</td>
           <td class="legacy-we-grid__dotcell">{r.l && <span class="legacy-dot legacy-dot--filled" />}</td>
           <td class="legacy-we-grid__dotcell">{r.f && <span class="legacy-dot legacy-dot--filled" />}</td>
@@ -118,6 +119,8 @@ const splitWeType = (weType: string) => {
     color: #333;
   }
   .legacy-we-grid tbody tr:hover { background: #f5f9fc; }
+  .legacy-we-grid a { color: #007090; text-decoration: none; }
+  .legacy-we-grid a:hover { text-decoration: underline; }
   .legacy-we-grid__desc { max-width: 320px; }
   .legacy-we-grid__num { text-align: right; white-space: nowrap; }
   .legacy-we-grid__dotcell { text-align: center; }

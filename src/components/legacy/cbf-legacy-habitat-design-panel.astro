@@ -32,6 +32,10 @@ const metrics = [
     Results exported from the Habitat Design Tool for this work element.
   </p>
 
+  <p class="legacy-hd-panel__mocknotice">
+    <strong>Prototype note:</strong> the metrics below are mock data for this demo, not a real export.
+  </p>
+
   <dl class="legacy-hd-panel__meta">
     <dt>Contract #</dt><dd>{contractNum}</dd>
     <dt>COR</dt><dd>{cor}</dd>
@@ -62,6 +66,17 @@ const metrics = [
   }
   .legacy-hd-panel__intro {
     margin: 0 0 14px;
+  }
+  /* bcn-lego-checked: deliberately NOT styled like the legacy chrome around
+     it — this is a disclaimer about the prototype itself, so it should read
+     as "note from the demo," not as part of the recreated real UI. */
+  .legacy-hd-panel__mocknotice {
+    margin: 0 0 16px;
+    padding: 8px 12px;
+    background: #fff8e1;
+    border: 1px solid #f0d78c;
+    border-radius: 3px;
+    color: #6b5900;
   }
   .legacy-hd-panel__meta {
     display: grid;
