@@ -96,6 +96,15 @@ export const prototypes: Prototype[] = [
     status: 'in-progress',
   },
   {
+    slug: 'legacy-sow',
+    title: 'Habitat Design Tool - Entrance',
+    description:
+      "A recreation of the real qa.cbfish.org SOW work elements screen — shows where a user discovers and launches the Habitat Design Tool from inside the actual product, via the new HD column and its linked Milestones page.",
+    route: '/legacy/sow',
+    createdAt: '2026-07-31',
+    status: 'in-progress',
+  },
+  {
     slug: 'crs-commitments',
     title: 'BiOp landing page',
     description:
