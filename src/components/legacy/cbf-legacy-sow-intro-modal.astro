@@ -1,0 +1,43 @@
+---
+// Explains the prototype's new entry/exit workflow to a reviewer landing on
+// /legacy/sow — NOT part of the recreated legacy screen, so unlike the rest
+// of this page it uses the real esa-dialog lego and modern voice on purpose,
+// the same way cbf-legacy-habitat-design-panel.astro's mock-data notice
+// deliberately breaks from the legacy look to read as "note from the demo."
+import EsaButton from '@esa/ecology/esa-button.astro';
+---
+<esa-dialog id="sow-intro-modal" heading="About this prototype" show-close-button open>
+  <p class="legacy-sow-intro__body">
+    This page recreates the real CBFish SOW screen to show where a new capability plugs in.
+  </p>
+  <p class="legacy-sow-intro__body">
+    The <strong>HD</strong> (Habitat Design) column is new, and only appears for
+    <strong>175. Produce Design</strong> work elements. Clicking it opens that work element's
+    Habitat Design tab, where you can review any metrics already entered and launch the design tool.
+  </p>
+  <p class="legacy-sow-intro__body">
+    There's also a new milestone — "Submit design with Habitat Design tool" — tracking this activity.
+  </p>
+
+  <div slot="footer">
+    <span onclick="document.getElementById('sow-intro-modal').close()">
+      <EsaButton color="primary" icon="check">Got it</EsaButton>
+    </span>
+  </div>
+</esa-dialog>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+</script>
+
+<style>
+  .legacy-sow-intro__body {
+    margin: 0 0 var(--spacing-300, 12px);
+    font-size: var(--type-size-200, 15px);
+    line-height: 1.5;
+    color: var(--color-text-secondary, #404040);
+  }
+  .legacy-sow-intro__body:last-of-type {
+    margin-bottom: 0;
+  }
+</style>

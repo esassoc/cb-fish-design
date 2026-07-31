@@ -78,12 +78,10 @@ L.Draggable.mergeOptions({ clickTolerance: 10 });
 
 // ── Init ──────────────────────────────────────────────────────────────────
 window.onload = function() {
-  // Welcome modal is open by default (see the `open` attribute in
-  // cbf-msow-modals.astro). Dismissing it any way — the Continue button, Esc,
-  // or a backdrop click — should still land the user on a default work element.
-  document.getElementById('welcome-modal').addEventListener('close', function() {
-    createDefaultWE();
-  }, { once: true });
+  // Welcome modal is disabled for now (see cbf-msow-modals.astro) — land on
+  // a default work element directly instead of waiting for its `close`
+  // event. If the modal comes back, move this back behind a `close` listener.
+  createDefaultWE();
 
   // esa-tab-layout only updates its own internal active-tab state on click — it
   // doesn't know about #pp-side/#work-side, so route its event into showInnerTab().
@@ -8827,9 +8825,10 @@ function wizardStepBody(we, step, idx) {
       break;
 
     case 'done':
-      h += '<div class="wz-step-desc">Your design is complete. Export your metrics.</div>';
+      h += '<div class="wz-step-desc">Your design is complete. Export your metrics, then return to the work element to continue tracking it through milestones and metrics.</div>';
       h += '<div class="wz-status done" style="font-size:13px;padding:14px">&#10003; <b>Design complete!</b></div>';
       h += '<button class="wz-action-btn" style="margin-top:16px" onclick="openSOW()">&#128196; Export Metrics</button>';
+      h += '<a class="wz-action-btn secondary" style="text-decoration:none" href="'+(window.MSOW_WORK_ELEMENTS_HREF||'/legacy/we')+'">&larr; Back to Work Element</a>';
       // "Add Another Work Element" hidden for now — kept for easy restore.
       // h += '<button class="wz-action-btn secondary" onclick="openWEModal(null)">&#43; Add Another Work Element</button>';
       break;

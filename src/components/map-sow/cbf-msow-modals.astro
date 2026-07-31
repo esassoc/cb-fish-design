@@ -77,10 +77,13 @@ import EsaButton from '@esa/ecology/esa-button.astro';
   </div>
 </esa-dialog>
 
-<!-- Welcome / onboarding modal — open by default; dismissing it any way (Continue,
-     Esc, backdrop click) creates the default work element, see the `close`
-     listener wired in map-sow.js window.onload. -->
-<esa-dialog id="welcome-modal" heading="Habitat Design Tool" show-close-button open>
+<!-- Welcome / onboarding modal — disabled for now (no `open` attribute; its
+     content doesn't earn its interruption anymore) but kept in place since
+     we expect to bring it back with different content later. The default
+     work element is now created directly in map-sow.js window.onload
+     instead of being gated behind this modal's `close` event — see the note
+     there if this modal is reintroduced. -->
+<esa-dialog id="welcome-modal" heading="Habitat Design Tool" show-close-button>
   <p class="msow-welcome-heading">Your contract is eligible to use the new map-based tool.</p>
   <p class="msow-welcome-desc">
     Define pre-project conditions and scope habitat work elements visually on the map,

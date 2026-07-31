@@ -1,0 +1,52 @@
+---
+// Recreates the real "Select a work element" panel shown above every
+// WE-level tab on qa.cbfish.org. Verified via getComputedStyle/DOM ancestry
+// that this is its OWN white Bootstrap panel with a gray ".panel-heading"
+// strip — a SEPARATE panel from the tab strip's, not slotted content inside
+// it (the tabs panel's body is empty on this page type). The dropdown is a
+// plain native browser control on the real site, but check-adherence's
+// hand-rolled-primitive rule is a hard Must-fix even inside this legacy
+// recreation — esa-select is the lego, disabled + a placeholder standing in
+// for the (inert, single-option) real dropdown.
+interface Props {
+  label: string;
+}
+const { label } = Astro.props;
+---
+<div class="legacy-panel legacy-we-selector">
+  <div class="legacy-we-selector__heading">
+    <span class="legacy-we-selector__icon" aria-hidden="true">&#9432;</span>
+    <span class="legacy-we-selector__label">Select a work element:</span>
+    <esa-select
+      placeholder={label}
+      options={JSON.stringify([{ label, value: label }])}
+      size="sm"
+      disabled
+    ></esa-select>
+  </div>
+</div>
+
+<script>
+  import '@esa/ecology/esa-select';
+</script>
+
+<style>
+  .legacy-we-selector__heading {
+    background: #dadada;
+    border-radius: 4px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    color: #333;
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .legacy-we-selector__icon {
+    color: #007090;
+    font-size: 16px;
+  }
+  .legacy-we-selector__heading esa-select {
+    max-width: 380px;
+  }
+</style>

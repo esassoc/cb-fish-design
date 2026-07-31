@@ -1,0 +1,89 @@
+---
+// /legacy/sow — a faithful recreation of the real qa.cbfish.org SOW work
+// statement elements grid (Contract.mvc/ContractActionsWorkStatementVersion),
+// with one addition: a new "HD" (Habitat Design) column next to RM. Every
+// type-175 "Produce Design" work element gets an empty-circle indicator
+// there, which is how a real user would discover and launch the Habitat
+// Design Tool from inside the actual SOW screen they already use today —
+// this is the "how does the user get here" half of the entry/exit story.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CbfLegacyChrome from '../../components/legacy/cbf-legacy-chrome.astro';
+import CbfLegacyContractHeader from '../../components/legacy/cbf-legacy-contract-header.astro';
+import CbfLegacyWeGrid from '../../components/legacy/cbf-legacy-we-grid.astro';
+import CbfLegacySowIntroModal from '../../components/legacy/cbf-legacy-sow-intro-modal.astro';
+import { workElements } from '../../data/work-elements';
+import { withBase } from '../../lib/base';
+
+const crumbs = [
+  { label: 'Projects & Contracts' },
+  { label: 'Projects' },
+  { label: '2023-001-00' },
+  { label: 'Contracts' },
+  { label: '84051 REL 50' },
+  { label: 'SOW for Change Request (CCR) - APPROVED - CCR-53920' },
+];
+
+const tabs = [
+  { label: 'Summary' },
+  { label: 'SOW', href: withBase('/legacy/sow'), active: true },
+  { label: 'WE Budgets' },
+  { label: 'Status Reports' },
+  { label: 'Pre-Award' },
+  { label: 'Workflow' },
+  { label: 'Review SOW' },
+  { label: 'Email Archive' },
+  { label: 'Internal Notes' },
+  { label: 'Documents' },
+  { label: 'COR File' },
+];
+
+// Decorative per-row tab-completion dots (M/L/F/EC/RM), invented to look
+// plausible next to WE H's actual Milestones count (13, from
+// /legacy/we-milestones — the "Submit design with Habitat Design tool"
+// milestone) — presentational only, not modeled as data.
+const rows = [
+  { we: workElements[0], ms: 13, m: true, l: true, f: false, ec: false, rm: false },
+  { we: workElements[1], ms: 13, m: true, l: true, f: false, ec: true, rm: false },
+  { we: workElements[2], ms: 3, m: true, l: true, f: false, ec: true, rm: false },
+];
+---
+<!-- manifest:
+  layout: legacy chrome (tabs panel w/ intro text) > WE grid > modal   # recreates real page structure, top to bottom
+  sections:
+    - legacy chrome + intro text -> cbf-legacy-chrome (nav/breadcrumb/tab strip) wrapping cbf-legacy-contract-header (intro paragraph, same white panel as the tabs on the real site)
+    - WE grid                    -> cbf-legacy-we-grid (title + work statement elements table + new HD column, its own separate white panel)
+    - intro modal                -> cbf-legacy-sow-intro-modal (explains the new HD column/workflow to a reviewer — not part of the recreated screen)
+-->
+<BaseLayout title="84051 REL 50: SOW — CBFish.org">
+  <CbfLegacyChrome crumbs={crumbs} tabs={tabs}>
+    <CbfLegacyContractHeader
+      helpText="Select a Contract Action to view its work statement elements. If a Contract Action has not been issued, only authorized users are allowed to view or work with the work statement elements."
+    />
+  </CbfLegacyChrome>
+
+  <main class="legacy-sow-page">
+    <div class="legacy-container">
+      <CbfLegacyWeGrid
+        title="Contract 84051 REL 50: 2023-001-00 EXP CTCR UPPER COLUMBIA HABITAT IMPROVEMENT PROJECT"
+        rows={rows}
+        habitatDesignHref={withBase('/legacy/we')}
+        milestonesHref={withBase('/legacy/we-milestones')}
+      />
+    </div>
+  </main>
+
+  <CbfLegacySowIntroModal />
+</BaseLayout>
+
+<style>
+  /* bcn-lego-checked: real qa.cbfish.org page background (#dadada), not the
+     spoke's white/token surface — legacy recreation, see cbf-legacy-chrome.astro.
+     .legacy-container (centered, responsive width) comes from cbf-legacy-chrome.astro's
+     global style — the real site wraps the whole page body in the same Bootstrap
+     .container the chrome uses, not just the chrome itself. */
+  .legacy-sow-page {
+    background: #dadada;
+    min-height: calc(100vh - 260px);
+    padding-block: 20px;
+  }
+</style>

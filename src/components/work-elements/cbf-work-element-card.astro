@@ -1,0 +1,59 @@
+---
+// cbf-work-element-card — one work element row on the Work Elements landing
+// page. esa-card is the surface (outlined, matching cbf-crs-commitment-basics'
+// established pattern), esa-pill in the header slot carries the design-status
+// chip, and esa-button is the CTA when a design tool session exists for this
+// work element. Not a whole-tile link like cbf-prototype: this card mixes
+// plain text (contract/budget) with one specific actionable button, so a
+// single click target is the right shape here, not the whole surface.
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaPill from '@esa/ecology/esa-pill.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import type { WorkElement } from '../../data/work-elements';
+import { withBase } from '../../lib/base';
+
+interface Props {
+  workElement: WorkElement;
+}
+const { workElement } = Astro.props;
+const statusLabel = workElement.status === 'in-progress' ? 'Design in progress' : 'Not started';
+const statusVariant = workElement.status === 'in-progress' ? 'warning' : 'default';
+---
+<EsaCard title={`${workElement.letter}: ${workElement.name}`} subtitle={`${workElement.weType} · Contract ${workElement.contractNum}`} variant="outlined">
+  <EsaPill slot="actions" label={statusLabel} variant={statusVariant} size="sm" removable={false} />
+  <p class="cbf-we-card__desc">{workElement.description}</p>
+  <div class="cbf-we-card__foot">
+    <span class="cbf-we-card__budget">{workElement.budgetPct}% of contract budget</span>
+    {workElement.designToolHref ? (
+      <EsaButton color="primary" size="sm" href={withBase(workElement.designToolHref)}>Open design tool</EsaButton>
+    ) : (
+      <span class="cbf-we-card__pending">Design tool not yet started for this work element</span>
+    )}
+  </div>
+</EsaCard>
+
+<style>
+  .cbf-we-card__desc {
+    margin: 0 0 var(--spacing-300, 12px);
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--color-text-secondary);
+  }
+  .cbf-we-card__foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--spacing-300, 12px);
+  }
+  .cbf-we-card__budget {
+    font-size: 14px;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-we-card__pending {
+    font-size: 14px;
+    color: var(--color-text-muted);
+    font-style: italic;
+  }
+</style>

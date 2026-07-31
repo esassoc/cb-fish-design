@@ -1,0 +1,21 @@
+---
+// bcn-lego-checked: plain legacy-page prose block — the real site's intro
+// paragraph lives INSIDE the same white panel as the tab strip (see
+// cbf-legacy-chrome.astro's default slot), not a separate section — not a
+// themed spoke surface.
+interface Props {
+  helpText: string;
+}
+const { helpText } = Astro.props;
+---
+<p class="legacy-contract-header__help">{helpText}</p>
+
+<style>
+  .legacy-contract-header__help {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    color: #333;
+    max-width: 900px;
+    margin: 0;
+  }
+</style>

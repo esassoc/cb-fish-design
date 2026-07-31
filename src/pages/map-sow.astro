@@ -28,15 +28,28 @@ import CbfMsowMap from '../components/map-sow/cbf-msow-map.astro';
 import CbfMsowModals from '../components/map-sow/cbf-msow-modals.astro';
 import '../styles/map-sow.css';
 import { withBase } from '../lib/base';
+import { workElements } from '../data/work-elements';
 
-const homeIcon =
-  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+// The Habitat Design Tool is WE H's live design-tool session (see
+// src/data/work-elements.ts) — pull its name from there so the breadcrumb and
+// toolbar's "Back to Work Element" link can't drift from the entry point.
+const activeWorkElement = workElements.find((we) => we.designToolHref === '/map-sow')!;
+
+// Matches the breadcrumb hierarchy on /legacy/sow and /legacy/we exactly —
+// this tool is one level deeper than the Habitat Design tab, not a
+// separate modern-nav hierarchy.
 const crumbs = [
-  { label: 'Home', href: withBase('/'), icon: homeIcon },
+  { label: 'Projects & Contracts' },
+  { label: 'Projects' },
+  { label: '2023-001-00' },
+  { label: 'Contracts' },
+  { label: '84051 REL 50' },
+  { label: 'SOW Rev 2', href: withBase('/legacy/sow') },
+  { label: `Summary of ${activeWorkElement.letter}: ${activeWorkElement.weType} - ${activeWorkElement.name}`, href: withBase('/legacy/we') },
   { label: 'Habitat Design Tool' },
 ];
 
-const contractNum = '84051 REL 50';
+const contractNum = activeWorkElement.contractNum;
 const cor = 'Virginia Preiss';
 const fy = '2026';
 
@@ -75,7 +88,7 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
           <EsaBreadcrumbs items={crumbs} />
         </div>
 
-        <CbfMsowToolbar contractNum={contractNum} cor={cor} fy={fy} />
+        <CbfMsowToolbar contractNum={contractNum} cor={cor} fy={fy} backHref={withBase('/legacy/we')} />
 
         <!-- GIS layout: [wizard column] [sidebar] [map] — wizard only visible when active -->
         <div class="msow-root">
@@ -93,6 +106,12 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
 
   <CbfMsowModals />
 
+  <!-- map-sow.js is a static public/ asset with no access to import.meta.env — hand it
+       the base-prefixed legacy WE-page URL so the wizard's "Design Complete" step can
+       link back to it without hardcoding an unprefixed path that would 404 in prod. -->
+  <script is:inline define:vars={{ workElementsHref: withBase('/legacy/we') }}>
+    window.MSOW_WORK_ELEMENTS_HREF = workElementsHref;
+  </script>
   <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
   <script is:inline src={mapSowSrc}></script>
 
