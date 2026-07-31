@@ -1,0 +1,130 @@
+---
+// bcn-lego-checked: hand-rolled dense data table matching the real
+// qa.cbfish.org Work Statement Elements grid (Bootstrap 3 "panel" + plain
+// bordered <table>, not an AG Grid, no esa-* table lego) — the entire point
+// of /legacy/sow is recreating that exact legacy screen, plus the one new
+// "HD" column. Colors read via getComputedStyle() off the live grid. Not a
+// pattern to reuse outside the legacy recreation (see cbf-legacy-chrome.astro).
+import type { WorkElement } from '../../data/work-elements';
+
+export interface LegacyWeRow {
+  we: WorkElement;
+  ms: number;
+  m: boolean;
+  l: boolean;
+  f: boolean;
+  ec: boolean;
+  rm: boolean;
+}
+
+interface Props {
+  rows: LegacyWeRow[];
+  habitatDesignHref: string;
+}
+const { rows, habitatDesignHref } = Astro.props;
+
+// weType is stored as "175. Produce Design" — the real grid splits this
+// across two columns: numeric WE ID ("175") and the type label ("Produce
+// Design"), separate from Sort Order (the letter) and Title (the specific
+// project name, e.g. "Upper Chewuch Floodplain Enhancement").
+const splitWeType = (weType: string) => {
+  const m = weType.match(/^(\d+)\.\s*(.+)$/);
+  return m ? { id: m[1], label: m[2] } : { id: weType, label: weType };
+};
+---
+<div class="legacy-we-grid__wrap">
+  <table class="legacy-we-grid">
+    <thead>
+      <tr>
+        <th>Sort Order</th>
+        <th>WE ID</th>
+        <th>Work Element History</th>
+        <th>Work Element Name</th>
+        <th>Title</th>
+        <th>Description</th>
+        <th>MS</th>
+        <th>M</th>
+        <th>L</th>
+        <th>F</th>
+        <th>EC</th>
+        <th>RM</th>
+        <th class="legacy-we-grid__hdcol">HD</th>
+        <th>% of Total WSE Effective Budget</th>
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((r) => {
+        const weType = splitWeType(r.we.weType);
+        return (
+        <tr>
+          <td>{r.we.letter}</td>
+          <td>{weType.id}</td>
+          <td>Existing</td>
+          <td>{weType.label}</td>
+          <td>{r.we.name}</td>
+          <td class="legacy-we-grid__desc">{r.we.description}</td>
+          <td class="legacy-we-grid__num">{r.ms}</td>
+          <td class="legacy-we-grid__dotcell">{r.m && <span class="legacy-dot legacy-dot--filled" />}</td>
+          <td class="legacy-we-grid__dotcell">{r.l && <span class="legacy-dot legacy-dot--filled" />}</td>
+          <td class="legacy-we-grid__dotcell">{r.f && <span class="legacy-dot legacy-dot--filled" />}</td>
+          <td class="legacy-we-grid__dotcell">{r.ec && <span class="legacy-dot legacy-dot--ring" />}</td>
+          <td class="legacy-we-grid__dotcell">{r.rm && <span class="legacy-dot legacy-dot--filled" />}</td>
+          <td class="legacy-we-grid__dotcell legacy-we-grid__hdcol">
+            <a href={habitatDesignHref} title={`Open Habitat Design for WE ${r.we.letter}`}>
+              <span class="legacy-dot legacy-dot--ring" />
+            </a>
+          </td>
+          <td class="legacy-we-grid__num">{r.we.budgetPct}%</td>
+        </tr>
+        );
+      })}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  .legacy-we-grid__wrap {
+    font-family: 'Montserrat', sans-serif;
+    overflow-x: auto;
+    background: #fff;
+    border: 1px solid #ddd;
+  }
+  .legacy-we-grid {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+    background: #fff;
+  }
+  .legacy-we-grid th {
+    background: transparent;
+    border: 1px solid #ddd;
+    padding: 5px 8px;
+    text-align: left;
+    font-weight: 700;
+    color: #333;
+    white-space: nowrap;
+  }
+  .legacy-we-grid td {
+    border: 1px solid #ddd;
+    padding: 5px 8px;
+    vertical-align: top;
+    color: #333;
+  }
+  .legacy-we-grid tbody tr:hover { background: #f5f9fc; }
+  .legacy-we-grid__desc { max-width: 320px; }
+  .legacy-we-grid__num { text-align: right; white-space: nowrap; }
+  .legacy-we-grid__dotcell { text-align: center; }
+  .legacy-we-grid__hdcol { background: #eaf6fa; }
+
+  .legacy-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .legacy-dot--filled { background: #007090; }
+  .legacy-dot--ring {
+    background: transparent;
+    border: 2px solid #007090;
+  }
+</style>

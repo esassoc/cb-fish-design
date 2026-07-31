@@ -1,0 +1,81 @@
+---
+// /legacy/we — a faithful recreation of the real qa.cbfish.org WE-level page
+// (Milestone.mvc/WorkStatementElement.mvc, tab strip: Summary/Milestones/
+// Metrics/Location/Focal Species/Environmental Compliance/RM&E Metadata),
+// with one new tab added: "Habitat Design". That tab is where the exported
+// results of a Habitat Design Tool session live, and where a user launches
+// the tool — the "what happens when they're done" half of the entry/exit
+// story, paired with the new HD column on /legacy/sow.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CbfLegacyChrome from '../../components/legacy/cbf-legacy-chrome.astro';
+import CbfLegacyWeSelector from '../../components/legacy/cbf-legacy-we-selector.astro';
+import CbfLegacyHabitatDesignPanel from '../../components/legacy/cbf-legacy-habitat-design-panel.astro';
+import { workElements } from '../../data/work-elements';
+import { withBase } from '../../lib/base';
+
+const activeWorkElement = workElements.find((we) => we.designToolHref === '/map-sow')!;
+
+const crumbs = [
+  { label: 'Projects & Contracts' },
+  { label: 'Projects' },
+  { label: '2023-001-00' },
+  { label: 'Contracts' },
+  { label: '84051 REL 50' },
+  { label: 'SOW Rev 2', href: withBase('/legacy/sow') },
+  { label: `Summary of ${activeWorkElement.letter}: ${activeWorkElement.weType} - ${activeWorkElement.name}` },
+  { label: 'Habitat Design' },
+];
+
+const tabs = [
+  { label: 'Summary', href: '#' },
+  { label: 'Milestones', href: '#', incomplete: true },
+  { label: 'Metrics', href: '#' },
+  { label: 'Location', href: '#', incomplete: true },
+  { label: 'Focal Species', href: '#', incomplete: true },
+  { label: 'Environmental Compliance', href: '#', incomplete: true },
+  { label: 'RM&E Metadata', href: '#' },
+  { label: 'Habitat Design', href: withBase('/legacy/we'), active: true },
+];
+---
+<!-- manifest:
+  layout: legacy chrome > WE selector > habitat design panel   # recreates real WE-level page structure
+  sections:
+    - legacy chrome         -> cbf-legacy-chrome (nav/breadcrumb/tab strip, incl. new Habitat Design tab)
+    - WE selector           -> cbf-legacy-we-selector ("Select a work element" bar)
+    - habitat design panel  -> cbf-legacy-habitat-design-panel (exported metrics snapshot + CTA into the tool)
+-->
+<BaseLayout title={`84051 REL 50: WE ${activeWorkElement.letter}: Habitat Design — CBFish.org`}>
+  <CbfLegacyChrome
+    crumbs={crumbs}
+    tabs={tabs}
+    backButton={{ label: 'Back to SOW', href: withBase('/legacy/sow') }}
+  />
+
+  <main class="legacy-we-page">
+    <div class="legacy-container">
+      <CbfLegacyWeSelector
+        label={`${activeWorkElement.letter}: ${activeWorkElement.weType} - ${activeWorkElement.name}`}
+      />
+      <CbfLegacyHabitatDesignPanel
+        contractNum={activeWorkElement.contractNum}
+        cor="Virginia Preiss"
+        fy="2026"
+        exportedDate="06/29/2026"
+        designToolHref={withBase('/map-sow')}
+      />
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  /* bcn-lego-checked: real qa.cbfish.org page background (#dadada), not the
+     spoke's white/token surface — legacy recreation, see cbf-legacy-chrome.astro.
+     .legacy-container (centered, responsive width) comes from cbf-legacy-chrome.astro's
+     global style — the real site wraps the whole page body in the same Bootstrap
+     .container the chrome uses, not just the chrome itself. */
+  .legacy-we-page {
+    background: #dadada;
+    min-height: calc(100vh - 260px);
+    padding-block: 20px;
+  }
+</style>

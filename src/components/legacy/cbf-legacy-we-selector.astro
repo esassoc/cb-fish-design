@@ -1,0 +1,33 @@
+---
+// Recreates the real "Select a work element" control shown above every
+// WE-level tab on qa.cbfish.org. The real control is a plain native browser
+// dropdown, but check-adherence's hand-rolled-primitive rule is a hard
+// Must-fix even inside this legacy recreation — esa-select is the lego,
+// disabled + a placeholder standing in for the (inert, single-option) real
+// dropdown.
+interface Props {
+  label: string;
+}
+const { label } = Astro.props;
+---
+<div class="legacy-we-selector">
+  <esa-select
+    label="Select a work element"
+    placeholder={label}
+    options={JSON.stringify([{ label, value: label }])}
+    size="sm"
+    disabled
+  ></esa-select>
+</div>
+
+<script>
+  import '@esa/ecology/esa-select';
+</script>
+
+<style>
+  .legacy-we-selector {
+    font-family: 'Montserrat', sans-serif;
+    max-width: 440px;
+    margin-bottom: 16px;
+  }
+</style>

@@ -40,8 +40,8 @@ const homeIcon =
 const crumbs = [
   { label: 'Home', href: withBase('/'), icon: homeIcon },
   { label: 'Mitigation Work' },
-  { label: 'Work Elements', href: withBase('/work-elements') },
-  { label: `${activeWorkElement.letter}: ${activeWorkElement.name}`, href: withBase('/work-elements') },
+  { label: 'Work Elements', href: withBase('/legacy/sow') },
+  { label: `${activeWorkElement.letter}: ${activeWorkElement.name}`, href: withBase('/legacy/we') },
   { label: 'Habitat Design Tool' },
 ];
 
@@ -84,7 +84,7 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
           <EsaBreadcrumbs items={crumbs} />
         </div>
 
-        <CbfMsowToolbar contractNum={contractNum} cor={cor} fy={fy} backHref={withBase('/work-elements')} />
+        <CbfMsowToolbar contractNum={contractNum} cor={cor} fy={fy} backHref={withBase('/legacy/we')} />
 
         <!-- GIS layout: [wizard column] [sidebar] [map] — wizard only visible when active -->
         <div class="msow-root">
@@ -103,9 +103,9 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
   <CbfMsowModals />
 
   <!-- map-sow.js is a static public/ asset with no access to import.meta.env — hand it
-       the base-prefixed work-elements URL so the wizard's "Design Complete" step can
+       the base-prefixed legacy WE-page URL so the wizard's "Design Complete" step can
        link back to it without hardcoding an unprefixed path that would 404 in prod. -->
-  <script is:inline define:vars={{ workElementsHref: withBase('/work-elements') }}>
+  <script is:inline define:vars={{ workElementsHref: withBase('/legacy/we') }}>
     window.MSOW_WORK_ELEMENTS_HREF = workElementsHref;
   </script>
   <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>

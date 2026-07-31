@@ -8830,7 +8830,7 @@ function wizardStepBody(we, step, idx) {
       h += '<div class="wz-step-desc">Your design is complete. Export your metrics, then return to the work element to continue tracking it through milestones and metrics.</div>';
       h += '<div class="wz-status done" style="font-size:13px;padding:14px">&#10003; <b>Design complete!</b></div>';
       h += '<button class="wz-action-btn" style="margin-top:16px" onclick="openSOW()">&#128196; Export Metrics</button>';
-      h += '<a class="wz-action-btn secondary" style="text-decoration:none" href="'+(window.MSOW_WORK_ELEMENTS_HREF||'/work-elements')+'">&larr; Back to Work Element</a>';
+      h += '<a class="wz-action-btn secondary" style="text-decoration:none" href="'+(window.MSOW_WORK_ELEMENTS_HREF||'/legacy/we')+'">&larr; Back to Work Element</a>';
       // "Add Another Work Element" hidden for now — kept for easy restore.
       // h += '<button class="wz-action-btn secondary" onclick="openWEModal(null)">&#43; Add Another Work Element</button>';
       break;

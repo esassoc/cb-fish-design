@@ -14,7 +14,7 @@ export const help: NavLink[] = [
 ];
 
 export const mitigation: NavLink[] = [
-  { label: 'Projects' }, { label: 'Contracts' }, { label: 'Portfolios' }, { label: 'Work elements', href: '/work-elements' },
+  { label: 'Projects' }, { label: 'Contracts' }, { label: 'Portfolios' }, { label: 'Work elements', href: '/legacy/sow' },
   { label: 'Estuary program' }, { label: 'Tributary habitat' }, { label: 'Land acquisitions' },
 ];
 
