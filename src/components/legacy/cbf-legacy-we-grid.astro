@@ -18,10 +18,11 @@ export interface LegacyWeRow {
 }
 
 interface Props {
+  title: string;
   rows: LegacyWeRow[];
   habitatDesignHref: string;
 }
-const { rows, habitatDesignHref } = Astro.props;
+const { title, rows, habitatDesignHref } = Astro.props;
 
 // weType is stored as "175. Produce Design" — the real grid splits this
 // across two columns: numeric WE ID ("175") and the type label ("Produce
@@ -32,7 +33,8 @@ const splitWeType = (weType: string) => {
   return m ? { id: m[1], label: m[2] } : { id: weType, label: weType };
 };
 ---
-<div class="legacy-we-grid__wrap">
+<h2 class="legacy-we-grid__title">{title}</h2>
+<div class="legacy-panel legacy-we-grid__wrap">
   <table class="legacy-we-grid">
     <thead>
       <tr>
@@ -83,11 +85,16 @@ const splitWeType = (weType: string) => {
 </div>
 
 <style>
+  .legacy-we-grid__title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+    margin: 0 0 14px;
+  }
   .legacy-we-grid__wrap {
     font-family: 'Montserrat', sans-serif;
     overflow-x: auto;
-    background: #fff;
-    border: 1px solid #ddd;
   }
   .legacy-we-grid {
     border-collapse: collapse;

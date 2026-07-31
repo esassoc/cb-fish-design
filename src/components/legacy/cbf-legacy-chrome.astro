@@ -2,15 +2,25 @@
 // bcn-lego-checked: this entire component is a deliberate exception to the
 // Ecology lookup order. It exists to visually recreate the REAL, pre-redesign
 // qa.cbfish.org chrome (Bootstrap 3 admin bar + navy app bar + gray-page
-// breadcrumb/tab strip) so the Habitat Design Tool's entry/exit point reads
-// as "here is where this drops into the actual current site" — not the
-// modern esa-* re-skin the rest of this spoke uses. No esa-* component fits
-// because none of them are meant to look like the legacy system; checked
-// Beacon (n/a, this isn't a Beacon pattern either). Colors/fonts/spacing below
-// were read via getComputedStyle() directly off the live qa.cbfish.org SOW
-// and Milestone pages, not eyeballed from screenshots — this is a pixel
-// match, not an approximation. None of this hand-rolled chrome should ever
-// be copied into a real (non-legacy) page in this spoke.
+// breadcrumb + a white "panel" wrapping the tab strip and whatever content
+// immediately follows it) so the Habitat Design Tool's entry/exit point
+// reads as "here is where this drops into the actual current site" — not
+// the modern esa-* re-skin the rest of this spoke uses. No esa-* component
+// fits because none of them are meant to look like the legacy system;
+// checked Beacon (n/a, this isn't a Beacon pattern either). Colors/fonts/
+// spacing below were read via getComputedStyle() directly off the live
+// qa.cbfish.org SOW and Milestone pages, not eyeballed from screenshots —
+// this is a pixel match, not an approximation. None of this hand-rolled
+// chrome should ever be copied into a real (non-legacy) page in this spoke.
+//
+// The default slot renders as the white panel's body, directly under the
+// tab strip — on the real site this is where the page's intro/help text
+// (SOW page) or "Select a work element" bar (WE-detail page) lives, in the
+// SAME panel as the tabs (one shared white box, not two). Content that
+// comes after that (the WE grid, the habitat design results) is a
+// SEPARATE white panel the page renders itself below this component —
+// see .legacy-panel, defined here and reused by cbf-legacy-we-grid.astro /
+// cbf-legacy-habitat-design-panel.astro so all three panels match.
 import { withBase } from '../../lib/base';
 
 export interface LegacyCrumb {
@@ -27,9 +37,12 @@ export interface LegacyTab {
 interface Props {
   crumbs: LegacyCrumb[];
   tabs: LegacyTab[];
-  backButton: { label: string; href: string };
+  /** Page-specific action on the tab row (e.g. "Back to SOW") — real site
+   * only shows this on pages nested under a SOW ("Back to SOW"/"Back to
+   * Work Element"); the top-level SOW page itself has none. */
+  tabBarAction?: { label: string; href: string };
 }
-const { crumbs, tabs, backButton } = Astro.props;
+const { crumbs, tabs, tabBarAction } = Astro.props;
 
 const navItems = [
   { label: 'Mitigation work', icon: 'Nav-Mitigationwork.svg', dropdown: true },
@@ -66,26 +79,36 @@ const navItems = [
     </div>
   </div>
 
-  <ul class="legacy-container legacy-chrome__crumbs">
-    {crumbs.map((c, i) => (
-      <>
-        {i > 0 && <span class="legacy-chrome__crumbsep">/</span>}
-        {c.href ? <a href={c.href}>{c.label}</a> : <span>{c.label}</span>}
-      </>
-    ))}
-  </ul>
-
-  <div class="legacy-container legacy-chrome__tabbar">
-    <ul class="legacy-chrome__tabs">
-      {tabs.map((t) => (
-        <li class={t.active ? 'is-active' : ''}>
-          <a href={t.href} class="legacy-chrome__tab">
-            {t.label}{t.incomplete && <span class="legacy-chrome__tabstar">&nbsp;*</span>}
-          </a>
-        </li>
+  <div class="legacy-container legacy-chrome__crumbrow">
+    <ul class="legacy-chrome__crumbs">
+      {crumbs.map((c, i) => (
+        <>
+          {i > 0 && <span class="legacy-chrome__crumbsep">/</span>}
+          {c.href ? <a href={c.href}>{c.label}</a> : <span>{c.label}</span>}
+        </>
       ))}
     </ul>
-    <a href={backButton.href} class="legacy-chrome__backbtn">{backButton.label}</a>
+    <a href="#" class="legacy-chrome__gotobtn">Go to&hellip; &#9662;</a>
+  </div>
+
+  <div class="legacy-container">
+    <div class="legacy-panel">
+      <div class="legacy-panel__tabbar">
+        <ul class="legacy-chrome__tabs">
+          {tabs.map((t) => (
+            <li class={t.active ? 'is-active' : ''}>
+              <a href={t.href} class="legacy-chrome__tab">
+                {t.label}{t.incomplete && <span class="legacy-chrome__tabstar">&nbsp;*</span>}
+              </a>
+            </li>
+          ))}
+        </ul>
+        {tabBarAction && <a href={tabBarAction.href} class="legacy-chrome__backbtn">{tabBarAction.label}</a>}
+      </div>
+      <div class="legacy-panel__body">
+        <slot />
+      </div>
+    </div>
   </div>
 </div>
 
@@ -115,6 +138,21 @@ const navItems = [
   @media (min-width: 1200px) { .legacy-container { width: 1200px; } }
   @media (min-width: 1400px) { .legacy-container { width: 1360px; } }
   @media (min-width: 1600px) { .legacy-container { width: 1560px; } }
+
+  /* bcn-lego-checked: the real site's Bootstrap 3 ".panel" — white surface,
+     4px radius, a near-invisible 1px border, and a very subtle drop shadow
+     (0 1px 1px rgba(0,0,0,.05)), margin-bottom 20px between stacked panels.
+     Read via getComputedStyle() off both the SOW grid panel and the tabs
+     panel on the live site — shared globally so cbf-legacy-chrome.astro,
+     cbf-legacy-we-grid.astro, and cbf-legacy-habitat-design-panel.astro all
+     match instead of three near-identical hand-copies. */
+  .legacy-panel {
+    background: #fff;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    box-shadow: 0 1px 1px 0 rgba(0, 0, 0, 0.05);
+    margin: 0 0 20px;
+  }
 </style>
 
 <style>
@@ -175,10 +213,18 @@ const navItems = [
   }
   .legacy-chrome__navcaret { opacity: 0.85; }
 
-  .legacy-chrome__crumbs {
+  .legacy-chrome__crumbrow {
     background: #dadada;
-    list-style: none;
     padding-block: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .legacy-chrome__crumbs {
+    list-style: none;
+    margin: 0;
+    padding: 0;
     font-size: 14px;
   }
   .legacy-chrome__crumbs a {
@@ -191,14 +237,30 @@ const navItems = [
     color: #999;
   }
 
-  .legacy-chrome__tabbar {
-    background: #dadada;
+  .legacy-chrome__gotobtn {
+    background: #5bc0de;
+    color: #fff;
+    font-size: 13px;
+    padding: 3px 12px;
+    border: 1px solid #46b8da;
+    border-radius: 4px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .legacy-chrome__gotobtn:hover { background: #46b8da; }
+
+  .legacy-panel__tabbar {
+    padding: 20px 0 10px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 8px;
   }
+  .legacy-panel__body {
+    padding: 0 15px 15px;
+  }
+
   .legacy-chrome__tabs {
     list-style: none;
     margin: 0;
@@ -233,7 +295,6 @@ const navItems = [
     border-radius: 4px;
     text-decoration: none;
     white-space: nowrap;
-    margin: 8px 0;
   }
   .legacy-chrome__backbtn:hover { background: #46b8da; }
 </style>
