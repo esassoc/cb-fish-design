@@ -14,13 +14,17 @@
 // chrome should ever be copied into a real (non-legacy) page in this spoke.
 //
 // The default slot renders as the white panel's body, directly under the
-// tab strip — on the real site this is where the page's intro/help text
-// (SOW page) or "Select a work element" bar (WE-detail page) lives, in the
-// SAME panel as the tabs (one shared white box, not two). Content that
-// comes after that (the WE grid, the habitat design results) is a
-// SEPARATE white panel the page renders itself below this component —
-// see .legacy-panel, defined here and reused by cbf-legacy-we-grid.astro /
-// cbf-legacy-habitat-design-panel.astro so all three panels match.
+// tab strip — on the real site this is where the SOW page's intro/help
+// text lives, in the SAME panel as the tabs (verified via DOM ancestry).
+// Other page types (e.g. the WE-detail page) have NO content there — the
+// real tabs panel closes right after the tab strip, so the slot is
+// optional and the panel-body wrapper only renders when something is
+// actually passed in (otherwise its padding leaves a visible empty sliver).
+// Content that comes after the tabs panel (the WE grid, "Select a work
+// element", the habitat design results) is the page's OWN separate white
+// panel — see .legacy-panel, defined here and reused by
+// cbf-legacy-we-grid.astro / cbf-legacy-we-selector.astro /
+// cbf-legacy-habitat-design-panel.astro so all the panels match.
 import { withBase } from '../../lib/base';
 
 export interface LegacyCrumb {
@@ -43,6 +47,7 @@ interface Props {
   tabBarAction?: { label: string; href: string };
 }
 const { crumbs, tabs, tabBarAction } = Astro.props;
+const hasPanelBody = Astro.slots.has('default');
 
 const navItems = [
   { label: 'Mitigation work', icon: 'Nav-Mitigationwork.svg', dropdown: true },
@@ -79,6 +84,8 @@ const navItems = [
     </div>
   </div>
 
+  <div class="legacy-chrome__messagebar"></div>
+
   <div class="legacy-container legacy-chrome__crumbrow">
     <ul class="legacy-chrome__crumbs">
       {crumbs.map((c, i) => (
@@ -105,9 +112,11 @@ const navItems = [
         </ul>
         {tabBarAction && <a href={tabBarAction.href} class="legacy-chrome__backbtn">{tabBarAction.label}</a>}
       </div>
-      <div class="legacy-panel__body">
-        <slot />
-      </div>
+      {hasPanelBody && (
+        <div class="legacy-panel__body">
+          <slot />
+        </div>
+      )}
     </div>
   </div>
 </div>
@@ -159,6 +168,16 @@ const navItems = [
   /* bcn-lego-checked: see frontmatter — legacy recreation, raw hex/px are
      pixel-matched values read off the real site, not token drift. */
   .legacy-chrome {
+    /* real qa.cbfish.org page background (#dadada) — a base fallback so the
+       gutters beside the white tabs panel read gray, not the spoke's white
+       page default. The utility bar / app bar / message bar / breadcrumb
+       row each set their own background over this.
+       display: flow-root establishes a block formatting context so the
+       tabs panel's own margin-bottom (.legacy-panel, 20px) doesn't collapse
+       straight through this wrapper — without it, that 20px shows as the
+       page body's near-white background instead of this gray one. */
+    background: #dadada;
+    display: flow-root;
     font-family: 'Montserrat', sans-serif;
     font-size: 14px;
     color: #333;
@@ -199,6 +218,15 @@ const navItems = [
   }
   .legacy-chrome__logo { display: block; }
   .legacy-chrome__logotype { display: block; }
+
+  /* bcn-lego-checked: the real site reserves a blank white strip here
+     (.system-message-display > .new-navigation-ui.container, 48px, verified
+     via getComputedStyle) for global announcement banners — empty on a
+     normal page load, but still present and white, not gray page bg. */
+  .legacy-chrome__messagebar {
+    background: #fff;
+    height: 48px;
+  }
   .legacy-chrome__nav {
     display: flex;
     gap: 26px;
@@ -267,6 +295,7 @@ const navItems = [
     padding: 0;
     display: flex;
     flex-wrap: wrap;
+    gap: 2px;
   }
   .legacy-chrome__tabs li {
     background: #dadada;

@@ -38,24 +38,24 @@ const tabs = [
 ];
 ---
 <!-- manifest:
-  layout: legacy chrome (tabs panel w/ WE selector) > habitat design panel   # recreates real WE-level page structure
+  layout: legacy chrome (tabs panel, empty body) > WE selector panel > habitat design panel   # recreates real WE-level page structure
   sections:
-    - legacy chrome + WE selector -> cbf-legacy-chrome (nav/breadcrumb/tab strip, incl. new Habitat Design tab) wrapping cbf-legacy-we-selector ("Select a work element" bar, same white panel as the tabs on the real site)
-    - habitat design panel        -> cbf-legacy-habitat-design-panel (exported metrics snapshot + CTA into the tool, its own separate white panel)
+    - legacy chrome         -> cbf-legacy-chrome (nav/breadcrumb/tab strip, incl. new Habitat Design tab) — tabs-only white panel, no slotted content (verified the real page's tabs panel has no body content on this page type)
+    - WE selector panel     -> cbf-legacy-we-selector ("Select a work element" bar) — its OWN separate panel with a gray heading strip, confirmed via DOM ancestry on the live site
+    - habitat design panel  -> cbf-legacy-habitat-design-panel (exported metrics snapshot + CTA into the tool, its own separate white panel)
 -->
 <BaseLayout title={`84051 REL 50: WE ${activeWorkElement.letter}: Habitat Design — CBFish.org`}>
   <CbfLegacyChrome
     crumbs={crumbs}
     tabs={tabs}
     tabBarAction={{ label: 'Back to SOW', href: withBase('/legacy/sow') }}
-  >
-    <CbfLegacyWeSelector
-      label={`${activeWorkElement.letter}: ${activeWorkElement.weType} - ${activeWorkElement.name}`}
-    />
-  </CbfLegacyChrome>
+  />
 
   <main class="legacy-we-page">
     <div class="legacy-container">
+      <CbfLegacyWeSelector
+        label={`${activeWorkElement.letter}: ${activeWorkElement.weType} - ${activeWorkElement.name}`}
+      />
       <CbfLegacyHabitatDesignPanel
         contractNum={activeWorkElement.contractNum}
         cor="Virginia Preiss"
