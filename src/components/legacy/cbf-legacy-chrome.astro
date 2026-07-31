@@ -16,10 +16,10 @@
 // The default slot renders as the white panel's body, directly under the
 // tab strip — on the real site this is where the SOW page's intro/help
 // text lives, in the SAME panel as the tabs (verified via DOM ancestry).
-// Other page types (e.g. the WE-detail page) have NO content there — the
-// real tabs panel closes right after the tab strip, so the slot is
-// optional and the panel-body wrapper only renders when something is
-// actually passed in (otherwise its padding leaves a visible empty sliver).
+// That panel-body wrapper is ALWAYS present on the real site, even with
+// nothing in it (e.g. the WE-detail page) — its own bottom padding is part
+// of the tabs panel's real measured height, not an artifact to hide, so the
+// slot is optional but the wrapper renders unconditionally.
 // Content that comes after the tabs panel (the WE grid, "Select a work
 // element", the habitat design results) is the page's OWN separate white
 // panel — see .legacy-panel, defined here and reused by
@@ -47,7 +47,6 @@ interface Props {
   tabBarAction?: { label: string; href: string };
 }
 const { crumbs, tabs, tabBarAction } = Astro.props;
-const hasPanelBody = Astro.slots.has('default');
 
 const navItems = [
   { label: 'Mitigation work', icon: 'Nav-Mitigationwork.svg', dropdown: true },
@@ -112,11 +111,9 @@ const navItems = [
         </ul>
         {tabBarAction && <a href={tabBarAction.href} class="legacy-chrome__backbtn">{tabBarAction.label}</a>}
       </div>
-      {hasPanelBody && (
-        <div class="legacy-panel__body">
-          <slot />
-        </div>
-      )}
+      <div class="legacy-panel__body">
+        <slot />
+      </div>
     </div>
   </div>
 </div>
