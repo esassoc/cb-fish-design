@@ -7549,18 +7549,30 @@ function clearPreview(){
 // ── Wizard panel collapse ───────────────────────────────────────────────────
 // Reclaims the wizard column's width for the map — distinct from the retired
 // toggleWizardMode() (Guided/Expert switch, dead code, do not touch/fix).
-// Purely a "step away to look at the map" toggle: the step list AND the
-// current step's own controls live inside #wizard-panel, so they're
-// unavailable while collapsed — expanding again is one click.
-function toggleWizardPanel(){
+// Collapses just the step-tree accordion (#wizard-panel); the current step's
+// own instructions/action button live in #sidebar and stay usable throughout.
+function setWizardPanelCollapsed(collapsed){
   var layout=document.getElementById('msow-layout');
   var btn=document.getElementById('wizard-collapse-toggle');
   if(!layout||!btn)return;
-  var collapsed=layout.classList.toggle('wizard-collapsed');
+  layout.classList.toggle('wizard-collapsed', collapsed);
   btn.setAttribute('aria-expanded', collapsed?'false':'true');
   btn.title=collapsed?'Expand steps panel':'Collapse steps panel';
   btn.setAttribute('aria-label', btn.title);
 }
+function toggleWizardPanel(){
+  var layout=document.getElementById('msow-layout');
+  if(!layout)return;
+  setWizardPanelCollapsed(!layout.classList.contains('wizard-collapsed'));
+}
+// Auto-collapse below ~1200px so the map isn't squeezed on narrower browser
+// windows (not just short ones — see the max-height compaction in
+// map-sow.astro for the height axis). The manual toggle above still works
+// freely on either side of this breakpoint; crossing it just resets the
+// default, the same way a responsive nav re-snaps its menu on resize.
+var wizardNarrowMQ = window.matchMedia('(max-width: 1200px)');
+wizardNarrowMQ.addEventListener('change', function(e){ setWizardPanelCollapsed(e.matches); });
+setWizardPanelCollapsed(wizardNarrowMQ.matches);
 
 // ── Legend ────────────────────────────────────────────────────────────────
 function toggleLegend(){legCollapsed=!legCollapsed;document.getElementById('leg-body').classList.toggle('collapsed',legCollapsed);document.getElementById('leg-toggle').textContent=legCollapsed?'[+]':'[–]';}
