@@ -10,6 +10,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import CbfLegacyChrome from '../../components/legacy/cbf-legacy-chrome.astro';
 import CbfLegacyContractHeader from '../../components/legacy/cbf-legacy-contract-header.astro';
 import CbfLegacyWeGrid from '../../components/legacy/cbf-legacy-we-grid.astro';
+import CbfLegacySowIntroModal from '../../components/legacy/cbf-legacy-sow-intro-modal.astro';
 import { workElements } from '../../data/work-elements';
 import { withBase } from '../../lib/base';
 
@@ -47,10 +48,11 @@ const rows = [
 ];
 ---
 <!-- manifest:
-  layout: legacy chrome (tabs panel w/ intro text) > WE grid   # recreates real page structure, top to bottom
+  layout: legacy chrome (tabs panel w/ intro text) > WE grid > modal   # recreates real page structure, top to bottom
   sections:
     - legacy chrome + intro text -> cbf-legacy-chrome (nav/breadcrumb/tab strip) wrapping cbf-legacy-contract-header (intro paragraph, same white panel as the tabs on the real site)
     - WE grid                    -> cbf-legacy-we-grid (title + work statement elements table + new HD column, its own separate white panel)
+    - intro modal                -> cbf-legacy-sow-intro-modal (explains the new HD column/workflow to a reviewer — not part of the recreated screen)
 -->
 <BaseLayout title="84051 REL 50: SOW — CBFish.org">
   <CbfLegacyChrome crumbs={crumbs} tabs={tabs}>
@@ -69,6 +71,8 @@ const rows = [
       />
     </div>
   </main>
+
+  <CbfLegacySowIntroModal />
 </BaseLayout>
 
 <style>

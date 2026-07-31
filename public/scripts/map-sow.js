@@ -78,12 +78,10 @@ L.Draggable.mergeOptions({ clickTolerance: 10 });
 
 // ── Init ──────────────────────────────────────────────────────────────────
 window.onload = function() {
-  // Welcome modal is open by default (see the `open` attribute in
-  // cbf-msow-modals.astro). Dismissing it any way — the Continue button, Esc,
-  // or a backdrop click — should still land the user on a default work element.
-  document.getElementById('welcome-modal').addEventListener('close', function() {
-    createDefaultWE();
-  }, { once: true });
+  // Welcome modal is disabled for now (see cbf-msow-modals.astro) — land on
+  // a default work element directly instead of waiting for its `close`
+  // event. If the modal comes back, move this back behind a `close` listener.
+  createDefaultWE();
 
   // esa-tab-layout only updates its own internal active-tab state on click — it
   // doesn't know about #pp-side/#work-side, so route its event into showInnerTab().
