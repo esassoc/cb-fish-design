@@ -1,0 +1,234 @@
+---
+// bcn-lego-checked: hand-rolled dense data grid matching the real
+// qa.cbfish.org Milestones grid (Bootstrap 3 "panel" + plain bordered
+// <table>, not an AG Grid, no esa-* table lego) — the entire point of
+// /legacy/we-milestones is recreating that exact legacy screen. Colors/
+// spacing match the shared .legacy-panel look (see cbf-legacy-chrome.astro).
+// Milestone data is invented for this prototype (same 13-item count already
+// claimed for WE H's MS column on /legacy/sow) — the categories mirror
+// generic BPA mitigation-contract milestone types (environmental compliance,
+// NEPA, design review stages, etc.), not transcribed from any real SOW.
+export interface LegacyMilestone {
+  sort: string;
+  template?: string;
+  type: string;
+  title: string;
+  /** Real milestone titles are plain text — this one link is deliberate: it's
+   * how a user gets from "here's the milestone due" back to the tool that
+   * fulfills it (the Habitat Design tab), not a general-purpose feature. */
+  titleHref?: string;
+  start?: string;
+  end: string;
+  status: 'Active' | 'Concluded' | 'Canceled';
+  modifiedBy: string;
+  modifiedDate: string;
+  highlighted?: boolean;
+}
+
+interface Props {
+  lastModifiedBy: string;
+  lastModifiedDate: string;
+  milestones: LegacyMilestone[];
+  selectedDescription: string;
+}
+const { lastModifiedBy, lastModifiedDate, milestones, selectedDescription } = Astro.props;
+---
+<div class="legacy-panel legacy-milestones-panel">
+  <div class="legacy-milestones-panel__infobar">
+    <span class="legacy-milestones-panel__deliverable">
+      <span class="legacy-milestones-panel__icon" aria-hidden="true">&#9432;</span>
+      Work Element must have a deliverable.
+    </span>
+    <span class="legacy-milestones-panel__modified">Last Modified: <a href="#">{lastModifiedBy}</a>, {lastModifiedDate}</span>
+  </div>
+
+  <div class="legacy-milestones-panel__toolbar">
+    <div class="legacy-milestones-panel__sortbtns">
+      <span class="legacy-milestones-panel__iconbtn" aria-hidden="true">&#8593;</span>
+      <span class="legacy-milestones-panel__iconbtn" aria-hidden="true">&#8595;</span>
+      <span class="legacy-milestones-panel__iconbtn" aria-hidden="true">&#9776;</span>
+    </div>
+    <div class="legacy-milestones-panel__actions">
+      <a href="#" class="legacy-milestones-panel__actionbtn">Add WSE Continuation</a>
+      <a href="#" class="legacy-milestones-panel__actionbtn">Set Sort Order</a>
+      <a href="#" class="legacy-milestones-panel__actionbtn">Add Deliverable</a>
+      <a href="#" class="legacy-milestones-panel__actionbtn">Add</a>
+      <a href="#" class="legacy-milestones-panel__actionbtn">Copy</a>
+      <a href="#" class="legacy-milestones-panel__actionbtn">Paste</a>
+      <a href="#" class="legacy-milestones-panel__actionbtn">Save</a>
+    </div>
+  </div>
+
+  <div class="legacy-milestones-panel__gridwrap">
+    <table class="legacy-milestones-grid">
+      <thead>
+        <tr>
+          <th class="legacy-milestones-grid__handle"></th>
+          <th></th>
+          <th>Sort</th>
+          <th>Template</th>
+          <th>Type</th>
+          <th>Title</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Status</th>
+          <th class="legacy-milestones-grid__envelope" aria-label="Notifications">&#9993;</th>
+          <th>Modified By</th>
+          <th>Modified Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {milestones.map((m) => (
+          <tr class={m.highlighted ? 'is-highlighted' : ''}>
+            <td class="legacy-milestones-grid__handle">
+              <span class="legacy-milestones-grid__dragicon" aria-hidden="true">&#9776;</span>
+            </td>
+            <td><esa-checkbox aria-label={`Select milestone ${m.sort}`} disabled></esa-checkbox></td>
+            <td>{m.sort}</td>
+            <td>{m.template || ''}</td>
+            <td>{m.type}</td>
+            <td>{m.titleHref ? <a href={m.titleHref}>{m.title}</a> : m.title}</td>
+            <td>{m.start || ''}</td>
+            <td>{m.end}</td>
+            <td>
+              <span class="legacy-milestones-grid__status">{m.status}</span>
+            </td>
+            <td class="legacy-milestones-grid__num">0</td>
+            <td><a href="#">{m.modifiedBy}</a></td>
+            <td>{m.modifiedDate}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  import '@esa/ecology/esa-checkbox';
+</script>
+
+<div class="legacy-panel legacy-milestone-desc">
+  <div class="legacy-milestone-desc__heading">
+    <span class="legacy-milestones-panel__icon" aria-hidden="true">&#9432;</span>
+    Milestone Description
+  </div>
+  <div class="legacy-milestone-desc__body">{selectedDescription}</div>
+</div>
+
+<style>
+  .legacy-milestones-panel {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    color: #333;
+    padding: 12px 15px;
+  }
+  .legacy-milestones-panel__infobar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .legacy-milestones-panel__deliverable { display: flex; align-items: center; gap: 6px; }
+  .legacy-milestones-panel__icon { color: #007090; font-size: 15px; }
+  .legacy-milestones-panel__modified { color: #333; font-size: 13px; }
+  .legacy-milestones-panel__modified a { color: #007090; text-decoration: none; }
+
+  .legacy-milestones-panel__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .legacy-milestones-panel__sortbtns { display: flex; gap: 4px; }
+  .legacy-milestones-panel__iconbtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: #5bc0de;
+    color: #fff;
+    border: 1px solid #46b8da;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .legacy-milestones-panel__actions { display: flex; flex-wrap: wrap; gap: 4px; }
+  .legacy-milestones-panel__actionbtn {
+    background: #5bc0de;
+    color: #fff;
+    font-size: 13px;
+    padding: 5px 10px;
+    border: 1px solid #46b8da;
+    border-radius: 4px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .legacy-milestones-panel__actionbtn:hover { background: #46b8da; }
+
+  .legacy-milestones-panel__gridwrap {
+    overflow-x: auto;
+  }
+  .legacy-milestones-grid {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 13px;
+    background: #fff;
+  }
+  .legacy-milestones-grid th {
+    background: #e6ecf1;
+    border: 1px solid #ddd;
+    padding: 5px 8px;
+    text-align: left;
+    font-weight: 700;
+    color: #333;
+    white-space: nowrap;
+  }
+  .legacy-milestones-grid td {
+    border: 1px solid #ddd;
+    padding: 5px 8px;
+    vertical-align: middle;
+    color: #333;
+    white-space: nowrap;
+  }
+  .legacy-milestones-grid tbody tr { background: #eaf7ea; }
+  .legacy-milestones-grid tbody tr.is-highlighted { background: #dbe7f2; }
+  .legacy-milestones-grid__handle { width: 28px; text-align: center; }
+  .legacy-milestones-grid__dragicon { color: #fff; background: #5bc0de; border-radius: 3px; padding: 3px 5px; font-size: 13px; }
+  .legacy-milestones-grid__envelope { text-align: center; }
+  .legacy-milestones-grid__num { text-align: center; }
+  .legacy-milestones-grid__status {
+    display: inline-block;
+    min-width: 90px;
+    padding: 3px 8px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    background: #fff;
+  }
+  .legacy-milestones-grid a { color: #007090; text-decoration: none; }
+
+  .legacy-milestone-desc {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    color: #333;
+    padding: 12px 15px;
+  }
+  .legacy-milestone-desc__heading {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .legacy-milestone-desc__body {
+    background: #eaf7ea;
+    border: 1px solid #cfe8cf;
+    border-radius: 3px;
+    padding: 12px;
+    min-height: 160px;
+  }
+</style>

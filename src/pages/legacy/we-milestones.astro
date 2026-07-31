@@ -1,0 +1,100 @@
+---
+// /legacy/we-milestones — a faithful recreation of the real qa.cbfish.org
+// WE-level Milestones tab (Milestone.mvc/Milestones), reached from the
+// "Milestones" tab shared with /legacy/we. Milestone data below is invented
+// for this prototype (see cbf-legacy-milestones-panel.astro) — not
+// transcribed from any real SOW, though it mirrors the generic BPA
+// mitigation-contract milestone categories (environmental compliance, NEPA,
+// staged design review, etc.) real habitat-design work elements go through.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CbfLegacyChrome from '../../components/legacy/cbf-legacy-chrome.astro';
+import CbfLegacyWeSelector from '../../components/legacy/cbf-legacy-we-selector.astro';
+import CbfLegacyMilestonesPanel, { type LegacyMilestone } from '../../components/legacy/cbf-legacy-milestones-panel.astro';
+import { workElements } from '../../data/work-elements';
+import { withBase } from '../../lib/base';
+
+const activeWorkElement = workElements.find((we) => we.designToolHref === '/map-sow')!;
+
+const crumbs = [
+  { label: 'Projects & Contracts' },
+  { label: 'Projects' },
+  { label: '2023-001-00' },
+  { label: 'Contracts' },
+  { label: '84051 REL 50' },
+  { label: 'SOW Rev 2', href: withBase('/legacy/sow') },
+  { label: `Summary of ${activeWorkElement.letter}: ${activeWorkElement.weType} - ${activeWorkElement.name}` },
+  { label: 'Milestones' },
+];
+
+const tabs = [
+  { label: 'Summary' },
+  { label: 'Milestones', href: withBase('/legacy/we-milestones'), incomplete: true, active: true },
+  { label: 'Metrics' },
+  { label: 'Location', incomplete: true },
+  { label: 'Focal Species', incomplete: true },
+  { label: 'Environmental Compliance', incomplete: true },
+  { label: 'RM&E Metadata' },
+  { label: 'Habitat Design', href: withBase('/legacy/we') },
+];
+
+// 13 milestones — matches the MS=13 now claimed for WE H on /legacy/sow.
+// J is new: submitting the design via the Habitat Design Tool is its own
+// milestone, ahead of uploading the final design set — its Title links
+// straight to the Habitat Design tab, the tool that fulfills it.
+const milestones: LegacyMilestone[] = [
+  { sort: 'A', template: 'EC', type: 'Required', title: 'Environmental compliance documentation submitted', start: '10/01/2025', end: '09/30/2026', status: 'Active', modifiedBy: 'Virginia Preiss', modifiedDate: '10/01/2025', highlighted: true },
+  { sort: 'B', type: 'User', title: 'HIP screening completed', start: '10/01/2025', end: '09/30/2026', status: 'Active', modifiedBy: 'Virginia Preiss', modifiedDate: '10/01/2025' },
+  { sort: 'C', type: 'User', title: 'Submit preliminary design alternative (30%) for review', start: '10/01/2025', end: '12/15/2025', status: 'Concluded', modifiedBy: 'Virginia Preiss', modifiedDate: '12/15/2025' },
+  { sort: 'D', type: 'User', title: 'Respond to BPA design review comments (30%)', start: '12/15/2025', end: '09/30/2026', status: 'Active', modifiedBy: 'Virginia Preiss', modifiedDate: '01/12/2026' },
+  { sort: 'E', type: 'User', title: 'Secure landowner access agreement', start: '10/01/2025', end: '09/30/2026', status: 'Active', modifiedBy: 'Virginia Preiss', modifiedDate: '10/01/2025' },
+  { sort: 'F', type: 'User', title: 'Complete cultural resource survey', start: '10/01/2025', end: '09/30/2026', status: 'Active', modifiedBy: 'Virginia Preiss', modifiedDate: '10/01/2025' },
+  { sort: 'G', type: 'User', title: 'Obtain NEPA categorical exclusion', start: '10/01/2025', end: '09/30/2026', status: 'Active', modifiedBy: 'Virginia Preiss', modifiedDate: '10/01/2025' },
+  { sort: 'H', type: 'User', title: 'Submit permit-ready design (60–80%) for review', start: '01/15/2026', end: '09/30/2026', status: 'Active', modifiedBy: 'Virginia Preiss', modifiedDate: '01/15/2026' },
+  { sort: 'I', type: 'User', title: 'Respond to BPA design review comments (60%)', start: '08/01/2026', end: '09/30/2026', status: 'Active', modifiedBy: 'Virginia Preiss', modifiedDate: '06/29/2026' },
+  { sort: 'J', type: 'User', title: 'Submit design with Habitat Design tool', titleHref: withBase('/legacy/we'), start: '09/01/2026', end: '09/30/2026', status: 'Active', modifiedBy: 'Virginia Preiss', modifiedDate: '06/29/2026' },
+  { sort: 'K', type: 'User', title: 'Upload final engineered design set', start: '09/01/2026', end: '09/30/2026', status: 'Active', modifiedBy: 'Virginia Preiss', modifiedDate: '06/29/2026' },
+  { sort: 'L', template: 'Suggested', type: 'Required', title: 'Report projected construction start date to BPA COR and EC', start: '08/15/2026', end: '09/30/2026', status: 'Active', modifiedBy: 'Virginia Preiss', modifiedDate: '06/29/2026' },
+  { sort: 'M', template: 'DELIV', type: 'Required', title: 'Submit final design deliverable.', end: '09/30/2026', status: 'Active', modifiedBy: 'Virginia Preiss', modifiedDate: '06/29/2026' },
+];
+---
+<!-- manifest:
+  layout: legacy chrome (tabs panel, empty body) > WE selector panel > milestones panel   # recreates real Milestones page structure
+  sections:
+    - legacy chrome         -> cbf-legacy-chrome (nav/breadcrumb/tab strip, Milestones tab active)
+    - WE selector panel     -> cbf-legacy-we-selector ("Select a work element" bar), its own separate panel
+    - milestones panel      -> cbf-legacy-milestones-panel (deliverable notice, toolbar, milestone grid, description box)
+-->
+<BaseLayout title={`84051 REL 50: WE ${activeWorkElement.letter}: Milestones — CBFish.org`}>
+  <CbfLegacyChrome
+    crumbs={crumbs}
+    tabs={tabs}
+    tabBarAction={{ label: 'Back to SOW', href: withBase('/legacy/sow') }}
+  />
+
+  <main class="legacy-we-page">
+    <div class="legacy-container">
+      <CbfLegacyWeSelector
+        label={`${activeWorkElement.letter}: ${activeWorkElement.weType} - ${activeWorkElement.name}`}
+      />
+      <CbfLegacyMilestonesPanel
+        lastModifiedBy="Virginia Preiss"
+        lastModifiedDate="06/29/2026 2:32 PM"
+        milestones={milestones}
+        selectedDescription="On-the-ground work for this work element cannot begin until environmental compliance documentation is submitted and accepted by BPA."
+      />
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  /* bcn-lego-checked: real qa.cbfish.org page background (#dadada), not the
+     spoke's white/token surface — legacy recreation, see cbf-legacy-chrome.astro.
+     .legacy-container (centered, responsive width) comes from cbf-legacy-chrome.astro's
+     global style — the real site wraps the whole page body in the same Bootstrap
+     .container the chrome uses, not just the chrome itself. */
+  .legacy-we-page {
+    background: #dadada;
+    min-height: calc(100vh - 260px);
+    padding-block: 20px;
+  }
+</style>

@@ -33,7 +33,9 @@ export interface LegacyCrumb {
 }
 export interface LegacyTab {
   label: string;
-  href: string;
+  /** Omit for tabs with no real page yet — renders as inert text instead of
+   * a dead link. */
+  href?: string;
   active?: boolean;
   incomplete?: boolean;
 }
@@ -103,9 +105,15 @@ const navItems = [
         <ul class="legacy-chrome__tabs">
           {tabs.map((t) => (
             <li class={t.active ? 'is-active' : ''}>
-              <a href={t.href} class="legacy-chrome__tab">
-                {t.label}{t.incomplete && <span class="legacy-chrome__tabstar">&nbsp;*</span>}
-              </a>
+              {t.href ? (
+                <a href={t.href} class="legacy-chrome__tab">
+                  {t.label}{t.incomplete && <span class="legacy-chrome__tabstar">&nbsp;*</span>}
+                </a>
+              ) : (
+                <span class="legacy-chrome__tab legacy-chrome__tab--inert">
+                  {t.label}{t.incomplete && <span class="legacy-chrome__tabstar">&nbsp;*</span>}
+                </span>
+              )}
             </li>
           ))}
         </ul>
@@ -305,6 +313,8 @@ const navItems = [
     text-decoration: none;
   }
   .legacy-chrome__tab:hover { text-decoration: underline; }
+  .legacy-chrome__tab--inert { cursor: default; }
+  .legacy-chrome__tab--inert:hover { text-decoration: none; }
   .legacy-chrome__tabs li.is-active {
     background: #42a2c1;
   }

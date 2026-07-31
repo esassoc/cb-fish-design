@@ -23,24 +23,25 @@ const crumbs = [
 ];
 
 const tabs = [
-  { label: 'Summary', href: '#' },
+  { label: 'Summary' },
   { label: 'SOW', href: withBase('/legacy/sow'), active: true },
-  { label: 'WE Budgets', href: '#' },
-  { label: 'Status Reports', href: '#' },
-  { label: 'Pre-Award', href: '#' },
-  { label: 'Workflow', href: '#' },
-  { label: 'Review SOW', href: '#' },
-  { label: 'Email Archive', href: '#' },
-  { label: 'Internal Notes', href: '#' },
-  { label: 'Documents', href: '#' },
-  { label: 'COR File', href: '#' },
+  { label: 'WE Budgets' },
+  { label: 'Status Reports' },
+  { label: 'Pre-Award' },
+  { label: 'Workflow' },
+  { label: 'Review SOW' },
+  { label: 'Email Archive' },
+  { label: 'Internal Notes' },
+  { label: 'Documents' },
+  { label: 'COR File' },
 ];
 
 // Decorative per-row tab-completion dots (M/L/F/EC/RM), invented to look
-// plausible next to the real Milestones count already established for WE H
-// (12, from qa.cbfish.org) — presentational only, not modeled as data.
+// plausible next to WE H's actual Milestones count (13, from
+// /legacy/we-milestones — the "Submit design with Habitat Design tool"
+// milestone) — presentational only, not modeled as data.
 const rows = [
-  { we: workElements[0], ms: 12, m: true, l: true, f: false, ec: false, rm: false },
+  { we: workElements[0], ms: 13, m: true, l: true, f: false, ec: false, rm: false },
   { we: workElements[1], ms: 13, m: true, l: true, f: false, ec: true, rm: false },
   { we: workElements[2], ms: 3, m: true, l: true, f: false, ec: true, rm: false },
 ];
