@@ -67,6 +67,15 @@ var chuPendingPoolDownId = null; // ID of downstream piece from first split
 var chuDrawPts = [];    // pts being drawn for current split line
 var chuSnapDist = 15;   // px snap distance to area_ch boundary
 
+// Pre-project pools — separate draw-mode state from the primary-channel CHU tool
+// above (both use the same split-line mechanism, but on different unit arrays).
+var ppChuDrawing = false;
+var ppChuPoolMode  = false;
+var ppChuPoolPhase = 0;
+var ppChuPendingPoolUpId   = null;
+var ppChuPendingPoolDownId = null;
+var ppChuDrawPts = [];
+
 // Leaflet's map panning (and any Leaflet-draggable marker) treats a mousedown+mouseup
 // as a real click only if the pointer moved less than this many px — default is 3,
 // which is easy to exceed by accident (trackpad jitter, a slightly-shaky click) and
@@ -307,7 +316,7 @@ function getActiveWE() { return getWE(activeWEId); }
 function newPrimaryChannel(n) {
   return {
     id: 'pc-'+Date.now()+'-'+n,
-    name: 'Primary Channel '+n,
+    name: 'Primary Channel', // no number — a work element only ever has the one
     sowLayers: {},                     // 'pc-reach','pc-area','pcw1/2/3','pc-bankht'
     inputVals: {},                     // 'pc-width','pc-bank-height','pc-excavation-vol'
     chuUnits: [],
@@ -356,7 +365,8 @@ function newWEData() {
     fpMulti: {grade:[], road:[], berm:[], revet:[], tailings:[], pp_wetland:[], fp_wetland_enhance:[]}, // [{id, vol}] — id keys into sowLayers for the drawn geometry
     fpStructs: [],
     primaryChannels: [pc1], // [{id, name, sowLayers, inputVals, chuUnits, structures, structs, gravelPlacements, ppData, sowElev}]
-    activePCId: pc1.id
+    activePCId: pc1.id,
+    ppChuUnits: [] // pre-project riffle/pool units — same shape as a primary channel's chuUnits, but reach-level (one set per work element, not per channel)
   };
 }
 
@@ -4674,6 +4684,289 @@ function toggleCHUPool(unitId) {
   wizardRefreshIfActive();
 }
 
+// ── Pre-Project Pools ──────────────────────────────────────────────────────
+// Same split-line mechanism as the primary-channel CHU tool above, forked to
+// operate on we.ppChuUnits (reach-level, one set per work element) instead of
+// getActivePC(we).chuUnits — see the "pre-project pools" feature notes below
+// for why this is a fork rather than a shared function: chuPerpendicularLine()
+// prefers the primary channel and falls back to pre-project data, which isn't
+// meaningful the other way around (there's only one pre-project reach, ever).
+// No undo/reset here — the primary-channel version only wires undoCHUSplit()/
+// resetCHU() to the retired expert-mode panel; the wizard body never exposes
+// them, so there's nothing to reach parity with.
+
+function getPPChannelPts(we) {
+  // Pre-project pools are built from the existing reach's own channel area —
+  // either the user-drawn override (.layer) or the auto-computed buffer from
+  // reach length + channel width (.bufferLayer, see updateAreaChBuffer()).
+  var d = we.ppData['area_ch'];
+  var layer = d && (d.layer || d.bufferLayer);
+  if (!layer) return null;
+  var lls = layer.getLatLngs();
+  return (lls.length && Array.isArray(lls[0])) ? lls[0] : lls;
+}
+
+// Initialise the channel as a single riffle unit (called when entering the Identify Pre-Project Pools step).
+function initPPChuUnits(we) {
+  if (!we || we.ppChuUnits.length > 0) return;
+  var chPts = getPPChannelPts(we); if (!chPts) return;
+  we.ppChuUnits = [{id:'ppchu-0', type:'riffle', pts:chPts.map(function(p){return L.latLng(p.lat,p.lng);}), layer:null, areaM2:0, lengthM:0}];
+  renderPPChuUnits(we);
+}
+
+// Remove a pool (convert it back to riffle). The split lines remain.
+function removePPChuPool(unitId) {
+  var we = getActiveWE(); if (!we) return;
+  var u = we.ppChuUnits.filter(function(u){ return u.id===unitId; })[0]; if (!u) return;
+  u.type = 'riffle';
+  renderPPChuUnits(we);
+  wizardRefreshIfActive();
+}
+
+function startPPChuPoolDraw() {
+  var we = getActiveWE(); if (!we) return;
+  if (!getPPChannelPts(we)) {
+    setMapHint('No pre-project channel area — complete the Stream Reach &amp; Channel Width steps first.');
+    setTimeout(function(){setMapHint('');}, 3000); return;
+  }
+  initPPChuUnits(we);
+  ppChuPoolMode = true; ppChuPoolPhase = 1; ppChuPendingPoolUpId = null; ppChuPendingPoolDownId = null;
+  startPPChuSplit();
+  setMapHint('Draw the <b>first boundary</b> of the pool — click across the channel');
+}
+
+function startPPChuSplit() {
+  var we = getActiveWE(); if (!we) return;
+  if (!getPPChannelPts(we)) {
+    setMapHint('No pre-project channel area — complete the Stream Reach &amp; Channel Width steps first.');
+    setTimeout(function(){setMapHint('');}, 3000);
+    return;
+  }
+  if (lineEditing) cancelLineEdit();
+  ppDrawing = null; sowDrawing = null; pendingStructPoint = null;
+  ppChuDrawing = true; ppChuDrawPts = [];
+  document.getElementById('mapwrap').classList.add('drawing');
+  setMapHint('Click anywhere across the channel to place a split line.');
+}
+
+function cancelPPChuSplit() {
+  ppChuDrawing = false; ppChuDrawPts = [];
+  clearPreview();
+  document.getElementById('mapwrap').classList.remove('drawing');
+  setMapHint('');
+}
+
+// Build a perpendicular split line across the pre-project channel polygon at
+// latlng, based on the nearest pre-project reach segment direction. Unlike
+// chuPerpendicularLine() there's no "prefer the primary channel" branch — pools
+// identified here are always pre-project, so they always cut against the
+// pre-project reach/width/area.
+function ppChuPerpendicularLine(latlng, we) {
+  var reachLayer = we.ppData['reach_len'] && we.ppData['reach_len'].layer;
+  if (!reachLayer) return null;
+  var reachPts = reachLayer.getLatLngs();
+  if (reachPts.length && Array.isArray(reachPts[0])) reachPts = reachPts[0];
+  if (reachPts.length < 2) return null;
+
+  var bestDist = Infinity, bestA = null, bestB = null;
+  for (var i = 0; i < reachPts.length - 1; i++) {
+    var a = reachPts[i], b = reachPts[i+1];
+    var near = nearestOnSegment(latlng, a, b);
+    var d = Math.sqrt(Math.pow(latlng.lat-near.lat,2)+Math.pow(latlng.lng-near.lng,2));
+    if (d < bestDist) { bestDist = d; bestA = a; bestB = b; }
+  }
+  if (!bestA) return null;
+
+  var snapped = nearestOnSegment(latlng, bestA, bestB);
+
+  var toRad = function(x){return x*Math.PI/180;};
+  var midLat = (bestA.lat + bestB.lat) / 2;
+  var cosLat = Math.cos(toRad(midLat));
+  var dLat = bestB.lat - bestA.lat;
+  var dLng = (bestB.lng - bestA.lng) * cosLat;
+  var len = Math.sqrt(dLat*dLat + dLng*dLng);
+  if (len < 1e-10) return null;
+  var perpLat = -dLng / len;
+  var perpLng =  dLat / len / cosLat;
+
+  var chAvgWidthM = ppMultiAvgM(we, 'ch_width');
+  var chD2 = we.ppData['area_ch'];
+  var chHalfWidthDeg = 0.001; // fallback ~100m
+  if (chAvgWidthM) {
+    chHalfWidthDeg = (chAvgWidthM / 2 * 4) / 111320; // 4x channel half-width in degrees
+  } else if (chD2 && (chD2.bufferLayer || chD2.layer)) {
+    var chLls2 = (chD2.bufferLayer || chD2.layer).getLatLngs();
+    var chPts2 = (chLls2.length && Array.isArray(chLls2[0])) ? chLls2[0] : chLls2;
+    var chLats = chPts2.map(function(p){return p.lat;});
+    var chLngs = chPts2.map(function(p){return p.lng;});
+    chHalfWidthDeg = Math.min(
+      Math.max.apply(null,chLats)-Math.min.apply(null,chLats),
+      Math.max.apply(null,chLngs)-Math.min.apply(null,chLngs)
+    ) * 1.5;
+  }
+  var ext = chHalfWidthDeg;
+
+  return [
+    L.latLng(snapped.lat + perpLat * ext, snapped.lng + perpLng * ext),
+    L.latLng(snapped.lat - perpLat * ext, snapped.lng - perpLng * ext)
+  ];
+}
+
+function ppChuMapMove(latlng) {
+  var we = getActiveWE(); if (!we || !ppChuDrawing) return;
+  clearPreview();
+  var line = ppChuPerpendicularLine(latlng, we);
+  if (line) {
+    drawPreview = L.polyline(line, {color:'#ff3333', weight:2.5, dashArray:'6,4', interactive:false}).addTo(map);
+  }
+}
+
+function ppChuMapClick(latlng) {
+  var we = getActiveWE(); if (!we || !ppChuDrawing) return;
+  var line = ppChuPerpendicularLine(latlng, we);
+  if (!line) return;
+  commitPPChuSplit(we, line.slice());
+}
+
+function ppChuMapDbl(latlng) {
+  // No-op for single-click mode — dblclick handled by click
+}
+
+function commitPPChuSplit(we, line) {
+  cancelPPChuSplit();
+  if (!line || line.length < 2) return;
+  if (we.ppChuUnits.length === 0) {
+    var chPts = getPPChannelPts(we);
+    if (!chPts) return;
+    we.ppChuUnits = [{id:'ppchu-0', type:'riffle', pts:chPts.map(function(p){return L.latLng(p.lat,p.lng);}), layer:null, areaM2:0, lengthM:0}];
+  }
+
+  // Extend the split line beyond the polygon in both directions — same idiom
+  // as commitCHUSplit()'s extendLine(), sized off the bbox of all ppChuUnits.
+  function extendLine(pts) {
+    if (pts.length < 2) return pts;
+    var first = pts[0], second = pts[1];
+    var last = pts[pts.length-1], prev = pts[pts.length-2];
+    var allLats = [], allLngs = [];
+    we.ppChuUnits.forEach(function(u){ u.pts.forEach(function(p){ allLats.push(p.lat); allLngs.push(p.lng); }); });
+    var ext = Math.max(
+      Math.max.apply(null,allLats) - Math.min.apply(null,allLats),
+      Math.max.apply(null,allLngs) - Math.min.apply(null,allLngs)
+    ) * 2 + 0.001;
+    function extPt(from, toward, dist) {
+      var dLat = from.lat - toward.lat, dLng = from.lng - toward.lng;
+      var len = Math.sqrt(dLat*dLat + dLng*dLng);
+      if (len < 1e-10) return from;
+      return L.latLng(from.lat + (dLat/len)*dist, from.lng + (dLng/len)*dist);
+    }
+    var startExt = extPt(first, second, ext);
+    var endExt   = extPt(last, prev, ext);
+    return [startExt].concat(pts).concat([endExt]);
+  }
+
+  var extLine = extendLine(line);
+  var splitIdx = -1, splitResult = null;
+  for (var i = 0; i < we.ppChuUnits.length; i++) {
+    var res = splitPolyWithLine(we.ppChuUnits[i].pts, extLine);
+    if (res) { splitIdx = i; splitResult = res; break; }
+  }
+  if (splitIdx === -1) {
+    setMapHint('Split line did not cross any channel unit — try extending it further.');
+    setTimeout(function(){setMapHint('');}, 3000);
+    return;
+  }
+  if (we.ppChuUnits[splitIdx].layer) map.removeLayer(we.ppChuUnits[splitIdx].layer);
+  if (we.ppChuUnits[splitIdx].labelMarker) map.removeLayer(we.ppChuUnits[splitIdx].labelMarker);
+  var ts = Date.now();
+  var newUnits = [
+    {id:'ppchu-'+ts+'a', type: we.ppChuUnits[splitIdx].type, pts: splitResult[0], layer:null, labelMarker:null, areaM2:0, lengthM:0},
+    {id:'ppchu-'+ts+'b', type: we.ppChuUnits[splitIdx].type, pts: splitResult[1], layer:null, labelMarker:null, areaM2:0, lengthM:0}
+  ];
+  // Sort so the topmost (highest lat) or leftmost (lowest lng) piece comes first
+  function polyCenter(pts) {
+    var lats = pts.map(function(p){return p.lat;}), lngs = pts.map(function(p){return p.lng;});
+    return {
+      lat: (Math.min.apply(null,lats)+Math.max.apply(null,lats))/2,
+      lng: (Math.min.apply(null,lngs)+Math.max.apply(null,lngs))/2
+    };
+  }
+  var c0 = polyCenter(newUnits[0].pts), c1 = polyCenter(newUnits[1].pts);
+  var latDiff = Math.abs(c0.lat - c1.lat), lngDiff = Math.abs(c0.lng - c1.lng);
+  if (latDiff >= lngDiff) {
+    if (c0.lat < c1.lat) newUnits.reverse();
+  } else {
+    if (c0.lng > c1.lng) newUnits.reverse();
+  }
+  var splitUnitId = we.ppChuUnits[splitIdx] ? we.ppChuUnits[splitIdx].id : null;
+  we.ppChuUnits.splice(splitIdx, 1, newUnits[0], newUnits[1]);
+
+  if (ppChuPoolMode) {
+    if (ppChuPoolPhase === 1) {
+      ppChuPendingPoolUpId   = newUnits[0].id;
+      ppChuPendingPoolDownId = newUnits[1].id;
+      ppChuPoolPhase = 2;
+      ppChuDrawing = true; ppChuDrawPts = [];
+      document.getElementById('mapwrap').classList.add('drawing');
+      setMapHint('Now draw the <b>second boundary</b> of the pool — click across the channel');
+      renderPPChuUnits(we); wizardRefreshIfActive();
+      return;
+    } else if (ppChuPoolPhase === 2) {
+      if (splitUnitId === ppChuPendingPoolDownId) {
+        newUnits[0].type = 'pool';
+      } else if (splitUnitId === ppChuPendingPoolUpId) {
+        newUnits[1].type = 'pool';
+      }
+      ppChuPoolMode = false; ppChuPoolPhase = 0; ppChuPendingPoolUpId = null; ppChuPendingPoolDownId = null;
+    }
+  }
+  renderPPChuUnits(we);
+  wizardRefreshIfActive();
+}
+
+function wizardSetPPChuBoulders(unitId, val) {
+  var we = getActiveWE(); if (!we) return;
+  var u = we.ppChuUnits && we.ppChuUnits.filter(function(x){ return x.id===unitId; })[0];
+  if (u) { u.boulderCount = parseInt(val)||0; }
+}
+
+function wizardSetPPChuDepth(unitId, val) {
+  var we = getActiveWE(); if (!we) return;
+  var u = we.ppChuUnits && we.ppChuUnits.filter(function(x){ return x.id===unitId; })[0];
+  if (u) { u.avgDepth = parseFloat(val)||0; }
+}
+
+function renderPPChuUnits(we) {
+  var poolNum = 0, riffleNum = 0;
+  we.ppChuUnits.forEach(function(u) {
+    var col = CHU_COLOR[u.type || 'unassigned'];
+    if (u.layer) map.removeLayer(u.layer);
+    if (u.labelMarker) { map.removeLayer(u.labelMarker); u.labelMarker = null; }
+    u.areaM2 = geoAreaM2(u.pts);
+    u.lengthM = chuBBoxLength(u.pts);
+    var typeLabel;
+    if (u.type === 'pool') { poolNum++; typeLabel = 'Pool ' + poolNum; }
+    else { riffleNum++; typeLabel = 'Riffle ' + riffleNum; }
+    u._displayLabel = typeLabel;
+    u.layer = L.polygon(u.pts, {color:col, fillColor:col, fillOpacity:0.25, weight:2, interactive:true})
+      .bindTooltip(typeLabel + ' (pre-project) — ' + (u.areaM2*0.000247105).toFixed(3)+' ac')
+      .addTo(map);
+    var icon = L.divIcon({
+      className: '',
+      iconSize: null,
+      iconAnchor: null,
+      html: '<div style="background:'+col+';color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.6);white-space:nowrap;box-shadow:0 1px 5px rgba(0,0,0,.5);pointer-events:none;transform:translate(-50%,-50%)">'+typeLabel+'</div>'
+    });
+    // During pool identification, only show labels for pool units — riffle labels add noise
+    var identifyingPools = wizardMode && (function(){
+      var vis = getVisibleSteps(); var s = vis[wizardStep]; return s && s.id === 'pp_pools';
+    })();
+    if (!identifyingPools || u.type === 'pool') {
+      u.labelMarker = L.marker(chuCentroid(u.pts), {icon:icon, interactive:false, zIndexOffset:100});
+      if (labelsVisible) u.labelMarker.addTo(map);
+    }
+  });
+}
+
 // ── Secondary Channels ────────────────────────────────────────────────────
 var SC_COLOR = '#2a6a9c';
 
@@ -7491,6 +7784,7 @@ document.addEventListener('keydown', function(e) {
     if (reachAutoDetecting) { cancelReachAutoDetect(); return; }
     if (crDrawing) { crDrawing=null; drawPts=[]; clearPreview(); document.getElementById('mapwrap').classList.remove('drawing'); setMapHint(''); return; }
     if (chuDrawing) { cancelCHUSplit(); return; }
+    if (ppChuDrawing) { cancelPPChuSplit(); return; }
     if (ppDrawing) { ppDrawing=null; drawPts=[]; clearPreview(); document.getElementById('mapwrap').classList.remove('drawing'); setMapHint(''); return; }
   }
 });
@@ -7507,6 +7801,7 @@ function mapClick(e) {
     reachAutoClick(e.latlng);return;
   }
   if(chuDrawing){chuMapClick(e.latlng);return;}
+  if(ppChuDrawing){ppChuMapClick(e.latlng);return;}
   if(crDrawing){
     if(crDrawing.geo==='gravel-perp'){
       var we2=getWE(crDrawing.weId);
@@ -7550,6 +7845,7 @@ function mapClick(e) {
 function mapMove(e) {
   if(reachTrimming){reachTrimMove(e.latlng);return;}
   if(chuDrawing){chuMapMove(e.latlng);return;}
+  if(ppChuDrawing){ppChuMapMove(e.latlng);return;}
   if(crDrawing && crDrawing.geo==='gravel-perp'){
     clearPreview();
     var we3=getWE(crDrawing.weId);
@@ -7577,6 +7873,7 @@ function mapMove(e) {
 function mapDbl(e) {
   L.DomEvent.stop(e);
   if(chuDrawing){chuMapDbl(e.latlng);return;}
+  if(ppChuDrawing){ppChuMapDbl(e.latlng);return;}
   if(ppDrawing){finishPPDraw();return;}
   if(crDrawing&&crDrawing.geo!=='segment'){
     if(crDrawing.geo==='line'&&drawPts.length>=2)finishCRDraw();
@@ -7744,6 +8041,8 @@ var WIZARD_STEPS = [
   { id:'fp_poly',    label:'Floodplain',      title:'Draw Floodplain Boundary',       phase:'pp' },
   { id:'buffers',    label:'Review Areas',    title:'Review Floodplain Areas',        phase:'pp' },
   { id:'pp_wetland', label:'Existing Wetlands', title:'Existing Wetland Areas',       phase:'pp' },
+  { id:'pp_pools',        label:'Existing Pools', title:'Identify Pre-Project Pools',       phase:'pp' },
+  { id:'pp_pool_details', label:'Pool & Riffle Details', title:'Pre-Project Pool & Riffle Details', phase:'pp' },
   { id:'pp_done',    label:'Pre-Project Done',  title:'Pre-Project Complete!',          phase:'pp' },
   { id:'pc_reach',   label:'Primary Channel',  title:'Draw Primary Channel',           phase:'work', types:['pc'], repeat:'pc' },
   { id:'pc_width',   label:'Channel Width',    title:'Enter Primary Channel Width',    phase:'work', types:['pc'], repeat:'pc' },
@@ -7816,6 +8115,15 @@ function wizardStepStatus(we, stepId) {
     case 'fp_right': return (we.ppData['fp_right'] && we.ppData['fp_right'].layer) ? 'done' : 'pending';
     case 'fp_poly':  return (we.ppData['fp_poly']  && we.ppData['fp_poly'].layer)  ? 'done' : 'pending';
     case 'pp_wetland': return fpMultiHasAny(we, 'pp_wetland') ? 'done' : 'pending';
+    case 'pp_pools':  return (we.ppChuUnits && we.ppChuUnits.length >= 1) ? 'done' : 'pending';
+    case 'pp_pool_details': {
+      if (!we.ppChuUnits || we.ppChuUnits.length < 1) return 'pending';
+      var ppAllMeasured = we.ppChuUnits.every(function(u){
+        if (u.type==='pool') return !!(u.avgDepth>0);
+        return !!(u.boulderCount>=0 && u.boulderCount!==undefined && u.boulderCount!==null);
+      });
+      return ppAllMeasured ? 'done' : 'pending';
+    }
     case 'buffers': {
       var ach = we.ppData['area_ch'];
       var achDone = ach && (ach.layer || ach.bufferLayer);
@@ -8027,7 +8335,7 @@ function renderWizardStep() {
       sectionKey = 'pp'; sectionLabel = 'Pre-Project';
     } else if (s.types && s.types.length) {
       sectionKey = s.repeat === 'pc' ? ('pc-' + s.pcIndex) : (s.section || s.types[0]);
-      sectionLabel = s.repeat === 'pc' ? ('Primary Channel ' + (s.pcIndex + 1)) : (workSectionLabels[sectionKey] || sectionKey);
+      sectionLabel = s.repeat === 'pc' ? 'Primary Channel' : (workSectionLabels[sectionKey] || sectionKey); // no number — only ever one channel
     }
     // Steps with no section info of their own (e.g. the final 'done' step) tack onto
     // whichever section came last, same as the old flat rendering did.
@@ -8352,6 +8660,83 @@ function wizardStepBody(we, step, idx) {
       if (ppWetItems.length) {
         var ppWetSum = fpMultiSum(we, 'pp_wetland');
         h += '<div class="wz-status done" style="margin-top:6px">&#10003; '+ppWetItems.length+' wetland area'+(ppWetItems.length>1?'s':'')+' &middot; '+ppWetSum.acres.toFixed(2)+' ac total</div>';
+      }
+      break;
+    }
+
+    case 'pp_pools': {
+      h += '<div class="wz-step-desc">Draw two boundaries for each existing pool — in either order, wherever the pool starts and ends. Everything outside a pool boundary is treated as riffle.</div>';
+      var ppPoolsReady = we && getPPChannelPts(we);
+      if (!ppPoolsReady) {
+        h += '<div class="wz-status warning">&#9888; Draw the stream reach and enter channel width first to generate the channel area.</div>';
+      } else {
+        var ppUnits = we.ppChuUnits || [];
+        var ppPools = ppUnits.filter(function(u){return u.type==='pool';});
+        var ppInPoolDraw = ppChuPoolMode;
+        if (ppInPoolDraw && ppChuPoolPhase === 1) {
+          h += '<div class="wz-status pending">&#9654; Draw the <b>first boundary</b> of the pool on the map…</div>';
+        } else if (ppInPoolDraw && ppChuPoolPhase === 2) {
+          h += '<div class="wz-status pending">&#9654; Draw the <b>second boundary</b> of the pool on the map…</div>';
+        } else {
+          h += '<button class="wz-action-btn" onclick="startPPChuPoolDraw()">&#43; Add Pool</button>';
+        }
+        if (ppPools.length > 0) {
+          h += '<div style="margin-top:10px">';
+          var ppPIdx = 0;
+          ppUnits.forEach(function(u) {
+            if (u.type !== 'pool') return;
+            ppPIdx++;
+            var ac = u.areaM2 ? (u.areaM2*0.000247105).toFixed(3)+' ac' : '—';
+            h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;margin-bottom:4px;';
+            h += 'background:#1a7abf18;border:2px solid #1a7abf55;border-radius:5px">';
+            h += '<span style="font-size:12px;font-weight:600;color:#1a7abf">Pool '+ppPIdx+'</span>';
+            h += '<span style="font-size:11px;color:#555">'+ac+'</span>';
+            h += '<button onclick="removePPChuPool(\''+u.id+'\');renderWizardStep()" title="Remove pool" ';
+            h += 'style="background:transparent;border:none;color:#c44a4a;font-size:14px;cursor:pointer;padding:0 4px;line-height:1">&#10005;</button>';
+            h += '</div>';
+          });
+          h += '</div>';
+          h += '<div class="wz-status done" style="margin-top:6px">&#10003; '+ppPools.length+' pool'+(ppPools.length>1?'s':'')+' identified.</div>';
+        } else if (!ppInPoolDraw && ppUnits.length >= 1) {
+          h += '<div class="wz-tip" style="margin-top:8px">No pools yet — click <b>Add Pool</b> and draw two boundary lines to mark a pool. Leave blank for all-riffle.</div>';
+        }
+      }
+      break;
+    }
+
+    case 'pp_pool_details': {
+      h += '<div class="wz-step-desc">Enter measurements for each pre-project channel unit.</div>';
+      var ppDetUnits = (we && we.ppChuUnits) ? we.ppChuUnits : [];
+      if (ppDetUnits.length < 1) {
+        h += '<div class="wz-status warning">&#9888; Go back and identify pool locations first.</div>';
+      } else {
+        ppDetUnits.forEach(function(u) {
+          var isPool = u.type === 'pool';
+          var col = CHU_COLOR[u.type || 'unassigned'];
+          var typeLabel = u._displayLabel || (isPool ? 'Pool' : 'Riffle');
+          var ac = u.areaM2 ? (u.areaM2*0.000247105).toFixed(3)+' ac' : '—';
+          var ft = u.lengthM ? Math.round(u.lengthM*3.28084)+' ft' : '—';
+          h += '<div style="background:#fff;border:2px solid '+col+'33;border-radius:6px;padding:10px;margin-bottom:8px">';
+          h += '<div style="display:flex;align-items:center;margin-bottom:8px">';
+          h += '<span style="font-size:12px;font-weight:700;color:'+col+'">'+typeLabel+'</span>';
+          h += '</div>';
+          if (isPool) {
+            h += '<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#525252">';
+            h += '<label style="flex:1">Avg depth at low flow (ft)</label>';
+            h += '<input type="number" min="0" step="0.1" style="width:70px;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" ';
+            h += 'value="'+(u.avgDepth||'')+'" placeholder="0.0" onchange="wizardSetPPChuDepth(&apos;'+u.id+'&apos;,this.value)">';
+            h += '</div>';
+          } else {
+            h += '<div style="display:flex;align-items:center;gap:8px;font-size:11px;color:#525252">';
+            h += '<label style="flex:1">Boulder count</label>';
+            h += '<input type="number" min="0" style="width:70px;background:#fff;border:1px solid #dcdcdc;color:#3d3d3d;padding:3px 6px;border-radius:3px;font-size:11px" ';
+            h += 'value="'+(u.boulderCount!==undefined&&u.boulderCount!==null?u.boulderCount:'')+'" placeholder="0" onchange="wizardSetPPChuBoulders(&apos;'+u.id+'&apos;,this.value)">';
+            h += '</div>';
+          }
+          h += '<div style="display:flex;gap:8px;margin-top:6px;font-size:10px;color:#7c7c7c">';
+          h += '<span>'+ac+'</span><span>'+ft+'</span>';
+          h += '</div></div>';
+        });
       }
       break;
     }
@@ -8948,7 +9333,7 @@ function wizardStepFooter(we, step, idx) {
   // Steps that must be completed before advancing
   var required  = ['perimeter', 'reach', 'ch_width', 'fp_left', 'fp_right'];
   // Steps where "Skip ›" shows when empty, "Next ›" when something is entered
-  var skippable = ['bank_ht', 'substrate', 'pp_wetland', 'chu_split', 'structures', 'pc_gravel',
+  var skippable = ['bank_ht', 'substrate', 'pp_wetland', 'pp_pools', 'chu_split', 'structures', 'pc_gravel',
     'fp_structures', 'fp_reach_width', 'fp_grading', 'fp_road', 'fp_berm', 'fp_revetment', 'fp_tailings', 'fp_wetland_enhance',
     'rr_fencing', 'rr_planting', 'rr_totals'];
 
@@ -9205,6 +9590,27 @@ function wizardAutoActivate() {
           }
           renderWizardStep();
         }, 200);
+      }
+      break;
+    case 'pp_pools':
+      if (we) { initPPChuUnits(we); }
+      { var ppChuPerim = we && we.ppData['perimeter'] && we.ppData['perimeter'].layer;
+        if (ppChuPerim) {
+          // Perimeter must always be visible in this step regardless of toggle state
+          if (!map.hasLayer(ppChuPerim)) map.addLayer(ppChuPerim);
+          ppChuPerim.setStyle({opacity:1, weight:2, dashArray:'8 5', fillOpacity:0});
+          map.fitBounds(ppChuPerim.getBounds(), {padding:[30,30]});
+        } else {
+          var ppChPts = we && getPPChannelPts(we);
+          if (ppChPts) map.fitBounds(L.latLngBounds(ppChPts), {padding:[40,40]});
+        }
+      }
+      break;
+    case 'pp_pool_details':
+      // Re-render units so riffle labels appear (they're suppressed in pp_pools step)
+      if (we && we.ppChuUnits) { setLabelsVisible(true); renderPPChuUnits(we); }
+      { var ppChuPerim2 = we && we.ppData['perimeter'] && we.ppData['perimeter'].layer;
+        if (ppChuPerim2) map.fitBounds(ppChuPerim2.getBounds(), {padding:[30,30]});
       }
       break;
     case 'pp_done':
@@ -9641,6 +10047,51 @@ function openSOW() {
     var ppWetSumExp = fpMultiSum(we, 'pp_wetland');
     h+='<tr><td>Existing Wetland Areas</td><td>measured</td><td>'+(ppWetSumExp.count>0?ppWetSumExp.acres.toFixed(2)+' acres ('+ppWetSumExp.count+')':'—')+'</td></tr>';
     h+='</tbody></table>';
+
+    // ── Pre-Project Habitat Units — same shape as a primary channel's "— Habitat
+    // Units" section below, but reach-level (once per work element, from
+    // we.ppChuUnits, not per primary channel) ──
+    var ppChuR = we.ppChuUnits ? we.ppChuUnits.filter(function(u){return u.type==='riffle';}) : [];
+    var ppChuP = we.ppChuUnits ? we.ppChuUnits.filter(function(u){return u.type==='pool';}) : [];
+    if (ppChuR.length || ppChuP.length) {
+      var ppChuRArea=(ppChuR.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105);
+      var ppChuPArea=(ppChuP.reduce(function(a,u){return a+u.areaM2;},0)*0.000247105);
+      var ppChuRLen=ppChuR.reduce(function(a,u){return a+u.lengthM;},0)*3.28084;
+      var ppChuPLen=ppChuP.reduce(function(a,u){return a+u.lengthM;},0)*3.28084;
+      var ppChuTotalBoulders = ppChuR.reduce(function(a,u){return a+(u.boulderCount||0);},0);
+      var ppChuPDepths = ppChuP.filter(function(u){return u.avgDepth;}).map(function(u){return u.avgDepth;});
+      var ppChuAvgDepth = ppChuPDepths.length?(ppChuPDepths.reduce(function(a,v){return a+v;},0)/ppChuPDepths.length).toFixed(1)+' ft':null;
+      var ppChTotalAreaSL = we.ppData['area_ch'];
+      var ppChTotalAreaAc = ppChTotalAreaSL && ppChTotalAreaSL.valueM ? ppChTotalAreaSL.valueM*0.000247105 : null;
+      var ppChuRPct = (ppChTotalAreaAc && ppChuR.length) ? (ppChuRArea/ppChTotalAreaAc*100) : null;
+      var ppChuPPct = (ppChTotalAreaAc && ppChuP.length) ? (ppChuPArea/ppChTotalAreaAc*100) : null;
+      h+='<h3 class="sow-section-title">Pre-Project Habitat Units</h3>';
+      h+='<table class="sow-table"><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
+      h+='<tr><td># Riffles</td><td>measured</td><td>'+(ppChuR.length||'—')+'</td></tr>';
+      h+='<tr><td>Total boulders</td><td>entered</td><td>'+(ppChuR.length?(ppChuTotalBoulders||'0'):'—')+'</td></tr>';
+      h+='<tr><td>Riffle area</td><td>calc</td><td>'+(ppChuR.length?ppChuRArea.toFixed(3)+' acres':'—')+'</td></tr>';
+      h+='<tr><td>Riffle length (approx)</td><td>calc</td><td>'+(ppChuR.length?'~'+Math.round(ppChuRLen).toLocaleString()+' ft':'—')+'</td></tr>';
+      h+='<tr><td># Pools</td><td>measured</td><td>'+(ppChuP.length||'—')+'</td></tr>';
+      h+='<tr><td>Pool area</td><td>calc</td><td>'+(ppChuP.length?ppChuPArea.toFixed(3)+' acres':'—')+'</td></tr>';
+      h+='<tr><td>Pool length (approx)</td><td>calc</td><td>'+(ppChuP.length?'~'+Math.round(ppChuPLen).toLocaleString()+' ft':'—')+'</td></tr>';
+      h+='<tr><td>Avg pool depth at low flow</td><td>entered</td><td>'+(ppChuAvgDepth||'—')+'</td></tr>';
+      h+='<tr><td>Total area of riffles in reach</td><td>calc</td><td>'+(ppChuRPct!==null?ppChuRPct.toFixed(1)+'%':'—')+'</td></tr>';
+      h+='<tr><td>Total area of pools in reach</td><td>calc</td><td>'+(ppChuPPct!==null?ppChuPPct.toFixed(1)+'%':'—')+'</td></tr>';
+      h+='</tbody></table>';
+      var ppChartId1 = 'ppchu-pie-ac-'+we.id, ppChartId2 = 'ppchu-pie-ft-'+we.id;
+      h += '<div style="display:flex;gap:24px;margin:16px 0;flex-wrap:wrap">';
+      h += '<div style="flex:1;min-width:200px;text-align:center"><div style="font-size:11px;font-weight:700;color:#2c4a6a;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">By Area (acres)</div><canvas id="'+ppChartId1+'" width="180" height="180"></canvas><div id="'+ppChartId1+'-leg" style="margin-top:8px;font-size:10px;text-align:left;display:inline-block"></div></div>';
+      h += '<div style="flex:1;min-width:200px;text-align:center"><div style="font-size:11px;font-weight:700;color:#2c4a6a;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">By Length (ft)</div><canvas id="'+ppChartId2+'" width="180" height="180"></canvas><div id="'+ppChartId2+'-leg" style="margin-top:8px;font-size:10px;text-align:left;display:inline-block"></div></div>';
+      h += '</div>';
+      (function(ppChartId1, ppChartId2, ppChuRArea, ppChuPArea, ppChuRLen, ppChuPLen) {
+        setTimeout(function() {
+          var acData  = [{label:'Riffle',val:ppChuRArea,color:'#c07820'},{label:'Pool',val:ppChuPArea,color:'#1a7abf'}].filter(function(d){return d.val>0;});
+          var ftData  = [{label:'Riffle',val:ppChuRLen,color:'#c07820'},{label:'Pool',val:ppChuPLen,color:'#1a7abf'}].filter(function(d){return d.val>0;});
+          drawCHUPie(ppChartId1, acData, function(v){return v.toFixed(2)+' ac'});
+          drawCHUPie(ppChartId2, ftData, function(v){return Math.round(v).toLocaleString()+' ft'});
+        }, 100);
+      })(ppChartId1, ppChartId2, ppChuRArea, ppChuPArea, ppChuRLen, ppChuPLen);
+    }
 
     // Only include sections for selected types — set this WE as active for fmtIn/fmtCalc to work
     // (Note: fmtIn reads from DOM, which reflects the currently rendered WE)
