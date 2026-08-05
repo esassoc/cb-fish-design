@@ -613,6 +613,25 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
   padding: var(--spacing-300) var(--spacing-500) var(--spacing-400);
   min-height: 0;
 }
+
+/* bcn-lego-checked: no esa- lego covers a wizard-stepper phase banner (esa-badge/
+   esa-pill are for inline status, not a full-width group header); Beacon has no
+   equivalent multi-phase stepper. This extends the pre-existing hand-rolled .wz-v-*
+   stepper (see this file's own note that it predates component-first conventions)
+   with one banner marking the Pre-Project → Project Design transition — a value
+   tint + plain label, not a colored left border, per the design-principles skill. */
+.wz-phase-group[data-phase="work"] {
+  background: color-mix(in srgb, var(--color-primary) 4%, transparent);
+  border-top: 1px solid var(--color-border);
+  margin: var(--spacing-200) calc(-1 * var(--spacing-500)) 0;
+  padding: 0 var(--spacing-500) var(--spacing-100);
+}
+.wz-phase-group-title {
+  font-size: 14px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  padding: var(--spacing-300) 0 var(--spacing-100);
+}
 .wz-v-phase-head {
   display: flex;
   align-items: center;
@@ -772,6 +791,18 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
 #sowbody th { background: var(--color-primary-subtle); color: var(--color-surface-inverse); font-weight: var(--font-weight-bold); text-align: left; padding: 4px 7px; border: 1px solid var(--color-border); font-size: 11px; }
 #sowbody td { padding: 3px 7px; border: 1px solid var(--color-border-light); color: var(--color-text-primary); font-size: 11px; }
 #sowbody tr:nth-child(even) td { background: var(--color-surface-sunken); }
+
+/* bcn-lego-checked: no esa- lego renders a live map (esa-card/esa-empty-state are
+   inert containers); Beacon has no export-report equivalent. This extends the
+   #sowbody report block above (already bespoke — a print/export document, not app
+   chrome) with a plain two-column flex row holding two small Leaflet maps. */
+.sow-before-after-row { display: flex; gap: 12px; margin: 4px 0 14px; }
+.sow-mini-map-col { flex: 1; min-width: 0; }
+.sow-mini-map-label { font-size: 11px; font-weight: var(--font-weight-bold); color: var(--color-surface-inverse); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.sow-mini-map { height: 220px; border: 1px solid var(--color-border); border-radius: 4px; background: var(--color-surface-sunken); }
+@media print {
+  .sow-before-after-row { break-inside: avoid; }
+}
 
 /* ── Accessibility ───────────────────────────────────────────────────────── */
 .skip-link { position: absolute; top: -40px; left: 0; background: var(--color-secondary); color: var(--color-text-inverse, #fff); padding: 8px 12px; z-index: 9999; font-size: 13px; font-weight: var(--font-weight-bold); border-radius: 0 0 4px 0; transition: top 0.1s; }
