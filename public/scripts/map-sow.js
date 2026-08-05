@@ -48,7 +48,7 @@ var STRUCT_LABEL = {cms:'Channel Margin', mcs:'Mid Channel', css:'Channel Spanni
 
 // ── State ─────────────────────────────────────────────────────────────────
 var map;
-var refImage = null;         // {overlay, bounds, opacity, fileName, naturalW, naturalH, locked}
+var refImage = null;         // {overlay, bounds, opacity, rotation, fileName, naturalW, naturalH, locked}
 var refImagePositioning = false;
 var refImageHandles = {};    // {nw,ne,se,sw: L.circleMarker} — only populated while positioning
 var workElements = [];  // [{id, name, types[], ppData{}, sowLayers{}, structures{}, inputVals{}}]
@@ -299,9 +299,11 @@ window.onload = function() {
 function getWE(id) { for(var i=0;i<workElements.length;i++) if(workElements[i].id===id) return workElements[i]; return null; }
 function getActiveWE() { return getWE(activeWEId); }
 
-// A work element can have multiple primary channels (uncommon, but supported).
-// Each channel gets its own copy of everything the pc_reach..structures wizard
-// steps touch; getActivePC() resolves whichever one the wizard is currently on.
+// A work element has exactly one primary channel (the data model still stores it
+// as a one-element array — see newWEData() — since that's what getActivePC() and
+// every pc_reach..structures wizard step already key off of; there is no UI to add
+// a second one). Each channel gets its own copy of everything those steps touch;
+// getActivePC() resolves whichever one the wizard is currently on.
 function newPrimaryChannel(n) {
   return {
     id: 'pc-'+Date.now()+'-'+n,
@@ -3141,6 +3143,28 @@ function finishSOWDraw() {
   if (wizardMode) wizardRefreshIfActive();
 }
 
+// Seeds the primary (designed) channel's centerline from the pre-project reach, for
+// projects where the design follows the existing alignment — same storage shape and
+// post-draw hooks as finishSOWDraw()'s 'pc-reach' branch (lines above), just skipping
+// the manual draw since the geometry already exists on the map.
+function copyPPReachToPrimaryChannel() {
+  var we = getActiveWE(); if (!we) return;
+  var refReachD = we.ppData['reach_len'];
+  if (!refReachD || !refReachD.layer) return;
+  var pts = refReachD.layer.getLatLngs();
+  if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+  pts = pts.map(function(ll){ return L.latLng(ll.lat, ll.lng); }); // copy points, not a live reference to the pp layer
+  var pc = getActivePC(we);
+  if (pc.sowLayers['pc-reach'] && pc.sowLayers['pc-reach'].layer) map.removeLayer(pc.sowLayers['pc-reach'].layer);
+  var col = pcChannelColor(we, we.activePCId);
+  var layer = L.polyline(pts, {color:col, weight:2.5, interactive:true}).bindTooltip('Primary Channel').addTo(map);
+  pc.sowLayers['pc-reach'] = {layer:layer, valueM:geoLen(pts), acres:0, geo:'line', label:'Primary Channel', _pts:null};
+  addPCReachArrow(we);
+  updatePCBuffer(we);
+  setTimeout(function(){ fetchSOWElevationProfile(we); }, 300);
+  if (wizardMode) wizardRefreshIfActive();
+}
+
 // Build / rebuild the primary channel area buffer polygon.
 // Works without the expert-panel DOM — called from setPCWidth and when pc-reach is drawn.
 function updatePCBuffer(we) {
@@ -4183,11 +4207,30 @@ function createRefImageOverlay(dataUrl, natW, natH, fileName) {
   if (imgEl) imgEl.style.pointerEvents = 'none'; // starts locked; enterRefImagePositionMode() opens it up
 
   refImage = {
-    overlay: overlay, bounds: bounds, opacity: 0.85,
+    overlay: overlay, bounds: bounds, opacity: 0.85, rotation: 0,
     fileName: fileName, naturalW: natW, naturalH: natH, locked: true, visible: true
   };
+  applyRefImageTransform();
+  if (!refImageZoomHandlerAttached) { map.on('zoom viewreset', applyRefImageTransform); refImageZoomHandlerAttached = true; }
   attachRefImageBodyDrag();
   enterRefImagePositionMode();
+}
+
+// Leaflet's ImageOverlay positions its own <img> via L.DomUtil.setPosition(), which
+// sets style.transform to a plain translate3d(...) on every setBounds()/zoom/viewreset
+// — so a naive `imgEl.style.transform = 'rotate(...)'` gets silently stomped on the
+// next drag, resize, or map move. Instead we always recompute the combined transform
+// from Leaflet's own last-applied position (img._leaflet_pos, a stable Leaflet
+// internal) plus our rotation, and call this after anything that could trigger either.
+var refImageZoomHandlerAttached = false;
+function applyRefImageTransform() {
+  if (!refImage) return;
+  var imgEl = refImage.overlay.getElement();
+  if (!imgEl) return;
+  var pos = imgEl._leaflet_pos;
+  var translate = pos ? 'translate3d(' + pos.x + 'px,' + pos.y + 'px,0)' : '';
+  imgEl.style.transformOrigin = 'center center';
+  imgEl.style.transform = translate + (refImage.rotation ? ' rotate(' + refImage.rotation + 'deg)' : '');
 }
 
 function attachRefImageBodyDrag() {
@@ -4211,6 +4254,7 @@ function attachRefImageBodyDrag() {
       );
       refImage.bounds = newBounds;
       refImage.overlay.setBounds(newBounds);
+      applyRefImageTransform();
       positionRefImageHandles();
     };
     var onUp = function() {
@@ -4263,6 +4307,7 @@ function buildRefImageHandles() {
         var newBounds = L.latLngBounds(anchorLatLng, newCornerLatLng);
         refImage.bounds = newBounds;
         refImage.overlay.setBounds(newBounds);
+        applyRefImageTransform();
         positionRefImageHandles();
       };
       var onUp = function() {
@@ -4334,16 +4379,23 @@ function setRefImageOpacity(v) {
   refImage.overlay.setOpacity(v);
 }
 
+function setRefImageRotation(deg) {
+  if (!refImage) return;
+  refImage.rotation = deg;
+  applyRefImageTransform();
+}
+
 function setRefImageVisible(v) {
   if (!refImage) return;
   refImage.visible = v;
   if (v) {
-    refImage.overlay.addTo(map); // Leaflet rebuilds the <img> on re-add, so re-apply lock state + drag
+    refImage.overlay.addTo(map); // Leaflet rebuilds the <img> on re-add, so re-apply lock state + drag + rotation
     var imgEl = refImage.overlay.getElement();
     if (imgEl) {
       imgEl.style.pointerEvents = refImage.locked ? 'none' : 'auto';
       imgEl.style.cursor = refImage.locked ? '' : 'move';
     }
+    applyRefImageTransform();
     attachRefImageBodyDrag();
   } else {
     if (refImagePositioning) finishRefImagePositioning();
@@ -4392,6 +4444,7 @@ function renderRefImageSection() {
 
   var opSlider = document.createElement('esa-range-slider');
   opSlider.className = 'layer-opacity-slider';
+  opSlider.setAttribute('label', 'Opacity');
   opSlider.setAttribute('min', '0');
   opSlider.setAttribute('max', '100');
   opSlider.setAttribute('step', '5');
@@ -4399,6 +4452,17 @@ function renderRefImageSection() {
   opSlider.value = Math.round(refImage.opacity * 100);
   opSlider.addEventListener('change', function(e) { setRefImageOpacity(e.detail.value / 100); });
   wrap.appendChild(opSlider);
+
+  var rotSlider = document.createElement('esa-range-slider');
+  rotSlider.className = 'layer-opacity-slider';
+  rotSlider.setAttribute('label', 'Rotation');
+  rotSlider.setAttribute('min', '-180');
+  rotSlider.setAttribute('max', '180');
+  rotSlider.setAttribute('step', '1');
+  rotSlider.setAttribute('size', 'sm');
+  rotSlider.value = refImage.rotation || 0;
+  rotSlider.addEventListener('change', function(e) { setRefImageRotation(e.detail.value); });
+  wrap.appendChild(rotSlider);
 
   var actions = document.createElement('div');
   actions.className = 'ref-img-actions-row';
@@ -7683,7 +7747,7 @@ var WIZARD_STEPS = [
   { id:'pp_done',    label:'Pre-Project Done',  title:'Pre-Project Complete!',          phase:'pp' },
   { id:'pc_reach',   label:'Primary Channel',  title:'Draw Primary Channel',           phase:'work', types:['pc'], repeat:'pc' },
   { id:'pc_width',   label:'Channel Width',    title:'Enter Primary Channel Width',    phase:'work', types:['pc'], repeat:'pc' },
-  { id:'pc_metrics', label:'Complexity Metrics', title:'Primary Channel Complexity',    phase:'work', types:['pc'], repeat:'pc' },
+  { id:'pc_metrics', label:'Metrics', title:'Primary Channel Metrics',    phase:'work', types:['pc'], repeat:'pc' },
   { id:'pc_gravel',  label:'Gravel Placement', title:'Gravel Placement',               phase:'work', types:['pc'], repeat:'pc' },
   { id:'pc_fp',      label:'New Floodplain',   title:'Draw New Floodplain',            phase:'work', types:['pc'], repeat:'pc' },
   { id:'chu_split',  label:'Identify Pools',   title:'Identify Pool Locations',        phase:'work', types:['pc'], repeat:'pc' },
@@ -7958,7 +8022,7 @@ function renderWizardStep() {
     var isDone = st === 'done';
     var isLast = (i === visSteps.length - 1);
 
-    var sectionKey = null, sectionLabel = null;
+    var sectionKey = null, sectionLabel = null, sectionPhase = (s.phase === 'pp') ? 'pp' : 'work';
     if (s.phase === 'pp') {
       sectionKey = 'pp'; sectionLabel = 'Pre-Project';
     } else if (s.types && s.types.length) {
@@ -7968,10 +8032,10 @@ function renderWizardStep() {
     // Steps with no section info of their own (e.g. the final 'done' step) tack onto
     // whichever section came last, same as the old flat rendering did.
     if (sectionKey !== null && sectionKey !== prevSectionKey) {
-      sections.push({key: sectionKey, label: sectionLabel, items: []});
+      sections.push({key: sectionKey, label: sectionLabel, phase: sectionPhase, items: []});
       prevSectionKey = sectionKey;
     }
-    if (!sections.length) sections.push({key: 'main', label: '', items: []});
+    if (!sections.length) sections.push({key: 'main', label: '', phase: sectionPhase, items: []});
     sections[sections.length - 1].items.push({s:s, i:i, isActive:isActive, isDone:isDone, isLast:isLast});
   });
 
@@ -7983,7 +8047,16 @@ function renderWizardStep() {
   wzLastEffectiveSection = effectiveOpenKey;
 
   var stepsHtml = '<div class="wz-v-steps">';
+  var workPhaseOpened = false;
   sections.forEach(function(sec) {
+    // Mark the Pre-Project → Project Design transition with a banner the first time
+    // a 'work'-phase section appears, so the sidebar reads as two distinct phases
+    // rather than one flat list of same-looking sections.
+    if (sec.phase === 'work' && !workPhaseOpened) {
+      stepsHtml += '<div class="wz-phase-group" data-phase="work">';
+      stepsHtml += '<div class="wz-phase-group-title">Project Design</div>';
+      workPhaseOpened = true;
+    }
     var isOpen = sec.key === effectiveOpenKey;
     var doneCount = sec.items.filter(function(it){ return it.isDone; }).length;
     var totalCount = sec.items.length;
@@ -8009,6 +8082,7 @@ function renderWizardStep() {
     stepsHtml += '</div>'; // wz-v-section-body
     stepsHtml += '</div>'; // wz-v-section
   });
+  if (workPhaseOpened) stepsHtml += '</div>'; // wz-phase-group
   stepsHtml += '</div>';
 
   var bodyHtml = we ? wizardStepBody(we, step, wizardStep) : '<div class="wz-step-desc">Add a work element to get started.</div>';
@@ -8431,7 +8505,7 @@ function wizardStepBody(we, step, idx) {
       var dPCFP = we && getActivePC(we).ppData['pc_fp'];
       var pcFPDone = dPCFP && dPCFP.layer;
       var isEditingPCFP = lineEditing && lineEditing.type==='pp-poly' && lineEditing.id==='pc_fp';
-      h += '<div class="wz-step-desc">Draw a polygon covering the new designed floodplain on both sides of the primary channel. The channel area will be automatically subtracted to give the net new floodplain area.</div>';
+      h += '<div class="wz-step-desc">Draw a polygon covering the new designed floodplain on both sides of the primary channel. The channel area will be automatically subtracted to give the net new floodplain area. Your pre-project floodplain is shown on the map for reference.</div>';
       if (pcFPDone) {
         h += '<div class="wz-status done">&#10003; New floodplain: <b>'+((dPCFP.valueM||0)*0.000247105).toFixed(2)+' ac (net)</b></div>';
         if (dPCFP._outsidePerim) {
@@ -8458,7 +8532,7 @@ function wizardStepBody(we, step, idx) {
     case 'pc_reach': {
       var pcSL = we && getActivePC(we).sowLayers['pc-reach'];
       var pcDone = pcSL && pcSL.layer;
-      h += '<div class="wz-step-desc">Draw the centerline of the proposed (designed) primary channel. This represents the planned channel alignment after habitat work, and will be used to delineate channel units in the next step.</div>';
+      h += '<div class="wz-step-desc">Draw the centerline of the proposed (designed) primary channel. This represents the planned channel alignment after habitat work, and will be used to delineate channel units in the next step. Your pre-project reach is shown on the map for reference.</div>';
       if (pcDone) {
         // Calculate valley length and sinuosity from pc-reach endpoints
         var pcRL = pcSL.valueM;
@@ -8484,7 +8558,10 @@ function wizardStepBody(we, step, idx) {
         h += '<div class="wz-tip">Flow direction is normally set from elevation data — flip it manually if that\'s unavailable or looks wrong.</div>';
       } else {
         h += '<button class="wz-action-btn" onclick="startSOWDraw(\'pc-reach\',\'line\',\'Primary Channel\');renderWizardStep()">&#128207; Draw Primary Channel</button>';
-        h += '<div class="wz-tip">Draw the designed channel centerline — this is different from the existing reach and represents where the channel will be after restoration.</div>';
+        if (we && we.ppData['reach_len'] && we.ppData['reach_len'].layer) {
+          h += '<button class="wz-action-btn secondary" onclick="copyPPReachToPrimaryChannel()">&#8942; Copy Pre-Project Reach</button>';
+        }
+        h += '<div class="wz-tip">Draw the designed channel centerline — this is different from the existing reach and represents where the channel will be after restoration. If the design follows the existing alignment, copy it as a starting point instead.</div>';
       }
       break;
     }
@@ -8659,7 +8736,7 @@ function wizardStepBody(we, step, idx) {
     case 'pc_channel_done': {
       var pcDone = getActivePC(we);
       var pcDoneReachDrawn = !!(pcDone.sowLayers['pc-reach'] && pcDone.sowLayers['pc-reach'].layer);
-      h += '<div class="wz-step-desc">This primary channel is complete. Add another primary channel if this work element has more than one — otherwise continue.</div>';
+      h += '<div class="wz-step-desc">This primary channel is complete.</div>';
       if (pcDoneReachDrawn) {
         h += '<div class="wz-status done" style="font-size:13px;padding:14px">&#10003; <b>'+pcDone.name+' complete!</b></div>';
       } else {
@@ -8675,7 +8752,6 @@ function wizardStepBody(we, step, idx) {
         h += '<div class="wz-metric-row"><span class="wz-metric-label">'+m[0]+'</span>';
         h += '<span class="wz-metric-val '+(m[1]?'':'missing')+'">'+( m[1] || 'not entered')+'</span></div>';
       });
-      h += '<button class="wz-action-btn" style="margin-top:16px" onclick="wizardAddPrimaryChannel()">&#43; Add Another Primary Channel</button>';
       break;
     }
 
@@ -8903,26 +8979,11 @@ function syncActivePCForStep(idx) {
   if (step && step.pcId) we.activePCId = step.pcId;
 }
 
-// Adds another primary channel and jumps straight to its first step (Draw Primary Channel).
 // Any real navigation snaps the stepper accordion back to auto-following wherever
 // the wizard actually is now, discarding any section the user had manually peeked at.
 function toggleWzSection(key) {
   wzOpenSection = (wzLastEffectiveSection === key) ? '__none__' : key;
   renderWizardStep();
-}
-
-function wizardAddPrimaryChannel() {
-  wzOpenSection = null;
-  var we = getActiveWE(); if (!we) return;
-  var pc = newPrimaryChannel(we.primaryChannels.length + 1);
-  we.primaryChannels.push(pc);
-  we.activePCId = pc.id;
-  var vis = getVisibleSteps();
-  var idx = -1;
-  vis.forEach(function(s, i){ if (s.pcId === pc.id && s.id === 'pc_reach') idx = i; });
-  if (idx >= 0) wizardStep = idx;
-  renderWizardStep();
-  wizardAutoActivate();
 }
 
 // Whether the user has a drawing/edit in progress that wizardAutoActivate()'s
@@ -9090,6 +9151,13 @@ function wizardAutoActivate() {
       if (we && getActivePC(we).sowLayers['pc-reach'] && getActivePC(we).sowLayers['pc-reach'].layer) map.fitBounds(getActivePC(we).sowLayers['pc-reach'].layer.getBounds(), {padding:[40,40]});
       break;
     case 'pc_fp':
+      // Show the pre-project floodplain as a reference while drawing the new one —
+      // setPPLayersVisible(false) above already hid it; re-add with its normal style,
+      // same as pc_reach re-adding the pre-project reach line above.
+      if (we && we.ppData['fp_poly'] && we.ppData['fp_poly'].layer) {
+        var ppFpL = we.ppData['fp_poly'].layer;
+        if (!map.hasLayer(ppFpL)) map.addLayer(ppFpL);
+      }
       if (we && getActivePC(we).sowLayers['pc-reach'] && getActivePC(we).sowLayers['pc-reach'].layer) map.fitBounds(getActivePC(we).sowLayers['pc-reach'].layer.getBounds(), {padding:[40,40]});
       break;
     case 'sc_draw': case 'sc_width': case 'sc_wood': {
@@ -9113,7 +9181,14 @@ function wizardAutoActivate() {
       break;
     }
     case 'pc_reach':
-      if (we && we.ppData['reach_len'] && we.ppData['reach_len'].layer) map.fitBounds(we.ppData['reach_len'].layer.getBounds(), {padding:[40,40]});
+      // Show the pre-project reach as a reference while drawing the designed channel —
+      // setPPLayersVisible(false) above already hid it (not in ALWAYS_VISIBLE_PP), so
+      // re-add it here the same way sc_draw/sc_width/sc_wood re-add the primary channel.
+      if (we && we.ppData['reach_len'] && we.ppData['reach_len'].layer) {
+        var ppReachL = we.ppData['reach_len'].layer;
+        if (!map.hasLayer(ppReachL)) map.addLayer(ppReachL);
+        map.fitBounds(ppReachL.getBounds(), {padding:[40,40]});
+      }
       break;
     case 'buffers':
       if (we) { updateAreaChBuffer(we); updateAreaFpBuffer(we); setTimeout(function(){ renderWizardStep(); }, 150); }
@@ -9430,8 +9505,96 @@ function drawCHUPie(canvasId, data, fmtFn) {
   }
 }
 
+// ── Before/After export preview maps ────────────────────────────────────────
+// Two small read-only Leaflet maps embedded in the export report, at the same
+// extent/zoom so they read as a true before/after comparison. Scope is the core
+// channel + floodplain silhouette (plus secondary channels in the after view) —
+// wood structures/gravel/riparian detail stays in the metrics tables below,
+// where it's already covered; duplicating every marker type onto a 220px
+// thumbnail would add clutter, not clarity.
+var sowMiniMaps = [];
+function clearSOWMiniMaps() {
+  sowMiniMaps.forEach(function(m) { m.remove(); });
+  sowMiniMaps = [];
+}
+
+function buildSOWMiniMap(containerId, we, mode) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  var mm = L.map(containerId, {
+    zoomControl: false, attributionControl: false, dragging: false,
+    scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, tap: false
+  });
+  sowMiniMaps.push(mm);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {maxZoom: 19}).addTo(mm);
+
+  var bounds = null;
+  function extend(latlngs) {
+    if (!latlngs || !latlngs.length) return;
+    bounds = bounds ? bounds.extend(L.latLngBounds(latlngs)) : L.latLngBounds(latlngs);
+  }
+  function flat(ll) { return (ll && ll.length && Array.isArray(ll[0])) ? ll[0] : ll; }
+
+  var perimD = we.ppData['perimeter'];
+  if (perimD && perimD.layer) {
+    var perimPts = flat(perimD.layer.getLatLngs());
+    L.polygon(perimPts, {color: '#5a6b7a', weight: 1.5, dashArray: '6 4', fillOpacity: 0, interactive: false}).addTo(mm);
+    extend(perimPts);
+  }
+
+  if (mode === 'before') {
+    var reachD = we.ppData['reach_len'];
+    if (reachD && reachD.layer) {
+      var reachPts = flat(reachD.layer.getLatLngs());
+      L.polyline(reachPts, {color: '#3a6ea5', weight: 2.5, interactive: false}).addTo(mm);
+      extend(reachPts);
+    }
+    var fpD = we.ppData['fp_poly'];
+    if (fpD && fpD.layer) {
+      var fpPts = flat(fpD.layer.getLatLngs());
+      L.polygon(fpPts, {color: '#2a7a5c', fillColor: '#2a7a5c', fillOpacity: 0.18, weight: 1.5, interactive: false}).addTo(mm);
+      extend(fpPts);
+    }
+  } else {
+    var pc = we.primaryChannels && we.primaryChannels[0];
+    if (pc) {
+      var pcReachD = pc.sowLayers['pc-reach'];
+      if (pcReachD && pcReachD.layer) {
+        var pcReachPts = flat(pcReachD.layer.getLatLngs());
+        L.polyline(pcReachPts, {color: pcChannelColor(we, pc.id), weight: 2.5, interactive: false}).addTo(mm);
+        extend(pcReachPts);
+      }
+      var pcFpD = pc.ppData['pc_fp'];
+      if (pcFpD && pcFpD.layer) {
+        var pcFpPts = flat(pcFpD.layer.getLatLngs());
+        L.polygon(pcFpPts, {color: '#1a7a6c', fillColor: '#1a7a6c', fillOpacity: 0.18, weight: 1.5, interactive: false}).addTo(mm);
+        extend(pcFpPts);
+      }
+    }
+    (we.scReaches || []).forEach(function(sc) {
+      if (sc.pts && sc.pts.length) {
+        L.polyline(sc.pts, {color: '#c07820', weight: 2, interactive: false}).addTo(mm);
+        extend(sc.pts);
+      }
+    });
+  }
+
+  if (bounds && bounds.isValid()) mm.fitBounds(bounds, {padding: [14, 14]});
+  else mm.setView([45.5, -119.5], 6); // no geometry drawn yet — arbitrary Columbia Basin fallback view
+
+  // The modal's show/layout transition can leave the container briefly unmeasured;
+  // re-measure and re-fit once it has settled (same defensive pattern the map-sow
+  // page itself doesn't need, but a freshly-shown dialog does).
+  setTimeout(function() {
+    mm.invalidateSize();
+    if (bounds && bounds.isValid()) mm.fitBounds(bounds, {padding: [14, 14]});
+  }, 50);
+}
+
 function openSOW() {
   if(!workElements.length){alert('No work elements to export.');return;}
+  clearSOWMiniMaps(); // destroy any preview maps from a previous export before their containers are overwritten below
+  var sowMapTargets = [];
   var today=new Date().toLocaleDateString();
   var h='<h3>Contract Information</h3><dl class="smeta"><dt>Contract #</dt><dd>84051 REL 50</dd><dt>COR</dt><dd>Virginia Preiss</dd><dt>FY</dt><dd>2026</dd><dt>Date</dt><dd>'+today+'</dd></dl>';
 
@@ -9439,6 +9602,15 @@ function openSOW() {
     // WE header/work-types line hidden for now — kept for easy restore.
     // h+='<h2>WE '+(idx+1)+': '+we.name+'</h2>';
     // h+='<div style="font-size:11px;color:#5ddba5;margin-bottom:8px">Work types: '+we.types.map(function(t){return TYPE_LABELS[t];}).join(', ')+'</div>';
+
+    // Before/After map preview — built after this HTML lands in the DOM (see the
+    // setTimeout at the end of openSOW()); container ids are just placeholders here.
+    var beforeMapId = 'sow-map-before-' + we.id, afterMapId = 'sow-map-after-' + we.id;
+    h += '<div class="sow-before-after-row">';
+    h += '<div class="sow-mini-map-col"><div class="sow-mini-map-label">Pre-Project</div><div class="sow-mini-map" id="' + beforeMapId + '"></div></div>';
+    h += '<div class="sow-mini-map-col"><div class="sow-mini-map-label">Project Design</div><div class="sow-mini-map" id="' + afterMapId + '"></div></div>';
+    h += '</div>';
+    sowMapTargets.push({we: we, beforeMapId: beforeMapId, afterMapId: afterMapId});
 
     // Pre-project
     h+='<h3>Pre-Project Conditions</h3><table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
@@ -9685,6 +9857,14 @@ function openSOW() {
 
   document.getElementById('sowbody').innerHTML=h;
   document.getElementById('sowmodal').show();
+  // Build the preview maps after the modal's own dialog has shown and its containers
+  // are laid out in the DOM — same deferred-after-injection pattern as drawCHUPie() above.
+  setTimeout(function() {
+    sowMapTargets.forEach(function(t) {
+      buildSOWMiniMap(t.beforeMapId, t.we, 'before');
+      buildSOWMiniMap(t.afterMapId, t.we, 'after');
+    });
+  }, 100);
 }
 
 function closeSOW(){document.getElementById('sowmodal').close();}
