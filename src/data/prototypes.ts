@@ -35,12 +35,12 @@ export const prototypes: Prototype[] = [
     status: 'in-progress',
   },
   {
-    slug: 'legacy-sow',
-    title: 'Habitat Design Tool - Entrance',
+    slug: 'project-budgets',
+    title: 'Project budgets',
     description:
-      "A recreation of the real qa.cbfish.org SOW work elements screen — shows where a user discovers and launches the Habitat Design Tool from inside the actual product, via the new HD column and its linked Milestones page.",
-    route: '/legacy/sow',
-    createdAt: '2026-07-31',
+      'A new Funding area for managing project budgets by fiscal year and fund. Starts with the "Summary" landing — sub-nav across Baselines, SOY, Decisions, and Change requests (BOG), a photo/prose intro, and related report links.',
+    route: '/project-budgets',
+    createdAt: '2026-06-23',
     status: 'in-progress',
   },
   {
@@ -50,15 +50,6 @@ export const prototypes: Prototype[] = [
       "The landing page for the RM&E Reporting area — what BPA's research, monitoring, and evaluation work is and why it exists, then a sub-nav into the reporting views underneath it.",
     route: '/rme-reporting',
     createdAt: '2026-07-23',
-    status: 'in-progress',
-  },
-  {
-    slug: 'crs-commitments',
-    title: 'BiOp landing page',
-    description:
-      "The landing page for the BiOp Reporting area — what BPA's biological opinion consultation work is and why it exists, then a sub-nav into the reporting views underneath it.",
-    route: '/biop-reporting',
-    createdAt: '2026-07-16',
     status: 'in-progress',
   },
   {
@@ -89,12 +80,21 @@ export const prototypes: Prototype[] = [
     status: 'in-progress',
   },
   {
-    slug: 'project-budgets',
-    title: 'Project budgets',
+    slug: 'crs-commitments',
+    title: 'BiOp landing page',
     description:
-      'A new Funding area for managing project budgets by fiscal year and fund. Starts with the "Summary" landing — sub-nav across Baselines, SOY, Decisions, and Change requests (BOG), a photo/prose intro, and related report links.',
-    route: '/project-budgets',
-    createdAt: '2026-06-23',
+      "The landing page for the BiOp Reporting area — what BPA's biological opinion consultation work is and why it exists, then a sub-nav into the reporting views underneath it.",
+    route: '/biop-reporting',
+    createdAt: '2026-07-16',
+    status: 'in-progress',
+  },
+  {
+    slug: 'legacy-sow',
+    title: 'Habitat Design Tool - Entrance',
+    description:
+      "A recreation of the real qa.cbfish.org SOW work elements screen — shows where a user discovers and launches the Habitat Design Tool from inside the actual product, via the new HD column and its linked Milestones page.",
+    route: '/legacy/sow',
+    createdAt: '2026-07-31',
     status: 'in-progress',
   },
   {
