@@ -20,44 +20,46 @@ export interface Prototype {
   status: PrototypeStatus;
 }
 
+// Authored in intended display order. The home page renders active
+// (in-progress) prototypes first, in this array order, then the live ones under
+// "Past explorations". Reorder rows here to reorder the landing page.
 export const prototypes: Prototype[] = [
+  // --- Active prototypes (in progress) ---
   {
     slug: 'lib-entry',
     title: 'LIB entry & COR review',
     description:
-      'The vendor’s Line Item Budget entry screen, living as the LIB tab inside the contract shell — four line shapes (quantity × rate, GSA authority rate, percentage of a base, lump sum) across nine cost categories, entered inline in a grid so the cross-line dependencies stay visible: fringe follows salary, linked utility months follow a position’s staffing months, and indirect follows whichever categories the rate is scoped to. A persistent rail reconciles the running total against the Contract Value and holds the submit gate the vendor still owns. The same screen carries the other half of the round trip: a role switch flips it into the BPA COR’s lens, where the grid reads as values rather than fields, each line can be marked with a severity, a reason and a note saying what has to change, and the COR returns the budget or approves it. Returned marks come back to the vendor as a checklist that gates resubmitting.',
+      'The vendor’s Line Item Budget entry screen — an inline grid for entering budget lines with their cross-line dependencies visible — that a role switch flips into the BPA COR’s lens to mark, return, or approve the budget.',
     route: '/lib-entry',
     createdAt: '2026-08-05',
     status: 'in-progress',
   },
   {
-    slug: 'lib-pi-editing',
-    title: 'LIB & PI document editing',
+    slug: 'legacy-sow',
+    title: 'Habitat Design Tool - Entrance',
     description:
-      'A supportive, fully explained process for unlocking Line Item Budget and Property Inventory document edits under select business conditions — replace a file in place with all specifications retained, approvals reset, and the COR notified when an already-approved document changes.',
-    route: '/lib-pi-editing',
-    createdAt: '2026-07-23',
-    ticket: 'CBF-8204',
+      "A recreation of the real qa.cbfish.org SOW work elements screen — shows where a user discovers and launches the Habitat Design Tool from inside the actual product, via the new HD column and its linked Milestones page.",
+    route: '/legacy/sow',
+    createdAt: '2026-07-31',
     status: 'in-progress',
   },
   {
-    slug: 'home',
-    title: 'CBFish homepage',
+    slug: 'rme-work-elements',
+    title: 'RM&E landing page',
     description:
-      'A static, in-design-system snapshot of the live cbfish.org landing — the shared home every prototype returns to via the logo and the Home breadcrumb.',
-    route: '/home',
-    createdAt: '2026-06-24',
-    status: 'live',
+      "The landing page for the RM&E Reporting area — what BPA's research, monitoring, and evaluation work is and why it exists, then a sub-nav into the reporting views underneath it.",
+    route: '/rme-reporting',
+    createdAt: '2026-07-23',
+    status: 'in-progress',
   },
   {
-    slug: 'search',
-    title: 'Global search & command palette',
+    slug: 'crs-commitments',
+    title: 'BiOp landing page',
     description:
-      'Omni-search command palette (⌘K) plus a full /search results page with faceted filtering.',
-    route: '/search',
-    createdAt: '2026-06-04',
-    ticket: 'CBF-8117',
-    status: 'live',
+      "The landing page for the BiOp Reporting area — what BPA's biological opinion consultation work is and why it exists, then a sub-nav into the reporting views underneath it.",
+    route: '/biop-reporting',
+    createdAt: '2026-07-16',
+    status: 'in-progress',
   },
   {
     slug: 'vendor-dashboard',
@@ -104,35 +106,41 @@ export const prototypes: Prototype[] = [
     createdAt: '2026-06-22',
     status: 'in-progress',
   },
+  // --- Past explorations (live) ---
   {
-    slug: 'legacy-sow',
-    title: 'Habitat Design Tool - Entrance',
+    slug: 'lib-pi-editing',
+    title: 'LIB & PI document editing',
     description:
-      "A recreation of the real qa.cbfish.org SOW work elements screen — shows where a user discovers and launches the Habitat Design Tool from inside the actual product, via the new HD column and its linked Milestones page.",
-    route: '/legacy/sow',
-    createdAt: '2026-07-31',
-    status: 'in-progress',
-  },
-  {
-    slug: 'crs-commitments',
-    title: 'BiOp landing page',
-    description:
-      "The landing page for the BiOp Reporting area — what BPA's biological opinion consultation work is and why it exists, then a sub-nav into the reporting views underneath it.",
-    route: '/biop-reporting',
-    createdAt: '2026-07-16',
-    status: 'in-progress',
-  },
-  {
-    slug: 'rme-work-elements',
-    title: 'RM&E landing page',
-    description:
-      "The landing page for the RM&E Reporting area — what BPA's research, monitoring, and evaluation work is and why it exists, then a sub-nav into the reporting views underneath it.",
-    route: '/rme-reporting',
+      'A supportive, fully explained process for unlocking Line Item Budget and Property Inventory document edits under select business conditions — replace a file in place with all specifications retained, approvals reset, and the COR notified when an already-approved document changes.',
+    route: '/lib-pi-editing',
     createdAt: '2026-07-23',
-    status: 'in-progress',
+    ticket: 'CBF-8204',
+    status: 'live',
+  },
+  {
+    slug: 'home',
+    title: 'CBFish homepage',
+    description:
+      'A static, in-design-system snapshot of the live cbfish.org landing — the shared home every prototype returns to via the logo and the Home breadcrumb.',
+    route: '/home',
+    createdAt: '2026-06-24',
+    status: 'live',
+  },
+  {
+    slug: 'search',
+    title: 'Global search & command palette',
+    description:
+      'Omni-search command palette (⌘K) plus a full /search results page with faceted filtering.',
+    route: '/search',
+    createdAt: '2026-06-04',
+    ticket: 'CBF-8117',
+    status: 'live',
   },
 ];
 
-/** Newest first — the order the index table renders. */
-export const prototypesByNewest = (): Prototype[] =>
-  [...prototypes].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+/**
+ * Prototypes in authored (display) order, optionally filtered by status.
+ * The home page uses this to render active items first, then the live ones.
+ */
+export const prototypesByStatus = (status: PrototypeStatus): Prototype[] =>
+  prototypes.filter((p) => p.status === status);
