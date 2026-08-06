@@ -1,0 +1,2775 @@
+---
+/*
+ * cbf-lib-cost-table — the vendor Line Item Budget (LIB) entry grid.
+ * The LIB tab of a CBFish contract (/lib-entry).
+ *
+ * ── THE DESIGN CLAIM ────────────────────────────────────────────────────────
+ * A LIB is a WEB OF CROSS-LINE DEPENDENCIES, not a list of independent rows:
+ * fringe is a percentage of a salary line, a cell-phone line's months are LINKED
+ * to a position's staffing months, indirect is a percentage of the sum of
+ * whatever the rate is scoped to. A grid can hold that web — you can see the
+ * salary line and everything that follows it at once. A one-line-at-a-time modal
+ * fights it. So THERE IS NO ADD-LINE MODAL HERE: "Add line" appends an editable
+ * row inline, of the shape the vendor picked, focused and ready to type.
+ *
+ * ── EVERY CATEGORY CAPTIONS ITS OWN COLUMNS ─────────────────────────────────
+ * There is no global <thead>. One header for nine categories forced every
+ * section to answer to the same three words — and "Quantity" means months in
+ * Personnel, nights in a lodging line, units in Supplies, and nothing at all in
+ * Fringe. So each category emits its own caption row under its heading, in its
+ * own vocabulary (`columns` in src/data/lib-entry.mjs). Only the three columns
+ * that DON'T move keep one name throughout — Amount, Work element and the row
+ * action — because the money column has to line up with the sub-block subtotals,
+ * the indirect base and the grand total in the table foot.
+ *
+ * ── THE FIVE LINE SHAPES — the ROW decides its cells, not the category ───────
+ * Several categories mix shapes (Vehicles carries B and A; Supplies carries A
+ * and D), so the shape is per-row and each row renders only the cells its shape
+ * actually has. A collapsed cell is an em dash or a spanned cell — never a dead
+ * input.
+ *   A  qty-rate       label · qty (+ optional 2nd qty) · unit · cost per unit.
+ *                     The vendor TYPES the rate. amount = qty × qty2 × rate.
+ *   B  authority-rate label · GSA location + season · qty (+ 2nd qty). The rate
+ *                     is REFERENCED from the GSA schedule, rendered as a value
+ *                     with its source, not as an open input. A vendor may
+ *                     override it; an override above `ceiling` is the failure.
+ *   C  pct-of-base    pick a base, enter a percentage. NO qty, NO unit. The row
+ *                     shows WHAT it is a percentage of and the resolved base
+ *                     dollars, so the dependency is visible on the row itself.
+ *   D  lump           label · one dollar amount. No qty, no rate.
+ *   E  travel-line    belongs to a TRIP and picks a travel KIND. Nothing about
+ *                     it is free text: the kind fixes the unit and the slice of
+ *                     the schedule the rate may come from, and the trip supplies
+ *                     the locality, the travelers and the occurrence count.
+ *                     amount = occurrences × count × duration × rate.
+ *
+ * ── TRIPS, AND WHY TRAVEL IS THE ONE CATEGORY WITH ITS OWN SHAPE ─────────────
+ * Travel is the most RULE-BOUND category in a LIB and was being entered as the
+ * least structured: a generic "3 persons × 10 days" typed into two free-text
+ * quantity boxes, against a schedule row nothing stopped you picking wrong. Now
+ * a trip is a sub-block — the same machinery Supplies uses for Office/Field —
+ * carrying destination, purpose, window, travelers and `occurrences`. That last
+ * one is what the flat list could not say at all: a semiannual coordination
+ * meeting is ONE trip that happens twice, not two rows a reviewer has to
+ * recognise as the same journey. Change the trip and every line under it moves,
+ * which is the same cross-line dependency the rest of this grid is built around.
+ *
+ * ── THE LINE'S IDENTITY IS A CONTROL, NOT A TEXTBOX ──────────────────────────
+ * Four categories know what a line is called better than the vendor does, so
+ * they replace the free-text description: Personnel picks a position off the
+ * roster, Travel picks a kind, Vehicles picks a kind, and Fringe names itself
+ * after the salary line it follows. All five identity variants ship on every row
+ * and one is revealed — which is what keeps a CLONED row correct when it is
+ * added to, or moved into, a different category.
+ *
+ * ── ARITHMETIC IS NEVER DONE HERE ───────────────────────────────────────────
+ * Every amount, subtotal, indirect base and total comes from
+ * `priceLines(lines, cfg)` in src/data/lib-entry.mjs, which resolves the
+ * dependency order (linked quantities → A/B/D → C → indirect). It is re-called
+ * in full after EVERY edit, so a dependent line can never silently disagree with
+ * its base. `dependentsOf(id)` names exactly the rows that just moved because of
+ * an edit, and they get a brief tint — the money moment of the prototype.
+ *
+ * ── GATES, RENDERED IN BOTH STATES ON LOAD ──────────────────────────────────
+ *   · gsa-over-ceiling — trv-4 Boise lodging overrides GSA at $172 against a
+ *     $155 ceiling: danger badge + esa-field-error naming ceiling and overage.
+ *   · matches-schedule — every other schedule-rated line renders the PASSING
+ *     side of the same gate ("Matches GSA schedule"), so it is legible either way.
+ *   · no-allocation — sal-4 Administrative Specialist reads "Not allocated" in
+ *     the warning tone with an esa-field-error. Added rows start `allocations:{}`
+ *     — correctly unallocated, which moves the gate the moment a line is added.
+ *   · capitalization threshold — tested in BOTH directions and shown failing on
+ *     load: sup-f4, a $6,200 trap assembly, is filed under Supplies and belongs
+ *     in Capital Equipment. The failing row offers the MOVE, not just a verdict,
+ *     because the item is correct — only its category is wrong, and retyping it
+ *     elsewhere would lose its work-element split.
+ *   · contract period — every salary line tests its months against the
+ *     12-month period, passing on load and failing live past it.
+ *
+ * ── EVENT CONTRACT (all on `document`) ──────────────────────────────────────
+ * DISPATCH 'cbf-lib:totals' — on mount and after EVERY recompute
+ *   detail: { total, direct, indirect, indirectBase, remaining, pctOfValue,
+ *             failing, unallocated, capitalFailing, monthsFailing }
+ *   failing        = gsaFailingLines(lines).length
+ *   unallocated    = unallocatedLines(lines).length
+ *   capitalFailing = thresholdMisfiled(lines).length     // both directions
+ *   monthsFailing  = monthsOverPeriod(lines).length
+ * DISPATCH 'cbf-lib:open-subcontract' — a subcontracts row's jump-out
+ *   detail: { sheetId, lineId }        // sheetId = line.sheet
+ * LISTEN   'cbf-lib:indirect-config' — a sibling owns the overhead block,
+ *   including WHICH categories the rate applies to.
+ *   detail: { config }                 // shape of indirectConfig
+ *   On receipt: re-run priceLines(lines, config), repaint the indirect base,
+ *   indirect and total (the base visibly moves as the scope changes), and
+ *   re-fire 'cbf-lib:totals'.
+ *
+ * bcn-lego-checked: the house rule points data tables at AG Grid, but that rule
+ * governs SCANNABLE data grids with search / filter / download chrome. This is an
+ * ENTRY FORM — a live control and its own validation state in most cells, with
+ * per-row shape branching and colspan collapse — so a semantic <table> carrying
+ * esa-* controls is both correct and far lighter. Same call cbf-baselines-table
+ * .astro and cbf-lib-pi-documents.astro already made in this spoke; the full
+ * ecology catalog was re-checked and has no table/grid lego at all. Everything
+ * that ISN'T the grid itself is a lego: entry cells = esa-text-field, GSA row and
+ * percentage base = esa-select, add-line = esa-button / esa-dropdown-menu (shape
+ * picker), allocation editor = esa-popover, row delete = esa-icon-button,
+ * validation = esa-field-error, gate verdicts = esa-badge. Beacon is not cloned
+ * on this machine.
+ */
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaFieldError from '@esa/ecology/esa-field-error.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import {
+  SHAPES,
+  categories,
+  costLines,
+  priceLines,
+  effectiveRate,
+  effectiveQty,
+  baseAmountFor,
+  baseLabelFor,
+  gsaRate,
+  isScheduleRated,
+  workElements,
+  weLabel,
+  contract,
+  contractMonths,
+  positions,
+  positionTitle,
+  tripOf,
+  TRAVEL_KINDS,
+  travelKind,
+  travelChain,
+  travelCount,
+  travelLabel,
+  localityNote,
+  fringeLabel,
+  VEHICLE_KINDS,
+  vehicleKind,
+  perItemCost,
+  thresholdTargetFor,
+  countOf,
+  indirectConfig,
+  usd,
+  pct,
+  qtyFmt,
+} from '../../data/lib-entry.mjs';
+import {
+  SEVERITIES,
+  severityMeta,
+  reasonLabel,
+  seedReview,
+  flagFor,
+  isIssued,
+} from '../../data/lib-review.mjs';
+
+interface Props {
+  /** Section heading above the grid. Pass null to let the page own the heading. */
+  heading?: string | null;
+  /** One line of context under the heading. Pass null to omit. */
+  lede?: string | null;
+}
+const {
+  heading = 'Line item budget',
+  lede = `${contract.number} · ${contract.fiscalYear} · ${contract.periodStart}–${contract.periodEnd}`,
+} = Astro.props;
+
+const lines: any[] = costLines;
+const priced = priceLines(lines, indirectConfig);
+const amt = (id: string): number => priced.amounts[id] ?? 0;
+
+/* ── The COR's review layer ─────────────────────────────────────────────────
+   Server-rendered from the seeded review, then kept live by the script. A mark
+   belongs ON the line it is about, so it renders inside the cost-line cell —
+   under the description it disputes — rather than in a list somewhere else. */
+const review = seedReview();
+const flagOf = (l: any) => flagFor(review, l.id);
+const reviewIssued = isIssued(review);
+
+/* The four shapes are a MODEL concept, not vendor-facing copy — a vendor never
+   thinks "this is a shape-A line". The shape shows itself through which cells the
+   row exposes; naming it on every row was internal vocabulary leaking into the UI
+   (and it pushed the Rate-source control a line below its neighbours). Removed. */
+
+/* ── Money / quantity text ── */
+const cents = (n: number) => Math.abs((n ?? 0) % 1) > 0.0001;
+const money = (n: number) => usd(n, { cents: cents(n) });
+/* Field values keep thousands separators (parsed back out on edit) and are never
+   rewritten while the vendor types, so the caret can't jump. */
+const numText = (n: number | null | undefined) =>
+  n == null ? '' : cents(n) ? String(n) : n.toLocaleString('en-US');
+
+/* ── Linked quantity (the cell-phone line follows a position) ── */
+const labelOfId = (id: string) => lines.find((l) => l.id === id)?.label ?? id;
+
+/* ── GSA gate ── */
+const gsaOf = (l: any) => gsaRate(l.gsaKey);
+/* Any SCHEDULE-RATED line can be overridden — shape B, and the GSA-rated travel
+   kinds. Keying this to shape B alone left an overridden travel line showing
+   "Matches GSA schedule" and "Over GSA ceiling" at the same time. */
+const overridden = (l: any) => isScheduleRated(l) && l.rateOverride != null;
+const gsaOver = (l: any) => {
+  const g = gsaOf(l);
+  return !!(g && l.rateOverride != null && l.rateOverride > g.ceiling);
+};
+const gsaSrcText = (l: any) => {
+  const g = gsaOf(l);
+  /* The dropdown above already NAMES the schedule row (location · kind · season).
+     Restating it here said the same string twice and explained nothing, so this
+     line says what the control DOES instead: the rate is referenced, not typed,
+     and the schedule sets the ceiling the line is checked against. */
+  return g
+    ? `Rate referenced from this GSA row — not typed. Ceiling ${money(g.ceiling)}.`
+    : 'Pick the GSA schedule row this line references — it sets the rate.';
+};
+const gsaErrText = (l: any) => {
+  const g = gsaOf(l);
+  if (!g) return 'Select the GSA schedule row this line references.';
+  return `${money(l.rateOverride)} is over the ${g.kind} ceiling of ${money(g.ceiling)} for ${g.location} (${g.season}) — ${money(l.rateOverride - g.ceiling)} over.`;
+};
+const gsaLabel = (l: any) => {
+  const g = gsaOf(l);
+  return g ? `${g.location} · ${g.kind} · ${g.season}` : 'Select a schedule row';
+};
+
+/* ── Capitalization threshold — a gate that runs in BOTH directions ─────────
+   The old grid only tested capital lines for being too cheap. The same threshold
+   equally condemns a $6,200 trap assembly sitting in Supplies, so the test now
+   applies to both categories and the failing row offers the move rather than
+   just naming the problem. */
+const onThreshold = (l: any) => l.category === 'capital-equipment' || l.category === 'supplies';
+/* Only a per-unit line has a per-item cost to test — a lump has no unit count. */
+const thresholdTested = (l: any) => onThreshold(l) && l.shape === SHAPES.QTY_RATE;
+const isCapital = (l: any) => l.category === 'capital-equipment';
+const perItem = (l: any) => perItemCost(l, priced.amounts);
+const capPass = (l: any) =>
+  !thresholdTested(l) ||
+  (isCapital(l)
+    ? perItem(l) >= contract.capitalizationThreshold
+    : perItem(l) < contract.capitalizationThreshold);
+const capText = (l: any) =>
+  `${money(perItem(l))} per item · threshold ${usd(contract.capitalizationThreshold)}`;
+const capErrText = (l: any) =>
+  isCapital(l)
+    ? `${money(perItem(l))} per item is below the ${usd(contract.capitalizationThreshold)} capitalization threshold — this item belongs in Supplies & Equipment.`
+    : `${money(perItem(l))} per item is at or above the ${usd(contract.capitalizationThreshold)} capitalization threshold — this item belongs in Capital Equipment.`;
+const capPassText = (l: any) =>
+  isCapital(l) ? 'Meets capitalization threshold' : 'Below capitalization threshold';
+const capFailText = (l: any) =>
+  isCapital(l) ? 'Below capitalization threshold' : 'Over capitalization threshold';
+const capMoveText = (l: any) =>
+  isCapital(l) ? 'Move to Supplies & Equipment' : 'Move to Capital Equipment';
+
+/* ── Contract-period guard on staffing months ───────────────────────────────
+   Budgeting a position for more months than the contract runs is arithmetic the
+   form can check, and it was being left to a reviewer. */
+const monthsTested = (l: any) => l.category === 'personnel-salary';
+const monthsOver = (l: any) => monthsTested(l) && effectiveQty(l, lines) > contractMonths;
+const monthsText = (l: any) =>
+  `${countOf(effectiveQty(l, lines), 'months')} of the ${contractMonths}-month contract period`;
+const monthsErrText = (l: any) =>
+  `${countOf(effectiveQty(l, lines), 'months')} is longer than the ${contractMonths}-month contract period (${contract.periodStart}–${contract.periodEnd}).`;
+
+/* ── Line identity: which control NAMES this line ────────────────────────────
+   Four categories know their own line's name better than the vendor does, so
+   they replace the free-text description with the thing that actually decides
+   it. Every row ships all the variants and reveals one, which is what keeps a
+   cloned row correct when it is added to a different category. */
+const identOf = (l: any): string =>
+  l.category === 'personnel-salary' ? 'position'
+  : l.category === 'personnel-fringe' ? 'derived'
+  : l.shape === SHAPES.TRAVEL ? 'travel-kind'
+  : l.category === 'vehicles' ? 'vehicle-kind'
+  : 'label';
+/** What the line is CALLED, whether that was typed or resolved. */
+const displayLabel = (l: any): string =>
+  l.shape === SHAPES.TRAVEL ? travelLabel(l)
+  : l.category === 'personnel-fringe' ? fringeLabel(l, lines)
+  : l.category === 'personnel-salary' ? (positionTitle(l.staffKey) || l.label || '')
+  : l.label ?? '';
+/** The quiet second line a kind picker owes the vendor — its rule, in words. */
+const kindNote = (l: any): string =>
+  l.shape === SHAPES.TRAVEL ? (travelKind(l.travelKind)?.note ?? '')
+  : l.category === 'vehicles' ? (vehicleKind(l.vehicleKind)?.note ?? '')
+  : l.detail ?? '';
+
+/* ── Vehicles: the kind locks the unit, so the unit stops being an input ── */
+const unitLocked = (l: any) => l.category === 'vehicles' && !!vehicleKind(l.vehicleKind);
+const lockedUnit = (l: any) => vehicleKind(l.vehicleKind)?.unit ?? l.qtyUnit ?? '';
+const lockedUnit2 = (l: any) => vehicleKind(l.vehicleKind)?.secondUnit ?? l.qty2Unit ?? '';
+
+/* ── Work-element allocation ── */
+const allocEntries = (l: any): [string, number][] =>
+  (Object.entries(l.allocations ?? {}) as [string, number][]).sort((a, b) => b[1] - a[1]);
+const allocSum = (l: any) => allocEntries(l).reduce((a, [, p]) => a + p, 0);
+const allocSummary = (l: any) => {
+  const e = allocEntries(l);
+  if (!e.length) return 'Not allocated';
+  return e.length === 1 ? `${e[0][0]} · ${e[0][1]}%` : `${e[0][0]} · ${e[0][1]}% +${e.length - 1}`;
+};
+const allocTitle = (l: any) => {
+  const e = allocEntries(l);
+  return e.length ? e.map(([id, p]) => `${weLabel(id)} — ${p}%`).join('\n') : 'No work element assigned';
+};
+const allocErrText = (l: any) => {
+  const s = allocSum(l);
+  return s === 0
+    ? 'No work element assigned — allocations must total 100%.'
+    : `Allocated ${s}% — work-element allocations must total 100%.`;
+};
+
+/* ── Read-only mirrors, for the COR lens ────────────────────────────────────
+   A reviewer does not type into someone else's budget, so in the COR lens every
+   entry control is replaced by the VALUE it holds. Rendered as facts, not as
+   disabled inputs: a grayed-out field reads as "you failed to fill this in",
+   which is a lie about a budget that has already been submitted. Both renderings
+   ship in the markup and the role attribute reveals one, so switching lenses
+   never loses what the vendor typed. */
+const qtyFactText = (l: any) => {
+  if (l.shape === SHAPES.TRAVEL) return travelChain(l);
+  const one = `${qtyFmt(effectiveQty(l, lines))} ${l.qtyUnit ?? ''}`.trim();
+  return l.qty2 != null ? `${one} × ${qtyFmt(l.qty2)} ${l.qty2Unit ?? ''}`.trim() : one;
+};
+const allocFactText = (l: any) => {
+  const e = allocEntries(l);
+  return e.length ? e.map(([id, p]) => `${id} ${p}%`).join(' · ') : 'Not allocated';
+};
+
+/* Row state carried as an inline background tint — never a colored left border. */
+const rowFlag = (l: any) =>
+  gsaOver(l) ? 'gsa'
+  : allocSum(l) !== 100 ? 'alloc'
+  : !capPass(l) ? 'capital'
+  : monthsOver(l) ? 'months'
+  : null;
+
+/* ── Grouping: a flat item list per category so the ROW markup is written once,
+   whether or not the category is split into sub-blocks. ── */
+const linesIn = (catKey: string, blockKey?: string) =>
+  lines.filter((l) => l.category === catKey && (blockKey ? l.block === blockKey : true));
+const itemsFor = (cat: any): any[] =>
+  cat.blocks
+    ? cat.blocks.flatMap((b: any) => [
+        { kind: 'block', block: b },
+        ...linesIn(cat.key, b.key).map((line: any) => ({ kind: 'line', line })),
+      ])
+    : linesIn(cat.key).map((line: any) => ({ kind: 'line', line }));
+
+/* ── Indirect scope, spelled out so re-scoping is legible in the totals block ── */
+const excludedLabels = (cfg: any) =>
+  categories.filter((c: any) => !cfg.appliesTo.includes(c.key)).map((c: any) => c.label);
+const scopeText = (cfg: any) => {
+  const out = excludedLabels(cfg);
+  return out.length
+    ? `${cfg.appliesTo.length} of ${categories.length} categories in scope — ${out.join(' and ')} excluded`
+    : `All ${categories.length} categories in scope`;
+};
+
+const t0 = priced.totals;
+---
+
+<section class="cbf-lct stack" data-gap="md" data-lct>
+  {heading && (
+    <header class="stack" data-gap="3xs">
+      <h2 class="type-section-title">{heading}</h2>
+      {lede && <p class="cbf-lct__lede">{lede}</p>}
+    </header>
+  )}
+
+  <!-- overflow stays visible at desktop on purpose: the allocation esa-popover,
+       the esa-select panels and the add-line esa-dropdown-menu all position
+       absolutely and cannot escape a clipping ancestor (same finding as
+       cbf-lib-pi-documents). Narrow viewports fall back to horizontal scrolling
+       and accept the clipping. -->
+  <div class="cbf-lct__scroll">
+    <!-- There is deliberately NO global <thead>. One header for nine categories
+         forced every section to answer to the same three words, and "Quantity"
+         means months here, nights there, and nothing at all in Fringe. Each
+         category captions its own columns instead — see `columns` in
+         src/data/lib-entry.mjs. The three columns that DON'T move (Amount, Work
+         element, the row action) keep one name throughout, because the money
+         column has to line up with the subtotals and the table foot. -->
+    <table class="cbf-lct__table" aria-label="Line item budget cost lines">
+      {categories.map((cat: any) => (
+        <tbody data-cat={cat.key}>
+          {/* ── Category header: label, note, subtotal, and the inline add ── */}
+          <tr class="cbf-lct__cathead">
+            <th scope="colgroup" colspan="3">
+              <span class="stack" data-gap="3xs">
+                <span class="cbf-lct__cat-label">{cat.label}</span>
+                {cat.note && <span class="cbf-lct__note">{cat.note}</span>}
+              </span>
+            </th>
+            <td class="cbf-lct__cell cbf-lct__cell--num">
+              <strong class="cbf-lct__money" data-cat-total={cat.key}>{usd(priced.byCategory[cat.key] ?? 0)}</strong>
+            </td>
+            <td class="cbf-lct__cell" colspan="2">
+              {cat.key === 'travel' ? (
+                /* Travel adds TRIPS, not lines — a line without a trip has no
+                   locality, no travelers and no occurrence count to stand on. */
+                <EsaButton size="sm" color="primary" appearance="outline" icon="plus" data-add-trip>
+                  Add trip
+                </EsaButton>
+              ) : cat.shapes.length > 1 || cat.blocks ? (
+                /* More than one legal kind (or more than one sub-block): the add
+                   affordance has to let the vendor pick which one, so it is a menu. */
+                <esa-dropdown-menu position="below-end" data-add-menu={cat.key}>
+                  <EsaButton size="sm" color="primary" appearance="outline" icon="plus">Add line</EsaButton>
+                </esa-dropdown-menu>
+              ) : (
+                <EsaButton
+                  size="sm"
+                  color="primary"
+                  appearance="outline"
+                  icon="plus"
+                  data-add-line={`${cat.key}||${cat.shapes[0]}`}
+                >Add line</EsaButton>
+              )}
+            </td>
+          </tr>
+
+          {/* ── This category's OWN column captions ── */}
+          <tr class="cbf-lct__colhead">
+            <th scope="col" class="cbf-lct__col-line">{cat.columns.line}</th>
+            {cat.columns.span ? (
+              <th scope="col" class="cbf-lct__col-span" colspan="2">{cat.columns.span}</th>
+            ) : (
+              <>
+                <th scope="col" class="cbf-lct__col-qty">
+                  {cat.columns.qty ?? <span class="cbf-lct__sr">This section has no quantity column</span>}
+                </th>
+                <th scope="col" class="cbf-lct__col-rate">{cat.columns.rate}</th>
+              </>
+            )}
+            <th scope="col" class="cbf-lct__col-num">Amount</th>
+            <th scope="col" class="cbf-lct__col-we">Work element</th>
+            <th scope="col" class="cbf-lct__col-act"><span class="cbf-lct__sr">Row actions</span></th>
+          </tr>
+
+          {itemsFor(cat).map((item: any) =>
+            item.kind === 'block' ? (
+              /* ── Sub-block header with its OWN subtotal ────────────────────
+                 Supplies uses this for Office/Field. Travel uses the SAME
+                 machinery for trips, and a trip head carries more: it owns the
+                 facts every line under it would otherwise repeat — locality,
+                 purpose, window, travelers — plus `occurrences`, the multiplier
+                 that turns "a quarterly meeting" into one trip instead of four
+                 unrelated rows. Raise it and every line below moves together. ── */
+              <tr
+                class="cbf-lct__blockhead"
+                data-blockhead={item.block.key}
+                data-trip={item.block.trip ? item.block.key : undefined}
+              >
+                <th scope="rowgroup" colspan="3">
+                  <span class="stack" data-gap="2xs">
+                    <span class="cbf-lct__block-label">{item.block.label}</span>
+
+                    {item.block.trip && (
+                      <>
+                        <span class="cbf-lct__note" data-trip-cell="window">
+                          {item.block.trip.window}
+                        </span>
+                        <span class="cluster" data-gap="sm" data-trip-controls>
+                          {/* Destination is TYPED, not picked. The GSA schedule
+                              prices a few hundred localities separately and covers
+                              every other place with one standard CONUS row — so a
+                              list of listed localities would tell a vendor they may
+                              only travel where GSA itemises, which is the opposite
+                              of how per diem works. A weir on Rock Creek is a real
+                              destination that simply prices at CONUS. */}
+                          <esa-text-field
+                            class="cbf-lct__field cbf-lct__field--dest"
+                            size="sm"
+                            label="Destination"
+                            data-trip-field="locality"
+                            value={item.block.trip.locality}
+                            placeholder="City, ST"
+                          ></esa-text-field>
+                          <esa-text-field
+                            class="cbf-lct__field cbf-lct__field--purpose"
+                            size="sm"
+                            label="Purpose"
+                            data-trip-field="purpose"
+                            value={item.block.trip.purpose}
+                          ></esa-text-field>
+                          <esa-text-field
+                            class="cbf-lct__field cbf-lct__field--trip"
+                            size="sm"
+                            label="Times it happens"
+                            data-trip-field="occurrences"
+                            value={String(item.block.trip.occurrences)}
+                          ></esa-text-field>
+                        </span>
+                        {/* What the dropdown used to hide: whether the place typed
+                            is separately priced, and therefore what the lines
+                            below will actually cost. */}
+                        <span class="cbf-lct__note" data-trip-cell="locality-note">
+                          {localityNote(item.block.trip)}
+                        </span>
+                        {/* COR lens: the trip as facts, not as an editor. */}
+                        <span class="cbf-lct__fact" data-trip-fact>
+                          {countOf(item.block.trip.occurrences, 'trips')}
+                        </span>
+                      </>
+                    )}
+                  </span>
+                </th>
+                <td class="cbf-lct__cell cbf-lct__cell--num">
+                  <span class="cbf-lct__money" data-block-total={`${cat.key}:${item.block.key}`}>
+                    {usd(priced.byBlock[`${cat.key}:${item.block.key}`] ?? 0)}
+                  </span>
+                </td>
+                <td class="cbf-lct__cell" colspan="2">
+                  {item.block.trip && (
+                    /* Adding INSIDE a trip: the menu is the travel kinds, because
+                       the kind is what the vendor is actually choosing. */
+                    <esa-dropdown-menu position="below-end" data-add-travel={item.block.key}>
+                      <EsaButton size="sm" color="secondary" appearance="soft" icon="plus">
+                        Add travel line
+                      </EsaButton>
+                    </esa-dropdown-menu>
+                  )}
+                </td>
+              </tr>
+            ) : (
+              <tr
+                data-line={item.line.id}
+                data-shape={item.line.shape}
+                data-cat={cat.key}
+                data-block={item.line.block ?? ''}
+                data-flag={rowFlag(item.line)}
+              >
+                {/* ── 1. The line's IDENTITY — and the mark, if it carries one ──
+                     Four categories know what a line is called better than the
+                     vendor does, so they replace free text with the thing that
+                     actually decides the name: a position off the roster, a
+                     travel kind, a vehicle kind, or — for fringe — the salary
+                     line it follows. All five variants ship on every row and one
+                     is revealed, which is what keeps a CLONED row correct when it
+                     is added to, or moved into, a different category. */}
+                <td class="cbf-lct__cell cbf-lct__cell--line">
+                  <div class="stack" data-gap="3xs">
+                    <span data-ident="label" hidden={identOf(item.line) !== 'label'}>
+                      <esa-text-field
+                        class="cbf-lct__field cbf-lct__field--label"
+                        size="md"
+                        data-field="label"
+                        value={item.line.label}
+                        placeholder="Describe this cost line"
+                        aria-label={`Cost line description — ${item.line.label || 'new line'}`}
+                      ></esa-text-field>
+                    </span>
+
+                    {/* Positions, never names — so it is a roster, not a textbox. */}
+                    <span data-ident="position" hidden={identOf(item.line) !== 'position'}>
+                      <esa-select
+                        class="cbf-lct__select"
+                        size="md"
+                        searchable
+                        data-position-select
+                        placeholder={displayLabel(item.line) || 'Pick a position'}
+                        aria-label={`Position — ${displayLabel(item.line) || 'new line'}`}
+                      ></esa-select>
+                    </span>
+
+                    {/* The travel kind decides the units AND the schedule scope. */}
+                    <span data-ident="travel-kind" hidden={identOf(item.line) !== 'travel-kind'}>
+                      <esa-select
+                        class="cbf-lct__select"
+                        size="md"
+                        data-travel-kind-select
+                        placeholder={travelKind(item.line.travelKind)?.label ?? 'Pick a travel kind'}
+                        aria-label={`Travel kind — ${displayLabel(item.line) || 'new line'}`}
+                      ></esa-select>
+                    </span>
+
+                    {/* The vehicle kind decides the shape: schedule-rated or typed. */}
+                    <span data-ident="vehicle-kind" hidden={identOf(item.line) !== 'vehicle-kind'}>
+                      <esa-select
+                        class="cbf-lct__select"
+                        size="md"
+                        data-vehicle-kind-select
+                        placeholder={vehicleKind(item.line.vehicleKind)?.label ?? 'Pick a vehicle kind'}
+                        aria-label={`Vehicle kind — ${displayLabel(item.line) || 'new line'}`}
+                      ></esa-select>
+                    </span>
+
+                    {/* Fringe names itself after the position it is a percentage
+                        of — there is nothing here for a vendor to decide. */}
+                    <span
+                      class="cbf-lct__derived"
+                      data-ident="derived"
+                      data-cell="ident-derived"
+                      hidden={identOf(item.line) !== 'derived'}
+                    >{displayLabel(item.line)}</span>
+
+                    <span class="cbf-lct__fact cbf-lct__fact--label" data-fact="label">{displayLabel(item.line)}</span>
+                    <span class="cbf-lct__note" data-cell="detail" hidden={!kindNote(item.line)}>
+                      {kindNote(item.line)}
+                    </span>
+
+                    {/* The COR's mark, on the line it disputes. Hidden from the
+                        vendor until the review is issued — an unfinished review
+                        read as a work list is worse than no review. */}
+                    <span
+                      class="cbf-lct__mark stack"
+                      data-gap="3xs"
+                      data-mark
+                      data-sev={flagOf(item.line)?.severity ?? ''}
+                      hidden={!flagOf(item.line) || !reviewIssued}
+                    >
+                      <span class="cluster" data-gap="2xs">
+                        <span data-mark-sev={SEVERITIES.REQUIRED}>
+                          <EsaBadge
+                            value={severityMeta[SEVERITIES.REQUIRED].short}
+                            variant={severityMeta[SEVERITIES.REQUIRED].variant}
+                            size="sm"
+                          />
+                        </span>
+                        <span data-mark-sev={SEVERITIES.QUESTION}>
+                          <EsaBadge
+                            value={severityMeta[SEVERITIES.QUESTION].short}
+                            variant={severityMeta[SEVERITIES.QUESTION].variant}
+                            size="sm"
+                          />
+                        </span>
+                        <span class="cbf-lct__mark-reason" data-mark-reason>
+                          {flagOf(item.line) ? reasonLabel(flagOf(item.line)!.reason) : ''}
+                        </span>
+                      </span>
+                      <span class="cbf-lct__mark-note" data-mark-note>
+                        {flagOf(item.line)?.note ?? ''}
+                      </span>
+                      <span class="cbf-lct__note" data-mark-by>
+                        {flagOf(item.line) ? `${flagOf(item.line)!.author} · ${flagOf(item.line)!.date}` : ''}
+                      </span>
+                    </span>
+                  </div>
+                </td>
+
+                {/* ── 2. Quantity — collapsed away entirely for shapes C and D ──
+                     There is no "rate source" column: what governs a rate lives in
+                     the Rate cell, beside the number it produces. */}
+                {item.line.shape === SHAPES.LUMP ? (
+                  <td class="cbf-lct__cell cbf-lct__cell--void" colspan="2">
+                    <div class="stack" data-gap="2xs">
+                      <span class="cbf-lct__note">No quantity, no rate — one amount.</span>
+                      {item.line.sheet && (
+                        <span class="cluster" data-gap="2xs">
+                          {/* The seam: a lump HERE, a full recursed category set THERE. */}
+                          <EsaButton
+                            size="sm"
+                            color="secondary"
+                            appearance="soft"
+                            icon="external-link"
+                            data-open-sheet={item.line.sheet}
+                            data-open-sheet-line={item.line.id}
+                          >Open subcontract sheet</EsaButton>
+                          <span class="cbf-lct__note">Itemized on its own sheet — no indirect applied there.</span>
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                ) : item.line.shape === SHAPES.PCT_OF_BASE ? (
+                  <td class="cbf-lct__cell cbf-lct__cell--void">
+                    <span class="cbf-lct__void-mark">No quantity</span>
+                  </td>
+                ) : item.line.shape === SHAPES.TRAVEL ? (
+                  /* ── Travel quantity: occurrences × count × duration ─────────
+                     Occurrences is the only one RESOLVED rather than typed, and
+                     it is never per-line: a trip that happens six times makes
+                     every cost in it happen six times, and a cost that happens a
+                     different number of times is a different trip.
+
+                     The count and the duration are this line's own. An earlier
+                     pass held the count on the trip as "travelers" and gave every
+                     row an override button — but a lodging line counts ROOMS, a
+                     mileage line counts VEHICLES, and per diem counts TRAVELERS.
+                     Those are three different numbers, so one shared field could
+                     not be right for all of them, and the button next to it was
+                     the design admitting so. A new line seeds from the last line
+                     in the trip counting the SAME unit instead. Both units are
+                     fixed by the kind rather than spelled by the vendor. */
+                  <td class="cbf-lct__cell cbf-lct__cell--qty">
+                    <div class="stack" data-gap="2xs">
+                      <span class="cbf-lct__derived" data-cell="travel-chain">
+                        {travelChain(item.line)}
+                      </span>
+
+                      <span class="cluster" data-gap="2xs" data-travel-count>
+                        <esa-text-field
+                          class="cbf-lct__field cbf-lct__field--qty"
+                          size="md"
+                          data-field="count"
+                          value={numText(travelCount(item.line))}
+                          aria-label={`Count — ${displayLabel(item.line)}`}
+                        ></esa-text-field>
+                        <span class="cbf-lct__unit" data-cell="travel-count-unit">
+                          {travelKind(item.line.travelKind)?.countLabel ?? ''}
+                        </span>
+                      </span>
+
+                      {/* Duration — always typed, unit always fixed by the kind. */}
+                      <span
+                        class="cluster"
+                        data-gap="2xs"
+                        data-travel-duration
+                        hidden={!travelKind(item.line.travelKind)?.durationLabel}
+                      >
+                        <span class="cbf-lct__times" aria-hidden="true">×</span>
+                        <esa-text-field
+                          class="cbf-lct__field cbf-lct__field--qty"
+                          size="md"
+                          data-field="duration"
+                          value={numText(item.line.duration)}
+                          aria-label={`Duration — ${displayLabel(item.line)}`}
+                        ></esa-text-field>
+                        <span class="cbf-lct__unit" data-cell="travel-duration-unit">
+                          {travelKind(item.line.travelKind)?.durationLabel ?? ''}
+                        </span>
+                      </span>
+                      {/* No separate COR mirror here: the resolved chain above IS
+                          the value, and it is shown to both roles. */}
+                    </div>
+                  </td>
+                ) : (
+                  <>
+                    {/* ── 3. Quantity (typed, or DERIVED when it follows a line) ── */}
+                    <td class="cbf-lct__cell cbf-lct__cell--qty">
+                      <div class="stack" data-gap="2xs">
+                        <span class="cluster" data-gap="2xs" data-qty-typed hidden={!!item.line.qtyFrom}>
+                          <esa-text-field
+                            class="cbf-lct__field cbf-lct__field--qty"
+                            size="md"
+                            data-field="qty"
+                            value={numText(item.line.qty)}
+                            aria-label={`Quantity — ${displayLabel(item.line)}`}
+                          ></esa-text-field>
+                          {/* The unit is only a question where the category leaves
+                              it open. A vehicle kind already fixed it to months,
+                              so it reads as a value — not as an empty box the
+                              vendor has to guess the house word for. */}
+                          <esa-text-field
+                            class="cbf-lct__field cbf-lct__field--unit"
+                            size="md"
+                            data-field="qtyUnit"
+                            data-unit-open
+                            value={item.line.qtyUnit ?? ''}
+                            placeholder="unit"
+                            hidden={unitLocked(item.line)}
+                            aria-label={`Unit — ${displayLabel(item.line)}`}
+                          ></esa-text-field>
+                          <span class="cbf-lct__unit" data-unit-locked hidden={!unitLocked(item.line)}>
+                            {lockedUnit(item.line)}
+                          </span>
+                        </span>
+
+                        {/* The contract period is a ceiling on staffing months,
+                            and it is arithmetic — so the form does it, in both
+                            states, rather than leaving it to the reviewer. */}
+                        <span class="stack" data-gap="2xs" data-months-wrap hidden={!monthsTested(item.line)}>
+                          <span class="cluster" data-gap="2xs">
+                            <span data-months="pass" hidden={monthsOver(item.line)}>
+                              <EsaBadge value="Within contract period" variant="success" />
+                            </span>
+                            <span data-months="fail" hidden={!monthsOver(item.line)}>
+                              <EsaBadge value="Past contract period" variant="danger" />
+                            </span>
+                          </span>
+                          <span class="cbf-lct__note" data-months-note>{monthsText(item.line)}</span>
+                          <span data-months-err hidden={!monthsOver(item.line)}>
+                            <EsaFieldError message={monthsErrText(item.line)} icon />
+                          </span>
+                        </span>
+
+                        {/* Read-only, and it names the line it follows. */}
+                        <span class="stack" data-gap="3xs" data-qty-derived hidden={!item.line.qtyFrom}>
+                          <span class="cbf-lct__derived" data-cell="derived-qty">
+                            {qtyFmt(effectiveQty(item.line, lines))} {item.line.qtyUnit}
+                          </span>
+                          <span class="cbf-lct__note" data-cell="derived-src">
+                            {item.line.qtyFrom ? `follows ${labelOfId(item.line.qtyFrom)}` : ''}
+                          </span>
+                        </span>
+
+                        <span class="cluster" data-gap="2xs" data-qty2 hidden={item.line.qty2 == null}>
+                          <span class="cbf-lct__times" aria-hidden="true">×</span>
+                          <esa-text-field
+                            class="cbf-lct__field cbf-lct__field--qty"
+                            size="md"
+                            data-field="qty2"
+                            value={numText(item.line.qty2)}
+                            aria-label={`Second quantity — ${displayLabel(item.line)}`}
+                          ></esa-text-field>
+                          <esa-text-field
+                            class="cbf-lct__field cbf-lct__field--unit"
+                            size="md"
+                            data-field="qty2Unit"
+                            data-unit2-open
+                            value={item.line.qty2Unit ?? ''}
+                            placeholder="unit"
+                            hidden={unitLocked(item.line)}
+                            aria-label={`Second unit — ${displayLabel(item.line)}`}
+                          ></esa-text-field>
+                          <span class="cbf-lct__unit" data-unit2-locked hidden={!unitLocked(item.line)}>
+                            {lockedUnit2(item.line)}
+                          </span>
+                        </span>
+                        <span data-qty2-add hidden={item.line.qty2 != null}>
+                          <EsaButton size="xs" color="secondary" appearance="soft" data-add-qty2>
+                            Add a second quantity
+                          </EsaButton>
+                        </span>
+
+                        {/* COR lens: the quantity as a value. A derived quantity
+                            already reads as one, so it keeps its own cell. */}
+                        <span class="cbf-lct__fact" data-fact="qty" hidden={!!item.line.qtyFrom}>
+                          {qtyFactText(item.line)}
+                        </span>
+                      </div>
+                    </td>
+                  </>
+                )}
+
+                {/* ── 4. Rate — typed (A), referenced (B), a percentage (C) ── */}
+                {item.line.shape === SHAPES.QTY_RATE && (
+                  <td class="cbf-lct__cell cbf-lct__cell--rate">
+                    <div class="stack" data-gap="2xs">
+                      <esa-text-field
+                        class="cbf-lct__field cbf-lct__field--rate"
+                        size="md"
+                        prefix="$"
+                        data-field="rate"
+                        value={numText(item.line.rate)}
+                        aria-label={`Cost per unit — ${displayLabel(item.line)}`}
+                      ></esa-text-field>
+                      <span class="cbf-lct__fact" data-fact="rate">{money(item.line.rate ?? 0)}</span>
+
+                      {/* The capitalization threshold, tested in BOTH directions
+                          and sitting with the per-item cost it is a test OF. A
+                          $6,200 trap assembly filed under Supplies is the same
+                          error as a $400 toner cartridge filed under Capital —
+                          so the failing row offers the move rather than only
+                          naming the problem. */}
+                      <span class="stack" data-gap="2xs" data-cap-wrap hidden={!thresholdTested(item.line)}>
+                        <span class="cluster" data-gap="2xs">
+                          <span data-cap="pass" hidden={!capPass(item.line)}>
+                            <EsaBadge value={capPassText(item.line)} variant="success" />
+                          </span>
+                          <span data-cap="fail" hidden={capPass(item.line)}>
+                            <EsaBadge value={capFailText(item.line)} variant="danger" />
+                          </span>
+                        </span>
+                        <span class="cbf-lct__note" data-cap-note>{capText(item.line)}</span>
+                        <span data-cap-err hidden={capPass(item.line)}>
+                          <EsaFieldError message={capErrText(item.line)} icon />
+                        </span>
+                        <span data-cap-move hidden={capPass(item.line)}>
+                          <EsaButton size="xs" color="secondary" appearance="soft" icon="arrow-right">
+                            {capMoveText(item.line)}
+                          </EsaButton>
+                        </span>
+                      </span>
+                    </div>
+                  </td>
+                )}
+
+                {/* ── Travel's rate cell carries BOTH sources ─────────────────
+                     Lodging, per diem and mileage are referenced from the GSA
+                     schedule; airfare, ground transport and registration are
+                     typed. Because a vendor can switch a line's kind in place,
+                     both renderings ship in the one cell and the kind reveals
+                     one — the same device the two role lenses already use. */}
+                {item.line.shape === SHAPES.TRAVEL && (
+                  <td class="cbf-lct__cell cbf-lct__cell--rate">
+                    <div class="stack" data-gap="2xs">
+                      {/* Referenced — and the combobox is filtered by the KIND, so
+                          a lodging line cannot reach an M&IE row and a mileage
+                          line reaches the fleet rows it actually needs. */}
+                      <span class="stack" data-gap="2xs" data-travel-rate="gsa" hidden={!isScheduleRated(item.line)}>
+                        <esa-combobox
+                          class="cbf-lct__select"
+                          size="md"
+                          data-gsa-select
+                          placeholder={gsaLabel(item.line)}
+                          search-placeholder="Search locality…"
+                          aria-label={`GSA schedule row — ${displayLabel(item.line)}`}
+                        ></esa-combobox>
+                        <span class="cbf-lct__ref" data-cell="ref-rate">{money(effectiveRate(item.line))}</span>
+                        <span class="cbf-lct__note" data-cell="ref-src">{gsaSrcText(item.line)}</span>
+
+                        <span class="cluster" data-gap="2xs">
+                          <span data-gsa="pass" hidden={overridden(item.line)}>
+                            <EsaBadge value="Matches GSA schedule" variant="success" />
+                          </span>
+                          <span data-gsa="under" hidden={!overridden(item.line) || gsaOver(item.line)}>
+                            <EsaBadge value="Overridden, within ceiling" variant="warning" />
+                          </span>
+                          <span data-gsa="over" hidden={!gsaOver(item.line)}>
+                            <EsaBadge value="Over GSA ceiling" variant="danger" />
+                          </span>
+                        </span>
+
+                        <span data-override-wrap hidden={!overridden(item.line)}>
+                          <esa-text-field
+                            class="cbf-lct__field cbf-lct__field--rate"
+                            size="md"
+                            prefix="$"
+                            data-field="rateOverride"
+                            value={numText(item.line.rateOverride)}
+                            aria-label={`Overridden rate — ${displayLabel(item.line)}`}
+                          ></esa-text-field>
+                        </span>
+                        <span>
+                          <EsaButton size="xs" color="secondary" appearance="soft" data-toggle-override>
+                            {overridden(item.line) ? 'Use schedule rate' : 'Override rate'}
+                          </EsaButton>
+                        </span>
+                        <span data-gsa-err hidden={!gsaOver(item.line)}>
+                          <EsaFieldError message={gsaErrText(item.line)} icon />
+                        </span>
+                      </span>
+
+                      {/* Typed — no schedule governs an airfare quote or a parking
+                          estimate, so the cell says so rather than implying one. */}
+                      <span class="stack" data-gap="2xs" data-travel-rate="typed" hidden={isScheduleRated(item.line)}>
+                        <esa-text-field
+                          class="cbf-lct__field cbf-lct__field--rate"
+                          size="md"
+                          prefix="$"
+                          data-field="rate"
+                          value={numText(item.line.rate)}
+                          aria-label={`Rate — ${displayLabel(item.line)}`}
+                        ></esa-text-field>
+                        <span class="cbf-lct__note">No schedule governs this rate — quote it.</span>
+                      </span>
+
+                      <span class="cbf-lct__fact" data-fact="travel-rate">{money(effectiveRate(item.line))}</span>
+                    </div>
+                  </td>
+                )}
+
+                {item.line.shape === SHAPES.AUTHORITY && (
+                  <td class="cbf-lct__cell cbf-lct__cell--rate">
+                    <div class="stack" data-gap="2xs">
+                      {/* Which schedule row the rate is drawn FROM sits with the
+                          rate itself — the authority and the number it produces
+                          belong in one cell, not two columns apart. */}
+                      {/* A combobox, not a select: the real schedule is thousands
+                          of localities, so the row has to be SEARCHED for. That is
+                          also the honest argument for "referenced, not typed". */}
+                      <esa-combobox
+                        class="cbf-lct__select"
+                        size="md"
+                        data-gsa-select
+                        placeholder={gsaLabel(item.line)}
+                        search-placeholder="Search locality or rate type…"
+                        aria-label={`GSA schedule row — ${displayLabel(item.line)}`}
+                      ></esa-combobox>
+                      {/* Referenced, not typed: the schedule value plus its source. */}
+                      <span class="cbf-lct__ref" data-cell="ref-rate">{money(effectiveRate(item.line))}</span>
+                      <span class="cbf-lct__note" data-cell="ref-src">{gsaSrcText(item.line)}</span>
+
+                      <span class="cluster" data-gap="2xs">
+                        <span data-gsa="pass" hidden={overridden(item.line)}>
+                          <EsaBadge value="Matches GSA schedule" variant="success" />
+                        </span>
+                        <span data-gsa="under" hidden={!overridden(item.line) || gsaOver(item.line)}>
+                          <EsaBadge value="Overridden, within ceiling" variant="warning" />
+                        </span>
+                        <span data-gsa="over" hidden={!gsaOver(item.line)}>
+                          <EsaBadge value="Over GSA ceiling" variant="danger" />
+                        </span>
+                      </span>
+
+                      <span data-override-wrap hidden={!overridden(item.line)}>
+                        <esa-text-field
+                          class="cbf-lct__field cbf-lct__field--rate"
+                          size="md"
+                          prefix="$"
+                          data-field="rateOverride"
+                          value={numText(item.line.rateOverride)}
+                          aria-label={`Overridden rate — ${displayLabel(item.line)}`}
+                        ></esa-text-field>
+                      </span>
+                      <span>
+                        <EsaButton size="xs" color="secondary" appearance="soft" data-toggle-override>
+                          {overridden(item.line) ? 'Use schedule rate' : 'Override rate'}
+                        </EsaButton>
+                      </span>
+                      <span data-gsa-err hidden={!gsaOver(item.line)}>
+                        <EsaFieldError message={gsaErrText(item.line)} icon />
+                      </span>
+                    </div>
+                  </td>
+                )}
+
+                {item.line.shape === SHAPES.PCT_OF_BASE && (
+                  <td class="cbf-lct__cell cbf-lct__cell--rate">
+                    <div class="stack" data-gap="2xs">
+                      <esa-text-field
+                        class="cbf-lct__field cbf-lct__field--pct"
+                        size="md"
+                        suffix="%"
+                        data-field="pct"
+                        value={((item.line.pct ?? 0) * 100).toFixed(1)}
+                        aria-label={`Percentage of base — ${displayLabel(item.line)}`}
+                      ></esa-text-field>
+                      <span class="cbf-lct__fact" data-fact="pct">{((item.line.pct ?? 0) * 100).toFixed(1)}%</span>
+
+                      {/* A percentage is meaningless without its base, so the base
+                          picker and the resolved dollars ride with the percentage. */}
+                      <esa-select
+                        class="cbf-lct__select"
+                        size="md"
+                        data-base-select
+                        placeholder={baseLabelFor(item.line, lines)}
+                        aria-label={`Percentage base — ${displayLabel(item.line)}`}
+                      ></esa-select>
+                      {/* The dependency, made visible on the row itself. */}
+                      <span class="cbf-lct__derived" data-cell="base">
+                        {money(baseAmountFor(item.line, lines, priced.amounts))} base ·
+                        {' '}{baseLabelFor(item.line, lines)}
+                      </span>
+                    </div>
+                  </td>
+                )}
+
+                {/* ── 5. Amount — typed only for a lump; derived everywhere else ── */}
+                <td class="cbf-lct__cell cbf-lct__cell--num">
+                  {item.line.shape === SHAPES.LUMP ? (
+                    <>
+                      <esa-text-field
+                        class="cbf-lct__field cbf-lct__field--amount"
+                        size="md"
+                        prefix="$"
+                        data-field="amount"
+                        value={numText(item.line.amount)}
+                        aria-label={`Amount — ${displayLabel(item.line)}`}
+                      ></esa-text-field>
+                      <strong class="cbf-lct__fact cbf-lct__money" data-fact="amount">
+                        {usd(amt(item.line.id))}
+                      </strong>
+                    </>
+                  ) : (
+                    <strong class="cbf-lct__money" data-cell="amount">{usd(amt(item.line.id))}</strong>
+                  )}
+                </td>
+
+                {/* ── 6. Work-element allocation — on EVERY row, whatever the shape ── */}
+                <td class="cbf-lct__cell cbf-lct__cell--we">
+                  <div class="stack" data-gap="2xs">
+                    <esa-popover position="bottom" trigger="click" offset="6">
+                      <span data-alloc-state="set" hidden={allocSum(item.line) !== 100}>
+                        <EsaButton size="md" color="secondary" appearance="outline" title={allocTitle(item.line)}>
+                          {allocSummary(item.line)}
+                        </EsaButton>
+                      </span>
+                      <span data-alloc-state="unset" hidden={allocSum(item.line) === 100}>
+                        <EsaButton size="md" color="warning" appearance="outline" title={allocTitle(item.line)}>
+                          {allocSummary(item.line)}
+                        </EsaButton>
+                      </span>
+
+                      <div slot="content" class="cbf-lct__alloc stack" data-gap="sm" data-alloc-panel>
+                        <span class="cbf-lct__alloc-head">Work-element allocation</span>
+                        {workElements.map((we: any) => (
+                          <div class="cbf-lct__alloc-row">
+                            <span class="cbf-lct__alloc-label">{weLabel(we.id)}</span>
+                            <esa-text-field
+                              class="cbf-lct__alloc-input"
+                              size="md"
+                              suffix="%"
+                              data-alloc-we={we.id}
+                              value={item.line.allocations?.[we.id] != null ? String(item.line.allocations[we.id]) : ''}
+                              aria-label={`${weLabel(we.id)} percent — ${displayLabel(item.line)}`}
+                            ></esa-text-field>
+                          </div>
+                        ))}
+                        <p class="cbf-lct__alloc-sum">
+                          <span>Allocated</span>
+                          <strong data-alloc-sum>{allocSum(item.line)}%</strong>
+                          <span class="cbf-lct__note">of 100%</span>
+                        </p>
+                        <span data-alloc-panel-err hidden={allocSum(item.line) === 100}>
+                          <EsaFieldError message={allocErrText(item.line)} icon />
+                        </span>
+                      </div>
+                    </esa-popover>
+
+                    {/* COR lens: the split as a value, not an editor. */}
+                    <span class="cbf-lct__fact" data-fact="alloc" title={allocTitle(item.line)}>
+                      {allocFactText(item.line)}
+                    </span>
+
+                    <span data-alloc-row-err hidden={allocSum(item.line) === 100}>
+                      <EsaFieldError message={allocErrText(item.line)} icon />
+                    </span>
+                  </div>
+                </td>
+
+                {/* ── 7. Row action — delete for the vendor, MARK for the COR ──
+                    The same slot, because they are the same thing from each side:
+                    the one operation that role performs on a line it is looking
+                    at. The mark editor opens on the row so the note is written
+                    with the numbers it is about still on screen. ── */}
+                <td class="cbf-lct__cell cbf-lct__cell--act">
+                  <span data-delete-line>
+                    <EsaIconButton icon="trash-2" size="sm" label={`Delete line — ${displayLabel(item.line)}`} />
+                  </span>
+
+                  <span data-mark-cell>
+                    <esa-popover position="left" trigger="click" offset="6" data-mark-popover>
+                      <span data-mark-state="off" hidden={!!flagOf(item.line)}>
+                        <EsaIconButton
+                          icon="pencil"
+                          size="sm"
+                          label={`Mark this line for the vendor — ${displayLabel(item.line)}`}
+                        />
+                      </span>
+                      <span data-mark-state="on" hidden={!flagOf(item.line)}>
+                        <EsaIconButton
+                          icon="triangle-alert"
+                          size="sm"
+                          label={`Edit the mark on this line — ${displayLabel(item.line)}`}
+                        />
+                      </span>
+
+                      <div slot="content" class="cbf-lct__markform stack" data-gap="sm" data-mark-panel>
+                        <span class="cbf-lct__alloc-head">Mark this line for the vendor</span>
+                        <span class="cbf-lct__note" data-mark-form-line>{displayLabel(item.line)}</span>
+                        <esa-radio-group data-mark-sev-input size="md" label="How hard is this?"></esa-radio-group>
+                        <esa-select
+                          data-mark-reason-input
+                          size="md"
+                          label="Reason"
+                          placeholder="Pick a reason"
+                        ></esa-select>
+                        <esa-textarea
+                          data-mark-note-input
+                          label="What has to change"
+                          rows="3"
+                          auto-resize
+                          help-text="Written to the vendor. Say what to do, not just what is wrong."
+                          value={flagOf(item.line)?.note ?? ''}
+                        ></esa-textarea>
+                        <span class="repel" data-gap="sm">
+                          <span data-mark-remove hidden={!flagOf(item.line)}>
+                            <EsaButton size="sm" color="ghost">Remove mark</EsaButton>
+                          </span>
+                          <EsaButton size="sm" color="primary" data-mark-save>Save mark</EsaButton>
+                        </span>
+                      </div>
+                    </esa-popover>
+                  </span>
+                </td>
+              </tr>
+            ),
+          )}
+        </tbody>
+      ))}
+
+      {/* ── The close: direct, indirect base, indirect, and the ceiling test ── */}
+      <tfoot class="cbf-lct__totals">
+        <tr>
+          <th scope="row" colspan="3">
+            Direct cost
+            <span class="cbf-lct__note">Every cost line above, priced in dependency order.</span>
+          </th>
+          <td class="cbf-lct__cell cbf-lct__cell--num"><span data-total="direct">{usd(t0.direct)}</span></td>
+          <td class="cbf-lct__cell" colspan="2"></td>
+        </tr>
+        <tr data-indirect-row>
+          <th scope="row" colspan="3">
+            Indirect base
+            <span class="cbf-lct__note" data-indirect-scope>{scopeText(indirectConfig)}</span>
+          </th>
+          <td class="cbf-lct__cell cbf-lct__cell--num"><span data-total="indirectBase">{usd(t0.indirectBase)}</span></td>
+          <td class="cbf-lct__cell" colspan="2"></td>
+        </tr>
+        <tr data-indirect-row>
+          <th scope="row" colspan="3">
+            Indirect at <span data-indirect-rate>{pct(indirectConfig.rate)}</span>
+            <span class="cbf-lct__note" data-indirect-ref>{indirectConfig.referenceDoc}</span>
+          </th>
+          <td class="cbf-lct__cell cbf-lct__cell--num"><span data-total="indirect">{usd(t0.indirect)}</span></td>
+          <td class="cbf-lct__cell" colspan="2"></td>
+        </tr>
+        <tr class="cbf-lct__grand" data-indirect-row>
+          <th scope="row" colspan="3">
+            Total this contract period
+            <span class="cbf-lct__note" data-total-note>
+              {pct(t0.pctOfValue, 1)} of the {usd(contract.contractValue)} Contract Value ·
+              {' '}{usd(t0.remaining)} remaining
+            </span>
+          </th>
+          <td class="cbf-lct__cell cbf-lct__cell--num"><strong data-total="total">{usd(t0.total)}</strong></td>
+          <td class="cbf-lct__cell" colspan="2"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
+
+<script>
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-combobox';
+  import '@esa/ecology/esa-popover';
+  import '@esa/ecology/esa-dropdown-menu';
+  import '@esa/ecology/esa-radio-group';
+  import '@esa/ecology/esa-textarea';
+  import {
+    SEVERITIES,
+    REASONS,
+    severityMeta,
+    reasonLabel,
+    reviewMeta,
+    loadReview,
+    saveReview,
+    flagFor,
+    isIssued,
+    fireReview,
+  } from '../../data/lib-review.mjs';
+  import {
+    SHAPES,
+    categories,
+    costLines,
+    priceLines,
+    effectiveRate,
+    effectiveQty,
+    baseAmountFor,
+    baseLabelFor,
+    dependentsOf,
+    gsaRates,
+    gsaRatesFor,
+    gsaRatesForTravelKind,
+    gsaRatesForVehicleKind,
+    gsaRate,
+    isScheduleRated,
+    weLabel,
+    unallocatedLines,
+    gsaFailingLines,
+    thresholdMisfiled,
+    monthsOverPeriod,
+    perItemCost,
+    contract,
+    contractMonths,
+    positions,
+    positionTitle,
+    trips,
+    tripOf,
+    tripLabel,
+    TRAVEL_KINDS,
+    travelKind,
+    travelChain,
+    travelCount,
+    seedCountFor,
+    localityNote,
+    gsaRowFor,
+    travelLabel,
+    fringeLabel,
+    VEHICLE_KINDS,
+    vehicleKind,
+    countOf,
+    indirectConfig,
+    usd,
+    pct,
+    qtyFmt,
+  } from '../../data/lib-entry.mjs';
+
+  const root = document.querySelector<HTMLElement>('[data-lct]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    /* Working copies — edits, added and deleted lines mutate THESE, never the
+       module's exports, so every derived number stays honest across a repaint. */
+    const lines: any[] = costLines.map((l: any) => ({ ...l, allocations: { ...(l.allocations ?? {}) } }));
+    let cfg: any = { ...indirectConfig, appliesTo: [...indirectConfig.appliesTo] };
+    let seq = 0;
+
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string, scope: ParentNode = root) =>
+      scope.querySelector<T>(sel);
+    const $$ = (sel: string, scope: ParentNode = root) =>
+      Array.from(scope.querySelectorAll<HTMLElement>(sel));
+    const rowOf = (id: string) => $(`tr[data-line="${id}"]`);
+    const lineById = (id: string) => lines.find((l) => l.id === id);
+    const num = (s: string) => {
+      const v = parseFloat(String(s ?? '').replace(/[^0-9.\-]/g, ''));
+      return Number.isFinite(v) ? v : 0;
+    };
+
+    /* ── Text helpers — mirrored from the frontmatter so SSR and repaint agree.
+       (The shape descriptor itself is never repainted: row templates are captured
+       PER SHAPE, so a cloned row already carries the right one.) ── */
+    const cents = (n: number) => Math.abs((n ?? 0) % 1) > 0.0001;
+    const money = (n: number) => usd(n, { cents: cents(n) });
+    const numText = (n: number | null | undefined) =>
+      n == null ? '' : cents(n) ? String(n) : n.toLocaleString('en-US');
+    const labelOfId = (id: string) => lines.find((l) => l.id === id)?.label ?? id;
+
+    const gsaOf = (l: any) => gsaRate(l.gsaKey);
+    /* Any SCHEDULE-RATED line can be overridden — shape B, and the GSA-rated travel
+   kinds. Keying this to shape B alone left an overridden travel line showing
+   "Matches GSA schedule" and "Over GSA ceiling" at the same time. */
+const overridden = (l: any) => isScheduleRated(l) && l.rateOverride != null;
+    const gsaOver = (l: any) => {
+      const g = gsaOf(l);
+      return !!(g && l.rateOverride != null && l.rateOverride > g.ceiling);
+    };
+    const gsaSrcText = (l: any) => {
+      const g = gsaOf(l);
+      /* The dropdown above already NAMES the schedule row (location · kind · season).
+     Restating it here said the same string twice and explained nothing, so this
+     line says what the control DOES instead: the rate is referenced, not typed,
+     and the schedule sets the ceiling the line is checked against. */
+  return g
+    ? `Rate referenced from this GSA row — not typed. Ceiling ${money(g.ceiling)}.`
+    : 'Pick the GSA schedule row this line references — it sets the rate.';
+    };
+    const gsaErrText = (l: any) => {
+      const g = gsaOf(l);
+      if (!g) return 'Select the GSA schedule row this line references.';
+      return `${money(l.rateOverride)} is over the ${g.kind} ceiling of ${money(g.ceiling)} for ${g.location} (${g.season}) — ${money(l.rateOverride - g.ceiling)} over.`;
+    };
+
+    /* ── The capitalization threshold, tested in BOTH directions ── */
+    const onThreshold = (l: any) => l.category === 'capital-equipment' || l.category === 'supplies';
+    const thresholdTested = (l: any) => onThreshold(l) && l.shape === SHAPES.QTY_RATE;
+    const isCapital = (l: any) => l.category === 'capital-equipment';
+    const perItem = (l: any, a: any) => perItemCost(l, a);
+    const capPass = (l: any, a: any) =>
+      !thresholdTested(l) ||
+      (isCapital(l)
+        ? perItem(l, a) >= contract.capitalizationThreshold
+        : perItem(l, a) < contract.capitalizationThreshold);
+    const capText = (l: any, a: any) =>
+      `${money(perItem(l, a))} per item · threshold ${usd(contract.capitalizationThreshold)}`;
+    const capErrText = (l: any, a: any) =>
+      isCapital(l)
+        ? `${money(perItem(l, a))} per item is below the ${usd(contract.capitalizationThreshold)} capitalization threshold — this item belongs in Supplies & Equipment.`
+        : `${money(perItem(l, a))} per item is at or above the ${usd(contract.capitalizationThreshold)} capitalization threshold — this item belongs in Capital Equipment.`;
+    const capPassText = (l: any) =>
+      isCapital(l) ? 'Meets capitalization threshold' : 'Below capitalization threshold';
+    const capFailText = (l: any) =>
+      isCapital(l) ? 'Below capitalization threshold' : 'Over capitalization threshold';
+    const capMoveText = (l: any) =>
+      isCapital(l) ? 'Move to Supplies & Equipment' : 'Move to Capital Equipment';
+    /** Where a misfiled item belongs, and which shape it lands as. */
+    const capMoveTarget = (l: any) =>
+      isCapital(l)
+        ? { category: 'supplies', block: 'field' }
+        : { category: 'capital-equipment', block: '' };
+
+    /* ── The contract period as a ceiling on staffing months ── */
+    const monthsTested = (l: any) => l.category === 'personnel-salary';
+    const monthsOver = (l: any) => monthsTested(l) && effectiveQty(l, lines) > contractMonths;
+    const monthsText = (l: any) =>
+      `${countOf(effectiveQty(l, lines), 'months')} of the ${contractMonths}-month contract period`;
+    const monthsErrText = (l: any) =>
+      `${countOf(effectiveQty(l, lines), 'months')} is longer than the ${contractMonths}-month contract period (${contract.periodStart}–${contract.periodEnd}).`;
+
+    /* ── Line identity — mirrored from the frontmatter ── */
+    const identOf = (l: any): string =>
+      l.category === 'personnel-salary' ? 'position'
+      : l.category === 'personnel-fringe' ? 'derived'
+      : l.shape === SHAPES.TRAVEL ? 'travel-kind'
+      : l.category === 'vehicles' ? 'vehicle-kind'
+      : 'label';
+    const displayLabel = (l: any): string =>
+      l.shape === SHAPES.TRAVEL ? travelLabel(l)
+      : l.category === 'personnel-fringe' ? fringeLabel(l, lines)
+      : l.category === 'personnel-salary' ? (positionTitle(l.staffKey) || l.label || '')
+      : l.label ?? '';
+    const kindNote = (l: any): string =>
+      l.shape === SHAPES.TRAVEL ? (travelKind(l.travelKind)?.note ?? '')
+      : l.category === 'vehicles' ? (vehicleKind(l.vehicleKind)?.note ?? '')
+      : l.detail ?? '';
+
+    /* ── Vehicles: the kind locks the unit ── */
+    const unitLocked = (l: any) => l.category === 'vehicles' && !!vehicleKind(l.vehicleKind);
+    const lockedUnit = (l: any) => vehicleKind(l.vehicleKind)?.unit ?? l.qtyUnit ?? '';
+    const lockedUnit2 = (l: any) => vehicleKind(l.vehicleKind)?.secondUnit ?? l.qty2Unit ?? '';
+
+    /* Keep the stored label in step with a derived one, so the review panel — which
+       addresses lines BY NAME — never quotes a name the grid stopped showing. */
+    const syncLabel = (l: any) => {
+      if (l.shape === SHAPES.TRAVEL || l.category === 'personnel-fringe' || l.category === 'personnel-salary') {
+        l.label = displayLabel(l);
+      }
+    };
+
+    const allocEntries = (l: any): [string, number][] =>
+      (Object.entries(l.allocations ?? {}) as [string, number][]).sort((a, b) => b[1] - a[1]);
+    const allocSum = (l: any) => allocEntries(l).reduce((a, [, p]) => a + p, 0);
+    const allocSummary = (l: any) => {
+      const e = allocEntries(l);
+      if (!e.length) return 'Not allocated';
+      return e.length === 1 ? `${e[0][0]} · ${e[0][1]}%` : `${e[0][0]} · ${e[0][1]}% +${e.length - 1}`;
+    };
+    const allocTitle = (l: any) => {
+      const e = allocEntries(l);
+      return e.length ? e.map(([id, p]) => `${weLabel(id)} — ${p}%`).join('\n') : 'No work element assigned';
+    };
+    const allocErrText = (l: any) => {
+      const s = allocSum(l);
+      return s === 0
+        ? 'No work element assigned — allocations must total 100%.'
+        : `Allocated ${s}% — work-element allocations must total 100%.`;
+    };
+
+    /* The COR lens's read-only mirrors — mirrored from the frontmatter so a
+       server render and a client repaint print the same value. */
+    const qtyFactText = (l: any) => {
+      const one = `${qtyFmt(effectiveQty(l, lines))} ${l.qtyUnit ?? ''}`.trim();
+      return l.qty2 != null ? `${one} × ${qtyFmt(l.qty2)} ${l.qty2Unit ?? ''}`.trim() : one;
+    };
+    const allocFactText = (l: any) => {
+      const e = allocEntries(l);
+      return e.length ? e.map(([id, p]) => `${id} ${p}%`).join(' · ') : 'Not allocated';
+    };
+
+    const excludedLabels = (c: any) =>
+      categories.filter((k: any) => !c.appliesTo.includes(k.key)).map((k: any) => k.label);
+    const scopeText = (c: any) => {
+      const out = excludedLabels(c);
+      return out.length
+        ? `${c.appliesTo.length} of ${categories.length} categories in scope — ${out.join(' and ')} excluded`
+        : `All ${categories.length} categories in scope`;
+    };
+
+    /* ── Tiny DOM setters (esa-* internals are stable markup) ── */
+    const show = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };
+    const setText = (el: Element | null, text: string) => { if (el) el.textContent = text; };
+    /** esa-field-error renders <p.esa-field-error><span.esa-field-error__text>. */
+    const setErrText = (wrap: Element | null, text: string) =>
+      setText(wrap?.querySelector('.esa-field-error__text') ?? null, text);
+    /** esa-badge renders <span.esa-badge><span.esa-badge__text>. */
+    const setBadgeText = (wrap: Element | null, text: string) =>
+      setText(wrap?.querySelector('.esa-badge__text') ?? null, text);
+    /** esa-button renders <span.esa-button><button><span.esa-button__label>. */
+    const setBtnLabel = (wrap: Element | null, text: string, title?: string) => {
+      setText(wrap?.querySelector('.esa-button__label') ?? null, text);
+      if (title != null) wrap?.querySelector('button')?.setAttribute('title', title);
+    };
+
+    /* ── Select option sets ── */
+    /* Scoped per LINE, and now per KIND — which is the tighter, truer filter.
+       Scoping by category already stopped a travel line reaching a fleet lease
+       row, but it still let a lodging line pick an M&IE rate, which is the error
+       that actually happens. The kind narrows the schedule to the rows that kind
+       can legally reference, so most lines see a handful of localities instead of
+       the whole schedule. */
+    const gsaOptionsFor = (line: any) => {
+      const rows =
+        line.shape === SHAPES.TRAVEL
+          ? gsaRatesForTravelKind(line.travelKind)
+          : line.category === 'vehicles' && line.vehicleKind
+            ? gsaRatesForVehicleKind(line.vehicleKind)
+            : gsaRatesFor(line.category);
+      return rows.map((g: any) => ({
+        label: `${g.location} · ${g.kind} · ${g.season}`,
+        value: g.key,
+      }));
+    };
+    const positionOptions = () => positions.map((p: any) => ({ label: p.title, value: p.key }));
+    const travelKindOptions = () => TRAVEL_KINDS.map((k: any) => ({ label: k.label, value: k.key }));
+    const vehicleKindOptions = () => VEHICLE_KINDS.map((k: any) => ({ label: k.label, value: k.key }));
+    const baseOptions = () => [
+      ...lines
+        .filter((l) => l.category === 'personnel-salary' && l.staffKey)
+        .map((l) => ({ label: `Salary — ${l.label || '(untitled line)'}`, value: `staff:${l.staffKey}` })),
+      ...categories.map((c: any) => ({ label: `Category — ${c.label}`, value: `category:${c.key}` })),
+    ];
+    const baseValueOf = (l: any) => {
+      const b = l.base ?? {};
+      if (b.type === 'staff') return `staff:${b.staffKey}`;
+      if (b.type === 'category') return `category:${b.category}`;
+      return '';
+    };
+    let baseSig = '';
+
+    /* ── The review layer ───────────────────────────────────────────────────
+       The grid owns MARKING (a mark is made on the row it is about); the review
+       panel owns the list, the memo and the decision. Both read and write the
+       same review object and announce it with fireReview(), so neither ever
+       reaches into the other's DOM. */
+    let review: any = loadReview();
+    const role = () => (document.documentElement.dataset.cbfRole === 'cor' ? 'cor' : 'vendor');
+    const markOf = (id: string) => flagFor(review, id);
+
+    const SEV_OPTIONS = [
+      { label: severityMeta[SEVERITIES.REQUIRED].label, value: SEVERITIES.REQUIRED },
+      { label: severityMeta[SEVERITIES.QUESTION].label, value: SEVERITIES.QUESTION },
+    ];
+    const REASON_OPTIONS = REASONS.map((r: any) => ({ label: r.label, value: r.key }));
+
+    /** Seed one row's mark editor from the mark it currently carries. */
+    const fillMarkForm = (tr: HTMLElement, line: any) => {
+      const f = markOf(line.id);
+      const sev: any = $('[data-mark-sev-input]', tr);
+      if (sev) { sev.options = SEV_OPTIONS; sev.value = f?.severity ?? SEVERITIES.REQUIRED; }
+      const reason: any = $('[data-mark-reason-input]', tr);
+      if (reason) { reason.options = REASON_OPTIONS; reason.value = f?.reason ?? ''; }
+      const note: any = $('[data-mark-note-input]', tr);
+      if (note) note.value = f?.note ?? '';
+      setText($('[data-mark-form-line]', tr), line.label || '(untitled line)');
+    };
+
+    /** The mark as the two roles see it: always to the COR, only once issued to
+        the vendor. */
+    const paintMark = (tr: HTMLElement | null, line: any) => {
+      if (!tr) return;
+      const f = markOf(line.id);
+      const visible = !!f && (role() === 'cor' || isIssued(review));
+      const band = $('[data-mark]', tr);
+      show(band, visible);
+      if (band) band.dataset.sev = f?.severity ?? '';
+      if (f) {
+        setText($('[data-mark-reason]', tr), reasonLabel(f.reason));
+        setText($('[data-mark-note]', tr), f.note || 'No note written.');
+        setText($('[data-mark-by]', tr), `${f.author} · ${f.date}`);
+      }
+      show($('[data-mark-state="off"]', tr), !f);
+      show($('[data-mark-state="on"]', tr), !!f);
+      show($('[data-mark-remove]', tr), !!f);
+    };
+
+    const paintReview = () => lines.forEach((l) => paintMark(rowOf(l.id), l));
+
+    /** Write the review, tell everyone, repaint the rows. */
+    const commitReview = () => {
+      saveReview(review);
+      paintReview();
+      fireReview(review);
+    };
+
+    /* ── Pristine row templates, one per SHAPE, captured BEFORE any edit ────────
+       Cloning a real, freshly-rendered row of the same shape is how an added line
+       gets its markup: the new row's esa-* legos and its colspan collapse are
+       byte-identical to the SSR ones, with zero duplicated markup. */
+    const rowTemplates: Record<string, HTMLTableRowElement> = {};
+    Object.values(SHAPES).forEach((shape: any) => {
+      const src = $$(`tr[data-shape="${shape}"]`)[0] as HTMLTableRowElement | undefined;
+      if (src) rowTemplates[shape] = src.cloneNode(true) as HTMLTableRowElement;
+    });
+
+    /* ── Painting: fillRow writes identity + entry VALUES (never during typing),
+       paintRow writes everything DERIVED. ── */
+    const fillRow = (tr: HTMLElement, line: any) => {
+      tr.dataset.line = line.id;
+      tr.dataset.shape = line.shape;
+      tr.dataset.cat = line.category;
+      tr.dataset.block = line.block ?? '';
+
+      $$('[data-field]', tr).forEach((el: any) => {
+        const key = el.dataset.field;
+        if (key === 'label') el.value = line.label ?? '';
+        else if (key === 'qtyUnit') el.value = line.qtyUnit ?? '';
+        else if (key === 'qty2Unit') el.value = line.qty2Unit ?? '';
+        else if (key === 'pct') el.value = ((line.pct ?? 0) * 100).toFixed(1);
+        else if (key === 'count') el.value = numText(travelCount(line));
+        else el.value = numText(line[key]);
+      });
+      $$('[data-alloc-we]', tr).forEach((el: any) => {
+        const p = line.allocations?.[el.dataset.allocWe];
+        el.value = p != null ? String(p) : '';
+      });
+
+      const gsaSel: any = $('[data-gsa-select]', tr);
+      if (gsaSel) { gsaSel.options = gsaOptionsFor(line); gsaSel.value = line.gsaKey ?? ''; }
+      const baseSel: any = $('[data-base-select]', tr);
+      if (baseSel) { baseSel.options = baseOptions(); baseSel.value = baseValueOf(line); }
+      /* The three identity pickers. Options are constant lists, so they are safe
+         to seed on every fill — only the revealed one is ever reachable. */
+      const posSel: any = $('[data-position-select]', tr);
+      if (posSel) { posSel.options = positionOptions(); posSel.value = line.staffKey ?? ''; }
+      const tkSel: any = $('[data-travel-kind-select]', tr);
+      if (tkSel) { tkSel.options = travelKindOptions(); tkSel.value = line.travelKind ?? ''; }
+      const vkSel: any = $('[data-vehicle-kind-select]', tr);
+      if (vkSel) { vkSel.options = vehicleKindOptions(); vkSel.value = line.vehicleKind ?? ''; }
+      const del = $('[data-delete-line] button', tr);
+      const name = displayLabel(line) || 'new line';
+      del?.setAttribute('aria-label', `Delete line — ${name}`);
+      del?.setAttribute('title', `Delete line — ${name}`);
+    };
+
+    const paintRow = (tr: HTMLElement | null, line: any, priced: any) => {
+      if (!tr) return;
+      const a = priced.amounts;
+      const sum = allocSum(line);
+      const over = gsaOver(line);
+
+      /* Basis — shape C shows its resolved base dollars, which is the whole point:
+         the dependency is legible ON the row, not implied by it. */
+      const baseCell = $('[data-cell="base"]', tr);
+      if (baseCell) {
+        setText(baseCell, `${money(baseAmountFor(line, lines, a))} base · ${baseLabelFor(line, lines)}`);
+      }
+
+      /* Identity — reveal the one control that names a line in THIS category, and
+         keep the derived names (fringe, travel) current. */
+      const ident = identOf(line);
+      $$('[data-ident]', tr).forEach((el) => show(el, el.dataset.ident === ident));
+      setText($('[data-cell="ident-derived"]', tr), displayLabel(line));
+      setText($('[data-cell="detail"]', tr), kindNote(line));
+      show($('[data-cell="detail"]', tr), !!kindNote(line));
+
+      /* Quantity — derived rows read as derived and name the line they follow. */
+      show($('[data-qty-typed]', tr), !line.qtyFrom);
+      show($('[data-qty-derived]', tr), !!line.qtyFrom);
+      setText($('[data-cell="derived-qty"]', tr), `${qtyFmt(effectiveQty(line, lines))} ${line.qtyUnit ?? ''}`.trim());
+      setText($('[data-cell="derived-src"]', tr), line.qtyFrom ? `follows ${labelOfId(line.qtyFrom)}` : '');
+      show($('[data-qty2]', tr), line.qty2 != null);
+      show($('[data-qty2-add]', tr), line.qty2 == null && !line.qtyFrom && !unitLocked(line));
+
+      /* A kind that already fixed the unit shows it as a value, not an input. */
+      const locked = unitLocked(line);
+      show($('[data-unit-open]', tr), !locked);
+      show($('[data-unit-locked]', tr), locked);
+      setText($('[data-unit-locked]', tr), lockedUnit(line));
+      show($('[data-unit2-open]', tr), !locked);
+      show($('[data-unit2-locked]', tr), locked);
+      setText($('[data-unit2-locked]', tr), lockedUnit2(line));
+
+      /* Travel — the whole chain is repainted, because raising a TRIP's occurrence
+         count has to move every line under it at once. */
+      if (line.shape === SHAPES.TRAVEL) {
+        const k = travelKind(line.travelKind);
+        setText($('[data-cell="travel-chain"]', tr), travelChain(line));
+        setText($('[data-cell="travel-count-unit"]', tr), k?.countLabel ?? '');
+        show($('[data-travel-duration]', tr), !!k?.durationLabel);
+        setText($('[data-cell="travel-duration-unit"]', tr), k?.durationLabel ?? '');
+        /* The kind decides where the rate comes from, so it decides which half of
+           the rate cell is real. */
+        show($('[data-travel-rate="gsa"]', tr), isScheduleRated(line));
+        show($('[data-travel-rate="typed"]', tr), !isScheduleRated(line));
+        setText($('[data-fact="travel-rate"]', tr), money(effectiveRate(line)));
+      }
+
+      /* Staffing months against the contract period — shown in both states. */
+      const monthsWrap = $('[data-months-wrap]', tr);
+      if (monthsWrap) {
+        const tested = monthsTested(line);
+        show(monthsWrap, tested);
+        if (tested) {
+          const bad = monthsOver(line);
+          show($('[data-months="pass"]', tr), !bad);
+          show($('[data-months="fail"]', tr), bad);
+          setText($('[data-months-note]', tr), monthsText(line));
+          const mErr = $('[data-months-err]', tr);
+          show(mErr, bad);
+          if (bad) setErrText(mErr, monthsErrText(line));
+        }
+      }
+
+      /* Rate — shape B is a REFERENCED value, and the gate shows both verdicts. */
+      setText($('[data-cell="ref-rate"]', tr), money(effectiveRate(line)));
+      setText($('[data-cell="ref-src"]', tr), gsaSrcText(line));
+      show($('[data-gsa="pass"]', tr), isScheduleRated(line) && !overridden(line));
+      show($('[data-gsa="under"]', tr), overridden(line) && !over);
+      show($('[data-gsa="over"]', tr), over);
+      show($('[data-override-wrap]', tr), overridden(line));
+      setBtnLabel($('[data-toggle-override]', tr)?.closest('.esa-button') ?? null,
+        overridden(line) ? 'Use schedule rate' : 'Override rate');
+      const gErr = $('[data-gsa-err]', tr);
+      show(gErr, over);
+      if (over) setErrText(gErr, gsaErrText(line));
+
+      /* The capitalization threshold — a real gate, shown passing AND failing, and
+         now condemning a misfiling in either direction. */
+      const capWrap = $('[data-cap-wrap]', tr);
+      if (capWrap) {
+        const tested = thresholdTested(line);
+        show(capWrap, tested);
+        if (tested) {
+          const pass = capPass(line, a);
+          show($('[data-cap="pass"]', tr), pass);
+          show($('[data-cap="fail"]', tr), !pass);
+          /* The badge WORDING flips with the direction of the test — "below the
+             threshold" is the pass in Supplies and the failure in Capital. */
+          setBadgeText($('[data-cap="pass"]', tr), capPassText(line));
+          setBadgeText($('[data-cap="fail"]', tr), capFailText(line));
+          setText($('[data-cap-note]', tr), capText(line, a));
+          const cErr = $('[data-cap-err]', tr);
+          show(cErr, !pass);
+          if (!pass) setErrText(cErr, capErrText(line, a));
+          const move = $('[data-cap-move]', tr);
+          show(move, !pass);
+          setBtnLabel(move, capMoveText(line));
+        }
+      }
+
+      /* Amount — typed only for a lump. */
+      setText($('[data-cell="amount"]', tr), usd(a[line.id] ?? 0));
+
+      /* Work element — unfinished must READ unfinished. */
+      show($('[data-alloc-state="set"]', tr), sum === 100);
+      show($('[data-alloc-state="unset"]', tr), sum !== 100);
+      setBtnLabel($('[data-alloc-state="set"]', tr), allocSummary(line), allocTitle(line));
+      setBtnLabel($('[data-alloc-state="unset"]', tr), allocSummary(line), allocTitle(line));
+      setText($('[data-alloc-sum]', tr), `${sum}%`);
+      const pErr = $('[data-alloc-panel-err]', tr);
+      show(pErr, sum !== 100);
+      if (sum !== 100) setErrText(pErr, allocErrText(line));
+      const rErr = $('[data-alloc-row-err]', tr);
+      show(rErr, sum !== 100);
+      if (sum !== 100) setErrText(rErr, allocErrText(line));
+
+      /* Inline background tint — never a colored left border. */
+      const flag = over ? 'gsa'
+        : sum !== 100 ? 'alloc'
+        : !capPass(line, a) ? 'capital'
+        : monthsOver(line) ? 'months'
+        : '';
+      if (flag) tr.dataset.flag = flag;
+      else tr.removeAttribute('data-flag');
+
+      /* The COR lens reads the same row as VALUES. Painted on every recompute so
+         switching lenses mid-edit shows what the vendor actually just typed. */
+      setText($('[data-fact="label"]', tr), displayLabel(line) || '(untitled line)');
+      setText($('[data-fact="qty"]', tr), qtyFactText(line));
+      show($('[data-fact="qty"]', tr), !line.qtyFrom);
+      setText($('[data-fact="rate"]', tr), money(line.rate ?? 0));
+      setText($('[data-fact="pct"]', tr), `${((line.pct ?? 0) * 100).toFixed(1)}%`);
+      setText($('[data-fact="amount"]', tr), usd(a[line.id] ?? 0));
+      const allocFact = $('[data-fact="alloc"]', tr);
+      setText(allocFact, allocFactText(line));
+      allocFact?.setAttribute('title', allocTitle(line));
+    };
+
+    const paintGroups = (priced: any) => {
+      categories.forEach((cat: any) => {
+        setText($(`[data-cat-total="${cat.key}"]`), usd(priced.byCategory[cat.key] ?? 0));
+        (cat.blocks ?? []).forEach((b: any) => {
+          const k = `${cat.key}:${b.key}`;
+          setText($(`[data-block-total="${k}"]`), usd(priced.byBlock[k] ?? 0));
+        });
+      });
+      /* Trip heads carry facts of their own — and the COR lens reads them as
+         values, because a reviewer does not restructure someone else's itinerary. */
+      trips.forEach((t: any) => {
+        const head = $(`[data-trip="${t.key}"]`);
+        if (!head) return;
+        setText($('[data-trip-fact]', head), countOf(t.occurrences, 'trips'));
+        setText($('[data-trip-cell="locality-note"]', head), localityNote(t));
+      });
+    };
+
+    const paintTotals = (t: any) => {
+      setText($('[data-total="direct"]'), usd(t.direct));
+      setText($('[data-total="indirectBase"]'), usd(t.indirectBase));
+      setText($('[data-total="indirect"]'), usd(t.indirect));
+      setText($('[data-total="total"]'), usd(t.total));
+      setText($('[data-indirect-rate]'), pct(cfg.rate));
+      setText($('[data-indirect-ref]'), cfg.referenceDoc ?? '');
+      setText($('[data-indirect-scope]'), scopeText(cfg));
+      setText(
+        $('[data-total-note]'),
+        `${pct(t.pctOfValue, 1)} of the ${usd(contract.contractValue)} Contract Value · ${
+          t.remaining >= 0 ? `${usd(t.remaining)} remaining` : `${usd(Math.abs(t.remaining))} over`
+        }`,
+      );
+    };
+
+    /** The one broadcast the reconciliation rail and the overhead block consume. */
+    const fireTotals = (t: any) => {
+      document.dispatchEvent(
+        new CustomEvent('cbf-lib:totals', {
+          detail: {
+            total: t.total,
+            direct: t.direct,
+            indirect: t.indirect,
+            indirectBase: t.indirectBase,
+            remaining: t.remaining,
+            pctOfValue: t.pctOfValue,
+            failing: gsaFailingLines(lines).length,
+            unallocated: unallocatedLines(lines).length,
+            /* Both directions of the threshold now count — an item filed too high
+               is as misfiled as one filed too low. */
+            capitalFailing: thresholdMisfiled(lines).length,
+            monthsFailing: monthsOverPeriod(lines).length,
+          },
+        }),
+      );
+    };
+
+    /* The money moment: the rows that just moved because of THIS edit get a brief
+       tint. dependentsOf() names exactly those — linked quantities and the
+       shape-C lines computed off the edited line's staff group. */
+    const flash = (els: (HTMLElement | null)[]) => {
+      els.filter(Boolean).forEach((el) => {
+        const node = el as HTMLElement;
+        node.classList.remove('is-recomputed');
+        void node.offsetWidth; // restart the animation on a repeat edit
+        node.classList.add('is-recomputed');
+        window.setTimeout(() => node.classList.remove('is-recomputed'), 1500);
+      });
+    };
+
+    const recompute = (originId?: string) => {
+      const priced = priceLines(lines, cfg);
+      /* Shape-C base options follow the salary roster; only rebuild when it moves,
+         so an open dropdown is never yanked out from under the vendor. */
+      const sig = lines
+        .filter((l) => l.category === 'personnel-salary')
+        .map((l) => `${l.staffKey}:${l.label}`)
+        .join('|');
+      if (sig !== baseSig) {
+        baseSig = sig;
+        const opts = baseOptions();
+        lines.forEach((l) => {
+          const sel: any = rowOf(l.id) && $('[data-base-select]', rowOf(l.id)!);
+          if (sel) { sel.options = opts; sel.value = baseValueOf(l); }
+        });
+      }
+      lines.forEach((l) => paintRow(rowOf(l.id), l, priced));
+      paintGroups(priced);
+      paintTotals(priced.totals);
+      fireTotals(priced.totals);
+      if (originId) flash(dependentsOf(originId, lines).map((l: any) => rowOf(l.id)));
+      return priced;
+    };
+
+    /* ── Wiring ──────────────────────────────────────────────────────────────
+       esa-popover toggles on any click inside its anchor, and the slotted panel
+       sits INSIDE that anchor — so a click on an allocation field would close the
+       popover mid-edit. Stopping propagation at the panel keeps the edit alive
+       (the popover's own outside-click check still passes, since the panel is a
+       light-DOM child of the host). Known hub gap, logged in the summary. */
+    const wireRow = (tr: HTMLElement) => {
+      $$('[data-alloc-panel]', tr).forEach((p) =>
+        p.addEventListener('click', (ev) => ev.stopPropagation()),
+      );
+
+      /* The mark editor lives inside the same kind of popover, so it needs the
+         same guard — and because the guard stops the bubble, its own Save and
+         Remove are handled HERE rather than by the root delegate. */
+      $$('[data-mark-panel]', tr).forEach((panel) =>
+        panel.addEventListener('click', (ev) => {
+          const t = ev.target as HTMLElement;
+          if (t.closest('[data-mark-save]')) saveMark(tr);
+          else if (t.closest('[data-mark-remove]')) removeMark(tr);
+          ev.stopPropagation();
+        }),
+      );
+    };
+
+    /** Write (or rewrite) this row's mark from what the editor holds. */
+    const saveMark = (tr: HTMLElement) => {
+      const line = lineById(tr.dataset.line!);
+      if (!line) return;
+      const sev = ($('[data-mark-sev-input]', tr) as any)?.value || SEVERITIES.REQUIRED;
+      const reason = ($('[data-mark-reason-input]', tr) as any)?.value || 'other';
+      const note = String(($('[data-mark-note-input]', tr) as any)?.value ?? '').trim();
+
+      const flag = {
+        lineId: line.id,
+        severity: sev === SEVERITIES.QUESTION ? SEVERITIES.QUESTION : SEVERITIES.REQUIRED,
+        reason,
+        note,
+        author: reviewMeta.reviewer,
+        date: reviewMeta.today,
+      };
+      const i = (review.flags ?? []).findIndex((f: any) => f.lineId === line.id);
+      if (i >= 0) review.flags[i] = flag;
+      else review.flags = [...(review.flags ?? []), flag];
+      /* Re-marking a line the vendor already ticked off puts it back on the list —
+         the mark changed, so "addressed" is no longer a claim about this mark. */
+      review.addressed = (review.addressed ?? []).filter((id: string) => id !== line.id);
+
+      commitReview();
+      closeMark(tr);
+    };
+
+    const removeMark = (tr: HTMLElement) => {
+      const line = lineById(tr.dataset.line!);
+      if (!line) return;
+      review.flags = (review.flags ?? []).filter((f: any) => f.lineId !== line.id);
+      review.addressed = (review.addressed ?? []).filter((id: string) => id !== line.id);
+      commitReview();
+      fillMarkForm(tr, line);
+      closeMark(tr);
+    };
+
+    /** esa-popover keeps `open` as a public reflected property. */
+    const closeMark = (tr: HTMLElement) => {
+      const pop: any = $('[data-mark-popover]', tr);
+      if (pop) pop.open = false;
+    };
+
+    $$('tr[data-line]').forEach(wireRow);
+    lines.forEach((l) => {
+      const tr = rowOf(l.id);
+      if (tr) fillMarkForm(tr, l);
+    });
+
+    /* Selects are property-driven — seed the SSR rows once. There are five of them
+       per row now (schedule row, percentage base, position, travel kind, vehicle
+       kind), so this runs the same fillRow the added rows use rather than keeping
+       a second, drifting list of what needs seeding. */
+    lines.forEach((l) => {
+      const tr = rowOf(l.id);
+      if (tr) fillRow(tr, l);
+    });
+    baseSig = lines
+      .filter((l) => l.category === 'personnel-salary')
+      .map((l) => `${l.staffKey}:${l.label}`)
+      .join('|');
+
+    /* ── Add-line menus ─────────────────────────────────────────────────────
+       Every menu action is `category|block|shape|kind`. What the menu OFFERS is
+       the vendor's vocabulary, not the model's: Vehicles lists the four vehicle
+       kinds rather than "GSA schedule rate (B)" and "Quantity × rate (A)", and a
+       trip lists the six travel kinds. Only where a category genuinely offers a
+       structural choice with no better name — Supplies' itemize-or-lump — does
+       the shape surface at all, and even then in plain words. */
+    const SHAPE_MENU_LABEL: Record<string, string> = {
+      [SHAPES.QTY_RATE]: 'Itemized — quantity × cost per unit',
+      [SHAPES.AUTHORITY]: 'GSA schedule rate',
+      [SHAPES.PCT_OF_BASE]: 'Percentage of a base',
+      [SHAPES.LUMP]: 'Lump sum',
+      [SHAPES.TRAVEL]: 'Travel line',
+    };
+    $$('[data-add-menu]').forEach((menu: any) => {
+      const cat = categories.find((c: any) => c.key === menu.dataset.addMenu);
+      if (!cat) return;
+      if (cat.key === 'vehicles') {
+        menu.items = VEHICLE_KINDS.map((k: any) => ({
+          label: k.label,
+          action: `vehicles||${k.shape}|${k.key}`,
+        }));
+        return;
+      }
+      const blocks = cat.blocks ?? [null];
+      menu.items = blocks.flatMap((b: any, bi: number) =>
+        [
+          ...(bi > 0 ? [{ divider: true }] : []),
+          ...cat.shapes.map((s: string) => ({
+            label: b ? `${b.label} — ${SHAPE_MENU_LABEL[s]}` : SHAPE_MENU_LABEL[s],
+            action: `${cat.key}|${b ? b.key : ''}|${s}|`,
+          })),
+        ],
+      );
+    });
+
+    /** A trip's own add menu: the six travel kinds, scoped to that trip. */
+    const wireTravelMenu = (menu: any) => {
+      menu.items = TRAVEL_KINDS.map((k: any) => ({
+        label: k.label,
+        action: `travel|${menu.dataset.addTravel}|${SHAPES.TRAVEL}|${k.key}`,
+      }));
+    };
+    $$('[data-add-travel]').forEach(wireTravelMenu);
+
+
+    /* ── Add a line INLINE — no modal. A new row is a real, editable row of the
+       chosen shape, appended in the right group, focused and ready to type. It
+       starts with allocations:{} — correctly unallocated, which moves the gate. */
+    const insertRow = (tr: HTMLTableRowElement, catKey: string, block: string) => {
+      const tbody = $(`tbody[data-cat="${catKey}"]`);
+      if (!tbody) return;
+      if (block) {
+        const rows = $$(`tr[data-line][data-block="${block}"]`, tbody);
+        const anchor = rows[rows.length - 1] ?? $(`tr[data-blockhead="${block}"]`, tbody);
+        anchor?.after(tr);
+        if (!anchor) tbody.appendChild(tr);
+      } else {
+        tbody.appendChild(tr);
+      }
+    };
+
+    const defaultGsaKeyFor = (catKey: string) => {
+      const sibling = lines.find((l) => l.category === catKey && l.gsaKey);
+      /* Fall back within the category's OWN scope — gsaRates[0] is a travel row,
+         which would seed a new vehicles line with a lodging rate. */
+      return sibling?.gsaKey ?? gsaRatesFor(catKey)[0]?.key ?? gsaRates[0].key;
+    };
+
+    /** The first position not already on the budget — a new salary line should
+        not open on a title the vendor already used. */
+    const nextFreePosition = () => {
+      const taken = new Set(lines.filter((l) => l.category === 'personnel-salary').map((l) => l.staffKey));
+      return (positions.find((p: any) => !taken.has(p.key)) ?? positions[0]).key;
+    };
+
+    /** Seed the fields a KIND is responsible for. Called on add, and again every
+        time the vendor changes the kind — the kind owns the units and the rate
+        source, so changing it has to reset both rather than leave a lodging
+        line's "nights" sitting on an airfare line. */
+    const applyTravelKind = (line: any, kindKey: string) => {
+      const k = travelKind(kindKey);
+      line.travelKind = kindKey;
+      if (!k) return;
+      line.duration = k.durationLabel ? (line.duration ?? 1) : undefined;
+      /* The kind decides WHAT is counted, so switching kind re-seeds the count
+         from the last line in this trip counting the same unit — a lodging line
+         turned into a mileage line must not keep "2" and silently mean vehicles. */
+      line.count = seedCountFor(line.trip, kindKey, lines.filter((l) => l.id !== line.id));
+      if (k.rateSource === 'gsa') {
+        delete line.rate;
+        const allowed = gsaRatesForTravelKind(kindKey);
+        /* Default to the row for the trip's destination — resolving through the
+           CONUS fallback when the place is not separately listed. */
+        const match = gsaRowFor(kindKey, tripOf(line.trip)?.locality);
+        if (!allowed.some((g: any) => g.key === line.gsaKey)) line.gsaKey = match?.key ?? '';
+      } else {
+        delete line.gsaKey;
+        delete line.rateOverride;
+        line.rate = line.rate ?? 0;
+      }
+      syncLabel(line);
+    };
+
+    const applyVehicleKind = (line: any, kindKey: string) => {
+      const k = vehicleKind(kindKey);
+      line.vehicleKind = kindKey;
+      if (!k) return;
+      line.shape = k.shape;
+      line.qtyUnit = k.unit;
+      if (k.secondUnit) { line.qty2 = line.qty2 ?? 1; line.qty2Unit = k.secondUnit; }
+      else { delete line.qty2; delete line.qty2Unit; }
+      if (k.shape === SHAPES.AUTHORITY) {
+        delete line.rate;
+        const allowed = gsaRatesForVehicleKind(kindKey);
+        if (!allowed.some((g: any) => g.key === line.gsaKey)) line.gsaKey = allowed[0]?.key ?? '';
+      } else {
+        delete line.gsaKey;
+        delete line.rateOverride;
+        line.rate = line.rate ?? 0;
+      }
+      if (!line.label) line.label = k.label;
+    };
+
+    const addLine = (catKey: string, block: string, shape: string, kind = '') => {
+      const line: any = {
+        id: `new-${++seq}-${Date.now().toString(36)}`,
+        category: catKey,
+        shape,
+        label: '',
+        allocations: {},
+      };
+      if (block) line.block = block;
+      if (shape === SHAPES.QTY_RATE) { line.qty = 1; line.qtyUnit = ''; line.rate = 0; }
+      if (shape === SHAPES.AUTHORITY) { line.qty = 1; line.qtyUnit = ''; line.gsaKey = defaultGsaKeyFor(catKey); }
+      if (shape === SHAPES.PCT_OF_BASE) {
+        const firstStaff = lines.find((l) => l.category === 'personnel-salary' && l.staffKey);
+        line.base = firstStaff ? { type: 'staff', staffKey: firstStaff.staffKey } : { type: 'category', category: catKey };
+        line.pct = 0;
+      }
+      if (shape === SHAPES.LUMP) line.amount = 0;
+      if (catKey === 'personnel-salary') { line.staffKey = nextFreePosition(); line.qty = 1; line.qtyUnit = 'months'; }
+      if (shape === SHAPES.TRAVEL) { line.trip = block; applyTravelKind(line, kind || TRAVEL_KINDS[0].key); }
+      if (catKey === 'vehicles' && kind) applyVehicleKind(line, kind);
+      syncLabel(line);
+
+      const tpl = rowTemplates[line.shape];
+      if (!tpl) return;
+      const tr = tpl.cloneNode(true) as HTMLTableRowElement;
+      insertRow(tr, catKey, block);
+      lines.push(line);
+      fillRow(tr, line);
+      /* A cloned row inherits the template row's mark markup — reset it, because
+         a brand-new line carries no mark of its own. */
+      fillMarkForm(tr, line);
+      paintMark(tr, line);
+      wireRow(tr);
+      recompute();
+      tr.classList.add('is-added');
+      window.setTimeout(() => tr.classList.remove('is-added'), 1500);
+      tr.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      window.requestAnimationFrame(() => {
+        /* Focus whatever this category's FIRST question actually is — the free-text
+           description on most rows, but the duration on a travel line, whose kind
+           and locality the vendor already answered by choosing the menu item. */
+        const first: any =
+          line.shape === SHAPES.TRAVEL
+            ? ($('[data-field="duration"]', tr) ?? $('[data-field="count"]', tr))
+            : $('[data-field="label"]', tr);
+        first?.shadowRoot?.querySelector('input')?.focus();
+      });
+      return tr;
+    };
+
+    /* ── A row that changes SHAPE has to be rebuilt ──────────────────────────
+       Two edits do this: switching a vehicle kind between a schedule-rated lease
+       and a typed premium, and moving a misfiled item across the capitalization
+       threshold. Both mean the row's cells no longer exist in the same
+       arrangement, so the honest move is to re-clone from the template for the
+       new shape rather than to hide and reveal cells that were never there. */
+    const rebuildRow = (line: any, catKey?: string, block?: string) => {
+      const old = rowOf(line.id);
+      const tpl = rowTemplates[line.shape];
+      if (!old || !tpl) return;
+      const tr = tpl.cloneNode(true) as HTMLTableRowElement;
+      old.remove();
+      insertRow(tr, catKey ?? line.category, block ?? line.block ?? '');
+      fillRow(tr, line);
+      fillMarkForm(tr, line);
+      paintMark(tr, line);
+      wireRow(tr);
+      recompute(line.id);
+      flash([tr]);
+      return tr;
+    };
+
+    /* ── Adding a TRIP ──────────────────────────────────────────────────────
+       A travel line with no trip has no locality, no travelers and no occurrence
+       count to stand on, so Travel's category-level add makes the container, not
+       a line. The head is cloned from a real trip head for the same reason rows
+       are: the esa-* legos and the sub-block subtotal wiring come with it. */
+    const tripHeadTemplate = ($('tr[data-trip]:not([data-trip=""])') as HTMLTableRowElement | null)
+      ?.cloneNode(true) as HTMLTableRowElement | undefined;
+
+    const addTrip = () => {
+      if (!tripHeadTemplate) return;
+      const key = `trip-${++seq}-${Date.now().toString(36)}`;
+      const trip: any = {
+        key,
+        locality: '',
+        purpose: '',
+        window: 'Dates to be set',
+        occurrences: 1,
+      };
+      trips.push(trip);
+      /* Travel's blocks ARE the trips, so the category's block list has to follow —
+         paintGroups walks it to repaint sub-block subtotals. */
+      const cat = categories.find((c: any) => c.key === 'travel');
+      cat?.blocks?.push({ key, label: tripLabel(trip), trip });
+
+      const head = tripHeadTemplate.cloneNode(true) as HTMLTableRowElement;
+      head.dataset.blockhead = key;
+      head.dataset.trip = key;
+      setText($('.cbf-lct__block-label', head), tripLabel(trip));
+      setText($('[data-trip-cell="window"]', head), trip.window);
+      const purpose: any = $('[data-trip-field="purpose"]', head);
+      if (purpose) purpose.value = '';
+      const totalCell = $('[data-block-total]', head);
+      totalCell?.setAttribute('data-block-total', `travel:${key}`);
+      setText(totalCell, usd(0));
+      const dest: any = $('[data-trip-field="locality"]', head);
+      if (dest) dest.value = '';
+      const occ: any = $('[data-trip-field="occurrences"]', head);
+      if (occ) occ.value = '1';
+      setText($('[data-trip-cell="locality-note"]', head), localityNote(trip));
+      const menu: any = $('[data-add-travel]', head);
+      if (menu) { menu.dataset.addTravel = key; wireTravelMenu(menu); }
+
+      $(`tbody[data-cat="travel"]`)?.appendChild(head);
+      head.classList.add('is-added');
+      window.setTimeout(() => head.classList.remove('is-added'), 1500);
+      head.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      recompute();
+      return head;
+    };
+
+    root.addEventListener('menu-action', (e: any) => {
+      const [catKey, block, shape, kind] = String(e.detail ?? '').split('|');
+      if (catKey && shape) addLine(catKey, block, shape, kind ?? '');
+    });
+
+    /* ── Every esa-* control fires a composed `change`; delegate the lot ── */
+    root.addEventListener('change', (e: any) => {
+      const el = e.target as HTMLElement;
+
+      /* A TRIP field belongs to the block head, not to any one row — and editing
+         it moves every line under that trip at once, which is the entire reason
+         travel is grouped this way. The trip objects are looked up by key inside
+         the pricing engine, so they are updated in place rather than copied. */
+      const head = el.closest?.('tr[data-trip]') as HTMLElement | null;
+      if (head && (el.dataset as any).tripField) {
+        const trip: any = tripOf(head.dataset.trip!);
+        if (!trip) return;
+        const field = (el.dataset as any).tripField;
+        const raw = (el as any).value;
+
+        if (field === 'locality') {
+          trip.locality = String(raw ?? '').trim();
+          /* Re-point every schedule-rated line under this trip at the row for the
+             new destination and its own kind — resolving through the CONUS
+             fallback when the place is not separately listed. Leaving them on the
+             old place's rate would be the quiet kind of wrong a reviewer catches
+             months later. */
+          lines
+            .filter((l) => l.trip === trip.key && travelKind(l.travelKind)?.rateSource === 'gsa')
+            .forEach((l) => {
+              const match = gsaRowFor(l.travelKind, trip.locality);
+              if (match) l.gsaKey = match.key;
+              const sel: any = rowOf(l.id) && $('[data-gsa-select]', rowOf(l.id)!);
+              if (sel) sel.value = l.gsaKey;
+            });
+          /* Say what the destination RESOLVED to. This is the thing the old
+             locality dropdown hid by refusing unlisted places outright. */
+          setText($('[data-trip-cell="locality-note"]', head), localityNote(trip));
+        } else if (field === 'purpose') {
+          trip.purpose = String(raw ?? '');
+        } else {
+          /* A journey happens at least once. */
+          trip[field] = Math.max(1, num(raw));
+        }
+
+        setText($('.cbf-lct__block-label', head), tripLabel(trip));
+        const moved = lines.filter((l) => l.trip === trip.key);
+        moved.forEach(syncLabel);
+        recompute();
+        flash(moved.map((l) => rowOf(l.id)));
+        return;
+      }
+
+      const tr = el.closest?.('tr[data-line]') as HTMLElement | null;
+      if (!tr) return;
+      const line = lineById(tr.dataset.line!);
+      if (!line) return;
+      const d = el.dataset;
+
+      /* ── The identity pickers ── */
+      if ('positionSelect' in d) {
+        line.staffKey = (el as any).value;
+        syncLabel(line);
+        /* Fringe lines are keyed to a staff group, so renaming a salary line's
+           position renames every fringe line computed off it. */
+        lines.filter((l) => l.category === 'personnel-fringe').forEach(syncLabel);
+        recompute(line.id);
+        return;
+      }
+      if ('travelKindSelect' in d) {
+        applyTravelKind(line, (el as any).value);
+        fillRow(tr, line);
+        recompute(line.id);
+        return;
+      }
+      if ('vehicleKindSelect' in d) {
+        const before = line.shape;
+        applyVehicleKind(line, (el as any).value);
+        /* Lease → insurance is a change of SHAPE, not just of values. */
+        if (line.shape !== before) rebuildRow(line);
+        else { fillRow(tr, line); recompute(line.id); }
+        return;
+      }
+
+      if (d.field === 'label') {
+        line.label = (el as any).value ?? '';
+      } else if (d.field === 'qtyUnit' || d.field === 'qty2Unit') {
+        line[d.field] = (el as any).value ?? '';
+      } else if (d.field === 'pct') {
+        line.pct = num((el as any).value) / 100;
+      } else if (d.field) {
+        line[d.field] = num((el as any).value);
+      } else if (d.allocWe) {
+        const p = num((el as any).value);
+        if (p > 0) line.allocations[d.allocWe] = p;
+        else delete line.allocations[d.allocWe];
+      } else if ('gsaSelect' in d) {
+        line.gsaKey = (el as any).value;
+      } else if ('baseSelect' in d) {
+        const [type, key] = String((el as any).value).split(':');
+        line.base = type === 'staff' ? { type: 'staff', staffKey: key } : { type: 'category', category: key };
+        /* A fringe line is NAMED by its base, so repointing it renames it. */
+        syncLabel(line);
+      } else {
+        return;
+      }
+      recompute(line.id);
+    });
+
+    /* ── Clicks: add, delete, second quantity, rate override, subcontract seam ── */
+    root.addEventListener('click', (e: any) => {
+      const t = e.target as HTMLElement;
+
+      if (t.closest?.('[data-add-trip]')) {
+        addTrip();
+        return;
+      }
+
+      const add = t.closest?.('[data-add-line]') as HTMLElement | null;
+      if (add) {
+        const [catKey, block, shape, kind] = String(add.dataset.addLine).split('|');
+        addLine(catKey, block, shape, kind ?? '');
+        return;
+      }
+
+      const sheet = t.closest?.('[data-open-sheet]') as HTMLElement | null;
+      if (sheet) {
+        document.dispatchEvent(
+          new CustomEvent('cbf-lib:open-subcontract', {
+            detail: { sheetId: sheet.dataset.openSheet, lineId: sheet.dataset.openSheetLine },
+          }),
+        );
+        return;
+      }
+
+      const tr = t.closest?.('tr[data-line]') as HTMLElement | null;
+      if (!tr) return;
+      const line = lineById(tr.dataset.line!);
+      if (!line) return;
+
+      if (t.closest('[data-delete-line]')) {
+        const i = lines.findIndex((l) => l.id === line.id);
+        if (i >= 0) lines.splice(i, 1);
+        tr.remove();
+        recompute();
+        return;
+      }
+
+      if (t.closest('[data-add-qty2]')) {
+        line.qty2 = 1;
+        line.qty2Unit = '';
+        const f2: any = $('[data-field="qty2"]', tr);
+        if (f2) f2.value = '1';
+        recompute(line.id);
+        return;
+      }
+
+      if (t.closest('[data-toggle-override]')) {
+        if (line.rateOverride == null) line.rateOverride = gsaRate(line.gsaKey)?.rate ?? 0;
+        else delete line.rateOverride;
+        const f: any = $('[data-field="rateOverride"]', tr);
+        if (f) f.value = numText(line.rateOverride);
+        recompute(line.id);
+        return;
+      }
+
+      /* The threshold offers the MOVE, not just the verdict — the item is fine,
+         it is only filed in the wrong category, and re-typing it there would lose
+         its work-element split. */
+      if (t.closest('[data-cap-move]')) {
+        const target = capMoveTarget(line);
+        line.category = target.category;
+        if (target.block) line.block = target.block;
+        else delete line.block;
+        rebuildRow(line, target.category, target.block);
+        return;
+      }
+    });
+
+    /* ── The overhead block owns the rate AND its scope; this grid owns the base.
+       Re-scoping must be visible HERE, so the indirect rows flash on receipt. ── */
+    document.addEventListener('cbf-lib:indirect-config', (e: any) => {
+      const incoming = e.detail?.config;
+      if (!incoming) return;
+      cfg = { ...cfg, ...incoming, appliesTo: [...(incoming.appliesTo ?? cfg.appliesTo)] };
+      recompute();
+      flash($$('[data-indirect-row]'));
+    });
+
+    /* ── The review round trip ─────────────────────────────────────────────
+       The panel owns the list and the decision; when either changes, the rows
+       have to agree. Identity check first: this grid fires the same event, and
+       repainting its own echo would be work for nothing. */
+    document.addEventListener('cbf-lib:review', (e: any) => {
+      const incoming = e.detail?.review;
+      if (!incoming || incoming === review) return;
+      review = incoming;
+      lines.forEach((l) => {
+        const tr = rowOf(l.id);
+        if (tr) fillMarkForm(tr, l);
+      });
+      paintReview();
+    });
+
+    /* Switching lenses changes WHO is reading, which changes whether a mark is
+       visible at all — so the marks repaint, and the read-only mirrors are
+       already current from the last recompute. */
+    document.addEventListener('cbf-role:change', paintReview);
+
+    /* "Go to line" from the review panel: bring the row into view and flash it,
+       and — for the COR's Edit — open that row's mark editor, so the note is
+       always written next to the numbers it is about. */
+    document.addEventListener('cbf-lib:focus-line', (e: any) => {
+      const { lineId, openFlag } = e.detail ?? {};
+      const tr = lineId ? rowOf(lineId) : null;
+      if (!tr) return;
+      tr.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      flash([tr]);
+      if (openFlag && role() === 'cor') {
+        const pop: any = $('[data-mark-popover]', tr);
+        if (pop) window.setTimeout(() => { pop.open = true; }, 250);
+      }
+    });
+
+    /* Mount: paint everything, broadcast once, and re-broadcast on load so a
+       sibling whose script initialises after this one still gets the state (the
+       event is a pure snapshot, so repeating it is harmless). */
+    paintReview();
+    recompute();
+    const rebroadcast = () => fireTotals(priceLines(lines, cfg).totals);
+    if (document.readyState === 'complete') window.setTimeout(rebroadcast, 0);
+    else window.addEventListener('load', rebroadcast, { once: true });
+  }
+</script>
+
+<style>
+  /* Dense entry surface: 14px table base, 13px for the quiet second lines — and
+     DARKENED as it shrinks (text-secondary, never a muted gray). The literal
+     sizes are deliberate: the --type-size-* clamps bottom out at 11–12px on
+     narrow viewports, which is under the 13px absolute floor. */
+  .cbf-lct__lede {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+  }
+  .cbf-lct__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* overflow stays VISIBLE: the per-row allocation popover and the add-line shape
+     menu position absolutely and cannot escape a clipping ancestor. So the table
+     is sized to FIT its column instead of scrolling inside it — the page drops the
+     reconciliation rail below the grid before the grid would ever need to scroll
+     (--sidebar-content-min on the page). Horizontal scroll is the last resort at
+     genuinely narrow widths, where a clipped popover is the lesser evil. */
+  .cbf-lct__scroll {
+    overflow: visible;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    background: var(--color-surface);
+  }
+  @media (max-width: 900px) {
+    .cbf-lct__scroll { overflow-x: auto; }
+  }
+
+  .cbf-lct__table {
+    width: 100%;
+    min-width: 900px;
+    border-collapse: collapse;
+    font-size: 14px;
+    color: var(--color-text-primary);
+  }
+
+  /* ── Per-category column captions ──
+     Quieter than the old single table head, and deliberately so: it repeats nine
+     times, and a full-weight header band at every category would read as nine
+     tables stacked instead of one budget. It sits BELOW its category heading and
+     above that category's rows, so it reads as a caption of the section it
+     introduces rather than as a divider between sections. */
+  .cbf-lct__colhead th {
+    text-align: left;
+    padding: var(--spacing-150) var(--spacing-300);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    font-size: 13px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+  .cbf-lct__colhead .cbf-lct__col-num { text-align: right; }
+  .cbf-lct__col-span { min-width: 380px; }
+  /* Column floors sum to ~1020px so the grid fits its column beside the rail on a
+     laptop rather than overflowing it. */
+  /* Six columns. The old "Rate source" column was dropped: what governs a rate
+     (the GSA schedule row, the percentage base, the capitalization test) now
+     lives in the Rate cell beside the number it produces, which is why Rate is
+     the widest of the entry columns. Floors sum to ~900px. */
+  .cbf-lct__col-line { min-width: 230px; }
+  .cbf-lct__col-qty { min-width: 165px; }
+  .cbf-lct__col-rate { min-width: 215px; }
+  .cbf-lct__col-we { min-width: 140px; }
+  .cbf-lct__col-act { width: 44px; }
+  .cbf-lct__col-num { text-align: right; min-width: 115px; }
+
+  .cbf-lct__cell {
+    padding: var(--spacing-250) var(--spacing-300);
+    vertical-align: top;
+    border-top: 1px solid var(--color-border-light);
+  }
+  .cbf-lct__cell--num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .cbf-lct__cell--act { text-align: right; }
+  /* A shape whose cells genuinely don't exist collapses into one spanned cell —
+     never a row of dead inputs. */
+  .cbf-lct__cell--void { color: var(--color-text-secondary); }
+
+  /* ── Category + sub-block header rows ── */
+  .cbf-lct__cathead th {
+    text-align: left;
+    padding: var(--spacing-300);
+    background: var(--cbf-surface-section-head, var(--color-surface-sunken));
+    border-top: 1px solid var(--color-border-strong);
+    border-bottom: 1px solid var(--color-border);
+    font-weight: var(--font-weight-regular);
+  }
+  .cbf-lct__cathead .cbf-lct__cell {
+    background: var(--cbf-surface-section-head, var(--color-surface-sunken));
+    border-top: 1px solid var(--color-border-strong);
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+  }
+  .cbf-lct__cat-label {
+    font-size: 16px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-lct__blockhead th {
+    text-align: left;
+    padding: var(--spacing-200) var(--spacing-300) var(--spacing-200) var(--spacing-500);
+    border-top: 1px solid var(--color-border);
+    font-weight: var(--font-weight-regular);
+  }
+  .cbf-lct__blockhead .cbf-lct__cell {
+    border-top: 1px solid var(--color-border);
+    vertical-align: middle;
+  }
+  .cbf-lct__block-label {
+    font-size: 14px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+
+  /* ── Quiet second lines ── */
+  .cbf-lct__note {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    max-width: 46ch;
+  }
+  /* "Nothing governs this rate" — a typed-rate line. Aligned with the controls in
+     its sibling cells rather than floating at the cell's very top. */
+  .cbf-lct__void-mark {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    line-height: var(--form-height-md, 40px);
+  }
+  /* A value the vendor did NOT type — referenced or derived. Reads as a value,
+     not as an input, and never as a disabled control. */
+  .cbf-lct__ref,
+  .cbf-lct__derived {
+    font-size: 14px;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-lct__derived { font-weight: var(--font-weight-regular); }
+  .cbf-lct__times {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    align-self: center;
+  }
+
+  /* ── Entry controls — one purpose per control, all md so a row lines up ──
+     Fields keep the legos' default chrome (bordered, on surface). An earlier pass
+     made them borderless-until-hover to quiet the grid; that buried the affordance
+     — a vendor could not see where they were allowed to type until they clicked.
+     Discoverability wins over visual quiet on an entry surface. Don't re-quiet
+     these without solving the "where do I type" problem some other way. */
+  .cbf-lct__field--label { width: 100%; }
+  .cbf-lct__field--qty { width: 76px; }
+  .cbf-lct__field--unit { width: 96px; }
+  .cbf-lct__field--rate { width: 116px; }
+  .cbf-lct__field--pct { width: 92px; }
+  .cbf-lct__field--amount { width: 130px; margin-inline-start: auto; }
+  .cbf-lct__field--trip { width: 116px; }
+  .cbf-lct__field--dest { width: 230px; }
+  .cbf-lct__field--purpose { width: 260px; }
+  .cbf-lct__select { width: 100%; }
+
+  /* A unit a KIND already decided is a value, not a control — it reads in line
+     with the field it qualifies rather than as another empty box beside it. */
+  .cbf-lct__unit {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    align-self: center;
+    white-space: nowrap;
+  }
+
+  /* ── Money ── */
+  .cbf-lct__money {
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* Until esa-popover upgrades it is an unknown element, so EVERY child renders
+     inline — including slot="content". Without this guard each row shows its
+     whole six-field allocation editor (and, in the COR lens, the mark form)
+     stacked in the cell until hydration, which on a grid this size is a long and
+     very loud flash. Same :not(:defined) guard the spoke uses on esa-tab-layout.
+     If the script ever fails to load, this keeps the panels closed rather than
+     dumping every editor onto the page. */
+  esa-popover:not(:defined) [slot='content'] { display: none; }
+
+  /* ── Allocation popover panel ── */
+  .cbf-lct__alloc { width: 380px; }
+  .cbf-lct__alloc-head {
+    font-size: 14px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-lct__alloc-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-300);
+  }
+  .cbf-lct__alloc-label {
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    min-width: 0;
+  }
+  .cbf-lct__alloc-input { width: 104px; flex: none; }
+  .cbf-lct__alloc-sum {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-150);
+    margin: 0;
+    padding-block-start: var(--spacing-200);
+    border-top: 1px solid var(--color-border-light);
+    font-size: 14px;
+    color: var(--color-text-secondary);
+  }
+  .cbf-lct__alloc-sum strong {
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-primary);
+  }
+
+  /* ── Row state: an inline background tint, NEVER a colored left border ── */
+  tr[data-flag='gsa'] > .cbf-lct__cell,
+  tr[data-flag='capital'] > .cbf-lct__cell,
+  tr[data-flag='months'] > .cbf-lct__cell {
+    background: var(--color-danger-subtle);
+  }
+  tr[data-flag='alloc'] > .cbf-lct__cell {
+    background: var(--color-warning-subtle);
+  }
+
+  /* ── The money moment: rows that just recomputed because of an edit ──────────
+     dependentsOf() names them exactly — a salary edit visibly moving its fringe
+     line and the cell-phone line whose months follow it. */
+  tr.is-recomputed > .cbf-lct__cell,
+  tr.is-recomputed > th,
+  tr.is-added > .cbf-lct__cell {
+    animation: cbf-lct-flash 1.5s var(--easing-out) 1;
+  }
+  /* The flash LAYERS over the cell (inset shadow) rather than replacing its
+     background-color — otherwise a flagged row loses its danger/warning tint for
+     the duration of the flash and then snaps back to it. */
+  @keyframes cbf-lct-flash {
+    from { box-shadow: inset 0 0 0 100vmax var(--color-info-subtle); }
+    to { box-shadow: inset 0 0 0 100vmax transparent; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    tr.is-recomputed > .cbf-lct__cell,
+    tr.is-recomputed > th,
+    tr.is-added > .cbf-lct__cell {
+      animation: none;
+      box-shadow: inset 0 0 0 100vmax var(--color-info-subtle);
+    }
+  }
+
+  /* ── Totals block ── */
+  .cbf-lct__totals th {
+    text-align: right;
+    padding: var(--spacing-250) var(--spacing-300);
+    border-top: 1px solid var(--color-border-light);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+  }
+  .cbf-lct__totals th .cbf-lct__note {
+    display: block;
+    max-width: none;
+    font-weight: var(--font-weight-regular);
+  }
+  .cbf-lct__totals .cbf-lct__cell {
+    border-top: 1px solid var(--color-border-light);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-lct__totals tr:first-child th,
+  .cbf-lct__totals tr:first-child .cbf-lct__cell {
+    border-top: 1px solid var(--color-border-strong);
+    background: var(--color-surface-sunken);
+  }
+  .cbf-lct__grand th,
+  .cbf-lct__grand .cbf-lct__cell {
+    border-top: 1px solid var(--color-border-strong);
+    background: var(--color-surface-sunken);
+    font-size: 16px;
+    font-weight: var(--font-weight-semibold);
+  }
+  .cbf-lct__grand .cbf-lct__cell strong { font-variant-numeric: tabular-nums; }
+
+  /* ── The two lenses ───────────────────────────────────────────────────────
+     VENDOR sees entry controls and no mark editor. COR sees the same grid as
+     values plus the mark editor, because a reviewer does not type into someone
+     else's budget. Both renderings are in the markup; the document's role
+     attribute reveals one, so switching lenses never loses an edit. */
+  .cbf-lct__fact {
+    font-size: 14px;
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-lct__fact--label { font-weight: var(--font-weight-medium); }
+
+  /* Vendor lens (the default): the mirrors and the mark editor stay out. */
+  :global(html:not([data-cbf-role='cor'])) .cbf-lct__fact,
+  :global(html:not([data-cbf-role='cor'])) [data-trip-fact],
+  :global(html:not([data-cbf-role='cor'])) [data-mark-cell] {
+    display: none !important;
+  }
+
+  /* COR lens: every entry affordance goes, and the values take their place. */
+  :global(html[data-cbf-role='cor']) .cbf-lct__field,
+  :global(html[data-cbf-role='cor']) .cbf-lct__select,
+  :global(html[data-cbf-role='cor']) [data-qty2-add],
+  :global(html[data-cbf-role='cor']) [data-toggle-override],
+  :global(html[data-cbf-role='cor']) [data-alloc-state],
+  :global(html[data-cbf-role='cor']) [data-delete-line],
+  :global(html[data-cbf-role='cor']) [data-add-line],
+  :global(html[data-cbf-role='cor']) [data-add-trip],
+  :global(html[data-cbf-role='cor']) [data-add-travel],
+  :global(html[data-cbf-role='cor']) [data-trip-controls],
+  :global(html[data-cbf-role='cor']) [data-cap-move],
+  /* A fringe row's name is already carried by the read-only mirror; leaving the
+     derived identity in as well printed it twice. */
+  :global(html[data-cbf-role='cor']) [data-ident='derived'],
+  :global(html[data-cbf-role='cor']) [data-add-menu] {
+    display: none !important;
+  }
+  /* A shape-C row's percentage cell keeps its resolved base line; only the input
+     is replaced. Same for the GSA rows, which already state their source. The
+     second-quantity group goes whole, so its × never strands — and so does the
+     travel row's count/duration group, whose resolved chain is already printed
+     above it as a value. */
+  :global(html[data-cbf-role='cor']) .cbf-lct__cell--qty [data-qty-typed],
+  :global(html[data-cbf-role='cor']) .cbf-lct__cell--qty [data-travel-count],
+  :global(html[data-cbf-role='cor']) .cbf-lct__cell--qty [data-travel-duration],
+  :global(html[data-cbf-role='cor']) .cbf-lct__cell--qty [data-qty2] {
+    display: none !important;
+  }
+
+  /* ── The COR's mark, on the line it disputes ──────────────────────────────
+     A tinted comment band INSIDE the cost-line cell — the same discipline the
+     rest of this grid follows: status is carried by a badge and a tint, never by
+     a colored left border. */
+  .cbf-lct__mark {
+    margin-block-start: var(--spacing-150);
+    padding: var(--spacing-200) var(--spacing-250);
+    border-radius: var(--radius-100);
+    background: var(--color-danger-subtle);
+  }
+  .cbf-lct__mark[data-sev='question'] { background: var(--color-warning-subtle); }
+  .cbf-lct__mark [data-mark-sev] { display: none; }
+  .cbf-lct__mark[data-sev='required'] [data-mark-sev='required'],
+  .cbf-lct__mark[data-sev='question'] [data-mark-sev='question'] { display: inline-flex; }
+  .cbf-lct__mark-reason {
+    font-size: 13px;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+  }
+  .cbf-lct__mark-note {
+    font-size: 14px;
+    color: var(--color-text-primary);
+    max-width: 46ch;
+  }
+
+  /* ── The mark editor ── */
+  .cbf-lct__markform { width: 360px; }
+
+  /* Layout primitives set display:flex, which would beat the UA [hidden] rule. */
+  [hidden] { display: none !important; }
+</style>

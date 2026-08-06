@@ -1,0 +1,686 @@
+---
+// cbf-lib-reconcile-rail — the persistent reconciliation rail on the vendor LIB
+// entry screen (the LIB tab of a CBFish contract). It is the thing the vendor
+// watches while they type: the running line-item total against the Contract
+// Value ceiling, the direct/indirect split, the submit-gate checklist, and the
+// submit action they still own. It sticks alongside the cost-line table and must
+// never disagree with it.
+//
+// ── EVENT CONTRACT (the sibling cost-line grid is the producer) ───────────────
+// LISTENS on `document` for:
+//   'cbf-lib:totals'  detail: {
+//     total: number,          // grand total = direct + indirect
+//     direct: number,         // every priced line, fringe included
+//     indirect: number,       // indirectBase × the indirect rate
+//     indirectBase: number,   // the sum of the categories the rate is scoped to
+//     remaining: number,      // contract.contractValue - total (NEGATIVE when over)
+//     pctOfValue: number,     // total / contract.contractValue, as a FRACTION (0.9059)
+//     failing: number,        // lines over their GSA ceiling      → `gsa` check
+//     unallocated: number,    // lines not totalling 100%          → `allocation` check
+//     capitalFailing: number, // items on the wrong side of the capitalization
+//                             // threshold, in EITHER direction → `capital` check
+//     monthsFailing: number,  // positions budgeted past the contract period
+//                             //                                → `months` check
+//   }
+//   'cbf-lib:indirect-config'  detail: { config }
+//     config = { rate, referenceDoc, effectiveStart, effectiveEnd, mode, appliesTo }
+//     The vendor re-scoping `appliesTo` moves the indirect BASE and therefore the
+//     total, so the rail restates the scope in words ("26.75% on 7 of 9
+//     categories") — a reconciliation you can explain, not just a number. The
+//     grid re-fires 'cbf-lib:totals' right after, so the dollars still arrive
+//     through the event above; this one only re-renders rate + scope + the
+//     `indirect` check's reference detail.
+// The grid fires totals on mount AND on every recompute. This rail FIRES
+// NOTHING — it is a pure consumer, so the grid never has to listen back.
+//
+// Everything is SERVER-RENDERED from priceLines() / submitChecksFor() first, so
+// the rail is correct before a single byte of script runs; the listeners only
+// move numbers that are already on screen.
+//
+// Five of the SEVEN gate checks are recomputed from the totals detail (allocation
+// ← unallocated, gsa ← failing, capital ← capitalFailing, months ← monthsFailing,
+// ceiling ← total vs contractValue). `indirect` carries no pass/fail on either event — it restates
+// the approved reference and only its detail line follows a config change — and
+// `funded` (every work element carries budget) is on neither event, so both hold
+// their server-rendered state. Noted here so the omission reads as deliberate.
+//
+// bcn-lego-checked: every primitive here is a lego — esa-progress-bar is the
+// proportional readout, esa-badge the fail marker, esa-button the submit action,
+// esa-stat the headline total, esa-icon the pass/fail glyph (checked the full
+// ecology catalog: no esa-checklist / esa-gate / esa-summary-rail exists, and
+// Beacon has no ui- equivalent either — its budget reconciliation is an AG Grid
+// footer, not a rail). What this file owns is composition only: the sticky
+// shell, the ledger rows, and the row-state toggling. Status is carried by the
+// glyph + an inline warning tint + an esa-badge — never a colored left border.
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaIcon from '@esa/ecology/esa-icon.astro';
+import EsaProgressBar from '@esa/ecology/esa-progress-bar.astro';
+import {
+  contract,
+  indirectConfig,
+  categories,
+  priceLines,
+  submitChecksFor,
+  usd,
+  pct,
+} from '../../data/lib-entry.mjs';
+import { seedReview, reviewCounts, isIssued } from '../../data/lib-review.mjs';
+
+interface Props {
+  /** Rail heading. */
+  title?: string;
+  /** One-line context under the heading. */
+  lede?: string;
+}
+const {
+  title = 'Reconciliation',
+  lede = `Contract ${contract.number} · ${contract.fiscalYear}`,
+} = Astro.props;
+
+interface SubmitCheck {
+  key: string;
+  label: string;
+  pass: boolean;
+  detail: string;
+}
+
+// priceLines() is the single pricing entry point — the same call the grid makes,
+// so the rail and the grid cannot arrive at two different totals.
+const { totals } = priceLines();
+
+// The COR's review is a SEVENTH gate, and the only one whose evidence lives off
+// this screen: a budget that came back with marks cannot be resubmitted until
+// the vendor has worked each one off. It renders only while a review has
+// actually been issued and still carries marks — the script hides it the moment
+// that stops being true, and refreshGate() counts visible rows, so the Submit
+// button follows without any special case.
+const review = seedReview();
+const rc = reviewCounts(review);
+const reviewGateApplies = isIssued(review) && rc.total > 0;
+const reviewCheck: SubmitCheck = {
+  key: 'review',
+  label: 'The changes BPA asked for are addressed',
+  pass: rc.outstanding === 0,
+  detail:
+    rc.outstanding === 0
+      ? `All ${rc.total} marked line${rc.total === 1 ? '' : 's'} addressed`
+      : `${rc.outstanding} of ${rc.total} still outstanding`,
+};
+
+const checks: SubmitCheck[] = [...submitChecksFor(), reviewCheck];
+const liveChecks = checks.filter((c) => c.key !== 'review' || reviewGateApplies);
+const blocked = liveChecks.filter((c) => !c.pass);
+const cleared = liveChecks.length - blocked.length;
+
+// A returned budget is RESUBMITTED — saying "Submit" again would pretend the
+// round trip never happened.
+const submitLabel =
+  review.status === 'returned' ? 'Resubmit line item budget' : 'Submit line item budget';
+
+// The over-ceiling branch does not fire on load (90.59% of the Contract Value)
+// but the vendor can now push past the ceiling easily — by adding lines OR by
+// widening the indirect scope — so the rail renders it honestly: the meter
+// clamps at 100% (a bar cannot show 104%) while the text states the overage.
+const isOver = totals.total > contract.contractValue;
+const meterValue = Math.max(0, Math.min(100, totals.pctOfValue * 100));
+
+const remainingText = isOver
+  ? `${usd(Math.abs(totals.remaining))} over the ceiling`
+  : `${usd(totals.remaining)} remaining`;
+
+// The indirect rate now lives on indirectConfig, and it is SCOPED: `appliesTo`
+// is the vendor-editable list of categories the rate is charged on. Both the
+// rate and the width of that scope are what make the indirect figure
+// explainable, so both are on screen.
+const ratePct = pct(indirectConfig.rate);
+// Kept byte-identical to the client re-render in the script below.
+const scopeText = `on ${indirectConfig.appliesTo.length} of ${categories.length} categories`;
+
+const blockedText = (n: number) =>
+  n === 0
+    ? 'All checks clear. Submitting sends the budget to BPA and locks it for review.'
+    : `${n} check${n === 1 ? '' : 's'} still ${n === 1 ? 'stands' : 'stand'} between you and submitting.`;
+---
+<aside
+  class:list={['cbf-lib-rail', 'stack', isOver && 'is-over']}
+  data-gap="lg"
+  data-lib-rail
+  aria-label="Budget reconciliation and submit gate"
+>
+  <header class="stack" data-gap="3xs">
+    <h2 class="type-section-title">{title}</h2>
+    <p class="cbf-lib-rail__lede type-body-small">{lede}</p>
+  </header>
+
+  {/* ── Running total vs the Contract Value ──────────────────────────────── */}
+  {/* esa-stat forwards no extra attrs, so the live-update hook rides the wrapper. */}
+  <div class="cbf-lib-rail__total" data-stat-total>
+    <EsaStat
+      value={usd(totals.total)}
+      label="Line item budget total"
+      sub={`${pct(totals.pctOfValue)} of the ${usd(contract.contractValue)} Contract Value`}
+    />
+  </div>
+
+  <div class="cbf-lib-rail__meter stack" data-gap="xs" data-meter>
+    <EsaProgressBar
+      value={meterValue}
+      variant={isOver ? 'danger' : 'primary'}
+      size="lg"
+      label="Committed against Contract Value"
+    />
+    <p class="cbf-lib-rail__remaining type-body-small" data-remaining>{remainingText}</p>
+  </div>
+
+  {/* ── Direct / indirect split ──────────────────────────────────────────── */}
+  <dl class="cbf-lib-rail__ledger stack" data-gap="xs">
+    <div class="repel" data-gap="sm">
+      <dt class="type-body-small">Direct costs</dt>
+      <dd class="cbf-lib-rail__amount type-body-small" data-ledger="direct">{usd(totals.direct)}</dd>
+    </div>
+    <div class="repel" data-gap="sm">
+      <dt class="type-body-small">
+        <span>Indirect at <span data-ledger="indirect-rate">{ratePct}</span></span>
+        {/* Scope first, then the dollars it produces — the base is a consequence
+            of the scope, and saying so is what makes the number arguable. */}
+        <span class="cbf-lib-rail__ledger-note type-body-small">
+          <span data-ledger="indirect-scope">{scopeText}</span>
+          <span aria-hidden="true"> · </span>
+          <span data-ledger="indirect-base">{usd(totals.indirectBase)} base</span>
+        </span>
+      </dt>
+      <dd class="cbf-lib-rail__amount type-body-small" data-ledger="indirect">{usd(totals.indirect)}</dd>
+    </div>
+    <div class="repel cbf-lib-rail__ledger-rule" data-gap="sm">
+      <dt class="type-body-small">Contract Value</dt>
+      <dd class="cbf-lib-rail__amount type-body-small">{usd(contract.contractValue)}</dd>
+    </div>
+  </dl>
+
+  {/* ── The submit gate ──────────────────────────────────────────────────── */}
+  <section class="cbf-lib-rail__gate stack" data-gap="sm" aria-label="Submit checklist">
+    <div class="repel" data-gap="sm">
+      <h3 class="type-card-title">Before you submit</h3>
+      <span class="cbf-lib-rail__count type-body-small" role="status" data-gate-count>
+        {cleared} of {liveChecks.length} clear
+      </span>
+    </div>
+
+    <ul class="cbf-lib-rail__checks stack" data-gap="2xs">
+      {checks.map((c) => (
+        <li
+          class:list={['cbf-lib-rail__check', 'repel', c.pass ? 'is-pass' : 'is-fail']}
+          data-gap="sm"
+          data-check={c.key}
+          hidden={c.key === 'review' && !reviewGateApplies}
+        >
+          <span class="cbf-lib-rail__check-body">
+            {/* Both glyphs ship server-rendered; the row class reveals one. A
+                glyph swap by class beats innerHTML surgery on a lego. */}
+            <span class="cbf-lib-rail__mark cbf-lib-rail__mark--pass">
+              <EsaIcon name="circle-check" size="sm" label="Clear" />
+            </span>
+            <span class="cbf-lib-rail__mark cbf-lib-rail__mark--fail">
+              <EsaIcon name="circle-alert" size="sm" label="Needs attention" />
+            </span>
+            <span class="cbf-lib-rail__check-text">
+              <span class="cbf-lib-rail__check-label type-body-small">{c.label}</span>
+              <span class="cbf-lib-rail__check-detail type-body-small" data-check-detail>{c.detail}</span>
+            </span>
+          </span>
+          {/* Badge only on the failing rows — the passing rows already read
+              clearly from the green check plus their detail line, and a second
+              chip on every row would be decoration, not information. */}
+          <span class="cbf-lib-rail__check-badge">
+            <EsaBadge value="Needs fix" variant="warning" />
+          </span>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  {/* ── The COR reads this rail; they do not act on it. Their two decisions —
+       return and approve — belong to the review panel, next to the marks that
+       justify them, not beside the vendor's submit button. ── */}
+  <p class="cbf-lib-rail__cor type-body-small" data-rail-cor>
+    You are reading the vendor's reconciliation. Returning or approving this budget happens in the
+    review panel above, with the marks you made.
+  </p>
+
+  {/* ── The submit action the vendor still owns ──────────────────────────── */}
+  <div class="cbf-lib-rail__submit stack" data-gap="xs" data-rail-vendor>
+    <EsaButton
+      color="primary"
+      size="lg"
+      disabled={blocked.length > 0}
+      data-submit
+      aria-describedby="cbf-lib-rail-reason"
+    >
+      {submitLabel}
+    </EsaButton>
+
+    <p class="cbf-lib-rail__reason type-body-small" id="cbf-lib-rail-reason" data-submit-reason>
+      {blockedText(blocked.length)}
+    </p>
+
+    <ul class="cbf-lib-rail__blockers stack" data-gap="3xs" data-submit-blockers hidden={blocked.length === 0}>
+      {checks.map((c) => (
+        <li
+          class="cbf-lib-rail__blocker type-body-small"
+          data-blocker={c.key}
+          hidden={c.pass || (c.key === 'review' && !reviewGateApplies)}
+        >{c.label}</li>
+      ))}
+    </ul>
+  </div>
+</aside>
+
+<script>
+  // Live reconciliation. The sibling cost-line grid owns the numbers and
+  // broadcasts them; this rail only re-renders what it already painted on the
+  // server. Formatting comes from the shared data module so the rail and the
+  // grid can never print the same dollar two different ways.
+  import { contract, contractMonths, categories, usd, pct } from '../../data/lib-entry.mjs';
+
+  interface LibTotals {
+    total: number;
+    direct: number;
+    indirect: number;
+    indirectBase: number;
+    remaining: number;
+    pctOfValue: number;
+    failing: number;
+    unallocated: number;
+    capitalFailing: number;
+    monthsFailing?: number;
+  }
+
+  interface IndirectConfig {
+    rate: number;
+    referenceDoc: string;
+    appliesTo: string[];
+  }
+
+  const rail = document.querySelector<HTMLElement>('[data-lib-rail]');
+
+  if (rail) {
+    const text = (sel: string, value: string) => {
+      const el = rail.querySelector(sel);
+      if (el) el.textContent = value;
+    };
+
+    // ── the money band ──────────────────────────────────────────────────────
+    const applyTotals = (d: LibTotals) => {
+      const over = d.total > contract.contractValue;
+      rail.classList.toggle('is-over', over);
+
+      text('[data-stat-total] .esa-stat__value', usd(d.total));
+      text(
+        '[data-stat-total] .esa-stat__sub',
+        `${pct(d.pctOfValue)} of the ${usd(contract.contractValue)} Contract Value`,
+      );
+
+      // esa-progress-bar is a static server snapshot by design; driving the fill
+      // + aria value + variant class is the documented way to animate one.
+      const bar = rail.querySelector<HTMLElement>('[data-meter] .esa-progress-bar');
+      const fill = bar?.querySelector<HTMLElement>('.esa-progress-bar__fill');
+      const shown = Math.max(0, Math.min(100, d.pctOfValue * 100));
+      if (fill) fill.style.width = `${shown}%`;
+      if (bar) {
+        bar.setAttribute('aria-valuenow', String(Math.round(shown)));
+        bar.classList.toggle('esa-progress-bar--primary', !over);
+        bar.classList.toggle('esa-progress-bar--danger', over);
+      }
+
+      text(
+        '[data-remaining]',
+        over
+          ? `${usd(Math.abs(d.remaining))} over the ceiling`
+          : `${usd(d.remaining)} remaining`,
+      );
+
+      text('[data-ledger="direct"]', usd(d.direct));
+      text('[data-ledger="indirect"]', usd(d.indirect));
+      // The base now rides the event, so it is read rather than reverse-derived
+      // from the rate — which matters, because the base moves when the vendor
+      // re-scopes the rate, not only when a line changes. If a producer ever
+      // omits it, the server-rendered figure holds rather than printing $NaN.
+      if (typeof d.indirectBase === 'number') {
+        text('[data-ledger="indirect-base"]', `${usd(d.indirectBase)} base`);
+      }
+    };
+
+    // ── the gate ────────────────────────────────────────────────────────────
+    const setCheckDetail = (key: string, detail: string) => {
+      const d = rail.querySelector(`[data-check="${key}"] [data-check-detail]`);
+      if (d) d.textContent = detail;
+    };
+
+    const setCheck = (key: string, pass: boolean, detail: string) => {
+      const row = rail.querySelector(`[data-check="${key}"]`);
+      if (!row) return;
+      row.classList.toggle('is-pass', pass);
+      row.classList.toggle('is-fail', !pass);
+      setCheckDetail(key, detail);
+      const blocker = rail.querySelector<HTMLElement>(`[data-blocker="${key}"]`);
+      if (blocker) blocker.hidden = pass;
+    };
+
+    const plural = (n: number) => (n === 1 ? '' : 's');
+
+    const refreshGate = () => {
+      // Hidden rows are gates that do not apply to this budget (the review gate
+      // when nothing has been returned) — they must not be counted or block.
+      const rows = Array.from(rail.querySelectorAll<HTMLElement>('[data-check]')).filter(
+        (r) => !r.hidden,
+      );
+      const failed = rows.filter((r) => r.classList.contains('is-fail')).length;
+      const clear = rows.length - failed;
+
+      text('[data-gate-count]', `${clear} of ${rows.length} clear`);
+      text(
+        '[data-submit-reason]',
+        failed === 0
+          ? 'All checks clear. Submitting sends the budget to BPA and locks it for review.'
+          : `${failed} check${plural(failed)} still ${failed === 1 ? 'stands' : 'stand'} between you and submitting.`,
+      );
+
+      const blockers = rail.querySelector<HTMLElement>('[data-submit-blockers]');
+      if (blockers) blockers.hidden = failed === 0;
+
+      const btn = rail.querySelector<HTMLButtonElement>('button[data-submit]');
+      if (btn) {
+        btn.disabled = failed > 0;
+        btn.closest('.esa-button')?.classList.toggle('esa-button--disabled', failed > 0);
+      }
+    };
+
+    // Detail strings mirror submitChecksFor() exactly so a client recompute and a
+    // server render are byte-identical.
+    document.addEventListener('cbf-lib:totals', (event) => {
+      const d = (event as CustomEvent<LibTotals>).detail;
+      if (!d) return;
+
+      applyTotals(d);
+
+      setCheck(
+        'allocation',
+        d.unallocated === 0,
+        d.unallocated === 0
+          ? 'All lines total 100%'
+          : `${d.unallocated} line${plural(d.unallocated)} unallocated`,
+      );
+      setCheck(
+        'gsa',
+        d.failing === 0,
+        d.failing === 0
+          ? 'All referenced rates within ceiling'
+          : `${d.failing} line${plural(d.failing)} over ceiling`,
+      );
+      // A missing count must not fail the gate and disable Submit on a lie — the
+      // server-rendered state holds instead.
+      if (typeof d.capitalFailing === 'number') {
+        setCheck(
+          'capital',
+          d.capitalFailing === 0,
+          d.capitalFailing === 0
+            ? `Threshold ${usd(contract.capitalizationThreshold)} per item`
+            : `${d.capitalFailing} item${plural(d.capitalFailing)} filed in the wrong category`,
+        );
+      }
+      if (typeof d.monthsFailing === 'number') {
+        setCheck(
+          'months',
+          d.monthsFailing === 0,
+          d.monthsFailing === 0
+            ? `All positions within ${contractMonths} months`
+            : `${d.monthsFailing} position${plural(d.monthsFailing)} over ${contractMonths} months`,
+        );
+      }
+      setCheck(
+        'ceiling',
+        d.total <= contract.contractValue,
+        d.total <= contract.contractValue
+          ? `${usd(d.remaining)} remaining`
+          : `${usd(Math.abs(d.remaining))} over`,
+      );
+
+      refreshGate();
+    });
+
+    // ── the indirect scope ──────────────────────────────────────────────────
+    // Re-scoping which categories the rate is charged on moves the base and the
+    // total. The dollars come back through 'cbf-lib:totals' (the grid re-fires
+    // it), so this handler owns only the EXPLANATION: the rate, how wide the
+    // scope is, and the reference document the `indirect` check cites. It never
+    // flips that check's pass state — an approved rate stays approved however
+    // the vendor scopes it.
+    document.addEventListener('cbf-lib:indirect-config', (event) => {
+      const cfg = (event as CustomEvent<{ config: IndirectConfig }>).detail?.config;
+      if (!cfg) return;
+
+      text('[data-ledger="indirect-rate"]', pct(cfg.rate));
+      text(
+        '[data-ledger="indirect-scope"]',
+        `on ${cfg.appliesTo.length} of ${categories.length} categories`,
+      );
+      setCheckDetail('indirect', `${pct(cfg.rate)} — ${cfg.referenceDoc}`);
+    });
+
+    // ── the review gate ─────────────────────────────────────────────────────
+    // A budget that came back marked cannot be resubmitted until the vendor has
+    // worked every mark off. The review panel owns the marks and broadcasts
+    // them; this rail only decides whether the gate applies and whether it
+    // passes — and relabels the button, because resubmitting a returned budget
+    // is not the same act as submitting a fresh one.
+    document.addEventListener('cbf-lib:review', (event) => {
+      const detail = (event as CustomEvent<{ review: any; counts: any }>).detail;
+      if (!detail?.review || !detail?.counts) return;
+      const { review, counts } = detail;
+      const applies =
+        (review.status === 'returned' || review.status === 'approved') && counts.total > 0;
+
+      const row = rail.querySelector<HTMLElement>('[data-check="review"]');
+      if (row) row.hidden = !applies;
+      const blocker = rail.querySelector<HTMLElement>('[data-blocker="review"]');
+      if (blocker) blocker.hidden = !applies || counts.outstanding === 0;
+
+      if (applies) {
+        setCheck(
+          'review',
+          counts.outstanding === 0,
+          counts.outstanding === 0
+            ? `All ${counts.total} marked line${counts.total === 1 ? '' : 's'} addressed`
+            : `${counts.outstanding} of ${counts.total} still outstanding`,
+        );
+      }
+
+      const label = rail.querySelector('button[data-submit] .esa-button__label');
+      if (label) {
+        label.textContent =
+          review.status === 'returned' ? 'Resubmit line item budget' : 'Submit line item budget';
+      }
+
+      refreshGate();
+    });
+
+    // Nothing submits on the vendor's behalf — this is the one action they own.
+    rail.querySelector<HTMLButtonElement>('button[data-submit]')?.addEventListener('click', (e) => {
+      const btn = e.currentTarget as HTMLButtonElement;
+      if (btn.disabled) return;
+      const sb = document.querySelector('[data-snackbar]') as any;
+      (sb?.success)?.call(
+        sb,
+        `${contract.fiscalYear} line item budget submitted to BPA for review.`,
+        { duration: 4000 },
+      );
+    });
+  }
+</script>
+
+<style>
+  /* Neutral surface, value-layered against the page — the rail is chrome, not a
+     brand panel. The only saturated color in it is the primary submit button. */
+  .cbf-lib-rail {
+    position: sticky;
+    top: var(--spacing-500);
+    align-self: start;
+    padding: var(--spacing-500);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    /* The gate can outgrow a short viewport; the rail scrolls itself rather than
+       dragging the page or jacking the scroll. */
+    max-height: calc(100vh - var(--spacing-800));
+    overflow-y: auto;
+  }
+  /* Once the layout stacks (the page drops the rail above the grid rather than
+     squeezing it), sticky would pin a tall panel across a short viewport and eat
+     the grid. Below that breakpoint the rail is a normal block that scrolls away. */
+  @media (max-width: 1380px) {
+    .cbf-lib-rail {
+      position: static;
+      max-height: none;
+      overflow-y: visible;
+    }
+  }
+
+  .cbf-lib-rail__lede {
+    color: var(--color-text-secondary);
+  }
+
+  /* ── money band ───────────────────────────────────────────────────────── */
+  .cbf-lib-rail__remaining {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+  }
+
+  /* Over the ceiling: the headline figure and the remaining line both say so. */
+  .cbf-lib-rail.is-over .cbf-lib-rail__total :global(.esa-stat__value),
+  .cbf-lib-rail.is-over .cbf-lib-rail__remaining {
+    color: var(--color-danger-strong);
+  }
+
+  /* ── ledger ───────────────────────────────────────────────────────────── */
+  .cbf-lib-rail__ledger {
+    padding-top: var(--spacing-400);
+    border-top: 1px solid var(--color-border-light);
+  }
+  /* Sizes come from .type-body-small in the markup — the 14px floor holds
+     everywhere in this rail, so nothing here sets a raw type size. */
+  .cbf-lib-rail__ledger dt {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-050);
+    color: var(--color-text-secondary);
+  }
+  .cbf-lib-rail__ledger-note {
+    /* Dense, but not faint — still 14px, and the color stays readable. */
+    color: var(--color-text-muted);
+  }
+  .cbf-lib-rail__amount {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-lib-rail__ledger-rule {
+    padding-top: var(--spacing-200);
+    border-top: 1px solid var(--color-border-light);
+  }
+
+  /* ── gate ─────────────────────────────────────────────────────────────── */
+  .cbf-lib-rail__gate {
+    padding-top: var(--spacing-400);
+    border-top: 1px solid var(--color-border-light);
+  }
+  .cbf-lib-rail__count {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cbf-lib-rail__checks {
+    list-style: none;
+    padding: 0;
+  }
+  .cbf-lib-rail__check {
+    --align: flex-start;
+    padding: var(--spacing-200);
+    border-radius: var(--radius-100);
+  }
+  /* Status lives INSIDE the row — glyph, tint, badge. Never a left border. */
+  .cbf-lib-rail__check.is-fail {
+    background: var(--color-warning-subtle);
+  }
+
+  .cbf-lib-rail__check-body {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-200);
+    flex: 1 1 12rem;
+  }
+  .cbf-lib-rail__mark {
+    display: none;
+    flex: none;
+    /* nudge the 16px glyph onto the label's optical baseline */
+    margin-top: var(--spacing-050);
+  }
+  .cbf-lib-rail__check.is-pass .cbf-lib-rail__mark--pass { display: inline-flex; color: var(--color-success-strong); }
+  .cbf-lib-rail__check.is-fail .cbf-lib-rail__mark--fail { display: inline-flex; color: var(--color-warning-strong); }
+
+  .cbf-lib-rail__check-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-050);
+  }
+  .cbf-lib-rail__check-label {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+  }
+  .cbf-lib-rail__check-detail {
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cbf-lib-rail__check-badge { display: none; flex: none; }
+  .cbf-lib-rail__check.is-fail .cbf-lib-rail__check-badge { display: inline-flex; }
+
+  /* ── the two lenses ───────────────────────────────────────────────────────
+     The rail is the same reconciliation for both roles; only the ACTION differs,
+     and the COR's action is not here. */
+  .cbf-lib-rail__cor {
+    display: none;
+    padding-top: var(--spacing-400);
+    border-top: 1px solid var(--color-border-light);
+    color: var(--color-text-secondary);
+  }
+  :global(html[data-cbf-role='cor']) .cbf-lib-rail__cor { display: block; }
+  :global(html[data-cbf-role='cor']) .cbf-lib-rail__submit { display: none; }
+
+  /* ── submit ───────────────────────────────────────────────────────────── */
+  .cbf-lib-rail__submit {
+    padding-top: var(--spacing-400);
+    border-top: 1px solid var(--color-border-light);
+  }
+  /* The single saturated element in the rail, full width so it reads as THE action. */
+  .cbf-lib-rail__submit :global(.esa-button) { display: block; }
+
+  .cbf-lib-rail__reason {
+    color: var(--color-text-secondary);
+  }
+  .cbf-lib-rail__blockers {
+    list-style: none;
+    padding: 0;
+  }
+  .cbf-lib-rail__blocker {
+    padding-left: var(--spacing-300);
+    color: var(--color-text-secondary);
+    text-indent: calc(-1 * var(--spacing-300));
+  }
+  .cbf-lib-rail__blocker::before {
+    content: '— ';
+    color: var(--color-text-muted);
+  }
+</style>

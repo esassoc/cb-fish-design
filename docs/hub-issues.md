@@ -68,6 +68,46 @@ declare private _isDragging: boolean;  // was: private _isDragging: boolean;
 
 ## esa-combobox
 
+### No free-entry mode — cannot accept a value that isn't in `options`
+
+**Status:** Open — needs upstream change
+**Affects:** Any field where the option list is a set of SUGGESTIONS rather than the complete set of legal values
+
+**Problem:**
+`mode` is typed `'autocomplete' | 'select'`, and both only ever emit a value that
+came from `options` — `selectOption()` is the sole path to `emitValue()`, and
+typing into the autocomplete input only filters. There is no "creatable" /
+"free solo" / `allow-custom` mode, so the component cannot back a field where the
+list is a helpful head-start but arbitrary entry is legitimate.
+
+Found while building the LIB travel entry grid (`cbf-lib-cost-table.astro`). A
+trip's destination drives which GSA per-diem rows its cost lines reference, which
+makes a combobox the obvious reach — but the GSA schedule prices a few hundred
+localities separately and covers every other place in the country with one
+standard CONUS row. Constraining the field to listed localities would tell a
+vendor they may only travel where GSA itemises, which inverts how per diem works.
+
+**Workaround in the spoke:**
+Fell back to `<esa-text-field>` plus a derived resolution line under it
+("Separately listed — lines price at Portland, OR schedule rates." /
+"Not separately listed — lines price at the Standard CONUS rate."). This turned
+out to read better than the combobox would have, since it states the consequence
+rather than hiding it behind a filtered list — but it means no suggestions, and
+every spoke needing this pattern re-implements the resolution note.
+
+**Requested change:**
+Add an `allowCustom` boolean (or a third `mode`) that emits the typed string when
+it matches no option, so the option list can act as suggestions. The existing
+`_search` state already holds the text; it just never reaches `emitValue()`.
+
+```ts
+declare allowCustom: boolean;
+// on Enter / blur with allowCustom && _search && no active option:
+//   this._selected = [this._search]; this.emitValue();
+```
+
+---
+
 ### Click on already-focused input does not reopen dropdown (`autocomplete` mode)
 
 **Status:** Workaround applied locally in ecology repo — pending upstream fix  
@@ -326,3 +366,26 @@ Added the missing step to the theme block:
 **Requested change:** give the tablist `overflow-x: auto` (scrollbar-width: none) so the strip pans on narrow viewports, and/or expose a part/`--tab-layout-*` hook so themes can opt into a compact mode. An `activeIndex` change should also scroll the active tab into view.
 
 **Local workaround (CBFish):** none applied yet — the console is desktop-first and the strip fits ≥~520px; below that the trailing tab clips. If mobile becomes a requirement, drop `size="lg"` → `"md"` under a container query in `cbf-mywork-tabs` (buys ~60px) or shorten labels.
+
+## esa-radio-group — no `disabled` on the GROUP (only per-option)
+
+**Found:** 2026-08-05, building the COR review lens on `/lib-entry` (the indirect-rate
+drawer has to be inspectable but not editable when a reviewer opens it).
+
+**Issue:** `esa-radio-group`'s reactive properties are `options`, `label`, `size`,
+`orientation`, `value` — there is no `disabled`. Every other form lego in the catalog
+(esa-text-field, esa-textarea, esa-select, esa-checkbox, esa-date-picker,
+esa-button-toggle) reflects a `disabled` boolean, so a screen that has to put a whole
+form into a read-only state can disable all of them EXCEPT the radio group. Per-option
+`disabled` exists (the LIB screen already uses it to render "Dual rate" as visibly
+out of scope), but disabling every option one by one is not the same thing: the group
+still takes focus and still reads as interactive.
+
+**Requested change:** add `disabled: { type: Boolean, reflect: true }` to
+`esa-radio-group`, matching the other form-associated legos — host `[disabled]`
+styling, `aria-disabled` on the radiogroup, and no roving tabindex when set.
+
+**Local workaround (CBFish):** none needed by luck rather than design — the only
+option the group offers in the reviewer's lens is the one already selected, so a COR
+cannot actually change anything. Any future read-only surface with a real multi-option
+radio group would need a bespoke overlay.

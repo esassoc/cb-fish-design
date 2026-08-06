@@ -1,0 +1,598 @@
+---
+/*
+ * cbf-lib-review-panel — the COR's review console AND the vendor's change list.
+ * One component, because they are one thing seen from two sides: the marks the
+ * BPA COR put on the submitted Line Item Budget.
+ *
+ * ── WHY ONE COMPONENT ───────────────────────────────────────────────────────
+ * The temptation is two screens — a "review" page for the COR and a "changes
+ * requested" banner for the vendor. That splits the record in half and lets the
+ * two halves drift. What actually happens is a round trip on ONE document: the
+ * COR marks lines and issues a decision; the vendor works the same marks off and
+ * resubmits. So this panel renders both lenses from the same review state and
+ * reveals the half that belongs to whoever is looking (see cbf-role-switch).
+ *
+ * ── WHAT EACH LENS GETS ─────────────────────────────────────────────────────
+ * COR      the marks with Edit / Remove, a return memo, and the two decisions
+ *          only they can make — Return for revision, or Approve. Approve is
+ *          blocked while any REQUIRED mark stands: a budget cannot be approved
+ *          and simultaneously carry a change the COR called mandatory.
+ * VENDOR   nothing at all while the review is still 'in-review' — an unfinished
+ *          review read as a work list is worse than no review — and once it is
+ *          returned, the same marks as a working checklist, each with "Mark
+ *          addressed". Working the list down is what clears the resubmit gate in
+ *          the reconciliation rail.
+ *
+ * ── EVENT CONTRACT (all on `document`) ──────────────────────────────────────
+ * LISTEN   'cbf-lib:review'   detail: { review, counts }
+ *          The cost grid fires this when the COR flags/unflags a row; this panel
+ *          re-renders its list from it. It fires the SAME event after its own
+ *          edits, and ignores its own echo by comparing state identity.
+ * LISTEN   'cbf-role:change'  detail: { role }   — repaints role-worded copy.
+ * DISPATCH 'cbf-lib:review'   after a decision, a removal, or an addressed mark.
+ * DISPATCH 'cbf-lib:focus-line'  detail: { lineId, openFlag }
+ *          "Go to line" scrolls the grid to the row and flashes it; the COR's
+ *          "Edit" adds openFlag:true, which opens that row's mark popover — the
+ *          mark is edited ON the line it is about, never in a list far from it.
+ *
+ * ── THE LIST IS TEMPLATE-CLONED, NOT STRING-BUILT ───────────────────────────
+ * A mark can be added at any time, so the list is dynamic — but building
+ * esa-badge / esa-button markup in JavaScript would be re-implementing legos as
+ * strings. Instead the server renders every item complete, carrying BOTH
+ * severity badges and BOTH role's actions, and the script clones a pristine item
+ * and toggles what is already there. Same pattern as the cost grid's per-shape
+ * row templates and the rail's pass/fail glyphs.
+ *
+ * bcn-lego-checked: every element here is a lego — panel = esa-card, status and
+ * severity = esa-badge, counts = esa-stat, decisions and jumps = esa-button, the
+ * return memo = esa-textarea, "Mark addressed" = esa-checkbox, the approved and
+ * under-review states = esa-alert-box, the no-marks state = esa-empty-state. I
+ * walked the catalog (ls node_modules/@esa/ecology/src/components/): there is no
+ * review/comment/annotation/approval lego of any kind — esa-danger-zone is the
+ * nearest destructive-action panel and is not a review surface. What this file
+ * owns is composition only: the item frame, the quoted memo, and the role/status
+ * reveal rules. Beacon is not cloned on this machine.
+ */
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import { costLines, categoryOf, contract } from '../../data/lib-entry.mjs';
+import {
+  SEVERITIES,
+  severityMeta,
+  reasonLabel,
+  reviewMeta,
+  seedReview,
+  reviewCounts,
+  statusText,
+  statusBadge,
+  isAddressed,
+} from '../../data/lib-review.mjs';
+
+// SSR renders the seeded review; the script re-renders from sessionStorage on
+// mount if the tab already carries a review in flight.
+const review = seedReview();
+const counts = reviewCounts(review);
+const badge = statusBadge(review);
+
+const lineOf = (id: string) => costLines.find((l: any) => l.id === id);
+const lineLabel = (id: string) => lineOf(id)?.label ?? id;
+const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
+---
+
+<section
+  class="cbf-lrp"
+  data-review-panel
+  data-status={review.status}
+  aria-labelledby="cbf-lrp-title"
+>
+  <EsaCard variant="outlined">
+    <div class="stack" data-gap="lg">
+      {/* ── Who this is, where it stands ─────────────────────────────────── */}
+      <header class="cbf-lrp__head repel" data-gap="md">
+        <div class="stack" data-gap="2xs">
+          <div class="cluster" data-gap="xs">
+            <h2 id="cbf-lrp-title" class="type-section-title" data-rp-title>
+              BPA review of this budget
+            </h2>
+            <span data-rp-badge>
+              <EsaBadge value={badge.value} variant={badge.variant} size="sm" />
+            </span>
+          </div>
+          <p class="cbf-lrp__status type-body" data-rp-status>{statusText(review, 'vendor')}</p>
+          <p class="cbf-lrp__meta type-body-small">
+            Cycle {reviewMeta.cycle} · submitted {reviewMeta.submittedOn} by {reviewMeta.vendorContact} ·
+            reviewer {reviewMeta.reviewer}, {reviewMeta.reviewerRole}
+          </p>
+        </div>
+
+        <div class="cbf-lrp__counts cluster" data-gap="lg">
+          <div class="cbf-lrp__num">
+            <EsaStat value={String(counts.required)} label="Changes required" sub="must be fixed" />
+          </div>
+          <div class="cbf-lrp__num">
+            <EsaStat value={String(counts.questions)} label="Questions" sub="must be answered" />
+          </div>
+          <div class="cbf-lrp__num">
+            <EsaStat value={`${counts.addressed}/${counts.total}`} label="Addressed" sub="by the vendor" />
+          </div>
+        </div>
+      </header>
+
+      {/* ── The vendor, while the COR is still working: no marks, no guessing ── */}
+      <div data-rp-role="vendor" data-rp-when="in-review">
+        <EsaAlertBox variant="info" title="This budget is with BPA">
+          Nothing is required of you while the review is open. If changes are needed you will get
+          the budget back with every line marked, and the marks will appear on this screen.
+        </EsaAlertBox>
+      </div>
+
+      {/* ── Approved ─────────────────────────────────────────────────────── */}
+      <div data-rp-when="approved">
+        <EsaAlertBox variant="success" title="Approved">
+          This line item budget is approved for {contract.fiscalYear}. The marks below stay on the
+          record for the contract file.
+        </EsaAlertBox>
+      </div>
+
+      {/* ── How the COR marks a line. Said once, where they start. ───────── */}
+      <p class="cbf-lrp__howto type-body-small" data-rp-role="cor">
+        Mark a line with the flag button at the end of its row. Every mark carries a reason and a
+        note saying what has to change — the vendor sees them only once you return the budget.
+      </p>
+
+      {/* ── The memo: written by the COR, read by the vendor ─────────────── */}
+      <div class="stack" data-gap="xs" data-rp-memo-wrap>
+        <div data-rp-role="cor">
+          <esa-textarea
+            data-rp-memo
+            label="Return memo"
+            rows="3"
+            auto-resize
+            help-text="The cover note that goes with the returned budget. The line marks carry the detail."
+            value={review.memo}
+          ></esa-textarea>
+        </div>
+        <blockquote class="cbf-lrp__memo" data-rp-role="vendor" data-rp-memo-read>
+          <p class="type-body">{review.memo}</p>
+          <footer class="cbf-lrp__memo-by type-body-small">
+            {reviewMeta.reviewer} · {reviewMeta.returnedOn}
+          </footer>
+        </blockquote>
+      </div>
+
+      {/* ── The marks ─────────────────────────────────────────────────────── */}
+      <div class="stack" data-gap="sm" data-rp-list-wrap>
+        <div class="repel" data-gap="sm">
+          <h3 class="type-card-title">Marked lines</h3>
+          <span class="cbf-lrp__count type-body-small" role="status" data-rp-outstanding>
+            {counts.outstanding} of {counts.total} outstanding
+          </span>
+        </div>
+
+        <ul class="cbf-lrp__list stack" data-gap="xs" data-rp-list>
+          {review.flags.map((f: any) => (
+            <li
+              class="cbf-lrp__item"
+              data-rp-item
+              data-line-id={f.lineId}
+              data-severity={f.severity}
+              data-addressed={String(isAddressed(review, f.lineId))}
+            >
+              <div class="cbf-lrp__item-body stack" data-gap="2xs">
+                <div class="cluster" data-gap="2xs">
+                  {/* Both severities ship rendered; the item reveals one. */}
+                  <span data-rp-sev={SEVERITIES.REQUIRED}>
+                    <EsaBadge
+                      value={severityMeta[SEVERITIES.REQUIRED].short}
+                      variant={severityMeta[SEVERITIES.REQUIRED].variant}
+                      size="sm"
+                    />
+                  </span>
+                  <span data-rp-sev={SEVERITIES.QUESTION}>
+                    <EsaBadge
+                      value={severityMeta[SEVERITIES.QUESTION].short}
+                      variant={severityMeta[SEVERITIES.QUESTION].variant}
+                      size="sm"
+                    />
+                  </span>
+                  <span class="cbf-lrp__line" data-rp-line>{lineLabel(f.lineId)}</span>
+                  <span class="cbf-lrp__sep" aria-hidden="true">·</span>
+                  <span class="cbf-lrp__cat type-body-small" data-rp-cat>{lineCat(f.lineId)}</span>
+                  <span data-rp-done-badge>
+                    <EsaBadge value="Addressed" variant="success" size="sm" />
+                  </span>
+                </div>
+
+                <p class="cbf-lrp__reason type-body-small" data-rp-reason>{reasonLabel(f.reason)}</p>
+                <p class="cbf-lrp__note type-body" data-rp-note>{f.note}</p>
+                <p class="cbf-lrp__by type-body-small" data-rp-by>{f.author} · {f.date}</p>
+              </div>
+
+              <div class="cbf-lrp__item-actions cluster" data-gap="2xs">
+                <span data-rp-goto>
+                  <EsaButton size="sm" color="secondary" appearance="soft" icon="arrow-right">
+                    Go to line
+                  </EsaButton>
+                </span>
+                <span data-rp-role="cor" data-rp-edit>
+                  <EsaButton size="sm" color="secondary" appearance="outline" icon="pencil">Edit</EsaButton>
+                </span>
+                <span data-rp-role="cor" data-rp-remove>
+                  <EsaButton size="sm" color="ghost" icon="trash-2">Remove</EsaButton>
+                </span>
+                <span data-rp-role="vendor" class="cbf-lrp__addressed">
+                  <esa-checkbox
+                    data-rp-addressed
+                    label="Mark addressed"
+                    size="md"
+                    checked={isAddressed(review, f.lineId)}
+                  ></esa-checkbox>
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+
+        <div data-rp-empty hidden={review.flags.length > 0}>
+          <EsaEmptyState
+            title="No lines are marked"
+            description="Nothing on this budget is flagged. Use the flag button on a row to mark a line that has to change."
+            size="sm"
+          />
+        </div>
+      </div>
+
+      {/* ── The decisions only the COR can make ───────────────────────────── */}
+      <div class="cbf-lrp__decide repel" data-gap="sm" data-rp-role="cor">
+        <p class="cbf-lrp__decide-note type-body-small" data-rp-decide-note></p>
+        <div class="cluster" data-gap="xs">
+          <span data-rp-reopen>
+            <EsaButton size="md" color="ghost">Reopen review</EsaButton>
+          </span>
+          <span data-rp-return>
+            <EsaButton size="md" color="warning" appearance="outline" icon="corner-up-left">
+              Return for revision
+            </EsaButton>
+          </span>
+          <span data-rp-approve>
+            <EsaButton size="md" color="primary" icon="check">Approve budget</EsaButton>
+          </span>
+        </div>
+      </div>
+
+      {/* ── What the vendor does next ────────────────────────────────────── */}
+      <p class="cbf-lrp__next type-body-small" data-rp-role="vendor" data-rp-next></p>
+    </div>
+  </EsaCard>
+</section>
+
+<script>
+  import '@esa/ecology/esa-textarea';
+  import '@esa/ecology/esa-checkbox';
+  import { costLines, categoryOf } from '../../data/lib-entry.mjs';
+  import {
+    reasonLabel,
+    reviewMeta,
+    loadReview,
+    saveReview,
+    reviewCounts,
+    statusText,
+    statusBadge,
+    isAddressed,
+    requiredFlags,
+    fireReview,
+  } from '../../data/lib-review.mjs';
+
+  const root = document.querySelector<HTMLElement>('[data-review-panel]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    let review: any = loadReview();
+
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string, scope: ParentNode = root) =>
+      scope.querySelector<T>(sel);
+    const $$ = (sel: string, scope: ParentNode = root) =>
+      Array.from(scope.querySelectorAll<HTMLElement>(sel));
+    const role = () => (document.documentElement.dataset.cbfRole === 'cor' ? 'cor' : 'vendor');
+
+    const lineOf = (id: string) => costLines.find((l: any) => l.id === id);
+    const lineLabel = (id: string) => lineOf(id)?.label || '(untitled line)';
+    const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
+
+    const setText = (el: Element | null, text: string) => {
+      if (el) el.textContent = text;
+    };
+    const show = (el: Element | null, on: boolean) => {
+      if (el) (el as HTMLElement).hidden = !on;
+    };
+    /** esa-badge renders <span.esa-badge><span.esa-badge__text>. */
+    const setBadge = (wrap: Element | null, value: string, variant: string) => {
+      const b = wrap?.querySelector('.esa-badge');
+      if (!b) return;
+      setText(b.querySelector('.esa-badge__text') ?? b, value);
+      ['primary', 'secondary', 'success', 'warning', 'danger', 'info'].forEach((v) =>
+        b.classList.toggle(`esa-badge--${v}`, v === variant),
+      );
+    };
+    const setDisabled = (wrap: Element | null, off: boolean) => {
+      const btn = wrap?.querySelector('button');
+      if (btn) btn.disabled = off;
+      wrap?.querySelector('.esa-button')?.classList.toggle('esa-button--disabled', off);
+    };
+
+    /* A pristine item, captured before any edit — cloning a real rendered item is
+       how a new mark gets its legos without rebuilding esa-* markup in strings. */
+    const itemTemplate = $('[data-rp-item]')?.cloneNode(true) as HTMLElement | undefined;
+
+    const fillItem = (li: HTMLElement, f: any) => {
+      li.dataset.lineId = f.lineId;
+      li.dataset.severity = f.severity;
+      li.dataset.addressed = String(isAddressed(review, f.lineId));
+      setText($('[data-rp-line]', li), lineLabel(f.lineId));
+      setText($('[data-rp-cat]', li), lineCat(f.lineId));
+      setText($('[data-rp-reason]', li), reasonLabel(f.reason));
+      setText($('[data-rp-note]', li), f.note || 'No note written.');
+      setText($('[data-rp-by]', li), `${f.author} · ${f.date}`);
+      const box = $('[data-rp-addressed]', li) as any;
+      if (box) box.checked = isAddressed(review, f.lineId);
+    };
+
+    const renderList = () => {
+      const list = $('[data-rp-list]');
+      if (!list || !itemTemplate) return;
+      const flags = review.flags ?? [];
+      const existing = new Map($$('[data-rp-item]', list).map((li) => [li.dataset.lineId!, li]));
+
+      flags.forEach((f: any) => {
+        let li = existing.get(f.lineId);
+        if (li) existing.delete(f.lineId);
+        else {
+          li = itemTemplate.cloneNode(true) as HTMLElement;
+          list.appendChild(li);
+        }
+        fillItem(li, f);
+        list.appendChild(li); // keep DOM order equal to review order
+      });
+      existing.forEach((li) => li.remove());
+      show($('[data-rp-empty]'), flags.length === 0);
+    };
+
+    const render = () => {
+      const counts = reviewCounts(review);
+      const r = role();
+      const badge = statusBadge(review);
+
+      root.dataset.status = review.status;
+      setBadge($('[data-rp-badge]'), badge.value, badge.variant);
+      setText($('[data-rp-title]'), r === 'cor' ? 'Your review of this budget' : 'BPA review of this budget');
+      setText($('[data-rp-status]'), statusText(review, r));
+
+      const stats = $$('.cbf-lrp__counts .esa-stat__value');
+      if (stats[0]) stats[0].textContent = String(counts.required);
+      if (stats[1]) stats[1].textContent = String(counts.questions);
+      if (stats[2]) stats[2].textContent = `${counts.addressed}/${counts.total}`;
+      setText($('[data-rp-outstanding]'), `${counts.outstanding} of ${counts.total} outstanding`);
+
+      renderList();
+
+      // Memo — the COR's textarea is the source; the vendor reads what was issued.
+      const memoRead = $('[data-rp-memo-read] p');
+      setText(memoRead, review.memo || 'No cover note was written.');
+      setText(
+        $('[data-rp-memo-read] footer'),
+        `${reviewMeta.reviewer} · ${review.status === 'approved' ? 'approved' : reviewMeta.returnedOn}`,
+      );
+
+      // COR decisions. Approve stays shut while a REQUIRED mark stands — a budget
+      // cannot be approved and carry a mandatory change at the same time.
+      const blocking = requiredFlags(review).length;
+      setDisabled($('[data-rp-approve]'), blocking > 0);
+      setDisabled($('[data-rp-return]'), counts.total === 0 || review.status === 'returned');
+      show($('[data-rp-reopen]'), review.status !== 'in-review');
+      setText(
+        $('[data-rp-decide-note]'),
+        blocking > 0
+          ? `${blocking} required change${blocking === 1 ? '' : 's'} — the budget can be returned, not approved.`
+          : counts.total === 0
+            ? 'Nothing is marked. Approving accepts the budget as submitted.'
+            : 'Only questions are outstanding — you can approve or return.',
+      );
+
+      // What the vendor does next.
+      setText(
+        $('[data-rp-next]'),
+        review.status === 'approved'
+          ? 'Nothing further is needed on this budget.'
+          : counts.outstanding === 0
+            ? 'Every item is marked addressed. Resubmit the budget from the reconciliation rail.'
+            : `Fix each line, then mark it addressed. Resubmitting unlocks when all ${counts.total} are cleared.`,
+      );
+    };
+
+    /** Save, repaint, and tell the grid and the rail. */
+    const commit = () => {
+      saveReview(review);
+      render();
+      fireReview(review);
+    };
+
+    // ── The grid owns marking; this panel owns the list, the memo, the decision ──
+    document.addEventListener('cbf-lib:review', (e: Event) => {
+      const incoming = (e as CustomEvent).detail?.review;
+      if (!incoming || incoming === review) return;
+      review = incoming;
+      render();
+    });
+
+    document.addEventListener('cbf-role:change', render);
+
+    root.addEventListener('click', (e: Event) => {
+      const t = e.target as HTMLElement;
+      const li = t.closest('[data-rp-item]') as HTMLElement | null;
+
+      if (li) {
+        const lineId = li.dataset.lineId!;
+        if (t.closest('[data-rp-goto]') || t.closest('[data-rp-edit]')) {
+          document.dispatchEvent(
+            new CustomEvent('cbf-lib:focus-line', {
+              detail: { lineId, openFlag: !!t.closest('[data-rp-edit]') },
+            }),
+          );
+          return;
+        }
+        if (t.closest('[data-rp-remove]')) {
+          review.flags = (review.flags ?? []).filter((f: any) => f.lineId !== lineId);
+          review.addressed = (review.addressed ?? []).filter((id: string) => id !== lineId);
+          commit();
+          return;
+        }
+      }
+
+      if (t.closest('[data-rp-return]')) {
+        review.status = 'returned';
+        review.addressed = [];
+        commit();
+        toast(`Budget returned to ${reviewMeta.vendorContact} with ${reviewCounts(review).total} marks.`);
+        return;
+      }
+      if (t.closest('[data-rp-approve]')) {
+        review.status = 'approved';
+        commit();
+        toast('Line item budget approved. The vendor is notified.', 'success');
+        return;
+      }
+      if (t.closest('[data-rp-reopen]')) {
+        review.status = 'in-review';
+        commit();
+      }
+    });
+
+    root.addEventListener('change', (e: Event) => {
+      const el = e.target as HTMLElement & { value?: string; checked?: boolean };
+      if (el.dataset && 'rpMemo' in el.dataset) {
+        review.memo = String(el.value ?? '');
+        saveReview(review);
+        setText($('[data-rp-memo-read] p'), review.memo || 'No cover note was written.');
+        return;
+      }
+      if (el.dataset && 'rpAddressed' in el.dataset) {
+        const li = el.closest('[data-rp-item]') as HTMLElement | null;
+        if (!li) return;
+        const id = li.dataset.lineId!;
+        const on = !!el.checked;
+        review.addressed = on
+          ? Array.from(new Set([...(review.addressed ?? []), id]))
+          : (review.addressed ?? []).filter((x: string) => x !== id);
+        commit();
+      }
+    });
+
+    const toast = (message: string, kind: 'success' | 'info' = 'info') => {
+      const sb = document.querySelector('[data-snackbar]') as any;
+      (sb?.[kind] ?? sb?.info)?.call(sb, message, { duration: 4000 });
+    };
+
+    render();
+    // Announce once after mount so the grid and the rail start from this state
+    // even when their scripts registered after this one ran.
+    requestAnimationFrame(() => fireReview(review));
+  }
+</script>
+
+<style>
+  /* ── Role and status reveal ───────────────────────────────────────────────
+     Both lenses are server-rendered; the document's role attribute reveals one.
+     Written as :global(html[...]) so the scoped class still does the selecting. */
+  :global(html[data-cbf-role='cor']) .cbf-lrp [data-rp-role='vendor'],
+  :global(html:not([data-cbf-role='cor'])) .cbf-lrp [data-rp-role='cor'] {
+    display: none !important;
+  }
+
+  /* Status-only blocks. */
+  .cbf-lrp [data-rp-when] { display: none; }
+  .cbf-lrp[data-status='in-review'] [data-rp-when='in-review'],
+  .cbf-lrp[data-status='approved'] [data-rp-when='approved'] { display: block; }
+  :global(html[data-cbf-role='cor']) .cbf-lrp [data-rp-when='in-review'] { display: none; }
+
+  /* The vendor sees nothing of an unfinished review — not the memo, not the marks. */
+  :global(html:not([data-cbf-role='cor'])) .cbf-lrp[data-status='in-review'] [data-rp-list-wrap],
+  :global(html:not([data-cbf-role='cor'])) .cbf-lrp[data-status='in-review'] [data-rp-memo-wrap],
+  :global(html:not([data-cbf-role='cor'])) .cbf-lrp[data-status='in-review'] [data-rp-next] {
+    display: none;
+  }
+
+  /* ── Head ─────────────────────────────────────────────────────────────── */
+  .cbf-lrp__head { --align: flex-start; }
+  .cbf-lrp__status { color: var(--color-text-primary); max-inline-size: 72ch; }
+  .cbf-lrp__meta { color: var(--color-text-secondary); }
+  .cbf-lrp__counts { --align: flex-end; }
+  /* Supporting figures inside a strip — a step down from the page-hero stat. */
+  .cbf-lrp__num { --stat-value-size: var(--type-size-500); }
+  .cbf-lrp__num :global(.esa-stat__value) { font-variant-numeric: tabular-nums; }
+
+  .cbf-lrp__howto { color: var(--color-text-secondary); max-inline-size: 76ch; }
+
+  /* ── The memo, quoted rather than boxed: it is someone's words. ────────── */
+  .cbf-lrp__memo {
+    margin: 0;
+    padding-inline-start: var(--spacing-400);
+    border-inline-start: 2px solid var(--color-border-strong);
+  }
+  .cbf-lrp__memo p { margin: 0; color: var(--color-text-primary); max-inline-size: 76ch; }
+  .cbf-lrp__memo-by { color: var(--color-text-secondary); margin-block-start: var(--spacing-100); }
+
+  /* ── The marks ────────────────────────────────────────────────────────── */
+  .cbf-lrp__count { color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+  .cbf-lrp__list { list-style: none; margin: 0; padding: 0; }
+
+  .cbf-lrp__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    padding: var(--spacing-300) var(--spacing-400);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    /* Severity is carried by the badge and a background tint INSIDE the item —
+       never a colored left border. */
+    background: var(--color-danger-subtle);
+  }
+  .cbf-lrp__item[data-severity='question'] { background: var(--color-warning-subtle); }
+  .cbf-lrp__item[data-addressed='true'] { background: var(--color-surface-sunken); }
+
+  .cbf-lrp__item-body { flex: 1 1 28rem; min-inline-size: 0; }
+  .cbf-lrp__item-actions { flex: none; --align: center; }
+
+  /* One severity badge shows; the other is rendered and hidden. */
+  .cbf-lrp__item [data-rp-sev] { display: none; }
+  .cbf-lrp__item[data-severity='required'] [data-rp-sev='required'],
+  .cbf-lrp__item[data-severity='question'] [data-rp-sev='question'] { display: inline-flex; }
+  .cbf-lrp__item [data-rp-done-badge] { display: none; }
+  .cbf-lrp__item[data-addressed='true'] [data-rp-done-badge] { display: inline-flex; }
+  /* An addressed mark stays readable, just visibly settled. */
+  .cbf-lrp__item[data-addressed='true'] .cbf-lrp__note { color: var(--color-text-secondary); }
+
+  .cbf-lrp__line { font-weight: var(--font-weight-semibold); color: var(--color-text-primary); }
+  .cbf-lrp__sep { color: var(--color-text-muted); }
+  .cbf-lrp__cat { color: var(--color-text-secondary); }
+  .cbf-lrp__reason { color: var(--color-text-secondary); font-weight: var(--font-weight-medium); }
+  .cbf-lrp__note { color: var(--color-text-primary); max-inline-size: 76ch; }
+  .cbf-lrp__by { color: var(--color-text-secondary); }
+
+  /* ── Decisions ────────────────────────────────────────────────────────── */
+  .cbf-lrp__decide {
+    --align: center;
+    padding-block-start: var(--spacing-400);
+    border-block-start: 1px solid var(--color-border-light);
+  }
+  .cbf-lrp__decide-note { color: var(--color-text-secondary); }
+  .cbf-lrp__next { color: var(--color-text-secondary); }
+
+  /* Layout primitives set display:flex, which would beat the UA [hidden] rule. */
+  [hidden] { display: none !important; }
+</style>

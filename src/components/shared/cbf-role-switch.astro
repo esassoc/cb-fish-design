@@ -1,0 +1,172 @@
+---
+/*
+ * cbf-role-switch — the prototype's role lens.
+ *
+ * WHY IT EXISTS: some screens in cbfish are ONE document read by two people with
+ * different powers — a vendor who enters a Line Item Budget, and the BPA COR who
+ * reviews it and sends it back. In production the role comes from who you signed
+ * in as; in a prototype nobody signs in, so the role has to be switchable, and it
+ * has to be OBVIOUSLY a prototype device rather than app chrome someone might
+ * mistake for a real cbfish control. Hence the dashed frame and the "Prototype
+ * control" label: it reads as scaffolding, not as product.
+ *
+ * HOW IT WORKS: the role is a single attribute on the document element —
+ * `<html data-cbf-role="vendor|cor">`. Both roles are SERVER-RENDERED into the
+ * page; components reveal their own half with `:global(html[data-cbf-role='cor'])`
+ * selectors. That means switching is instant and lossless: the budget the vendor
+ * just typed is still there when you come back from the COR's side, which is the
+ * whole point of watching a round trip.
+ *
+ * An `is:inline` script sets the attribute at parse time, BEFORE the page paints,
+ * so a reload in the COR lens never flashes the vendor screen first.
+ *
+ * EVENT CONTRACT (on `document`)
+ *   dispatch  cbf-role:change   detail: { role }   // 'vendor' | 'cor'
+ *   Fired after the attribute is set, on mount and on every switch, so components
+ *   that need to do more than swap CSS (repaint a read-only mirror, re-run a
+ *   gate) can react without reading this component's DOM.
+ *
+ * bcn-lego-checked: the control itself IS esa-button-toggle — the segmented
+ * one-of-N lego, which is exactly a role lens (checked the full catalog: no
+ * esa-role-switch / esa-impersonate / esa-view-as exists; esa-radio-group is the
+ * same choice worn as a form field, and this is a view control, not a form value;
+ * esa-select hides the alternative behind a click, which defeats a device whose
+ * job is to advertise that a second view exists). The badge is esa-badge. What is
+ * left here is the prototype frame around it — a dashed strip and a caption —
+ * which is deliberately NOT a product surface and has no lego by design. Beacon is
+ * not cloned on this machine.
+ */
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import { ROLE_KEY } from '../../data/lib-review.mjs';
+
+interface Props {
+  /** The role the page renders as when nothing is stored yet. */
+  initial?: 'vendor' | 'cor';
+  /** One line saying what the lens changes on THIS screen. */
+  note?: string;
+}
+const {
+  initial = 'vendor',
+  note = 'The same screen, seen by the two people who use it.',
+} = Astro.props;
+---
+
+<!-- Set the lens before first paint, so a reload in the COR view never flashes
+     the vendor screen. Inline on purpose: a module script is deferred. -->
+<script is:inline define:vars={{ initial, ROLE_KEY }}>
+  (() => {
+    let role = initial;
+    try {
+      const url = new URL(window.location.href);
+      const q = url.searchParams.get('role');
+      const stored = window.sessionStorage?.getItem(ROLE_KEY);
+      role = q === 'cor' || q === 'vendor' ? q : stored === 'cor' || stored === 'vendor' ? stored : initial;
+    } catch {
+      /* private mode / no storage — the default lens still works */
+    }
+    document.documentElement.dataset.cbfRole = role;
+  })();
+</script>
+
+<aside class="cbf-role-switch" data-role-switch aria-label="Prototype role switch">
+  <div class="cbf-role-switch__ident stack" data-gap="3xs">
+    <span class="cluster" data-gap="2xs">
+      <EsaBadge value="Prototype control" variant="secondary" size="sm" />
+      <span class="cbf-role-switch__note">{note}</span>
+    </span>
+    <p class="cbf-role-switch__who" data-role-who></p>
+  </div>
+
+  <esa-button-toggle
+    class="cbf-role-switch__control"
+    size="sm"
+    label="Viewing as"
+    data-role-control
+  ></esa-button-toggle>
+</aside>
+
+<script>
+  import '@esa/ecology/esa-button-toggle';
+  import { ROLES, ROLE_KEY, roleMeta } from '../../data/lib-review.mjs';
+
+  const root = document.querySelector<HTMLElement>('[data-role-switch]');
+  if (root) {
+    const control = root.querySelector<HTMLElement & { options: any[]; value: string }>(
+      '[data-role-control]',
+    );
+    const who = root.querySelector<HTMLElement>('[data-role-who]');
+
+    const current = () =>
+      document.documentElement.dataset.cbfRole === 'cor' ? 'cor' : 'vendor';
+
+    if (control) {
+      control.options = ROLES.map((r: any) => ({ label: r.label, value: r.key }));
+      control.value = current();
+    }
+
+    const paintWho = (role: string) => {
+      const meta = roleMeta(role);
+      if (who) {
+        who.textContent =
+          role === 'cor'
+            ? `${meta.who} — reviewing this budget for BPA`
+            : `${meta.who} — entering this budget`;
+      }
+    };
+
+    const apply = (role: string) => {
+      document.documentElement.dataset.cbfRole = role;
+      try {
+        window.sessionStorage?.setItem(ROLE_KEY, role);
+      } catch {
+        /* ignore */
+      }
+      paintWho(role);
+      document.dispatchEvent(new CustomEvent('cbf-role:change', { detail: { role } }));
+    };
+
+    root.addEventListener('change', (e: Event) => {
+      const el = e.target as HTMLElement & { value?: string };
+      if (!el?.dataset || !('roleControl' in el.dataset)) return;
+      apply(el.value === 'cor' ? 'cor' : 'vendor');
+    });
+
+    // Announce the lens the inline script already set, so every listener starts
+    // from the same state whichever order the scripts happen to run in.
+    apply(current());
+  }
+</script>
+
+<style>
+  /* Scaffolding, not product: a dashed neutral frame that could never be mistaken
+     for a cbfish control. No brand fill, no saturated surface. */
+  .cbf-role-switch {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    padding: var(--spacing-300) var(--spacing-400);
+    margin-block-end: var(--spacing-400);
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-200);
+    background: var(--color-surface-sunken);
+  }
+  .cbf-role-switch__ident {
+    min-inline-size: 16rem;
+    flex: 1 1 20rem;
+  }
+  .cbf-role-switch__note {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+  }
+  .cbf-role-switch__who {
+    margin: 0;
+    font-size: 14px;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+  }
+  .cbf-role-switch__control {
+    flex: none;
+  }
+</style>

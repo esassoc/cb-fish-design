@@ -1,0 +1,317 @@
+---
+// cbf-lib-subcontract-sheet — the jump-out drawer behind a Subcontracts row on the
+// vendor-facing Line Item Budget (LIB) entry screen.
+//
+// WHY IT EXISTS: in the main grid a subcontract is ONE lump-sum line tied to work
+// elements (shape D). The detail recurses — that subcontract runs the entire
+// category set again on a sheet of its own, under different rules: no indirect
+// rate, no lump-sums or contingency, plus a state-tax-on-construction line that is
+// a percentage of items 1–3. That seam is real, and the screen has to show it.
+//
+// THIS IS A DELIBERATE STUB. The full recursed entry sheet is a separate build.
+// What ships here is the SEAM, honestly: which subcontract you jumped from, what
+// the parent line is tied to, the rules that make the sub-sheet different, and the
+// recursed category set as a READ-ONLY summary that is labeled, in the surface
+// itself, as a stand-in. There are no editable sub-lines, because sub-lines that
+// don't compute would lie. A reviewer should read this drawer as a stub in about
+// two seconds — that is the design point, not a shortfall.
+//
+// EVENT CONTRACT (listen only — this component dispatches nothing):
+//   document → 'cbf-lib:open-subcontract'  detail: { sheetId?: string; lineId?: string }
+//   Fired by the cost grid when a subcontract row's jump-out is clicked. The sheet
+//   resolves from `sheetId`, falling back to the `sheet` field of the cost line
+//   named by `lineId`. An unknown id fails QUIETLY — no empty shell is opened.
+//
+// bcn-lego-checked: the drawer IS esa-side-dialog (I read its source — it already
+// ships Esc-to-close, click-outside on its own backdrop, a header close button, a
+// focus trap + focus restore, and a SYMMETRIC exit: `closing` keeps the panel
+// mounted for the slide-out, so it slides back out the way it came in). The rules
+// block IS esa-alert-box; the two read-only panels ARE esa-card variant="filled".
+// I walked the catalog (ls node_modules/@esa/ecology/src/components/): there is no
+// table/grid, summary-list, or key-value lego, so the category summary and the
+// work-element allocations are a plain <dl> laid out with the .stack/.repel
+// primitives and typed with type-roles — content in layout primitives, not bespoke
+// grid CSS. No footer button: esa-side-dialog's header close is the ONE close
+// affordance on this surface. No badge is hand-rolled — the allocation shares are
+// plain text on purpose (a filled badge would shout on a read-only stub). Beacon
+// is not cloned on this machine.
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaCard from '@esa/ecology/esa-card.astro';
+import {
+  subcontractSheets,
+  costLines,
+  workElements,
+  weLabel,
+  usd,
+  contract,
+} from '../../data/lib-entry.mjs';
+
+interface Props {
+  /**
+   * Which subcontract sheets to pre-render into the drawer. Defaults to every
+   * sheet in the data module; the open event picks one of them at runtime.
+   */
+  sheetIds?: string[];
+}
+
+const { sheetIds = Object.keys(subcontractSheets) } = Astro.props;
+
+const views = sheetIds
+  .map((id) => (subcontractSheets as Record<string, any>)[id])
+  .filter(Boolean)
+  .map((sheet: any) => {
+    // The parent LIB line — the single lump this whole sheet collapses into.
+    const parent = costLines.find((l: any) => l.id === sheet.parentLine) ?? null;
+    const allocations = Object.entries(parent?.allocations ?? {})
+      .sort((a: any, b: any) => b[1] - a[1])
+      .map(([id, share]: [string, any]) => ({ id, label: weLabel(id), share }));
+    const summaryTotal = sheet.categorySummary.reduce((t: number, c: any) => t + c.amount, 0);
+    return {
+      sheet,
+      parent,
+      allocations,
+      summaryTotal,
+      // The stand-in has to at least tie back to the lump it stands in for.
+      reconciles: summaryTotal === sheet.total,
+    };
+  });
+---
+<esa-side-dialog
+  data-subcontract-sheet
+  size="lg"
+  position="right"
+  heading="Subcontract sheet"
+  show-close-button
+>
+  {views.map(({ sheet, parent, allocations, summaryTotal, reconciles }) => (
+    <div class="cbf-lss stack" data-gap="lg" data-sheet={sheet.id} hidden>
+      {/* ── 1 · Which subcontract, and what it is worth ── */}
+      <header class="cbf-lss__head stack" data-gap="sm">
+        <div class="repel" data-gap="md">
+          <div class="stack" data-gap="3xs">
+            <h2 class="cbf-lss__title type-card-title">{sheet.title}</h2>
+            <p class="cbf-lss__meta type-body-small">
+              {sheet.vendor} · Contract {contract.number} · {contract.fiscalYear}
+            </p>
+          </div>
+          <div class="cbf-lss__total stack" data-gap="3xs">
+            <span class="cbf-lss__total-value">{usd(sheet.total)}</span>
+            <span class="cbf-lss__meta type-body-small">Subcontract total</span>
+          </div>
+        </div>
+      </header>
+
+      {/* ── The parent line: one lump in the grid, tied to work elements ── */}
+      <EsaCard variant="filled">
+        <div class="stack" data-gap="sm">
+          <p class="cbf-lss__lede type-body">
+            Carried on the LIB as a single lump-sum line
+            {parent ? <> — <strong>{parent.label}</strong> at {usd(parent.amount)}</> : null}.
+            The itemized detail lives here, on the subcontract's own sheet.
+          </p>
+          {parent?.detail ? <p class="cbf-lss__meta type-body-small">{parent.detail}</p> : null}
+
+          <div class="stack" data-gap="2xs">
+            <h3 class="cbf-lss__h3 type-body">Work elements the parent line is tied to</h3>
+            {allocations.length ? (
+              <>
+                <dl class="cbf-lss__rows stack" data-gap="2xs">
+                  {allocations.map((a) => (
+                    <div class="cbf-lss__row repel" data-gap="sm">
+                      <dt class="type-body">{a.label}</dt>
+                      <dd class="cbf-lss__num type-body">{a.share}%</dd>
+                    </div>
+                  ))}
+                </dl>
+                <p class="cbf-lss__meta type-body-small">
+                  {allocations.length} of the {workElements.length} work elements on this
+                  contract's SOW.
+                </p>
+              </>
+            ) : (
+              <p class="cbf-lss__meta type-body-small">
+                The parent line carries no work-element allocation yet — assign it in the grid
+                before this subcontract can be submitted.
+              </p>
+            )}
+          </div>
+        </div>
+      </EsaCard>
+
+      {/* ── 2 · The rules that make this sheet its own surface ── */}
+      <section class="stack" data-gap="sm">
+        <EsaAlertBox variant="info" title="This sheet runs under different rules">
+          <ul class="cbf-lss__rules stack" data-gap="2xs">
+            {sheet.rules.map((rule: string) => (
+              <li class="type-body">{rule}</li>
+            ))}
+          </ul>
+        </EsaAlertBox>
+        <p class="cbf-lss__meta type-body-small">
+          The state tax on construction is the same percentage-of-a-base shape as fringe and
+          indirect on the parent LIB — it just sits down here, on the sub-sheet, computed off
+          items 1–3 rather than off anything in the grid above. It is entered and resolved on
+          the full sheet, not on this summary.
+        </p>
+      </section>
+
+      {/* ── 3 · The recursed category set — read-only stand-in, labeled as one ── */}
+      <section class="stack" data-gap="sm">
+        <div class="stack" data-gap="3xs">
+          <h3 class="cbf-lss__h3 type-body">The category set, run again</h3>
+          <p class="cbf-lss__meta type-body-small">
+            Summary only — the full category set opens in the subcontract's own sheet. No line
+            detail, quantities, or rates are carried here, and nothing on this panel is editable.
+          </p>
+        </div>
+
+        <EsaCard variant="filled">
+          <div class="stack" data-gap="sm">
+            <dl class="cbf-lss__rows stack" data-gap="2xs">
+              {sheet.categorySummary.map((c: any) => (
+                <div class="cbf-lss__row repel" data-gap="sm">
+                  <dt class="type-body">{c.label}</dt>
+                  <dd class="cbf-lss__num type-body">{usd(c.amount)}</dd>
+                </div>
+              ))}
+              <div class="cbf-lss__row cbf-lss__row--total repel" data-gap="sm">
+                <dt class="type-body">Subtotal — {sheet.categorySummary.length} categories</dt>
+                <dd class="cbf-lss__num type-body">{usd(summaryTotal)}</dd>
+              </div>
+            </dl>
+            <p class="cbf-lss__meta type-body-small">
+              {reconciles
+                ? `Ties to the ${usd(sheet.total)} lump carried on the LIB. No indirect is added on top.`
+                : `Does not yet tie to the ${usd(sheet.total)} lump carried on the LIB — the full sheet reconciles it.`}
+            </p>
+          </div>
+        </EsaCard>
+
+        <p class="cbf-lss__meta type-body-small">
+          The full subcontract entry sheet is a separate screen and is not part of this
+          prototype.
+        </p>
+      </section>
+    </div>
+  ))}
+</esa-side-dialog>
+
+<script>
+  import '@esa/ecology/esa-side-dialog';
+  import { subcontractSheets, costLines } from '../../data/lib-entry.mjs';
+
+  const dialog = document.querySelector('[data-subcontract-sheet]') as any;
+
+  if (dialog) {
+    const panels = Array.from(
+      dialog.querySelectorAll<HTMLElement>('[data-sheet]'),
+    );
+
+    /**
+     * Resolve the sheet from the event detail: `sheetId` wins, otherwise follow the
+     * cost line named by `lineId` to its `sheet` field. Returns null when neither
+     * resolves — the caller then does nothing at all.
+     */
+    const resolveSheetId = (detail: any): string | null => {
+      const direct = detail?.sheetId;
+      if (direct && (subcontractSheets as any)[direct]) return direct;
+      const line = detail?.lineId
+        ? costLines.find((l: any) => l.id === detail.lineId)
+        : null;
+      const viaLine = line?.sheet;
+      return viaLine && (subcontractSheets as any)[viaLine] ? viaLine : null;
+    };
+
+    document.addEventListener('cbf-lib:open-subcontract', (event: Event) => {
+      const sheetId = resolveSheetId((event as CustomEvent).detail);
+      // Unknown or missing id — fail quietly rather than opening an empty shell.
+      if (!sheetId) return;
+      const panel = panels.find((p) => p.dataset.sheet === sheetId);
+      if (!panel) return;
+      panels.forEach((p) => {
+        p.hidden = p !== panel;
+      });
+      dialog.show();
+    });
+  }
+</script>
+
+<style>
+  /* .stack sets display:flex, which ties with [hidden]'s UA display:none — raise
+     the specificity so the inactive sheets actually stay hidden. */
+  .cbf-lss[hidden] {
+    display: none;
+  }
+
+  .cbf-lss__title {
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+  .cbf-lss__h3 {
+    margin: 0;
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+  /* Dense meta stays at the 14px role and DARKENS rather than graying out. */
+  .cbf-lss__meta {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+  .cbf-lss__lede {
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+
+  .cbf-lss__head {
+    padding-block-end: var(--spacing-300);
+    border-block-end: 1px solid var(--color-border-light, var(--color-border));
+  }
+  /* The number this whole drawer is about — a step up, right-aligned to its label. */
+  .cbf-lss__total {
+    text-align: end;
+  }
+  .cbf-lss__total-value {
+    font-size: var(--type-size-500);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Read-only name/value rows — .repel does the layout, this only types them. */
+  .cbf-lss__rows {
+    margin: 0;
+  }
+  .cbf-lss__row {
+    --align: baseline;
+    align-items: baseline;
+  }
+  .cbf-lss__row dt {
+    color: var(--color-text-primary);
+    min-width: 0;
+  }
+  .cbf-lss__row dd {
+    margin: 0;
+  }
+  .cbf-lss__num {
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .cbf-lss__row--total {
+    margin-block-start: var(--spacing-100);
+    padding-block-start: var(--spacing-200);
+    border-block-start: 1px solid var(--color-border);
+  }
+  .cbf-lss__row--total dt,
+  .cbf-lss__row--total dd {
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .cbf-lss__rules {
+    margin: 0;
+    padding-inline-start: var(--spacing-500);
+  }
+  .cbf-lss__rules li {
+    color: var(--color-text-primary);
+  }
+</style>

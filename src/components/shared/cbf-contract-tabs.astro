@@ -1,0 +1,120 @@
+---
+// cbf-contract-tabs — the CBFish contract tab strip (Summary / SOW / WE Budgets /
+// LIB / …). Shared chrome: any contract SUB-PAGE in this spoke mounts it directly
+// under the breadcrumb so the page reads as a native cbfish tab rather than a form
+// floating on its own screen. It is the strip ONLY — it renders no panels; the page
+// renders its own content beneath it (which is also why every contract page can keep
+// its real markup, routing and scroll behaviour instead of being stuffed into a slot).
+//
+// This is pure composition of the esa-tab-layout lego (same API the /lib-pi-editing
+// documents surface drives: `tabs` array + `activeIndex` + the bubbling `tabchange`
+// event). esa-tab-layout always renders its panel wrapper; with nothing slotted it
+// collapses to its own spacing-400 top pad, which reads as the gap between the strip
+// and the page content — so there is no need to fight it.
+//
+// Prototype fidelity: the real app has ~11 contract tabs and we only ever build one
+// or two of them. Rather than DISABLE the rest (which would read as "broken for this
+// contract" and kill the keyboard roving), every tab stays clickable; selecting a tab
+// that isn't `live` snaps the selection back and explains itself in a snackbar.
+//
+// bcn-lego-checked: the tab strip IS esa-tab-layout — nothing here re-implements a
+// tab bar. Checked the ecology catalog for a strip-only/nav variant (esa-tab-layout is
+// the only tabs lego; esa-nav-dropdown is app-bar chrome, and cbf-report-tabs is a
+// LINK strip between distinct report routes, not a tab control). Beacon is not on this
+// machine. The only CSS below is a horizontal-overflow affordance for the long strip
+// and a pre-upgrade height reserve — no bespoke tab/panel chrome, no reinvented control.
+interface Tab {
+  key: string;
+  label: string;
+  /** True when the tab exists in this prototype. Everything else toasts + snaps back. */
+  live?: boolean;
+}
+interface Props {
+  tabs: Tab[];
+  /** The `key` of the selected tab. */
+  active: string;
+}
+const { tabs, active } = Astro.props;
+
+const activeIndex = Math.max(
+  0,
+  tabs.findIndex((t) => t.key === active),
+);
+// esa-tab-layout parses its `tabs` attribute as JSON (property type Array), so the
+// strip is server-rendered complete — the script below only adds the inert-tab rule.
+const tabDefs = tabs.map((t) => ({ label: t.label }));
+---
+
+<esa-tab-layout
+  class="cbf-contract-tabs"
+  size="md"
+  appearance="underline"
+  active-index={activeIndex}
+  tabs={JSON.stringify(tabDefs)}
+  data-contract-tabs={JSON.stringify(tabs.map((t) => ({ key: t.key, label: t.label, live: !!t.live })))}
+  data-active-index={activeIndex}
+></esa-tab-layout>
+
+<style>
+  /* The full contract strip is ~11 tabs wide; esa-tab-layout's tablist is flex/nowrap,
+     so let the host scroll horizontally on narrow viewports instead of clipping. */
+  .cbf-contract-tabs {
+    display: block;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+  /* Reserve the strip's height before the custom element upgrades so the page content
+     below doesn't jump. Same tokens the lego uses for its md row + bottom rule. */
+  .cbf-contract-tabs:not(:defined) {
+    min-block-size: var(--tab-layout-height-md, 44px);
+    border-bottom: 1px solid var(--color-border);
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-tab-layout';
+
+  type TabEl = HTMLElement & { activeIndex: number };
+  type TabMeta = { key: string; label: string; live: boolean };
+
+  function setup(root: HTMLElement): void {
+    const el = root as TabEl;
+    let meta: TabMeta[] = [];
+    try {
+      meta = JSON.parse(root.dataset.contractTabs ?? '[]') as TabMeta[];
+    } catch {
+      /* malformed data → every tab is treated as inert, which fails safe */
+    }
+    const activeIndex = Number(root.dataset.activeIndex ?? 0) || 0;
+
+    const toast = (msg: string): void => {
+      const sb = document.querySelector('[data-snackbar]') as any;
+      (sb?.info ?? sb?.success)?.call(sb, msg, { duration: 4000 });
+    };
+
+    el.addEventListener('tabchange', (e) => {
+      const index = (e as CustomEvent<{ index: number }>).detail?.index ?? 0;
+      // Re-clicking the page's own tab is a no-op, never a "not in this prototype" toast.
+      if (index === activeIndex) return;
+      const tab = meta[index];
+      if (!tab || !tab.live) {
+        // Snap the selection back to the page's own tab — clicking (or arrowing onto)
+        // a tab we didn't build must never leave the strip pointing somewhere else.
+        el.activeIndex = activeIndex;
+        if (tab) toast(`The ${tab.label} tab is outside this prototype.`);
+        return;
+      }
+      // A live sibling tab: let the selection stand and tell the page, which owns
+      // whatever it means to switch (navigate, swap a section, …).
+      root.dispatchEvent(
+        new CustomEvent('cbf:contract-tab-change', {
+          detail: { key: tab.key, index },
+          bubbles: true,
+        }),
+      );
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('.cbf-contract-tabs').forEach(setup);
+</script>
