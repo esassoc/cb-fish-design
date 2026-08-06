@@ -10,9 +10,10 @@ import CbfLayer from '../components/home/cbf-layer.astro';
 import CbfPrototype from '../components/home/cbf-prototype.astro';
 import CbfSiteFooter from '../components/shared/cbf-site-footer.astro';
 import { withBase } from '../lib/base';
-import { prototypesByNewest, type PrototypeStatus } from '../data/prototypes';
+import { prototypesByStatus, type PrototypeStatus } from '../data/prototypes';
 
-const rows = prototypesByNewest();
+const activeRows = prototypesByStatus('in-progress');
+const pastRows = prototypesByStatus('live');
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 // Format from the ISO parts directly — avoids new Date() timezone drift that can
@@ -65,7 +66,7 @@ const STATUS_LABEL: Record<PrototypeStatus, string> = {
         <p class="type-body">Working screens for the program, built on the system.</p>
       </div>
       <ul class="home__proto-list grid">
-        {rows.map((p) => (
+        {activeRows.map((p) => (
           <li>
             <CbfPrototype
               title={p.title}
@@ -81,6 +82,31 @@ const STATUS_LABEL: Record<PrototypeStatus, string> = {
         ))}
       </ul>
     </section>
+
+    {pastRows.length > 0 && (
+      <section class="home__protos" aria-label="Past explorations">
+        <div class="home__protos-head">
+          <h2 class="type-section-title">Past explorations</h2>
+          <p class="type-body">Earlier prototypes that have shipped or landed live.</p>
+        </div>
+        <ul class="home__proto-list grid">
+          {pastRows.map((p) => (
+            <li>
+              <CbfPrototype
+                title={p.title}
+                description={p.description}
+                href={withBase(p.route)}
+                status={p.status}
+                statusLabel={STATUS_LABEL[p.status]}
+                dateLabel={fmtDate(p.createdAt)}
+                datetime={p.createdAt}
+                ticket={p.ticket}
+              />
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
 
     <CbfSiteFooter />
   </main>
