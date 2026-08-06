@@ -22,6 +22,15 @@ export interface Prototype {
 
 export const prototypes: Prototype[] = [
   {
+    slug: 'lib-entry',
+    title: 'LIB entry & COR review',
+    description:
+      'The vendor’s Line Item Budget entry screen, living as the LIB tab inside the contract shell — four line shapes (quantity × rate, GSA authority rate, percentage of a base, lump sum) across nine cost categories, entered inline in a grid so the cross-line dependencies stay visible: fringe follows salary, linked utility months follow a position’s staffing months, and indirect follows whichever categories the rate is scoped to. A persistent rail reconciles the running total against the Contract Value and holds the submit gate the vendor still owns. The same screen carries the other half of the round trip: a role switch flips it into the BPA COR’s lens, where the grid reads as values rather than fields, each line can be marked with a severity, a reason and a note saying what has to change, and the COR returns the budget or approves it. Returned marks come back to the vendor as a checklist that gates resubmitting.',
+    route: '/lib-entry',
+    createdAt: '2026-08-05',
+    status: 'in-progress',
+  },
+  {
     slug: 'lib-pi-editing',
     title: 'LIB & PI document editing',
     description:

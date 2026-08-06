@@ -1,0 +1,124 @@
+---
+// cbf-lib-context-header — the header strip of the vendor-facing Line Item Budget
+// (LIB) entry screen, i.e. the LIB tab inside a CBFish contract.
+//
+// WHY IT EXISTS: before a vendor types a single dollar, this strip has to settle
+// three things. (1) WHICH contract am I budgeting against — the identity row.
+// (2) WHAT is the ceiling — the Contract Value is the single most important
+// number on the screen, so it is stated up front at the largest type on the
+// page, with the approved NICRA rate beside it, because every line below
+// reconciles to that pair. (3) WHAT is already known — project, contract/action
+// number, sponsor, period of performance, BPA COR and contract manager are all
+// auto-filled from the contract. They render as FACTS (a definition list on a
+// filled/sunken card), never as disabled inputs: a grayed-out field reads as
+// "something you failed to fill in", a fact reads as "already handled".
+//
+// Reads src/data/lib-entry.mjs directly — the house pattern for these section
+// components (see cbf-contract-summary / cbf-baselines-table), so the page stays
+// a manifest and no contract facts get retyped at the call site.
+//
+// bcn-lego-checked: the two ceiling numbers ARE esa-stat legos (sized through its
+// public --stat-value-size token, not restyled), and the auto-filled panel IS
+// esa-card variant="filled" — the sunken, borderless surface that already reads
+// as system-supplied — so no bespoke card/panel CSS. I walked the catalog
+// (ls node_modules/@esa/ecology/src/components/): there is no "fact list" /
+// "definition list" / "read-only field" lego, and esa-form-field + esa-text-field
+// are exactly the disabled-input treatment this strip must NOT use. Beacon shows
+// the same contract facts as a plain Angular dl. What is left is a <dl> laid out
+// with the .grid primitive and typed with type-roles — content, not a primitive.
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaCard from '@esa/ecology/esa-card.astro';
+import { contract, usd } from '../../data/lib-entry.mjs';
+
+const heading = `Contract ${contract.number}: ${contract.project} ${contract.projectTitle}`;
+const period = `${contract.periodStart} – ${contract.periodEnd}`;
+const subline = [contract.sponsor, contract.fiscalYear, period].join(' · ');
+
+// Auto-filled from the contract — the vendor enters none of it.
+const facts = [
+  { label: 'Project', value: `${contract.project} ${contract.projectTitle}` },
+  { label: 'Contract (action) number', value: contract.number },
+  { label: 'Sponsor', value: contract.sponsor },
+  { label: 'Period of performance', value: `${period} (${contract.fiscalYear})` },
+  { label: 'BPA COR', value: contract.bpaCor },
+  { label: 'Contract manager', value: contract.contractManager },
+];
+---
+<section class="cbf-lib-context stack" data-gap="lg" aria-labelledby="cbf-lib-context-title">
+  <!-- 1 — contract identity -->
+  <header class="cbf-lib-context__head stack" data-gap="2xs">
+    <h1 id="cbf-lib-context-title" class="type-section-title">{heading}</h1>
+    <p class="cbf-lib-context__subline type-body">{subline}</p>
+  </header>
+
+  <!-- 2 — the ceiling, stated before anything is typed -->
+  <div class="cbf-lib-context__ceiling cluster" data-gap="xl" data-align="start">
+    <div class="cbf-lib-context__ceiling-value">
+      <EsaStat
+        value={usd(contract.contractValue)}
+        label="Contract Value"
+        sub="The ceiling — every line below reconciles to it"
+      />
+    </div>
+    <div class="cbf-lib-context__ceiling-rate">
+      <EsaStat
+        value={usd(contract.capitalizationThreshold)}
+        label="Capitalization threshold"
+        sub="At or above this, an item is capital — below it, a supply"
+      />
+    </div>
+  </div>
+
+  <!-- 3 — auto-filled contract facts (facts, not fields) -->
+  <EsaCard variant="filled">
+    <div class="stack" data-gap="sm">
+      <p class="cbf-lib-context__source type-body-small">
+        Pulled from the contract — not editable here.
+      </p>
+      <dl class="cbf-lib-context__facts grid" data-gap="md">
+        {facts.map((f) => (
+          <div class="cbf-lib-context__fact">
+            <dt class="type-body-small">{f.label}</dt>
+            <dd class="type-body">{f.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  </EsaCard>
+</section>
+
+<style>
+  .cbf-lib-context__head h1 {
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+  .cbf-lib-context__subline {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  /* The Contract Value outranks everything on the screen; the rate is its
+     companion, a step down. Both go through esa-stat's public size token. */
+  .cbf-lib-context__ceiling-value { --stat-value-size: var(--type-size-800); }
+  .cbf-lib-context__ceiling-rate { --stat-value-size: var(--type-size-600); }
+
+  .cbf-lib-context__source {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+
+  /* Facts wrap into as many columns as fit — .grid does the work, --grid-min
+     is the primitive's own knob. */
+  .cbf-lib-context__facts {
+    --grid-min: 13rem;
+    margin: 0;
+  }
+  .cbf-lib-context__fact dt {
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+  }
+  .cbf-lib-context__fact dd {
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+</style>

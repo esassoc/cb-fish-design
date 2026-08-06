@@ -1,0 +1,125 @@
+---
+// /lib-entry — the vendor's Line Item Budget entry screen, living as the LIB tab
+// inside the CBFish contract shell so it reads as a native contract tab rather
+// than a form floating on its own page.
+//
+// The design claim this screen makes: a LIB is a WEB OF CROSS-LINE DEPENDENCIES
+// (fringe follows salary; a cell-phone line's months follow a position's staffing
+// months; indirect follows the sum of whatever the rate is scoped to). A grid can
+// hold that; a one-line-at-a-time modal fights it. So entry happens inline in the
+// grid, and the two things that genuinely are NOT cost lines get their own
+// surfaces: the audit-critical indirect block, and the subcontract jump-out whose
+// detail recurses into its own sheet.
+//
+// Thin assembler — all behavior lives in the lib-entry components and the pricing
+// engine in src/data/lib-entry.mjs. The components talk over three document
+// events: cbf-lib:totals (grid → rail), cbf-lib:indirect-config (config → grid,
+// rail), cbf-lib:open-subcontract (grid → sheet).
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
+import CbfContractTabs from '../components/shared/cbf-contract-tabs.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import CbfRoleSwitch from '../components/shared/cbf-role-switch.astro';
+import CbfLibContextHeader from '../components/lib-entry/cbf-lib-context-header.astro';
+import CbfLibReviewPanel from '../components/lib-entry/cbf-lib-review-panel.astro';
+import CbfLibIndirectConfig from '../components/lib-entry/cbf-lib-indirect-config.astro';
+import CbfLibCostTable from '../components/lib-entry/cbf-lib-cost-table.astro';
+import CbfLibReconcileRail from '../components/lib-entry/cbf-lib-reconcile-rail.astro';
+import CbfLibSubcontractSheet from '../components/lib-entry/cbf-lib-subcontract-sheet.astro';
+import { withBase } from '../lib/base';
+import { contract, contractTabs } from '../data/lib-entry.mjs';
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+
+const crumbs = [
+  { label: 'Home', href: withBase('/home'), icon: homeIcon },
+  { label: 'Projects' },
+  { label: contract.project },
+  { label: 'Contracts' },
+  { label: contract.number },
+  { label: 'LIB' },
+];
+---
+<!-- manifest:
+  layout: esa-container > cbf-role-switch + cbf-app-panel > sidebar(end)
+  sections:
+    - nav                -> cbf-public-nav             (shared)
+    - role lens          -> cbf-role-switch            (shared — prototype device: vendor ⇄ BPA COR)
+    - contract frame     -> cbf-app-panel              (shared — breadcrumb strip)
+    - contract tab bar   -> cbf-contract-tabs          (shared — LIB active)
+    - header strip       -> cbf-lib-context-header     (auto-filled context + the Contract Value ceiling)
+    - review             -> cbf-lib-review-panel       (COR console / vendor change list + the decision)
+    - indirect block     -> cbf-lib-indirect-config    (rate, reference doc, dates, applicability picker)
+    - cost grid          -> cbf-lib-cost-table         (4 line shapes, 9 categories, inline entry, dependencies,
+                                                        per-line COR marks, read-only COR lens)
+    - reconciliation     -> cbf-lib-reconcile-rail     (running total vs Contract Value + submit/resubmit gate)
+    - subcontract sheet  -> cbf-lib-subcontract-sheet  (the jump-out — stubbed recursed sheet)
+-->
+<BaseLayout title="Line Item Budget entry — Columbia Basin Fish &amp; Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <!-- The prototype device: one budget, two people. Everything below renders
+           both lenses and reveals whichever role is selected. -->
+      <CbfRoleSwitch note="One Line Item Budget, seen by the vendor who enters it and the BPA COR who reviews it." />
+
+      <CbfAppPanel crumbs={crumbs}>
+        <CbfContractTabs tabs={contractTabs} active="lib" />
+
+        <CbfLibContextHeader />
+
+        <!-- The rail sits beside the grid and stays with it as the vendor scrolls:
+             the running total is what they watch while they type. -->
+        <div class="sidebar" data-side="end" data-gap="lg">
+          <aside class="cbf-lib-entry__rail">
+            <CbfLibReconcileRail />
+          </aside>
+          <div class="stack" data-gap="lg">
+            <!-- The review sits ABOVE the money: for the vendor it is the work
+                 list that decides what to change before resubmitting, and for
+                 the COR it is the console they mark from. Either way it is the
+                 first thing on the screen that asks something of you. -->
+            <CbfLibReviewPanel />
+            <CbfLibIndirectConfig />
+            <CbfLibCostTable />
+          </div>
+        </div>
+      </CbfAppPanel>
+    </EsaContainer>
+  </main>
+
+  <!-- The subcontract jump-out — opened by a row in the grid, not by the page. -->
+  <CbfLibSubcontractSheet />
+
+  <esa-snackbar-container data-snackbar></esa-snackbar-container>
+
+  <script>
+    import '@esa/ecology/esa-snackbar-container';
+  </script>
+</BaseLayout>
+
+<style>
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+  /* The rail column: narrow enough to leave the grid room, wide enough to hold
+     the gate checklist without wrapping every detail line.
+     --sidebar-content-min is the load-bearing value: the grid needs ~900px to
+     lay out without overflowing, and it CANNOT scroll inside its own box (the
+     allocation popovers and shape menus have to escape it). So the rail drops
+     below the grid the moment the grid would be squeezed under 57rem, rather
+     than the grid bursting its column. */
+  .cbf-page :global(.sidebar) { --sidebar-width: 20rem; --sidebar-content-min: 57rem; }
+  /* Once stacked, the rail belongs ABOVE the grid — it's the running total the
+     vendor watches while typing, not a footnote to scroll past. */
+  @media (max-width: 1380px) {
+    .cbf-page :global(.sidebar[data-side='end'] > :first-child) { order: 0; }
+  }
+  /* esa-popover and esa-dropdown-menu position absolutely and cannot escape a
+     clipping ancestor; cbf-app-panel clips (rounded-corner card). Let the panel
+     overflow on THIS page only, so the per-row allocation popovers and the
+     add-line shape menus show in full. Page-scoped — /search and /publications
+     keep their clipping. */
+  .cbf-page :global(.cbf-app-panel) { overflow: visible; }
+</style>
