@@ -17,6 +17,24 @@
 // internal scroll (and the compare columns) can scroll while the right panel scrolls
 // in normal page flow.
 //
+// ── The three things a COR does here ──────────────────────────────────────────
+// 1. EDIT. One switch puts the whole surface into edit mode: every panel field
+//    becomes an input, and the paper ledger swaps for a real line-item editor (a
+//    four-column bill is for reading; correcting it needs labelled controls).
+//    Derived money is never typed — the amount is the sum of the lines and the
+//    remaining balance is contract value less expenditures, both re-derived on save,
+//    so the panel can never drift from the ledger it summarises.
+// 2. FLAG. Any field, and any single line item, can be marked as an issue with a
+//    written reason. The mark rides on the field itself (a warning tint carrying the
+//    reason) AND collects into cbf-invoice-issues.
+// 3. RETURN. Return for revision opens with those flags already written up as the
+//    memo, so returning the invoice is just sending what the COR marked. An invoice
+//    carrying flags cannot be Approved — the two statements contradict each other.
+//
+// Contract context is stated in full: the contract's OWN start and end dates
+// explicitly (never inferred from one invoice's performance period), the full award
+// value, and what share of that award this single invoice represents.
+//
 // bcn-lego-checked: no esa-* lego renders an invoice/budget DOCUMENT (a paper vendor
 // bill with letterhead, bill-to, line-item ledger, totals — or the reconciled Line
 // Item Budget sheet) — that paper-doc markup is bespoke and reusable, and lives here
@@ -31,6 +49,8 @@ import EsaPill from '@esa/ecology/esa-pill.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import CbfInvoiceField from './cbf-invoice-field.astro';
+import CbfInvoiceIssues from './cbf-invoice-issues.astro';
 import { withBase } from '../../lib/base';
 
 type Stage = 'Submitted' | 'In review' | 'Returned' | 'Approved';
@@ -87,83 +107,87 @@ const { invoice, dashboardHref = withBase('/my-work#invoices') } = Astro.props;
         </EsaAlertBox>
       </div>
 
+      <!-- Edit mode. One switch for the whole surface: the COR reads the invoice as a
+           document, and only when they choose to correct it do the values become
+           inputs. Save/Cancel replace the switch while editing, so there is exactly
+           one way out and no ambiguity about whether a change has landed. -->
+      <div class="cbf-review-editbar repel" data-editbar>
+        <p class="cbf-review-editbar__hint" data-edit-hint hidden>
+          Editing the invoice. Correct any field, then save.
+        </p>
+        <div class="cbf-review-editbar__actions cluster" data-gap="sm">
+          <span data-act-edit>
+            <EsaButton appearance="outline" color="secondary" size="sm" icon="pencil">Edit invoice</EsaButton>
+          </span>
+          <span data-act-edit-save hidden>
+            <EsaButton color="primary" size="sm" icon="check">Save changes</EsaButton>
+          </span>
+          <span data-act-edit-cancel hidden>
+            <EsaButton appearance="outline" color="secondary" size="sm">Cancel</EsaButton>
+          </span>
+        </div>
+      </div>
+
       <!-- Invoice information — the identifying fields, all of roughly equal weight.
-           Each row carries a copy control that copies that field's value. -->
+           Every row can be copied, corrected in place, or flagged as an issue. -->
       <dl class="cbf-review-fields">
-        <div class="cbf-review-fields__row">
-          <dt class="cbf-review__label">Invoice</dt>
-          <dd class="cbf-review-fields__value cbf-num" data-f-number-panel></dd>
-          <span class="cbf-review-fields__copy" data-copy>
-            <EsaIconButton icon="copy" label="Copy invoice number" size="xs" />
-          </span>
-        </div>
-        <div class="cbf-review-fields__row">
-          <dt class="cbf-review__label">Vendor</dt>
-          <dd class="cbf-review-fields__value" data-f-vendor-panel></dd>
-          <span class="cbf-review-fields__copy" data-copy>
-            <EsaIconButton icon="copy" label="Copy vendor" size="xs" />
-          </span>
-        </div>
-        <div class="cbf-review-fields__row">
-          <dt class="cbf-review__label">Contract</dt>
-          <dd class="cbf-review-fields__value cbf-num" data-f-contract>
-            <span data-f-contract-num></span>
-            <span class="cbf-review-fields__sub" data-f-contract-name></span>
-          </dd>
-          <span class="cbf-review-fields__copy" data-copy data-f-contract-copy>
-            <EsaIconButton icon="copy" label="Copy contract number" size="xs" />
-          </span>
-        </div>
-        <div class="cbf-review-fields__row">
-          <dt class="cbf-review__label">Project</dt>
-          <dd class="cbf-review-fields__value cbf-num" data-f-project>
-            <span data-f-project-num></span>
-            <span class="cbf-review-fields__sub" data-f-project-name></span>
-          </dd>
-          <span class="cbf-review-fields__copy" data-copy data-f-project-copy>
-            <EsaIconButton icon="copy" label="Copy project number" size="xs" />
-          </span>
-        </div>
-        <div class="cbf-review-fields__row">
-          <dt class="cbf-review__label">Perf. start</dt>
-          <dd class="cbf-review-fields__value" data-f-perf-start></dd>
-          <span class="cbf-review-fields__copy" data-copy>
-            <EsaIconButton icon="copy" label="Copy performance start date" size="xs" />
-          </span>
-        </div>
-        <div class="cbf-review-fields__row">
-          <dt class="cbf-review__label">Perf. end</dt>
-          <dd class="cbf-review-fields__value" data-f-perf-end>
-            <span data-f-perf-end-date></span>
-            <span class="cbf-review-fields__sub" data-f-contract-end></span>
-          </dd>
-          <span class="cbf-review-fields__copy" data-copy data-f-perf-end-copy>
-            <EsaIconButton icon="copy" label="Copy performance end date" size="xs" />
-          </span>
-        </div>
+        <CbfInvoiceField field="number" label="Invoice" copy editable flaggable />
+        <CbfInvoiceField field="vendor" label="Vendor" copy editable flaggable />
+        <CbfInvoiceField field="invoiceDate" label="Invoice date" copy editable flaggable />
+        <CbfInvoiceField field="billTo" label="Bill to" copy editable flaggable />
+        <CbfInvoiceField field="notes" label="Memo" editable flaggable />
+        <CbfInvoiceField
+          field="contractNumber"
+          label="Contract"
+          copy
+          editable
+          flaggable
+          subField="contract"
+          subLabel="Contract name"
+        />
+        <CbfInvoiceField
+          field="projectNumber"
+          label="Project"
+          copy
+          editable
+          flaggable
+          subField="project"
+          subLabel="Project name"
+        />
+        <CbfInvoiceField field="perfStart" label="Perf. start" copy editable flaggable />
+        <CbfInvoiceField field="perfEnd" label="Perf. end" copy editable flaggable />
+      </dl>
+
+      <!-- Contract context — the award this invoice draws against, stated in full.
+           The contract's own START and END dates are listed EXPLICITLY (not left to
+           be inferred from the invoice's performance period) so the COR can place
+           this bill on the contract's timeline: is it early work, mid-term, or a
+           closeout draw running up against the contract's end? The full contract
+           VALUE sits alongside them because it is what the invoice's amount is
+           judged against — the percentage on the Amount row below reads from it. -->
+      <dl class="cbf-review-fields cbf-review-contract" aria-label="Contract">
+        <CbfInvoiceField field="contractStart" label="Contract start" copy editable flaggable />
+        <CbfInvoiceField field="contractEnd" label="Contract end" copy editable flaggable />
+        <CbfInvoiceField field="contractValue" label="Contract value" copy editable flaggable inputType="number" prefix="$" />
+        <CbfInvoiceField field="expended" label="Expended" copy editable flaggable inputType="number" prefix="$" />
       </dl>
 
       <!-- Amount information — the billed figure and how it draws down the contract.
            Comes AFTER the invoice information, and reuses the SAME label→value row
            grid as the fields above so every value lines up in one left column (no
            right-aligned figures for the eye to jump to). The amount is emphasized by
-           size only. -->
+           size only, and carries the share of the FULL contract it represents — the
+           figure that separates a routine draw from a material slice of the award.
+           Amount is DERIVED from the line-item ledger (edit the lines to change it),
+           so it is flaggable but not directly editable; remaining derives from the
+           contract value and expenditures above. -->
       <dl class="cbf-review-fields cbf-review-money" aria-label="Amount">
-        <div class="cbf-review-fields__row">
-          <dt class="cbf-review__label">Amount</dt>
-          <dd class="cbf-review-fields__value cbf-review-money__amount cbf-num" data-f-amount-hero></dd>
-          <span class="cbf-review-fields__copy" data-copy data-f-amount-copy>
-            <EsaIconButton icon="copy" label="Copy amount" size="xs" />
-          </span>
-        </div>
-        <div class="cbf-review-fields__row">
-          <dt class="cbf-review__label">Contract remaining</dt>
-          <dd class="cbf-review-fields__value cbf-num" data-f-remaining>
-            <span data-f-remaining-val></span>
-            <span class="cbf-review-fields__sub" data-f-rem-after></span>
-          </dd>
-        </div>
+        <CbfInvoiceField field="amount" label="Amount" copy flaggable emphasis="amount" />
+        <CbfInvoiceField field="remaining" label="Contract remaining" />
       </dl>
+
+      <!-- Everything the COR has flagged, and the source of the return memo. -->
+      <CbfInvoiceIssues />
 
       <!-- Backup documentation: the supporting files the vendor uploaded with the
            invoice. Each row carries a "view" control (renders the file in the
@@ -213,6 +237,9 @@ const { invoice, dashboardHref = withBase('/my-work#invoices') } = Astro.props;
           <span data-act-return><EsaButton color="danger" appearance="outline" size="md">Return for revision</EsaButton></span>
           <span data-act-approve><EsaButton color="primary" size="md">Approve</EsaButton></span>
         </div>
+        <!-- Why Approve is shut, said where the COR is looking when they find it
+             shut. Empty (and hidden) whenever nothing is flagged. -->
+        <p class="cbf-review-actions__note" data-decide-note hidden></p>
 
         <div class="stack" data-gap="sm" data-actions-approve hidden>
           <p class="cbf-review-fields__value">
@@ -289,15 +316,26 @@ const { invoice, dashboardHref = withBase('/my-work#invoices') } = Astro.props;
                 <th scope="col" class="cbf-num">Qty</th>
                 <th scope="col" class="cbf-num">Unit</th>
                 <th scope="col" class="cbf-num">Total</th>
+                <th scope="col" aria-label="Line actions"></th>
               </tr>
             </thead>
+            <!-- Line rows are injected by the script: read cells by default, inputs
+                 in edit mode, each row flaggable on its own so the COR can mark ONE
+                 bad line rather than rejecting the whole invoice. -->
             <tbody data-f-items></tbody>
             <tfoot>
-              <tr><th scope="row" colspan="3">Subtotal</th><td class="cbf-num" data-f-subtotal></td></tr>
-              <tr><th scope="row" colspan="3">Tax</th><td class="cbf-num" data-f-tax></td></tr>
-              <tr class="cbf-invoice-doc__total"><th scope="row" colspan="3">Total</th><td class="cbf-num" data-f-total></td></tr>
+              <tr><th scope="row" colspan="3">Subtotal</th><td class="cbf-num" data-f-subtotal></td><td></td></tr>
+              <tr><th scope="row" colspan="3">Tax</th><td class="cbf-num" data-f-tax></td><td></td></tr>
+              <tr class="cbf-invoice-doc__total"><th scope="row" colspan="3">Total</th><td class="cbf-num" data-f-total></td><td></td></tr>
             </tfoot>
           </table>
+
+          <!-- Edit mode swaps the paper ledger for a real editor: one labelled group
+               per line. Cramming inputs into a four-column paper table would leave
+               every control unlabelled and the rows unreadable — the ledger is for
+               READING the bill, this is for CORRECTING it, and they are different
+               jobs. Injected by the script from the same line items. -->
+          <div class="cbf-line-editor stack" data-gap="md" data-line-editor hidden></div>
 
           <p class="cbf-invoice-doc__memo" data-f-memo-wrap hidden><span>Memo:</span> <span data-f-memo></span></p>
           <p class="cbf-invoice-doc__generated" data-f-pdf></p>
@@ -372,6 +410,12 @@ const { invoice, dashboardHref = withBase('/my-work#invoices') } = Astro.props;
       <span data-urgency={u}><EsaPill label={u} variant={urgencyVariant[u]} size="md" removable={false} /></span>
     ))}
     <span data-flag="final"><EsaPill label="Final" variant="default" size="md" removable={false} /></span>
+    {/* Per-line controls for the injected ledger rows — real legos, cloned so the
+        document table never hand-rolls a button or an input. */}
+    <span data-tmpl="line-flag"><EsaIconButton icon="triangle-alert" label="Flag this line as an issue" size="xs" /></span>
+    <span data-tmpl="line-issue-clear"><EsaIconButton icon="x" label="Clear the issue on this line" size="xs" /></span>
+    <span data-tmpl="line-note-save"><EsaButton color="primary" size="sm">Save issue</EsaButton></span>
+    <span data-tmpl="line-note-cancel"><EsaButton appearance="outline" color="secondary" size="sm">Cancel</EsaButton></span>
   </div>
 
   <!-- Single-invoice record for the client script (no second fetch). -->
@@ -419,69 +463,38 @@ const { invoice, dashboardHref = withBase('/my-work#invoices') } = Astro.props;
     color: var(--color-text-muted);
   }
 
-  /* Amount information — a money block set off with a hairline top/bottom rule,
-     placed AFTER the invoice fields. The amount is a labeled line at a moderate
-     scale (not a giant hero); the remaining balance leads the draw-down below it. */
-  /* The money block reuses the field-row grid; a top/bottom hairline sets it off
-     as a group. The amount is emphasized by SIZE only (no bold), still left-aligned
-     in the shared value column. */
-  .cbf-review-money { padding-block: var(--spacing-200); border-block: 1px solid var(--color-border); }
-  .cbf-review-money__amount {
-    font-size: var(--type-size-400);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
-  }
-
+  /* The field BLOCKS. Each is a <dl> of cbf-invoice-field rows (which own the row
+     grid, the value type, the copy/flag affordances and the issue note); what's left
+     here is how the blocks are separated from one another. A hairline top/bottom rule
+     sets the contract block and the money block off as groups. */
   .cbf-review-fields { margin: 0; }
-  .cbf-review-fields__row {
-    display: grid;
-    grid-template-columns: 92px 1fr auto;
-    gap: var(--spacing-300);
-    align-items: baseline;
-    padding-block: var(--spacing-250);
-    border-top: 1px solid var(--color-border-light, var(--color-border));
-  }
-  .cbf-review-fields__row:first-child { border-top: 0; padding-top: 0; }
   .cbf-review-fields__value { margin: 0; font-size: var(--type-size-200); color: var(--color-text-secondary); }
-  /* Secondary line under a value — the reference number (contract/project) or the
-     contract-end note under the performance end date. Quieter than the value. */
-  /* Secondary line under a lead value — the contract/project NAME (the number is
-     the lead) or the contract-end note under the performance end date. Reset to a
-     regular weight so it stays clearly quieter than the lead value above it. */
-  .cbf-review-fields__sub {
-    display: block;
-    margin-top: var(--spacing-50);
-    font-size: var(--type-size-100);
-    font-weight: var(--font-weight-regular);
-    color: var(--color-text-muted);
-  }
-  .cbf-review-fields__sub.cbf-num { font-variant-numeric: tabular-nums; }
+  .cbf-review-contract,
+  .cbf-review-money { padding-block: var(--spacing-200); border-block: 1px solid var(--color-border); }
+  .cbf-review-contract + .cbf-review-money { border-top: 0; }
 
-  /* Per-field copy control — the esa-icon-button lego, quiet until hovered. */
-  .cbf-review-fields__copy {
-    align-self: center;
-    position: relative;
-    line-height: 0;
-    color: var(--color-text-muted);
+  /* Edit-mode bar. One switch for the whole surface; while editing it becomes
+     Save/Cancel and a line saying what mode you're in. */
+  .cbf-review-editbar { align-items: center; gap: var(--spacing-300); }
+  .cbf-review-editbar__hint {
+    margin: 0;
+    font-size: var(--type-size-150);
+    color: var(--color-text-secondary);
   }
-  .cbf-review-fields__copy :global(.esa-icon-button) { color: inherit; }
-  .cbf-review-fields__copy :global(.esa-icon-button:hover) {
-    background: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
-    color: var(--color-text-primary);
+  .cbf-review-editbar__hint[hidden] { display: none; }
+  .cbf-review-editbar__actions { flex: none; margin-left: auto; }
+  .cbf-review-editbar [hidden] { display: none !important; }
+
+  /* Why Approve is shut — sits directly under the decision buttons. */
+  .cbf-review-actions__note {
+    margin: var(--spacing-200) 0 0;
+    font-size: var(--type-size-150);
+    color: var(--color-text-secondary);
   }
-  .cbf-review-fields__copy[data-state='copied'] { color: var(--color-success, #1f8a4c); }
-  .cbf-review-fields__copy[data-state='copied']::after {
-    content: 'Copied';
-    position: absolute;
-    right: calc(100% + var(--spacing-150));
-    top: 50%;
-    transform: translateY(-50%);
-    white-space: nowrap;
-    font-size: var(--type-size-050);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-success, #1f8a4c);
-    pointer-events: none;
-  }
+  .cbf-review-actions__note[hidden] { display: none; }
+
+  /* Line-item editor — the edit-mode counterpart to the paper ledger. */
+  .cbf-line-editor[hidden] { display: none; }
 
   /* Ledger table shared by the budget-document summary. */
   .cbf-review-impact__ledger {
@@ -710,6 +723,81 @@ const { invoice, dashboardHref = withBase('/my-work#invoices') } = Astro.props;
   /* Document line items are injected by JS (no Astro scope hash) — styled globally. */
   .cbf-invoice-doc__items tbody td { font-size: var(--type-size-150); }
 
+  /* Per-line flag control. Quiet until the line is engaged, so the ledger still
+     reads as a bill rather than as a row of buttons; always visible once the line
+     actually carries an issue, because that state is persistent. */
+  .cbf-invoice-line__actions { width: 1%; white-space: nowrap; text-align: right; }
+  .cbf-invoice-line__flag {
+    display: inline-flex;
+    color: var(--color-text-muted);
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+  .cbf-invoice-line:hover .cbf-invoice-line__flag,
+  .cbf-invoice-line__flag:focus-within,
+  .cbf-invoice-line[data-flagged] .cbf-invoice-line__flag { opacity: 1; }
+  .cbf-invoice-line[data-flagged] .cbf-invoice-line__flag { color: var(--color-warning, #b54708); }
+  @media (hover: none) { .cbf-invoice-line__flag { opacity: 1; } }
+
+  /* A flagged line and the objection to it read as one unit: the line takes a soft
+     warning tint (never a colored left border) and the reason sits in the row
+     directly beneath, spanning the full ledger width. */
+  .cbf-invoice-line[data-flagged] > td {
+    background: var(--color-warning-subtle, color-mix(in srgb, var(--color-warning, #b54708) 10%, transparent));
+  }
+  .cbf-invoice-line__note > td {
+    padding-top: 0;
+    background: var(--color-warning-subtle, color-mix(in srgb, var(--color-warning, #b54708) 10%, transparent));
+  }
+  .cbf-invoice-line__note-text {
+    font-size: var(--type-size-150);
+    color: var(--color-text-primary);
+  }
+  .cbf-invoice-line__note-clear {
+    display: inline-flex;
+    vertical-align: middle;
+    margin-left: var(--spacing-150);
+    color: var(--color-text-muted);
+  }
+  /* The line's comment capture, opened in place under the line it belongs to. */
+  .cbf-invoice-line__note-actions {
+    display: inline-flex;
+    gap: var(--spacing-200);
+    margin-top: var(--spacing-200);
+  }
+  .cbf-invoice-line__note-btn { display: inline-flex; }
+
+  /* Line-item editor groups — injected by JS, so styled globally. One labelled
+     block per line: description full width, quantity and unit price side by side. */
+  .cbf-line-editor__item {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-250);
+    margin: 0;
+    padding: var(--spacing-300);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100, 4px);
+  }
+  .cbf-line-editor__legend {
+    padding-inline: var(--spacing-150);
+    font-size: var(--type-size-150);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+  }
+  .cbf-line-editor__desc { grid-column: 1 / -1; }
+
+  /* "Go to field" from the issues list lands the eye on the right row. */
+  .is-flash {
+    animation: cbf-issue-flash 1.2s ease-out;
+  }
+  @keyframes cbf-issue-flash {
+    0%, 55% { background-color: var(--color-warning-subtle, color-mix(in srgb, var(--color-warning, #b54708) 22%, transparent)); }
+    100% { background-color: transparent; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .is-flash { animation: none; outline: 2px solid var(--color-warning, #b54708); outline-offset: 2px; }
+  }
+
   /* Backup-documentation rows are injected by JS — styled globally. The filename
      carries its own extension; the affordances are the view control (renders the
      file in the document pane) and the download control — actions, not decoration. */
@@ -747,6 +835,9 @@ const { invoice, dashboardHref = withBase('/my-work#invoices') } = Astro.props;
 
 <script>
   import '@esa/ecology/esa-textarea';
+  // Edit mode swaps values for esa-text-field inputs (panel rows + line editor), so
+  // the element has to be registered here or the inputs never upgrade.
+  import '@esa/ecology/esa-text-field';
 
   type Stage = 'Submitted' | 'In review' | 'Returned' | 'Approved';
   type LineItem = { description: string; qty: number; unitPrice: number };
@@ -828,6 +919,31 @@ const { invoice, dashboardHref = withBase('/my-work#invoices') } = Astro.props;
     return days > 0
       ? `${n} day${n === 1 ? '' : 's'} before contract end`
       : `${n} day${n === 1 ? '' : 's'} past contract end`;
+  };
+
+  // How long the contract itself runs, given its explicit start and end dates —
+  // the scale the COR places a single invoice against.
+  const termLabel = (startStr: string, endStr: string): string => {
+    const a = new Date(startStr);
+    const b = new Date(endStr);
+    if (isNaN(a.getTime()) || isNaN(b.getTime())) return '';
+    const months = Math.round((b.getTime() - a.getTime()) / (86_400_000 * 30.4375));
+    if (months < 1) return '';
+    if (months % 12 === 0) {
+      const y = months / 12;
+      return `${y}-year term`;
+    }
+    return `${months}-month term`;
+  };
+
+  // A part as a share of a whole, in the same voice the data module uses: one
+  // decimal below 10% so a small routine draw still reads as a real number.
+  const pctLabel = (part: number, whole: number): string => {
+    const w = Number(whole) || 0;
+    if (w <= 0) return '—';
+    const pct = (Number(part) || 0) / w * 100;
+    if (pct > 0 && pct < 0.1) return '<0.1%';
+    return `${pct < 10 ? pct.toFixed(1) : Math.round(pct)}%`;
   };
 
   // Bind ONE processor surface: populate the single invoice, wire view controls +
@@ -935,6 +1051,329 @@ const { invoice, dashboardHref = withBase('/my-work#invoices') } = Astro.props;
     };
 
     const setText = (sel: string, value: string) => { const el = $(sel); if (el) el.textContent = value; };
+    const setDisabled = (wrap: Element | null, off: boolean) => {
+      const btn = wrap?.querySelector('button');
+      if (btn) btn.disabled = off;
+      wrap?.querySelector('.esa-button')?.classList.toggle('esa-button--disabled', off);
+    };
+
+    // Write one cbf-invoice-field row: its value, and the quiet derived line beneath
+    // it (hidden when there is nothing to derive).
+    const setField = (key: string, value: string, sub?: string) => {
+      const row = root.querySelector<HTMLElement>(`.cbf-invoice-field[data-field="${key}"]`);
+      if (!row) return;
+      const display = row.querySelector<HTMLElement>('[data-field-display]');
+      if (display) display.textContent = value;
+      const subEl = row.querySelector<HTMLElement>('[data-field-sub]');
+      if (subEl) {
+        subEl.textContent = sub ?? '';
+        subEl.hidden = !sub || editing;
+      }
+    };
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Correcting the invoice: EDIT a field, or FLAG it as an issue.
+    //
+    // These are the two things a COR does to a line of an invoice that is wrong.
+    // Editing is for what they can fix themselves (a transposed date, a contract
+    // value that moved after a modification). Flagging is for what only the vendor
+    // can fix — it records WHAT is wrong and WHY, and every flag is carried into
+    // the Return-for-revision memo, so returning is just "send what I marked".
+    //
+    // Both run off one addressing scheme, a field KEY:
+    //   'perfStart'          a field on the record        (a cbf-invoice-field row)
+    //   'line:2:unitPrice'   one cell of one line item    (the ledger / line editor)
+    //   'line:2'             a whole line item            (flag target only)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    // Figures stored as numbers — parsed on write, currency-formatted on read.
+    const MONEY_FIELDS = new Set(['contractValue', 'expended', 'amount', 'remaining']);
+
+    const readRaw = (key: string): string => {
+      if (key.startsWith('line:')) {
+        const [, idx, prop] = key.split(':');
+        const li = inv.lineItems[Number(idx)];
+        if (!li || !prop) return '';
+        return String((li as unknown as Record<string, unknown>)[prop] ?? '');
+      }
+      const v = (inv as unknown as Record<string, unknown>)[key];
+      return v === undefined || v === null ? '' : String(v);
+    };
+
+    const writeRaw = (key: string, raw: string) => {
+      const rec = inv as unknown as Record<string, unknown>;
+      if (key.startsWith('line:')) {
+        const [, idx, prop] = key.split(':');
+        const li = inv.lineItems[Number(idx)];
+        if (!li || !prop) return;
+        if (prop === 'description') li.description = raw;
+        else (li as unknown as Record<string, unknown>)[prop] = Number(raw) || 0;
+        return;
+      }
+      rec[key] = MONEY_FIELDS.has(key) ? (Number(raw) || 0) : raw;
+    };
+
+    // Derived money never gets typed: the invoice AMOUNT is the sum of its lines, and
+    // what's REMAINING on the contract is its value less what's been expended. Editing
+    // a line or a contract figure re-derives both, so the panel can't drift from the
+    // ledger it's summarising.
+    const recompute = () => {
+      inv.amount = inv.lineItems.reduce((t, li) => t + (li.qty || 0) * (li.unitPrice || 0), 0);
+      inv.remaining = Math.max(0, (inv.contractValue || 0) - (inv.expended || 0));
+    };
+
+    // Human name for a key — read from the rendered row label rather than kept in a
+    // second registry that could drift from the markup.
+    const LINE_PROP_LABELS: Record<string, string> = {
+      description: 'Description', qty: 'Qty', unitPrice: 'Unit price',
+    };
+    const labelFor = (key: string): string => {
+      if (key.startsWith('line:')) {
+        const [, idx, prop] = key.split(':');
+        const n = Number(idx) + 1;
+        return prop ? `Line ${n} · ${LINE_PROP_LABELS[prop] ?? prop}` : `Line ${n}`;
+      }
+      const row = root.querySelector<HTMLElement>(`[data-field="${key}"] .cbf-invoice-field__label`);
+      return (row?.textContent ?? '').trim() || key;
+    };
+
+    // ---- Issues --------------------------------------------------------------
+    // key → the COR's written reason. Insertion order is the order they raised them,
+    // which is the order the return memo lists them in.
+    const issues = new Map<string, string>();
+    const issuesList = $('[data-issues-list]');
+    const issuesEmpty = $('[data-issues-empty]');
+    const issuesCount = $('[data-issues-count]');
+    const issuesClearAll = $('[data-issues-clear-all]');
+    const issueTmpl = (name: string) =>
+      root.querySelector<HTMLElement>(`[data-issues-templates] [data-tmpl="${name}"]`)?.innerHTML ?? '';
+
+    const renderIssues = () => {
+      const entries = [...issues.entries()];
+      const n = entries.length;
+
+      if (issuesEmpty) issuesEmpty.hidden = n > 0;
+      if (issuesClearAll) issuesClearAll.hidden = n === 0;
+      if (issuesCount) {
+        issuesCount.hidden = n === 0;
+        const badge = issuesCount.querySelector('.esa-badge__text');
+        if (badge) badge.textContent = String(n);
+      }
+      if (issuesList) {
+        issuesList.innerHTML = entries
+          .map(([key, comment]) => `<li class="cbf-invoice-issue" data-issue-field="${escAttr(key)}">
+            <span class="cbf-invoice-issue__field">${escAttr(labelFor(key))}</span>
+            <span class="cbf-invoice-issue__actions">
+              <span data-issue-goto data-issue-field="${escAttr(key)}">${issueTmpl('goto')}</span>
+              <span data-issue-clear data-issue-field="${escAttr(key)}">${issueTmpl('clear')}</span>
+            </span>
+            <span class="cbf-invoice-issue__comment">${escAttr(comment)}</span>
+          </li>`)
+          .join('');
+      }
+
+      // An invoice the COR has marked as wrong cannot also be approved — the two
+      // statements contradict each other. Return stays open; that's the way out.
+      setDisabled($('[data-act-approve]'), n > 0);
+      const gate = $('[data-decide-note]');
+      if (gate) {
+        gate.hidden = n === 0;
+        gate.textContent = n === 0
+          ? ''
+          : `${n} issue${n === 1 ? '' : 's'} flagged — this invoice can be returned, not approved.`;
+      }
+    };
+
+    // Paint an issue onto the field row it belongs to (the panel rows only; line
+    // items carry theirs inside the ledger, repainted by renderLineItems).
+    const paintFieldIssues = () => {
+      root.querySelectorAll<HTMLElement>('.cbf-invoice-field[data-flaggable]').forEach((row) => {
+        const key = row.dataset.field ?? '';
+        const comment = issues.get(key);
+        const box = row.querySelector<HTMLElement>('[data-field-issue]');
+        const text = row.querySelector<HTMLElement>('[data-field-issue-text]');
+        if (comment) row.dataset.flagged = ''; else delete row.dataset.flagged;
+        if (box) box.hidden = !comment;
+        if (text) text.textContent = comment ?? '';
+      });
+    };
+
+    // Open the comment capture on a field row, seeded with any existing reason.
+    const openNote = (key: string) => {
+      const row = root.querySelector<HTMLElement>(`.cbf-invoice-field[data-field="${key}"]`);
+      if (!row) return;
+      const note = row.querySelector<HTMLElement>('[data-field-note]');
+      const input = row.querySelector<HTMLElement & { value: string }>('[data-field-note-input]');
+      const issueBox = row.querySelector<HTMLElement>('[data-field-issue]');
+      if (input) input.value = issues.get(key) ?? '';
+      if (note) note.hidden = false;
+      if (issueBox) issueBox.hidden = true;
+      (input as unknown as HTMLElement | null)?.focus?.();
+    };
+    const closeNote = (key: string) => {
+      const row = root.querySelector<HTMLElement>(`.cbf-invoice-field[data-field="${key}"]`);
+      const note = row?.querySelector<HTMLElement>('[data-field-note]');
+      if (note) note.hidden = true;
+      paintFieldIssues();
+    };
+
+    const raiseIssue = (key: string, comment: string) => {
+      const text = comment.trim();
+      if (!text) { issues.delete(key); } else { issues.set(key, text); }
+      renderIssues();
+      paintFieldIssues();
+      renderLineItems();
+    };
+    const clearIssue = (key: string) => {
+      issues.delete(key);
+      renderIssues();
+      paintFieldIssues();
+      renderLineItems();
+    };
+
+    // ---- The line-item ledger (read) and line editor (edit) -------------------
+    const itemsBody = $('[data-f-items]');
+    const itemsTable = itemsBody?.closest('table') ?? null;
+    const lineEditor = $('[data-line-editor]');
+    const lineTmpl = (name: string) =>
+      root.querySelector<HTMLElement>(`[data-badge-templates] [data-tmpl="${name}"]`)?.innerHTML ?? '';
+    const lineFlagHTML = lineTmpl('line-flag');
+    const lineClearHTML = lineTmpl('line-issue-clear');
+    const lineSaveHTML = lineTmpl('line-note-save');
+    const lineCancelHTML = lineTmpl('line-note-cancel');
+
+    // Which line, if any, currently has its comment capture open. A line flags the
+    // same way a field does — an inline capture in place, never a native prompt —
+    // so the two halves of the surface behave identically.
+    let lineNoteOpenFor: string | null = null;
+
+    const renderLineItems = () => {
+      if (!itemsBody) return;
+      itemsBody.innerHTML = inv.lineItems
+        .map((li, i) => {
+          const key = `line:${i}`;
+          const comment = issues.get(key);
+          const capturing = lineNoteOpenFor === key;
+          const flagged = comment || capturing ? ' data-flagged' : '';
+          const row = `<tr class="cbf-invoice-line" data-line="${i}"${flagged}>
+            <td>${escAttr(li.description)}</td>
+            <td class="cbf-num">${qtyFmt.format(li.qty)}</td>
+            <td class="cbf-num">${usd.format(li.unitPrice)}</td>
+            <td class="cbf-num">${usd.format(li.qty * li.unitPrice)}</td>
+            <td class="cbf-invoice-line__actions"><span class="cbf-invoice-line__flag" data-line-flag data-line-key="${key}">${lineFlagHTML}</span></td>
+          </tr>`;
+
+          // Capture open: the textarea and its two controls, spanning the ledger.
+          if (capturing) {
+            return `${row}<tr class="cbf-invoice-line__note" data-line-capture="${i}">
+              <td colspan="5">
+                <esa-textarea
+                  data-line-note-input
+                  label="What's wrong with this line?"
+                  placeholder="Explain what the vendor needs to correct — e.g. the rate exceeds the contract's approved rate."
+                  rows="3"
+                ></esa-textarea>
+                <span class="cbf-invoice-line__note-actions">
+                  <span class="cbf-invoice-line__note-btn" data-line-note-save data-line-key="${key}">${lineSaveHTML}</span>
+                  <span class="cbf-invoice-line__note-btn" data-line-note-cancel>${lineCancelHTML}</span>
+                </span>
+              </td>
+            </tr>`;
+          }
+
+          if (!comment) return row;
+          // The reason rides directly under the line it belongs to — the COR reads
+          // the bad line and the objection to it in one place.
+          return `${row}<tr class="cbf-invoice-line__note" data-line-note="${i}">
+            <td colspan="5">
+              <span class="cbf-invoice-line__note-text">${escAttr(comment)}</span>
+              <span class="cbf-invoice-line__note-clear" data-line-issue-clear data-line-key="${key}">${lineClearHTML}</span>
+            </td>
+          </tr>`;
+        })
+        .join('');
+
+      // Seed and focus the capture, if one is open. A Lit element parsed from an
+      // HTML string has no value until its property is assigned.
+      if (lineNoteOpenFor) {
+        const input = itemsBody.querySelector<HTMLElement & { value: string }>('[data-line-note-input]');
+        if (input) {
+          input.value = issues.get(lineNoteOpenFor) ?? '';
+          input.focus?.();
+        }
+      }
+    };
+
+    // Edit-mode counterpart: one labelled group per line item.
+    const renderLineEditor = () => {
+      if (!lineEditor) return;
+      lineEditor.innerHTML = inv.lineItems
+        .map((li, i) => `<fieldset class="cbf-line-editor__item">
+          <legend class="cbf-line-editor__legend">Line ${i + 1}</legend>
+          <esa-text-field class="cbf-line-editor__desc" data-line-input data-line-key="line:${i}:description" size="sm" label="Description"></esa-text-field>
+          <esa-text-field data-line-input data-line-key="line:${i}:qty" size="sm" type="number" label="Qty"></esa-text-field>
+          <esa-text-field data-line-input data-line-key="line:${i}:unitPrice" size="sm" type="number" prefix="$" label="Unit price"></esa-text-field>
+        </fieldset>`)
+        .join('');
+      // Values are set as PROPERTIES after injection — a Lit element parsed from an
+      // HTML string has no value until its property is assigned.
+      lineEditor.querySelectorAll<HTMLElement & { value: string }>('[data-line-input]').forEach((el) => {
+        el.value = readRaw(el.dataset.lineKey ?? '');
+      });
+    };
+
+    // ---- Edit mode -----------------------------------------------------------
+    let editing = false;
+
+    const applyEditMode = () => {
+      root.querySelectorAll<HTMLElement>('.cbf-invoice-field[data-editable]').forEach((row) => {
+        const key = row.dataset.field ?? '';
+        const display = row.querySelector<HTMLElement>('[data-field-display]');
+        const sub = row.querySelector<HTMLElement>('[data-field-sub]');
+        const input = row.querySelector<HTMLElement & { value: string }>('[data-field-input]');
+        const subInput = row.querySelector<HTMLElement & { value: string; dataset: DOMStringMap }>('[data-field-sub-input]');
+        if (input) { if (editing) input.value = readRaw(key); input.hidden = !editing; }
+        if (subInput) {
+          if (editing) subInput.value = readRaw(subInput.dataset.subField ?? '');
+          subInput.hidden = !editing;
+        }
+        if (display) display.hidden = editing;
+        if (sub) sub.hidden = editing || !sub.textContent;
+      });
+
+      // The paper ledger and its editor are the same content in two modes.
+      if (itemsTable) itemsTable.hidden = editing;
+      if (lineEditor) lineEditor.hidden = !editing;
+      if (editing) renderLineEditor();
+
+      const hint = $('[data-edit-hint]');
+      if (hint) hint.hidden = !editing;
+      const editBtn = $('[data-act-edit]');
+      const saveBtn = $('[data-act-edit-save]');
+      const cancelBtn = $('[data-act-edit-cancel]');
+      if (editBtn) editBtn.hidden = editing;
+      if (saveBtn) saveBtn.hidden = !editing;
+      if (cancelBtn) cancelBtn.hidden = !editing;
+      // Deciding on an invoice mid-edit would decide on unsaved numbers.
+      const actionsEl = $('[data-actions]');
+      if (actionsEl && !decision) actionsEl.hidden = editing;
+    };
+
+    const commitEdits = () => {
+      root.querySelectorAll<HTMLElement>('.cbf-invoice-field[data-editable]').forEach((row) => {
+        const key = row.dataset.field ?? '';
+        const input = row.querySelector<HTMLElement & { value: string }>('[data-field-input]');
+        if (input) writeRaw(key, String(input.value ?? ''));
+        const subInput = row.querySelector<HTMLElement & { value: string }>('[data-field-sub-input]');
+        if (subInput) writeRaw((subInput as HTMLElement).dataset.subField ?? '', String(subInput.value ?? ''));
+      });
+      lineEditor?.querySelectorAll<HTMLElement & { value: string }>('[data-line-input]').forEach((el) => {
+        writeRaw((el as HTMLElement).dataset.lineKey ?? '', String(el.value ?? ''));
+      });
+      recompute();
+    };
+
+    const setEditing = (on: boolean) => { editing = on; applyEditMode(); };
 
     const populate = () => {
       // Status badge (decided stage overrides the invoice stage).
@@ -967,53 +1406,59 @@ const { invoice, dashboardHref = withBase('/my-work#invoices') } = Astro.props;
       const stamp = $('[data-f-stamp]');
       if (stamp) stamp.hidden = !inv.final;
 
-      // Amount information — the billed figure (exact); its draw-down context follows.
-      setText('[data-f-amount-hero]', usd.format(inv.amount));
-      const amtCopy = $('[data-f-amount-copy]');
+      // ── The field rows ──────────────────────────────────────────────────────
+      // Identity and spec fields lead; the contract block states the award's own
+      // term and size; the money block closes with the billed figure and what it
+      // does to the balance. Each row's `sub` is DERIVED context — never a stored
+      // value — so it recomputes whenever an edit lands.
+      setField('number', inv.number);
+      setField('vendor', inv.vendor);
+      setField('invoiceDate', inv.invoiceDate);
+      setField('billTo', inv.billTo);
+      setField('notes', inv.notes || 'No memo submitted');
+      // Contract & project lead with the reference NUMBER — the ID the COR
+      // transcribes into Asset Suite — and sub the human name.
+      setField('contractNumber', inv.contractNumber, inv.contract);
+      setField('projectNumber', inv.projectNumber, inv.project);
+      setField('perfStart', inv.perfStart);
+      setField('perfEnd', inv.perfEnd, contractEndGap(inv.perfEnd, inv.contractEnd));
+
+      // Contract context. The term is stated as two explicit dates — a COR should
+      // never have to infer when the contract itself starts and ends from the
+      // performance period of one invoice against it.
+      setField('contractStart', inv.contractStart);
+      setField('contractEnd', inv.contractEnd, termLabel(inv.contractStart, inv.contractEnd));
+      setField('contractValue', usd.format(inv.contractValue), 'Full award value');
+      setField(
+        'expended',
+        usd.format(inv.expended),
+        `${pctLabel(inv.expended, inv.contractValue)} of the contract drawn to date · as of ${inv.asOf}`,
+      );
+
+      // The billed figure, and the share of the whole award it represents — the
+      // number that separates a routine draw from a material slice of the contract.
+      setField(
+        'amount',
+        usd.format(inv.amount),
+        `${pctLabel(inv.amount, inv.contractValue)} of the ${usdCompact.format(inv.contractValue)} contract value`,
+      );
+      setField(
+        'remaining',
+        usdCompact.format(inv.remaining),
+        `${usdCompact.format(inv.remaining - inv.amount)} after this invoice`,
+      );
+      const amtCopy = root.querySelector<HTMLElement>('[data-field="amount"] [data-copy]');
       if (amtCopy) amtCopy.dataset.copyValue = inv.amount.toFixed(2);
-
-      // Amount draw-down (compact figures). Contract remaining shows a muted sub with
-      // the projected balance once this invoice is processed.
-      setText('[data-f-remaining-val]', usdCompact.format(inv.remaining));
-      const remAfter = inv.remaining - inv.amount;
-      setText('[data-f-rem-after]', `${usdCompact.format(remAfter)} after this invoice`);
-
-      // Spec fields.
-      setText('[data-f-number-panel]', inv.number);
-      setText('[data-f-vendor-panel]', inv.vendor);
-      // Contract & project: name + reference number. The copy control carries the
-      // NUMBER — that's the ID the COR transcribes into Asset Suite / other systems.
-      setText('[data-f-contract-name]', inv.contract);
-      setText('[data-f-contract-num]', inv.contractNumber);
-      const contractCopy = $<HTMLElement>('[data-f-contract-copy]');
-      if (contractCopy) contractCopy.dataset.copyValue = inv.contractNumber || inv.contract;
-      setText('[data-f-project-name]', inv.project);
-      setText('[data-f-project-num]', inv.projectNumber);
-      const projectCopy = $<HTMLElement>('[data-f-project-copy]');
-      if (projectCopy) projectCopy.dataset.copyValue = inv.projectNumber || inv.project;
-      // Performance start & end on separate rows so each copies on its own. The end
-      // row also notes how close the work runs to the contract's end date.
-      setText('[data-f-perf-start]', inv.perfStart);
-      setText('[data-f-perf-end-date]', inv.perfEnd);
-      setText('[data-f-contract-end]', `Contract ends ${inv.contractEnd} · ${contractEndGap(inv.perfEnd, inv.contractEnd)}`);
-      const perfEndCopy = $<HTMLElement>('[data-f-perf-end-copy]');
-      if (perfEndCopy) perfEndCopy.dataset.copyValue = inv.perfEnd;
 
       // Invoice document.
       setText('[data-f-vendor-doc]', inv.vendor);
       setText('[data-f-num-doc]', inv.number);
       setText('[data-f-date]', inv.invoiceDate);
       setText('[data-f-billto]', inv.billTo);
-      const itemsBody = $('[data-f-items]');
+      // The ledger — each line flaggable on its own, and rebuilt here so an edit to
+      // a quantity or a rate shows up in the document, not just in the panel.
       const subtotal = inv.lineItems.reduce((t, li) => t + li.qty * li.unitPrice, 0);
-      if (itemsBody) {
-        itemsBody.innerHTML = inv.lineItems.map((li) => `<tr>
-          <td>${li.description}</td>
-          <td class="cbf-num">${qtyFmt.format(li.qty)}</td>
-          <td class="cbf-num">${usd.format(li.unitPrice)}</td>
-          <td class="cbf-num">${usd.format(li.qty * li.unitPrice)}</td>
-        </tr>`).join('');
-      }
+      renderLineItems();
       setText('[data-f-subtotal]', usd.format(subtotal));
       setText('[data-f-tax]', usd.format(0));
       setText('[data-f-total]', usd.format(inv.amount));
@@ -1075,11 +1520,134 @@ const { invoice, dashboardHref = withBase('/my-work#invoices') } = Astro.props;
       if (reason) reason.value = '';
 
       showActionMode(decision ? 'done' : 'default', decision ?? undefined);
+
+      // Flags last: they annotate the rows just written, and gate Approve.
+      paintFieldIssues();
+      renderIssues();
+      applyEditMode();
     };
+
+    // ---- Edit mode controls --------------------------------------------------
+    $('[data-act-edit]')?.addEventListener('click', () => setEditing(true));
+    $('[data-act-edit-cancel]')?.addEventListener('click', () => {
+      // Discard: nothing was written to the record, so simply leaving edit mode and
+      // repainting from the record restores what was there.
+      setEditing(false);
+      populate();
+    });
+    $('[data-act-edit-save]')?.addEventListener('click', () => {
+      commitEdits();
+      setEditing(false);
+      populate();
+    });
+
+    // ---- Flagging ------------------------------------------------------------
+    // One delegated listener covers the panel rows, the injected ledger rows, and
+    // the issues list — so rows re-rendered at any time stay wired.
+    root.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+
+      // Raise / re-open a note on a FIELD row.
+      const flagBtn = t.closest<HTMLElement>('[data-field-flag]');
+      if (flagBtn) {
+        const key = flagBtn.closest<HTMLElement>('.cbf-invoice-field')?.dataset.field ?? '';
+        if (key) openNote(key);
+        return;
+      }
+      const saveNote = t.closest<HTMLElement>('[data-field-note-save]');
+      if (saveNote) {
+        const row = saveNote.closest<HTMLElement>('.cbf-invoice-field');
+        const key = row?.dataset.field ?? '';
+        const input = row?.querySelector<HTMLElement & { value: string }>('[data-field-note-input]');
+        raiseIssue(key, String(input?.value ?? ''));
+        closeNote(key);
+        return;
+      }
+      const cancelNote = t.closest<HTMLElement>('[data-field-note-cancel]');
+      if (cancelNote) {
+        closeNote(cancelNote.closest<HTMLElement>('.cbf-invoice-field')?.dataset.field ?? '');
+        return;
+      }
+      const editIssue = t.closest<HTMLElement>('[data-field-issue-edit]');
+      if (editIssue) {
+        openNote(editIssue.closest<HTMLElement>('.cbf-invoice-field')?.dataset.field ?? '');
+        return;
+      }
+      const clearFieldIssue = t.closest<HTMLElement>('[data-field-issue-clear]');
+      if (clearFieldIssue) {
+        clearIssue(clearFieldIssue.closest<HTMLElement>('.cbf-invoice-field')?.dataset.field ?? '');
+        return;
+      }
+
+      // Raise / clear a note on a LINE ITEM — the capture opens as a row under the
+      // line, mirroring how a field row opens its own capture in place.
+      const lineFlag = t.closest<HTMLElement>('[data-line-flag]');
+      if (lineFlag) {
+        const key = lineFlag.dataset.lineKey ?? '';
+        lineNoteOpenFor = lineNoteOpenFor === key ? null : key;
+        renderLineItems();
+        return;
+      }
+      const lineSave = t.closest<HTMLElement>('[data-line-note-save]');
+      if (lineSave) {
+        const key = lineSave.dataset.lineKey ?? '';
+        const input = itemsBody?.querySelector<HTMLElement & { value: string }>('[data-line-note-input]');
+        lineNoteOpenFor = null;
+        raiseIssue(key, String(input?.value ?? ''));
+        return;
+      }
+      if (t.closest('[data-line-note-cancel]')) {
+        lineNoteOpenFor = null;
+        renderLineItems();
+        return;
+      }
+      const lineClear = t.closest<HTMLElement>('[data-line-issue-clear]');
+      if (lineClear) {
+        clearIssue(lineClear.dataset.lineKey ?? '');
+        return;
+      }
+
+      // The issues list: jump to the flagged field, or drop the flag.
+      const goto = t.closest<HTMLElement>('[data-issue-goto]');
+      if (goto) {
+        const key = goto.dataset.issueField ?? '';
+        const target = key.startsWith('line:')
+          ? root.querySelector<HTMLElement>(`[data-line="${key.split(':')[1]}"]`)
+          : root.querySelector<HTMLElement>(`.cbf-invoice-field[data-field="${key}"]`);
+        target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        target?.classList.add('is-flash');
+        setTimeout(() => target?.classList.remove('is-flash'), 1200);
+        return;
+      }
+      const issueClear = t.closest<HTMLElement>('[data-issue-clear]');
+      if (issueClear) {
+        clearIssue(issueClear.dataset.issueField ?? '');
+        return;
+      }
+      if (t.closest('[data-issues-clear-all]')) {
+        issues.clear();
+        renderIssues();
+        paintFieldIssues();
+        renderLineItems();
+      }
+    });
 
     // Wire actions (delegated to wrapper spans like the rest of the spoke).
     $('[data-act-approve]')?.addEventListener('click', () => showActionMode('approve'));
-    $('[data-act-return]')?.addEventListener('click', () => showActionMode('return'));
+    // Returning opens with the flagged issues already written up. The COR marked
+    // them one at a time across the invoice; the memo is that work, collected — so
+    // nothing has to be retyped and nothing silently fails to reach the vendor. The
+    // text stays editable: this is a first draft, not a locked summary.
+    $('[data-act-return]')?.addEventListener('click', () => {
+      if (reason && issues.size > 0 && !(reason.value ?? '').trim()) {
+        const lines = [...issues.entries()]
+          .map(([key, comment], i) => `${i + 1}. ${labelFor(key)} — ${comment}`)
+          .join('\n');
+        reason.value =
+          `${issues.size} issue${issues.size === 1 ? '' : 's'} need${issues.size === 1 ? 's' : ''} correction before this invoice can be approved:\n\n${lines}`;
+      }
+      showActionMode('return');
+    });
     $('[data-act-approve-cancel]')?.addEventListener('click', () => showActionMode('default'));
     $('[data-act-return-cancel]')?.addEventListener('click', () => showActionMode('default'));
 
@@ -1112,9 +1680,13 @@ const { invoice, dashboardHref = withBase('/my-work#invoices') } = Astro.props;
 
     $('[data-act-return-confirm]')?.addEventListener('click', () => {
       const note = (reason?.value ?? '').trim();
+      const n = issues.size;
+      const flagged = n > 0 ? ` ${n} flagged field${n === 1 ? '' : 's'} were sent with it.` : '';
       const dec: Decision = {
         variant: 'danger', title: 'Returned for revision', badge: 'Returned',
-        text: note ? `Returned to the vendor with your comments: “${note}”` : 'Returned to the vendor for revision.',
+        text: note
+          ? `Returned to the vendor with your comments: “${note}”${flagged}`
+          : `Returned to the vendor for revision.${flagged}`,
       };
       decision = dec;
       if (statusSlot) statusSlot.innerHTML = `<span class="cbf-grid-status">${stageHTML.get('Returned') ?? 'Returned'}</span>`;

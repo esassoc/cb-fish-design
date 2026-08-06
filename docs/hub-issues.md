@@ -389,3 +389,30 @@ styling, `aria-disabled` on the radiogroup, and no roving tabindex when set.
 option the group offers in the reviewer's lens is the one already selected, so a COR
 cannot actually change anything. Any future read-only surface with a real multi-option
 radio group would need a bespoke overlay.
+
+## esa-text-field — no accessible name without a VISIBLE label
+
+**Found:** 2026-08-06, building the COR's edit mode on `/invoice-review/<number>` (the
+invoice's line-item ledger becomes editable in place).
+
+**Issue:** `esa-text-field` renders its `<input id="input">` inside shadow DOM, and the
+only thing that names it is the `label` property — which also renders a visible
+`<label>` above the control. There is no `aria-label` / `aria-labelledby` /
+`hide-label` passthrough, and the input is not exposed as a part, so a caller cannot
+reach it from outside. An `aria-label` set on the HOST does not name the shadow input.
+
+The consequence: any dense editing surface where the column/row heading already names
+the field — a table of line items, an inline grid editor, a compact filter bar — must
+choose between an unlabelled (inaccessible) input and repeating the heading above
+every single control. Same shape applies to `esa-textarea`.
+
+**Requested change:** either (a) forward `aria-label` / `aria-labelledby` from the host
+onto the inner input, or (b) add a `hide-label` boolean that keeps `label` as the
+accessible name while visually hiding the `<label>` (the usual visually-hidden
+treatment). (b) is preferable — it keeps one naming API and can't be forgotten.
+
+**Local workaround (CBFish):** the line-item ledger does NOT put inputs in the table.
+Edit mode swaps the paper ledger for `cbf-line-editor` — one `<fieldset>` per line with
+three fully-labelled `esa-text-field`s. That is arguably the better editing surface
+anyway (a four-column paper bill is for reading, not correcting), so the workaround is
+not a compromise here — but it was forced, not chosen.

@@ -27,7 +27,8 @@ export { fmtExact, fmtCompact };
  *   contract: string; contractNumber: string; project: string; projectNumber: string;
  *   submitted: string; reviewBy: string; daysRemaining: number; netTerms: string;
  *   amount: number; stage: ReviewStage; final: boolean;
- *   invoiceDate: string; perfStart: string; perfEnd: string; contractEnd: string;
+ *   invoiceDate: string; perfStart: string; perfEnd: string;
+ *   contractStart: string; contractEnd: string;
  *   billTo: string; lineItems: LineItem[]; notes?: string; pdfName: string;
  *   supportingDocs: string[];
  *   contractValue: number; expended: number; remaining: number; asOf: string;
@@ -36,10 +37,12 @@ export { fmtExact, fmtCompact };
  * }} ReviewInvoice
  *
  * `contractNumber` / `projectNumber` are the reference IDs a COR transcribes into
- * Asset Suite and other systems; `contractEnd` is the contract's period-of-performance
- * END date (so the COR can see how close this invoice's performance period runs to the
- * contract's close); `netTerms` is the vendor's payment terms. All four are merged onto
- * each record from the by-name lookup below.
+ * Asset Suite and other systems; `contractStart` / `contractEnd` are the contract's
+ * period-of-performance START and END dates, stated EXPLICITLY (not inferred from the
+ * invoice's own performance period) so the COR can place this invoice on the contract's
+ * full timeline and see how close the work runs to the contract's close; `netTerms` is
+ * the vendor's payment terms. All five are merged onto each record from the by-name
+ * lookup below.
  *
  * `pdfName` is the invoice document the vendor submitted; `supportingDocs` are the
  * extra files they attached (timesheets, receipts, reports). The COR downloads any
@@ -229,12 +232,16 @@ const reviewQueueBase = [
 // numbers are kept 1-to-1 with the same contracts in vendor-dashboard-invoices.mjs,
 // and `contractEnd` mirrors portfolio[].perfEnd in my-work.mjs, so a given contract
 // reads identically everywhere it appears. (Not imported to avoid a circular dep.)
+//
+// `contractStart` is a two-year period of performance ending on `contractEnd` — the
+// term implied by the C-2024-* numbering, and early enough that every invoice's own
+// performance period falls inside it.
 const contractRefs = {
-  'Salmon Habitat Restoration — Wenatchee': { contractNumber: 'C-2024-042', contractEnd: 'Sep 30, 2026', netTerms: 'Net 30' },
-  'Smolt Survival Telemetry Study':         { contractNumber: 'C-2024-067', contractEnd: 'Oct 31, 2026', netTerms: 'Net 30' },
-  'Riparian Vegetation Monitoring — Methow': { contractNumber: 'C-2024-051', contractEnd: 'Nov 30, 2026', netTerms: 'Net 30' },
-  'Hatchery Supplementation — Entiat':      { contractNumber: 'C-2024-073', contractEnd: 'Aug 31, 2026', netTerms: 'Net 45' },
-  'Water Quality Sampling — Okanogan':      { contractNumber: 'C-2024-058', contractEnd: 'Jun 13, 2026', netTerms: 'Net 30' },
+  'Salmon Habitat Restoration — Wenatchee': { contractNumber: 'C-2024-042', contractStart: 'Oct 1, 2024', contractEnd: 'Sep 30, 2026', netTerms: 'Net 30' },
+  'Smolt Survival Telemetry Study':         { contractNumber: 'C-2024-067', contractStart: 'Nov 1, 2024', contractEnd: 'Oct 31, 2026', netTerms: 'Net 30' },
+  'Riparian Vegetation Monitoring — Methow': { contractNumber: 'C-2024-051', contractStart: 'Dec 1, 2024', contractEnd: 'Nov 30, 2026', netTerms: 'Net 30' },
+  'Hatchery Supplementation — Entiat':      { contractNumber: 'C-2024-073', contractStart: 'Sep 1, 2024', contractEnd: 'Aug 31, 2026', netTerms: 'Net 45' },
+  'Water Quality Sampling — Okanogan':      { contractNumber: 'C-2024-058', contractStart: 'Jun 14, 2024', contractEnd: 'Jun 13, 2026', netTerms: 'Net 30' },
 };
 const projectNumbers = {
   'Wenatchee Subbasin': 'PRJ-2024-112',
@@ -246,7 +253,7 @@ const projectNumbers = {
 
 /**
  * The COR's assigned invoices — base records enriched with each contract/project's
- * reference number, the contract end date, and net terms.
+ * reference number, the contract start/end dates, and net terms.
  * @type {ReviewInvoice[]}
  */
 export const reviewQueue = reviewQueueBase.map((inv) => {
@@ -255,6 +262,7 @@ export const reviewQueue = reviewQueueBase.map((inv) => {
     ...inv,
     contractNumber: ref.contractNumber ?? '',
     projectNumber: projectNumbers[inv.project] ?? '',
+    contractStart: ref.contractStart ?? '',
     contractEnd: ref.contractEnd ?? '',
     netTerms: ref.netTerms ?? 'Net 30',
   };
@@ -294,6 +302,30 @@ export function deriveTriage(list = reviewQueue) {
     onTrack: by('on-track').length,
     awaitingAmount: open.reduce((t, i) => t + i.amount, 0),
   };
+}
+
+/**
+ * What share of the FULL contract value this single invoice represents — the figure
+ * that tells a COR whether they're signing off on a routine draw or a material slice
+ * of the whole award. Returns a number (percent), or null when the contract carries
+ * no value to divide by.
+ * @param {{ amount: number; contractValue: number }} invoice
+ */
+export function pctOfContract(invoice) {
+  const value = Number(invoice?.contractValue) || 0;
+  if (value <= 0) return null;
+  return (Number(invoice.amount) || 0) / value * 100;
+}
+
+/**
+ * Display form of `pctOfContract` — one decimal under 10%, whole numbers above, so a
+ * small routine draw still reads as a real number ("1.5%") instead of rounding to 1%.
+ */
+export function pctLabel(invoice) {
+  const pct = pctOfContract(invoice);
+  if (pct === null) return '';
+  if (pct > 0 && pct < 0.1) return '<0.1%';
+  return `${pct < 10 ? pct.toFixed(1) : Math.round(pct)}%`;
 }
 
 /** Find one invoice by its number (detail-page lookup). */
