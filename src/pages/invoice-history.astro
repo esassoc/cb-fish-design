@@ -7,7 +7,10 @@
 // Thin assembler: esa-container + cbf-app-panel chrome; the archive itself is the
 // existing cbf-invoice-review-queue (workspace variant), reused verbatim with the
 // paid subset — the Asset Suite column reads "Paid <date>" for every row, and the
-// click-through review overlay works the same as in the workspace.
+// navigation works the same as in the workspace: a row (or its invoice-number link)
+// goes to that invoice's page, and the quick-view control opens the peek drawer.
+// A paid invoice is terminal, so the page's decision actions have nothing left to
+// act on — it is read as a record, not worked.
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
 import CbfAppPanel from '../components/shared/cbf-app-panel.astro';

@@ -1,0 +1,134 @@
+---
+// cbf-invoice-issues — the running list of every field the COR has flagged as wrong
+// on this invoice, and the bridge between flagging and returning.
+//
+// The COR raises issues one field at a time (see cbf-invoice-field), scattered across
+// the document, the spec fields, and the contract block. This section is where those
+// scattered marks become ONE reviewable list: what's wrong, why, and how many. It is
+// the answer to "what am I about to send back?" — and Return for revision reads
+// straight from it, so the memo the vendor receives is exactly the set of marks the
+// COR made. Nothing has to be retyped, and nothing silently goes unsent.
+//
+// Empty is the normal state and says so plainly: an invoice with no issues is one the
+// COR can approve.
+//
+// PINNED CONTRACT (cbf-invoice-processor drives all of these):
+//   [data-issues-count]  the count badge wrapper (hidden at zero)
+//   [data-issues-empty]  the nothing-flagged line
+//   [data-issues-list]   <ul>; the host injects one <li> per issue carrying
+//                        data-issue-field="<key>", with [data-issue-goto] and
+//                        [data-issue-clear] controls the host delegates on
+//   [data-issues-clear-all]  wrapper for the clear-every-issue control
+//
+// bcn-lego-checked: no esa-* lego is a keyed annotation list with per-row jump/clear
+// affordances — checked the full node_modules/@esa/ecology/src/components catalog
+// (esa-alert-box is a single static message, esa-file-list is file-specific,
+// esa-empty-state is a whole-surface zero state rather than a section's quiet empty
+// line). It composes esa-badge for the count and esa-button/esa-icon-button for every
+// control rather than restyling any of them. Beacon is not on this machine.
+// cbf-invoice-issues is the reusable home for the pattern.
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+
+interface Props {
+  /** Heading for the section. */
+  title?: string;
+}
+
+const { title = 'Issues raised' } = Astro.props;
+---
+<section class="cbf-invoice-issues" aria-label="Issues raised on this invoice">
+  <div class="cbf-invoice-issues__head repel">
+    <h3 class="cbf-invoice-issues__title">
+      {title}
+      <span class="cbf-invoice-issues__count" data-issues-count hidden>
+        <EsaBadge value="0" variant="warning" size="sm" />
+      </span>
+    </h3>
+    <span data-issues-clear-all hidden>
+      <EsaButton appearance="outline" color="secondary" size="sm">Clear all</EsaButton>
+    </span>
+  </div>
+
+  <p class="cbf-invoice-issues__empty" data-issues-empty>
+    No issues flagged. Use the flag control on any field to mark it and say why —
+    everything you flag is sent with the invoice when you return it.
+  </p>
+
+  <ul class="cbf-invoice-issues__list" data-issues-list></ul>
+
+  <!-- Row control templates: server-rendered real legos, cloned into each injected
+       <li> so the list never hand-rolls a button. -->
+  <div class="cbf-invoice-issues__templates" data-issues-templates hidden aria-hidden="true">
+    <span data-tmpl="goto"><EsaIconButton icon="arrow-right" label="Go to field" size="xs" /></span>
+    <span data-tmpl="clear"><EsaIconButton icon="x" label="Clear issue" size="xs" /></span>
+  </div>
+</section>
+
+<style>
+  .cbf-invoice-issues__head { align-items: center; margin-bottom: var(--spacing-200); }
+
+  .cbf-invoice-issues__title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-200);
+    margin: 0;
+    font-size: var(--type-size-150);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+  }
+  .cbf-invoice-issues__count[hidden] { display: none; }
+
+  /* Darker rather than fainter as it shrinks — small text is never grayed out. */
+  .cbf-invoice-issues__empty {
+    margin: 0;
+    font-size: var(--type-size-150);
+    color: var(--color-text-secondary);
+  }
+  .cbf-invoice-issues__empty[hidden] { display: none; }
+
+  .cbf-invoice-issues__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-150);
+  }
+  .cbf-invoice-issues__list:empty { display: none; }
+</style>
+
+<style is:global>
+  /* Issue rows are injected by the processor (no Astro scope hash), so they are
+     styled globally. A soft warning tint carries the state — never a colored left
+     border, per the house rules. */
+  .cbf-invoice-issue {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--spacing-100) var(--spacing-200);
+    align-items: start;
+    padding: var(--spacing-200) var(--spacing-250);
+    border-radius: var(--radius-100, 4px);
+    background: var(--color-warning-subtle, color-mix(in srgb, var(--color-warning, #b54708) 10%, transparent));
+  }
+  .cbf-invoice-issue__field {
+    grid-column: 1;
+    font-size: var(--type-size-150);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+  .cbf-invoice-issue__comment {
+    grid-column: 1 / -1;
+    font-size: var(--type-size-150);
+    color: var(--color-text-secondary);
+    overflow-wrap: anywhere;
+  }
+  .cbf-invoice-issue__actions {
+    grid-column: 2;
+    grid-row: 1;
+    display: inline-flex;
+    gap: var(--spacing-050, 2px);
+    color: var(--color-text-muted);
+  }
+</style>

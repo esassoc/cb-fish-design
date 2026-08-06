@@ -2,11 +2,19 @@
 // cbf-invoice-review-queue — the COR's invoice review queue AND its review
 // overlay. A searchable, status-filterable, sortable grid of every invoice
 // assigned to the reviewer, sorted by urgency (most overdue first) so the
-// review-by clock drives triage. Click a row → an esa-side-dialog overlay opens
-// the split-view review surface (à la Acctual): the SUBMITTED DOCUMENT on the
-// left, the REVIEW PANEL (contract context + Approve / Return) on the right.
-// Prev/next step through the displayed rows so the COR churns the queue without
-// leaving the page — same overlay mechanic as the vendor dashboard's invoices grid.
+// review-by clock drives triage.
+//
+// NAVIGATION: a row click — and the invoice-number anchor in every row — goes to
+// /invoice-review/<number>, the full processing page where the COR edits fields,
+// flags issues, and decides. That page is the invoice's home; the grid is an index
+// of links to it, which is why the number renders as a real <a> (cmd/middle-click
+// and keyboard both work).
+//
+// The esa-side-dialog overlay is DEMOTED TO A PEEK: a split-view glance (SUBMITTED
+// DOCUMENT left, contract context + decision right) opened only from the explicit
+// quick-view control in each row's trailing cell, never from the row itself. Its
+// prev/next footer still steps through the displayed rows for fast triage, and its
+// "Process invoice" button hands off to the same detail page.
 //
 // bcn-lego-checked: (1) ecology has NO table/grid lego (checked the full
 // node_modules/@esa/ecology/src/components catalog — esa-badge/esa-pill are atoms,
@@ -129,6 +137,9 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
     {variant === 'workspace' && assetKeys.map((a) => (
       <span data-asset={a}><EsaPill label={a} variant={assetVariant[a]} size="md" removable={false} /></span>
     ))}
+    {/* The quick-view control, server-rendered once as a real esa-icon-button and
+        cloned into every row's peek cell — so the grid never hand-rolls a button. */}
+    <span data-peek-button><EsaIconButton icon="eye" label="Quick view" size="sm" /></span>
   </div>
 
   <!-- Row data for the client grid module (avoids a second fetch). -->
@@ -611,6 +622,41 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
   .cbf-invoice-review-queue__grid .cbf-grid-muted { color: var(--color-text-muted); }
   .cbf-invoice-review-queue__grid .ag-row { cursor: pointer; }
 
+  /* Invoice-number anchor → the invoice's processing page. Injected by the cell
+     renderer (no Astro scope hash), so it is styled here. Reads as a link on hover
+     and focus rather than shouting in link-blue at rest — the whole row is
+     clickable, and a grid of underlined blue IDs would be noise. */
+  .cbf-invoice-review-queue__grid .cbf-grid-link {
+    color: inherit;
+    text-decoration: none;
+    border-radius: var(--radius-100, 4px);
+  }
+  .cbf-invoice-review-queue__grid .cbf-grid-link:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+  }
+  .cbf-invoice-review-queue__grid .cbf-grid-link:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* Quick-view cell: the peek drawer's only entry point. The control is quiet at
+     rest and surfaces on row hover / keyboard focus, so it never competes with the
+     data — but it is always reachable by tab. */
+  .cbf-invoice-review-queue__grid .cbf-grid-peek { display: flex; align-items: center; justify-content: center; }
+  .cbf-invoice-review-queue__grid .cbf-grid-peek__btn {
+    display: inline-flex;
+    color: var(--color-text-muted);
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+  .cbf-invoice-review-queue__grid .ag-row:hover .cbf-grid-peek__btn,
+  .cbf-invoice-review-queue__grid .cbf-grid-peek__btn:focus-within { opacity: 1; }
+  /* Touch / coarse pointers never hover — the control must always be visible there. */
+  @media (hover: none) {
+    .cbf-invoice-review-queue__grid .cbf-grid-peek__btn { opacity: 1; }
+  }
+
   /* Document line items are injected by JS (no Astro scope hash) — styled globally. */
   .cbf-invoice-doc__items tbody td { font-size: var(--type-size-150); }
 
@@ -713,6 +759,11 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  // The invoice's full processing page — the destination for a row click, the
+  // invoice-number anchor, and the drawer's "Process invoice" button alike.
+  const detailHref = (number: string) =>
+    `${import.meta.env.BASE_URL}invoice-review/${encodeURIComponent(number)}`;
+
   const urgencyOf = (d: number) => (d < 0 ? 'overdue' : d <= 3 ? 'due-soon' : 'on-track');
   const daysLabel = (d: number) => {
     if (d < 0) { const n = Math.abs(d); return `${n} day${n === 1 ? '' : 's'} overdue`; }
@@ -774,6 +825,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
       urgencyHTML.set(el.dataset.urgency ?? '', el.innerHTML);
     });
     const finalHTML = root.querySelector<HTMLElement>('[data-badge-templates] [data-flag="final"]')?.innerHTML ?? 'Final';
+    const peekBtnHTML = root.querySelector<HTMLElement>('[data-badge-templates] [data-peek-button]')?.innerHTML ?? '';
 
     // Asset Suite pill templates (workspace variant only). Empty in the review
     // variant since those templates aren't server-rendered there.
@@ -825,22 +877,34 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
         stageRank(nodeA.data) - stageRank(nodeB.data) || (a - b),
     };
 
-    // Invoice #. In the workspace variant the "Final?" column is dropped, so the
-    // final flag rides inline after the number (same clone/scope-hash pill the
-    // standalone column used). Review variant keeps the plain number + a separate
-    // Final? column.
+    // Invoice #. The number is a REAL anchor to the invoice's detail page — so it
+    // reads as a link, supports middle-click / cmd-click / open-in-new-tab, and is
+    // reachable by keyboard. (A row click navigates to the same href; the anchor is
+    // what makes that destination discoverable and honest.)
+    // In the workspace variant the "Final?" column is dropped, so the final flag
+    // rides inline after the number (same clone/scope-hash pill the standalone
+    // column used). Review variant keeps a bare linked number + a separate Final?
+    // column.
     const invoiceNumCol = {
       headerName: 'Invoice #', field: 'number', colId: 'number',
       cellClass: 'cbf-grid-id', minWidth: 160,
       getQuickFilterText: (p: { data: Invoice }) => `${p.data.number} ${p.data.project}`,
-      ...(isWorkspace
-        ? {
-            cellRenderer: (p: { data: Invoice }) =>
-              p.data.final
-                ? `<span class="cbf-grid-idcell">${p.data.number}<span class="cbf-grid-status">${finalHTML}</span></span>`
-                : p.data.number,
-          }
-        : {}),
+      cellRenderer: (p: { data: Invoice }) => {
+        const link = `<a class="cbf-grid-link" href="${detailHref(p.data.number)}">${p.data.number}</a>`;
+        return isWorkspace && p.data.final
+          ? `<span class="cbf-grid-idcell">${link}<span class="cbf-grid-status">${finalHTML}</span></span>`
+          : link;
+      },
+    };
+
+    // Quick view — the ONLY way into the peek drawer now that the row itself goes to
+    // the full detail page. An explicit, labelled affordance beats a hidden gesture:
+    // the COR chooses between "glance" (drawer) and "work it" (page).
+    const quickViewCol = {
+      headerName: '', colId: 'quickView',
+      minWidth: 56, maxWidth: 56, sortable: false, resizable: false,
+      cellClass: 'cbf-grid-peek',
+      cellRenderer: () => `<span class="cbf-grid-peek__btn" data-quick-view>${peekBtnHTML}</span>`,
     };
 
     const amountCol = {
@@ -888,7 +952,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
         ]
       : [];
 
-    // Column order:
+    // Column order (each variant then gains a trailing 56px quick-view cell):
     //  review    → Days left · Review by · Invoice # · Vendor · Contract · Amount · Final? · Status  (8)
     //  workspace → Days left · Invoice # · Vendor · Contract · Amount · Status · Asset Suite · In status  (8)
     //
@@ -905,6 +969,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
           { ...amountCol, flex: 1 },
           { ...statusCol, flex: 1 },
           ...workspaceCols.map((col, i) => (i === 1 ? { ...col, flex: 1 } : col)), // In status gets flex:1; Asset Suite already has flex:2
+          quickViewCol,
         ]
       : [
           daysLeftCol,
@@ -915,6 +980,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
           amountCol,
           ...reviewOnlyCols,
           statusCol,
+          quickViewCol,
         ];
 
     const gridApi = createGrid(gridHost, {
@@ -941,7 +1007,20 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
         if (empty) empty.hidden = shown !== 0;
         gridHost.hidden = shown === 0;
       },
-      onRowClicked: (e) => { if (e.data) openDetail(e.data as Invoice); },
+      // A row click GOES TO THE INVOICE — the full processing page, where the COR
+      // edits, flags issues, and decides. The peek drawer is no longer the default
+      // destination; it opens only from the explicit quick-view control, which is
+      // handled here and short-circuits the navigation.
+      // The invoice-number anchor is left alone: the browser follows it natively
+      // (preserving cmd/middle-click), so intercepting it would break new-tab.
+      onRowClicked: (e) => {
+        const inv = e.data as Invoice | undefined;
+        if (!inv) return;
+        const target = (e.event?.target as HTMLElement | null) ?? null;
+        if (target?.closest('[data-quick-view]')) { openDetail(inv); return; }
+        if (target?.closest('a')) return;
+        window.location.href = detailHref(inv.number);
+      },
     });
 
     search?.addEventListener('input', () => {
@@ -1132,7 +1211,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
 
       // Process link → the invoice's own processing page (documents + Line Item
       // Budget + approve/return live there, not in this preview).
-      if (processLink) processLink.href = `${import.meta.env.BASE_URL}invoice-review/${encodeURIComponent(inv.number)}`;
+      if (processLink) processLink.href = detailHref(inv.number);
 
       // Nav.
       setText('[data-f-position]', `Invoice ${current + 1} of ${list.length}`);

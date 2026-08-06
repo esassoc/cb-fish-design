@@ -271,7 +271,8 @@ const actionableCount = tasks.filter((t) => !t.waiting).length;
 <!-- Delegated click handler: [data-open-invoice] → dispatch cbf:open-invoice
      PINNED CONTRACT: event name `cbf:open-invoice`, detail `{ number }`.
      The parent cbf-mywork-tabs catches this, switches to the My Invoices panel,
-     awaits updateComplete, then forwards to the queue root to open the overlay.
+     awaits updateComplete, then forwards to the queue root to open the peek drawer
+     (which carries on to the invoice's full page via "Process invoice").
 -->
 <script>
   (function () {

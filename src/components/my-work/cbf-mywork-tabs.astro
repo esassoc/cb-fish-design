@@ -136,7 +136,9 @@ const tabs: TabDef[] = [
     // 4. The task→invoice bridge (PINNED CONTRACT — a sibling task-queue component
     // dispatches a bubbling `cbf:open-invoice` with detail { number }). Switch to the
     // My Invoices tab, wait for the panel to slot in, then forward the event to the
-    // queue root so its (pre-init) pending-open path opens the review overlay.
+    // queue root so its (pre-init) pending-open path opens the peek drawer. A task
+    // is a nudge to LOOK at an invoice, so the peek is the right landing — the
+    // drawer's "Process invoice" button carries on to the full page from there.
     const queueSelector = '.cbf-invoice-review-queue';
     root.addEventListener('cbf:open-invoice', async (e) => {
       const evt = e as CustomEvent<{ number: string }>;

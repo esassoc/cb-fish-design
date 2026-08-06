@@ -1,0 +1,281 @@
+---
+// cbf-invoice-field — ONE reviewable field on the COR's invoice-processing surface:
+// a label → value row that can additionally be COPIED, EDITED in place, and FLAGGED
+// AS AN ISSUE with a written reason.
+//
+// This is the atom the whole review interaction is built from. The COR reads a field;
+// if it is wrong they either FIX it (edit mode swaps the value for an input) or they
+// RAISE AN ISSUE against it (a comment capture opens inline beneath the value, and the
+// field then carries a visible issue note). Every raised issue is collected by
+// cbf-invoice-issues and folded into the Return-for-revision memo, so "mark this field
+// as wrong" and "return the invoice" are one continuous act rather than two.
+//
+// PINNED CONTRACT with the host (cbf-invoice-processor drives all of these):
+//   root  [data-field="<key>"]            the field's stable key
+//         [data-editable] / [data-flaggable]  which affordances this field offers
+//   read  [data-field-display]            the value (host sets textContent)
+//         [data-field-sub]                quiet secondary line; hidden while empty
+//   edit  [data-field-input]              esa-text-field, revealed in edit mode
+//   flag  [data-field-flag]               the raise-an-issue control
+//         [data-field-note]               the inline comment capture (esa-textarea)
+//         [data-field-note-input]         the textarea itself
+//         [data-field-note-save] / [data-field-note-cancel]
+//         [data-field-issue]              the raised-issue note; [data-field-issue-text]
+//         [data-field-issue-edit] / [data-field-issue-clear]
+//   The host toggles `hidden` on these; this component ships no client script of its
+//   own, so one delegated listener on the processor root drives every instance.
+//
+// bcn-lego-checked: no esa-* lego is a label→value row that can flip to an input and
+// carry an issue annotation — checked the full node_modules/@esa/ecology/src/components
+// catalog (esa-form-field is label+control chrome for a form, not a read/edit/annotate
+// data row; esa-text-field/esa-textarea/esa-icon-button/esa-badge are the atoms this
+// composes, and it composes all four rather than restyling any of them). Beacon is not
+// on this machine. cbf-invoice-field is the reusable home for the pattern — the
+// processor renders ten of them and the same row serves the invoice document, the spec
+// fields, and the contract-context block.
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+
+interface Props {
+  /** Stable key the host reads/writes this field by (e.g. `perfStart`). */
+  field: string;
+  label: string;
+  /** Offer a copy-to-clipboard control. */
+  copy?: boolean;
+  /** Offer in-place editing (the row participates in the processor's edit mode). */
+  editable?: boolean;
+  /** Offer "raise an issue" with a written reason. */
+  flaggable?: boolean;
+  /** Input type used while editing. */
+  inputType?: 'text' | 'number';
+  /** Segmented addon inside the edit input (e.g. `$`). */
+  prefix?: string;
+  /** `amount` renders the value one step larger — the money line in its block. */
+  emphasis?: 'default' | 'amount';
+  /**
+   * Key for the row's SECOND value (the quiet sub line), when that line is itself a
+   * stored field rather than derived text — e.g. a Contract row leads with the
+   * reference number and subs the contract name, and the COR may edit either. Only
+   * rows that pass this get a second input in edit mode; rows whose sub is derived
+   * (a percentage, a projected balance) leave it out and stay read-only there.
+   */
+  subField?: string;
+  subLabel?: string;
+}
+
+const {
+  field,
+  label,
+  copy = false,
+  editable = false,
+  flaggable = false,
+  inputType = 'text',
+  prefix = '',
+  emphasis = 'default',
+  subField = '',
+  subLabel = '',
+} = Astro.props;
+---
+<div
+  class="cbf-invoice-field"
+  data-field={field}
+  data-editable={editable ? '' : undefined}
+  data-flaggable={flaggable ? '' : undefined}
+  data-emphasis={emphasis}
+>
+  <dt class="cbf-invoice-field__label">{label}</dt>
+  <dd class="cbf-invoice-field__body">
+    <!-- Read state: the value, plus an optional quiet second line for derived
+         context (a percentage, a projected balance, a gap to a date). -->
+    <span class="cbf-invoice-field__value" data-field-display></span>
+    <span class="cbf-invoice-field__sub" data-field-sub hidden></span>
+
+    <!-- Edit state: revealed by the processor's edit mode, seeded from the value. -->
+    {editable && (
+      <esa-text-field
+        class="cbf-invoice-field__input"
+        data-field-input
+        hidden
+        size="sm"
+        type={inputType}
+        prefix={prefix}
+        label={`${label} — edit`}
+      ></esa-text-field>
+    )}
+    {editable && subField && (
+      <esa-text-field
+        class="cbf-invoice-field__input cbf-invoice-field__input--sub"
+        data-field-sub-input
+        data-sub-field={subField}
+        hidden
+        size="sm"
+        label={`${subLabel || label} — edit`}
+      ></esa-text-field>
+    )}
+
+    <!-- Issue capture: opens inline under the value, never as a nested modal. -->
+    {flaggable && (
+      <div class="cbf-invoice-field__note stack" data-gap="sm" data-field-note hidden>
+        <esa-textarea
+          data-field-note-input
+          label="What's wrong with this field?"
+          placeholder="Explain what the vendor needs to correct — e.g. the rate exceeds the contract's approved rate."
+          rows="3"
+        ></esa-textarea>
+        <div class="cluster" data-gap="sm">
+          <span data-field-note-save>
+            <EsaButton color="primary" size="sm">Save issue</EsaButton>
+          </span>
+          <span data-field-note-cancel>
+            <EsaButton appearance="outline" color="secondary" size="sm">Cancel</EsaButton>
+          </span>
+        </div>
+      </div>
+    )}
+
+    <!-- Raised issue: a tinted inline note (a background tint carrying the content,
+         never a colored left border), with the reason the COR wrote. -->
+    {flaggable && (
+      <div class="cbf-invoice-field__issue" data-field-issue hidden>
+        <span class="cbf-invoice-field__issue-icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+        </span>
+        <span class="cbf-invoice-field__issue-text" data-field-issue-text></span>
+        <span class="cbf-invoice-field__issue-actions">
+          <span data-field-issue-edit>
+            <EsaIconButton icon="pencil" label={`Edit the issue raised on ${label}`} size="xs" />
+          </span>
+          <span data-field-issue-clear>
+            <EsaIconButton icon="x" label={`Clear the issue raised on ${label}`} size="xs" />
+          </span>
+        </span>
+      </div>
+    )}
+  </dd>
+
+  <!-- Row affordances, right edge. Quiet at rest, surfaced on hover/focus. -->
+  <div class="cbf-invoice-field__controls">
+    {flaggable && (
+      <span class="cbf-invoice-field__control" data-field-flag>
+        <EsaIconButton icon="triangle-alert" label={`Flag ${label} as an issue`} size="xs" />
+      </span>
+    )}
+    {copy && (
+      <span
+        class="cbf-invoice-field__control"
+        data-copy
+        data-copy-target={`[data-field="${field}"] [data-field-display]`}
+      >
+        <EsaIconButton icon="copy" label={`Copy ${label}`} size="xs" />
+      </span>
+    )}
+  </div>
+</div>
+
+<style>
+  /* The row grid matches the processor's field block: label · value · controls.
+     `align-items: baseline` keeps the label optically aligned to the first line of
+     the value even when an issue note wraps below it. */
+  .cbf-invoice-field {
+    display: grid;
+    grid-template-columns: 92px 1fr auto;
+    gap: var(--spacing-300);
+    align-items: baseline;
+    padding-block: var(--spacing-250);
+    border-top: 1px solid var(--color-border-light, var(--color-border));
+  }
+  .cbf-invoice-field:first-child { border-top: 0; padding-top: 0; }
+
+  .cbf-invoice-field__label {
+    font-size: var(--type-size-150);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-muted);
+  }
+
+  .cbf-invoice-field__body { margin: 0; min-width: 0; }
+  .cbf-invoice-field__value {
+    display: block;
+    font-size: var(--type-size-200);
+    color: var(--color-text-secondary);
+    overflow-wrap: anywhere;
+  }
+  /* The money line in its block — emphasized by SIZE, not weight or color. */
+  .cbf-invoice-field[data-emphasis='amount'] .cbf-invoice-field__value {
+    font-size: var(--type-size-400);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+  }
+  /* Derived context under the value: a percentage, a projected balance, a date gap.
+     Darker than the label despite being smaller — small text is never faint. */
+  .cbf-invoice-field__sub {
+    display: block;
+    margin-top: var(--spacing-050, 2px);
+    font-size: var(--type-size-100);
+    color: var(--color-text-muted);
+  }
+  .cbf-invoice-field__sub[hidden] { display: none; }
+
+  .cbf-invoice-field__input { display: block; width: 100%; }
+  .cbf-invoice-field__input[hidden] { display: none; }
+  .cbf-invoice-field__input--sub { margin-top: var(--spacing-150); }
+
+  .cbf-invoice-field__note { margin-top: var(--spacing-200); }
+  .cbf-invoice-field__note[hidden] { display: none; }
+
+  /* Raised-issue note. A soft warning TINT behind the content carries the state —
+     the house rule bans colored left borders as status indicators. */
+  .cbf-invoice-field__issue {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-200);
+    margin-top: var(--spacing-200);
+    padding: var(--spacing-200) var(--spacing-250);
+    border-radius: var(--radius-100, 4px);
+    background: var(--color-warning-subtle, color-mix(in srgb, var(--color-warning, #b54708) 10%, transparent));
+    color: var(--color-text-primary);
+  }
+  .cbf-invoice-field__issue[hidden] { display: none; }
+  .cbf-invoice-field__issue-icon {
+    display: inline-flex;
+    flex: none;
+    margin-top: 1px;
+    color: var(--color-warning, #b54708);
+  }
+  .cbf-invoice-field__issue-text {
+    flex: 1;
+    min-width: 0;
+    font-size: var(--type-size-150);
+    overflow-wrap: anywhere;
+  }
+  .cbf-invoice-field__issue-actions {
+    display: inline-flex;
+    flex: none;
+    gap: var(--spacing-050, 2px);
+    color: var(--color-text-muted);
+  }
+
+  /* Affordances recede until the row is engaged, so a column of ten rows reads as
+     data rather than as a wall of buttons. Focus-within keeps them tab-reachable. */
+  .cbf-invoice-field__controls {
+    display: inline-flex;
+    gap: var(--spacing-050, 2px);
+    color: var(--color-text-muted);
+  }
+  .cbf-invoice-field__control {
+    display: inline-flex;
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+  .cbf-invoice-field:hover .cbf-invoice-field__control,
+  .cbf-invoice-field:focus-within .cbf-invoice-field__control { opacity: 1; }
+  /* A field that already carries an issue keeps its flag control lit — the state is
+     persistent, so its control must be too. */
+  .cbf-invoice-field[data-flagged] .cbf-invoice-field__control { opacity: 1; }
+  .cbf-invoice-field[data-flagged] [data-field-flag] { color: var(--color-warning, #b54708); }
+  @media (hover: none) {
+    .cbf-invoice-field__control { opacity: 1; }
+  }
+
+  /* Copy feedback — the delegated copy handler stamps data-state="copied". */
+  .cbf-invoice-field__control[data-state='copied'] { color: var(--color-success, #067647); }
+</style>
