@@ -1,4 +1,4 @@
-import"./cbf-legacy-sow-intro-modal.astro_astro_type_script_index_0_lang.ClC7BfLJ.js";import"./esa-text-field.astro_astro_type_script_index_0_lang.Bh9QjbpR.js";import"./cbf-legacy-we-selector.astro_astro_type_script_index_0_lang.HUpJg4S3.js";import"./esa-textarea.astro_astro_type_script_index_0_lang.f3qIukGs.js";import{i as t,b as e,a}from"./lit-element.C8p3bJxG.js";class o extends t{constructor(){super(),this.onInput=r=>{const i=r.target.value;this.value=i,this.internals.setFormValue(i||null),this.dispatchEvent(new CustomEvent("change",{detail:{value:i},bubbles:!0,composed:!0}))},this.label="",this.size="md",this.placeholder="Select date...",this.min="",this.max="",this.disabled=!1,this.helpText="",this.errorText="",this.required=!1,this.value="",this.internals=this.attachInternals()}static{this.formAssociated=!0}static{this.properties={label:{type:String},size:{type:String,reflect:!0},placeholder:{type:String},min:{type:String},max:{type:String},disabled:{type:Boolean,reflect:!0},helpText:{type:String,attribute:"help-text"},errorText:{type:String,attribute:"error-text"},required:{type:Boolean},value:{type:String}}}connectedCallback(){super.connectedCallback(),this.internals.setFormValue(this.value||null)}render(){const r=!!this.errorText;return e`
+import{i as a,b as e,a as t}from"./lit-element.C8p3bJxG.js";class o extends a{constructor(){super(),this.onInput=r=>{const i=r.target.value;this.value=i,this.internals.setFormValue(i||null),this.dispatchEvent(new CustomEvent("change",{detail:{value:i},bubbles:!0,composed:!0}))},this.label="",this.size="md",this.placeholder="Select date...",this.min="",this.max="",this.disabled=!1,this.helpText="",this.errorText="",this.required=!1,this.value="",this.internals=this.attachInternals()}static{this.formAssociated=!0}static{this.properties={label:{type:String},size:{type:String,reflect:!0},placeholder:{type:String},min:{type:String},max:{type:String},disabled:{type:Boolean,reflect:!0},helpText:{type:String,attribute:"help-text"},errorText:{type:String,attribute:"error-text"},required:{type:Boolean},value:{type:String}}}connectedCallback(){super.connectedCallback(),this.internals.setFormValue(this.value||null)}render(){const r=!!this.errorText;return e`
       <div class="field ${r?"field--error":""}">
         ${this.label?e`<label class="field__label">
               ${this.label}${this.required?e`<span class="field__required">*</span>`:null}
@@ -16,7 +16,7 @@ import"./cbf-legacy-sow-intro-modal.astro_astro_type_script_index_0_lang.ClC7BfL
         />
         ${r?e`<span class="field__error">${this.errorText}</span>`:this.helpText?e`<span class="field__help">${this.helpText}</span>`:null}
       </div>
-    `}static{this.styles=a`
+    `}static{this.styles=t`
     :host {
       display: block;
       --_field-padding-y: var(--form-padding-y-md, 8px);
