@@ -4,35 +4,59 @@
 // AS AN ISSUE with a written reason.
 //
 // This is the atom the whole review interaction is built from. The COR reads a field;
-// if it is wrong they either FIX it (edit mode swaps the value for an input) or they
-// RAISE AN ISSUE against it (a comment capture opens inline beneath the value, and the
-// field then carries a visible issue note). Every raised issue is collected by
-// cbf-invoice-issues and folded into the Return-for-revision memo, so "mark this field
-// as wrong" and "return the invoice" are one continuous act rather than two.
+// if it is wrong they either FIX it (the value swaps for an input, in place, on that
+// row alone) or they RAISE AN ISSUE against it (a comment capture opens inline beneath
+// the value, and the field then carries a visible issue note). Every raised issue is
+// collected by cbf-invoice-issues and folded into the Return-for-revision memo, so
+// "mark this field as wrong" and "return the invoice" are one continuous act rather
+// than two.
+//
+// ── The row's control cluster has TWO states ────────────────────────────────────
+// At REST it offers the three things you can do to a field: copy · flag · edit.
+// While EDITING that row it offers only the two ways out of the edit: save · cancel.
+// The rest-state controls are not merely disabled, they are GONE — a half-typed
+// correction is not something to copy, and flagging a field you are mid-way through
+// fixing is a contradiction. Editing is PER ROW: opening one row leaves every other
+// row readable, so the panel is never wholesale unreadable just to fix one date.
 //
 // PINNED CONTRACT with the host (cbf-invoice-processor drives all of these):
 //   root  [data-field="<key>"]            the field's stable key
 //         [data-editable] / [data-flaggable]  which affordances this field offers
+//         [data-editing]                  set by the host while THIS row is editing;
+//                                         the control-cluster swap is pure CSS off it
 //   read  [data-field-display]            the value (host sets textContent)
 //         [data-field-sub]                quiet secondary line; hidden while empty
-//   edit  [data-field-input]              esa-text-field, revealed in edit mode
+//   edit  [data-field-edit]               enter edit on this row
+//         [data-field-input]              THE control, revealed while editing — an
+//                                         esa-text-field / esa-textarea / esa-combobox
+//                                         / bcn-date-picker per `control`, marked with
+//                                         [data-control] so the host knows how to
+//                                         read and write its value. All four expose a
+//                                         `.value` property, so the host's read/write
+//                                         path is uniform regardless.
+//         [data-combobox-options]         JSON options; the host assigns them as a
+//                                         PROPERTY after upgrade (Astro cannot set
+//                                         properties, and esa-combobox takes an array)
+//         [data-field-edit-save] / [data-field-edit-cancel]
 //   flag  [data-field-flag]               the raise-an-issue control
 //         [data-field-note]               the inline comment capture (esa-textarea)
 //         [data-field-note-input]         the textarea itself
 //         [data-field-note-save] / [data-field-note-cancel]
 //         [data-field-issue]              the raised-issue note; [data-field-issue-text]
 //         [data-field-issue-edit] / [data-field-issue-clear]
-//   The host toggles `hidden` on these; this component ships no client script of its
-//   own, so one delegated listener on the processor root drives every instance.
+//   The host toggles `hidden` / `data-editing` on these; this component ships no client
+//   script of its own, so one delegated listener on the processor root drives every
+//   instance.
 //
-// bcn-lego-checked: no esa-* lego is a label→value row that can flip to an input and
+// bcn-lego-checked: no esa-* lego is a label→value row that can flip to a control and
 // carry an issue annotation — checked the full node_modules/@esa/ecology/src/components
 // catalog (esa-form-field is label+control chrome for a form, not a read/edit/annotate
-// data row; esa-text-field/esa-textarea/esa-icon-button/esa-badge are the atoms this
-// composes, and it composes all four rather than restyling any of them). Beacon is not
-// on this machine. cbf-invoice-field is the reusable home for the pattern — the
-// processor renders ten of them and the same row serves the invoice document, the spec
-// fields, and the contract-context block.
+// data row). Every control this row flips to IS a lego — esa-text-field, esa-textarea,
+// esa-combobox, and the spoke's own bcn-date-picker — and so are its affordances
+// (esa-icon-button, esa-button); this composes them rather than restyling any.
+// Beacon is not on this machine. cbf-invoice-field is the reusable home for the
+// pattern — the processor renders fifteen of them across the submitted block and the
+// contract-context block.
 import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 
@@ -42,25 +66,26 @@ interface Props {
   label: string;
   /** Offer a copy-to-clipboard control. */
   copy?: boolean;
-  /** Offer in-place editing (the row participates in the processor's edit mode). */
+  /** Offer in-place editing. */
   editable?: boolean;
   /** Offer "raise an issue" with a written reason. */
   flaggable?: boolean;
-  /** Input type used while editing. */
-  inputType?: 'text' | 'number';
-  /** Segmented addon inside the edit input (e.g. `$`). */
+  /**
+   * WHICH CONTROL the COR edits this field with — and the answer is always "the same
+   * one the vendor submitted it with". A date the vendor picked from a calendar is
+   * corrected on a calendar; a contract they chose from a known set is corrected by
+   * choosing from that same set. A review screen that degrades every field to a text
+   * box can produce values the submission form could never have produced — an invalid
+   * date, a contract number that does not exist — and quietly loses the validation
+   * the form already encodes. Mirror `cbf-invoice-step-details.astro`.
+   */
+  control?: 'text' | 'number' | 'date' | 'select' | 'multiline';
+  /** Options for `control="select"`, as esa-combobox `{ value, label }` records. */
+  options?: { value: string; label: string }[];
+  /** Segmented addon inside a `number` control (e.g. `$`). */
   prefix?: string;
   /** `amount` renders the value one step larger — the money line in its block. */
   emphasis?: 'default' | 'amount';
-  /**
-   * Key for the row's SECOND value (the quiet sub line), when that line is itself a
-   * stored field rather than derived text — e.g. a Contract row leads with the
-   * reference number and subs the contract name, and the COR may edit either. Only
-   * rows that pass this get a second input in edit mode; rows whose sub is derived
-   * (a percentage, a projected balance) leave it out and stay read-only there.
-   */
-  subField?: string;
-  subLabel?: string;
 }
 
 const {
@@ -69,12 +94,16 @@ const {
   copy = false,
   editable = false,
   flaggable = false,
-  inputType = 'text',
+  control = 'text',
+  options = [],
   prefix = '',
   emphasis = 'default',
-  subField = '',
-  subLabel = '',
 } = Astro.props;
+
+// A standing warning about the value, slotted by the host (see the "alert" region
+// below). Only rendered when something is actually slotted, so a row without one
+// carries no empty wrapper.
+const hasAlert = Astro.slots.has('alert');
 ---
 <div
   class="cbf-invoice-field"
@@ -90,83 +119,155 @@ const {
     <span class="cbf-invoice-field__value" data-field-display></span>
     <span class="cbf-invoice-field__sub" data-field-sub hidden></span>
 
-    <!-- Edit state: revealed by the processor's edit mode, seeded from the value. -->
-    {editable && (
+    <!-- Edit state: exactly ONE of these renders, chosen by `control` to match the
+         control the vendor submitted the value with. Revealed when the host opens
+         THIS row, seeded from the record.
+
+         NONE of them renders a visible label — the row's <dt> is the label, and it
+         stays exactly where it is in read state, so opening a row for editing moves
+         NOTHING. All three hub legos skip their <label> element entirely when `label`
+         is empty, and the host then names the inner control through the open shadow
+         root (see nameShadowControls in the processor). bcn-date-picker is ours, so
+         it gets the honest version of the same thing: `hide-label` drops the visible
+         label and keeps `label` as the accessible name.
+
+         All are left at their DEFAULT `md` size: bcn-date-picker is fixed at
+         --form-height-md, so anything smaller elsewhere would make sibling rows
+         disagree in height as the COR moved down the panel — and md is the house
+         default for form controls anyway (they err one step bigger, never smaller). -->
+    {editable && control === 'date' && (
+      <bcn-date-picker
+        class="cbf-invoice-field__input"
+        data-field-input
+        data-control="date"
+        hidden
+        label={label}
+        hide-label
+      ></bcn-date-picker>
+    )}
+    {editable && control === 'select' && (
+      <esa-combobox
+        class="cbf-invoice-field__input"
+        data-field-input
+        data-control="select"
+        data-combobox-options={JSON.stringify(options)}
+        hidden
+        mode="autocomplete"
+        placeholder={`Search ${label.toLowerCase()}…`}
+      ></esa-combobox>
+    )}
+    {editable && control === 'multiline' && (
+      <esa-textarea class="cbf-invoice-field__input" data-field-input data-control="multiline" hidden rows="3"
+      ></esa-textarea>
+    )}
+    {editable && (control === 'text' || control === 'number') && (
       <esa-text-field
         class="cbf-invoice-field__input"
         data-field-input
+        data-control={control}
         hidden
-        size="sm"
-        type={inputType}
+        type={control === 'number' ? 'number' : 'text'}
         prefix={prefix}
-        label={`${label} — edit`}
-      ></esa-text-field>
-    )}
-    {editable && subField && (
-      <esa-text-field
-        class="cbf-invoice-field__input cbf-invoice-field__input--sub"
-        data-field-sub-input
-        data-sub-field={subField}
-        hidden
-        size="sm"
-        label={`${subLabel || label} — edit`}
       ></esa-text-field>
     )}
 
-    <!-- Issue capture: opens inline under the value, never as a nested modal. -->
-    {flaggable && (
-      <div class="cbf-invoice-field__note stack" data-gap="sm" data-field-note hidden>
-        <esa-textarea
-          data-field-note-input
-          label="What's wrong with this field?"
-          placeholder="Explain what the vendor needs to correct — e.g. the rate exceeds the contract's approved rate."
-          rows="3"
-        ></esa-textarea>
-        <div class="cluster" data-gap="sm">
-          <span data-field-note-save>
-            <EsaButton color="primary" size="sm">Save issue</EsaButton>
-          </span>
-          <span data-field-note-cancel>
-            <EsaButton appearance="outline" color="secondary" size="sm">Cancel</EsaButton>
-          </span>
-        </div>
-      </div>
-    )}
-
-    <!-- Raised issue: a tinted inline note (a background tint carrying the content,
-         never a colored left border), with the reason the COR wrote. -->
-    {flaggable && (
-      <div class="cbf-invoice-field__issue" data-field-issue hidden>
-        <span class="cbf-invoice-field__issue-icon" aria-hidden="true">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-        </span>
-        <span class="cbf-invoice-field__issue-text" data-field-issue-text></span>
-        <span class="cbf-invoice-field__issue-actions">
-          <span data-field-issue-edit>
-            <EsaIconButton icon="pencil" label={`Edit the issue raised on ${label}`} size="xs" />
-          </span>
-          <span data-field-issue-clear>
-            <EsaIconButton icon="x" label={`Clear the issue raised on ${label}`} size="xs" />
-          </span>
-        </span>
-      </div>
-    )}
   </dd>
 
-  <!-- Row affordances, right edge. Quiet at rest, surfaced on hover/focus. -->
+  <!-- Issue capture and the raised note live OUTSIDE the value column, spanning the
+       whole row (see the grid rules). They are prose, not a value: writing "the rate
+       exceeds the contract's approved $78.00/hr" into a ~180px column left over after
+       the label and the controls is writing through a letterbox. The row's own label
+       already says which field this is about, so nothing is lost by using its width. -->
+
+  <!-- Opens inline under the value, never as a nested modal. -->
+  {flaggable && (
+    <div class="cbf-invoice-field__note stack" data-gap="sm" data-field-note hidden>
+      <esa-textarea
+        data-field-note-input
+        label={`What's wrong with ${label}?`}
+        placeholder="e.g. the rate exceeds the contract's approved $78.00/hr"
+        rows="3"
+      ></esa-textarea>
+      <div class="cluster" data-gap="sm">
+        <span data-field-note-save>
+          <EsaButton color="primary" size="sm">Save issue</EsaButton>
+        </span>
+        <span data-field-note-cancel>
+          <EsaButton appearance="outline" color="secondary" size="sm">Cancel</EsaButton>
+        </span>
+      </div>
+    </div>
+  )}
+
+  <!-- Raised issue: a tinted inline note (a background tint carrying the content,
+       never a colored left border), with the reason the COR wrote. -->
+  {flaggable && (
+    <div class="cbf-invoice-field__issue" data-field-issue hidden>
+      <span class="cbf-invoice-field__issue-icon" aria-hidden="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+      </span>
+      <span class="cbf-invoice-field__issue-text" data-field-issue-text></span>
+      <span class="cbf-invoice-field__issue-actions">
+        <span data-field-issue-edit>
+          <EsaIconButton icon="pencil" label={`Edit the issue raised on ${label}`} size="xs" />
+        </span>
+        <span data-field-issue-clear>
+          <EsaIconButton icon="x" label={`Clear the issue raised on ${label}`} size="xs" />
+        </span>
+      </span>
+    </div>
+  )}
+
+  <!-- A standing warning ABOUT the value — not an objection the COR raised, but a
+       fact the row itself has to carry (an expired rate, a lapsed certification).
+       It belongs to the row, not to a banner further down the panel: a warning
+       separated from the number it is about makes the reader match them up. Same
+       full-row treatment as an issue note, and the same warning pair. -->
+  {hasAlert && (
+    <div class="cbf-invoice-field__alert" data-field-alert hidden>
+      <span class="cbf-invoice-field__issue-icon" aria-hidden="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+      </span>
+      <span class="cbf-invoice-field__alert-text"><slot name="alert" /></span>
+    </div>
+  )}
+
+  <!-- Row affordances, right edge. Quiet at rest, surfaced on hover/focus.
+       Two mutually exclusive sets, swapped by [data-editing] on the row: what you
+       can DO to the field, and how you get OUT of editing it. -->
   <div class="cbf-invoice-field__controls">
+    <!-- At rest: edit · flag · copy — most consequential first. A row that lacks an
+         affordance simply omits it; the rest hold their order, so a control never
+         sits in a different place from one row to the next. -->
+    {editable && (
+      <span class="cbf-invoice-field__control cbf-invoice-field__control--rest" data-field-edit>
+        <EsaIconButton icon="pencil" label={`Edit ${label}`} size="xs" />
+      </span>
+    )}
     {flaggable && (
-      <span class="cbf-invoice-field__control" data-field-flag>
+      <span class="cbf-invoice-field__control cbf-invoice-field__control--rest" data-field-flag>
         <EsaIconButton icon="triangle-alert" label={`Flag ${label} as an issue`} size="xs" />
       </span>
     )}
     {copy && (
       <span
-        class="cbf-invoice-field__control"
+        class="cbf-invoice-field__control cbf-invoice-field__control--rest"
         data-copy
         data-copy-target={`[data-field="${field}"] [data-field-display]`}
       >
         <EsaIconButton icon="copy" label={`Copy ${label}`} size="xs" />
+      </span>
+    )}
+
+    <!-- While editing: save · cancel, primary first (Windows order). -->
+    {editable && (
+      <span class="cbf-invoice-field__control cbf-invoice-field__control--editing" data-field-edit-save>
+        <EsaIconButton icon="check" label={`Save ${label}`} size="xs" />
+      </span>
+    )}
+    {editable && (
+      <span class="cbf-invoice-field__control cbf-invoice-field__control--editing" data-field-edit-cancel>
+        <EsaIconButton icon="x" label={`Cancel editing ${label}`} size="xs" />
       </span>
     )}
   </div>
@@ -178,7 +279,11 @@ const {
      the value even when an issue note wraps below it. */
   .cbf-invoice-field {
     display: grid;
-    grid-template-columns: 92px 1fr auto;
+    /* The label column is sized for the LONGEST label the panel carries
+       ("Performance period start date"), so it wraps to two tidy lines rather than
+       four narrow ones. `align-items: baseline` keeps the value on the label's
+       first line either way. */
+    grid-template-columns: 124px 1fr auto;
     gap: var(--spacing-300);
     align-items: baseline;
     padding-block: var(--spacing-250);
@@ -199,6 +304,10 @@ const {
     color: var(--color-text-secondary);
     overflow-wrap: anywhere;
   }
+  /* `display: block` above outranks the UA's `[hidden] { display: none }`, so the
+     host toggling `.hidden = true` on the read value would be silently ignored
+     without this. Every display-setting rule in this file needs its own guard. */
+  .cbf-invoice-field__value[hidden] { display: none; }
   /* The money line in its block — emphasized by SIZE, not weight or color. */
   .cbf-invoice-field[data-emphasis='amount'] .cbf-invoice-field__value {
     font-size: var(--type-size-400);
@@ -219,8 +328,31 @@ const {
   .cbf-invoice-field__input[hidden] { display: none; }
   .cbf-invoice-field__input--sub { margin-top: var(--spacing-150); }
 
+  /* The controls render NO visible label of their own — the row's <dt> is the label.
+     Nothing is hidden or collapsed here to achieve that: each lego is simply given an
+     empty `label`, which makes it skip its <label> element entirely, and the host then
+     names the inner control through its OPEN shadow root. See docs/hub-issues.md — a
+     `hide-label` on the form legos would let them do this themselves. */
+
+  /* Both the capture and the raised note span the FULL row — label column, value
+     column and control column — so the COR writes and reads an explanation at the
+     panel's width instead of in the value column's leftovers.
+     The control cluster is pinned to row 1 explicitly: auto-placement is sparse (the
+     cursor never moves backwards), so once a full-width item has claimed row 2, an
+     auto-placed cluster would land under it at the left edge instead of staying at
+     the row's right edge. */
+  .cbf-invoice-field__note,
+  .cbf-invoice-field__issue,
+  .cbf-invoice-field__alert { grid-column: 1 / -1; }
+  .cbf-invoice-field__controls { grid-row: 1; grid-column: 3; }
+
   .cbf-invoice-field__note { margin-top: var(--spacing-200); }
   .cbf-invoice-field__note[hidden] { display: none; }
+  /* Save/Cancel right-align to the row's control column, landing directly under the
+     flag button that opened the capture — and matching the house rule for an action
+     group (right-aligned, primary LEFT of Cancel). `--justify` is the .cluster
+     primitive's own knob, so this is a re-point, not an override. */
+  .cbf-invoice-field__note .cluster { --justify: flex-end; }
 
   /* Raised-issue note. A soft warning TINT behind the content carries the state —
      the house rule bans colored left borders as status indicators. */
@@ -231,15 +363,39 @@ const {
     margin-top: var(--spacing-200);
     padding: var(--spacing-200) var(--spacing-250);
     border-radius: var(--radius-100, 4px);
-    background: var(--color-warning-subtle, color-mix(in srgb, var(--color-warning, #b54708) 10%, transparent));
-    color: var(--color-text-primary);
+    /* The status pair, used together: the -subtle step is the surface and the
+       -strong step is the text ON that surface — that is what the two are FOR.
+       Set once on the container so the icon, the reason, and the note's own
+       controls all inherit it and the block reads as one warning-coloured unit
+       instead of neutral text that happens to be sitting on yellow. */
+    background: var(--color-warning-subtle);
+    color: var(--color-warning-strong);
   }
   .cbf-invoice-field__issue[hidden] { display: none; }
+
+  /* The standing warning wears the issue note's treatment — same tint, same icon,
+     same full-row width. It reads as one kind of thing ("something is wrong with
+     this row") whether the COR raised it or the record did. */
+  .cbf-invoice-field__alert {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--spacing-200);
+    margin-top: var(--spacing-200);
+    padding: var(--spacing-200) var(--spacing-250);
+    border-radius: var(--radius-100, 4px);
+    background: var(--color-warning-subtle);
+    color: var(--color-warning-strong);
+  }
+  .cbf-invoice-field__alert[hidden] { display: none; }
+  .cbf-invoice-field__alert-text {
+    min-width: 0;
+    font-size: var(--type-size-150);
+    overflow-wrap: anywhere;
+  }
   .cbf-invoice-field__issue-icon {
     display: inline-flex;
     flex: none;
     margin-top: 1px;
-    color: var(--color-warning, #b54708);
   }
   .cbf-invoice-field__issue-text {
     flex: 1;
@@ -247,11 +403,16 @@ const {
     font-size: var(--type-size-150);
     overflow-wrap: anywhere;
   }
+  /* The note's own controls stand in the SAME vertical column as the row's controls
+     above them — they are the same icons at the same size, so a 10px offset between
+     the two columns is exactly the kind of misalignment the eye catches. The tint's
+     inline padding is what would cause it, so the cluster is pulled back out by that
+     padding to sit flush with the row's right edge. */
   .cbf-invoice-field__issue-actions {
     display: inline-flex;
     flex: none;
     gap: var(--spacing-050, 2px);
-    color: var(--color-text-muted);
+    margin-inline-end: calc(var(--spacing-250) * -1);
   }
 
   /* Affordances recede until the row is engaged, so a column of ten rows reads as
@@ -271,11 +432,36 @@ const {
   /* A field that already carries an issue keeps its flag control lit — the state is
      persistent, so its control must be too. */
   .cbf-invoice-field[data-flagged] .cbf-invoice-field__control { opacity: 1; }
-  .cbf-invoice-field[data-flagged] [data-field-flag] { color: var(--color-warning, #b54708); }
+  .cbf-invoice-field[data-flagged] [data-field-flag] { color: var(--color-warning-strong); }
   @media (hover: none) {
     .cbf-invoice-field__control { opacity: 1; }
   }
 
+  /* The two-state control cluster. Only one set exists in the DOM's flow at a time —
+     removed, not disabled, so there is nothing to mis-click and nothing to explain.
+     A row being edited keeps its controls lit: it is unambiguously engaged, and its
+     save/cancel must never need a hover to be found. */
+  .cbf-invoice-field:not([data-editing]) .cbf-invoice-field__control--editing { display: none; }
+  .cbf-invoice-field[data-editing] .cbf-invoice-field__control--rest { display: none; }
+  .cbf-invoice-field[data-editing] .cbf-invoice-field__control { opacity: 1; }
+  .cbf-invoice-field[data-editing] [data-field-edit-save] { color: var(--color-primary, currentColor); }
+
+  /* An editing row keeps its shape exactly: same three columns, same label in the
+     same place. Only the read VALUE gives way, and the control stands precisely where
+     it stood — so opening a row to correct it moves nothing on screen, and a column
+     of rows doesn't reflow around whichever one is open.
+     Baseline alignment is right for a line of text beside a label and wrong for a
+     control beside one, so the row goes to `start` and the label and buttons take the
+     small offsets that optically centre them on the 40px (md) control. */
+  .cbf-invoice-field[data-editing] { align-items: start; }
+  .cbf-invoice-field[data-editing] .cbf-invoice-field__label { padding-top: var(--spacing-250); }
+  .cbf-invoice-field[data-editing] .cbf-invoice-field__controls { padding-top: var(--spacing-150); }
+
   /* Copy feedback — the delegated copy handler stamps data-state="copied". */
-  .cbf-invoice-field__control[data-state='copied'] { color: var(--color-success, #067647); }
+  /* -strong (the accessible TEXT step), never plain --color-success: that is the
+     SOLID-FILL step, meant to sit behind white text, and painting a glyph with it
+     lands around 2:1 on this surface. Same rule the warning icons follow. No hex
+     fallback — the token always resolves, so a literal here would only be a second,
+     unreviewed value that never renders. */
+  .cbf-invoice-field__control[data-state='copied'] { color: var(--color-success-strong); }
 </style>

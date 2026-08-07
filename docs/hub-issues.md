@@ -411,8 +411,79 @@ onto the inner input, or (b) add a `hide-label` boolean that keeps `label` as th
 accessible name while visually hiding the `<label>` (the usual visually-hidden
 treatment). (b) is preferable — it keeps one naming API and can't be forgotten.
 
-**Local workaround (CBFish):** the line-item ledger does NOT put inputs in the table.
-Edit mode swaps the paper ledger for `cbf-line-editor` — one `<fieldset>` per line with
-three fully-labelled `esa-text-field`s. That is arguably the better editing surface
-anyway (a four-column paper bill is for reading, not correcting), so the workaround is
-not a compromise here — but it was forced, not chosen.
+**Local workaround (CBFish), two places:**
+
+1. *Line items* — the ledger does NOT put inputs in its paper columns. A line's pencil
+   opens `cbf-line-editor` in the row beneath it: one `<fieldset>` per line with three
+   fully-labelled `esa-text-field`s. Arguably the better editing surface anyway (a
+   four-column paper bill is for reading, not correcting), so not a compromise here —
+   but it was forced, not chosen.
+2. *Panel field rows* — `cbf-invoice-field` is a `<dt>`/`<dd>` row whose `<dt>` already
+   names the field, so an input labelled the same way would print the word twice in a
+   24rem panel. Worked around by RE-POINTING THE COMPONENT'S OWN LABEL TOKENS on the
+   host — `--form-label-font-size: 0; --form-label-gap: 0` — which collapses the
+   `<label>` to a zero-height box while leaving it in the DOM, so `label` still
+   supplies the accessible name. Line-heights in `@esa/tokens` are unitless ratios, so
+   a zero font-size genuinely collapses the box.
+
+   This is the closest thing to `hide-label` that today's API allows, and it only
+   works by accident of those three tokens existing. It is NOT the visually-hidden
+   clip-rect treatment a real `hide-label` would use, and any future change to how
+   `.label` is sized would silently un-hide it. Please add the boolean.
+
+---
+
+## esa-progress-bar — no segmented mode, and no way to move the value after render
+
+**Found:** 2026-08-06, building the contract draw-down meter on `/invoice-review/<number>`.
+
+**Issue:** two gaps, both hit by the same feature.
+
+1. **Single segment only.** The bar renders one `__fill`. A draw-down meter has to show
+   two shares of the same whole — what a contract has already paid out, and what the
+   invoice under review would add on top if it is approved — so the COR sees where the
+   award *lands*, not only where it stood before they arrived. There is no `segments`
+   API, no stacked mode, and nothing else in the catalog does it either.
+2. **The value is a build-time snapshot.** `value` is baked into an inline
+   `style="width: N%"` during SSR. A page whose figure the user can EDIT (here: the
+   invoice amount, which the COR can correct in place) has no supported way to move
+   the bar afterwards. The only lever is writing into `.esa-progress-bar__fill`'s
+   inline style from outside — reaching into another component's internals, which the
+   token discipline rules out.
+
+**Requested change:** accept an array of segments (value + variant per segment), and
+reflect `value` as an observed attribute so a host can update it. Either alone would
+have been enough to keep this on the lego; both together are what forced it off.
+
+**A third, smaller thing:** the header font size is hard-coded to a private
+`--_progress-font-size` (13px at `md`, 11px at `sm`) with no public token, and
+`showHeader` is driven by `label`/`showValue` — so a caller cannot have an accessible
+name without also rendering a visible header. 13px sits under the 14px label floor in
+the design principles, and there is no supported way to raise it.
+
+**Local workaround (CBFish):** `cbf-review-meter` in `cbf-invoice-processor.astro` —
+two token-driven spans in a track, widths written by the same `populate()` that fills
+every other figure on the panel, marked with `bcn-lego-checked:` and the reasoning
+above. It is ~20 lines and does not restyle the lego; it replaces it. If the segmented
+API lands, this should go back to `esa-progress-bar`.
+
+---
+
+## Semantic color ramps — the step-9 "solid fill" token reads as the obvious choice for text
+
+**Found:** 2026-08-06 (twice — `--color-warning` on issue icons, then `--color-success`
+on the copy-confirm state).
+
+**Issue:** not a bug, a naming trap worth recording. `--color-success` / `--color-warning`
+/ `--color-danger` are the **step 9 solid-fill** values (`#22c55e`, `#f59e0b`,
+`#ef4444`) — meant to sit *behind* white text, as a bar fill or a badge background.
+The unsuffixed name reads like "the success color", so it keeps getting reached for
+when painting a glyph or a label, where it lands around 2:1 contrast. The accessible
+text step is the `-strong` suffix (`#15803d`, `#b45309`, `#b91c1c`).
+
+**Would help:** either an explicit `-fill` alias for step 9, so both roles are named
+and neither is the default, or a note in the token docs. Nothing to fix in code.
+
+**Local rule, now applied throughout `src/components/invoice-review/`:** glyphs and
+label text take `-strong`; bar fills and badge surfaces take the unsuffixed token; the
+`-subtle` / `-strong` pair is set together on a container so children inherit both.

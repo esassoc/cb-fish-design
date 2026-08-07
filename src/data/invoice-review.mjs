@@ -80,6 +80,7 @@ const reviewQueueBase = [
   {
     number: 'INV-2026-0051', vendor: 'Pacific Environmental Services, LLC',
     contract: 'Salmon Habitat Restoration — Wenatchee', project: 'Wenatchee Subbasin',
+    besVendor: 'BES-10442',
     submitted: 'Jun 19, 2026', reviewBy: 'Jun 24, 2026', daysRemaining: 2,
     amount: 6120, stage: 'Submitted', final: false,
     invoiceDate: 'Jun 17, 2026', perfStart: 'Jun 1, 2026', perfEnd: 'Jun 15, 2026',
@@ -96,6 +97,7 @@ const reviewQueueBase = [
   {
     number: 'INV-2026-0049', vendor: 'Cascade Fisheries Consulting',
     contract: 'Smolt Survival Telemetry Study', project: 'Mainstem Survival',
+    besVendor: 'BES-20817',
     submitted: 'Jun 15, 2026', reviewBy: 'Jun 23, 2026', daysRemaining: 1,
     amount: 12_480, stage: 'In review', final: false,
     invoiceDate: 'Jun 10, 2026', perfStart: 'May 1, 2026', perfEnd: 'May 31, 2026',
@@ -113,6 +115,7 @@ const reviewQueueBase = [
   {
     number: 'INV-2026-0047', vendor: 'Methow Restoration Partners',
     contract: 'Riparian Vegetation Monitoring — Methow', project: 'Methow Subbasin',
+    besVendor: 'BES-31164',
     submitted: 'May 28, 2026', reviewBy: 'Jun 20, 2026', daysRemaining: -2,
     amount: 3960, stage: 'In review', final: false,
     invoiceDate: 'May 22, 2026', perfStart: 'Apr 1, 2026', perfEnd: 'Apr 30, 2026',
@@ -128,6 +131,7 @@ const reviewQueueBase = [
   {
     number: 'INV-2026-0046', vendor: 'Pacific Environmental Services, LLC',
     contract: 'Hatchery Supplementation — Entiat', project: 'Entiat Subbasin',
+    besVendor: 'BES-10487',
     submitted: 'Jun 18, 2026', reviewBy: 'Jul 5, 2026', daysRemaining: 13,
     amount: 2280, stage: 'Submitted', final: false,
     invoiceDate: 'Jun 12, 2026', perfStart: 'May 1, 2026', perfEnd: 'May 31, 2026',
@@ -143,6 +147,7 @@ const reviewQueueBase = [
   {
     number: 'INV-2026-0044', vendor: 'Okanogan Water Sciences',
     contract: 'Water Quality Sampling — Okanogan', project: 'Okanogan Subbasin',
+    besVendor: 'BES-40529',
     submitted: 'Jun 16, 2026', reviewBy: 'Jul 1, 2026', daysRemaining: 9,
     amount: 18_750, stage: 'Submitted', final: true,
     invoiceDate: 'Jun 14, 2026', perfStart: 'Apr 1, 2026', perfEnd: 'Jun 13, 2026',
@@ -160,6 +165,7 @@ const reviewQueueBase = [
   {
     number: 'INV-2026-0041', vendor: 'Cascade Fisheries Consulting',
     contract: 'Smolt Survival Telemetry Study', project: 'Mainstem Survival',
+    besVendor: 'BES-20817',
     submitted: 'Jun 5, 2026', reviewBy: 'Jun 28, 2026', daysRemaining: 6,
     amount: 4310, stage: 'Returned', final: false,
     invoiceDate: 'May 30, 2026', perfStart: 'May 1, 2026', perfEnd: 'May 31, 2026',
@@ -176,6 +182,7 @@ const reviewQueueBase = [
   {
     number: 'INV-2026-0038', vendor: 'Pacific Environmental Services, LLC',
     contract: 'Salmon Habitat Restoration — Wenatchee', project: 'Wenatchee Subbasin',
+    besVendor: 'BES-10442',
     submitted: 'May 29, 2026', reviewBy: 'Jun 21, 2026', daysRemaining: -1,
     amount: 5210, stage: 'Approved', final: false,
     invoiceDate: 'May 24, 2026', perfStart: 'May 1, 2026', perfEnd: 'May 15, 2026',
@@ -194,6 +201,7 @@ const reviewQueueBase = [
   {
     number: 'INV-2026-0032', vendor: 'Methow Restoration Partners',
     contract: 'Riparian Vegetation Monitoring — Methow', project: 'Methow Subbasin',
+    besVendor: 'BES-31164',
     submitted: 'May 15, 2026', reviewBy: 'Jun 8, 2026', daysRemaining: -13,
     amount: 4180, stage: 'Approved', final: false,
     invoiceDate: 'May 10, 2026', perfStart: 'Mar 1, 2026', perfEnd: 'Mar 31, 2026',
@@ -211,6 +219,7 @@ const reviewQueueBase = [
   {
     number: 'INV-2026-0027', vendor: 'Okanogan Water Sciences',
     contract: 'Water Quality Sampling — Okanogan', project: 'Okanogan Subbasin',
+    besVendor: 'BES-40529',
     submitted: 'May 8, 2026', reviewBy: 'Jun 1, 2026', daysRemaining: -20,
     amount: 9450, stage: 'Approved', final: false,
     invoiceDate: 'May 3, 2026', perfStart: 'Feb 1, 2026', perfEnd: 'Mar 31, 2026',
@@ -243,6 +252,156 @@ const contractRefs = {
   'Hatchery Supplementation — Entiat':      { contractNumber: 'C-2024-073', contractStart: 'Sep 1, 2024', contractEnd: 'Aug 31, 2026', netTerms: 'Net 45' },
   'Water Quality Sampling — Okanogan':      { contractNumber: 'C-2024-058', contractStart: 'Jun 14, 2024', contractEnd: 'Jun 13, 2026', netTerms: 'Net 30' },
 };
+/**
+ * Line Item Budget REVISIONS, per contract, newest first.
+ *
+ * A LIB is not one document — it is re-issued whenever the budget moves (a contract
+ * modification, a reallocation between work elements, a scope change). A COR checking
+ * an invoice against "the budget" has to know WHICH budget: an invoice for April work
+ * is judged against the LIB that was in force in April, not against whatever was
+ * issued last month. So every revision is listed with the date it was issued and why,
+ * and the newest is marked current.
+ *
+ * Dates fall inside each contract's own term and ahead of the invoices that draw on
+ * it. Deterministic — no generated dates, so every demo run reads the same.
+ */
+const budgetRevisionsByContract = {
+  'C-2024-042': [
+    { revision: 3, issued: 'May 4, 2026', reason: 'Reallocation — habitat survey hours to riparian planting' },
+    { revision: 2, issued: 'Nov 12, 2025', reason: 'Modification 2 — added side-channel monitoring' },
+    { revision: 1, issued: 'Oct 1, 2024', reason: 'Original award' },
+  ],
+  'C-2024-067': [
+    { revision: 2, issued: 'Feb 18, 2026', reason: 'Modification 1 — extended tagging season' },
+    { revision: 1, issued: 'Nov 1, 2024', reason: 'Original award' },
+  ],
+  'C-2024-051': [
+    { revision: 2, issued: 'Mar 30, 2026', reason: 'Reallocation — travel to field labor' },
+    { revision: 1, issued: 'Dec 1, 2024', reason: 'Original award' },
+  ],
+  'C-2024-073': [
+    { revision: 4, issued: 'Jun 2, 2026', reason: 'Modification 3 — added acclimation-pond maintenance' },
+    { revision: 3, issued: 'Jan 22, 2026', reason: 'Reallocation — feed to fish health' },
+    { revision: 2, issued: 'Apr 9, 2025', reason: 'Modification 1 — revised production targets' },
+    { revision: 1, issued: 'Sep 1, 2024', reason: 'Original award' },
+  ],
+  'C-2024-058': [
+    { revision: 1, issued: 'Jun 14, 2024', reason: 'Original award' },
+  ],
+};
+
+/**
+ * The Line Item Budget revisions for one invoice's contract, newest first, each with
+ * the filename it downloads as. The newest is `current`.
+ *
+ * A LIB is an EXCEL WORKBOOK, not a PDF — which is why it is never rendered beside the
+ * invoice the way the submitted PDFs are. The document pane displays paper documents;
+ * a spreadsheet is opened in a spreadsheet. Every revision therefore offers open and
+ * download, and no in-pane view.
+ *
+ * @param {{ contractNumber?: string }} invoice
+ * @returns {{ revision: number; issued: string; reason: string; label: string; file: string; current: boolean }[]}
+ */
+export function budgetRevisions(invoice) {
+  const list = budgetRevisionsByContract[invoice?.contractNumber] ?? [];
+  return list.map((rev, i) => ({
+    ...rev,
+    label: `Line Item Budget — Rev ${rev.revision}`,
+    file: `LIB-${invoice.contractNumber}-rev${rev.revision}.xlsx`,
+    current: i === 0,
+  }));
+}
+
+/**
+ * BPA "Vendors" — a BES vendor number plus a work LOCATION.
+ *
+ * BPA treats each of an organization's billing locations as a separate Vendor, so one
+ * company can appear several times under different BES IDs. That is not a modelling
+ * quirk: the indirect rate is negotiated PER LOCATION, so which Vendor an invoice was
+ * submitted under determines which rate applies to it. Pacific Environmental Services
+ * below is the case — two locations, two BES IDs, two different rates.
+ */
+const besVendors = {
+  'BES-10442': { org: 'Pacific Environmental Services, LLC', location: 'Wenatchee, WA' },
+  'BES-10487': { org: 'Pacific Environmental Services, LLC', location: 'Leavenworth, WA' },
+  'BES-20817': { org: 'Cascade Fisheries Consulting', location: 'Portland, OR' },
+  'BES-31164': { org: 'Methow Restoration Partners', location: 'Twisp, WA' },
+  'BES-40529': { org: 'Okanogan Water Sciences', location: 'Omak, WA' },
+};
+
+/**
+ * Indirect rates per BPA Vendor, newest first.
+ *
+ * A Vendor can hold several rates over time but only ONE is ever in force, so the
+ * first entry is the one that governs — and it is shown whether or not it is still
+ * valid. An EXPIRED newest rate is the case that matters: it means the Vendor has no
+ * rate in force at all, and any indirect the invoice bills is unsupported until a new
+ * one is negotiated. Hiding it, or falling back to an older valid-looking rate, would
+ * hide exactly the problem the COR needs to catch.
+ *
+ * `status` is stored rather than computed from today's date — the queue's whole
+ * timeline is a fixed mid-2026 mock, and a real clock would drift it out of sync.
+ * BES-31164 (Methow) is the expired case.
+ */
+const indirectRatesByBes = {
+  // Lapsed: nothing in force. This is the Vendor on INV-2026-0051, the queue's first
+  // record, so the expired state is visible on the invoice a demo opens first.
+  'BES-10442': [
+    { rate: 31.5, effective: 'Jun 1, 2025', expires: 'May 31, 2026', status: 'expired' },
+    { rate: 29.8, effective: 'Jun 1, 2024', expires: 'May 31, 2025', status: 'expired' },
+  ],
+  'BES-10487': [
+    { rate: 27.4, effective: 'Jan 1, 2026', expires: 'Dec 31, 2026', status: 'active' },
+    { rate: 26.9, effective: 'Jan 1, 2025', expires: 'Dec 31, 2025', status: 'expired' },
+  ],
+  'BES-20817': [
+    { rate: 38.2, effective: 'Jul 1, 2025', expires: 'Jun 30, 2026', status: 'active' },
+  ],
+  'BES-31164': [
+    { rate: 24.6, effective: 'Apr 1, 2025', expires: 'Mar 31, 2026', status: 'expired' },
+    { rate: 23.1, effective: 'Apr 1, 2024', expires: 'Mar 31, 2025', status: 'expired' },
+  ],
+  'BES-40529': [
+    { rate: 33.0, effective: 'Apr 1, 2026', expires: 'Mar 31, 2027', status: 'active' },
+    { rate: 31.4, effective: 'Apr 1, 2025', expires: 'Mar 31, 2026', status: 'expired' },
+  ],
+};
+
+/**
+ * The indirect rate governing one invoice: the rate that was IN FORCE during the work,
+ * found by the performance period rather than by recency.
+ *
+ * Recency would be wrong. An invoice billed in June for April work is governed by
+ * April's rate, and quietly applying today's rate would misstate what the vendor is
+ * owed — in either direction. So the rate is matched on the performance period's start
+ * date; only when nothing covers it does the newest stand in.
+ *
+ * `expired` therefore means something narrow and worth acting on: the rate that
+ * applies here is ALSO the vendor's most recent, and it has lapsed — so the vendor has
+ * nothing in force now. A superseded rate matched to an old performance period is not
+ * expired in this sense; it is simply the rate that applied at the time, and flagging
+ * it would cry wolf on every historical invoice.
+ *
+ * @param {{ besVendor?: string; perfStart?: string }} invoice
+ * @returns {{ rate: number; effective: string; expires: string; expired: boolean } | null}
+ */
+export function indirectRate(invoice) {
+  const list = indirectRatesByBes[invoice?.besVendor] ?? [];
+  if (!list.length) return null;
+  const on = Date.parse(invoice?.perfStart ?? '');
+  const covering = Number.isNaN(on)
+    ? null
+    : list.find((r) => on >= Date.parse(r.effective) && on <= Date.parse(r.expires));
+  const applies = covering ?? list[0];
+  return {
+    rate: applies.rate,
+    effective: applies.effective,
+    expires: applies.expires,
+    // Only the CURRENT rate having lapsed is a problem: it means nothing is in force.
+    expired: applies === list[0] && applies.status === 'expired',
+  };
+}
+
 const projectNumbers = {
   'Wenatchee Subbasin': 'PRJ-2024-112',
   'Mainstem Survival': 'PRJ-2024-201',
@@ -267,6 +426,44 @@ export const reviewQueue = reviewQueueBase.map((inv) => {
     netTerms: ref.netTerms ?? 'Net 30',
   };
 });
+
+/**
+ * The contracts a COR can bill an invoice against, as esa-combobox options.
+ *
+ * A contract is a SELECTION from a known set, never free text — which is how the
+ * vendor's own submission wizard asks for it (an esa-combobox in autocomplete mode).
+ * A COR correcting the contract on a submitted invoice is answering the same
+ * question, so they get the same control and the same set. Free text here would let
+ * a review screen invent a contract number the vendor's form could never produce.
+ *
+ * @type {{ value: string; label: string }[]}
+ */
+export const contractOptions = Object.entries(contractRefs)
+  .map(([name, ref]) => ({ value: ref.contractNumber, label: `${ref.contractNumber} — ${name}` }))
+  .sort((a, b) => a.value.localeCompare(b.value));
+
+/**
+ * contractNumber → everything that FOLLOWS from choosing that contract: its name, and
+ * the project it belongs to. The vendor's form auto-fills Project from the contract
+ * and locks it ("Read-only — determined by the selected contract"); a COR changing the
+ * contract on review has to see the same thing happen, or the invoice would end up
+ * carrying a project that belongs to the contract it no longer bills against.
+ *
+ * Project is 1:1 with contract across every record in the queue, so it is derived
+ * from the records themselves rather than kept as a second table that could drift.
+ *
+ * @type {Record<string, { contract: string; project: string; projectNumber: string }>}
+ */
+export const contractFacts = Object.fromEntries(
+  Object.entries(contractRefs).map(([name, ref]) => {
+    const sample = reviewQueueBase.find((inv) => inv.contract === name);
+    return [ref.contractNumber, {
+      contract: name,
+      project: sample?.project ?? '',
+      projectNumber: projectNumbers[sample?.project] ?? '',
+    }];
+  }),
+);
 
 /** Stages that sit in the COR's actionable queue (awaiting their decision). */
 export const openStages = ['Submitted', 'In review'];

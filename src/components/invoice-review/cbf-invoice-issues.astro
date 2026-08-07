@@ -52,8 +52,8 @@ const { title = 'Issues raised' } = Astro.props;
   </div>
 
   <p class="cbf-invoice-issues__empty" data-issues-empty>
-    No issues flagged. Use the flag control on any field to mark it and say why —
-    everything you flag is sent with the invoice when you return it.
+    No issues flagged. Flag any field, line, or document to say what's wrong — flags
+    go to the vendor when you return this invoice.
   </p>
 
   <ul class="cbf-invoice-issues__list" data-issues-list></ul>
@@ -110,18 +110,23 @@ const { title = 'Issues raised' } = Astro.props;
     align-items: start;
     padding: var(--spacing-200) var(--spacing-250);
     border-radius: var(--radius-100, 4px);
-    background: var(--color-warning-subtle, color-mix(in srgb, var(--color-warning, #b54708) 10%, transparent));
+    /* The status pair: -subtle is the surface, -strong is the text on it. Set on the
+       row so the field name, the reason and the row's controls all inherit it. */
+    background: var(--color-warning-subtle);
+    color: var(--color-warning-strong);
   }
   .cbf-invoice-issue__field {
     grid-column: 1;
     font-size: var(--type-size-150);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
   }
+  /* The reason steps back from the field name by WEIGHT, not by going grey — a grey
+     here would be neither the neutral ramp nor the warning ramp, and would read as
+     washed out against the tint. */
   .cbf-invoice-issue__comment {
     grid-column: 1 / -1;
     font-size: var(--type-size-150);
-    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-regular);
     overflow-wrap: anywhere;
   }
   .cbf-invoice-issue__actions {
@@ -129,6 +134,5 @@ const { title = 'Issues raised' } = Astro.props;
     grid-row: 1;
     display: inline-flex;
     gap: var(--spacing-050, 2px);
-    color: var(--color-text-muted);
   }
 </style>
