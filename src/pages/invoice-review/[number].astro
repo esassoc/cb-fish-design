@@ -42,7 +42,7 @@ const crumbs = [
   layout: esa-container > cbf-app-panel
   sections:
     - nav                 -> cbf-public-nav
-    - page header         -> esa-page-header
+    - page header         -> esa-page-header (slotted into the processor's sticky doc column)
     - processing surface  -> cbf-invoice-processor (doc viewer + budget + approve/return)
 -->
 <BaseLayout title={`Process ${invoice.number} — Columbia Basin Fish & Wildlife Program`}>
@@ -51,11 +51,13 @@ const crumbs = [
   <main class="cbf-page">
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
-        <EsaPageHeader
-          eyebrow={`${invoice.vendor} · ${invoice.contract}`}
-          title={`Process invoice ${invoice.number}`}
-        />
-        <CbfInvoiceProcessor invoice={invoice} />
+        <CbfInvoiceProcessor invoice={invoice}>
+          <EsaPageHeader
+            slot="doc-header"
+            eyebrow={`${invoice.vendor} · ${invoice.contract}`}
+            title={`Process invoice ${invoice.number}`}
+          />
+        </CbfInvoiceProcessor>
       </CbfAppPanel>
     </EsaContainer>
   </main>

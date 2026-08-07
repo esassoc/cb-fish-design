@@ -475,8 +475,10 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
     background: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
     color: var(--color-text-primary);
   }
-  /* Copied feedback: tint the control + a transient "Copied" label beside it. */
-  .cbf-review-fields__copy[data-state='copied'] { color: var(--color-success, #1f8a4c); }
+  /* Copied feedback: tint the control + a transient "Copied" label beside it.
+     -strong is the accessible TEXT step; plain --color-success is the solid-FILL
+     step and lands near 2:1 painted onto a glyph. */
+  .cbf-review-fields__copy[data-state='copied'] { color: var(--color-success-strong); }
   .cbf-review-fields__copy[data-state='copied']::after {
     content: 'Copied';
     position: absolute;
@@ -486,7 +488,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
     white-space: nowrap;
     font-size: var(--type-size-050);
     font-weight: var(--font-weight-medium);
-    color: var(--color-success, #1f8a4c);
+    color: var(--color-success-strong);
     pointer-events: none;
   }
 

@@ -66,6 +66,13 @@ export class BcnDatePicker extends LitElement {
 
   static properties = {
     label:        { type: String },
+    // Keep `label` as the accessible name (it is already forwarded to the input's
+    // aria-label) while dropping the VISIBLE <label>. For a caller whose own layout
+    // already labels the control — a label→value data row, a labelled table column —
+    // rendering the word a second time is noise, and clearing `label` instead would
+    // leave the input unnamed. Same idea the hub form legos still need (see the
+    // spoke's docs/hub-issues.md).
+    hideLabel:    { type: Boolean, attribute: 'hide-label' },
     placeholder:  { type: String },
     required:     { type: Boolean },
     disabled:     { type: Boolean, reflect: true },
@@ -83,6 +90,7 @@ export class BcnDatePicker extends LitElement {
   };
 
   declare label: string;
+  declare hideLabel: boolean;
   declare placeholder: string;
   declare required: boolean;
   declare disabled: boolean;
@@ -110,6 +118,7 @@ export class BcnDatePicker extends LitElement {
   constructor() {
     super();
     this.label = '';
+    this.hideLabel = false;
     this.placeholder = 'MM/DD/YYYY';
     this.required = false;
     this.disabled = false;
@@ -409,7 +418,7 @@ export class BcnDatePicker extends LitElement {
     return html`
       <div class="field" @keydown=${this._onKeyDown}>
 
-        ${this.label ? html`
+        ${this.label && !this.hideLabel ? html`
           <label class="field__label" @click=${() => this.shadowRoot?.querySelector<HTMLInputElement>('.date-input')?.focus()}>
             ${this.label}${this.required ? html`<span class="field__req" aria-hidden="true">&thinsp;*</span>` : nothing}
           </label>` : nothing}
