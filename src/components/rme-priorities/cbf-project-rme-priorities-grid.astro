@@ -194,6 +194,29 @@ const priorityOptions = RME_PRIORITIES.map((p) => ({ value: String(p.id), label:
     if (!handle) return;
     const { gridApi } = handle;
 
+    // cbf-rme-priorities-list's per-row "Edit title" flow renames a priority in
+    // the sibling taxonomy list — relabel it here too (the bulk-edit dropdown
+    // option and every already-assigned project row) so the two sections never
+    // disagree. Mirrors the create-event handshake above.
+    document.addEventListener('cbf-rme-priority-updated', (e) => {
+      const { id, title } = (e as CustomEvent<{ id: number; title: string }>).detail;
+      const label = `${id}: ${title}`;
+
+      const select = field('rmePriorityId') as (HTMLElement & { options: { value: string; label: string }[] }) | null;
+      if (select) {
+        select.options = select.options.map((o) => (o.value === String(id) ? { ...o, label } : o));
+      }
+
+      const updated: ProjectPriority[] = [];
+      gridApi.forEachNode((node) => {
+        if (node.data && node.data.rmePriorityId === id) {
+          node.data.rmePriorityTitle = label;
+          updated.push(node.data);
+        }
+      });
+      if (updated.length) gridApi.applyTransaction({ update: updated });
+    });
+
     bulkEditOpenWrap?.addEventListener('click', () => {
       if (bulkEditOpenBtn?.disabled) return;
       const selected = gridApi.getSelectedRows();

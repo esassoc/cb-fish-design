@@ -139,6 +139,26 @@ const { rows = defaultRows } = Astro.props;
       countNoun: 'work statement elements',
       csvFileName: 'rme-work-elements.csv',
       columnDefs: [
+        // Leading order per stakeholder request: contract/WE/WSE identity, then
+        // the four RM&E classification columns (type + focal area, the shaded
+        // editable pairs) followed by focal species — the rest keep their
+        // prior relative order.
+        {
+          headerName: 'Contract number', field: 'contractNumber', colId: 'contractNumber', minWidth: 150,
+          getQuickFilterText: (p) => p.data?.contractNumber ?? '',
+        },
+        { headerName: 'WE ID', field: 'weId', colId: 'weId', minWidth: 90 },
+        { headerName: 'WSE ID', field: 'wseId', colId: 'wseId', minWidth: 100 },
+        {
+          headerName: 'WSE title', field: 'title', colId: 'title', flex: 3, minWidth: 300,
+          getQuickFilterText: (p) => p.data?.title ?? '',
+        },
+        editableSelectCol('Primary RM&E type', 'primaryRmeType', typeOptions),
+        editableSelectCol('Secondary RM&E type', 'secondaryRmeType', typeOptions),
+        editableSelectCol('Primary RM&E focal area', 'primaryRmeFocalArea', focalOptions),
+        editableSelectCol('Secondary RM&E focal area', 'secondaryRmeFocalArea', focalOptions),
+        { headerName: 'Primary focal species', field: 'primaryFocalSpecies', colId: 'primaryFocalSpecies', minWidth: 160 },
+        { headerName: 'Secondary focal species', field: 'secondaryFocalSpecies', colId: 'secondaryFocalSpecies', minWidth: 170 },
         {
           headerName: 'Project number', field: 'projectNumber', colId: 'projectNumber', minWidth: 140,
           getQuickFilterText: (p) => p.data?.projectNumber ?? '',
@@ -152,31 +172,15 @@ const { rows = defaultRows } = Astro.props;
           getQuickFilterText: (p) => p.data?.contractContractor ?? '',
         },
         dateCol('Contract start date', 'contractStartDate', 150),
-        {
-          headerName: 'Contract number', field: 'contractNumber', colId: 'contractNumber', minWidth: 150,
-          getQuickFilterText: (p) => p.data?.contractNumber ?? '',
-        },
         { headerName: 'SOW reports', colId: 'sowReports', minWidth: 130, valueGetter: () => 'SOW report' },
         { headerName: 'FY started', field: 'fyStarted', colId: 'fyStarted', minWidth: 110 },
-        { headerName: 'WE ID', field: 'weId', colId: 'weId', minWidth: 90 },
-        { headerName: 'WSE ID', field: 'wseId', colId: 'wseId', minWidth: 100 },
         dateCol('WSE start', 'wseStart', 120),
         dateCol('WSE end', 'wseEnd', 120),
-        {
-          headerName: 'Title', field: 'title', colId: 'title', flex: 3, minWidth: 300,
-          getQuickFilterText: (p) => p.data?.title ?? '',
-        },
         { headerName: 'Description', field: 'description', colId: 'description', flex: 3, minWidth: 300 },
         {
           headerName: 'WSE effective budget', field: 'wseEffectiveBudget', colId: 'wseEffectiveBudget', minWidth: 170,
           valueFormatter: (p) => (typeof p.value === 'number' ? currencyFmt.format(p.value) : ''),
         },
-        editableSelectCol('Primary RM&E type', 'primaryRmeType', typeOptions),
-        editableSelectCol('Secondary RM&E type', 'secondaryRmeType', typeOptions),
-        editableSelectCol('Primary RM&E focal area', 'primaryRmeFocalArea', focalOptions),
-        editableSelectCol('Secondary RM&E focal area', 'secondaryRmeFocalArea', focalOptions),
-        { headerName: 'Primary focal species', field: 'primaryFocalSpecies', colId: 'primaryFocalSpecies', minWidth: 160 },
-        { headerName: 'Secondary focal species', field: 'secondaryFocalSpecies', colId: 'secondaryFocalSpecies', minWidth: 170 },
         { headerName: 'Protocol name', field: 'protocolName', colId: 'protocolName', minWidth: 220 },
         { headerName: 'Protocol state name', field: 'protocolStateName', colId: 'protocolStateName', minWidth: 160 },
         { headerName: 'Study plan name', field: 'studyPlanName', colId: 'studyPlanName', minWidth: 220 },
