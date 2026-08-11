@@ -25,7 +25,7 @@ const homeIcon =
 const crumbs = [
   { label: 'Home', href: withBase('/home'), icon: homeIcon },
   { label: 'Reporting' },
-  { label: 'RM&E Reporting' },
+  { label: 'RM&E reporting' },
 ];
 
 const intro = {
@@ -46,13 +46,13 @@ const intro = {
     - sub-nav tabs  -> cbf-report-tabs
     - intro band    -> cbf-report-intro
 -->
-<BaseLayout title="RM&amp;E Reporting: Summary — Columbia Basin Fish &amp; Wildlife Program">
+<BaseLayout title="RM&amp;E reporting: Summary — Columbia Basin Fish &amp; Wildlife Program">
   <CbfPublicNav />
 
   <main class="cbf-page">
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
-        <CbfPageHeading title="RM&E Reporting: Summary" />
+        <CbfPageHeading title="RM&E reporting: Summary" />
         <CbfReportTabs tabs={rmeReportingTabs('summary')} ariaLabel="RM&E reporting sections" />
         <CbfReportIntro image={intro.image} lede={intro.lede} body={intro.body} />
       </CbfAppPanel>

@@ -23,8 +23,8 @@ const homeIcon =
 const crumbs = [
   { label: 'Home', href: withBase('/home'), icon: homeIcon },
   { label: 'Reporting' },
-  { label: 'RM&E Reporting', href: withBase('/rme-reporting') },
-  { label: 'Manage Priorities' },
+  { label: 'RM&E reporting', href: withBase('/rme-reporting') },
+  { label: 'Manage priorities' },
 ];
 ---
 <!-- manifest:
@@ -40,13 +40,13 @@ const crumbs = [
       #   priorities-list create flow and the project grid's bulk-edit flow
       #   both call document.querySelector('[data-snackbar]')
 -->
-<BaseLayout title="Manage RM&amp;E Priorities — Columbia Basin Fish &amp; Wildlife Program">
+<BaseLayout title="Manage RM&amp;E priorities — Columbia Basin Fish &amp; Wildlife Program">
   <CbfPublicNav />
 
   <main class="cbf-page">
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
-        <CbfPageHeading title="Manage RM&E Priorities" />
+        <CbfPageHeading title="Manage RM&E priorities" />
         <CbfReportTabs tabs={rmeReportingTabs('priorities')} ariaLabel="RM&E reporting sections" />
 
         <div class="cbf-rme-priorities-page stack" data-gap="lg">

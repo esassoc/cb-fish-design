@@ -50,3 +50,23 @@ if it's missing. To update: `claude plugin marketplace update ecology`.
 
 - Skill: `component-first` (→ `lego-lookup.md`, `bcn-authoring.md`)
 - Hook: `check-component-first` (PreToolUse, from the plugin)
+
+## Copy & capitalization (CBFish-only — always in design/UX QA)
+
+CBFish follows the **Microsoft Writing Style Guide: sentence case** for all UI
+chrome. This is a **CBFish-spoke rule**, deliberately kept out of the shared
+`spoke-kit` skills so it never affects other spokes — so it must be applied
+*here*, every time.
+
+**Always run a sentence-case pass** as part of `/design-qa` and any
+design/UX or copy review in this repo (it is not enforced by the hub's
+`design-principles` skill or the `check-adherence` grep — this file is the
+trigger). Flag Title Case in chrome — page titles, headings, breadcrumbs, tabs,
+buttons, form labels, **table/column headers**, dialog headings, toasts — as a
+fix, and re-case it.
+
+Capitalize only the first word + proper nouns/acronyms; field and classification
+names are common nouns (`RM&E type`, `Focal area`, `RM&E priority`), even where
+prod shows Title Case. Acronyms stay uppercase (`RM&E`, `SOW`, `WSE`, `COTR`,
+`SME`, `BiOp`); the brand is one word, `CBFish`. **Full rules + proper-noun list:
+[`docs/copy-style.md`](docs/copy-style.md).**

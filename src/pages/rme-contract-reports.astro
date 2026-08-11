@@ -24,8 +24,8 @@ const homeIcon =
 const crumbs = [
   { label: 'Home', href: withBase('/home'), icon: homeIcon },
   { label: 'Reporting' },
-  { label: 'RM&E Reporting', href: withBase('/rme-reporting') },
-  { label: 'Contract Reports' },
+  { label: 'RM&E reporting', href: withBase('/rme-reporting') },
+  { label: 'Contract reports' },
 ];
 ---
 <!-- manifest:
@@ -37,13 +37,13 @@ const crumbs = [
     - sub-nav tabs -> cbf-report-tabs
     - grid         -> cbf-rme-contract-reports-grid
 -->
-<BaseLayout title="RM&amp;E Contract Reports — Columbia Basin Fish &amp; Wildlife Program">
+<BaseLayout title="RM&amp;E contract reports — Columbia Basin Fish &amp; Wildlife Program">
   <CbfPublicNav />
 
   <main class="cbf-page">
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
-        <CbfPageHeading title="RM&E Contract Reports" />
+        <CbfPageHeading title="RM&E contract reports" />
         <CbfReportTabs tabs={rmeReportingTabs('contract-reports')} ariaLabel="RM&E reporting sections" />
         <CbfRmeContractReportsGrid />
       </CbfAppPanel>
