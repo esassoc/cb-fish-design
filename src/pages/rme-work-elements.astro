@@ -10,6 +10,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
 import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
 import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import CbfReportTabs from '../components/shared/cbf-report-tabs.astro';
 import CbfRmeWorkElementsGrid from '../components/rme-work-elements/cbf-rme-work-elements-grid.astro';
@@ -43,11 +44,11 @@ const crumbs = [
   <main class="cbf-page">
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
-        <EsaPageHeader
-          title="RM&E work elements report"
-          lede="Every work statement element carrying RM&E work, with each project's RM&E type and focal area classifications. Double-click a primary/secondary type or focal area cell (shaded) to edit it directly."
-        />
+        <EsaPageHeader title="RM&E work elements report" />
         <CbfReportTabs tabs={rmeReportingTabs('work-elements')} ariaLabel="RM&E reporting sections" />
+        <EsaAlertBox variant="info">
+          Every work statement element carrying RM&E work, with each project's RM&E type and focal area classifications. Double-click a primary/secondary type or focal area cell (shaded) to edit it directly.
+        </EsaAlertBox>
         <CbfRmeWorkElementsGrid />
       </CbfAppPanel>
     </EsaContainer>
