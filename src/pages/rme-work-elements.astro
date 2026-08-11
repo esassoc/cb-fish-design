@@ -22,8 +22,8 @@ const homeIcon =
 const crumbs = [
   { label: 'Home', href: withBase('/home'), icon: homeIcon },
   { label: 'Reporting' },
-  { label: 'RM&E Reporting', href: withBase('/rme-reporting') },
-  { label: 'Work Elements Report' },
+  { label: 'RM&E reporting', href: withBase('/rme-reporting') },
+  { label: 'Work elements report' },
 ];
 ---
 <!-- manifest:
@@ -37,15 +37,15 @@ const crumbs = [
     - toasts       -> esa-snackbar-container  # not decorative: the grid's
       #   inline-edit confirmations call document.querySelector('[data-snackbar]')
 -->
-<BaseLayout title="RM&amp;E Work Elements Report — Columbia Basin Fish &amp; Wildlife Program">
+<BaseLayout title="RM&amp;E work elements report — Columbia Basin Fish &amp; Wildlife Program">
   <CbfPublicNav />
 
   <main class="cbf-page">
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
         <EsaPageHeader
-          title="RM&E Work Elements Report"
-          lede="Every Work Statement Element carrying RM&E work, with each project's RM&E Type and Focal Area classifications. Double-click a Primary/Secondary Type or Focal Area cell (shaded) to edit it directly."
+          title="RM&E work elements report"
+          lede="Every work statement element carrying RM&E work, with each project's RM&E type and focal area classifications. Double-click a primary/secondary type or focal area cell (shaded) to edit it directly."
         />
         <CbfReportTabs tabs={rmeReportingTabs('work-elements')} ariaLabel="RM&E reporting sections" />
         <CbfRmeWorkElementsGrid />

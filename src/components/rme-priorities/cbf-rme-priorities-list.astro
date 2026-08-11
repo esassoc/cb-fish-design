@@ -25,15 +25,15 @@ const { priorities = defaultPriorities } = Astro.props;
     <span class="type-caption cbf-rme-priorities-list__count-label">
       Viewing {priorities.length} of {priorities.length} RM&E priorities
     </span>
-    <EsaButton color="primary" icon="plus" data-rme-priority-create-open>Create new RM&E Priority</EsaButton>
+    <EsaButton color="primary" icon="plus" data-rme-priority-create-open>Create new RM&E priority</EsaButton>
   </header>
 
   <div class="cbf-rme-priorities-list__table-wrap">
     <table class="cbf-rme-priorities-list__table" data-rme-priorities-table>
       <thead>
         <tr>
-          <th scope="col">RME Priority ID</th>
-          <th scope="col">RME Priority Title</th>
+          <th scope="col">RME priority ID</th>
+          <th scope="col">RME priority title</th>
         </tr>
       </thead>
       <tbody>
@@ -47,10 +47,10 @@ const { priorities = defaultPriorities } = Astro.props;
     </table>
   </div>
 
-  <esa-dialog heading="Create new RM&E Priority" show-close-button size="sm" data-rme-priority-create-dialog>
+  <esa-dialog heading="Create new RM&E priority" show-close-button size="sm" data-rme-priority-create-dialog>
     <form class="stack" data-gap="md" data-rme-priority-create-form>
       <esa-text-field
-        label="RM&E Priority title"
+        label="RM&E priority title"
         placeholder="e.g. Estuary Habitat Effectiveness"
         required
         data-field="title"
@@ -176,7 +176,7 @@ const { priorities = defaultPriorities } = Astro.props;
       if (countLabel) countLabel.textContent = `Viewing ${total} of ${total} RM&E priorities`;
 
       const snackbar = document.querySelector<HTMLElement & { success?: (msg: string, cfg?: unknown) => void }>('[data-snackbar]');
-      snackbar?.success?.(`RM&E Priority ${nextId}: ${title} created.`, { duration: 5000 });
+      snackbar?.success?.(`RM&E priority ${nextId}: ${title} created.`, { duration: 5000 });
 
       // cbf-project-rme-priorities-grid's bulk-edit dropdown is a sibling
       // section reading the same taxonomy — notify it so a freshly created
