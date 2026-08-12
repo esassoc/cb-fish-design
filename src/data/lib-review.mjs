@@ -120,9 +120,13 @@ export const seedReview = () => ({
       lineId: 'trv-4',
       severity: SEVERITIES.REQUIRED,
       reason: 'rate-over-ceiling',
+      /* Rewritten for the typed-rate model: there is no ceiling to be "over" any
+         more, so the COR's question is the one the new row actually raises —
+         this line claims no published rate, and the number is above the one that
+         is published for Boise. That is allowed, and it has to be justified. */
       note:
-        'Boise lodging is entered at $172 against the $155 Nov–Mar ceiling. Use the schedule ' +
-        'rate, or attach the approved lodging exception and re-enter the override with it.',
+        'Boise lodging is entered at $172 and claims no standard rate. FY2026 publishes $166 ' +
+        'for Boise — either claim it, or attach the approved lodging exception for the difference.',
       author: contract.bpaCor,
       date: '08/03/2026',
     },
@@ -159,6 +163,20 @@ export const seedReview = () => ({
     },
   ],
   /** Line ids the VENDOR has marked as dealt with since the return. */
+  addressed: [],
+});
+
+/**
+ * A budget nobody has reviewed yet — what the demo's "Clear all entries" control
+ * leaves behind (see src/data/lib-demo.mjs). Status 'in-review' rather than a
+ * fourth status: with no flags on it, isIssued() is false, so no mark renders on
+ * any row and the rail's review gate does not apply — which is exactly the state
+ * of a budget that has not been through a cycle.
+ */
+export const blankReview = () => ({
+  status: 'in-review',
+  memo: '',
+  flags: [],
   addressed: [],
 });
 

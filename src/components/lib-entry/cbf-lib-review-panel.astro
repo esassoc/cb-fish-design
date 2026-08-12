@@ -285,13 +285,21 @@ const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
     isAddressed,
     requiredFlags,
     fireReview,
+    blankReview,
   } from '../../data/lib-review.mjs';
+  import { isBlank } from '../../data/lib-demo.mjs';
 
   const root = document.querySelector<HTMLElement>('[data-review-panel]');
   if (root) init(root);
 
   function init(root: HTMLElement) {
-    let review: any = loadReview();
+    /* The demo's "Clear all entries" (src/data/lib-demo.mjs). A budget with no
+       lines on it has not been through a review cycle, so the marks go with the
+       lines — the panel itself is hidden by the demo controls' reveal gate, and
+       this is what keeps the GRID and the RAIL agreeing with that: a blank review
+       is broadcast on mount exactly like any other, so no row carries a mark and
+       the rail's review gate does not apply. */
+    let review: any = isBlank() ? blankReview() : loadReview();
 
     const $ = <T extends HTMLElement = HTMLElement>(sel: string, scope: ParentNode = root) =>
       scope.querySelector<T>(sel);

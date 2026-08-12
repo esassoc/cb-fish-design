@@ -1,0 +1,140 @@
+/* bcn-lego-checked: the skin for src/lib/row-reorder.ts. No esa-* lego fits —
+   the catalog (ls node_modules/@esa/ecology/src/components/) has no sortable,
+   tree, drag-handle or table component, and this is the CHROME of a gesture
+   (grab handle, insertion marker, drop-into tint) rather than a control. What IS
+   a control stays a lego: the handle itself is esa-icon-button, rendered by
+   cbf-drag-handle.astro. Shared by all three LIB surfaces on purpose — three
+   copies would give the prototype three different drag feels. Beacon is not
+   cloned on this machine.
+
+   Global rather than component-scoped because the marker and the live region are
+   created by the engine on <body>, outside any component's scoped-style reach.
+*/
+
+/* ── The grab handle ───────────────────────────────────────────────────────
+   Quiet until the row is under the pointer or holds focus. A permanent column
+   of grips down a nine-category budget reads as clutter and competes with the
+   money; the affordance only has to exist at the moment you are on the row.
+   It stays visible once GRABBED, for the obvious reason. */
+.cbf-drag-handle {
+  display: inline-flex;
+  cursor: grab;
+  /* The pointer drag is built on Pointer Events, so the browser must not claim
+     the vertical gesture for scrolling first. */
+  touch-action: none;
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+.cbf-drag-handle:where(:hover, :focus-within),
+:where(tr, .cbf-libwl):where(:hover, :focus-within) .cbf-drag-handle,
+.is-dragging .cbf-drag-handle,
+.is-lifted .cbf-drag-handle {
+  opacity: 1;
+}
+/* Keyboard users never hover, so the handle must be reachable by focus alone. */
+.cbf-drag-handle:focus-within { opacity: 1; }
+.cbf-drag-handle button { touch-action: none; cursor: inherit; color: var(--color-text-secondary); }
+/* An author `display` beats the UA's `[hidden] { display: none }`, so any element
+   that sets one has to opt back in — the same trap logged against the layout
+   primitives in docs/hub-issues.md. A surface that reveals handles per row (the
+   wizard does) toggles `hidden`, and it has to actually hide. */
+.cbf-drag-handle[hidden] { display: none; }
+.cbf-rdnd-active .cbf-drag-handle { cursor: grabbing; }
+
+/* ── The row in flight ─────────────────────────────────────────────────────
+   It stays in place in the flow and is offset by transform instead of being
+   detached: a <tr> removed from its <tbody> would collapse the table's column
+   widths under the drag, and the row you are moving is the one thing that must
+   not change shape while you move it. */
+.is-dragging {
+  position: relative;
+  z-index: 3;
+  transform: translateY(var(--cbf-rdnd-dy, 0));
+  box-shadow: var(--elevation-4);
+  background: var(--color-surface);
+  opacity: 0.96;
+  cursor: grabbing;
+}
+/* The row follows the pointer, so the pointer is over it at ALL times — it has
+   to be invisible to the hit test or every drop target is itself. Pointer
+   capture is set on the handle, and a captured pointer is delivered without a
+   hit test, so the drag keeps receiving moves regardless. */
+.is-dragging { pointer-events: none; }
+
+/* ── The insertion marker ──────────────────────────────────────────────────
+   A 2px rule at the boundary the row will land on, with a cap at the left edge
+   so it reads as an insertion point rather than as a table border. Fixed to the
+   viewport because a <table> has nowhere to put an element between two rows. */
+.cbf-rdnd-marker {
+  position: fixed;
+  z-index: 60;
+  height: 2px;
+  background: var(--color-primary);
+  border-radius: var(--radius-full);
+  pointer-events: none;
+}
+.cbf-rdnd-marker::before {
+  content: '';
+  position: absolute;
+  inset-block: -3px;
+  inset-inline-start: -1px;
+  width: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+}
+.cbf-rdnd-marker[hidden] { display: none; }
+
+/* ── The grouping target ───────────────────────────────────────────────────
+   The one drop that is not an insertion gets the one cue that is not a line:
+   the whole target tints and rings, because what is being proposed is that
+   these two rows become one thing. */
+.is-drop-into {
+  background: var(--color-primary-subtle) !important;
+  /* An OUTLINE, not an inset ring: on the wizard the row is an <article> wrapping
+     an opaque esa-card, and anything drawn inside it would be covered by the
+     card. An outline is drawn outside the box, so the same rule reads on a table
+     row and on a card. */
+  outline: 2px solid var(--color-primary);
+  outline-offset: -1px;
+}
+.is-drop-into > :where(td, th) { background: transparent; }
+
+/* ── The keyboard lift ─────────────────────────────────────────────────────
+   The same "this row is in your hands" state the pointer drag shows, held
+   between keystrokes. */
+.is-lifted {
+  position: relative;
+  z-index: 2;
+  outline: 2px solid var(--color-primary-border);
+  outline-offset: -1px;
+}
+
+/* The row that just landed. Distinct from the grid's own `is-recomputed` tint,
+   which means "this number moved because of an edit somewhere else" — this one
+   means "this is where the row you were carrying went". */
+.is-dropped { animation: cbf-rdnd-land 900ms ease-out; }
+@keyframes cbf-rdnd-land {
+  from { background: var(--color-primary-subtle); }
+  to { background: transparent; }
+}
+
+.cbf-rdnd-active { user-select: none; cursor: grabbing; }
+
+/* The announcement channel. Visually hidden, never display:none — a hidden
+   live region is a silent one. */
+.cbf-rdnd-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cbf-drag-handle { transition: none; }
+  .is-dropped { animation: none; }
+}

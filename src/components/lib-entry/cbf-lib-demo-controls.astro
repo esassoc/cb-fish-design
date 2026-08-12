@@ -1,0 +1,205 @@
+---
+/*
+ * cbf-lib-demo-controls — the two demo controls for the LIB entry screen.
+ *
+ * WHAT IT IS
+ * PROTOTYPE SCAFFOLDING, not product. It lives inside the dashed role-switch
+ * strip for exactly that reason: everything in that strip is a device for the
+ * person DEMOING the screen, and nothing in it should ever be mistaken for a
+ * control CBFish would ship.
+ *
+ *   Reset to sample data   the seeded budget back exactly as it ships — typed
+ *                          edits gone, the COR's marks gone.
+ *   Clear all entries      the screen a vendor starting from nothing sees — no
+ *                          cost lines, no trips, no indirect rate, no review.
+ *
+ * HOW IT WORKS
+ * Both are a flag plus a reload — see the module comment in src/data/lib-demo.mjs
+ * for why. Reset drops the stored review and the blank flag; Clear drops the
+ * review and SETS the blank flag. Nothing here reaches into a sibling component:
+ * each LIB surface asks isBlank() on its own mount and empties itself.
+ *
+ * THE REVEAL GATE (the is:global block at the bottom)
+ * The seeded budget is server-rendered, so a cleared page would paint the mock
+ * data and then wipe it a frame later — the one thing a demo cannot show. The
+ * inline script sets `<html data-cbf-lib-blank>` BEFORE first paint, the gate
+ * hides the four LIB surfaces while it is set, and the mount pass lifts it by
+ * setting `data-cbf-lib-ready` once every surface has cleared itself. A timeout
+ * in the inline script lifts it regardless, so a JS failure can never leave the
+ * page invisible.
+ *
+ * bcn-lego-checked: the controls ARE legos — esa-button for both actions,
+ * esa-confirm-dialog for the "are you sure" (it owns its own backdrop, focus
+ * trap, Esc and the confirm/cancel event pair, which is the whole of what this
+ * needs), esa-badge for the cleared-state marker, and the `cluster` layout
+ * primitive for the row. No esa-* lego exists for "reset the prototype" and none
+ * should — this is scaffolding for a demo, so the only thing this file owns is
+ * which legos to line up and the reveal gate above, which is page state and not
+ * a UI primitive at all. Beacon is not cloned on this machine.
+ */
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import { BLANK_KEY } from '../../data/lib-demo.mjs';
+---
+
+<!-- Before first paint, so a cleared page never flashes the seeded budget.
+     Inline on purpose: a module script is deferred, and deferred is too late. -->
+<script is:inline define:vars={{ BLANK_KEY }}>
+  (() => {
+    let blank = false;
+    try {
+      blank = window.sessionStorage?.getItem(BLANK_KEY) === '1';
+    } catch {
+      /* private mode / no storage — the seeded budget renders as normal */
+    }
+    if (!blank) return;
+    document.documentElement.dataset.cbfLibBlank = '';
+    // Safety net. If the mount scripts never run, the page must still be usable
+    // rather than held invisible by a gate nothing is left to lift.
+    window.setTimeout(() => {
+      document.documentElement.dataset.cbfLibReady = '';
+    }, 2000);
+  })();
+</script>
+
+<div class="cluster" data-gap="2xs" data-lib-demo>
+  <span data-demo-cleared hidden>
+    <EsaBadge value="Cleared — no sample data" variant="warning" size="sm" />
+  </span>
+  <span data-demo-reset>
+    <EsaButton size="sm" color="secondary" appearance="outline" icon="rotate-ccw">
+      Reset to sample data
+    </EsaButton>
+  </span>
+  <span data-demo-clear>
+    <EsaButton size="sm" color="secondary" appearance="soft" icon="trash-2">
+      Clear all entries
+    </EsaButton>
+  </span>
+</div>
+
+<!-- Both actions throw away whatever was typed, so both ask first — the message
+     says what is about to be lost, which is the fact that decides it. -->
+<esa-confirm-dialog data-demo-confirm cancel-label="Keep what's on screen"></esa-confirm-dialog>
+
+<script>
+  import '@esa/ecology/esa-confirm-dialog';
+  import { BLANK_KEY, isBlank } from '../../data/lib-demo.mjs';
+  import { REVIEW_KEY } from '../../data/lib-review.mjs';
+
+  const root = document.querySelector<HTMLElement>('[data-lib-demo]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const dialog = document.querySelector<HTMLElement & {
+      heading: string;
+      message: string;
+      variant: string;
+      confirmLabel: string;
+      show: () => void;
+    }>('[data-demo-confirm]');
+
+    const ACTIONS: Record<string, any> = {
+      reset: {
+        heading: 'Reset to the sample budget?',
+        message:
+          'The seeded budget comes back exactly as it ships. Every line typed, added or '
+          + 'deleted since the page loaded is discarded, and so is any review mark made in '
+          + 'the BPA COR lens.',
+        confirmLabel: 'Reset the budget',
+        variant: 'warning',
+      },
+      clear: {
+        heading: 'Clear every entry?',
+        message:
+          'The screen comes back with no cost lines, no trips, no indirect rate and no BPA '
+          + 'review on it — a budget a vendor is starting from scratch. “Reset to sample '
+          + 'data” brings the seeded budget back afterwards.',
+        confirmLabel: 'Clear the budget',
+        variant: 'danger',
+      },
+    };
+
+    let pending = '';
+
+    /** Both actions are a stored flag plus a reload — see src/data/lib-demo.mjs. */
+    const apply = (kind: string) => {
+      try {
+        window.sessionStorage?.removeItem(REVIEW_KEY);
+        if (kind === 'clear') window.sessionStorage?.setItem(BLANK_KEY, '1');
+        else window.sessionStorage?.removeItem(BLANK_KEY);
+      } catch {
+        /* a blocked store means the reload just re-renders the seeded budget */
+      }
+      window.location.reload();
+    };
+
+    const ask = (kind: string) => {
+      const a = ACTIONS[kind];
+      if (!a) return;
+      if (!dialog) { apply(kind); return; }
+      pending = kind;
+      dialog.heading = a.heading;
+      dialog.message = a.message;
+      dialog.confirmLabel = a.confirmLabel;
+      dialog.variant = a.variant;
+      dialog.show();
+    };
+
+    root.addEventListener('click', (e: Event) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-demo-reset]')) ask('reset');
+      else if (t.closest('[data-demo-clear]')) ask('clear');
+    });
+
+    dialog?.addEventListener('confirm', () => {
+      if (pending) apply(pending);
+      pending = '';
+    });
+    dialog?.addEventListener('cancel', () => { pending = ''; });
+
+    // ── The cleared state, and lifting the reveal gate ──────────────────────
+    // The badge says which state the screen is in, because "no lines" and "the
+    // page has not finished loading" look identical for a moment otherwise.
+    const blank = isBlank();
+    const cleared = root.querySelector<HTMLElement>('[data-demo-cleared]');
+    if (cleared) cleared.hidden = !blank;
+
+    if (blank) {
+      // DOMContentLoaded, not this script's own frame: every LIB surface clears
+      // itself in its own deferred mount script, and they all run before it.
+      const reveal = () => {
+        document.documentElement.dataset.cbfLibReady = '';
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => requestAnimationFrame(reveal), {
+          once: true,
+        });
+      } else {
+        requestAnimationFrame(reveal);
+      }
+    }
+  }
+</script>
+
+<style is:global>
+  /* ── The reveal gate ──────────────────────────────────────────────────────
+     Page state, not component styling, which is why it is global and why it is
+     keyed entirely off two attributes on <html>: it can only ever be active on a
+     page that set data-cbf-lib-blank before paint, and only until the mount pass
+     sets data-cbf-lib-ready. Visibility rather than display, so nothing reflows
+     when the gate lifts. */
+  html[data-cbf-lib-blank]:not([data-cbf-lib-ready]) .cbf-lct,
+  html[data-cbf-lib-blank]:not([data-cbf-lib-ready]) .cbf-lic,
+  html[data-cbf-lib-blank]:not([data-cbf-lib-ready]) .cbf-lrp,
+  html[data-cbf-lib-blank]:not([data-cbf-lib-ready]) .cbf-lib-rail {
+    visibility: hidden;
+  }
+
+  /* A cleared budget has no review ON it — the panel does not merely go empty,
+     it does not apply — so it goes away rather than rendering an empty console
+     about a cycle that never happened. Reset brings it back with the budget. */
+  html[data-cbf-lib-blank] .cbf-lrp {
+    display: none;
+  }
+</style>

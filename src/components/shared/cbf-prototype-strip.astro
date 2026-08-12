@@ -1,0 +1,85 @@
+---
+/*
+ * cbf-prototype-strip — the frame every PROTOTYPE control sits in.
+ *
+ * WHY IT EXISTS
+ * Some screens carry devices that exist for the person DEMOING them and would
+ * never ship: a role lens (nobody signs in here, so "who am I" has to be
+ * switchable), a reset/clear pair, a switch between three competing versions of
+ * the same screen. Loose on the page, each of those reads as product — a control
+ * a stakeholder could reasonably assume CBFish has. Inside one dashed, unbranded
+ * strip captioned "Prototype controls", none of them can.
+ *
+ * So this owns the FRAME and nothing else. What goes in it is the page's
+ * business: it slots them.
+ *
+ *   <CbfPrototypeStrip note="…">
+ *     <CbfLibViewSwitch active="grid" />
+ *     <CbfLibDemoControls />
+ *     <CbfRoleSwitch />
+ *   </CbfPrototypeStrip>
+ *
+ * It used to be welded to the role lens (cbf-role-switch owned this frame). It
+ * came apart the moment a second device needed the same treatment on a screen
+ * with no lens at all — /lib-entry-wizard, which is a vendor construct and has no
+ * COR side to switch to.
+ *
+ * bcn-lego-checked: the caption is esa-badge and the row is the `cluster` layout
+ * primitive; the only thing this file owns is the dashed frame itself, which is
+ * deliberately NOT a product surface (no brand fill, no card, no shadow — an
+ * esa-card or esa-alert-box would say the opposite of what this has to say) and
+ * therefore has no lego and should never get one. Beacon is not cloned on this
+ * machine.
+ */
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+
+interface Props {
+  /** One line saying what these devices change on THIS screen. */
+  note?: string;
+  /** The caption on the badge. Plural by default — most screens carry several. */
+  label?: string;
+}
+const { note = '', label = 'Prototype controls' } = Astro.props;
+---
+
+<aside class="cbf-proto-strip" aria-label="Prototype controls">
+  <div class="cbf-proto-strip__ident cluster" data-gap="2xs">
+    <EsaBadge value={label} variant="secondary" size="sm" />
+    {note && <span class="cbf-proto-strip__note">{note}</span>}
+  </div>
+
+  <div class="cbf-proto-strip__actions cluster" data-gap="md">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  /* Scaffolding, not product: a dashed neutral frame that could never be mistaken
+     for a cbfish control. No brand fill, no saturated surface. */
+  .cbf-proto-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    padding: var(--spacing-300) var(--spacing-400);
+    margin-block-end: var(--spacing-400);
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-200);
+    background: var(--color-surface-sunken);
+  }
+  .cbf-proto-strip__ident {
+    min-inline-size: 16rem;
+    flex: 1 1 20rem;
+  }
+  .cbf-proto-strip__note {
+    font-size: 14px;
+    color: var(--color-text-secondary);
+  }
+  /* The devices sit at the end of the row and keep their order, so a presenter
+     finds the same control in the same place on every screen that carries it. */
+  .cbf-proto-strip__actions {
+    --justify: flex-end;
+    flex: none;
+  }
+</style>

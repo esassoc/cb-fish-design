@@ -1,0 +1,192 @@
+---
+/*
+ * cbf-libw-stepper — the step rail across the top of the LIB wizard.
+ *
+ * ── WHAT A STEPPER OWES A BUDGET ────────────────────────────────────────────
+ * Most steppers only say where you are. This one has a harder job, because the
+ * thing being stepped through is ARITHMETIC that can go wrong on a step you have
+ * already left: a salary line budgeted past the contract period, a lodging rate
+ * over its GSA ceiling, a line with no work-element split. In a grid all of that
+ * is on screen at once. In a wizard it is three steps back and invisible.
+ *
+ * So each step carries its own issue count, and the rail is the only place a
+ * vendor can see that step 6 is fine and step 2 is not. That roll-up is what
+ * earns the wizard the right to hide eight-ninths of the budget.
+ *
+ * ── NOT TABS ────────────────────────────────────────────────────────────────
+ * It is still freely navigable — a vendor revising one marked line should not
+ * have to walk ten steps to reach it — but it is ordered, it shows progress, and
+ * a step you have visited is marked. Tabs claim none of that, which is why
+ * esa-tab-layout is the wrong lego here even though it looks close.
+ *
+ * ── PURELY PRESENTATIONAL ───────────────────────────────────────────────────
+ * No script. cbf-libw-wizard paints state and delegates clicks off
+ * `data-goto-step`.
+ *
+ * bcn-lego-checked: esa-progress-bar is the proportional readout,
+ * esa-badge the per-step issue count, esa-icon the completed glyph, esa-button
+ * the step target. I walked the ecology catalog (ls
+ * node_modules/@esa/ecology/src/components/): there is NO stepper, wizard,
+ * breadcrumb-progress or timeline lego — esa-breadcrumbs is a navigation trail
+ * with no state or progress, and esa-tab-layout is unordered and carries no
+ * completion. cbf-libw-stepper is the reusable home for this. Beacon is not
+ * cloned on this machine.
+ */
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaIcon from '@esa/ecology/esa-icon.astro';
+import EsaProgressBar from '@esa/ecology/esa-progress-bar.astro';
+
+interface Props {
+  /** [{ key, short, label }] in wizard order. */
+  steps: { key: string; short: string; label: string }[];
+  /** 0-based index of the step shown on load. */
+  active?: number;
+}
+const { steps, active = 0 } = Astro.props;
+---
+
+<nav class="cbf-libwn stack" data-gap="sm" data-stepper aria-label="Line item budget steps">
+  <div class="cbf-libwn__bar">
+    <EsaProgressBar value={Math.round(((active + 1) / steps.length) * 100)} size="sm" />
+  </div>
+
+  <ol class="cbf-libwn__list" data-step-list>
+    {steps.map((step, i) => (
+      <li
+        class="cbf-libwn__item"
+        data-step-item={step.key}
+        data-index={i}
+        data-state={i === active ? 'current' : i < active ? 'done' : 'ahead'}
+      >
+        <button
+          type="button"
+          class="cbf-libwn__btn"
+          data-goto-step={i}
+          aria-current={i === active ? 'step' : undefined}
+        >
+          <span class="cbf-libwn__marker" aria-hidden="true">
+            {/* Two markers ship; the state reveals one. A completed step shows a
+                check instead of its number, which is the only difference a
+                vendor scanning the rail actually needs. */}
+            <span class="cbf-libwn__num" data-marker="num">{i + 1}</span>
+            <span class="cbf-libwn__tick" data-marker="tick"><EsaIcon name="check" size="xs" /></span>
+          </span>
+          <span class="cbf-libwn__label">{step.short}</span>
+          <span class="cbf-libwn__sr" data-step-sr></span>
+          {/* The roll-up: how many things on this step still need fixing. */}
+          <span class="cbf-libwn__issues" data-step-issues hidden>
+            <EsaBadge value="0" variant="danger" size="sm" />
+          </span>
+        </button>
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style>
+  [hidden] { display: none !important; }
+
+  .cbf-libwn {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding-block: var(--spacing-300);
+    background: var(--color-surface);
+    border-block-end: 1px solid var(--color-border);
+  }
+  .cbf-libwn__bar { max-width: none; }
+
+  /* A horizontal rail that SCROLLS rather than wrapping: eleven steps on two
+     lines stop reading as a sequence. Below the breakpoint it becomes a wrapping
+     list of chips, which does still read as one — because at that width the
+     labels are the only thing left. */
+  .cbf-libwn__list {
+    display: flex;
+    gap: var(--spacing-100);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  @media (max-width: 900px) {
+    .cbf-libwn__list { flex-wrap: wrap; overflow-x: visible; }
+  }
+
+  .cbf-libwn__item { flex: none; }
+
+  .cbf-libwn__btn {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-150);
+    padding: var(--spacing-150) var(--spacing-250);
+    border: 1px solid transparent;
+    border-radius: var(--radius-100);
+    background: none;
+    color: var(--color-text-secondary);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.2;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .cbf-libwn__btn:hover { background: var(--color-surface-sunken); color: var(--color-text-primary); }
+  .cbf-libwn__btn:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  /* The step number, in a ring — the ring is what makes a number read as a
+     position in a sequence rather than as a quantity. */
+  .cbf-libwn__marker {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    flex: none;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 50%;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-libwn__tick { display: none; line-height: 0; }
+
+  /* ── The three states ────────────────────────────────────────────────────
+     Weight and fill carry the state; nothing here is a colored left border, and
+     "done" is deliberately quiet — a completed step is not an achievement to
+     celebrate, it is one fewer thing to look at. */
+  [data-state='done'] .cbf-libwn__num { display: none; }
+  [data-state='done'] .cbf-libwn__tick { display: block; }
+  [data-state='done'] .cbf-libwn__marker {
+    border-color: var(--color-success, var(--color-primary));
+    color: var(--color-success, var(--color-primary));
+  }
+  [data-state='current'] .cbf-libwn__btn {
+    border-color: var(--color-border-strong);
+    background: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+  [data-state='current'] .cbf-libwn__marker {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-text-inverse, #fff);
+  }
+
+  /* A step with a failing gate outranks its own progress state: it is the one
+     thing the rail exists to surface. */
+  .cbf-libwn__item:has([data-step-issues]:not([hidden])) .cbf-libwn__marker {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+  }
+  [data-state='current'] .cbf-libwn__marker { color: var(--color-text-inverse, #fff); }
+
+  .cbf-libwn__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>

@@ -1,0 +1,133 @@
+---
+// /lib-entry-sheet — the SECOND version of the vendor's Line Item Budget entry
+// screen. /lib-entry is unchanged and still ships; this one makes the opposite
+// bet about where entry happens.
+//
+// THE FORK, IN ONE SENTENCE: /lib-entry puts a live control in every grid cell
+// and appends a new line inline; this screen makes the grid a READ-ONLY ledger
+// and moves every create and every edit onto a side sheet.
+//
+// WHAT EACH VERSION BUYS
+//   inline (/lib-entry)  — the web of cross-line dependencies stays visible while
+//     you type. You can see the salary line, the fringe that follows it and the
+//     phone line whose months follow it, all at once, and watch them move.
+//   side sheet (this)    — the ledger stays scannable, and every field finally
+//     gets a real label, its own help text and its own error. A grid cell never
+//     had room for "the unit decides what the rate means"; a sheet does. The
+//     dependency you can no longer SEE is answered by a live preview that prices
+//     the draft against the whole budget as you type.
+//
+// Everything that is not about creating or editing a LINE is REUSED from
+// /lib-entry unchanged — the context header, the review panel, the overhead
+// block, the reconciliation rail and the subcontract jump-out. They talk to the
+// ledger over the same document events the inline grid dispatches, which is the
+// test this fork had to pass: the surfaces around entry should not be able to
+// tell which entry model is mounted.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
+import CbfContractTabs from '../components/shared/cbf-contract-tabs.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import CbfPrototypeStrip from '../components/shared/cbf-prototype-strip.astro';
+import CbfRoleSwitch from '../components/shared/cbf-role-switch.astro';
+import CbfLibViewSwitch from '../components/lib-entry/cbf-lib-view-switch.astro';
+import CbfLibContextHeader from '../components/lib-entry/cbf-lib-context-header.astro';
+import CbfLibReviewPanel from '../components/lib-entry/cbf-lib-review-panel.astro';
+import CbfLibIndirectConfig from '../components/lib-entry/cbf-lib-indirect-config.astro';
+import CbfLibReconcileRail from '../components/lib-entry/cbf-lib-reconcile-rail.astro';
+import CbfLibSubcontractSheet from '../components/lib-entry/cbf-lib-subcontract-sheet.astro';
+import CbfLibsCostTable from '../components/lib-entry-sheet/cbf-libs-cost-table.astro';
+import CbfLibsLineEditor from '../components/lib-entry-sheet/cbf-libs-line-editor.astro';
+import CbfLibsTripEditor from '../components/lib-entry-sheet/cbf-libs-trip-editor.astro';
+import { withBase } from '../lib/base';
+import { contract, contractTabs } from '../data/lib-entry.mjs';
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+
+const crumbs = [
+  { label: 'Home', href: withBase('/home'), icon: homeIcon },
+  { label: 'Projects' },
+  { label: contract.project },
+  { label: 'Contracts' },
+  { label: contract.number },
+  { label: 'LIB' },
+];
+---
+<!-- manifest:
+  layout: esa-container > cbf-prototype-strip + cbf-app-panel > sidebar(end)
+  sections:
+    - nav                -> cbf-public-nav             (shared)
+    - prototype strip    -> cbf-prototype-strip        (shared — the dashed frame the two devices below sit in)
+    - entry model switch -> cbf-lib-view-switch        (REUSED — grid ⇄ side sheet ⇄ wizard)
+    - role lens          -> cbf-role-switch            (shared — prototype device: vendor ⇄ BPA COR)
+    - contract frame     -> cbf-app-panel              (shared — breadcrumb strip)
+    - contract tab bar   -> cbf-contract-tabs          (shared — LIB active)
+    - header strip       -> cbf-lib-context-header     (REUSED from /lib-entry, unchanged)
+    - review             -> cbf-lib-review-panel       (REUSED — COR console / vendor change list)
+    - indirect block     -> cbf-lib-indirect-config    (REUSED — rate, reference doc, applicability)
+    - cost ledger        -> cbf-libs-cost-table        (NEW — read-only grid; a line opens the sheet)
+    - reconciliation     -> cbf-lib-reconcile-rail     (REUSED — running total + submit gate)
+    - line sheet         -> cbf-libs-line-editor       (NEW — esa-side-dialog: create, edit, and the COR's mark)
+    - trip sheet         -> cbf-libs-trip-editor       (NEW — esa-side-dialog: the travel container)
+    - subcontract sheet  -> cbf-lib-subcontract-sheet  (REUSED — the jump-out stub)
+-->
+<BaseLayout title="Line Item Budget entry (side sheet) — Columbia Basin Fish &amp; Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <CbfPrototypeStrip note="One Line Item Budget, seen by the vendor who enters it and the BPA COR who reviews it. Entry and review both happen on a side sheet.">
+        <CbfLibViewSwitch active="sheet" />
+        <CbfRoleSwitch />
+      </CbfPrototypeStrip>
+
+      <CbfAppPanel crumbs={crumbs}>
+        <CbfContractTabs tabs={contractTabs} active="lib" />
+
+        <CbfLibContextHeader />
+
+        <!-- The rail sits beside the ledger and stays with it as the vendor
+             scrolls: the running total is what they watch while they work. -->
+        <div class="sidebar" data-side="end" data-gap="lg">
+          <aside class="cbf-lib-entry__rail">
+            <CbfLibReconcileRail />
+          </aside>
+          <div class="stack" data-gap="lg">
+            <CbfLibReviewPanel />
+            <CbfLibIndirectConfig />
+            <CbfLibsCostTable />
+          </div>
+        </div>
+      </CbfAppPanel>
+    </EsaContainer>
+  </main>
+
+  <!-- The three drawers. All are opened by an event, never by the page. -->
+  <CbfLibsLineEditor />
+  <CbfLibsTripEditor />
+  <CbfLibSubcontractSheet />
+
+  <esa-snackbar-container data-snackbar></esa-snackbar-container>
+
+  <script>
+    import '@esa/ecology/esa-snackbar-container';
+  </script>
+</BaseLayout>
+
+<style>
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+  /* The rail column. --sidebar-content-min is lower than on /lib-entry: a
+     read-only ledger lays out in ~820px where the entry grid needed ~900, so the
+     rail can stay beside it further down the viewport before it has to drop. */
+  .cbf-page :global(.sidebar) { --sidebar-width: 20rem; --sidebar-content-min: 52rem; }
+  /* Once stacked, the rail belongs ABOVE the ledger — it's the running total, not
+     a footnote to scroll past. */
+  @media (max-width: 1300px) {
+    .cbf-page :global(.sidebar[data-side='end'] > :first-child) { order: 0; }
+  }
+  /* The add-line esa-dropdown-menu positions absolutely and cannot escape a
+     clipping ancestor; cbf-app-panel clips (rounded-corner card). Page-scoped, so
+     /search and /publications keep their clipping. */
+  .cbf-page :global(.cbf-app-panel) { overflow: visible; }
+</style>

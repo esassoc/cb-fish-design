@@ -20,13 +20,18 @@ import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
 import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
 import CbfContractTabs from '../components/shared/cbf-contract-tabs.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
+import CbfPrototypeStrip from '../components/shared/cbf-prototype-strip.astro';
 import CbfRoleSwitch from '../components/shared/cbf-role-switch.astro';
+import CbfLibViewSwitch from '../components/lib-entry/cbf-lib-view-switch.astro';
+import CbfLibDemoControls from '../components/lib-entry/cbf-lib-demo-controls.astro';
 import CbfLibContextHeader from '../components/lib-entry/cbf-lib-context-header.astro';
 import CbfLibReviewPanel from '../components/lib-entry/cbf-lib-review-panel.astro';
 import CbfLibIndirectConfig from '../components/lib-entry/cbf-lib-indirect-config.astro';
 import CbfLibCostTable from '../components/lib-entry/cbf-lib-cost-table.astro';
 import CbfLibReconcileRail from '../components/lib-entry/cbf-lib-reconcile-rail.astro';
 import CbfLibSubcontractSheet from '../components/lib-entry/cbf-lib-subcontract-sheet.astro';
+import CbfLibAllocSheet from '../components/lib-entry/cbf-lib-alloc-sheet.astro';
+import CbfLibStandardRateDialog from '../components/lib-entry/cbf-lib-standard-rate-dialog.astro';
 import { withBase } from '../lib/base';
 import { contract, contractTabs } from '../data/lib-entry.mjs';
 
@@ -43,9 +48,12 @@ const crumbs = [
 ];
 ---
 <!-- manifest:
-  layout: esa-container > cbf-role-switch + cbf-app-panel > sidebar(end)
+  layout: esa-container > cbf-prototype-strip + cbf-app-panel > sidebar(end)
   sections:
     - nav                -> cbf-public-nav             (shared)
+    - prototype strip    -> cbf-prototype-strip        (shared — the dashed frame the three devices below sit in)
+    - entry model switch -> cbf-lib-view-switch        (prototype device: grid ⇄ side sheet ⇄ wizard)
+    - demo controls      -> cbf-lib-demo-controls      (prototype device: reset to / clear the sample budget)
     - role lens          -> cbf-role-switch            (shared — prototype device: vendor ⇄ BPA COR)
     - contract frame     -> cbf-app-panel              (shared — breadcrumb strip)
     - contract tab bar   -> cbf-contract-tabs          (shared — LIB active)
@@ -62,9 +70,15 @@ const crumbs = [
 
   <main class="cbf-page">
     <EsaContainer maxWidth="1920px">
-      <!-- The prototype device: one budget, two people. Everything below renders
-           both lenses and reveals whichever role is selected. -->
-      <CbfRoleSwitch note="One Line Item Budget, seen by the vendor who enters it and the BPA COR who reviews it." />
+      <!-- Everything a presenter needs and CBFish would never ship, in one dashed
+           frame: which of the three entry models you are looking at, the reset /
+           clear pair, and the lens — one budget, two people, both server-rendered
+           with whichever role is selected revealed. -->
+      <CbfPrototypeStrip note="One Line Item Budget, seen by the vendor who enters it and the BPA COR who reviews it.">
+        <CbfLibViewSwitch active="grid" />
+        <CbfLibDemoControls />
+        <CbfRoleSwitch />
+      </CbfPrototypeStrip>
 
       <CbfAppPanel crumbs={crumbs}>
         <CbfContractTabs tabs={contractTabs} active="lib" />
@@ -93,6 +107,9 @@ const crumbs = [
 
   <!-- The subcontract jump-out — opened by a row in the grid, not by the page. -->
   <CbfLibSubcontractSheet />
+  <CbfLibAllocSheet />
+  <!-- Claiming a published travel rate — confirmed here, never typed on the row. -->
+  <CbfLibStandardRateDialog />
 
   <esa-snackbar-container data-snackbar></esa-snackbar-container>
 
@@ -105,15 +122,37 @@ const crumbs = [
   .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
   /* The rail column: narrow enough to leave the grid room, wide enough to hold
      the gate checklist without wrapping every detail line.
-     --sidebar-content-min is the load-bearing value: the grid needs ~900px to
-     lay out without overflowing, and it CANNOT scroll inside its own box (the
-     allocation popovers and shape menus have to escape it). So the rail drops
-     below the grid the moment the grid would be squeezed under 57rem, rather
-     than the grid bursting its column. */
-  .cbf-page :global(.sidebar) { --sidebar-width: 20rem; --sidebar-content-min: 57rem; }
+
+     --sidebar-content-min is the load-bearing value, and it is not a taste
+     setting: it is the grid's MIN-CONTENT width, measured. The seven column
+     floors in cbf-lib-cost-table sum to ~1443px, and the table CANNOT scroll
+     inside its own box (the allocation popovers and the add-line shape menus
+     position absolutely and have to escape it). So if the sidebar hands the grid
+     any less than that, the table does not shrink — it bursts its column and
+     paints its Amount column and its add-line buttons UNDER the rail.
+     90.25rem (1444px) is that floor plus a hair, and the hair is all there is:
+     1444 + the 1.5rem gap + the 20rem rail is 1788, against the 1920px container
+     minus its padding = 1790. The side-by-side layout survives at full width by
+     2px. Anything more generous here (91rem was) silently costs the rail its
+     place beside the grid at EVERY width, because the container caps at 1920.
+     Re-measure if those column floors move: `getComputedStyle` won't tell you,
+     but cloning the table at `width: min-content` will.
+
+     min(…, 100%) so the floor can never make the COLUMN wider than the page.
+     Below the fit point the table still overflows its box and the page scrolls
+     sideways — that is this screen's long-standing trade (a clipped allocation
+     popover is worse than a sideways scroll), and it is unchanged here. What the
+     floor fixes is the case in between, where the sidebar used to hold the rail
+     alongside a column the table could not fit in. */
+  .cbf-page :global(.sidebar) { --sidebar-width: 20rem; --sidebar-content-min: min(90.25rem, 100%); }
   /* Once stacked, the rail belongs ABOVE the grid — it's the running total the
-     vendor watches while typing, not a footnote to scroll past. */
-  @media (max-width: 1380px) {
+     vendor watches while typing, not a footnote to scroll past.
+     The breakpoint is the WRAP point, not a device size: the sidebar goes
+     side-by-side at exactly 1918px (content floor + gap + rail + the container's
+     padding), so every width below that is stacked and needs the order
+     corrected. Measured, not guessed — and it tracks --sidebar-content-min, so
+     move one and you move the other. */
+  @media (max-width: 1917px) {
     .cbf-page :global(.sidebar[data-side='end'] > :first-child) { order: 0; }
   }
   /* esa-popover and esa-dropdown-menu position absolutely and cannot escape a

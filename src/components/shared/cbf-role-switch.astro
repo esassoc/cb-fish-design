@@ -7,8 +7,9 @@
  * reviews it and sends it back. In production the role comes from who you signed
  * in as; in a prototype nobody signs in, so the role has to be switchable, and it
  * has to be OBVIOUSLY a prototype device rather than app chrome someone might
- * mistake for a real cbfish control. Hence the dashed frame and the "Prototype
- * control" label: it reads as scaffolding, not as product.
+ * mistake for a real cbfish control. The dashed frame that says so is
+ * cbf-prototype-strip, which this is slotted into — it stopped living here the
+ * moment a second device needed the same frame on a screen with no lens at all.
  *
  * HOW IT WORKS: the role is a single attribute on the document element —
  * `<html data-cbf-role="vendor|cor">`. Both roles are SERVER-RENDERED into the
@@ -31,24 +32,17 @@
  * esa-role-switch / esa-impersonate / esa-view-as exists; esa-radio-group is the
  * same choice worn as a form field, and this is a view control, not a form value;
  * esa-select hides the alternative behind a click, which defeats a device whose
- * job is to advertise that a second view exists). The badge is esa-badge. What is
- * left here is the prototype frame around it — a dashed strip and a caption —
- * which is deliberately NOT a product surface and has no lego by design. Beacon is
- * not cloned on this machine.
+ * job is to advertise that a second view exists). Everything else — the frame,
+ * the caption — belongs to cbf-prototype-strip. Beacon is not cloned on this
+ * machine.
  */
-import EsaBadge from '@esa/ecology/esa-badge.astro';
 import { ROLE_KEY } from '../../data/lib-review.mjs';
 
 interface Props {
   /** The role the page renders as when nothing is stored yet. */
   initial?: 'vendor' | 'cor';
-  /** One line saying what the lens changes on THIS screen. */
-  note?: string;
 }
-const {
-  initial = 'vendor',
-  note = 'The same screen, seen by the two people who use it.',
-} = Astro.props;
+const { initial = 'vendor' } = Astro.props;
 ---
 
 <!-- Set the lens before first paint, so a reload in the COR view never flashes
@@ -68,22 +62,19 @@ const {
   })();
 </script>
 
-<aside class="cbf-role-switch" data-role-switch aria-label="Prototype role switch">
-  <div class="cbf-role-switch__ident stack" data-gap="3xs">
-    <span class="cluster" data-gap="2xs">
-      <EsaBadge value="Prototype control" variant="secondary" size="sm" />
-      <span class="cbf-role-switch__note">{note}</span>
-    </span>
-    <p class="cbf-role-switch__who" data-role-who></p>
-  </div>
-
+<!-- The control and, under it, WHO the reader currently is — the lens says which
+     side of the document you are on, and the name says who that is on this
+     contract. Both belong to the lens, so both travel with it into whatever
+     frame the page slots it into. -->
+<div class="cbf-role-switch stack" data-gap="3xs" data-role-switch>
   <esa-button-toggle
     class="cbf-role-switch__control"
     size="sm"
     label="Viewing as"
     data-role-control
   ></esa-button-toggle>
-</aside>
+  <p class="cbf-role-switch__who" data-role-who></p>
+</div>
 
 <script>
   import '@esa/ecology/esa-button-toggle';
@@ -138,35 +129,17 @@ const {
 </script>
 
 <style>
-  /* Scaffolding, not product: a dashed neutral frame that could never be mistaken
-     for a cbfish control. No brand fill, no saturated surface. */
+  /* No frame of its own — cbf-prototype-strip is the frame. This only lines the
+     control up with the name underneath it, at the end of the strip's row. */
   .cbf-role-switch {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--spacing-400);
-    padding: var(--spacing-300) var(--spacing-400);
-    margin-block-end: var(--spacing-400);
-    border: 1px dashed var(--color-border-strong);
-    border-radius: var(--radius-200);
-    background: var(--color-surface-sunken);
-  }
-  .cbf-role-switch__ident {
-    min-inline-size: 16rem;
-    flex: 1 1 20rem;
-  }
-  .cbf-role-switch__note {
-    font-size: 14px;
-    color: var(--color-text-secondary);
+    --align: flex-end;
+    flex: none;
   }
   .cbf-role-switch__who {
     margin: 0;
     font-size: 14px;
     font-weight: var(--font-weight-medium);
     color: var(--color-text-primary);
-  }
-  .cbf-role-switch__control {
-    flex: none;
+    text-align: end;
   }
 </style>

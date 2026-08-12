@@ -1,0 +1,101 @@
+---
+/*
+ * cbf-lib-view-switch — the jump between the three LIB entry prototypes.
+ *
+ * WHAT IT IS
+ * A PROTOTYPE DEVICE, and one that has no production counterpart at all: CBFish
+ * will ship ONE of these screens, not a control for choosing between them. It
+ * exists because the three are a comparison, and a comparison read by opening
+ * three browser tabs is not a comparison — the point is landing on the same
+ * budget, the same contract, the same numbers, three ways, in the same second.
+ *
+ *   Grid       /lib-entry         a live control in every cell; lines entered inline.
+ *   Side sheet /lib-entry-sheet   a read-only ledger; every edit on a side sheet.
+ *   Wizard     /lib-entry-wizard  one category per step, front to back.
+ *
+ * The lens (vendor / BPA COR) survives the jump — it lives in sessionStorage, not
+ * on the page — so a reviewer's view of the grid is one click from the reviewer's
+ * view of the ledger. The wizard has no COR side by design; it renders the vendor
+ * construct whichever lens is stored.
+ *
+ * bcn-lego-checked: the control IS esa-button-toggle, the same segmented one-of-N
+ * lego the role lens uses, and for the same reason — the alternatives have to be
+ * ON SCREEN, because advertising that two other versions exist is half of what
+ * this device is for (an esa-select or an esa-dropdown-menu hides them behind a
+ * click; esa-tab-group is for panels within one screen, not for navigation
+ * between routes). No esa-* route switcher exists — checked the full catalog.
+ * Beacon is not cloned on this machine.
+ */
+import { withBase } from '../../lib/base';
+
+interface Props {
+  /** Which of the three this page IS. */
+  active: 'grid' | 'sheet' | 'wizard';
+}
+const { active } = Astro.props;
+
+/* Labels stay short — three of them sit in a segmented control beside the role
+   lens, and the strip has to survive a laptop viewport. */
+const views = [
+  { key: 'grid', label: 'Grid', href: withBase('/lib-entry') },
+  { key: 'sheet', label: 'Side sheet', href: withBase('/lib-entry-sheet') },
+  { key: 'wizard', label: 'Wizard', href: withBase('/lib-entry-wizard') },
+];
+---
+
+<div class="cbf-lib-view-switch stack" data-gap="3xs" data-view-switch data-views={JSON.stringify(views)} data-active={active}>
+  <esa-button-toggle
+    class="cbf-lib-view-switch__control"
+    size="sm"
+    label="Entry model"
+    data-view-control
+  ></esa-button-toggle>
+  <p class="cbf-lib-view-switch__note">Three versions of the same budget</p>
+</div>
+
+<script>
+  import '@esa/ecology/esa-button-toggle';
+
+  const root = document.querySelector<HTMLElement>('[data-view-switch]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const views: { key: string; label: string; href: string }[] = JSON.parse(
+      root.dataset.views || '[]',
+    );
+    const active = root.dataset.active ?? '';
+    const control = root.querySelector<HTMLElement & { options: any[]; value: string }>(
+      '[data-view-control]',
+    );
+    if (!control) return;
+
+    control.options = views.map((v) => ({ label: v.label, value: v.key }));
+    control.value = active;
+
+    /* A view is a ROUTE, so choosing one navigates. The control is put back to
+       the page it is actually on first: if the destination never arrives (a slow
+       load the presenter escapes out of), the segment must not be left claiming a
+       screen nobody is looking at. */
+    root.addEventListener('change', (e: Event) => {
+      const el = e.target as HTMLElement & { value?: string };
+      if (!el?.dataset || !('viewControl' in el.dataset)) return;
+      const next = views.find((v) => v.key === el.value);
+      control.value = active;
+      if (!next || next.key === active) return;
+      window.location.assign(next.href);
+    });
+  }
+</script>
+
+<style>
+  .cbf-lib-view-switch {
+    --align: flex-end;
+    flex: none;
+  }
+  .cbf-lib-view-switch__note {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    text-align: end;
+  }
+</style>

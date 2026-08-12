@@ -1,0 +1,202 @@
+---
+/*
+ * cbf-libw-review-step — the LAST step of the LIB wizard: the whole budget in
+ * one read, plus the change list the vendor still has to work off.
+ *
+ * ── WHY A WIZARD OWES THIS STEP MORE THAN A GRID DOES ───────────────────────
+ * A grid never needs a review screen: the whole budget is already on one page,
+ * and the totals row is three inches from the lines that made it. A wizard has
+ * spent ten steps showing the vendor one-ninth of their budget at a time, so the
+ * last thing it owes them is the read it has been withholding — every category,
+ * its subtotal, the indirect base and rate, and the total against the Contract
+ * Value ceiling.
+ *
+ * Every row here JUMPS back to the step that produced it. A summary you cannot
+ * act on is a receipt; a summary that returns you to the step is the end of the
+ * loop the wizard opened.
+ *
+ * ── WHAT IT DELIBERATELY DOES NOT DO ────────────────────────────────────────
+ * It does not own the submit gate. cbf-lib-reconcile-rail is beside the wizard
+ * the entire way through — the running total, the seven checks, and the submit
+ * action — and duplicating any of that here would give the vendor two places to
+ * read the same verdict and one chance for them to disagree. This step points at
+ * it instead.
+ *
+ * ── PURELY PRESENTATIONAL ───────────────────────────────────────────────────
+ * No script. cbf-libw-wizard repaints every number and wires the jumps.
+ *
+ * bcn-lego-checked: composition only — esa-card for the summary panel,
+ * esa-button for the per-row jumps, esa-alert-box for the outstanding-changes
+ * notice, esa-badge for a category's issue count. The summary is a <dl> laid out
+ * with .repel and typed with type-roles, exactly as cbf-lib-subcontract-sheet
+ * does it: I re-walked the catalog (ls node_modules/@esa/ecology/src/components/)
+ * and there is still no table, summary-list or key-value lego. The change list
+ * is the REUSED cbf-lib-review-panel, not a second implementation of it. Beacon
+ * is not cloned on this machine.
+ */
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import CbfLibReviewPanel from '../lib-entry/cbf-lib-review-panel.astro';
+import {
+  categories,
+  costLines,
+  priceLines,
+  indirectConfig,
+  contract,
+  usd,
+  pct,
+} from '../../data/lib-entry.mjs';
+
+interface Props {
+  index: number;
+  count: number;
+  /** Wizard-order step index per category key, so a row can jump to its step. */
+  stepIndexOf: Record<string, number>;
+}
+const { index, count, stepIndexOf } = Astro.props;
+
+const priced = priceLines(costLines, indirectConfig);
+const t0 = priced.totals;
+---
+
+<section class="cbf-libwr stack" data-gap="lg" data-step="review" data-step-kind="review" hidden>
+  <header class="stack" data-gap="2xs">
+    <p class="cbf-libwr__ord type-body-small">Step {index} of {count}</p>
+    <h2 class="cbf-libwr__title type-page-title">Review &amp; submit</h2>
+    <p class="cbf-libwr__lede type-body">
+      The whole budget, in the order you built it. Every line jumps back to the step it came
+      from — the checks and the submit action are in the reconciliation rail beside this one.
+    </p>
+  </header>
+
+  <!-- Anything still outstanding is stated BEFORE the numbers. A vendor who
+       scrolls straight to the total and submits should have already been told. -->
+  <div data-outstanding hidden>
+    <EsaAlertBox variant="warning" title="This budget is not ready to resubmit">
+      <span data-outstanding-msg></span>
+    </EsaAlertBox>
+  </div>
+
+  <EsaCard>
+    <dl class="cbf-libwr__rows stack" data-gap="2xs">
+      {categories.map((cat: any) => (
+        <div class="cbf-libwr__row repel" data-gap="sm" data-summary-cat={cat.key}>
+          <dt class="cbf-libwr__row-label">
+            <span data-goto-step={stepIndexOf[cat.key]}>
+              <EsaButton size="sm" color="ghost">{cat.label}</EsaButton>
+            </span>
+            <span class="cbf-libwr__issues" data-summary-issues hidden></span>
+          </dt>
+          <dd class="cbf-libwr__num type-body" data-summary-total={cat.key}>
+            {usd(priced.byCategory[cat.key] ?? 0)}
+          </dd>
+        </div>
+      ))}
+
+      <div class="cbf-libwr__row cbf-libwr__row--rule repel" data-gap="sm">
+        <dt class="type-body">Direct cost</dt>
+        <dd class="cbf-libwr__num type-body" data-total="direct">{usd(t0.direct)}</dd>
+      </div>
+      <div class="cbf-libwr__row repel" data-gap="sm">
+        <dt class="type-body">
+          Indirect base
+          <span class="cbf-libwr__quiet type-body-small" data-indirect-scope></span>
+        </dt>
+        <dd class="cbf-libwr__num type-body" data-total="indirectBase">{usd(t0.indirectBase)}</dd>
+      </div>
+      <div class="cbf-libwr__row repel" data-gap="sm">
+        <dt class="type-body">
+          Indirect at <span data-indirect-rate>{pct(indirectConfig.rate)}</span>
+          <span class="cbf-libwr__quiet type-body-small" data-indirect-ref>{indirectConfig.referenceDoc}</span>
+        </dt>
+        <dd class="cbf-libwr__num type-body" data-total="indirect">{usd(t0.indirect)}</dd>
+      </div>
+
+      <div class="cbf-libwr__row cbf-libwr__row--total repel" data-gap="sm">
+        <dt>
+          Total this contract period
+          <span class="cbf-libwr__quiet type-body-small" data-total-note>
+            {pct(t0.pctOfValue, 1)} of the {usd(contract.contractValue)} Contract Value ·
+            {' '}{usd(t0.remaining)} remaining
+          </span>
+        </dt>
+        <dd class="cbf-libwr__num" data-total="total">{usd(t0.total)}</dd>
+      </div>
+    </dl>
+  </EsaCard>
+
+  <!-- The COR's marks as the vendor's work list. REUSED from /lib-entry — the
+       round trip on this document is the same one whatever the entry model is,
+       and a second implementation of it would be a second thing to drift. -->
+  <CbfLibReviewPanel />
+</section>
+
+<style>
+  [hidden] { display: none !important; }
+
+  .cbf-libwr__ord {
+    margin: 0;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .cbf-libwr__title { margin: 0; color: var(--color-text-primary); }
+  .cbf-libwr__lede {
+    margin: 0;
+    max-width: 78ch;
+    color: var(--color-text-secondary);
+  }
+  .cbf-libwr__quiet {
+    display: block;
+    color: var(--color-text-secondary);
+  }
+
+  /* Read-only name/value rows — .repel does the layout, this only types them. */
+  .cbf-libwr__rows { margin: 0; }
+  .cbf-libwr__row { --align: baseline; align-items: baseline; }
+  .cbf-libwr__row dt { color: var(--color-text-primary); min-width: 0; }
+  .cbf-libwr__row dd { margin: 0; }
+  .cbf-libwr__num {
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .cbf-libwr__row--rule {
+    margin-block-start: var(--spacing-200);
+    padding-block-start: var(--spacing-300);
+    border-block-start: 1px solid var(--color-border);
+  }
+  .cbf-libwr__row--total {
+    margin-block-start: var(--spacing-200);
+    padding-block-start: var(--spacing-300);
+    border-block-start: 1px solid var(--color-border-strong);
+    font-size: 16px;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* A category label is the way back to its step, so it is a button — pulled
+     flush left so the column still reads as a column of category names.
+     esa-button renders under its OWN Astro scope id, hence :global. */
+  .cbf-libwr__row-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-200);
+    min-width: 0;
+  }
+  [data-goto-step] :global(.esa-button__native) {
+    padding-inline: 0;
+    justify-content: flex-start;
+    text-align: left;
+  }
+  [data-goto-step] :global(.esa-button__label) {
+    text-decoration: underline;
+    text-decoration-color: var(--color-border-strong);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  [data-goto-step] :global(.esa-button:hover .esa-button__label),
+  [data-goto-step] :global(button:focus-visible .esa-button__label) {
+    text-decoration-color: currentColor;
+  }
+</style>
