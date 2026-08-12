@@ -1,0 +1,1 @@
+const e="cbf-lib-blank";function n(){return typeof document>"u"?!1:"cbfLibBlank"in document.documentElement.dataset}const t=()=>({rate:0,referenceDoc:"",effectiveStart:"",effectiveEnd:"",mode:"single",appliesTo:[]});export{e as B,t as b,n as i};
