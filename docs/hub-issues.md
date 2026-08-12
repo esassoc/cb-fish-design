@@ -487,3 +487,67 @@ and neither is the default, or a note in the token docs. Nothing to fix in code.
 **Local rule, now applied throughout `src/components/invoice-review/`:** glyphs and
 label text take `-strong`; bar fills and badge surfaces take the unsuffixed token; the
 `-subtle` / `-strong` pair is set together on a container so children inherit both.
+
+---
+
+## icon registry — no `grip-vertical` (or any drag-handle glyph)
+
+**Found:** 2026-08-10, building row reordering for the LIB entry surfaces
+(`src/lib/row-reorder.ts` + `cbf-drag-handle.astro`).
+
+**Issue:** `node_modules/@esa/ecology/src/components/icon-registry.ts` registers 50
+Lucide icons and none of them is a drag handle. The nearest is `menu` (☰, three
+horizontal rules), which is what `cbf-drag-handle.astro` ships — it reads acceptably
+but it is the *navigation* glyph, and using it as a grab affordance means a page can
+end up with the same mark meaning "open the menu" in the app bar and "pick this row
+up" in a table.
+
+**Would help:** register `grip-vertical` (the two-column dot grid, the near-universal
+drag-handle mark) and `grip-horizontal`. Both are already in Lucide, so this is a
+registry entry, not a new asset.
+
+**Adjacent, larger gap:** there is no sortable / reorderable-list lego at all, so the
+gesture itself is a spoke-local module (`src/lib/row-reorder.ts` — pointer + keyboard,
+with a group-on-drop zone). If reordering shows up in a second spoke, that module is
+the promotion candidate, not a second copy of it.
+
+---
+
+## esa-collapsible — the summary takes a `title` STRING, so it cannot carry a value
+
+**Found:** 2026-08-11, folding the work-element split away on the LIB wizard's line
+cards (`src/components/lib-entry-wizard/cbf-libw-line-form.astro`).
+
+**Issue:** `title` is a plain `string` prop and the summary renders
+`{icon}{title}` with a caret pushed right by `margin-left: auto`. There is no slot
+in the summary row, so a disclosure whose whole point is to hide a VALUE has
+nowhere to put that value: the collapsed row can only say what the section is
+called, never what it currently holds. Every consumer that needs "Work-element
+allocation … 100%" on the caret row has the same two bad options — paint the
+lego's internal `.esa-collapsible__title` textContent (loses the two-tone: the
+label and the value have to be one string), or drop a second line underneath and
+accept a heading row with a long empty gap out to the chevron.
+
+This is the disclosure's most common job in a form: a summary row is a value
+read-out with a caret. `<details>` markup supports it natively — the limitation is
+the `.astro` API, not the element.
+
+**Would help:** a named summary slot alongside the prop, so the row can carry
+painted content and the caret still trails it:
+
+```astro
+<summary class="esa-collapsible__summary">
+  {icon && <EsaIcon name={icon} paths={iconPaths} size="sm" />}
+  <span class="esa-collapsible__title">{title}</span>
+  <slot name="summary" />   <!-- value / badge / count, before the caret -->
+</summary>
+```
+
+A `value` string prop would cover the simple case, but the slot is what lets a
+consumer put an `esa-badge`, a count, or a painted `data-*` span up there.
+
+**Local shape (CBFish):** the wizard keeps the static title in the lego and paints
+the read-out on its own quiet line below the disclosure —
+`Allocated 100%  A. 119 60% · B. 157 40%` — with the separating rule suppressed
+while folded (`[data-alloc-list]:has(details[open]) + …`) so a collapsed card does
+not grow a hairline under a heading. Collapse to one row once the slot lands.

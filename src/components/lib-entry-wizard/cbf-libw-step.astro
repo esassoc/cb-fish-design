@@ -1,0 +1,350 @@
+---
+/*
+ * cbf-libw-step — ONE step of the LIB wizard: a single cost category, its lines
+ * as form cards, its add affordances, and its subtotal.
+ *
+ * ── WHY A CATEGORY IS THE RIGHT SIZE FOR A STEP ─────────────────────────────
+ * A LIB has nine categories and they do not resemble each other: Travel is
+ * grouped by trip and rate-bound to a federal schedule, Fringe is generated and
+ * has nothing to type at all, Subcontracts is a lump that recurses onto its own
+ * sheet. The grid version had to answer all nine with one set of columns. A
+ * wizard does not: each step gets its own heading, its own rules stated in
+ * words, its own add affordance, and its own subtotal — the category's
+ * vocabulary, on a page of its own.
+ *
+ * ── THREE KINDS OF STEP, ONE COMPONENT ──────────────────────────────────────
+ *   plain      lines, in one list.                     (Meetings, Rent, Capital…)
+ *   blocked    lines under sub-block headings.         (Personnel by type, Supplies Office/Field)
+ *   trips      sub-blocks that are EDITABLE containers. (Travel)
+ *              A trip carries what every line under it would otherwise repeat —
+ *              destination, window, and `occurrences`, the multiplier
+ *              that turns "a semiannual meeting" into ONE trip that happens
+ *              twice rather than two rows a reviewer must recognise as the same
+ *              journey. Raise it and every line in the step moves at once.
+ *   derived    read-only, and says so.                 (Fringe)
+ *
+ * ── PURELY PRESENTATIONAL ───────────────────────────────────────────────────
+ * No script. cbf-libw-wizard owns the lines array, the pricing, the gates and
+ * every event; this file is the frame those numbers are painted into.
+ *
+ * bcn-lego-checked: the step is composed of legos + layout primitives —
+ * esa-alert-box for a step's standing rule and for the derived-step notice,
+ * esa-button / esa-dropdown-menu for the add affordances (the menu offers the
+ * VENDOR's vocabulary: vehicle kinds and travel kinds, not shape letters),
+ * esa-text-field for the trip container's four fields, esa-empty-state for a
+ * category with nothing in it yet. The line cards are cbf-libw-line-form. I
+ * re-walked the ecology catalog (ls node_modules/@esa/ecology/src/components/):
+ * there is no step/wizard/section-with-subtotal lego, and no fieldset lego —
+ * what this file owns is composition only. Beacon is not cloned on this machine.
+ */
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import CbfLibwLineForm from './cbf-libw-line-form.astro';
+import { costLines, priceLines, indirectConfig, categoryOf, contract, usd, NO_TRIP } from '../../data/lib-entry.mjs';
+
+interface Props {
+  /** The category this step is for. */
+  cat: any;
+  /** 1-based position in the wizard, for the "Step N of M" line. */
+  index: number;
+  /** Total number of steps. */
+  count: number;
+}
+const { cat, index, count } = Astro.props;
+
+const lines: any[] = costLines;
+const priced = priceLines(lines, indirectConfig);
+
+const linesIn = (blockKey?: string) =>
+  lines.filter((l) => l.category === cat.key && (blockKey ? l.block === blockKey : true));
+
+/* Same grouping the other two versions use — the LEDGER shape is the thing all
+   three agree on, whatever the entry model. Unlike the two table versions this
+   one NESTS: a sub-block is a real container element with its lines inside it,
+   because a step has no <tbody> to flatten them into. */
+const blocks: any[] = cat.blocks ?? [];
+const looseLines: any[] = cat.blocks ? [] : linesIn();
+
+const hasLines = lines.some((l) => l.category === cat.key);
+---
+
+<section
+  class="cbf-libws stack"
+  data-gap="lg"
+  data-step={cat.key}
+  data-step-kind="category"
+  hidden
+>
+  <header class="stack" data-gap="2xs">
+    <p class="cbf-libws__ord type-body-small">Step {index} of {count}</p>
+    <h2 class="cbf-libws__title type-page-title">{cat.label}</h2>
+    {cat.note && <p class="cbf-libws__lede type-body">{cat.note}</p>}
+  </header>
+
+  {cat.derived && (
+    /* A generated step has nothing to add TO. What it owes the vendor is not an
+       add button but where the lines came from — so it says that instead of
+       offering a control the next recompute would undo. */
+    <EsaAlertBox variant="info" title="This step was filled in for you">
+      Every line here is generated from Personnel — Salary: one per position, at the fringe rate
+      carried on that position's salary line. Change a rate back on that step and it lands here.
+      Nothing on this step is editable, and that is deliberate — a fringe line that could
+      disagree with the salary it follows is the bug this shape removes.
+    </EsaAlertBox>
+  )}
+
+  <div class="stack" data-gap="lg" data-step-body>
+    {blocks.map((block: any) => (
+      <div
+        class="cbf-libws__block stack"
+        data-gap="md"
+        data-blockhead={block.key}
+        data-trip={block.trip ? block.key : undefined}
+      >
+        <div class="cbf-libws__block-head repel" data-gap="sm">
+          <span class="stack" data-gap="3xs">
+            <h3 class="cbf-libws__block-title type-card-title" data-block-label>{block.label}</h3>
+            {/* A sub-block that states a RULE says it here. The two equipment
+                classes do, because which one an item lands in decides whether
+                the indirect rate reaches it and whether it becomes tracked
+                property — not a filing detail. */}
+            {block.note && <p class="cbf-libws__quiet type-body-small">{block.note}</p>}
+          </span>
+          <span class="cluster" data-gap="sm">
+            <strong class="cbf-libws__block-total" data-block-total={`${cat.key}:${block.key}`}>
+              {usd(priced.byBlock[`${cat.key}:${block.key}`] ?? 0)}
+            </strong>
+            {block.trip && (
+              /* Deleting a trip is TWO intentions, and this surface answers both
+                 in place rather than in a dialog: the cards under the head are
+                 open on screen, with their amounts, at the moment either button
+                 is pressed — which is the confirmation a modal would otherwise
+                 have to reconstruct in words.
+
+                 "Keep lines" files them as ungrouped travel, each carrying away
+                 the destination it was pricing at; the trash takes them with the
+                 trip. Before travel could be entered outside a trip there was
+                 only the second, and a vendor who meant the first had to retype
+                 every line. */
+              <>
+                <span data-ungroup-trip>
+                  <EsaButton size="xs" color="secondary" appearance="soft">Delete trip, keep lines</EsaButton>
+                </span>
+                <span data-delete-trip>
+                  <EsaIconButton icon="trash-2" size="sm" label={`Delete trip and its lines — ${block.label}`} />
+                </span>
+              </>
+            )}
+          </span>
+        </div>
+
+        {block.trip && (
+          /* The trip's own fields, inline and LABELLED. In the grid version
+             these lived in a block-head row where there was no room to say what
+             the destination resolves to on the schedule; here there is. */
+          <div class="cbf-libws__trip stack" data-gap="sm" data-trip-fields>
+            <div class="cbf-libws__row">
+              <esa-text-field
+                data-trip-field="locality"
+                size="md"
+                label="Destination"
+                placeholder="City, ST"
+                help-text="Typed, not picked — an unlisted place prices at the standard CONUS rate."
+              ></esa-text-field>
+              <esa-text-field
+                data-trip-field="occurrences"
+                size="md"
+                label="Times it happens"
+                help-text="A journey that repeats is ONE trip that happens N times."
+              ></esa-text-field>
+            </div>
+            <div class="cbf-libws__row">
+              <esa-text-field data-trip-field="window" size="md" label="When"></esa-text-field>
+            </div>
+          </div>
+        )}
+
+        {/* The insertion point an added line lands in — kept even when empty,
+            because a sub-block with nothing in it is still a place to add to. */}
+        <div class="stack" data-gap="md" data-block-lines={block.key}>
+          {linesIn(block.key).map((line: any) => <CbfLibwLineForm id={line.id} />)}
+        </div>
+
+        {(block.trip || block.standalone) && (
+          /* The ungrouped block is a block like any other, which is the whole
+             reason it IS one — same container, same add menu, no trip fields. */
+          <esa-dropdown-menu position="below-start" data-add-travel={block.key}>
+            <EsaButton size="sm" color="secondary" appearance="soft" icon="plus">
+              Add travel line
+            </EsaButton>
+          </esa-dropdown-menu>
+        )}
+      </div>
+    ))}
+
+    {/* A category with no sub-blocks keeps one flat list, and that list is the
+        insertion point. */}
+    {!cat.blocks && (
+      <div class="stack" data-gap="md" data-block-lines="">
+        {looseLines.map((line: any) => <CbfLibwLineForm id={line.id} />)}
+      </div>
+    )}
+  </div>
+
+  {!hasLines && (
+    <div data-step-empty>
+      <EsaEmptyState
+        title="Nothing budgeted here yet"
+        description="If this category does not apply to this contract, continue past it — an empty category is a valid answer."
+      />
+    </div>
+  )}
+
+  {cat.entersEquipment && (
+    /* Capital Equipment used to be a step of its own with its own add button,
+       which made the vendor answer — before typing a number — a question only
+       that number can settle. It is a sub-block of THIS step now, and items
+       arrive in it on their own. The notice says what that costs rather than
+       naming a section, because that is the part the vendor cannot see. */
+    <EsaAlertBox variant="info" title="Where an item lands is worked out from its cost">
+      Enter every item here, however much it costs. Anything at or above
+      {' '}{usd(contract.capitalizationThreshold)} per item files itself into Capital Equipment below,
+      and capitalizing changes what the money does: the indirect rate no longer reaches it, and the
+      item becomes tracked property on the contract's Property Inventory.
+    </EsaAlertBox>
+  )}
+
+  {!cat.derived && (
+    <div class="cbf-libws__add cluster" data-gap="sm">
+      {cat.key === 'travel' ? (
+        /* Two entry points, because travel is two things. A TRIP is a container:
+           it carries the destination and the occurrence count every
+           line under it would otherwise repeat. A single cab fare has none of
+           that to say, and making the vendor invent a journey to hold it is the
+           cost the second control removes. */
+        <>
+          <EsaButton size="sm" color="primary" appearance="outline" icon="plus" data-add-trip>
+            Add trip
+          </EsaButton>
+          <esa-dropdown-menu position="below-start" data-add-travel={NO_TRIP}>
+            <EsaButton size="sm" color="secondary" appearance="soft" icon="plus">
+              Add line without a trip
+            </EsaButton>
+          </esa-dropdown-menu>
+        </>
+      ) : cat.shapes.length > 1 || cat.blocks ? (
+        <esa-dropdown-menu position="below-start" data-add-menu={cat.key}>
+          <EsaButton size="sm" color="primary" appearance="outline" icon="plus">Add line</EsaButton>
+        </esa-dropdown-menu>
+      ) : (
+        <EsaButton
+          size="sm"
+          color="primary"
+          appearance="outline"
+          icon="plus"
+          data-add-line={`${cat.key}||${cat.shapes[0]}|`}
+        >Add line</EsaButton>
+      )}
+    </div>
+  )}
+
+  <!-- The step's own number. A wizard that only shows a grand total makes the
+       vendor hold nine subtotals in their head to know where the money went. -->
+  <div class="cbf-libws__subtotal repel" data-gap="sm">
+    <span class="stack" data-gap="3xs">
+      <span class="cbf-libws__subtotal-label type-body">{cat.label} subtotal</span>
+      <span class="cbf-libws__quiet type-body-small" data-step-count></span>
+    </span>
+    <strong class="cbf-libws__subtotal-value" data-cat-total={cat.key}>
+      {usd(priced.byCategory[cat.key] ?? 0)}
+    </strong>
+  </div>
+</section>
+
+<style>
+  /* Layout primitives set display:flex, which beats the UA [hidden] rule at
+     equal specificity — and a wizard hides every step but one. Without this
+     guard all eleven steps would render stacked on top of each other. */
+  [hidden] { display: none !important; }
+
+  .cbf-libws__ord {
+    margin: 0;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .cbf-libws__title {
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+  /* The step's standing rule, at full body size — this is the one place the
+     category's vocabulary gets explained, so it is not a footnote. */
+  .cbf-libws__lede {
+    margin: 0;
+    max-width: 78ch;
+    color: var(--color-text-secondary);
+  }
+  .cbf-libws__quiet {
+    margin: 0;
+    color: var(--color-text-secondary);
+    max-width: 70ch;
+  }
+
+  /* ── Sub-block: a heading and a subtotal, not a box ──────────────────────
+     The line cards are already boxes. Nesting them inside another box would
+     read as two containers deep for what is only a grouping. */
+  .cbf-libws__block-head {
+    --align: baseline;
+    align-items: baseline;
+    padding-block-end: var(--spacing-200);
+    border-block-end: 1px solid var(--color-border);
+  }
+  .cbf-libws__block-title {
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+  .cbf-libws__block-total {
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+  }
+
+  /* The trip container reads as the frame its lines sit inside. */
+  .cbf-libws__trip {
+    padding: var(--spacing-400);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    background: var(--color-surface-sunken);
+  }
+  .cbf-libws__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--spacing-300);
+  }
+  .cbf-libws__row > * { flex: 1 1 14rem; min-width: 0; }
+
+  /* ── The step's number ── */
+  .cbf-libws__subtotal {
+    --align: center;
+    align-items: center;
+    padding: var(--spacing-400);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-200);
+    background: var(--color-surface-sunken);
+  }
+  .cbf-libws__subtotal-label {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+  }
+  .cbf-libws__subtotal-value {
+    font-size: var(--type-size-500);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+</style>

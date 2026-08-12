@@ -1,0 +1,50 @@
+---
+/*
+ * cbf-drag-handle — the grab affordance for a reorderable row.
+ *
+ * Pairs with src/lib/row-reorder.ts (the gesture) and
+ * src/styles/cbf-row-reorder.css (the chrome). All three LIB surfaces render
+ * this same handle so the gesture is discovered once and works everywhere.
+ *
+ * ── WHY THE HANDLE IS A BUTTON AND NOT A DECORATION ─────────────────────────
+ * It is the KEYBOARD entry point to the whole interaction, not just something
+ * to press the mouse on: focus it and Space lifts the row, ↑/↓ move it, Shift+↑/↓
+ * group it where grouping is legal. A <span> with a grip glyph would have made
+ * reordering a budget a mouse-only privilege.
+ *
+ * The accessible name says what the button MOVES, because a screen reader user
+ * arriving on it out of context needs to know which line is in their hands —
+ * "Reorder" alone is nine identical buttons in Personnel.
+ *
+ * bcn-lego-checked: the control is esa-icon-button (the chrome-grade icon
+ * action) — not a hand-rolled .foo-icon-btn. The wrapper exists only because
+ * esa-icon-button takes no arbitrary attributes, so the engine's `data-drag-handle`
+ * hook and its aria-pressed state need somewhere to live; it adds no styling of
+ * its own beyond the shared stylesheet. The catalog was re-walked (ls
+ * node_modules/@esa/ecology/src/components/) and has no drag-handle or sortable
+ * lego. Beacon is not cloned on this machine.
+ *
+ * KNOWN GAP, logged in docs/hub-issues.md: the hub icon registry has no
+ * `grip-vertical`, so this uses `menu` — the same three-rule glyph, but the
+ * registry entry is the thing that should exist.
+ */
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+
+interface Props {
+  /** What this handle moves — folded into the accessible name. */
+  label?: string;
+  size?: 'xs' | 'sm' | 'md';
+  /** Extra classes on the wrapper. */
+  class?: string;
+}
+
+const { label = 'this line', size = 'sm', class: extra } = Astro.props;
+---
+
+<span class:list={['cbf-drag-handle', extra]} data-drag-handle>
+  <EsaIconButton
+    icon="menu"
+    size={size}
+    label={`Reorder ${label} — press Space to lift it, then use the arrow keys`}
+  />
+</span>

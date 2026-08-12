@@ -1,0 +1,308 @@
+---
+/*
+ * cbf-lib-alloc-sheet — where a cost line's work-element split is entered.
+ *
+ * ── WHY THIS LEFT THE POPOVER ───────────────────────────────────────────────
+ * The split used to be typed in an esa-popover anchored to the row's button.
+ * That works for the six work elements this contract happens to have and stops
+ * working the moment a contract has twenty: a popover is sized by its anchor and
+ * clipped by the viewport, so a long list either scrolls inside a floating box
+ * the vendor cannot see the bottom of, or pushes off screen entirely. A side
+ * dialog has the whole height of the window and can keep going down.
+ *
+ * The second thing the popover could not hold is the affordance below: "split it
+ * evenly across all of them" is one control that has to sit beside the list it
+ * acts on, and there was nowhere to put it that did not crowd the six rows.
+ *
+ * ── THE EVEN SPLIT, AND WHY IT IS NOT 16.67 EACH ────────────────────────────
+ * Allocations are whole percents everywhere else in this model — they are typed
+ * as integers, summed against 100 and gated on exactly 100. An even split across
+ * six therefore cannot be 16.67: it is four seventeens and two sixteens, which
+ * is the same total and is a number a reviewer can add up. The remainder goes to
+ * the FIRST work elements rather than the last, so the biggest shares sit at the
+ * top of the list where they are read first.
+ *
+ * ── EVENT CONTRACT (all on `document`) ──────────────────────────────────────
+ * LISTEN   'cbf-lib:open-alloc'   detail: { line, label, amount }
+ *   The allocations are COPIED on receipt — cancel leaves no trace. `label` and
+ *   `amount` come from the grid because the grid is what resolves them (a travel
+ *   line's name is derived, and the money is a priced total, not a field on the
+ *   line); both are optional and the subject degrades to the name alone.
+ * DISPATCH 'cbf-lib:save-alloc'   detail: { id, allocations }
+ *   The grid owns the line; this sheet states the intent and hands back a map.
+ *
+ * bcn-lego-checked: the drawer IS esa-side-dialog — the same lego this spoke
+ * already uses for cbf-lib-subcontract-sheet, cbf-libs-line-editor and
+ * cbf-libs-trip-editor; the percent inputs are esa-text-field, the total's
+ * verdict is esa-badge, the validation is esa-field-error and every button is
+ * esa-button. I re-walked the catalog (ls node_modules/@esa/ecology/src/
+ * components/): there is no allocation, split or percentage-table lego. Beacon
+ * is not cloned on this machine.
+ */
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaFieldError from '@esa/ecology/esa-field-error.astro';
+import { workElements } from '../../data/lib-entry.mjs';
+---
+
+<esa-side-dialog size="md" position="right" heading="Work-element allocation" data-alloc-sheet>
+  <div class="cbf-las stack" data-gap="lg">
+    {/* WHICH line is being split. The sheet's heading names the task, so the
+        subject has to be stated in the body — and stated as a subject, not
+        folded into the instruction sentence, where a vendor with six sheets
+        open cannot tell one from another. The scope is part of the name: the
+        same "Mileage" sits under three trips. */}
+    <div class="cbf-las__subject stack" data-gap="3xs">
+      <h3 class="cbf-las__name type-card-title" data-alloc-name></h3>
+      <p class="cbf-las__where type-body-small" data-alloc-where></p>
+    </div>
+
+    <p class="cbf-las__lede type-body-small" data-alloc-line></p>
+
+    {/* The even split sits ABOVE the list it rewrites, so the vendor sees what
+        it did the moment it happens rather than scrolling back up to a button
+        that has already acted. */}
+    <div class="cbf-las__tools cluster" data-gap="sm">
+      {/* Both quiet, and quieter than Save. These rewrite the list; the primary
+          action of the sheet is still committing it. */}
+      <span data-alloc-even>
+        <EsaButton size="sm" color="secondary" appearance="outline">Split evenly across all</EsaButton>
+      </span>
+      <span data-alloc-clear>
+        <EsaButton size="sm" color="secondary" appearance="ghost">Clear all</EsaButton>
+      </span>
+    </div>
+
+    <div class="cbf-las__list stack" data-gap="2xs">
+      {workElements.map((we: any) => (
+        <div class="cbf-las__row" data-alloc-row={we.id}>
+          <span class="stack" data-gap="3xs">
+            <span class="cbf-las__we type-body">{we.id}. {we.title}</span>
+            <span class="cbf-las__code type-body-small">Work element {we.code}</span>
+          </span>
+          <esa-text-field
+            class="cbf-las__input"
+            size="md"
+            suffix="%"
+            data-alloc-we={we.id}
+            aria-label={`${we.id}. ${we.title} percent`}
+          ></esa-text-field>
+        </div>
+      ))}
+    </div>
+
+    {/* The total is the gate, so it reads as one — a number, a verdict, and the
+        sentence that says what is wrong when it is not 100. */}
+    <div class="cbf-las__total repel" data-gap="sm">
+      <span class="stack" data-gap="3xs">
+        <span class="cbf-las__total-label type-body">Allocated</span>
+        <span data-alloc-verdict>
+          <EsaBadge value="Totals 100%" variant="success" />
+        </span>
+      </span>
+      <strong class="cbf-las__total-value" data-alloc-sum>0%</strong>
+    </div>
+    <span data-alloc-err hidden>
+      <EsaFieldError message="Work-element allocations must total 100%." icon />
+    </span>
+  </div>
+
+  <div slot="footer" class="repel" data-gap="sm">
+    <span data-alloc-cancel>
+      <EsaButton size="sm" color="secondary" appearance="outline">Cancel</EsaButton>
+    </span>
+    <span data-alloc-save>
+      <EsaButton size="sm" color="primary">Save allocation</EsaButton>
+    </span>
+  </div>
+</esa-side-dialog>
+
+<script>
+  import '@esa/ecology/esa-side-dialog';
+  import '@esa/ecology/esa-text-field';
+  import * as V from '../../lib/lib-entry-view';
+  import { workElements } from '../../data/lib-entry.mjs';
+
+  const money = V.money;
+
+  const dialog = document.querySelector<HTMLElement>('[data-alloc-sheet]') as any;
+  if (dialog) init(dialog);
+
+  function init(dialog: any) {
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string) => dialog.querySelector<T>(sel);
+    const $$ = <T extends HTMLElement = HTMLElement>(sel: string) =>
+      Array.from(dialog.querySelectorAll<T>(sel));
+
+    let lineId = '';
+    /* The draft. Copied on open so Cancel is free, and keyed by work element id
+       exactly as the line stores it. */
+    let draft: Record<string, number> = {};
+
+    const num = (v: any) => {
+      const n = parseFloat(String(v ?? '').replace(/[^0-9.\-]/g, ''));
+      return Number.isFinite(n) ? n : 0;
+    };
+    const setText = (el: Element | null, text: string) => { if (el) el.textContent = text; };
+    const show = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };
+    const sum = () => Object.values(draft).reduce((a, b) => a + b, 0);
+
+    /** Write the draft into the boxes. Never called while one is being typed in. */
+    const fill = () => {
+      $$('[data-alloc-we]').forEach((el: any) => {
+        const p = draft[el.dataset.allocWe];
+        el.value = p != null ? String(p) : '';
+      });
+      paint();
+    };
+
+    const paint = () => {
+      const total = sum();
+      const ok = total === 100;
+      setText($('[data-alloc-sum]'), `${total}%`);
+      /* The badge says which of the three states this is — on target, short, or
+         over — because "62%" alone does not tell a first-time vendor whether the
+         number is allowed to be anything other than 100. */
+      const badge = $('[data-alloc-verdict] .esa-badge');
+      setText(badge?.querySelector('.esa-badge__text') ?? null,
+        ok ? 'Totals 100%' : total < 100 ? `${100 - total}% left to allocate` : `${total - 100}% over`);
+      if (badge) badge.className = `esa-badge esa-badge--${ok ? 'success' : 'warning'} esa-badge--md`;
+      show($('[data-alloc-err]'), !ok);
+      setText(
+        $('[data-alloc-err] .esa-field-error__text') ?? null,
+        total === 0
+          ? 'No work element assigned — allocations must total 100%.'
+          : `Allocated ${total}% — work-element allocations must total 100%.`,
+      );
+      /* Saving a split that does not total 100 would put the line straight back
+         on the reconciliation gate, so the button says so rather than the sheet
+         refusing silently. */
+      const save = $('[data-alloc-save] button') as HTMLButtonElement | null;
+      if (save) save.disabled = !ok;
+    };
+
+    /**
+     * The even split. Integer percents that sum to exactly 100 — the remainder
+     * is handed one point at a time to the work elements at the top of the list,
+     * so six elements come out 17/17/17/17/16/16 rather than six 16.67s that add
+     * up to 100.02 and fail the gate they were meant to satisfy.
+     */
+    const splitEvenly = () => {
+      const ids = workElements.map((w: any) => w.id);
+      if (!ids.length) return;
+      const base = Math.floor(100 / ids.length);
+      let remainder = 100 - base * ids.length;
+      draft = {};
+      ids.forEach((id: string) => {
+        draft[id] = base + (remainder-- > 0 ? 1 : 0);
+      });
+      fill();
+    };
+
+    document.addEventListener('cbf-lib:open-alloc', (e: any) => {
+      const line = e.detail?.line;
+      if (!line) return;
+      lineId = line.id;
+      draft = { ...(line.allocations ?? {}) };
+      dialog.heading = 'Work-element allocation';
+      /* The name comes from the grid, which owns it — a travel line's name is
+         resolved from its kind and chain, not typed, and the grid is where that
+         resolution already happened. The scope and the money are derived here so
+         the caller stays a one-liner. */
+      setText($('[data-alloc-name]'), e.detail?.label || 'Untitled line');
+      const amount = e.detail?.amount;
+      const where = [V.scopeOf(line), Number.isFinite(amount) ? `${money(amount)} on this line` : '']
+        .filter(Boolean)
+        .join(' · ');
+      setText($('[data-alloc-where]'), where);
+      /* An empty scope line is a blank gap under the name, not a subheading. */
+      show($('[data-alloc-where]'), !!where);
+      setText(
+        $('[data-alloc-line]'),
+        'Split it across the work elements it pays for. Every cost line has to total 100%.',
+      );
+      fill();
+      dialog.show();
+      window.requestAnimationFrame(() => {
+        ($$('[data-alloc-we]')[0] as any)?.shadowRoot?.querySelector('input')?.focus();
+      });
+    });
+
+    dialog.addEventListener('change', (e: any) => {
+      const el = e.target as HTMLElement;
+      const id = (el.dataset as any)?.allocWe;
+      if (!id) return;
+      const p = num((el as any).value);
+      /* Zero is not an allocation, it is the absence of one — storing it would
+         put a work element on the line that carries none of its cost. */
+      if (p > 0) draft[id] = p;
+      else delete draft[id];
+      paint();
+    });
+
+    dialog.addEventListener('click', (e: any) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-alloc-even]')) { splitEvenly(); return; }
+      if (t.closest('[data-alloc-clear]')) { draft = {}; fill(); return; }
+      if (t.closest('[data-alloc-cancel]')) { dialog.close(); return; }
+      if (t.closest('[data-alloc-save]')) {
+        if (sum() !== 100) return;
+        document.dispatchEvent(
+          new CustomEvent('cbf-lib:save-alloc', { detail: { id: lineId, allocations: { ...draft } } }),
+        );
+        dialog.close();
+      }
+    });
+  }
+</script>
+
+<style>
+  /* Layout primitives set display:flex, which beats the UA [hidden] rule at
+     equal specificity. Same guard the sibling sheets carry. */
+  [hidden] { display: none !important; }
+
+  .cbf-las__name {
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+  .cbf-las__where,
+  .cbf-las__lede {
+    margin: 0;
+    color: var(--color-text-secondary);
+    max-width: 60ch;
+  }
+
+  /* One row per work element: the name reads left, the percent sits right, and
+     the pair keeps a rule between them so a long list stays scannable down the
+     percent column rather than becoming a wall of sentences. */
+  .cbf-las__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-300);
+    padding: var(--spacing-200) 0;
+    border-bottom: 1px solid var(--color-border-light);
+  }
+  .cbf-las__row:last-child { border-bottom: 0; }
+  .cbf-las__we { color: var(--color-text-primary); }
+  .cbf-las__code { color: var(--color-text-secondary); }
+  .cbf-las__input { width: 104px; flex: none; }
+
+  .cbf-las__total {
+    --align: center;
+    align-items: center;
+    padding: var(--spacing-300);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    background: var(--color-surface-sunken);
+  }
+  .cbf-las__total-label {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+  }
+  .cbf-las__total-value {
+    font-size: var(--type-size-500);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

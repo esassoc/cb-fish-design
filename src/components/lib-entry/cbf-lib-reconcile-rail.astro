@@ -17,8 +17,9 @@
 //     pctOfValue: number,     // total / contract.contractValue, as a FRACTION (0.9059)
 //     failing: number,        // lines over their GSA ceiling      → `gsa` check
 //     unallocated: number,    // lines not totalling 100%          → `allocation` check
-//     capitalFailing: number, // items on the wrong side of the capitalization
-//                             // threshold, in EITHER direction → `capital` check
+//     capitalFailing: number, // equipment the capitalization sort could not
+//                             // settle — overrides + untestable lumps
+//                             //                                → `capital` check
 //     monthsFailing: number,  // positions budgeted past the contract period
 //                             //                                → `months` check
 //   }
@@ -426,8 +427,8 @@ const blockedText = (n: number) =>
           'capital',
           d.capitalFailing === 0,
           d.capitalFailing === 0
-            ? `Threshold ${usd(contract.capitalizationThreshold)} per item`
-            : `${d.capitalFailing} item${plural(d.capitalFailing)} filed in the wrong category`,
+            ? `Sorted at ${usd(contract.capitalizationThreshold)} per item`
+            : `${d.capitalFailing} item${plural(d.capitalFailing)} the sort could not settle`,
         );
       }
       if (typeof d.monthsFailing === 'number') {
@@ -454,9 +455,9 @@ const blockedText = (n: number) =>
     // Re-scoping which categories the rate is charged on moves the base and the
     // total. The dollars come back through 'cbf-lib:totals' (the grid re-fires
     // it), so this handler owns only the EXPLANATION: the rate, how wide the
-    // scope is, and the reference document the `indirect` check cites. It never
-    // flips that check's pass state — an approved rate stays approved however
-    // the vendor scopes it.
+    // scope is, and the reference document the `indirect` check cites. The one
+    // thing it can flip is whether that check passes AT ALL, and only on the
+    // reference document — see the comment on it below.
     document.addEventListener('cbf-lib:indirect-config', (event) => {
       const cfg = (event as CustomEvent<{ config: IndirectConfig }>).detail?.config;
       if (!cfg) return;
@@ -466,7 +467,19 @@ const blockedText = (n: number) =>
         '[data-ledger="indirect-scope"]',
         `on ${cfg.appliesTo.length} of ${categories.length} categories`,
       );
-      setCheckDetail('indirect', `${pct(cfg.rate)} — ${cfg.referenceDoc}`);
+      /* An approved rate stays approved however the vendor scopes it — but a
+         budget carrying NO reference document has no approval to stand on, and a
+         green tick there would be the check lying about the one thing it exists
+         to assert. That is the state a cleared budget starts in (the demo's
+         "Clear all entries") and the state a vendor is in before they configure
+         the block at all. */
+      if (cfg.referenceDoc) {
+        setCheck('indirect', true, `${pct(cfg.rate)} — ${cfg.referenceDoc}`);
+      } else {
+        setCheck('indirect', false, 'No approved rate reference on this budget');
+      }
+
+      refreshGate();
     });
 
     // ── the review gate ─────────────────────────────────────────────────────

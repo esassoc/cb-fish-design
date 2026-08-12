@@ -1,0 +1,292 @@
+---
+/*
+ * cbf-lib-standard-rate-dialog — where a travel line's claim on a PUBLISHED rate
+ * is made, changed, and confirmed.
+ *
+ * ── WHY THE CLAIM LEFT THE ROW ──────────────────────────────────────────────
+ * Claiming a standard rate takes two answers — which locality, which fiscal
+ * year — and the rate cell was carrying both of them as live controls, forever,
+ * next to the resolved amount, the source sentence and the sentence about the
+ * typed rate underneath. Six things in the narrowest column of the grid, five of
+ * which were the claim's own paperwork.
+ *
+ * Making a claim is a DECISION, not a pair of fields: the vendor is asserting
+ * "this line is priced at the published FY2026 rate for Portland, OR", and that
+ * assertion is checkable a year later only if both answers were deliberate. A
+ * dialog is what makes it deliberate — it states what the two answers resolve
+ * to BEFORE the claim is made, which the row could not do (the row only ever
+ * showed the result of an edit already applied).
+ *
+ * What stays on the row afterwards is the answer, not the question: the rate,
+ * and a badge saying it is the standard one and for which year. Everything else
+ * is re-openable here.
+ *
+ * ── THE LOCATION IS PICKED, NOT TYPED ───────────────────────────────────────
+ * A claim's location is a SCHEDULE locality, and the schedule is a closed list:
+ * a few hundred separately-listed places plus one CONUS row that covers
+ * everywhere else. Typing it free-hand was how "Portlnd, OR" quietly claimed the
+ * CONUS floor and priced $75 a night under what the vendor meant. Picking from
+ * the published list makes the fallback an explicit choice instead of a typo's
+ * consequence — and the seed note below says out loud when a trip's destination
+ * is not separately listed, rather than resolving it silently.
+ *
+ * ── EVENT CONTRACT (all on `document`) ──────────────────────────────────────
+ * LISTEN   'cbf-lib:open-standard'  detail: { line, label }
+ *   The claim is drafted on a COPY — cancelling leaves the line untouched, which
+ *   is what makes "open it and look at what it would cost" free. `label` comes
+ *   from the grid because a travel line's name is resolved from its kind and
+ *   chain, not typed.
+ * DISPATCH 'cbf-lib:save-standard'  detail: { id, standard: { locality?, year } }
+ *   The grid owns the line; this dialog states the claim and hands back its two
+ *   answers, exactly as the line stores them.
+ *
+ * bcn-lego-checked: the modal IS esa-dialog — the same lego the grid already
+ * uses for its delete-trip confirmation; the location picker is esa-combobox
+ * (searchable, because the real schedule is hundreds of localities), the year is
+ * esa-select, the indicator is esa-badge and both actions are esa-button. I
+ * re-walked the catalog (ls node_modules/@esa/ecology/src/components/): there is
+ * no rate-claim, per-diem or schedule-lookup lego. Beacon is not cloned on this
+ * machine. The only CSS here is the dialog body's own layout.
+ */
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+---
+
+<esa-dialog data-std-dialog size="sm" heading="Use the standard rate">
+  <div class="cbf-lsr stack" data-gap="lg">
+    {/* WHICH line is claiming. Same reason the allocation sheet names its
+        subject: "Lodging" sits under three trips, and a vendor cannot tell one
+        dialog from another by its heading. */}
+    <div class="cbf-lsr__subject stack" data-gap="3xs">
+      <h3 class="cbf-lsr__name type-card-title" data-std-name></h3>
+      <p class="cbf-lsr__scope type-body-small" data-std-scope></p>
+    </div>
+
+    <div class="stack" data-gap="sm">
+      {/* Absent on mileage, which is one published national figure a year and
+          has no locality to state. */}
+      <span data-std-where hidden>
+        <esa-combobox
+          class="cbf-lsr__field"
+          size="md"
+          label="Location"
+          data-std-locality
+          placeholder="Pick the schedule location"
+          help-text="The published schedule prices some places separately and covers everywhere else with one CONUS row."
+        ></esa-combobox>
+      </span>
+      <esa-select
+        class="cbf-lsr__field"
+        size="md"
+        label="Rate year"
+        data-std-year
+        placeholder="Rate year"
+        help-text="Rates change every 1 October, so the claim has to say which year's schedule it is claiming."
+      ></esa-select>
+      {/* Said out loud, never silently: this destination is not on the list. */}
+      <p class="cbf-lsr__note type-body-small" data-std-seed hidden></p>
+    </div>
+
+    {/* What the two answers RESOLVE to, before the claim is made. This is the
+        whole argument for the dialog: the vendor confirms a number, not a pair
+        of dropdowns. */}
+    <div class="cbf-lsr__result stack" data-gap="2xs">
+      <span class="cbf-lsr__result-label type-label">This line would be rated at</span>
+      <span class="cluster" data-gap="sm">
+        <strong class="cbf-lsr__amount" data-std-amount></strong>
+        <span data-std-badge hidden>
+          <EsaBadge value="Standard rate" variant="info" size="sm" />
+        </span>
+      </span>
+      <p class="cbf-lsr__note type-body-small" data-std-kept></p>
+    </div>
+  </div>
+
+  <div slot="footer" class="repel" data-gap="sm">
+    <span data-std-cancel>
+      <EsaButton size="sm" color="secondary" appearance="outline">Cancel</EsaButton>
+    </span>
+    <span data-std-confirm>
+      <EsaButton size="sm" color="primary">Use this standard rate</EsaButton>
+    </span>
+  </div>
+</esa-dialog>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-combobox';
+  import '@esa/ecology/esa-select';
+  import * as V from '../../lib/lib-entry-view';
+  import {
+    travelKind,
+    travelLocality,
+    standardNeedsLocality,
+    standardRateFor,
+    isListedLocality,
+    resolveLocality,
+    defaultRateYear,
+  } from '../../data/lib-entry.mjs';
+
+  const money = V.money;
+
+  const dialog = document.querySelector<HTMLElement>('[data-std-dialog]') as any;
+  if (dialog) init(dialog);
+
+  function init(dialog: any) {
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string) => dialog.querySelector<T>(sel);
+    const setText = (el: Element | null, text: string) => { if (el) el.textContent = text; };
+    const show = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };
+
+    let lineId = '';
+    let kindKey = '';
+    let needsWhere = false;
+    /* The rate the line already had. Never touched here — a claim supersedes it
+       and dropping the claim gives it back — but it is stated, because "what
+       happens to my number" is the first thing a vendor asks of this dialog. */
+    let typedRate: number | null = null;
+    /* The destination the location seeds FROM, kept so the note can name it. */
+    let seed = '';
+    /* The draft claim. Copied on open, committed on confirm, discarded on
+       cancel — the line is not edited until the vendor says so. */
+    let draft: { locality: string; year: number } = { locality: '', year: defaultRateYear() };
+
+    const resolved = () => standardRateFor(kindKey, draft.locality, draft.year);
+
+    const paint = () => {
+      const rate = resolved();
+      const ok = rate != null;
+      /* A claim that resolves to nothing is a real state, not an error to hide:
+         the year has no table for that place. Saying so is what stops the line
+         being committed at zero. */
+      setText($('[data-std-amount]'), ok ? money(rate) : 'No published rate for that location and year');
+      show($('[data-std-badge]'), ok);
+      const badge = $('[data-std-badge] .esa-badge__text');
+      setText(badge, `Standard rate · FY${draft.year}`);
+      setText(
+        $('[data-std-kept]'),
+        typedRate == null
+          ? ''
+          : `Your own rate of ${money(typedRate)} is kept underneath and comes back if you drop the claim.`,
+      );
+
+      /* The seed note fires on the case that used to cost money silently: a
+         destination that is not separately listed resolves to CONUS, and the
+         vendor is told which place that was rather than discovering it in the
+         total. */
+      const unlisted = needsWhere && !!seed && !isListedLocality(seed);
+      show($('[data-std-seed]'), unlisted);
+      setText(
+        $('[data-std-seed]'),
+        unlisted
+          ? `${seed} is not separately listed on the FY${draft.year} schedule — it claims the Standard CONUS rate.`
+          : '',
+      );
+
+      const confirm = $('[data-std-confirm] button') as HTMLButtonElement | null;
+      if (confirm) confirm.disabled = !ok;
+    };
+
+    const fill = () => {
+      const loc: any = $('[data-std-locality]');
+      if (loc) {
+        loc.options = V.localityOptions(draft.year);
+        loc.value = draft.locality;
+      }
+      const yr: any = $('[data-std-year]');
+      if (yr) {
+        yr.options = V.fiscalYearOptions();
+        yr.value = String(draft.year);
+      }
+      show($('[data-std-where]'), needsWhere);
+      paint();
+    };
+
+    document.addEventListener('cbf-lib:open-standard', (e: any) => {
+      const line = e.detail?.line;
+      if (!line) return;
+      lineId = line.id;
+      kindKey = line.travelKind;
+      needsWhere = standardNeedsLocality(kindKey);
+      typedRate = line.rate ?? null;
+      seed = travelLocality(line) ?? '';
+      const prior = line.standard;
+      /* Re-opening a live claim shows THAT claim, not a fresh one — this is the
+         only way to change a claim's year or location, so it has to arrive
+         holding the answers it is changing. */
+      draft = {
+        year: Number(prior?.year) || defaultRateYear(),
+        locality: needsWhere ? resolveLocality(prior?.locality ?? seed) : '',
+      };
+      dialog.heading = prior ? 'Standard rate' : 'Use the standard rate';
+      const k = travelKind(kindKey);
+      setText($('[data-std-name]'), e.detail?.label || k?.label || 'Travel line');
+      const scope = V.scopeOf(line);
+      setText($('[data-std-scope]'), scope);
+      show($('[data-std-scope]'), !!scope);
+      const confirmLabel = $('[data-std-confirm] button .esa-button__label') ?? $('[data-std-confirm] button');
+      setText(confirmLabel, prior ? 'Update the claim' : 'Use this standard rate');
+      fill();
+      dialog.show();
+    });
+
+    dialog.addEventListener('change', (e: any) => {
+      const el = e.target as HTMLElement;
+      const value = Array.isArray(e.detail?.value) ? e.detail.value[0] : e.detail?.value;
+      if ((el.dataset as any)?.stdLocality != null) {
+        draft.locality = String(value ?? '');
+        paint();
+        return;
+      }
+      if ((el.dataset as any)?.stdYear != null) {
+        draft.year = Number(value) || defaultRateYear();
+        /* The locality list is published per year, so changing the year
+           re-offers it — and the same place claims a different number. */
+        fill();
+      }
+    });
+
+    dialog.addEventListener('click', (e: any) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-std-cancel]')) { dialog.close(); return; }
+      if (t.closest('[data-std-confirm]')) {
+        if (resolved() == null || !lineId) return;
+        document.dispatchEvent(
+          new CustomEvent('cbf-lib:save-standard', {
+            detail: {
+              id: lineId,
+              standard: needsWhere ? { locality: draft.locality, year: draft.year } : { year: draft.year },
+            },
+          }),
+        );
+        dialog.close();
+      }
+    });
+  }
+</script>
+
+<style>
+  /* The dialog body only. Every control inside it is a lego and styles itself. */
+  .cbf-lsr__name { margin: 0; }
+  .cbf-lsr__scope,
+  .cbf-lsr__note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    max-width: 46ch;
+  }
+  .cbf-lsr__field { display: block; }
+
+  /* The resolved number is the thing being confirmed, so it is the largest thing
+     in the dialog — a value the vendor did not type, read as a value. */
+  .cbf-lsr__result {
+    padding: var(--spacing-400);
+    border-radius: var(--radius-200, 8px);
+    background: var(--color-surface-sunken);
+  }
+  .cbf-lsr__result-label { color: var(--color-text-secondary); }
+  .cbf-lsr__amount {
+    font-size: var(--type-size-500, 1.25rem);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

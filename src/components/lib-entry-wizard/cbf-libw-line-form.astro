@@ -1,0 +1,608 @@
+---
+/*
+ * cbf-libw-line-form — ONE cost line, as a labelled form card, for the
+ * step-by-step LIB wizard (/lib-entry-wizard).
+ *
+ * ── WHAT THIS IS FOR ────────────────────────────────────────────────────────
+ * The wizard gives a whole page to ONE category at a time, which means a line no
+ * longer has to fit in a table row or a 34rem drawer. It gets a card: every
+ * field labelled, its help text beside it, its gates under the field that
+ * causes them, and its own amount in the header. Nothing is behind a popover
+ * and nothing is captioned by a column heading nine categories share.
+ *
+ * ── PURELY PRESENTATIONAL ───────────────────────────────────────────────────
+ * This file has NO script. Every card on the page is painted by the one script
+ * in cbf-libw-wizard, which owns the lines array, the pricing and the gates.
+ * That is what lets a card be CLONED for an added line: it ships every variant
+ * of every field and the wizard reveals the ones this line's shape actually has,
+ * so one template covers all five shapes.
+ *
+ * ── EVERY VARIANT SHIPS, ONE IS REVEALED ────────────────────────────────────
+ * Identity has five renderings (typed description, position, travel kind,
+ * vehicle kind, derived name); quantity has four (typed, travel, derived,
+ * none); rate has five (typed, GSA-referenced, lump amount, derived percentage,
+ * plus the fringe field that rides on a salary line). A vendor can change a
+ * vehicle kind from a schedule-rated lease to a typed premium, or move an item
+ * across the capitalization threshold, without the card being rebuilt.
+ *
+ * bcn-lego-checked: the card IS esa-card; every control is a lego —
+ * esa-text-field, esa-select, esa-combobox (the GSA schedule is thousands of
+ * rows, so it is SEARCHED, not picked), esa-icon-button for delete, esa-button
+ * for the threshold move and the second-quantity add, esa-badge for the COR's
+ * mark severity, esa-alert-box for a gate, esa-field-error for a field-level
+ * failure, esa-collapsible for the work-element split's disclosure. The split
+ * itself is a labelled esa-text-field per element laid out with .repel — I
+ * re-walked the catalog (ls node_modules/@esa/ecology/src/components/) and there
+ * is no percentage-split, key-value-editor or stepper/wizard lego of any kind.
+ * Beacon is not cloned on this machine.
+ */
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaFieldError from '@esa/ecology/esa-field-error.astro';
+import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
+import CbfDragHandle from '../shared/cbf-drag-handle.astro';
+import '../../styles/cbf-row-reorder.css';
+import { workElements, weLabel } from '../../data/lib-entry.mjs';
+import { SEVERITIES, severityMeta } from '../../data/lib-review.mjs';
+
+interface Props {
+  /** The line id this card is bound to. The wizard paints everything else. */
+  id: string;
+}
+const { id } = Astro.props;
+---
+
+<article class="cbf-libwl" data-line={id}>
+  <EsaCard>
+    <div class="stack" data-gap="md">
+      <!-- ── The card head: what this line is, what it costs, and the one
+           destructive action. The amount sits HERE rather than at the bottom
+           because on a page of cards it is the thing you scan down. ── -->
+      <header class="cbf-libwl__head repel" data-gap="sm">
+        <span class="cluster" data-gap="xs">
+          <!-- The grab handle leads the card for the same reason the ordinal
+               does: both are about WHERE this line sits, and the wizard renumbers
+               "Line 1, Line 2" off the card order on every recompute — so the
+               number under the handle is the direct read-out of what dragging
+               changes. Hidden on a derived card, whose position follows the
+               salary line it was generated from. -->
+          <span data-grab hidden>
+            <CbfDragHandle size="sm" label="this line" />
+          </span>
+          <span class="stack" data-gap="3xs">
+            <span class="cbf-libwl__ord type-body-small" data-ord></span>
+            <span class="cbf-libwl__name type-card-title" data-name></span>
+          </span>
+        </span>
+        <span class="cluster" data-gap="sm">
+          <strong class="cbf-libwl__amount" data-amount>$0</strong>
+          <!-- No delete on a derived row: it exists because a salary line
+               exists, and it stops existing when that one does. -->
+          <span data-delete>
+            <EsaIconButton icon="trash-2" size="sm" label="Delete this line" />
+          </span>
+        </span>
+      </header>
+
+      <!-- ── The COR's mark, read-only, on the line it disputes ────────────
+           Writing one is the reviewer's job and happens on /lib-entry or
+           /lib-entry-sheet. A vendor walking the wizard needs to READ it here,
+           beside the fields it asks them to change. -->
+      <div class="cbf-libwl__mark stack" data-gap="3xs" data-mark hidden>
+        <span class="cluster" data-gap="2xs">
+          <span data-mark-sev={SEVERITIES.REQUIRED}>
+            <EsaBadge
+              value={severityMeta[SEVERITIES.REQUIRED].short}
+              variant={severityMeta[SEVERITIES.REQUIRED].variant}
+              size="sm"
+            />
+          </span>
+          <span data-mark-sev={SEVERITIES.QUESTION}>
+            <EsaBadge
+              value={severityMeta[SEVERITIES.QUESTION].short}
+              variant={severityMeta[SEVERITIES.QUESTION].variant}
+              size="sm"
+            />
+          </span>
+          <span class="cbf-libwl__mark-reason type-body-small" data-mark-reason></span>
+        </span>
+        <span class="cbf-libwl__mark-note type-body-small" data-mark-note></span>
+        <span class="cbf-libwl__quiet type-body-small" data-mark-by></span>
+      </div>
+
+      <!-- ── 1 · What the line IS ─────────────────────────────────────────
+           Four categories know the name better than the vendor does, so they
+           replace the free-text description with the control that decides it. -->
+      <div class="cbf-libwl__group stack" data-gap="sm" data-group="identity">
+        <esa-text-field
+          data-field="label"
+          data-ident="label"
+          size="md"
+          label="Description"
+          placeholder="Describe this cost line"
+        ></esa-text-field>
+
+        <!-- ── The position: typed here, referenced everywhere after ────────
+             Positions are defined BY this LIB, not chosen from a list BPA
+             supplies — a closed roster would assert we know the sponsor's org
+             chart. So the vendor types the title, and typing it is what creates
+             the position.
+
+             It is an autocomplete rather than a plain text box because the
+             SECOND line for a position must reuse the first one's title exactly:
+             retyping invites the near-miss ("Seasonal Tech") that would silently
+             split the position in two and generate it a second fringe line. -->
+        <span data-ident="position" class="stack" data-gap="2xs">
+          <esa-combobox
+            data-position-combo
+            mode="autocomplete"
+            size="md"
+            label="Position title"
+            placeholder="Type a position title"
+            help-text="Titles, never names — one individual per line. Two technicians are two lines."
+          ></esa-combobox>
+          <span data-position-err hidden>
+            <EsaFieldError
+              message="Name the position this line pays for — the Fringe step and any line that follows this position refer back to it."
+              icon
+            />
+          </span>
+        </span>
+
+        <esa-select
+          data-travel-kind-select
+          data-ident="travel-kind"
+          size="md"
+          label="Travel kind"
+          placeholder="Pick a travel kind"
+          help-text="The kind fixes what is counted, the duration unit, and the schedule rows this line may reference."
+        ></esa-select>
+
+        <!-- ── Which journey this cost belongs to, if any ────────────────────
+             A trip carries the destination and the occurrence count
+             for every line filed under it. A one-off cost has none of that to
+             say, so it can sit outside every trip — and then the destination is
+             its own business, which is why the two controls sit together. On
+             this surface the trip's fields are right above, on the same step, so
+             moving a line between the two is a visible move. -->
+        <div class="stack" data-gap="sm" data-travel-group hidden>
+          <esa-select
+            data-trip-select
+            size="md"
+            label="Trip"
+            placeholder="Not part of a trip"
+            help-text="Leave a one-off cost out of every trip — it keeps its own destination instead."
+          ></esa-select>
+          <span data-travel-dest hidden>
+            <esa-text-field
+              data-field="locality"
+              size="md"
+              label="Destination"
+              placeholder="City, ST"
+            ></esa-text-field>
+          </span>
+        </div>
+
+        <esa-select
+          data-vehicle-kind-select
+          data-ident="vehicle-kind"
+          size="md"
+          label="Vehicle kind"
+          placeholder="Pick a vehicle kind"
+          help-text="Lease and mileage reference the GSA Fleet schedule; insurance and fuel are quoted."
+        ></esa-select>
+
+        <p class="cbf-libwl__static" data-ident="derived">
+          <span class="cbf-libwl__static-label type-body-small">Fringe on</span>
+          <span class="cbf-libwl__static-value type-body" data-ident-derived></span>
+        </p>
+
+        {/* No second line under the identity control. It mixed a kind's RULE
+            with free text nothing in this UI could type; the rule is the kind
+            picker's own help text, right above. */}
+      </div>
+
+      <!-- ── 2 · How much of it ───────────────────────────────────────────── -->
+      <div class="cbf-libwl__group stack" data-gap="sm" data-group="quantity">
+        <div class="cbf-libwl__row" data-qty-typed>
+          <esa-text-field data-field="qty" size="md" label="Quantity"></esa-text-field>
+          <esa-text-field data-field="qtyUnit" data-unit-open size="md" label="Unit" placeholder="unit"></esa-text-field>
+          <!-- A personnel unit has to be TIME, so it comes off a list rather
+               than a keyboard — and it is the unit that decides what the rate
+               beside it means. -->
+          <esa-select data-time-unit-select data-unit-select size="md" label="Time unit"></esa-select>
+          <p class="cbf-libwl__static" data-unit-static hidden>
+            <span class="cbf-libwl__static-label type-body-small">Unit</span>
+            <span class="cbf-libwl__static-value type-body" data-unit-static-value></span>
+          </p>
+
+          <!-- The second quantity shares this row: it multiplies the first, and a
+               row of its own put a line break where the × belongs. -->
+          <esa-text-field data-field="qty2" data-qty2 size="md" label="Second quantity" hidden></esa-text-field>
+          <esa-text-field data-field="qty2Unit" data-unit2-open size="md" label="Unit" placeholder="unit" hidden></esa-text-field>
+          <p class="cbf-libwl__static" data-unit2-static hidden>
+            <span class="cbf-libwl__static-label type-body-small">Unit</span>
+            <span class="cbf-libwl__static-value type-body" data-unit2-static-value></span>
+          </p>
+        </div>
+
+
+        <!-- No "add a second quantity" control: the categories that offered it —
+             Supplies, Meetings, Rent — are all quantity × cost EACH. The second
+             quantity that survives comes from a vehicle KIND, which knows both
+             units. -->
+
+        <!-- Travel: the trip supplies the occurrences, the line supplies what is
+             counted and for how long. Both units are fixed by the kind. -->
+        <div class="cbf-libwl__row" data-travel-qty hidden>
+          <esa-text-field data-field="count" size="md" label="Count"></esa-text-field>
+          <esa-text-field data-field="duration" data-duration size="md" label="Duration"></esa-text-field>
+        </div>
+
+        <p class="cbf-libwl__static" data-qty-derived hidden>
+          <span class="cbf-libwl__static-label type-body-small">Quantity</span>
+          <span class="cbf-libwl__static-value type-body" data-qty-derived-value></span>
+          <span class="cbf-libwl__quiet type-body-small" data-qty-derived-src></span>
+        </p>
+
+        <div data-gate="months" hidden>
+          <EsaAlertBox variant="danger" title="Past contract period">
+            <span data-gate-msg="months"></span>
+          </EsaAlertBox>
+        </div>
+        <p class="cbf-libwl__quiet type-body-small" data-months-note hidden></p>
+
+      </div>
+
+      <!-- ── 3 · What it costs ────────────────────────────────────────────── -->
+      <div class="cbf-libwl__group stack" data-gap="sm" data-group="rate">
+        <esa-text-field data-field="rate" data-rate-typed size="md" prefix="$" label="Cost per unit"></esa-text-field>
+
+        <esa-text-field
+          data-field="amount"
+          data-rate-lump
+          size="md"
+          prefix="$"
+          label="Amount"
+          help-text="A lump sum — no quantity, no rate."
+          hidden
+        ></esa-text-field>
+
+        <!-- ── Claiming a published standard rate ────────────────────────────
+             A travel rate is the vendor's own number. Three kinds have a
+             published standard they may claim instead, and claiming it takes two
+             answers of its own — which location, which fiscal year — because
+             those are what make the claim checkable a year later, when the
+             schedule has moved and the budget has not. The claim supersedes the
+             typed rate without erasing it, so the field above stays filled. -->
+        <div class="stack" data-gap="sm" data-standard hidden>
+          <span data-standard-toggle>
+            <EsaButton size="xs" color="secondary" appearance="soft">Use the standard rate</EsaButton>
+          </span>
+          <div class="stack" data-gap="sm" data-standard-fields hidden>
+            <span data-standard-where hidden>
+              <esa-text-field
+                data-field="standardLocality"
+                size="md"
+                label="Rate location"
+                placeholder="City, ST"
+                help-text="Which locality's published rate this line claims. Seeded from the destination, then it is yours."
+              ></esa-text-field>
+            </span>
+            <esa-select
+              data-standard-year
+              size="md"
+              label="Rate year"
+              placeholder="Pick a fiscal year"
+              help-text="Published rates change every 1 October, so a claim says which year's schedule it is claiming."
+            ></esa-select>
+            <p class="cbf-libwl__static">
+              <span class="cbf-libwl__static-label type-body-small">Standard rate</span>
+              <span class="cbf-libwl__static-value type-body" data-standard-rate></span>
+              <span class="cbf-libwl__quiet type-body-small" data-standard-src></span>
+              <span class="cbf-libwl__quiet type-body-small" data-standard-superseded></span>
+            </p>
+          </div>
+          <p class="cbf-libwl__quiet type-body-small" data-standard-none hidden></p>
+        </div>
+
+        <!-- Referenced, not typed. A combobox because the real schedule is
+             thousands of localities: the row has to be SEARCHED for, which is
+             also the honest argument for why this number is not an open input. -->
+        <div class="stack" data-gap="sm" data-rate-gsa hidden>
+          <esa-combobox
+            data-gsa-select
+            size="md"
+            label="GSA schedule row"
+            placeholder="Select a schedule row"
+            search-placeholder="Search locality or rate type…"
+          ></esa-combobox>
+          <p class="cbf-libwl__static">
+            <span class="cbf-libwl__static-label type-body-small">Scheduled rate</span>
+            <span class="cbf-libwl__static-value type-body" data-ref-rate></span>
+            <span class="cbf-libwl__quiet type-body-small" data-ref-src></span>
+          </p>
+          <span data-override-toggle>
+            <EsaButton size="xs" color="secondary" appearance="soft">Override rate</EsaButton>
+          </span>
+          <esa-text-field
+            data-field="rateOverride"
+            data-override-field
+            size="md"
+            prefix="$"
+            label="Overridden rate"
+            help-text="A rate above the schedule ceiling has to be justified in the narrative."
+            hidden
+          ></esa-text-field>
+          <div data-gate="gsa" hidden>
+            <EsaAlertBox variant="danger" title="Over GSA ceiling">
+              <span data-gate-msg="gsa"></span>
+            </EsaAlertBox>
+          </div>
+        </div>
+
+        <!-- A derived row's rate: where the number CAME FROM. Nothing here is an
+             input — the percentage was typed on a salary line, and the only
+             thing this owes the reader is the route back. -->
+        <p class="cbf-libwl__static" data-rate-derived hidden>
+          <span class="cbf-libwl__static-label type-body-small">Rate and base</span>
+          <span class="cbf-libwl__static-value type-body" data-derived-pct></span>
+          <span class="cbf-libwl__quiet type-body-small" data-derived-base></span>
+          <span class="cbf-libwl__quiet type-body-small" data-derived-src></span>
+        </p>
+
+        <!-- Fringe is not a budgeting choice — it is the organization's rate
+             applied to a position. One pre-filled field on the line that causes
+             it, and a note saying what it just added to the Fringe step. -->
+        <div class="stack" data-gap="2xs" data-fringe hidden>
+          <esa-text-field data-field="fringePct" size="md" suffix="%" label="Fringe rate"></esa-text-field>
+          <p class="cbf-libwl__quiet type-body-small" data-fringe-note></p>
+        </div>
+
+        <!-- The capitalization threshold FILES the item rather than grading it,
+             so the ordinary state is a note: the per-item cost, the step it put
+             the item on, and what that step does to the money. The alert is
+             raised only for what the sort cannot settle — an override, or a lump
+             with no per-item cost to sort on. The override toggle sits OUTSIDE
+             the alert, because turning one on is done from the passing state; in
+             a wizard it also moves the line to the other STEP, so it says which
+             one. -->
+        <div class="stack" data-gap="sm" data-gate="capital" hidden>
+          <EsaAlertBox variant="warning" title="Capitalization threshold">
+            <span data-gate-msg="capital"></span>
+          </EsaAlertBox>
+        </div>
+        <p class="cbf-libwl__quiet type-body-small" data-cap-note hidden></p>
+        <span data-cap-move hidden>
+          <EsaButton size="sm" color="secondary" appearance="soft">Override the threshold</EsaButton>
+        </span>
+      </div>
+
+      <!-- ── 4 · Which work it pays for ───────────────────────────────────── -->
+      <div class="cbf-libwl__group stack" data-gap="sm" data-group="allocation">
+        <!-- ── Six percent boxes, folded away ───────────────────────────────
+             The split is answered ONCE and then re-read, so on a page of cards
+             six always-open inputs per line are six rows of chrome standing
+             between the vendor and the next line's money. It folds: the total
+             and the named split stay out here, always visible, and the boxes
+             come out when there is editing to do. The wizard springs it open on
+             a card whose split does not total 100% — a fix must never be
+             hidden — until the vendor works the disclosure themselves. -->
+        <div data-alloc-list>
+          <EsaCollapsible title="Work-element allocation" flush>
+            <div class="stack" data-gap="2xs">
+              {workElements.map((we: any) => (
+                <div class="cbf-libwl__alloc repel" data-gap="sm">
+                  <span class="cbf-libwl__alloc-label type-body">{weLabel(we.id)}</span>
+                  <esa-text-field
+                    class="cbf-libwl__alloc-input"
+                    data-alloc-we={we.id}
+                    size="md"
+                    suffix="%"
+                    aria-label={`${weLabel(we.id)} percent`}
+                  ></esa-text-field>
+                </div>
+              ))}
+            </div>
+          </EsaCollapsible>
+        </div>
+        <!-- The read-out, folded or not: the total, then the elements it is a
+             total OF, by letter and code. The full titles caption the fields
+             inside the fold — repeating them here is a paragraph of prose
+             where a card wants a value. -->
+        <p class="cbf-libwl__alloc-sum">
+          <span class="type-body-small">Allocated</span>
+          <strong data-alloc-sum>0%</strong>
+          <span class="cbf-libwl__quiet type-body-small" data-alloc-split></span>
+        </p>
+        <span data-alloc-err hidden>
+          <EsaFieldError message="" icon />
+        </span>
+
+        <!-- A derived row's split is not its own — it is inherited, weighted by
+             the dollars of the salary lines it follows. An editor here would be
+             a way to make the two disagree. -->
+        <p class="cbf-libwl__static" data-alloc-derived hidden>
+          <span class="cbf-libwl__static-label type-body-small">Work element</span>
+          <span class="cbf-libwl__static-value type-body" data-alloc-derived-value></span>
+          <span class="cbf-libwl__quiet type-body-small" data-alloc-derived-src></span>
+        </p>
+      </div>
+
+      <!-- The subcontract seam: a lump HERE, a full recursed category set THERE. -->
+      <span data-open-sheet hidden>
+        <EsaButton size="sm" color="secondary" appearance="soft" icon="external-link">
+          Open subcontract sheet
+        </EsaButton>
+      </span>
+    </div>
+  </EsaCard>
+</article>
+
+<style>
+  /* Layout primitives set display:flex, which beats the UA [hidden] rule at
+     equal specificity — and this card works entirely by revealing one of several
+     renderings. Without this guard every shape's fields would show at once. */
+  [hidden] { display: none !important; }
+
+  .cbf-libwl__head {
+    --align: flex-start;
+    align-items: flex-start;
+    padding-block-end: var(--spacing-300);
+    border-block-end: 1px solid var(--color-border-light);
+  }
+  .cbf-libwl__ord {
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .cbf-libwl__name {
+    margin: 0;
+    color: var(--color-text-primary);
+  }
+  .cbf-libwl__amount {
+    font-size: var(--type-size-400);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* Quiet second lines DARKEN as they shrink — text-secondary, never a muted
+     gray, and never under the 13px absolute floor. */
+  .cbf-libwl__quiet {
+    margin: 0;
+    color: var(--color-text-secondary);
+    max-width: 62ch;
+  }
+
+  /* ── The four field groups, separated but not boxed ──────────────────────
+     A card inside a card would read as two objects. A rule between groups says
+     the same thing for a fraction of the ink. */
+  .cbf-libwl__group + .cbf-libwl__group {
+    padding-block-start: var(--spacing-400);
+    border-block-start: 1px solid var(--color-border-light);
+  }
+  /* The allocation disclosure IS that group's heading, so it sits exactly where
+     a group label would: no leading padding of its own, and its body flush to
+     the card's own rhythm. The caret trails the title on the same row. */
+  [data-alloc-list] :global(.esa-collapsible__summary) {
+    padding-block: 0 var(--spacing-200);
+  }
+  [data-alloc-list] :global(.esa-collapsible__body) {
+    padding-block-end: 0;
+  }
+  /* The caret belongs to the WORDS, not to the card's right edge. esa-collapsible
+     pushes it out with margin-left:auto, which is right for a full-bleed panel
+     and wrong here: on a card this wide it leaves a hand's width of nothing
+     between a four-word title and the one mark saying the title is a control.
+     It keeps the whole row clickable — only the glyph moves. */
+  [data-alloc-list] :global(.esa-collapsible__summary::after) {
+    margin-left: var(--spacing-100);
+  }
+
+  /* Fields that qualify one another sit on one line and wrap together — a
+     quantity and its unit are one answer, not two. */
+  .cbf-libwl__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: var(--spacing-300);
+  }
+  .cbf-libwl__row > * { flex: 1 1 9rem; min-width: 0; }
+
+
+  /* A value the vendor did NOT type — referenced, inherited, or fixed by a kind.
+     Rendered as a fact with its own caption, never as a disabled input: a
+     grayed-out field reads as "you failed to fill this in", which is a lie about
+     a value nobody was ever asked for. */
+  .cbf-libwl__static {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-050, 2px);
+    margin: 0;
+  }
+  .cbf-libwl__static-label { color: var(--color-text-secondary); }
+  .cbf-libwl__static-value {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Work-element allocation ─────────────────────────────────────────────
+     .repel wraps by default, which sends the percent box onto its own line the
+     moment a work-element name is long — and these names ARE long. Six rows
+     where some have the input beside the label and some below it read as six
+     different controls. So the row does not wrap: the NAME wraps inside its own
+     column and the box stays put. */
+  .cbf-libwl__alloc { --align: center; align-items: center; flex-wrap: nowrap; }
+  .cbf-libwl__alloc-label { color: var(--color-text-primary); flex: 1 1 auto; min-width: 0; }
+  .cbf-libwl__alloc-input { width: 7rem; flex: none; }
+  /* The read-out sits directly under the disclosure when the split is folded —
+     so it carries NO rule of its own there, or the card grows a stray line
+     under a heading with nothing between the two. Open, it is the running
+     total under six inputs, and then the rule is doing real work. */
+  .cbf-libwl__alloc-sum {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--spacing-150);
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+  [data-alloc-list]:has(details[open]) + .cbf-libwl__alloc-sum {
+    padding-block-start: var(--spacing-200);
+    border-block-start: 1px solid var(--color-border-light);
+  }
+  .cbf-libwl__alloc-sum strong {
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-primary);
+  }
+
+  /* ── The COR's mark ── */
+  .cbf-libwl__mark-reason,
+  .cbf-libwl__mark-note {
+    color: var(--color-text-primary);
+    max-width: 62ch;
+  }
+  .cbf-libwl__mark-reason { font-weight: var(--font-weight-medium); }
+  /* One severity badge is revealed by the mark's own severity. */
+  .cbf-libwl__mark[data-sev='required'] [data-mark-sev='question'],
+  .cbf-libwl__mark[data-sev='question'] [data-mark-sev='required'],
+  .cbf-libwl__mark:not([data-sev]) [data-mark-sev],
+  .cbf-libwl__mark[data-sev=''] [data-mark-sev] {
+    display: none;
+  }
+
+  /* ── Card state: an inline tint on the CARD, never a colored left border ──
+     esa-card renders its own surface, so the tint is set as a card token
+     override rather than by restyling the lego's internals. */
+  .cbf-libwl[data-flag='gsa'] :global(.esa-card),
+  .cbf-libwl[data-flag='capital'] :global(.esa-card),
+  .cbf-libwl[data-flag='months'] :global(.esa-card) {
+    --card-bg: var(--color-danger-subtle);
+  }
+  .cbf-libwl[data-flag='alloc'] :global(.esa-card) {
+    --card-bg: var(--color-warning-subtle);
+  }
+
+  /* The money moment: a card that just moved because of an edit elsewhere. */
+  .cbf-libwl.is-recomputed :global(.esa-card),
+  .cbf-libwl.is-added :global(.esa-card) {
+    animation: cbf-libwl-flash 1.5s var(--easing-out) 1;
+  }
+  @keyframes cbf-libwl-flash {
+    from { box-shadow: inset 0 0 0 100vmax var(--color-info-subtle); }
+    to { box-shadow: inset 0 0 0 100vmax transparent; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cbf-libwl.is-recomputed :global(.esa-card),
+    .cbf-libwl.is-added :global(.esa-card) {
+      animation: none;
+      box-shadow: inset 0 0 0 100vmax var(--color-info-subtle);
+    }
+  }
+</style>

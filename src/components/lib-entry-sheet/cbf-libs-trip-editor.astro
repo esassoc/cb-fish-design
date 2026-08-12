@@ -1,0 +1,283 @@
+---
+/*
+ * cbf-libs-trip-editor — the side sheet where a TRIP is created and edited on
+ * /lib-entry-sheet.
+ *
+ * ── WHY A TRIP GETS ITS OWN SHEET ───────────────────────────────────────────
+ * Travel is the most rule-bound category in a LIB, and a trip is not a cost — it
+ * is the CONTAINER four facts live in, and every line underneath inherits them.
+ * `occurrences` is the one the flat list could not say at all: a semiannual
+ * coordination meeting is ONE trip that happens twice, not two rows a reviewer
+ * has to recognise as the same journey. Change any of these four and every line
+ * under the trip moves at once.
+ *
+ * In the inline version those four fields sit in the block-head row, which is
+ * where they are most cramped and least explained — a destination box with no
+ * room to say what the place RESOLVES to on the schedule. On this surface they
+ * are labelled, and the resolution is stated under the field that decides it.
+ *
+ * ── DESTINATION IS TYPED, AND PRICES NOTHING ────────────────────────────────
+ * It names the trip and the lines under it, and it is offered as the default
+ * location when a line claims a published standard rate. It is a text field
+ * rather than a list of schedule localities because a weir on Rock Creek is a
+ * real destination — and because nothing here depends on it resolving.
+ *
+ * ── EVENT CONTRACT (all on `document`) ──────────────────────────────────────
+ * LISTEN   'cbf-libs:open-trip-editor'  detail: { mode: 'create'|'edit', trip }
+ *   The trip is COPIED on receipt — cancel leaves no trace.
+ * DISPATCH 'cbf-libs:save-trip'         detail: { trip }
+ *   The ledger owns the trip list: it appends a new trip's block head, or merges
+ *   an edited trip and renames the lines under it. It re-prices nothing — a line
+ *   that claims a published rate states its own location when it makes the claim.
+ * DISPATCH 'cbf-libs:delete-trip'       detail: { key, keepLines }
+ *   `keepLines` is the difference between "the journey was wrong" and "none of
+ *   this is happening" — see the two delete buttons in the footer.
+ *
+ * bcn-lego-checked: the drawer IS esa-side-dialog (the same lego this spoke
+ * already uses for cbf-lib-subcontract-sheet and cbf-libs-line-editor); the
+ * fields are esa-text-field; the resolution notice is esa-alert-box; the footer
+ * buttons are esa-button. Nothing here is hand-rolled and the ecology catalog
+ * has no trip/itinerary-shaped lego to reach for. Beacon is not cloned on this
+ * machine.
+ */
+import EsaButton from '@esa/ecology/esa-button.astro';
+---
+
+<esa-side-dialog size="md" position="right" heading="Trip" data-libs-trip-editor>
+  <div class="cbf-lste stack" data-gap="lg">
+    <p class="cbf-lste__lede type-body-small">
+      A trip carries what every line under it would otherwise repeat. Raise how many times
+      it happens and every cost in the trip moves together.
+    </p>
+
+    <esa-text-field
+      data-trip-field="locality"
+      size="md"
+      label="Destination"
+      placeholder="City, ST"
+    ></esa-text-field>
+
+    <esa-text-field
+      data-trip-field="window"
+      size="md"
+      label="When"
+      placeholder="e.g. March–April 2026"
+      help-text="The window the trip falls in, not exact dates."
+    ></esa-text-field>
+
+    <esa-text-field
+      data-trip-field="occurrences"
+      size="md"
+      label="Times it happens"
+      help-text="A journey that repeats is one trip that happens N times — not N unrelated rows."
+    ></esa-text-field>
+
+    <div class="cbf-lste__effect repel" data-gap="sm">
+      <span class="stack" data-gap="3xs">
+        <span class="cbf-lste__effect-label type-body">Lines in this trip</span>
+        <span class="cbf-lste__note type-body-small" data-effect-note></span>
+        {/* What the delete below would do to those lines, said beside the count
+            it is about rather than inside a button label. */}
+        <span class="cbf-lste__note type-body-small" data-delete-note hidden></span>
+      </span>
+      <strong class="cbf-lste__effect-value" data-effect-total>$0</strong>
+    </div>
+  </div>
+
+  <div slot="footer" class="repel" data-gap="sm">
+    {/* Delete sits opposite Save, the way it does on the line sheet — and it is
+        offered HERE rather than on the head because this is the one place that
+        already states what goes with the trip: the lines under it and what they
+        come to, two rows above the button. A trip cannot be deleted while it is
+        still being created, so this is edit-mode only.
+
+        TWO deletes, because deleting a trip is two different intentions. The
+        costs under a trip can be real even when the journey around them is
+        wrong, and travel can now be entered outside a trip — so "keep the lines"
+        files them as ungrouped travel, each carrying away the destination it was
+        pricing at, instead of making the vendor retype every one of them. Both
+        buttons are quiet: the sentence above them already says what each does,
+        and the line count and total are two rows up. */}
+    <span class="cluster" data-gap="2xs" data-delete hidden>
+      <span data-delete-keep>
+        <EsaButton size="sm" color="secondary" appearance="soft">Delete trip, keep the lines</EsaButton>
+      </span>
+      <span data-delete-all>
+        <EsaButton size="sm" color="danger" appearance="soft" icon="trash-2">Delete trip and lines</EsaButton>
+      </span>
+    </span>
+    <span class="cluster" data-gap="sm">
+      <span data-cancel>
+        <EsaButton size="sm" color="secondary" appearance="outline">Cancel</EsaButton>
+      </span>
+      <span data-save>
+        <EsaButton size="sm" color="primary">Save trip</EsaButton>
+      </span>
+    </span>
+  </div>
+</esa-side-dialog>
+
+<script>
+  import '@esa/ecology/esa-side-dialog';
+  import '@esa/ecology/esa-text-field';
+  import {
+    costLines,
+    priceLines,
+    tripOf,
+    indirectConfig,
+    countOf,
+    usd,
+  } from '../../data/lib-entry.mjs';
+
+  const dialog = document.querySelector<HTMLElement>('[data-libs-trip-editor]') as any;
+  if (dialog) init(dialog);
+
+  function init(dialog: any) {
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string) => dialog.querySelector<T>(sel);
+
+    let mode: 'create' | 'edit' = 'edit';
+    let draft: any = null;
+    /* The ledger's live array and config, read to price what this trip carries.
+       Never mutated here — the ledger owns both. */
+    let ledger: any[] = costLines;
+    let cfg: any = indirectConfig;
+
+    const num = (s: any) => {
+      const v = parseFloat(String(s ?? '').replace(/[^0-9.\-]/g, ''));
+      return Number.isFinite(v) ? v : 0;
+    };
+    const setText = (el: Element | null, text: string) => { if (el) el.textContent = text; };
+    const show = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };
+    const setVal = (sel: string, v: string) => { const el: any = $(sel); if (el) el.value = v; };
+    const setBtnLabel = (wrap: Element | null, text: string) =>
+      setText(wrap?.querySelector('.esa-button__label') ?? null, text);
+
+    const paint = () => {
+      dialog.heading = mode === 'create' ? 'Add trip' : `Edit trip — ${draft.locality || 'Destination not set'}`;
+      setBtnLabel($('[data-save]'), mode === 'create' ? 'Add trip' : 'Save trip');
+
+      /* What editing this trip is about to move — the whole reason `occurrences`
+         lives on the trip rather than on each line. Every travel amount is
+         occurrences × count × duration × rate, so the committed total scales
+         exactly by the change in occurrences: this reads as the trip WILL read
+         after Save, not as it reads now. (priceLines resolves the trip by key out
+         of the shared list, so the draft's own count cannot be priced directly
+         without mutating a trip the vendor has not saved.) */
+      const under = ledger.filter((l: any) => l.trip === draft.key);
+      const priced = priceLines(ledger, cfg);
+      const committed = under.reduce((s: number, l: any) => s + (priced.amounts[l.id] ?? 0), 0);
+      const wasOcc = tripOf(draft.key)?.occurrences ?? draft.occurrences ?? 1;
+      const total = committed * ((draft.occurrences || 1) / (wasOcc || 1));
+      setText($('[data-effect-total]'), usd(total));
+      setText(
+        $('[data-effect-note]'),
+        under.length
+          ? `${countOf(under.length, 'lines')} · every one of them happens ${countOf(draft.occurrences || 1, 'times')}.`
+          : 'No lines yet — add them from the trip once it is saved.',
+      );
+      /* What each delete would do to those lines, stated where the count is
+         rather than inside a button label. Keeping them costs the occurrence
+         multiplier — a line that is no longer part of a journey happens once —
+         and that is a real change to the money, so it is said out loud. */
+      const occ = tripOf(draft.key)?.occurrences ?? draft.occurrences ?? 1;
+      setText(
+        $('[data-delete-note]'),
+        !under.length
+          ? ''
+          : occ > 1
+            ? `Deleting this trip can keep these ${under.length} lines: they file under “Not part of a trip”, each keeping this destination and each priced once rather than ${countOf(occ, 'times')}.`
+            : `Deleting this trip can keep these ${under.length} lines: they file under “Not part of a trip”, each keeping this destination.`,
+      );
+      show($('[data-delete-note]'), mode === 'edit' && under.length > 0);
+    };
+
+    document.addEventListener('cbf-libs:open-trip-editor', (e: any) => {
+      const d = e.detail ?? {};
+      if (!d.trip) return;
+      mode = d.mode ?? 'edit';
+      if (Array.isArray(d.lines)) ledger = d.lines;
+      if (d.cfg) cfg = d.cfg;
+      draft = { ...d.trip };
+
+      setVal('[data-trip-field="locality"]', draft.locality ?? '');
+      setVal('[data-trip-field="window"]', draft.window ?? '');
+      setVal('[data-trip-field="occurrences"]', String(draft.occurrences ?? 1));
+      const del = $('[data-delete]');
+      if (del) del.hidden = mode !== 'edit';
+      paint();
+      dialog.show();
+    });
+
+    dialog.addEventListener('change', (e: any) => {
+      if (!draft) return;
+      const el = e.target as HTMLElement;
+      const field = (el.dataset as any)?.tripField;
+      if (!field) return;
+      const raw = (el as any).value;
+      /* A journey happens at least once. */
+      if (field === 'occurrences') draft.occurrences = Math.max(1, num(raw));
+      else if (field === 'locality') draft.locality = String(raw ?? '').trim();
+      else draft[field] = String(raw ?? '');
+      paint();
+    });
+
+    dialog.addEventListener('click', (e: any) => {
+      if (!draft) return;
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-cancel]')) {
+        dialog.close();
+        return;
+      }
+      const del = t.closest('[data-delete-keep]') ? 'keep' : t.closest('[data-delete-all]') ? 'all' : '';
+      if (del) {
+        /* The ledger owns the trip list AND the lines filed in it, so the sheet
+           states the intent and lets the ledger carry it out. Which intent is
+           the whole content of this event: a travel line can outlive its trip
+           now — it files as ungrouped travel and keeps the destination — but
+           only if the vendor said so. */
+        document.dispatchEvent(
+          new CustomEvent('cbf-libs:delete-trip', { detail: { key: draft.key, keepLines: del === 'keep' } }),
+        );
+        dialog.close();
+        return;
+      }
+      if (t.closest('[data-save]')) {
+        document.dispatchEvent(new CustomEvent('cbf-libs:save-trip', { detail: { trip: draft } }));
+        dialog.close();
+      }
+    });
+  }
+</script>
+
+<style>
+  /* Layout primitives set display:flex, which beats the UA [hidden] rule at equal
+     specificity. Same guard the sibling sheets carry. */
+  [hidden] { display: none !important; }
+
+  .cbf-lste__lede,
+  .cbf-lste__note {
+    margin: 0;
+    color: var(--color-text-secondary);
+    max-width: 56ch;
+  }
+
+  .cbf-lste__effect {
+    --align: center;
+    align-items: center;
+    padding: var(--spacing-300);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    background: var(--color-surface-sunken);
+  }
+  .cbf-lste__effect-label {
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+  }
+  .cbf-lste__effect-value {
+    font-size: var(--type-size-500);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+</style>

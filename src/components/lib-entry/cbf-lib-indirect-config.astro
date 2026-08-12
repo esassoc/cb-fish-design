@@ -10,7 +10,7 @@
  *   1. the rate itself,
  *   2. the reference document that authorizes it (the NICRA or equivalent),
  *   3. the period it is effective for, and
- *   4. a MANUAL pick of which cost categories the rate is applied to.
+ *   4. a MANUAL pick of which cost subtotals the rate is applied to.
  *
  * WHY IT IS AUDIT-CRITICAL
  * (4) is the one that gets budgets sent back. Capital equipment and subcontracts
@@ -41,7 +41,7 @@
  *             detail: { config: { rate, referenceDoc, effectiveStart,
  *                                 effectiveEnd, mode, appliesTo } }
  *             `rate` is a FRACTION (0.2675, not 26.75). `appliesTo` is an array of
- *             category keys in `categories` order. Dates are MM/DD/YYYY, matching
+ *             scope keys in `indirectScopes` order. Dates are MM/DD/YYYY, matching
  *             the data module. Fired ONCE on mount (after the frame, so sibling
  *             listeners are registered) and after EVERY change.
  *   The sibling cost grid re-runs priceLines(lines, config) on this event and
@@ -72,7 +72,8 @@ import EsaStat from '@esa/ecology/esa-stat.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import {
   indirectConfig,
-  categories,
+  indirectScopes,
+  scopeAmount,
   costLines,
   priceLines,
   usd,
@@ -87,7 +88,7 @@ interface IndirectConfig {
   effectiveStart: string;
   effectiveEnd: string;
   mode: 'single' | 'dual';
-  /** Category keys the rate is applied to, in `categories` order. */
+  /** Scope keys the rate is applied to, in `indirectScopes` order. */
   appliesTo: string[];
 }
 
@@ -114,7 +115,7 @@ const toIso = (us: string) => {
 
 const priced = priceLines(costLines, config);
 const inScope = new Set(config.appliesTo);
-const scopeLabel = `${config.appliesTo.length} of ${categories.length}`;
+const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
 ---
 
 <section
@@ -142,13 +143,13 @@ const scopeLabel = `${config.appliesTo.length} of ${categories.length}`;
           Effective <span data-lic-start>{config.effectiveStart}</span> through
           <span data-lic-end>{config.effectiveEnd}</span>
           <span class="cbf-lic__sep" aria-hidden="true">·</span>
-          applied to <span data-lic-scope>{scopeLabel}</span> cost categories
+          applied to <span data-lic-scope>{scopeLabel}</span> cost subtotals
         </p>
       </div>
 
       <div class="cbf-lic__figures cluster" data-gap="lg">
         <div class="cbf-lic__num" data-lic-stat="base">
-          <EsaStat value={usd(priced.totals.indirectBase)} label="Indirect base" sub="scoped categories" />
+          <EsaStat value={usd(priced.totals.indirectBase)} label="Indirect base" sub="scoped subtotals" />
         </div>
         <div class="cbf-lic__num" data-lic-stat="indirect">
           <EsaStat value={usd(priced.totals.indirect)} label="Indirect" sub={`at ${pct(config.rate)}`} />
@@ -162,11 +163,16 @@ const scopeLabel = `${config.appliesTo.length} of ${categories.length}`;
 
   {/* ── The configuration surface. Everything applies live; the strip behind and
        the computation band below both repaint on every toggle. ── */}
-  <esa-side-dialog data-lic-dialog heading="Configure the indirect rate" size="lg" open={open}>
+  {/* `open` must be ABSENT when closed, not `open="false"`. Astro stringifies a
+      false boolean onto a custom element, and esa-side-dialog's `open` is a Lit
+      `{type: Boolean}` property — which keys off attribute PRESENCE, so the
+      string "false" set it to true and the drawer server-rendered open over the
+      page. `undefined` is the only value Astro omits. */}
+  <esa-side-dialog data-lic-dialog heading="Configure the indirect rate" size="lg" open={open || undefined}>
     <div class="stack" data-gap="lg">
       <p class="cbf-lic__lede type-body">
         The rate, the document that authorizes it, the period it covers, and — the part that gets
-        checked — exactly which cost categories it is applied to. Every change here re-bases the
+        checked — exactly which cost subtotals it is applied to. Every change here re-bases the
         indirect calculation immediately, both below and in the cost grid.
       </p>
 
@@ -209,21 +215,28 @@ const scopeLabel = `${config.appliesTo.length} of ${categories.length}`;
       </div>
 
       <div class="stack" data-gap="sm">
-        <h3 class="type-card-title">Categories this rate is applied to</h3>
+        <h3 class="type-card-title">What this rate is applied to</h3>
         <p class="cbf-lic__hint type-body-small">
-          A category's subtotal counts toward the indirect base only while it is checked. Uncheck a
-          category and watch the base and the indirect dollars below drop by that amount.
+          A subtotal counts toward the indirect base only while it is checked. Uncheck one and watch
+          the base and the indirect dollars below drop by that amount. Supplies &amp; Equipment is
+          listed as its two classes rather than as one line, because capitalizing an item is exactly
+          the thing that takes it out of the base — so the scope has to be sayable at that level.
         </p>
         <ul class="cbf-lic__picker" data-lic-picker>
-          {categories.map((cat) => (
-            <li class="cbf-lic__row repel" data-lic-row={cat.key} data-in={String(inScope.has(cat.key))}>
+          {indirectScopes.map((scope) => (
+            <li
+              class="cbf-lic__row repel"
+              data-lic-row={scope.key}
+              data-in={String(inScope.has(scope.key))}
+              data-nested={scope.parent ? '' : undefined}
+            >
               <esa-checkbox
-                data-lic-cat={cat.key}
-                label={cat.label}
+                data-lic-cat={scope.key}
+                label={scope.parent ? `${scope.parentLabel} — ${scope.label}` : scope.label}
                 size="md"
-                checked={inScope.has(cat.key)}
+                checked={inScope.has(scope.key)}
               ></esa-checkbox>
-              <span class="cbf-lic__amount" data-lic-row-amount>{usd(priced.byCategory[cat.key] ?? 0)}</span>
+              <span class="cbf-lic__amount" data-lic-row-amount>{usd(scopeAmount(priced, scope.key))}</span>
             </li>
           ))}
         </ul>
@@ -236,7 +249,7 @@ const scopeLabel = `${config.appliesTo.length} of ${categories.length}`;
           <EsaStat
             value={usd(priced.totals.indirectBase)}
             label="Indirect base"
-            sub={`${scopeLabel} categories`}
+            sub={`${scopeLabel} subtotals`}
           />
         </div>
         <span class="cbf-lic__op" aria-hidden="true">×</span>
@@ -264,7 +277,8 @@ const scopeLabel = `${config.appliesTo.length} of ${categories.length}`;
   import '@esa/ecology/esa-date-picker';
   import '@esa/ecology/esa-checkbox';
   import '@esa/ecology/esa-radio-group';
-  import { categories, costLines, priceLines, usd, pct } from '../../data/lib-entry.mjs';
+  import { indirectScopes, scopeAmount, costLines, priceLines, usd, pct } from '../../data/lib-entry.mjs';
+  import { isBlank, blankConfig } from '../../data/lib-demo.mjs';
 
   const root = document.querySelector<HTMLElement>('[data-lic]');
   if (root) init(root);
@@ -273,10 +287,22 @@ const scopeLabel = `${config.appliesTo.length} of ${categories.length}`;
     const $ = <T extends HTMLElement = HTMLElement>(sel: string, scope: ParentNode = root) =>
       scope.querySelector<T>(sel);
 
+    /* The demo's "Clear all entries" (src/data/lib-demo.mjs). A cleared form has
+       no approved rate on it, so blank is what the APPROVED baseline itself is —
+       which also keeps the drawer's "Reset to approved" honest, rather than
+       restoring a rate the cleared screen never showed. */
+    const BLANK = isBlank();
+
     // The approved configuration is serialized onto the root by the Astro render,
     // so the markup and this script can never start from different numbers.
-    const APPROVED = JSON.parse(root.dataset.config || '{}');
+    const APPROVED = BLANK ? blankConfig() : JSON.parse(root.dataset.config || '{}');
     const config = { ...APPROVED, appliesTo: [...(APPROVED.appliesTo ?? [])] };
+
+    /* Every number the strip and the drawer quote is priced from the SAME engine
+       the grid uses. On a cleared form the grid holds no lines, so this prices
+       against none either — an indirect base built out of lines that are not on
+       the screen is the one number this block must never show. */
+    const baseLines = BLANK ? [] : costLines;
 
     // The data module speaks MM/DD/YYYY; esa-date-picker wraps a native date input,
     // which speaks ISO. Translate at the boundary and keep the config in MM/DD/YYYY.
@@ -317,8 +343,9 @@ const scopeLabel = `${config.appliesTo.length} of ${categories.length}`;
 
     const render = () => {
       // Priced from the SAME engine the grid uses, so the two can't disagree.
-      const { totals, byCategory } = priceLines(costLines, config);
-      const scope = `${config.appliesTo.length} of ${categories.length}`;
+      const priced = priceLines(baseLines, config);
+      const { totals } = priced;
+      const scope = `${config.appliesTo.length} of ${indirectScopes.length}`;
 
       // Always-visible strip.
       setText('[data-lic-rate]', pct(config.rate));
@@ -332,18 +359,19 @@ const scopeLabel = `${config.appliesTo.length} of ${categories.length}`;
 
       // The computation band in the drawer footer — base × rate = indirect.
       setText('[data-lic-eq="base"] .esa-stat__value', usd(totals.indirectBase));
-      setText('[data-lic-eq="base"] .esa-stat__sub', `${scope} categories`);
+      setText('[data-lic-eq="base"] .esa-stat__sub', `${scope} subtotals`);
       setText('[data-lic-eq="rate"] .esa-stat__value', pct(config.rate));
       setText('[data-lic-eq="indirect"] .esa-stat__value', usd(totals.indirect));
 
-      // Picker rows — the subtotal is a category roll-up, so it is independent of
-      // scope; what changes is whether the row counts toward the base.
-      categories.forEach((cat: any) => {
-        const row = $(`[data-lic-row="${cat.key}"]`);
+      // Picker rows — the subtotal is a roll-up, so it is independent of scope;
+      // what changes is whether the row counts toward the base. A row is a
+      // category, or a BLOCK where the rate does not reach the whole category.
+      indirectScopes.forEach((sc: any) => {
+        const row = $(`[data-lic-row="${sc.key}"]`);
         if (!row) return;
-        row.dataset.in = String(config.appliesTo.includes(cat.key));
+        row.dataset.in = String(config.appliesTo.includes(sc.key));
         const amount = row.querySelector('[data-lic-row-amount]');
-        if (amount) amount.textContent = usd(byCategory[cat.key] ?? 0);
+        if (amount) amount.textContent = usd(scopeAmount(priced, sc.key));
       });
 
       fire();
@@ -357,10 +385,10 @@ const scopeLabel = `${config.appliesTo.length} of ${categories.length}`;
 
       if (key) {
         const on = !!el.checked;
-        // Rebuild from `categories` so appliesTo always stays in LIB order.
-        config.appliesTo = categories
-          .filter((c: any) => (c.key === key ? on : config.appliesTo.includes(c.key)))
-          .map((c: any) => c.key);
+        // Rebuild from `indirectScopes` so appliesTo always stays in LIB order.
+        config.appliesTo = indirectScopes
+          .filter((sc: any) => (sc.key === key ? on : config.appliesTo.includes(sc.key)))
+          .map((sc: any) => sc.key);
       } else if (field === 'rate') {
         const n = Number(el.value);
         config.rate = Number.isFinite(n) ? Math.min(Math.max(n, 0), 100) / 100 : 0;
@@ -386,6 +414,25 @@ const scopeLabel = `${config.appliesTo.length} of ${categories.length}`;
       else if (target.closest('[data-lic-reset]')) resetToApproved();
     });
 
+    /** Write the config onto every control — the drawer's fields and the picker. */
+    const writeControls = () => {
+      const rateEl = $('[data-lic-field="rate"]') as any;
+      /* No rate is EMPTY, not 0.00 — a cleared form asks the question; a zero
+         answers it, and answers it with a number no NICRA ever carried. */
+      if (rateEl) rateEl.value = config.rate ? (config.rate * 100).toFixed(2) : '';
+      const docEl = $('[data-lic-field="referenceDoc"]') as any;
+      if (docEl) docEl.value = config.referenceDoc;
+      const startEl = $('[data-lic-field="effectiveStart"]') as any;
+      if (startEl) startEl.value = toIso(config.effectiveStart);
+      const endEl = $('[data-lic-field="effectiveEnd"]') as any;
+      if (endEl) endEl.value = toIso(config.effectiveEnd);
+      if (modeEl) modeEl.value = config.mode;
+      indirectScopes.forEach((sc: any) => {
+        const box = $(`[data-lic-cat="${sc.key}"]`) as any;
+        if (box) box.checked = config.appliesTo.includes(sc.key);
+      });
+    };
+
     /** Put every control and the config back to the approved configuration. */
     const resetToApproved = () => {
       config.rate = APPROVED.rate;
@@ -394,25 +441,12 @@ const scopeLabel = `${config.appliesTo.length} of ${categories.length}`;
       config.effectiveEnd = APPROVED.effectiveEnd;
       config.mode = APPROVED.mode;
       config.appliesTo = [...APPROVED.appliesTo];
-
-      const rateEl = $('[data-lic-field="rate"]') as any;
-      if (rateEl) rateEl.value = (config.rate * 100).toFixed(2);
-      const docEl = $('[data-lic-field="referenceDoc"]') as any;
-      if (docEl) docEl.value = config.referenceDoc;
-      const startEl = $('[data-lic-field="effectiveStart"]') as any;
-      if (startEl) startEl.value = toIso(config.effectiveStart);
-      const endEl = $('[data-lic-field="effectiveEnd"]') as any;
-      if (endEl) endEl.value = toIso(config.effectiveEnd);
-      if (modeEl) modeEl.value = config.mode;
-      categories.forEach((cat: any) => {
-        const box = $(`[data-lic-cat="${cat.key}"]`) as any;
-        if (box) box.checked = config.appliesTo.includes(cat.key);
-      });
+      writeControls();
       render();
     };
 
     // ── The COR lens ────────────────────────────────────────────────────────
-    // A reviewer has to be able to OPEN this drawer — which categories the rate
+    // A reviewer has to be able to OPEN this drawer — which subtotals the rate
     // is charged on is the audit-critical fact of the whole block, and the strip
     // only says how many. But they must not be able to re-scope the vendor's
     // rate from inside a review. So the drawer stays inspectable and every
@@ -436,6 +470,11 @@ const scopeLabel = `${config.appliesTo.length} of ${categories.length}`;
 
     document.addEventListener('cbf-role:change', applyLens);
     applyLens();
+
+    // A cleared form server-rendered the approved rate into every control, so the
+    // controls have to be written back from the blank config before the first
+    // paint — the strip and the drawer would otherwise still be quoting it.
+    if (BLANK) writeControls();
 
     // Paint, then announce on the next frame so sibling module scripts (which run
     // before DOMContentLoaded) have their listeners attached when the mount event
