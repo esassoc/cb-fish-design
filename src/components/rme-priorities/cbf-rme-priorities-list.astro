@@ -2,16 +2,21 @@
 // cbf-rme-priorities-list — the "RM&E Priorities" reference list on the
 // Manage RM&E Priorities page: the small, mostly-static taxonomy of RM&E
 // Priority categories (checked directly against prod's ManageRme.mvc/ManageRme),
-// plus a "Create new" flow. A real <table> (not AG Grid) — this is a 6-row
-// reference list, not a sortable/filterable/searchable data surface; the
-// vendor-invoice document sheet's line-items table is this spoke's existing
-// precedent for a plain semantic table over a hand-rolled grid.
+// plus "Create new" and per-row "Edit title" flows. A real <table> (not AG
+// Grid) — this is a 6-row reference list, not a sortable/filterable/searchable
+// data surface; the vendor-invoice document sheet's line-items table is this
+// spoke's existing precedent for a plain semantic table over a hand-rolled grid.
 //
-// bcn-lego-checked: the create flow is esa-dialog + esa-text-field + esa-button
-// (same pattern as cbf-crs-create-commitment-dialog, this component's closest
-// reference) — no reinvented modal/form control. Checked Beacon (no matching
-// small-taxonomy-list pattern). cbf-rme-priorities-list is the reusable home.
+// bcn-lego-checked: create/edit flows are esa-dialog + esa-text-field +
+// esa-button (same pattern as cbf-crs-create-commitment-dialog); the per-row
+// edit control is esa-icon-button (icon="pencil"), server-rendered once in a
+// <template> and cloned into every row's Actions cell — the exact pattern
+// cbf-crs-commitment-documents uses so cloned rows keep the lego's scoped
+// styles. No reinvented modal/form/icon-button control. Checked Beacon (no
+// matching small-taxonomy-list pattern). cbf-rme-priorities-list is the
+// reusable home.
 import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
 import { RME_PRIORITIES as defaultPriorities } from '../../data/rme-priorities.mjs';
 
 interface Props {
@@ -25,32 +30,51 @@ const { priorities = defaultPriorities } = Astro.props;
     <span class="type-caption cbf-rme-priorities-list__count-label">
       Viewing {priorities.length} of {priorities.length} RM&E priorities
     </span>
-    <EsaButton color="primary" icon="plus" data-rme-priority-create-open>Create new RM&E Priority</EsaButton>
+    <span data-rme-priority-create-open>
+      <EsaButton color="primary" icon="plus">Create new RM&E priority</EsaButton>
+    </span>
   </header>
 
   <div class="cbf-rme-priorities-list__table-wrap">
     <table class="cbf-rme-priorities-list__table" data-rme-priorities-table>
       <thead>
         <tr>
-          <th scope="col">RME Priority ID</th>
-          <th scope="col">RME Priority Title</th>
+          <th scope="col">ID</th>
+          <th scope="col">RM&E priority title</th>
+          <th scope="col"><span class="cbf-rme-priorities-list__sr-only">Actions</span></th>
         </tr>
       </thead>
       <tbody>
         {priorities.map((p) => (
           <tr>
             <td class="cbf-rme-priorities-list__id">{p.id}</td>
-            <td>{p.title}</td>
+            <td data-priority-title>{p.title}</td>
+            <td class="cbf-rme-priorities-list__actions">
+              <span data-rme-priority-edit>
+                <EsaIconButton icon="pencil" label={`Edit ${p.title}`} size="sm" />
+              </span>
+            </td>
           </tr>
         ))}
       </tbody>
     </table>
   </div>
 
-  <esa-dialog heading="Create new RM&E Priority" show-close-button size="sm" data-rme-priority-create-dialog>
+  <!-- Real esa-icon-button lego, server-rendered once and cloned into each
+       JS-created row's Actions cell (the "Create new" flow) — cloning a
+       server-rendered node keeps the lego's Astro-scoped styles, which a
+       hand-built innerHTML string would silently lose. Same pattern as
+       cbf-crs-commitment-documents. -->
+  <template data-rme-priority-action-template hidden aria-hidden="true">
+    <span data-rme-priority-edit>
+      <EsaIconButton icon="pencil" label="Edit" size="sm" />
+    </span>
+  </template>
+
+  <esa-dialog heading="Create new RM&E priority" show-close-button size="sm" data-rme-priority-create-dialog>
     <form class="stack" data-gap="md" data-rme-priority-create-form>
       <esa-text-field
-        label="RM&E Priority title"
+        label="RM&E priority title"
         placeholder="e.g. Estuary Habitat Effectiveness"
         required
         data-field="title"
@@ -66,6 +90,28 @@ const { priorities = defaultPriorities } = Astro.props;
       </span>
       <span data-rme-priority-create-submit>
         <EsaButton color="primary" icon="plus">Create priority</EsaButton>
+      </span>
+    </div>
+  </esa-dialog>
+
+  <esa-dialog heading="Edit RM&E priority" show-close-button size="sm" data-rme-priority-edit-dialog>
+    <form class="stack" data-gap="md" data-rme-priority-edit-form>
+      <esa-text-field
+        label="RM&E priority title"
+        required
+        data-field="edit-title"
+      ></esa-text-field>
+      <p class="type-caption cbf-rme-priorities-list__error" data-rme-priority-edit-error hidden>
+        Enter a title to continue.
+      </p>
+    </form>
+
+    <div slot="footer">
+      <span data-rme-priority-edit-cancel>
+        <EsaButton color="ghost" appearance="outline">Cancel</EsaButton>
+      </span>
+      <span data-rme-priority-edit-submit>
+        <EsaButton color="primary">Save changes</EsaButton>
       </span>
     </div>
   </esa-dialog>
@@ -91,14 +137,28 @@ const { priorities = defaultPriorities } = Astro.props;
   .cbf-rme-priorities-list__error {
     color: var(--color-danger-strong);
   }
+
+  .cbf-rme-priorities-list__sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 </style>
 
 <style is:global>
-  /* The "Create new" flow appends rows via createElement/innerHTML, so they
-     never carry Astro's per-component scope hash — every rule a JS-created
-     row needs (padding, borders, the id column's muted tabular styling) must
-     live here, global and prefixed by the root class, or a created row
-     silently loses all of it (matches the server-rendered rows' look). */
+  /* The "Create new" flow appends rows via createElement, so they never carry
+     Astro's per-component scope hash — every rule a JS-created row needs
+     (padding, borders, the id column's muted tabular styling, the Actions
+     cell's alignment) must live here, global and prefixed by the root class,
+     or a created row silently loses all of it (matches the server-rendered
+     rows' look). The edit button itself is cloned from a server-rendered
+     <template>, so it keeps the esa-icon-button lego's own scoped styles. */
   .cbf-rme-priorities-list__table {
     width: 100%;
     border-collapse: collapse;
@@ -124,6 +184,11 @@ const { priorities = defaultPriorities } = Astro.props;
     width: 1%;
     white-space: nowrap;
   }
+  .cbf-rme-priorities-list__actions {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+  }
 </style>
 
 <script>
@@ -134,10 +199,23 @@ const { priorities = defaultPriorities } = Astro.props;
     const table = root.querySelector<HTMLTableElement>('[data-rme-priorities-table]');
     const tbody = table?.querySelector('tbody');
     const countLabel = root.querySelector<HTMLElement>('.cbf-rme-priorities-list__count-label');
+    const actionTemplate = root.querySelector<HTMLTemplateElement>('[data-rme-priority-action-template]');
     if (!table || !tbody) return;
 
     let total = tbody.querySelectorAll('tr').length;
 
+    const snackbar = () =>
+      document.querySelector<HTMLElement & { success?: (msg: string, cfg?: unknown) => void }>('[data-snackbar]');
+
+    // Point the edit control's accessible name at the title it edits.
+    function labelEditButton(row: HTMLElement, title: string): void {
+      const btn = row.querySelector<HTMLElement>('.esa-icon-button');
+      if (!btn) return;
+      btn.setAttribute('aria-label', `Edit ${title}`);
+      btn.setAttribute('title', `Edit ${title}`);
+    }
+
+    // ---- Create new priority -------------------------------------------------
     const openBtn = root.querySelector<HTMLElement>('[data-rme-priority-create-open]');
     const dialog = root.querySelector<HTMLElement & { show: () => void; close: () => void }>('[data-rme-priority-create-dialog]');
     const form = root.querySelector<HTMLFormElement>('[data-rme-priority-create-form]');
@@ -168,15 +246,27 @@ const { priorities = defaultPriorities } = Astro.props;
         .reduce((max, el) => Math.max(max, Number(el.textContent) || 0), 0) + 1;
 
       const row = document.createElement('tr');
-      row.innerHTML = `<td class="cbf-rme-priorities-list__id">${nextId}</td><td></td>`;
-      (row.children[1] as HTMLElement).textContent = title;
+
+      const idCell = document.createElement('td');
+      idCell.className = 'cbf-rme-priorities-list__id';
+      idCell.textContent = String(nextId);
+
+      const titleCell = document.createElement('td');
+      titleCell.setAttribute('data-priority-title', '');
+      titleCell.textContent = title;
+
+      const actionCell = document.createElement('td');
+      actionCell.className = 'cbf-rme-priorities-list__actions';
+      if (actionTemplate) actionCell.appendChild(actionTemplate.content.cloneNode(true));
+
+      row.append(idCell, titleCell, actionCell);
+      labelEditButton(row, title);
       tbody.appendChild(row);
 
       total += 1;
       if (countLabel) countLabel.textContent = `Viewing ${total} of ${total} RM&E priorities`;
 
-      const snackbar = document.querySelector<HTMLElement & { success?: (msg: string, cfg?: unknown) => void }>('[data-snackbar]');
-      snackbar?.success?.(`RM&E Priority ${nextId}: ${title} created.`, { duration: 5000 });
+      snackbar()?.success?.(`RM&E priority ${nextId}: ${title} created.`, { duration: 5000 });
 
       // cbf-project-rme-priorities-grid's bulk-edit dropdown is a sibling
       // section reading the same taxonomy — notify it so a freshly created
@@ -185,6 +275,63 @@ const { priorities = defaultPriorities } = Astro.props;
 
       dialog?.close();
       resetForm();
+    });
+
+    // ---- Edit an existing priority's title ----------------------------------
+    const editDialog = root.querySelector<HTMLElement & { show: () => void; close: () => void }>('[data-rme-priority-edit-dialog]');
+    const editForm = root.querySelector<HTMLFormElement>('[data-rme-priority-edit-form]');
+    const editCancelBtn = root.querySelector<HTMLElement>('[data-rme-priority-edit-cancel]');
+    const editSubmitBtn = root.querySelector<HTMLElement>('[data-rme-priority-edit-submit]');
+    const editErrorEl = root.querySelector<HTMLElement & { hidden: boolean }>('[data-rme-priority-edit-error]');
+    const editTitleField = editForm?.querySelector<HTMLElement & { value?: string }>('[data-field="edit-title"]');
+
+    // The row whose title the edit dialog is currently editing.
+    let editingRow: HTMLElement | null = null;
+
+    function closeEdit(): void {
+      editDialog?.close();
+      editingRow = null;
+      if (editErrorEl) editErrorEl.hidden = true;
+    }
+
+    // Delegated so both server-rendered rows and JS-created rows are covered.
+    tbody.addEventListener('click', (e) => {
+      const trigger = (e.target as HTMLElement).closest<HTMLElement>('[data-rme-priority-edit]');
+      if (!trigger || !tbody.contains(trigger)) return;
+      const row = trigger.closest('tr');
+      if (!row) return;
+      editingRow = row;
+      const currentTitle = row.querySelector<HTMLElement>('[data-priority-title]')?.textContent?.trim() ?? '';
+      if (editTitleField) editTitleField.value = currentTitle;
+      if (editErrorEl) editErrorEl.hidden = true;
+      editDialog?.show();
+    });
+
+    editCancelBtn?.addEventListener('click', closeEdit);
+
+    editSubmitBtn?.addEventListener('click', () => {
+      const title = (editTitleField?.value ?? '').trim();
+      if (!title) {
+        if (editErrorEl) editErrorEl.hidden = false;
+        return;
+      }
+      if (!editingRow) {
+        closeEdit();
+        return;
+      }
+
+      const id = Number(editingRow.querySelector('.cbf-rme-priorities-list__id')?.textContent) || 0;
+      const titleCell = editingRow.querySelector<HTMLElement>('[data-priority-title]');
+      if (titleCell) titleCell.textContent = title;
+      labelEditButton(editingRow, title);
+
+      snackbar()?.success?.(`RM&E priority ${id}: ${title} updated.`, { duration: 5000 });
+
+      // Keep the sibling project-priorities grid's dropdown and rows in sync
+      // with the renamed priority — mirrors the create-event handshake.
+      document.dispatchEvent(new CustomEvent('cbf-rme-priority-updated', { detail: { id, title } }));
+
+      closeEdit();
     });
   }
 

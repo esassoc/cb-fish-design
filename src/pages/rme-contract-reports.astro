@@ -12,6 +12,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
 import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
 import CbfPageHeading from '../components/shared/cbf-page-heading.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import CbfReportTabs from '../components/shared/cbf-report-tabs.astro';
 import CbfRmeContractReportsGrid from '../components/rme-contract-reports/cbf-rme-contract-reports-grid.astro';
@@ -24,8 +25,8 @@ const homeIcon =
 const crumbs = [
   { label: 'Home', href: withBase('/home'), icon: homeIcon },
   { label: 'Reporting' },
-  { label: 'RM&E Reporting', href: withBase('/rme-reporting') },
-  { label: 'Contract Reports' },
+  { label: 'RM&E reporting', href: withBase('/rme-reporting') },
+  { label: 'Contract reports' },
 ];
 ---
 <!-- manifest:
@@ -37,14 +38,17 @@ const crumbs = [
     - sub-nav tabs -> cbf-report-tabs
     - grid         -> cbf-rme-contract-reports-grid
 -->
-<BaseLayout title="RM&amp;E Contract Reports — Columbia Basin Fish &amp; Wildlife Program">
+<BaseLayout title="RM&amp;E contract reports — Columbia Basin Fish &amp; Wildlife Program">
   <CbfPublicNav />
 
   <main class="cbf-page">
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
-        <CbfPageHeading title="RM&E Contract Reports" />
+        <CbfPageHeading title="RM&E contract reports" />
         <CbfReportTabs tabs={rmeReportingTabs('contract-reports')} ariaLabel="RM&E reporting sections" />
+        <EsaAlertBox variant="info">
+          Access final and draft technical reports for contracts with WSEs requiring RM&E reporting (including WE IDs 156, 157, 158, and 162). Results are listed based on the calendar year when the report is due.
+        </EsaAlertBox>
         <CbfRmeContractReportsGrid />
       </CbfAppPanel>
     </EsaContainer>

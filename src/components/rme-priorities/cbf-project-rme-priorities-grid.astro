@@ -34,7 +34,7 @@ const priorityOptions = RME_PRIORITIES.map((p) => ({ value: String(p.id), label:
   <header class="cbf-data-grid__header repel">
     <span class="type-caption cbf-data-grid__count-label">All project RM&E priorities</span>
     <span data-rme-bulk-edit-open>
-      <EsaButton color="primary" appearance="outline" disabled>Bulk Edit Project RM&E Priorities and Project SME</EsaButton>
+      <EsaButton color="primary" appearance="outline" disabled>Bulk edit project RM&E priorities and project SME</EsaButton>
     </span>
   </header>
 
@@ -64,11 +64,11 @@ const priorityOptions = RME_PRIORITIES.map((p) => ({ value: String(p.id), label:
        hydrates without a second fetch. -->
   <script type="application/json" data-rme-priorities-data set:html={JSON.stringify(rows)}></script>
 
-  <esa-dialog heading="Bulk edit project RM&E priorities and Project SME" show-close-button size="md" data-rme-bulk-edit-dialog>
+  <esa-dialog heading="Bulk edit project RM&E priorities and project SME" show-close-button size="md" data-rme-bulk-edit-dialog>
     <form class="stack" data-gap="md" data-rme-bulk-edit-form>
       <p class="type-body" data-rme-bulk-edit-summary></p>
       <esa-select
-        label="RM&E Priority"
+        label="RM&E priority"
         placeholder="Select…"
         required
         options={JSON.stringify(priorityOptions)}
@@ -86,7 +86,7 @@ const priorityOptions = RME_PRIORITIES.map((p) => ({ value: String(p.id), label:
         data-field="comments"
       ></esa-textarea>
       <p class="type-caption cbf-project-rme-priorities__error" data-rme-bulk-edit-error hidden>
-        Choose an RM&E Priority to apply.
+        Choose an RM&E priority to apply.
       </p>
     </form>
 
@@ -173,15 +173,15 @@ const priorityOptions = RME_PRIORITIES.map((p) => ({ value: String(p.id), label:
       csvFileName: 'project-rme-priorities.csv',
       columnDefs: [
         {
-          headerName: 'Project Number', field: 'projectNumber', colId: 'projectNumber', minWidth: 160,
+          headerName: 'Project number', field: 'projectNumber', colId: 'projectNumber', minWidth: 160,
           getQuickFilterText: (p) => p.data?.projectNumber ?? '',
         },
         {
           headerName: 'Project SME', field: 'projectSme', colId: 'projectSme', minWidth: 170,
           getQuickFilterText: (p) => p.data?.projectSme ?? '',
         },
-        { headerName: 'RME Priority ID List', field: 'rmePriorityId', colId: 'rmePriorityId', minWidth: 160 },
-        { headerName: 'RME Priority Title List', field: 'rmePriorityTitle', colId: 'rmePriorityTitle', flex: 2, minWidth: 280 },
+        { headerName: 'RME priority ID list', field: 'rmePriorityId', colId: 'rmePriorityId', minWidth: 160 },
+        { headerName: 'RME priority title list', field: 'rmePriorityTitle', colId: 'rmePriorityTitle', flex: 2, minWidth: 280 },
         { headerName: 'Comments', field: 'comments', colId: 'comments', flex: 2, minWidth: 220 },
       ] satisfies ColDef[],
       gridOptions: {
@@ -193,6 +193,29 @@ const priorityOptions = RME_PRIORITIES.map((p) => ({ value: String(p.id), label:
     });
     if (!handle) return;
     const { gridApi } = handle;
+
+    // cbf-rme-priorities-list's per-row "Edit title" flow renames a priority in
+    // the sibling taxonomy list — relabel it here too (the bulk-edit dropdown
+    // option and every already-assigned project row) so the two sections never
+    // disagree. Mirrors the create-event handshake above.
+    document.addEventListener('cbf-rme-priority-updated', (e) => {
+      const { id, title } = (e as CustomEvent<{ id: number; title: string }>).detail;
+      const label = `${id}: ${title}`;
+
+      const select = field('rmePriorityId') as (HTMLElement & { options: { value: string; label: string }[] }) | null;
+      if (select) {
+        select.options = select.options.map((o) => (o.value === String(id) ? { ...o, label } : o));
+      }
+
+      const updated: ProjectPriority[] = [];
+      gridApi.forEachNode((node) => {
+        if (node.data && node.data.rmePriorityId === id) {
+          node.data.rmePriorityTitle = label;
+          updated.push(node.data);
+        }
+      });
+      if (updated.length) gridApi.applyTransaction({ update: updated });
+    });
 
     bulkEditOpenWrap?.addEventListener('click', () => {
       if (bulkEditOpenBtn?.disabled) return;
@@ -237,7 +260,7 @@ const priorityOptions = RME_PRIORITIES.map((p) => ({ value: String(p.id), label:
       gridApi.deselectAll();
 
       const snackbar = document.querySelector<HTMLElement & { success?: (msg: string, cfg?: unknown) => void }>('[data-snackbar]');
-      snackbar?.success?.(`Updated RM&E Priority for ${updated.length} project${updated.length === 1 ? '' : 's'}.`, { duration: 5000 });
+      snackbar?.success?.(`Updated RM&E priority for ${updated.length} project${updated.length === 1 ? '' : 's'}.`, { duration: 5000 });
 
       dialog?.close();
       resetForm();

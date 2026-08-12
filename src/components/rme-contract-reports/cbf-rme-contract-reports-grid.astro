@@ -47,10 +47,6 @@ const yearOptions = [
 ];
 ---
 <section class="cbf-rme-contract-reports stack" data-gap="md">
-  <header class="cbf-data-grid__header repel">
-    <span class="type-caption cbf-data-grid__count-label">All contract reports</span>
-  </header>
-
   <div class="cbf-data-grid__controls repel">
     <div class="cbf-data-grid__filters cluster" data-gap="lg">
       <label class="cbf-data-grid__filter">
@@ -159,38 +155,38 @@ const yearOptions = [
           },
         },
         {
-          headerName: 'Project Number', field: 'projectNumber', colId: 'projectNumber', minWidth: 140,
+          headerName: 'Project number', field: 'projectNumber', colId: 'projectNumber', minWidth: 140,
           getQuickFilterText: (p) => p.data?.projectNumber ?? '',
         },
         {
-          headerName: 'Project Title', field: 'projectTitle', colId: 'projectTitle', flex: 2, minWidth: 260,
+          headerName: 'Project title', field: 'projectTitle', colId: 'projectTitle', flex: 2, minWidth: 260,
           getQuickFilterText: (p) => p.data?.projectTitle ?? '',
         },
         {
-          headerName: 'Contract Number', field: 'contractNumber', colId: 'contractNumber', minWidth: 150,
+          headerName: 'Contract number', field: 'contractNumber', colId: 'contractNumber', minWidth: 150,
           getQuickFilterText: (p) => p.data?.contractNumber ?? '',
         },
         {
-          headerName: 'Contract Contractor', field: 'contractContractor', colId: 'contractContractor', minWidth: 240,
+          headerName: 'Contract contractor', field: 'contractContractor', colId: 'contractContractor', minWidth: 240,
           getQuickFilterText: (p) => p.data?.contractContractor ?? '',
         },
-        { headerName: 'Work Elements', field: 'workElements', colId: 'workElements', minWidth: 130 },
+        { headerName: 'Work elements', field: 'workElements', colId: 'workElements', minWidth: 130 },
         { headerName: 'WE 132', field: 'we132Id', colId: 'we132Id', minWidth: 100 },
-        dateCol('Planned Metric Start Date', 'plannedMetricStart'),
-        dateCol('Planned Metric End Date', 'plannedMetricEnd'),
-        dateCol('WSE Start Date', 'wseStart'),
-        dateCol('WSE End Date', 'wseEnd'),
-        dateCol('WE Original Deliverable Due Date', 'weOriginalDueDate', 170),
-        dateCol('WE Deliverable Completion Date', 'weCompletionDate', 170),
-        dateCol('Report Upload Date', 'reportUploadDate'),
-        dateCol('Report Period Start', 'reportPeriodStart'),
-        dateCol('Report Period End', 'reportPeriodEnd'),
-        { headerName: 'Covered Contracts', field: 'coveredContracts', colId: 'coveredContracts', minWidth: 170, valueFormatter: naFmt },
-        { headerName: 'Report Type', field: 'reportType', colId: 'reportType', minWidth: 190, valueFormatter: naFmt },
-        { headerName: 'Document Link', field: 'documentFileName', colId: 'documentFileName', minWidth: 260, valueFormatter: naFmt },
+        dateCol('Planned metric start date', 'plannedMetricStart'),
+        dateCol('Planned metric end date', 'plannedMetricEnd'),
+        dateCol('WSE start date', 'wseStart'),
+        dateCol('WSE end date', 'wseEnd'),
+        dateCol('WE original deliverable due date', 'weOriginalDueDate', 170),
+        dateCol('WE deliverable completion date', 'weCompletionDate', 170),
+        dateCol('Report upload date', 'reportUploadDate'),
+        dateCol('Report period start', 'reportPeriodStart'),
+        dateCol('Report period end', 'reportPeriodEnd'),
+        { headerName: 'Covered contracts', field: 'coveredContracts', colId: 'coveredContracts', minWidth: 170, valueFormatter: naFmt },
+        { headerName: 'Report type', field: 'reportType', colId: 'reportType', minWidth: 190, valueFormatter: naFmt },
+        { headerName: 'Document link', field: 'documentFileName', colId: 'documentFileName', minWidth: 260, valueFormatter: naFmt },
         { headerName: 'Project SME', field: 'projectSme', colId: 'projectSme', minWidth: 150 },
-        { headerName: 'RME Priority ID List', field: 'rmePriorityId', colId: 'rmePriorityId', minWidth: 150 },
-        { headerName: 'RME Priority Title List', field: 'rmePriorityTitle', colId: 'rmePriorityTitle', minWidth: 260 },
+        { headerName: 'RME priority ID list', field: 'rmePriorityId', colId: 'rmePriorityId', minWidth: 150 },
+        { headerName: 'RME priority title list', field: 'rmePriorityTitle', colId: 'rmePriorityTitle', minWidth: 260 },
       ],
       gridOptions: {
         isExternalFilterPresent: () => yearValue !== '',
