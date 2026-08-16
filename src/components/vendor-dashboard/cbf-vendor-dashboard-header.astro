@@ -22,7 +22,6 @@ const { firstName, company, submitHref, showStats = true } = Astro.props;
   <EsaPageHeader
     eyebrow={company}
     title={`Welcome back, ${firstName}`}
-    lede="Submit and track invoices for your Columbia Basin Fish & Wildlife Program contracts."
   >
     <EsaButton slot="actions" href={submitHref} color="primary" size="lg" icon="file-plus">
       Submit invoice
