@@ -1,0 +1,232 @@
+---
+// cbf-report-embed — the CBFish-owned chrome that wraps a third-party Power BI
+// report: the vendor credit (esa-alert-box, title only — the body carried
+// provenance and a description of the toolbar, and was removed 2026-08-16), a
+// toolbar (report scope as esa-badge chips + esa-button / esa-icon-button
+// actions), and the framed report surface. The frame renders its three states — loaded (the vendor canvas),
+// loading (esa-loading-spinner), and no-access (esa-empty-state) — so the build has
+// every state to translate, not just the happy path.
+//
+// bcn-lego-checked: banner = esa-alert-box, actions = esa-button / esa-icon-button,
+// scope tags = esa-badge, the loading state = esa-loading-spinner, the no-access
+// state = esa-empty-state — all hub legos. The report CANVAS is a static token-built
+// placeholder for the region Power BI renders (a vendor embed, not a chart lego) and
+// the frame chrome is spoke-owned page furniture with no esa- equivalent. Checked
+// Ecology + Beacon. cbf-report-embed is the reusable home for the embed surface.
+import '@esa/tokens/type-roles.css';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaLoadingSpinner from '@esa/ecology/esa-loading-spinner.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import EsaIcon from '@esa/ecology/esa-icon.astro';
+
+interface Props {
+  title: string;
+  lastRefreshed: string;
+  scope: string[];
+}
+const { title, lastRefreshed, scope } = Astro.props;
+
+// Deterministic mock series — expenditures by fiscal month (FY2026, $M). Invented,
+// domain-credible, stable across renders (no Math.random). Feeds the placeholder
+// canvas the real Power BI embed replaces.
+const series = [
+  { month: 'Oct', value: 3.2 },
+  { month: 'Nov', value: 4.1 },
+  { month: 'Dec', value: 3.8 },
+  { month: 'Jan', value: 5.4 },
+  { month: 'Feb', value: 4.7 },
+  { month: 'Mar', value: 6.1 },
+  { month: 'Apr', value: 5.2 },
+  { month: 'May', value: 6.8 },
+];
+const peak = Math.max(...series.map((d) => d.value));
+---
+<section class="cbf-report-embed" aria-label={title}>
+  <!-- verbal-restraint-allow: Powered by Power BI -->
+  <EsaAlertBox variant="info" title="Powered by Power BI" />
+
+  <div class="cbf-report-embed__toolbar">
+    <div class="cbf-report-embed__scope">
+      <span class="cbf-report-embed__scope-label type-label">Scope</span>
+      {scope.map((s) => (
+        <EsaBadge value={s} variant="secondary" size="sm" />
+      ))}
+    </div>
+    <div class="cbf-report-embed__actions">
+      <EsaButton color="primary" appearance="outline" size="sm" icon="file-text">Export</EsaButton>
+      <EsaButton color="primary" appearance="outline" size="sm" icon="external-link">Open in Power BI</EsaButton>
+      <EsaIconButton icon="rotate-ccw" label="Refresh report" size="sm" />
+    </div>
+  </div>
+
+  <!-- State: loaded — the vendor canvas -->
+  <figure class="cbf-report-embed__frame">
+    <figcaption class="cbf-report-embed__frame-head">
+      <span class="cbf-report-embed__frame-title type-card-title">{title}</span>
+      <span class="cbf-report-embed__frame-meta type-caption">Last refreshed {lastRefreshed}</span>
+    </figcaption>
+    <div class="cbf-report-embed__canvas" role="img" aria-label={`${title} — placeholder for the Power BI report canvas`}>
+      <span class="cbf-report-embed__canvas-tag type-caption">Power BI report canvas</span>
+      <div class="cbf-report-embed__chart">
+        {series.map((d) => (
+          <div class="cbf-report-embed__bar-cell">
+            <div class="cbf-report-embed__bar" style={`height:${Math.round((d.value / peak) * 100)}%`}></div>
+            <span class="cbf-report-embed__bar-label type-caption">{d.month}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </figure>
+
+  <!-- Reference: the frame's other two states -->
+  <div class="cbf-report-embed__states">
+    <div class="cbf-report-embed__state">
+      <span class="cbf-report-embed__state-name type-label">Loading</span>
+      <div class="cbf-report-embed__state-frame cbf-report-embed__state-frame--center">
+        <EsaLoadingSpinner size="md" />
+        <span class="type-caption">Fetching the report from Power BI…</span>
+      </div>
+    </div>
+    <div class="cbf-report-embed__state">
+      <span class="cbf-report-embed__state-name type-label">No access</span>
+      <div class="cbf-report-embed__state-frame">
+        <EsaEmptyState
+          title="You don't have access to this report"
+          description="This Power BI workspace is restricted. Request access to view expenditures."
+          size="sm"
+        >
+          <EsaIcon slot="icon" name="triangle-alert" size="lg" />
+          <EsaButton color="primary" appearance="outline" size="sm">Request access</EsaButton>
+        </EsaEmptyState>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cbf-report-embed {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-500);
+  }
+
+  /* Toolbar — scope chips left, owned actions right. Wraps on narrow widths. */
+  .cbf-report-embed__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-300);
+  }
+  .cbf-report-embed__scope {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-200);
+  }
+  .cbf-report-embed__scope-label {
+    color: var(--color-text-tertiary);
+  }
+  .cbf-report-embed__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-200);
+  }
+
+  /* The framed embed surface. */
+  .cbf-report-embed__frame {
+    margin: 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    overflow: hidden;
+    background: var(--color-surface);
+  }
+  .cbf-report-embed__frame-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--spacing-200);
+    padding: var(--spacing-300) var(--spacing-400);
+    background: var(--color-surface-sunken);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .cbf-report-embed__frame-meta {
+    color: var(--color-text-muted);
+  }
+  /* The vendor canvas region — a tinted plot area with a corner tag marking it as
+     the Power BI-rendered surface. */
+  .cbf-report-embed__canvas {
+    position: relative;
+    padding: var(--spacing-600) var(--spacing-500) var(--spacing-500);
+    min-height: 320px;
+    background:
+      linear-gradient(180deg, var(--color-surface) 0%, var(--color-surface-sunken) 100%);
+  }
+  .cbf-report-embed__canvas-tag {
+    position: absolute;
+    top: var(--spacing-300);
+    right: var(--spacing-400);
+    padding: 2px var(--spacing-200);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-100);
+    background: var(--color-surface);
+    color: var(--color-text-muted);
+  }
+  .cbf-report-embed__chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--spacing-300);
+    height: 240px;
+  }
+  .cbf-report-embed__bar-cell {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--spacing-150);
+    height: 100%;
+  }
+  .cbf-report-embed__bar {
+    width: 100%;
+    max-width: 52px;
+    border-radius: var(--radius-100) var(--radius-100) 0 0;
+    background: var(--color-primary);
+  }
+  .cbf-report-embed__bar-label {
+    color: var(--color-text-secondary);
+  }
+
+  /* The two reference states, side by side. */
+  .cbf-report-embed__states {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+    gap: var(--spacing-400);
+  }
+  .cbf-report-embed__state {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-200);
+  }
+  .cbf-report-embed__state-name {
+    color: var(--color-text-tertiary);
+  }
+  .cbf-report-embed__state-frame {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-300);
+    min-height: 180px;
+    padding: var(--spacing-500);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-200);
+    background: var(--color-surface);
+    color: var(--color-text-secondary);
+  }
+</style>
