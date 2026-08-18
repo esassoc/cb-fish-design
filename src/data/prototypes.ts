@@ -47,7 +47,7 @@ export const prototypes: Prototype[] = [
     slug: 'rme-work-elements',
     title: 'RM&E landing page',
     description:
-      "The landing page for the RM&E Reporting area — what BPA's research, monitoring, and evaluation work is and why it exists, then a sub-nav into the reporting views underneath it.",
+      "The landing page for RM&E reporting — what BPA's research, monitoring, and evaluation work is and why it exists, then a sub-nav into the views and admin screens underneath it.",
     route: '/rme-reporting',
     createdAt: '2026-07-23',
     status: 'in-progress',
