@@ -19,17 +19,17 @@ export function rmeReportingTabs(active: RmeReportTabKey) {
   return [
     { label: 'Summary', href: withBase('/rme-reporting'), active: active === 'summary' },
     {
-      label: 'RM&E work elements report',
+      label: 'Work statement elements',
       href: withBase('/rme-work-elements'),
       active: active === 'work-elements',
     },
     {
-      label: 'RM&E contract reports',
+      label: 'Contracts',
       href: withBase('/rme-contract-reports'),
       active: active === 'contract-reports',
     },
     {
-      label: 'Manage RM&E priorities',
+      label: 'Manage priorities',
       href: withBase('/rme-priorities'),
       active: active === 'priorities',
     },

@@ -9,7 +9,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
 import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
-import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
+import CbfPageHeading from '../components/shared/cbf-page-heading.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import CbfReportTabs from '../components/shared/cbf-report-tabs.astro';
@@ -24,7 +24,7 @@ const crumbs = [
   { label: 'Home', href: withBase('/home'), icon: homeIcon },
   { label: 'Mitigation work' },
   { label: 'RM&E reporting', href: withBase('/rme-reporting') },
-  { label: 'Work elements report' },
+  { label: 'Work statement elements' },
 ];
 ---
 <!-- manifest:
@@ -32,19 +32,19 @@ const crumbs = [
   sections:
     - top nav      -> cbf-public-nav
     - page frame   -> esa-container
-    - page header  -> esa-page-header
+    - page heading -> cbf-page-heading
     - sub-nav tabs -> cbf-report-tabs
     - grid         -> cbf-rme-work-elements-grid
     - toasts       -> esa-snackbar-container  # not decorative: the grid's
       #   inline-edit confirmations call document.querySelector('[data-snackbar]')
 -->
-<BaseLayout title="RM&amp;E work elements report — Columbia Basin Fish &amp; Wildlife Program">
+<BaseLayout title="RM&amp;E reporting: Work statement elements — Columbia Basin Fish &amp; Wildlife Program">
   <CbfPublicNav />
 
   <main class="cbf-page">
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
-        <EsaPageHeader title="RM&E work elements report" />
+        <CbfPageHeading title="RM&E reporting: Work statement elements" />
         <CbfReportTabs tabs={rmeReportingTabs('work-elements')} ariaLabel="RM&E reporting sections" />
         <EsaAlertBox variant="info">
           Every work statement element carrying RM&E work, with each project's RM&E type and focal area classifications. Double-click a primary/secondary type or focal area cell (shaded) to edit it directly.
