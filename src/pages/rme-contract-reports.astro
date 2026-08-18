@@ -26,7 +26,7 @@ const crumbs = [
   { label: 'Home', href: withBase('/home'), icon: homeIcon },
   { label: 'Mitigation work' },
   { label: 'RM&E reporting', href: withBase('/rme-reporting') },
-  { label: 'Contract reports' },
+  { label: 'Contracts' },
 ];
 ---
 <!-- manifest:
@@ -38,13 +38,13 @@ const crumbs = [
     - sub-nav tabs -> cbf-report-tabs
     - grid         -> cbf-rme-contract-reports-grid
 -->
-<BaseLayout title="RM&amp;E contract reports — Columbia Basin Fish &amp; Wildlife Program">
+<BaseLayout title="RM&amp;E reporting: Contracts — Columbia Basin Fish &amp; Wildlife Program">
   <CbfPublicNav />
 
   <main class="cbf-page">
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={crumbs}>
-        <CbfPageHeading title="RM&E contract reports" />
+        <CbfPageHeading title="RM&E reporting: Contracts" />
         <CbfReportTabs tabs={rmeReportingTabs('contract-reports')} ariaLabel="RM&E reporting sections" />
         <EsaAlertBox variant="info">
           Access final and draft technical reports for contracts with WSEs requiring RM&E reporting (including WE IDs 156, 157, 158, and 162). Results are listed based on the calendar year when the report is due.
