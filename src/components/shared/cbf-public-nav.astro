@@ -188,10 +188,11 @@ const based = (links: NavLink[]): NavLink[] =>
 
 <style is:global>
   /* Admin tray: 3-column grid so the search trigger sits dead-center between the
-     left admin links and Help, regardless of their differing widths. Also tighten
-     the bar's vertical padding (the gap is set in theme-cb-fish.css). */
+     left admin links and Help, regardless of their differing widths. The bar's
+     own gap and vertical padding are the hub's now — the app-bar-pad-y hook went
+     out with app-bar-gap in app-bar-hooks-removed, so the tray sits at the stock
+     16px block padding until the density variant lands. */
   .cbf-app-bar--admin {
-    --app-bar-pad-y: var(--spacing-300);
   }
   .cbf-app-bar--admin .esa-app-bar__row {
     display: grid;

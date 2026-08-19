@@ -601,3 +601,30 @@ This spoke wanted two different gaps (40px on the admin tray, 64px on the header
 and one tighter `padding-block` on short viewports for the map page; that is the
 concrete demand for such a variant.
 
+---
+
+### `doctor` fails on `--sidebar-width` even when `migrations.json` says to keep it
+
+**Status:** Open — needs upstream change. Nothing to fix locally; all 5 sites are correct.
+**Affects:** `npm run doctor` in any spoke using the `.sidebar` layout primitive.
+
+**Problem:**
+`sidebar-width-to-sidenav-width` retired the *semantic* `--sidebar-width`, and its own
+row leads with the instruction: "If your declaration sits on an element that carries
+the `.sidebar` LAYOUT PRIMITIVE class, KEEP IT EXACTLY AS IT IS — layouts.css still
+reads `--sidebar-width` and your override still works. Deleting it as inert is the one
+wrong move." This spoke has 5 such declarations, every one on an element carrying
+`.sidebar` and paired with `--sidebar-content-min`.
+
+`doctor.mjs` matches token rows by whole name with no scope, so it reports all 5 as
+REMOVED names read, and the check hard-FAILs. Following the migration correctly and
+failing the gate are the same state, which trains a reader to ignore a red line —
+the exact failure mode the `removed:true` rows exist to prevent.
+
+**Requested change:**
+Teach the scan the distinction the row already documents. Either (a) skip a
+`--sidebar-width` declaration whose rule also declares `--sidebar-content-min` (the
+primitive always ships the pair), or (b) let a migration row carry an
+`ambiguous: true` flag that downgrades it from FAIL to an informational line naming
+the call sites, since the row itself says a human must decide.
+

@@ -211,7 +211,15 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
      see the CSS :has() invalidation note elsewhere in this spoke. */
   @media (max-height: 800px) {
     html:has(.msow-page) .cbf-app-bar--admin { display: none; }
-    html:has(.msow-page) .cbf-app-bar--header { --app-bar-pad-y: var(--spacing-200, 8px); }
+    /* DELIBERATE REACH INTO A PRIVATE HUB TOKEN, and the only one in this spoke.
+       The app-bar-pad-y hook was removed (app-bar-hooks-removed) and its replacement
+       --_bar-pad-y is private, declared by esa-app-bar on itself — so this needs
+       !important to win, which is exactly the smell that says it is temporary.
+       It stays because this one is FUNCTIONAL, not cosmetic: under 800px tall the
+       map needs the height, and the stock 16px costs enough of it to matter.
+       REMOVE THIS the moment esa-app-bar ships the density variant requested in
+       docs/hub-issues.md. If a hub change breaks it, the bar merely gets taller. */
+    html:has(.msow-page) .cbf-app-bar--header { --_bar-pad-y: var(--spacing-200) !important; }
     html:has(.msow-page) .msow-page { padding-block: var(--spacing-200, 8px); }
     html:has(.msow-page) .msow-crumb-strip { padding-block: var(--spacing-200, 8px); }
     html:has(.msow-page) .msow-toolbar { padding-block: var(--spacing-200, 8px); }

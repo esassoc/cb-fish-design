@@ -131,7 +131,13 @@
 
 }
 
-/* esa-app-bar gap, tuned per bar via the hub's --app-bar-gap component token.
-   Both values are ecology tokens — the 40px step was promoted to --spacing-650. */
-.cbf-app-bar--admin  { --app-bar-gap: var(--spacing-650); }   /* 40px */
-.cbf-app-bar--header { --app-bar-gap: var(--spacing-800); }   /* 64px */
+/* NO per-bar gap any more. app-bar-hooks-removed (2026-08-16) deleted
+   the app-bar-gap hook and replaced it with a PRIVATE --_bar-gap that esa-app-bar
+   declares on itself, so a spoke override loses on specificity even before you
+   count that the hub closed the knob deliberately: "Density belongs in a
+   variant, not a per-instance override."
+
+   Both bars now take the hub's 32px (--spacing-600). The two-tier rhythm this
+   spoke wanted — 40px on the admin tray, 64px on the header — is the concrete
+   demand recorded against the density variant in docs/hub-issues.md. Restore
+   the distinction there, not here. */
