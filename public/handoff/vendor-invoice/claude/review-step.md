@@ -18,7 +18,7 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
 <div class="cbf-wizard-step" data-step="1" hidden="">
   <h1 class="cbf-page-title">Review &amp; submit</h1>
   <div class="cbf-review-notice">
-    <div class="esa-alert-box esa-alert-box--info">
+    <div class="esa-alert-box esa-alert-box--info typography-body-sm">
       <div class="esa-alert-box__icon">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -46,7 +46,7 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
   <div data-review-content="">
     <div class="cbf-review-summary" data-review-summary="">
       <div class="esa-card">
-        <div class="esa-card__body">
+        <div class="esa-card__body typography-body-md">
           <div class="cbf-invoice-card cbf-invoice-card--summary">
             <div class="cbf-invoice-card__head">
               <p class="cbf-invoice-card__number" data-review="invoice-number"></p>
@@ -87,11 +87,11 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
         <div class="esa-card__header">
           <div class="esa-card__header-content">
             <div class="esa-card__titles">
-              <h3 class="esa-card__title">Uploaded invoice</h3>
+              <h3 class="esa-card__title typography-title-sm-strong">Uploaded invoice</h3>
             </div>
           </div>
         </div>
-        <div class="esa-card__body">
+        <div class="esa-card__body typography-body-md">
           <div class="cbf-review-row">
             <svg
               width="16"
@@ -109,18 +109,28 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
             </svg>
             <span data-review="file-name"></span>
             <span class="cbf-review-meta" data-review="file-size"></span>
-            <div class="cbf-review-file-actions">
-              <button type="button" class="cbf-review-file-btn" data-invoice-replace="">
-                Replace
-              </button>
-              <button
-                type="button"
-                class="cbf-review-file-btn cbf-review-file-btn--danger"
-                data-invoice-remove=""
+            <button
+              type="button"
+              class="cbf-doc-view"
+              data-view-invoice=""
+              hidden=""
+              aria-label="Preview invoice"
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
               >
-                Remove
-              </button>
-            </div>
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
           </div>
         </div>
       </div>
@@ -129,11 +139,13 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
           <div class="esa-card__header">
             <div class="esa-card__header-content">
               <div class="esa-card__titles">
-                <h3 class="esa-card__title">Supporting documents</h3>
+                <h3 class="esa-card__title typography-title-sm-strong">
+                  Supporting documents
+                </h3>
               </div>
             </div>
           </div>
-          <div class="esa-card__body">
+          <div class="esa-card__body typography-body-md">
             <div class="cbf-review-docs" data-review="docs-list"></div>
           </div>
         </div>
@@ -142,10 +154,12 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
         <div class="esa-card">
           <div class="esa-card__header">
             <div class="esa-card__header-content">
-              <div class="esa-card__titles"><h3 class="esa-card__title">Notes</h3></div>
+              <div class="esa-card__titles">
+                <h3 class="esa-card__title typography-title-sm-strong">Notes</h3>
+              </div>
             </div>
           </div>
-          <div class="esa-card__body">
+          <div class="esa-card__body typography-body-md">
             <p class="cbf-review-notes" data-review="notes"></p>
           </div>
         </div>
@@ -153,15 +167,29 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
     </div>
   </div>
   <div class="cbf-step-actions">
-    <button type="button" class="cbf-btn-ghost" data-wizard-back="">Back</button>
+    <span data-wizard-cancel="">
+      <span
+        class="esa-button esa-button--variant-danger esa-button--appearance-outline esa-button--md"
+        ><button class="esa-button__native typography-microcopy-md" type="button">
+          <span class="esa-button__label">Cancel</span>
+        </button></span
+      >
+    </span>
+    <span data-wizard-back="">
+      <span
+        class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--md"
+        ><button class="esa-button__native typography-microcopy-md" type="button">
+          <span class="esa-button__label">Edit</span>
+        </button></span
+      >
+    </span>
     <span data-wizard-submit="">
       <span
-        class="esa-button esa-button--color-primary esa-button--appearance-fill esa-button--md"
+        class="esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--md"
+        ><button class="esa-button__native typography-microcopy-md" type="button">
+          <span class="esa-button__label">Submit invoice</span>
+        </button></span
       >
-        <button class="esa-button__native" type="button">
-          <span class="esa-button__label"> Submit invoice </span>
-        </button>
-      </span>
     </span>
   </div>
 </div>
@@ -175,14 +203,14 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
   justify-content: space-between;
   gap: var(--spacing-400);
   padding-bottom: var(--spacing-400);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-default);
 }
 .cbf-invoice-card__number {
   margin: 0;
-  font-family: var(--font-display);
+  font-family: var(--typography-font-family-display);
   font-size: 22px;
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
+  font-weight: var(--typography-font-weight-semibold);
+  color: var(--color-content-default);
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
@@ -192,10 +220,10 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
   align-items: center;
   padding: 2px var(--spacing-200);
   border-radius: var(--radius-100);
-  background: var(--color-primary-subtle);
-  color: var(--color-secondary);
+  background: var(--color-background-brand-subtle);
+  color: var(--color-background-brand-muted);
   font-size: 12px;
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--typography-font-weight-semibold);
 }
 .cbf-invoice-card__flag[hidden] {
   display: none;
@@ -215,13 +243,13 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
 }
 .cbf-invoice-card__row-label {
   font-size: 14px;
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-muted);
+  font-weight: var(--typography-font-weight-medium);
+  color: var(--color-content-default-tertiary);
 }
 .cbf-invoice-card__row-value {
   margin: 0;
   font-size: 15px;
-  color: var(--color-text-primary);
+  color: var(--color-content-default);
 }
 .cbf-invoice-card__total {
   display: grid;
@@ -229,36 +257,61 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
   gap: var(--spacing-400);
   align-items: baseline;
   padding-top: var(--spacing-400);
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border-default);
 }
 .cbf-invoice-card__total-label {
   font-size: 15px;
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
+  font-weight: var(--typography-font-weight-medium);
+  color: var(--color-content-default-secondary);
 }
 .cbf-invoice-card__total-value {
-  font-family: var(--font-display);
+  font-family: var(--typography-font-family-display);
   font-size: 28px;
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
+  font-weight: var(--typography-font-weight-semibold);
+  color: var(--color-content-default);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
+.typography-microcopy-md-subtle {
+  font-family: var(--typography-microcopy-md-subtle-font-family);
+  font-size: var(--typography-microcopy-md-subtle-font-size);
+  font-weight: var(--typography-microcopy-md-subtle-font-weight);
+  line-height: var(--typography-microcopy-md-subtle-line-height);
+  letter-spacing: var(--typography-microcopy-md-subtle-letter-spacing);
+}
+.typography-body-sm {
+  font-family: var(--typography-body-sm-font-family);
+  font-size: var(--typography-body-sm-font-size);
+  font-weight: var(--typography-body-sm-font-weight);
+  line-height: var(--typography-body-sm-line-height);
+  letter-spacing: var(--typography-body-sm-letter-spacing);
+}
+.typography-body-md {
+  font-family: var(--typography-body-md-font-family);
+  font-size: var(--typography-body-md-font-size);
+  font-weight: var(--typography-body-md-font-weight);
+  line-height: var(--typography-body-md-line-height);
+  letter-spacing: var(--typography-body-md-letter-spacing);
+}
+.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {
+  transition: transform 0.15s ease;
+}
 .esa-button {
-  --_btn-height: var(--form-height-md, 40px);
-  --_btn-padding-x: var(--form-padding-x-md, 16px);
-  --_btn-font-size: var(--form-font-size-md, 14px);
-  --_btn-radius: var(--form-radius-md, 6px);
-  --_accent: var(--color-primary, #46a758);
-  --_accent-hover: var(--color-primary-hover, #3e9b4f);
-  --_on: var(--color-text-inverse, #ffffff);
+  --_btn-pad-y: var(--spacing-300, 0.75rem);
+  --_btn-padding-x: var(--spacing-300, 0.75rem);
+  --_btn-radius: var(--button-radius-md, 0.5rem);
+  --_accent: var(--color-background-brand, #46a758);
+  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);
+  --_on: var(--color-content-default-knockout, #fcfcfc);
   --_accent-text: var(--_accent);
   --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);
   --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);
   display: inline-block;
 }
-.esa-button--color-primary {
-  --_accent-text: var(--color-primary-strong);
+.esa-button--sm {
+  --_btn-pad-y: var(--spacing-250, 0.625rem);
+  --_btn-padding-x: var(--spacing-250, 0.625rem);
+  --_btn-radius: var(--button-radius-sm, 4px);
 }
 .esa-button__native {
   display: inline-flex;
@@ -266,14 +319,10 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
   justify-content: center;
   gap: var(--spacing-200, 8px);
   width: 100%;
-  height: var(--_btn-height);
+  padding-block: var(--_btn-pad-y);
   padding-inline: var(--_btn-padding-x);
-  border: 1px solid transparent;
+  border: var(--border-width-default, 1px) solid transparent;
   border-radius: var(--_btn-radius);
-  font-size: var(--_btn-font-size);
-  font-family: var(--font-sans, system-ui, sans-serif);
-  font-weight: var(--font-weight-medium, 500);
-  line-height: 1;
   text-decoration: none;
   cursor: pointer;
   transition:
@@ -285,25 +334,116 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
 .esa-button--appearance-fill .esa-button__native {
   background: var(--_accent);
   color: var(--_on);
+  border-color: var(--_accent-border, transparent);
+}
+.esa-button--variant-chrome .esa-button__native {
+  background: transparent;
+  color: inherit;
   border-color: transparent;
 }
 .esa-button__label {
   white-space: nowrap;
 }
+summary.esa-button {
+  list-style: none;
+  cursor: pointer;
+}
+.esa-button--variant-danger {
+  --_accent: var(--color-background-utility-danger);
+  --_accent-hover: var(--color-background-utility-danger-hover);
+  --_accent-text: var(--color-content-utility-danger);
+}
+.esa-button--appearance-outline .esa-button__native,
+.esa-button--appearance-dashed .esa-button__native {
+  background: transparent;
+  color: var(--_accent-text);
+  border-color: var(--_accent);
+}
+.esa-button--variant-secondary {
+  --_accent: var(--color-background-brand-muted);
+  --_accent-hover: var(--color-background-brand-muted-hover);
+  --_on: var(--color-content-on-brand-muted, var(--color-content-default));
+  --_accent-text: var(--color-content-brand);
+  --_accent-border: var(--color-border-default-strong, #bbbbbb);
+}
+.esa-button--variant-primary {
+  --_accent-text: var(--color-content-brand);
+}
+.cbf-page-title {
+  margin: 0 0 var(--spacing-400);
+  font-family: var(--typography-font-family-display);
+  font-weight: var(--typography-font-weight-medium);
+  font-size: 40px;
+  line-height: 1;
+  letter-spacing: -1px;
+  color: var(--color-background-default-knockout);
+}
+.cbf-step-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-300);
+  margin-top: var(--spacing-700);
+  padding-top: var(--spacing-500);
+  border-top: 1px solid var(--color-border-default);
+}
+.cbf-step-actions [data-wizard-save-draft] {
+  margin-left: auto;
+}
+.cbf-review-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-400);
+}
+.cbf-review-summary .esa-card {
+  box-shadow: var(--elevation-2, 0 1px 3px rgba(16, 24, 40, 0.06));
+}
+.cbf-review-summary .cbf-review-row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-200);
+  font-size: 15px;
+  color: var(--color-content-default);
+}
+.cbf-review-summary .cbf-review-row svg {
+  color: var(--color-background-brand-muted);
+  flex: none;
+}
+.cbf-review-summary .cbf-review-meta {
+  color: var(--color-content-default-tertiary);
+  font-size: 13px;
+}
+.cbf-review-summary .cbf-doc-view {
+  flex: none;
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-100);
+  background: var(--color-background-elevation-raised);
+  color: var(--color-content-default-tertiary);
+  cursor: pointer;
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease,
+    background 0.12s ease;
+}
+.cbf-review-summary .cbf-doc-view[hidden] {
+  display: none;
+}
 .esa-card {
-  --_card-bg: var(--card-bg, var(--color-surface, #ffffff));
-  --_card-border: var(--card-border-color, var(--color-border, #e5e5e5));
-  --_card-radius: var(--card-radius, var(--radius-300, 0.5rem));
-  --_card-padding: var(--card-padding, var(--spacing-500, 1.5rem));
+  --_card-bg: var(--card-bg, var(--color-background-elevation-raised, #fcfcfc));
+  --_card-border: var(--card-border-color, var(--color-border-default, #cecece));
+  --_card-radius: var(--radius-md, 0.5rem);
+  --_card-padding: var(--spacing-500, 1.5rem);
   --_card-header-bg: var(--card-header-bg, transparent);
-  --_card-header-color: var(--card-header-color, var(--color-text-primary, #171717));
-  --_card-header-border: var(
-    --card-header-border-color,
-    var(--color-border-light, #efefef)
-  );
+  --_card-header-color: var(--color-content-default, #202020);
+  --_card-header-border: var(--color-border-default-subtle, #d9d9d9);
   display: block;
   background: var(--_card-bg);
-  border: 1px solid var(--_card-border);
+  border: var(--border-width-default, 1px) solid var(--_card-border);
   border-radius: var(--_card-radius);
   overflow: hidden;
 }
@@ -317,7 +457,7 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
   padding: var(--spacing-400, 1rem) var(--_card-padding);
   background: var(--_card-header-bg);
   color: var(--_card-header-color);
-  border-bottom: 1px solid var(--_card-header-border);
+  border-bottom: var(--border-width-default, 1px) solid var(--_card-header-border);
   min-height: 56px;
 }
 .esa-card__header-content {
@@ -331,134 +471,104 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
   gap: var(--spacing-050, 0.125rem);
 }
 .esa-card__title {
-  font-size: var(--type-size-250, 1.0625rem);
-  font-weight: 600;
   margin: 0;
   color: inherit;
-  font-family: var(--font-sans, "DM Sans", sans-serif);
 }
-.cbf-page-title {
-  margin: 0 0 var(--spacing-400);
-  font-family: var(--font-display);
-  font-weight: var(--font-weight-medium);
-  font-size: 40px;
-  line-height: 1;
-  letter-spacing: -1px;
-  color: var(--color-surface-inverse);
+.typography-microcopy-md {
+  font-family: var(--typography-microcopy-md-font-family);
+  font-size: var(--typography-microcopy-md-font-size);
+  font-weight: var(--typography-microcopy-md-font-weight);
+  line-height: var(--typography-microcopy-md-line-height);
+  letter-spacing: var(--typography-microcopy-md-letter-spacing);
 }
-.cbf-step-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--spacing-300);
-  margin-top: var(--spacing-700);
-  padding-top: var(--spacing-500);
-  border-top: 1px solid var(--color-border);
+.typography-body-sm {
+  font-family: var(--typography-body-sm-font-family);
+  font-size: var(--typography-body-sm-font-size);
+  font-weight: var(--typography-body-sm-font-weight);
+  line-height: var(--typography-body-sm-line-height);
+  letter-spacing: var(--typography-body-sm-letter-spacing);
 }
-.cbf-review-summary {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-400);
+.typography-body-md {
+  font-family: var(--typography-body-md-font-family);
+  font-size: var(--typography-body-md-font-size);
+  font-weight: var(--typography-body-md-font-weight);
+  line-height: var(--typography-body-md-line-height);
+  letter-spacing: var(--typography-body-md-letter-spacing);
 }
-.cbf-review-summary .esa-card {
-  box-shadow: var(--shadow-100, 0 1px 3px rgba(16, 24, 40, 0.06));
-}
-.cbf-review-row {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-200);
-  font-size: 15px;
-  color: var(--color-text-primary);
-}
-.cbf-review-row svg {
-  color: var(--color-secondary);
-  flex: none;
-}
-.cbf-review-meta {
-  color: var(--color-text-muted);
-  font-size: 13px;
-}
-.cbf-review-file-actions {
-  display: flex;
-  gap: var(--spacing-200);
-  margin-left: auto;
-  flex: none;
-}
-.cbf-review-file-btn {
-  font-size: 13px;
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-secondary);
-  padding: var(--spacing-100) var(--spacing-300);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-100);
-  background: var(--color-surface);
-  transition:
-    background 0.12s ease,
-    border-color 0.12s ease;
-}
-.cbf-review-file-btn--danger {
-  color: var(--color-danger, #dc2626);
-}
-.cbf-btn-ghost {
-  display: inline-flex;
-  align-items: center;
-  height: 40px;
-  padding: 0 var(--spacing-400);
-  border-radius: var(--radius-100);
-  font-family: var(--font-sans);
-  font-size: 15px;
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-secondary);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  transition:
-    background 0.12s ease,
-    border-color 0.12s ease;
+.typography-title-sm-strong {
+  font-family: var(--typography-title-sm-strong-font-family);
+  font-size: var(--typography-title-sm-strong-font-size);
+  font-weight: var(--typography-title-sm-strong-font-weight);
+  line-height: var(--typography-title-sm-strong-line-height);
+  letter-spacing: var(--typography-title-sm-strong-letter-spacing);
 }
 ```
 
 ## Tokens
+- `--border-width-default`: 1px _(semantic)_
+- `--button-radius-md`: .5rem _(component)_
+- `--button-radius-sm`: .25rem _(component)_
 - `--card-bg`: #fcfcfc _(component)_
 - `--card-border-color`: #dcdcdc _(component)_
 - `--card-header-bg`: transparent _(component)_
-- `--card-header-border-color`: #efefef _(component)_
-- `--card-header-color`: #3d3d3d _(component)_
-- `--card-padding`: 1.5rem _(component)_
-- `--card-radius`: .5rem _(component)_
-- `--color-border`: #dcdcdc _(semantic)_
-- `--color-border-light`: #efefef _(semantic)_
-- `--color-danger`: #e5484d _(semantic)_
-- `--color-primary`: #1e5386 _(semantic)_
-- `--color-primary-hover`: #1a4570 _(semantic)_
-- `--color-primary-strong`: #2a7e3b _(semantic)_
-- `--color-primary-subtle`: #f3f7fc _(semantic)_
-- `--color-secondary`: #2770b2 _(semantic)_
-- `--color-surface`: #fcfcfc _(semantic)_
-- `--color-surface-inverse`: #13273e _(semantic)_
-- `--color-text-inverse`: #fcfcfc _(semantic)_
-- `--color-text-muted`: #7c7c7c _(semantic)_
-- `--color-text-primary`: #3d3d3d _(semantic)_
-- `--color-text-secondary`: #525252 _(semantic)_
-- `--font-display`: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif _(primitive)_
-- `--font-sans`: "IBM Plex Sans", sans-serif _(primitive)_
-- `--font-weight-medium`: 500 _(primitive)_
-- `--font-weight-semibold`: 600 _(primitive)_
-- `--form-font-size-md`: clamp(.75rem, .66rem + .44vw, .9375rem) _(component)_
-- `--form-height-md`: 40px _(component)_
-- `--form-padding-x-md`: .75rem _(component)_
-- `--form-radius-md`: .5rem _(component)_
+- `--color-background-brand`: #1e5386 _(semantic)_
+- `--color-background-brand-hover`: #1a4570 _(semantic)_
+- `--color-background-brand-muted`: #2770b2 _(semantic)_
+- `--color-background-brand-muted-hover`: #1e5386 _(semantic)_
+- `--color-background-brand-subtle`: #f3f7fc _(semantic)_
+- `--color-background-default-knockout`: #13273e _(semantic)_
+- `--color-background-elevation-raised`: #fcfcfc _(semantic)_
+- `--color-background-utility-danger`: #ce2c31 _(semantic)_
+- `--color-background-utility-danger-hover`: #641723 _(semantic)_
+- `--color-border-default`: #dcdcdc _(semantic)_
+- `--color-border-default-strong`: #bdbdbd _(semantic)_
+- `--color-border-default-subtle`: #efefef _(semantic)_
+- `--color-content-brand`: #1e5386 _(semantic)_
+- `--color-content-default`: #3d3d3d _(semantic)_
+- `--color-content-default-knockout`: #fcfcfc _(semantic)_
+- `--color-content-default-secondary`: #525252 _(semantic)_
+- `--color-content-default-tertiary`: #656565 _(semantic)_
+- `--color-content-on-brand-muted`: #203c25 _(semantic)_
+- `--color-content-utility-danger`: #ce2c31 _(semantic)_
+- `--elevation-2`: 0 2px 12px 0 rgba(0, 0, 0, .04) _(semantic)_
 - `--radius-100`: .25rem _(primitive)_
-- `--radius-300`: .5rem _(primitive)_
-- `--shadow-100`: 0 2px 12px 0 rgba(0, 0, 0, .04) _(primitive)_
+- `--radius-md`: .5rem _(semantic)_
 - `--spacing-050`: .125rem _(primitive)_
-- `--spacing-100`: .25rem _(primitive)_
 - `--spacing-200`: .5rem _(primitive)_
+- `--spacing-250`: .625rem _(primitive)_
 - `--spacing-300`: .75rem _(primitive)_
 - `--spacing-400`: 1rem _(primitive)_
 - `--spacing-500`: 1.5rem _(primitive)_
 - `--spacing-700`: 3rem _(primitive)_
-- `--transition-fast`: .15s ease _(primitive)_
-- `--type-size-250`: clamp(.8125rem, .71rem + .5vw, 1.0625rem) _(primitive)_
+- `--transition-fast`: .15s ease _(semantic)_
+- `--typography-body-md-font-family`: "IBM Plex Sans", sans-serif _(semantic)_
+- `--typography-body-md-font-size`: clamp(.75rem, .66rem + .44vw, .9375rem) _(semantic)_
+- `--typography-body-md-font-weight`: 400 _(semantic)_
+- `--typography-body-md-letter-spacing`: .01em _(semantic)_
+- `--typography-body-md-line-height`: 1.6 _(semantic)_
+- `--typography-body-sm-font-family`: "IBM Plex Sans", sans-serif _(semantic)_
+- `--typography-body-sm-font-size`: clamp(.6875rem, .61rem + .38vw, .875rem) _(semantic)_
+- `--typography-body-sm-font-weight`: 400 _(semantic)_
+- `--typography-body-sm-letter-spacing`: .01em _(semantic)_
+- `--typography-body-sm-line-height`: 1.6 _(semantic)_
+- `--typography-font-family-display`: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif _(semantic)_
+- `--typography-font-weight-medium`: 500 _(semantic)_
+- `--typography-font-weight-semibold`: 600 _(semantic)_
+- `--typography-microcopy-md-font-family`: "IBM Plex Sans", sans-serif _(semantic)_
+- `--typography-microcopy-md-font-size`: clamp(.75rem, .66rem + .44vw, .9375rem) _(semantic)_
+- `--typography-microcopy-md-font-weight`: 500 _(semantic)_
+- `--typography-microcopy-md-letter-spacing`: .01em _(semantic)_
+- `--typography-microcopy-md-line-height`: 1 _(semantic)_
+- `--typography-microcopy-md-subtle-font-family`: "IBM Plex Sans", sans-serif _(semantic)_
+- `--typography-microcopy-md-subtle-font-size`: clamp(.75rem, .66rem + .44vw, .9375rem) _(semantic)_
+- `--typography-microcopy-md-subtle-font-weight`: 400 _(semantic)_
+- `--typography-microcopy-md-subtle-letter-spacing`: .01em _(semantic)_
+- `--typography-microcopy-md-subtle-line-height`: 1 _(semantic)_
+- `--typography-title-sm-strong-font-family`: "IBM Plex Sans", sans-serif _(semantic)_
+- `--typography-title-sm-strong-font-size`: clamp(.8125rem, .71rem + .5vw, 1.0625rem) _(semantic)_
+- `--typography-title-sm-strong-font-weight`: 600 _(semantic)_
+- `--typography-title-sm-strong-letter-spacing`: .01em _(semantic)_
+- `--typography-title-sm-strong-line-height`: 1.6 _(semantic)_
 
 ## Behavior
 ```ts
@@ -540,7 +650,7 @@ export function initInvoiceWizard(): void {
     // colour the connector lines between done steps
     stepperLines.forEach((line, i) => {
       line.style.background =
-        i < current ? 'var(--color-primary)' : 'var(--color-border)';
+        i < current ? 'var(--color-background-brand)' : 'var(--color-border-default)';
     });
   }
 
@@ -568,13 +678,22 @@ export function initInvoiceWizard(): void {
   // Prototype-only testing helper so the review/confirmation screens can be reached
   // without hand-filling the form. Wired to the dev-bar "Autofill → Review" button
   // and exposed on window for console use (vendorInvoiceAutofill()).
+  // A minimal but *valid* one-page PDF (base64). A bare "%PDF-1.4" header with no
+  // objects/xref/trailer is NOT a renderable PDF — Chrome's PDF engine shows a
+  // blank viewer for it — so the demo file must be a real document to preview.
+  const DEMO_PDF_BASE64 =
+    'JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiA+PiA+PiAvQ29udGVudHMgNSAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago1IDAgb2JqCjw8IC9MZW5ndGggNjAgPj4Kc3RyZWFtCkJUIC9GMSAyMiBUZiA3MiA3MDAgVGQgKERlbW8gaW52b2ljZSBcMjI2IGZvciB0ZXN0aW5nKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU4IDAwMDAwIG4gCjAwMDAwMDAxMTUgMDAwMDAgbiAKMDAwMDAwMDI0MSAwMDAwMCBuIAowMDAwMDAwMzExIDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKNDIxCiUlRU9GCg==';
+
+  function makeDemoInvoiceFile(): File {
+    const bytes = Uint8Array.from(atob(DEMO_PDF_BASE64), (c) => c.charCodeAt(0));
+    return new File([bytes], 'demo-invoice.pdf', { type: 'application/pdf' });
+  }
+
   function devAutofill(): void {
-    // A placeholder PDF unlocks the form (pdfEverLoaded) and shows the panel.
+    // A valid demo PDF unlocks the form (pdfEverLoaded), shows the panel, and
+    // actually renders in the viewer.
     if (!uploadedFile) {
-      const demo = new File(['%PDF-1.4\n% demo invoice for testing\n'], 'demo-invoice.pdf', {
-        type: 'application/pdf',
-      });
-      showFile(demo);
+      showFile(makeDemoInvoiceFile());
     }
     const fill = (selector: string, value: string): void => {
       const el = wizard.querySelector<any>(selector);
@@ -606,16 +725,16 @@ export function initInvoiceWizard(): void {
       updateStepper();
       syncPdfPanel();
     }
-    if (t.closest('[data-invoice-replace]')) uploadInput.click();
-    if (t.closest('[data-invoice-remove]')) { clearFile(); goTo(0); }
+    if (t.closest('[data-wizard-save-draft]')) saveDraft();
     if (t.closest('[data-wizard-submit]')) submitInvoice();
     if (t.closest('[data-modal-submit]')) submitInvoice();
     if (t.closest('[data-modal-back]')) wizard.querySelector<any>('[data-confirm-modal]')?.close();
+    if (t.closest('[data-wizard-cancel]')) {
+      wizard.querySelector<any>('[data-confirm-modal]')?.close();
+      window.location.href = import.meta.env.BASE_URL + 'vendor-dashboard';
+    }
     if (t.closest('[data-dev-autofill]')) devAutofill();
   });
-
-  // Show panel immediately on load (step 0)
-  syncPdfPanel();
 
   // ---- Combobox initialization ----
   // esa-combobox takes options as a JS property, not slotted HTML.
@@ -627,9 +746,18 @@ export function initInvoiceWizard(): void {
   // ---- PDF panel sync ----
 
   function syncPdfPanel(): void {
-    const show = current === 0;
+    // The panel rides alongside BOTH the details form (step 0) and the review
+    // summary (step 1) so the layout stays consistent across the two steps.
+    const onReview = current === 1;
+    const show = current === 0 || onReview;
     pdfPanel?.toggleAttribute('hidden', !show);
     cardBody?.classList.toggle('has-pdf', show);
+    // Remove is a step-0 edit action; on review the viewer is a read-only preview
+    // the vendor can switch between the invoice and each supporting document.
+    wizard.querySelector<HTMLElement>('[data-upload-remove]')?.toggleAttribute('hidden', onReview);
+    // Whenever the panel (re)opens, reset the viewer to the main invoice so a
+    // leftover supporting-doc preview doesn't carry across step changes.
+    if (show && uploadedFile) previewMainInvoice();
   }
 
   // ---- Validation ----
@@ -733,6 +861,44 @@ export function initInvoiceWizard(): void {
   const pdfViewer = wizard.querySelector<HTMLElement>('[data-pdf-viewer]')!;
 
   let pdfObjectUrl: string | null = null;
+  // Object URL for a supporting-doc preview (kept separate from pdfObjectUrl so
+  // switching previews never revokes the main invoice's URL).
+  let activePreviewUrl: string | null = null;
+
+  // Highlight whichever review "view" button matches the doc now on screen.
+  function setActiveViewRow(name: string): void {
+    wizard.querySelectorAll<HTMLElement>('[data-view-invoice],[data-view-doc]').forEach((b) => {
+      b.classList.toggle('is-active', b.getAttribute('data-view-name') === name);
+    });
+  }
+
+  // Point the viewer back at the main invoice PDF.
+  function previewMainInvoice(): void {
+    if (activePreviewUrl) { URL.revokeObjectURL(activePreviewUrl); activePreviewUrl = null; }
+    if (pdfFrame && pdfObjectUrl) pdfFrame.src = pdfObjectUrl;
+    if (pdfFilenameEl && uploadedFile) pdfFilenameEl.textContent = uploadedFile.name;
+    setActiveViewRow(uploadedFile?.name ?? '');
+  }
+
+  // Point the viewer at a supporting document (PDF or image renders inline).
+  function previewDoc(file: File): void {
+    if (activePreviewUrl) { URL.revokeObjectURL(activePreviewUrl); activePreviewUrl = null; }
+    activePreviewUrl = URL.createObjectURL(file);
+    if (pdfFrame) pdfFrame.src = activePreviewUrl;
+    if (pdfFilenameEl) pdfFilenameEl.textContent = file.name;
+    setActiveViewRow(file.name);
+  }
+
+  // Only PDFs and images preview inline in the iframe; office docs can't be shown.
+  function isPreviewable(file: File): boolean {
+    return file.type === 'application/pdf'
+      || file.type.startsWith('image/')
+      || /\.(pdf|png|jpe?g)$/i.test(file.name);
+  }
+
+  // Show the panel immediately on load (step 0). Deferred to here so syncPdfPanel's
+  // uploadedFile read runs after that binding is initialized (no TDZ at init).
+  syncPdfPanel();
 
   // Upload size cap — mirrors the "Max 25 MB" hint shown on the drop zones.
   const MAX_FILE_BYTES = 25 * 1024 * 1024;
@@ -825,14 +991,15 @@ export function initInvoiceWizard(): void {
     }
   }
 
-  docsInput?.addEventListener('change', () => {
-    const incoming = Array.from(docsInput.files ?? []);
+  // Accept a batch of files (from the picker or a drag-drop), skipping oversize
+  // and duplicate-name files and surfacing a single error for any rejected ones.
+  function addDocs(incoming: File[]): void {
+    if (!incoming.length) return;
     const oversize = incoming.filter((f) => f.size > MAX_FILE_BYTES);
     const existingNames = new Set(supportingDocs.map((f) => f.name));
     supportingDocs.push(
       ...incoming.filter((f) => f.size <= MAX_FILE_BYTES && !existingNames.has(f.name)),
     );
-    docsInput.value = '';
     if (oversize.length) {
       const names = oversize.map((f) => f.name).join(', ');
       setDocsError(
@@ -843,6 +1010,27 @@ export function initInvoiceWizard(): void {
       setDocsError('');
     }
     renderDocs();
+  }
+
+  docsInput?.addEventListener('change', () => {
+    addDocs(Array.from(docsInput.files ?? []));
+    docsInput.value = '';
+  });
+
+  // Drag & drop onto the whole backup-documents surface — multiple files at once.
+  const docsZone = wizard.querySelector<HTMLElement>('[data-docs-zone]');
+  docsZone?.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    docsZone.classList.add('is-over');
+  });
+  docsZone?.addEventListener('dragleave', (e) => {
+    // Only clear when the pointer actually leaves the zone, not its children.
+    if (!docsZone.contains(e.relatedTarget as Node)) docsZone.classList.remove('is-over');
+  });
+  docsZone?.addEventListener('drop', (e) => {
+    e.preventDefault();
+    docsZone.classList.remove('is-over');
+    addDocs(Array.from(e.dataTransfer?.files ?? []));
   });
 
   docsList?.addEventListener('click', (e) => {
@@ -850,6 +1038,17 @@ export function initInvoiceWizard(): void {
     if (!btn) return;
     supportingDocs.splice(Number(btn.dataset.docRemove), 1);
     renderDocs();
+  });
+
+  // Review step: "view" buttons swap which document the PDF panel is showing.
+  wizard.querySelector<HTMLElement>('[data-review-content]')?.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-view-invoice]')) { previewMainInvoice(); return; }
+    const docBtn = target.closest<HTMLElement>('[data-view-doc]');
+    if (docBtn) {
+      const doc = supportingDocs[Number(docBtn.dataset.viewDoc)];
+      if (doc) previewDoc(doc);
+    }
   });
 
   wizard.querySelector('[data-upload-browse]')?.addEventListener('click', () => uploadInput.click());
@@ -1143,8 +1342,12 @@ export function initInvoiceWizard(): void {
   // instances exist (page step + modal), so fill is scoped to one root container.
   const fileRowSvg =
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
+  const eyeSvg =
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
 
-  function fillReviewSummary(root: HTMLElement | null): void {
+  // withViewer: only the page-step review sits beside the PDF panel, so only it
+  // renders the "view" buttons. The modal review has no panel to drive.
+  function fillReviewSummary(root: HTMLElement | null, withViewer = false): void {
     if (!root) return;
     const set = (key: string, value: string): void => {
       const el = root.querySelector<HTMLElement>(`[data-review="${key}"]`);
@@ -1153,6 +1356,14 @@ export function initInvoiceWizard(): void {
 
     set('file-name', uploadedFile?.name ?? '(no file)');
     set('file-size', uploadedFile ? formatBytes(uploadedFile.size) : '');
+
+    // Main-invoice "view" button — shown only beside the panel; tag it with the
+    // filename so setActiveViewRow can highlight it when it's the one on screen.
+    const invViewBtn = root.querySelector<HTMLElement>('[data-view-invoice]');
+    if (invViewBtn) {
+      invViewBtn.toggleAttribute('hidden', !withViewer || !uploadedFile);
+      invViewBtn.setAttribute('data-view-name', uploadedFile?.name ?? '');
+    }
 
     set('invoice-number', fieldVal('[data-field="invoice-number"]') || 'No invoice number');
     // Label-left review layout: show the full contract / project identifiers as values.
@@ -1175,11 +1386,14 @@ export function initInvoiceWizard(): void {
     // Supporting documents — rows are plain data (not legos); toggle the card.
     const docsList = root.querySelector<HTMLElement>('[data-review="docs-list"]');
     if (docsList) {
-      docsList.innerHTML = supportingDocs.map((f) => `
+      docsList.innerHTML = supportingDocs.map((f, i) => `
         <div class="cbf-review-row">
           ${fileRowSvg}
           <span>${escHtml(f.name)}</span>
           <span class="cbf-review-meta">${formatBytes(f.size)}</span>
+          ${withViewer && isPreviewable(f)
+            ? `<button type="button" class="cbf-doc-view" data-view-doc="${i}" data-view-name="${escHtml(f.name)}" aria-label="Preview ${escHtml(f.name)}">${eyeSvg}</button>`
+            : ''}
         </div>`).join('');
     }
     root.querySelector<HTMLElement>('[data-review="docs-card"]')
@@ -1193,11 +1407,23 @@ export function initInvoiceWizard(): void {
   }
 
   function populateReview(): void {
-    fillReviewSummary(wizard.querySelector<HTMLElement>('[data-review-content]'));
+    fillReviewSummary(wizard.querySelector<HTMLElement>('[data-review-content]'), true);
   }
 
   function populateModalReview(): void {
     fillReviewSummary(wizard.querySelector<HTMLElement>('[data-modal-review-content]'));
+  }
+
+  // ---- Save as draft ----
+  // A draft keeps whatever's been entered so far — no validation, no submission.
+  // Prototype: there's no persistence layer, so we confirm with a toast and return
+  // the vendor to the dashboard, where drafts are listed with a "Draft" status.
+  function saveDraft(): void {
+    const snackbar = document.querySelector<any>('[data-snackbar]');
+    snackbar?.success?.('Draft saved.', { duration: 3000 });
+    setTimeout(() => {
+      window.location.href = import.meta.env.BASE_URL + 'vendor-dashboard';
+    }, 700);
   }
 
   // ---- Submit ----
@@ -1229,7 +1455,7 @@ export function initInvoiceWizard(): void {
       if (isModal) wizard.querySelector<any>('[data-confirm-modal]')?.close();
       resetWizard();
       const snackbar = document.querySelector<any>('[data-snackbar]');
-      snackbar?.success?.(`Invoice ${ref} submitted. The form has been cleared for your next one.`, { duration: 6000 });
+      snackbar?.success?.(`Invoice ${ref} submitted.`, { duration: 4000 });
     }, 1500);
   }
 

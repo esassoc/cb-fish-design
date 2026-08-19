@@ -1,0 +1,617 @@
+{
+  "name": "legacy-sow",
+  "url": "http://localhost:4787/cb-fish-design/legacy/sow/",
+  "theme": "cb-fish",
+  "stats": {
+    "rulesMatched": 99,
+    "originalBytes": 141337,
+    "tokensReferenced": 62
+  },
+  "tokens": [
+    {
+      "name": "--border-width-default",
+      "value": "1px",
+      "tier": "semantic"
+    },
+    {
+      "name": "--button-radius-md",
+      "value": ".5rem",
+      "tier": "component"
+    },
+    {
+      "name": "--color-background-brand",
+      "value": "#1e5386",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-background-brand-hover",
+      "value": "#1a4570",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-background-elevation-floating",
+      "value": "#fcfcfc",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-background-elevation-raised",
+      "value": "#fcfcfc",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-background-overlay-backdrop",
+      "value": "rgba(0, 0, 0, .5)",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-border-default-subtle",
+      "value": "#efefef",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-content-brand",
+      "value": "#1e5386",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-content-default",
+      "value": "#3d3d3d",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-content-default-knockout",
+      "value": "#fcfcfc",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-content-default-secondary",
+      "value": "#525252",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-content-link",
+      "value": "#1e5386",
+      "tier": "semantic"
+    },
+    {
+      "name": "--dialog-width",
+      "value": "480px",
+      "tier": "component"
+    },
+    {
+      "name": "--focus-ring-color",
+      "value": "#3e9b4f",
+      "tier": "component"
+    },
+    {
+      "name": "--focus-ring-offset",
+      "value": "2px",
+      "tier": "component"
+    },
+    {
+      "name": "--focus-ring-width",
+      "value": "2px",
+      "tier": "component"
+    },
+    {
+      "name": "--font-size-200",
+      "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+      "tier": "primitive"
+    },
+    {
+      "name": "--icon-size-md",
+      "value": "20px",
+      "tier": "primitive"
+    },
+    {
+      "name": "--radius-lg",
+      "value": ".75rem",
+      "tier": "semantic"
+    },
+    {
+      "name": "--radius-md",
+      "value": ".5rem",
+      "tier": "semantic"
+    },
+    {
+      "name": "--spacing-200",
+      "value": ".5rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-300",
+      "value": ".75rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-500",
+      "value": "1.5rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--transition-fast",
+      "value": ".15s ease",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-body-md-font-family",
+      "value": "\"IBM Plex Sans\", sans-serif",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-body-md-font-size",
+      "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-body-md-font-weight",
+      "value": "400",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-body-md-letter-spacing",
+      "value": ".01em",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-body-md-line-height",
+      "value": "1.6",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-font-family-sans",
+      "value": "\"IBM Plex Sans\", sans-serif",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-label-md-font-family",
+      "value": "\"IBM Plex Sans\", sans-serif",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-label-md-font-size",
+      "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-label-md-font-weight",
+      "value": "500",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-label-md-letter-spacing",
+      "value": ".01em",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-label-md-line-height",
+      "value": "1.6",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-md-font-family",
+      "value": "\"IBM Plex Sans\", sans-serif",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-md-font-size",
+      "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-md-font-weight",
+      "value": "500",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-md-letter-spacing",
+      "value": ".01em",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-md-line-height",
+      "value": "1",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-title-font-family",
+      "value": "\"IBM Plex Sans\", sans-serif",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-title-font-size",
+      "value": "clamp(1rem, .88rem + .6vw, 1.25rem)",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-title-font-weight",
+      "value": "500",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-title-letter-spacing",
+      "value": ".01em",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-title-line-height",
+      "value": "1.6",
+      "tier": "semantic"
+    }
+  ],
+  "components": [
+    {
+      "component": "esa-button",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-button.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-icon",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-icon.astro",
+      "origin": "hub"
+    }
+  ],
+  "sections": [
+    {
+      "index": 0,
+      "label": "div",
+      "tag": "div",
+      "html": "<div class=\"legacy-chrome\">\n  <div class=\"legacy-chrome__utilitybar\">\n    <div class=\"legacy-chrome__utilitybar-inner\">\n      <span>Data management</span> <span>System status</span> <span>System configuration</span>\n    </div>\n  </div>\n  <div class=\"legacy-chrome__appbar\">\n    <div class=\"legacy-chrome__appbar-inner\">\n      <a class=\"legacy-chrome__brand\" href=\"#\">\n        <img\n          class=\"legacy-chrome__logo\"\n          src=\"/cb-fish-design/images/legacy/Modern-Nav-Logo.svg\"\n          width=\"48\"\n          height=\"48\"\n          alt=\"\"\n        />\n        <img\n          class=\"legacy-chrome__logotype\"\n          src=\"/cb-fish-design/images/legacy/Modern-Nav-Logo-Type.svg\"\n          width=\"190\"\n          height=\"47\"\n          alt=\"Columbia Basin Fish &amp; Wildlife Program\"\n        />\n      </a>\n      <nav class=\"legacy-chrome__nav\">\n        <span class=\"legacy-chrome__navitem\">\n          <img\n            src=\"/cb-fish-design/images/legacy/Nav-Mitigationwork.svg\"\n            alt=\"\"\n            width=\"16\"\n            height=\"16\"\n          />\n          Mitigation work\n          <img\n            class=\"legacy-chrome__navcaret\"\n            src=\"/cb-fish-design/images/legacy/Nav-Down-arrow.svg\"\n            alt=\"\"\n            width=\"9\"\n            height=\"9\"\n          /> </span\n        ><span class=\"legacy-chrome__navitem\">\n          <img\n            src=\"/cb-fish-design/images/legacy/Nav-Reporting.svg\"\n            alt=\"\"\n            width=\"16\"\n            height=\"16\"\n          />\n          Reporting\n          <img\n            class=\"legacy-chrome__navcaret\"\n            src=\"/cb-fish-design/images/legacy/Nav-Down-arrow.svg\"\n            alt=\"\"\n            width=\"9\"\n            height=\"9\"\n          /> </span\n        ><span class=\"legacy-chrome__navitem\">\n          <img src=\"/cb-fish-design/images/legacy/Nav-Funding.svg\" alt=\"\" width=\"16\" height=\"16\" />\n          Funding\n          <img\n            class=\"legacy-chrome__navcaret\"\n            src=\"/cb-fish-design/images/legacy/Nav-Down-arrow.svg\"\n            alt=\"\"\n            width=\"9\"\n            height=\"9\"\n          /> </span\n        ><span class=\"legacy-chrome__navitem\">\n          <img\n            src=\"/cb-fish-design/images/legacy/Nav-Dashboard.svg\"\n            alt=\"\"\n            width=\"16\"\n            height=\"16\"\n          />\n          Dashboard </span\n        ><span class=\"legacy-chrome__navitem\">\n          Recent\n          <img\n            class=\"legacy-chrome__navcaret\"\n            src=\"/cb-fish-design/images/legacy/Nav-Down-arrow.svg\"\n            alt=\"\"\n            width=\"9\"\n            height=\"9\"\n          />\n        </span>\n      </nav>\n    </div>\n  </div>\n  <div class=\"legacy-chrome__messagebar\"></div>\n  <div class=\"legacy-container legacy-chrome__crumbrow\">\n    <ul class=\"legacy-chrome__crumbs\">\n      <span>Projects &amp; Contracts</span\n      ><span class=\"legacy-chrome__crumbsep\">/</span\n      ><span>Projects</span\n      ><span class=\"legacy-chrome__crumbsep\">/</span\n      ><span>2023-001-00</span\n      ><span class=\"legacy-chrome__crumbsep\">/</span\n      ><span>Contracts</span\n      ><span class=\"legacy-chrome__crumbsep\">/</span\n      ><span>84051 REL 50</span\n      ><span class=\"legacy-chrome__crumbsep\">/</span\n      ><span>SOW for Change Request (CCR) - APPROVED - CCR-53920</span>\n    </ul>\n    <a href=\"#\" class=\"legacy-chrome__gotobtn\">Go to… ▾</a>\n  </div>\n  <div class=\"legacy-container\">\n    <div class=\"legacy-panel\">\n      <div class=\"legacy-panel__tabbar\">\n        <ul class=\"legacy-chrome__tabs\">\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Summary </span>\n          </li>\n          <li class=\"is-active\">\n            <a href=\"/cb-fish-design/legacy/sow\" class=\"legacy-chrome__tab\"> SOW </a>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> WE Budgets </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Status Reports </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Pre-Award </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Workflow </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Review SOW </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Email Archive </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Internal Notes </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Documents </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> COR File </span>\n          </li>\n        </ul>\n      </div>\n      <div class=\"legacy-panel__body\">\n        <p class=\"legacy-contract-header__help\">\n          Select a Contract Action to view its work statement elements. If a Contract Action has not\n          been issued, only authorized users are allowed to view or work with the work statement\n          elements.\n        </p>\n      </div>\n    </div>\n  </div>\n</div>\n",
+      "css": ".legacy-chrome {\n  background: #dadada;\n  display: flow-root;\n  font-family: Montserrat, sans-serif;\n  font-size: 14px;\n  color: #333;\n}\n.legacy-chrome__utilitybar {\n  background: #13273e;\n  font-size: 14px;\n  font-family:\n    IBM Plex Sans,\n    sans-serif;\n  color: #fff;\n}\n.legacy-chrome__utilitybar-inner {\n  width: 100%;\n  box-sizing: border-box;\n  padding: 17px 20px;\n  display: flex;\n  gap: 24px;\n}\n.legacy-chrome__appbar {\n  background: var(--color-background-brand, #1e5386);\n  min-height: 80px;\n}\n.legacy-chrome__appbar-inner {\n  width: 100%;\n  box-sizing: border-box;\n  padding: 16px 20px;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  flex-wrap: wrap;\n  gap: 16px;\n}\n.legacy-chrome__brand {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.legacy-chrome__logo,\n.legacy-chrome__logotype {\n  display: block;\n}\n.legacy-chrome__nav {\n  display: flex;\n  gap: 26px;\n  color: #fff;\n  font-size: 15px;\n  font-weight: 600;\n}\n.legacy-chrome__navitem {\n  display: flex;\n  align-items: center;\n  gap: 7px;\n}\n.legacy-chrome__navcaret {\n  opacity: 0.85;\n}\n.legacy-chrome__messagebar {\n  background: #fff;\n  height: 48px;\n}\n.legacy-container {\n  width: 100%;\n  margin: 0 auto;\n  padding-inline: 15px;\n  box-sizing: border-box;\n}\n.legacy-container {\n  width: 780px;\n  padding-inline: 0;\n}\n.legacy-container {\n  width: 1000px;\n}\n.legacy-container {\n  width: 1200px;\n}\n.legacy-chrome__crumbrow {\n  background: #dadada;\n  padding-block: 8px;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 12px;\n}\n.legacy-chrome__crumbs {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  font-size: 14px;\n}\n.legacy-chrome__crumbsep {\n  margin: 0 6px;\n  color: #999;\n}\n.legacy-chrome__gotobtn {\n  background: #5bc0de;\n  color: #fff;\n  font-size: 13px;\n  padding: 3px 12px;\n  border: 1px solid #46b8da;\n  border-radius: 4px;\n  text-decoration: none;\n  white-space: nowrap;\n}\n.legacy-panel {\n  background: #fff;\n  border: 1px solid transparent;\n  border-radius: 4px;\n  box-shadow: 0 1px 1px #0000000d;\n  margin: 0 0 20px;\n}\n.legacy-panel__tabbar {\n  padding: 20px 0 10px;\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  flex-wrap: wrap;\n  gap: 8px;\n}\n.legacy-chrome__tabs {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  display: flex;\n  flex-wrap: wrap;\n  gap: 2px;\n}\n.legacy-chrome__tabs li {\n  background: #dadada;\n}\n.legacy-chrome__tab {\n  display: block;\n  padding: 10px 7px;\n  font-size: 14px;\n  color: #007090;\n  text-decoration: none;\n}\n.legacy-chrome__tab--inert {\n  cursor: default;\n}\n.legacy-chrome__tabs li.is-active {\n  background: #42a2c1;\n}\n.legacy-chrome__tabs li.is-active .legacy-chrome__tab {\n  color: #fff;\n  text-decoration: none;\n}\n.legacy-panel__body {\n  padding: 0 15px 15px;\n}\n.legacy-contract-header__help {\n  font-family: Montserrat, sans-serif;\n  font-size: 13px;\n  color: #333;\n  max-width: 900px;\n  margin: 0;\n}\n",
+      "tokens": [
+        {
+          "name": "--color-background-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        }
+      ],
+      "claudePath": "claude/div.md",
+      "repoPath": "public/handoff/legacy-sow/claude/div.md"
+    },
+    {
+      "index": 1,
+      "label": "Main",
+      "tag": "main",
+      "html": "<main class=\"legacy-sow-page\">\n  <div class=\"legacy-container\">\n    <h2 class=\"legacy-we-grid__title\">\n      Contract 84051 REL 50: 2023-001-00 EXP CTCR UPPER COLUMBIA HABITAT IMPROVEMENT PROJECT\n    </h2>\n    <div class=\"legacy-panel legacy-we-grid__wrap\">\n      <table class=\"legacy-we-grid\">\n        <thead>\n          <tr>\n            <th>Sort Order</th>\n            <th>WE ID</th>\n            <th>Work Element History</th>\n            <th>Work Element Name</th>\n            <th>Title</th>\n            <th>Description</th>\n            <th>MS</th>\n            <th>M</th>\n            <th>L</th>\n            <th>F</th>\n            <th>EC</th>\n            <th>RM</th>\n            <th class=\"legacy-we-grid__hdcol\">HD</th>\n            <th>% of Total WSE Effective Budget</th>\n          </tr>\n        </thead>\n        <tbody>\n          <tr>\n            <td>H</td>\n            <td>175</td>\n            <td>Existing</td>\n            <td>Produce Design</td>\n            <td>Upper Chewuch Floodplain Enhancement</td>\n            <td class=\"legacy-we-grid__desc\">\n              Design phase for reconnecting the Upper Chewuch River to its historic floodplain —\n              draw the designed channel and floodplain extent, then compute pre- and post-project\n              metrics for the SOW.\n            </td>\n            <td class=\"legacy-we-grid__num\">\n              <a href=\"/cb-fish-design/legacy/we-milestones\" title=\"Open Milestones for WE H\">13</a>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--filled\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--filled\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\"></td>\n            <td class=\"legacy-we-grid__dotcell\"></td>\n            <td class=\"legacy-we-grid__dotcell\"></td>\n            <td class=\"legacy-we-grid__dotcell legacy-we-grid__hdcol\">\n              <a href=\"/cb-fish-design/legacy/we\" title=\"Open Habitat Design for WE H\">\n                <span class=\"legacy-dot legacy-dot--ring\"></span>\n              </a>\n            </td>\n            <td class=\"legacy-we-grid__num\">5%</td>\n          </tr>\n          <tr>\n            <td>M</td>\n            <td>175</td>\n            <td>Existing</td>\n            <td>Produce Design</td>\n            <td>Salmon Creek Floodplain Design</td>\n            <td class=\"legacy-we-grid__desc\">\n              Salmon Creek has been identified as a priority reach for floodplain reconnection\n              design work.\n            </td>\n            <td class=\"legacy-we-grid__num\">\n              <a href=\"/cb-fish-design/legacy/we-milestones\" title=\"Open Milestones for WE M\">13</a>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--filled\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--filled\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\"></td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--ring\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\"></td>\n            <td class=\"legacy-we-grid__dotcell legacy-we-grid__hdcol\">\n              <a href=\"/cb-fish-design/legacy/we\" title=\"Open Habitat Design for WE M\">\n                <span class=\"legacy-dot legacy-dot--ring\"></span>\n              </a>\n            </td>\n            <td class=\"legacy-we-grid__num\">10%</td>\n          </tr>\n          <tr>\n            <td>N</td>\n            <td>175</td>\n            <td>Existing</td>\n            <td>Produce Design</td>\n            <td>Omak Creek Instream Complexity</td>\n            <td class=\"legacy-we-grid__desc\">\n              Design phase for adding instream structure and channel complexity along a degraded\n              reach of Omak Creek.\n            </td>\n            <td class=\"legacy-we-grid__num\">\n              <a href=\"/cb-fish-design/legacy/we-milestones\" title=\"Open Milestones for WE N\">3</a>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--filled\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--filled\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\"></td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--ring\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\"></td>\n            <td class=\"legacy-we-grid__dotcell legacy-we-grid__hdcol\">\n              <a href=\"/cb-fish-design/legacy/we\" title=\"Open Habitat Design for WE N\">\n                <span class=\"legacy-dot legacy-dot--ring\"></span>\n              </a>\n            </td>\n            <td class=\"legacy-we-grid__num\">10%</td>\n          </tr>\n        </tbody>\n      </table>\n    </div>\n  </div>\n</main>\n",
+      "css": ".legacy-container {\n  width: 100%;\n  margin: 0 auto;\n  padding-inline: 15px;\n  box-sizing: border-box;\n}\n.legacy-container {\n  width: 780px;\n  padding-inline: 0;\n}\n.legacy-container {\n  width: 1000px;\n}\n.legacy-container {\n  width: 1200px;\n}\n.legacy-panel {\n  background: #fff;\n  border: 1px solid transparent;\n  border-radius: 4px;\n  box-shadow: 0 1px 1px #0000000d;\n  margin: 0 0 20px;\n}\n.legacy-panel__tabbar {\n  padding: 20px 0 10px;\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  flex-wrap: wrap;\n  gap: 8px;\n}\n.legacy-panel__body {\n  padding: 0 15px 15px;\n}\n.legacy-sow-page {\n  background: #dadada;\n  min-height: calc(100vh - 260px);\n  padding-block: 20px;\n}\n.legacy-we-grid__title {\n  font-family: Montserrat, sans-serif;\n  font-size: 14px;\n  font-weight: 700;\n  color: #333;\n  margin: 0 0 14px;\n}\n.legacy-we-grid__wrap {\n  font-family: Montserrat, sans-serif;\n  overflow-x: auto;\n}\n.legacy-we-grid {\n  border-collapse: collapse;\n  width: 100%;\n  font-size: 13px;\n  background: #fff;\n}\n.legacy-we-grid th {\n  background: transparent;\n  border: 1px solid #ddd;\n  padding: 5px 8px;\n  text-align: left;\n  font-weight: 700;\n  color: #333;\n  white-space: nowrap;\n}\n.legacy-we-grid__hdcol {\n  background: #eaf6fa;\n}\n.legacy-we-grid td {\n  border: 1px solid #ddd;\n  padding: 5px 8px;\n  vertical-align: top;\n  color: #333;\n}\n.legacy-we-grid__desc {\n  max-width: 320px;\n}\n.legacy-we-grid__num {\n  text-align: right;\n  white-space: nowrap;\n}\n.legacy-we-grid a {\n  color: #007090;\n  text-decoration: none;\n}\n.legacy-we-grid__dotcell {\n  text-align: center;\n}\n.legacy-dot {\n  display: inline-block;\n  width: 10px;\n  height: 10px;\n  border-radius: 50%;\n}\n.legacy-dot--filled {\n  background: #007090;\n}\n.legacy-dot--ring {\n  background: transparent;\n  border: 2px solid #007090;\n}\n",
+      "tokens": [],
+      "claudePath": "claude/main.md",
+      "repoPath": "public/handoff/legacy-sow/claude/main.md"
+    },
+    {
+      "index": 2,
+      "label": "Button",
+      "tag": "esa-dialog",
+      "html": "<esa-dialog\n  id=\"sow-intro-modal\"\n  heading=\"About this prototype\"\n  show-close-button=\"true\"\n  open=\"\"\n  size=\"md\"\n>\n  <p class=\"legacy-sow-intro__body\">\n    This page recreates the real CBFish SOW screen to show where a new capability plugs in.\n  </p>\n  <p class=\"legacy-sow-intro__body\">\n    The <strong>HD</strong> (Habitat Design) column is new, and only appears for\n    <strong>175. Produce Design</strong> work elements. Clicking it opens that work element's\n    Habitat Design tab, where you can review any metrics already entered and launch the design tool.\n  </p>\n  <p class=\"legacy-sow-intro__body\">\n    There's also a new milestone — \"Submit design with Habitat Design tool\" — tracking this\n    activity.\n  </p>\n  <div slot=\"footer\">\n    <span onclick=\"document.getElementById('sow-intro-modal').close()\">\n      <span\n        class=\"esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--md\"\n        ><button class=\"esa-button__native typography-microcopy-md\" type=\"button\">\n          <span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n            <svg\n              width=\"20\"\n              height=\"20\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path d=\"M20 6 9 17l-5-5\"></path>\n            </svg>\n          </span>\n          <span class=\"esa-button__label\">Got it</span>\n        </button></span\n      >\n    </span>\n  </div>\n</esa-dialog>\n",
+      "css": ".esa-button {\n  --_btn-pad-y: var(--spacing-300, 0.75rem);\n  --_btn-padding-x: var(--spacing-300, 0.75rem);\n  --_btn-radius: var(--button-radius-md, 0.5rem);\n  --_accent: var(--color-background-brand, #46a758);\n  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);\n  --_on: var(--color-content-default-knockout, #fcfcfc);\n  --_accent-text: var(--_accent);\n  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);\n  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);\n  display: inline-block;\n}\n.esa-button--variant-primary {\n  --_accent-text: var(--color-content-brand);\n}\n.esa-button__native {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: var(--spacing-200, 8px);\n  width: 100%;\n  padding-block: var(--_btn-pad-y);\n  padding-inline: var(--_btn-padding-x);\n  border: var(--border-width-default, 1px) solid transparent;\n  border-radius: var(--_btn-radius);\n  text-decoration: none;\n  cursor: pointer;\n  transition:\n    background var(--transition-fast, 0.15s ease),\n    border-color var(--transition-fast, 0.15s ease);\n  -webkit-appearance: none;\n  appearance: none;\n}\n.esa-button--appearance-fill .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent-border, transparent);\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, 20px);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  color: inherit;\n}\n.esa-icon--md {\n  --_icon-size: var(--icon-size-md, 20px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-button__label {\n  white-space: nowrap;\n}\n.legacy-sow-intro__body {\n  margin: 0 0 var(--spacing-300, 12px);\n  font-size: var(--font-size-200, 15px);\n  line-height: 1.5;\n  color: var(--color-content-default-secondary, #404040);\n}\n.legacy-sow-intro__body:last-of-type {\n  margin-bottom: 0;\n}\n.typography-microcopy-md {\n  font-family: var(--typography-microcopy-md-font-family);\n  font-size: var(--typography-microcopy-md-font-size);\n  font-weight: var(--typography-microcopy-md-font-weight);\n  line-height: var(--typography-microcopy-md-line-height);\n  letter-spacing: var(--typography-microcopy-md-letter-spacing);\n}\n",
+      "tokens": [
+        {
+          "name": "--border-width-default",
+          "value": "1px",
+          "tier": "semantic"
+        },
+        {
+          "name": "--button-radius-md",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--color-background-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-hover",
+          "value": "#1a4570",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-knockout",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--font-size-200",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-md",
+          "value": "20px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--transition-fast",
+          "value": ".15s ease",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-line-height",
+          "value": "1",
+          "tier": "semantic"
+        }
+      ],
+      "claudePath": "claude/button.md",
+      "repoPath": "public/handoff/legacy-sow/claude/button.md"
+    }
+  ],
+  "full": {
+    "label": "Full page",
+    "html": "<div class=\"legacy-chrome\">\n  <div class=\"legacy-chrome__utilitybar\">\n    <div class=\"legacy-chrome__utilitybar-inner\">\n      <span>Data management</span> <span>System status</span> <span>System configuration</span>\n    </div>\n  </div>\n  <div class=\"legacy-chrome__appbar\">\n    <div class=\"legacy-chrome__appbar-inner\">\n      <a class=\"legacy-chrome__brand\" href=\"#\">\n        <img\n          class=\"legacy-chrome__logo\"\n          src=\"/cb-fish-design/images/legacy/Modern-Nav-Logo.svg\"\n          width=\"48\"\n          height=\"48\"\n          alt=\"\"\n        />\n        <img\n          class=\"legacy-chrome__logotype\"\n          src=\"/cb-fish-design/images/legacy/Modern-Nav-Logo-Type.svg\"\n          width=\"190\"\n          height=\"47\"\n          alt=\"Columbia Basin Fish &amp; Wildlife Program\"\n        />\n      </a>\n      <nav class=\"legacy-chrome__nav\">\n        <span class=\"legacy-chrome__navitem\">\n          <img\n            src=\"/cb-fish-design/images/legacy/Nav-Mitigationwork.svg\"\n            alt=\"\"\n            width=\"16\"\n            height=\"16\"\n          />\n          Mitigation work\n          <img\n            class=\"legacy-chrome__navcaret\"\n            src=\"/cb-fish-design/images/legacy/Nav-Down-arrow.svg\"\n            alt=\"\"\n            width=\"9\"\n            height=\"9\"\n          /> </span\n        ><span class=\"legacy-chrome__navitem\">\n          <img\n            src=\"/cb-fish-design/images/legacy/Nav-Reporting.svg\"\n            alt=\"\"\n            width=\"16\"\n            height=\"16\"\n          />\n          Reporting\n          <img\n            class=\"legacy-chrome__navcaret\"\n            src=\"/cb-fish-design/images/legacy/Nav-Down-arrow.svg\"\n            alt=\"\"\n            width=\"9\"\n            height=\"9\"\n          /> </span\n        ><span class=\"legacy-chrome__navitem\">\n          <img src=\"/cb-fish-design/images/legacy/Nav-Funding.svg\" alt=\"\" width=\"16\" height=\"16\" />\n          Funding\n          <img\n            class=\"legacy-chrome__navcaret\"\n            src=\"/cb-fish-design/images/legacy/Nav-Down-arrow.svg\"\n            alt=\"\"\n            width=\"9\"\n            height=\"9\"\n          /> </span\n        ><span class=\"legacy-chrome__navitem\">\n          <img\n            src=\"/cb-fish-design/images/legacy/Nav-Dashboard.svg\"\n            alt=\"\"\n            width=\"16\"\n            height=\"16\"\n          />\n          Dashboard </span\n        ><span class=\"legacy-chrome__navitem\">\n          Recent\n          <img\n            class=\"legacy-chrome__navcaret\"\n            src=\"/cb-fish-design/images/legacy/Nav-Down-arrow.svg\"\n            alt=\"\"\n            width=\"9\"\n            height=\"9\"\n          />\n        </span>\n      </nav>\n    </div>\n  </div>\n  <div class=\"legacy-chrome__messagebar\"></div>\n  <div class=\"legacy-container legacy-chrome__crumbrow\">\n    <ul class=\"legacy-chrome__crumbs\">\n      <span>Projects &amp; Contracts</span\n      ><span class=\"legacy-chrome__crumbsep\">/</span\n      ><span>Projects</span\n      ><span class=\"legacy-chrome__crumbsep\">/</span\n      ><span>2023-001-00</span\n      ><span class=\"legacy-chrome__crumbsep\">/</span\n      ><span>Contracts</span\n      ><span class=\"legacy-chrome__crumbsep\">/</span\n      ><span>84051 REL 50</span\n      ><span class=\"legacy-chrome__crumbsep\">/</span\n      ><span>SOW for Change Request (CCR) - APPROVED - CCR-53920</span>\n    </ul>\n    <a href=\"#\" class=\"legacy-chrome__gotobtn\">Go to… ▾</a>\n  </div>\n  <div class=\"legacy-container\">\n    <div class=\"legacy-panel\">\n      <div class=\"legacy-panel__tabbar\">\n        <ul class=\"legacy-chrome__tabs\">\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Summary </span>\n          </li>\n          <li class=\"is-active\">\n            <a href=\"/cb-fish-design/legacy/sow\" class=\"legacy-chrome__tab\"> SOW </a>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> WE Budgets </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Status Reports </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Pre-Award </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Workflow </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Review SOW </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Email Archive </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Internal Notes </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> Documents </span>\n          </li>\n          <li class=\"\">\n            <span class=\"legacy-chrome__tab legacy-chrome__tab--inert\"> COR File </span>\n          </li>\n        </ul>\n      </div>\n      <div class=\"legacy-panel__body\">\n        <p class=\"legacy-contract-header__help\">\n          Select a Contract Action to view its work statement elements. If a Contract Action has not\n          been issued, only authorized users are allowed to view or work with the work statement\n          elements.\n        </p>\n      </div>\n    </div>\n  </div>\n</div>\n<main class=\"legacy-sow-page\">\n  <div class=\"legacy-container\">\n    <h2 class=\"legacy-we-grid__title\">\n      Contract 84051 REL 50: 2023-001-00 EXP CTCR UPPER COLUMBIA HABITAT IMPROVEMENT PROJECT\n    </h2>\n    <div class=\"legacy-panel legacy-we-grid__wrap\">\n      <table class=\"legacy-we-grid\">\n        <thead>\n          <tr>\n            <th>Sort Order</th>\n            <th>WE ID</th>\n            <th>Work Element History</th>\n            <th>Work Element Name</th>\n            <th>Title</th>\n            <th>Description</th>\n            <th>MS</th>\n            <th>M</th>\n            <th>L</th>\n            <th>F</th>\n            <th>EC</th>\n            <th>RM</th>\n            <th class=\"legacy-we-grid__hdcol\">HD</th>\n            <th>% of Total WSE Effective Budget</th>\n          </tr>\n        </thead>\n        <tbody>\n          <tr>\n            <td>H</td>\n            <td>175</td>\n            <td>Existing</td>\n            <td>Produce Design</td>\n            <td>Upper Chewuch Floodplain Enhancement</td>\n            <td class=\"legacy-we-grid__desc\">\n              Design phase for reconnecting the Upper Chewuch River to its historic floodplain —\n              draw the designed channel and floodplain extent, then compute pre- and post-project\n              metrics for the SOW.\n            </td>\n            <td class=\"legacy-we-grid__num\">\n              <a href=\"/cb-fish-design/legacy/we-milestones\" title=\"Open Milestones for WE H\">13</a>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--filled\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--filled\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\"></td>\n            <td class=\"legacy-we-grid__dotcell\"></td>\n            <td class=\"legacy-we-grid__dotcell\"></td>\n            <td class=\"legacy-we-grid__dotcell legacy-we-grid__hdcol\">\n              <a href=\"/cb-fish-design/legacy/we\" title=\"Open Habitat Design for WE H\">\n                <span class=\"legacy-dot legacy-dot--ring\"></span>\n              </a>\n            </td>\n            <td class=\"legacy-we-grid__num\">5%</td>\n          </tr>\n          <tr>\n            <td>M</td>\n            <td>175</td>\n            <td>Existing</td>\n            <td>Produce Design</td>\n            <td>Salmon Creek Floodplain Design</td>\n            <td class=\"legacy-we-grid__desc\">\n              Salmon Creek has been identified as a priority reach for floodplain reconnection\n              design work.\n            </td>\n            <td class=\"legacy-we-grid__num\">\n              <a href=\"/cb-fish-design/legacy/we-milestones\" title=\"Open Milestones for WE M\">13</a>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--filled\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--filled\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\"></td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--ring\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\"></td>\n            <td class=\"legacy-we-grid__dotcell legacy-we-grid__hdcol\">\n              <a href=\"/cb-fish-design/legacy/we\" title=\"Open Habitat Design for WE M\">\n                <span class=\"legacy-dot legacy-dot--ring\"></span>\n              </a>\n            </td>\n            <td class=\"legacy-we-grid__num\">10%</td>\n          </tr>\n          <tr>\n            <td>N</td>\n            <td>175</td>\n            <td>Existing</td>\n            <td>Produce Design</td>\n            <td>Omak Creek Instream Complexity</td>\n            <td class=\"legacy-we-grid__desc\">\n              Design phase for adding instream structure and channel complexity along a degraded\n              reach of Omak Creek.\n            </td>\n            <td class=\"legacy-we-grid__num\">\n              <a href=\"/cb-fish-design/legacy/we-milestones\" title=\"Open Milestones for WE N\">3</a>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--filled\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--filled\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\"></td>\n            <td class=\"legacy-we-grid__dotcell\">\n              <span class=\"legacy-dot legacy-dot--ring\"></span>\n            </td>\n            <td class=\"legacy-we-grid__dotcell\"></td>\n            <td class=\"legacy-we-grid__dotcell legacy-we-grid__hdcol\">\n              <a href=\"/cb-fish-design/legacy/we\" title=\"Open Habitat Design for WE N\">\n                <span class=\"legacy-dot legacy-dot--ring\"></span>\n              </a>\n            </td>\n            <td class=\"legacy-we-grid__num\">10%</td>\n          </tr>\n        </tbody>\n      </table>\n    </div>\n  </div>\n</main>\n<esa-dialog\n  id=\"sow-intro-modal\"\n  heading=\"About this prototype\"\n  show-close-button=\"true\"\n  open=\"\"\n  size=\"md\"\n>\n  <p class=\"legacy-sow-intro__body\">\n    This page recreates the real CBFish SOW screen to show where a new capability plugs in.\n  </p>\n  <p class=\"legacy-sow-intro__body\">\n    The <strong>HD</strong> (Habitat Design) column is new, and only appears for\n    <strong>175. Produce Design</strong> work elements. Clicking it opens that work element's\n    Habitat Design tab, where you can review any metrics already entered and launch the design tool.\n  </p>\n  <p class=\"legacy-sow-intro__body\">\n    There's also a new milestone — \"Submit design with Habitat Design tool\" — tracking this\n    activity.\n  </p>\n  <div slot=\"footer\">\n    <span onclick=\"document.getElementById('sow-intro-modal').close()\">\n      <span\n        class=\"esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--md\"\n        ><button class=\"esa-button__native typography-microcopy-md\" type=\"button\">\n          <span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n            <svg\n              width=\"20\"\n              height=\"20\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path d=\"M20 6 9 17l-5-5\"></path>\n            </svg>\n          </span>\n          <span class=\"esa-button__label\">Got it</span>\n        </button></span\n      >\n    </span>\n  </div>\n</esa-dialog>\n",
+    "css": ":root,\n[data-theme=\"cb-fish\"] {\n  --border-width-default: 1px;\n  --button-radius-md: 0.5rem;\n  --color-background-brand: #1e5386;\n  --color-background-brand-hover: #1a4570;\n  --color-background-elevation-floating: #fcfcfc;\n  --color-background-elevation-raised: #fcfcfc;\n  --color-background-overlay-backdrop: rgba(0, 0, 0, 0.5);\n  --color-border-default-subtle: #efefef;\n  --color-content-brand: #1e5386;\n  --color-content-default: #3d3d3d;\n  --color-content-default-knockout: #fcfcfc;\n  --color-content-default-secondary: #525252;\n  --color-content-link: #1e5386;\n  --dialog-width: 480px;\n  --focus-ring-color: #3e9b4f;\n  --focus-ring-offset: 2px;\n  --focus-ring-width: 2px;\n  --font-size-200: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);\n  --icon-size-md: 20px;\n  --radius-lg: 0.75rem;\n  --radius-md: 0.5rem;\n  --spacing-200: 0.5rem;\n  --spacing-300: 0.75rem;\n  --spacing-500: 1.5rem;\n  --transition-fast: 0.15s ease;\n  --typography-body-md-font-family: \"IBM Plex Sans\", sans-serif;\n  --typography-body-md-font-size: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);\n  --typography-body-md-font-weight: 400;\n  --typography-body-md-letter-spacing: 0.01em;\n  --typography-body-md-line-height: 1.6;\n  --typography-font-family-sans: \"IBM Plex Sans\", sans-serif;\n  --typography-label-md-font-family: \"IBM Plex Sans\", sans-serif;\n  --typography-label-md-font-size: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);\n  --typography-label-md-font-weight: 500;\n  --typography-label-md-letter-spacing: 0.01em;\n  --typography-label-md-line-height: 1.6;\n  --typography-microcopy-md-font-family: \"IBM Plex Sans\", sans-serif;\n  --typography-microcopy-md-font-size: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);\n  --typography-microcopy-md-font-weight: 500;\n  --typography-microcopy-md-letter-spacing: 0.01em;\n  --typography-microcopy-md-line-height: 1;\n  --typography-title-font-family: \"IBM Plex Sans\", sans-serif;\n  --typography-title-font-size: clamp(1rem, 0.88rem + 0.6vw, 1.25rem);\n  --typography-title-font-weight: 500;\n  --typography-title-letter-spacing: 0.01em;\n  --typography-title-line-height: 1.6;\n}\n\n.typography-title {\n  font-family: var(--typography-title-font-family);\n  font-size: var(--typography-title-font-size);\n  font-weight: var(--typography-title-font-weight);\n  line-height: var(--typography-title-line-height);\n  letter-spacing: var(--typography-title-letter-spacing);\n}\n.typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.esa-button {\n  --_btn-pad-y: var(--spacing-300, 0.75rem);\n  --_btn-padding-x: var(--spacing-300, 0.75rem);\n  --_btn-radius: var(--button-radius-md, 0.5rem);\n  --_accent: var(--color-background-brand, #46a758);\n  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);\n  --_on: var(--color-content-default-knockout, #fcfcfc);\n  --_accent-text: var(--_accent);\n  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);\n  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);\n  display: inline-block;\n}\n.esa-button--variant-primary {\n  --_accent-text: var(--color-content-brand);\n}\n.esa-button__native {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: var(--spacing-200, 8px);\n  width: 100%;\n  padding-block: var(--_btn-pad-y);\n  padding-inline: var(--_btn-padding-x);\n  border: var(--border-width-default, 1px) solid transparent;\n  border-radius: var(--_btn-radius);\n  text-decoration: none;\n  cursor: pointer;\n  transition:\n    background var(--transition-fast, 0.15s ease),\n    border-color var(--transition-fast, 0.15s ease);\n  -webkit-appearance: none;\n  appearance: none;\n}\n.esa-button--appearance-fill .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent-border, transparent);\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, 20px);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  color: inherit;\n}\n.esa-icon--md {\n  --_icon-size: var(--icon-size-md, 20px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-button__label {\n  white-space: nowrap;\n}\n:host {\n  --_dialog-bg: var(--color-background-elevation-floating, #fcfcfc);\n  --_dialog-border-radius: var(--radius-lg, 0.75rem);\n  --_dialog-padding: var(--spacing-500, 1.5rem);\n  --_dialog-header-border: var(--color-border-default-subtle, #d9d9d9);\n  /* Header/footer surface tints. These were --dialog-header-bg /\n         --dialog-footer-bg, declared in no token file — a hook offered on the\n         strength of a fallback nobody had asked to override. Folded to their\n         literal default 2026-08-16; --dialog-* is a live namespace, so they come\n         back as declarations the day a spoke actually wants to frame the body. */\n  --_dialog-header-bg: transparent;\n  --_dialog-footer-bg: transparent;\n  --_dialog-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1);\n  --_dialog-width: var(--dialog-width, 480px);\n  --_dialog-max-height: 85vh;\n}\ndialog.esa-dialog {\n  /* UA reset. The UA sheet gives <dialog> a solid border, 1em padding and\n         'max-width/max-height: calc(100% - 6px - 2em)'; without clearing those the\n         panel renders inside a second, smaller box. */\n  border: none;\n  padding: 0;\n  margin: auto;\n  background: var(--_dialog-bg);\n  color: var(--color-content-default, #202020);\n  border-radius: var(--_dialog-border-radius);\n  box-shadow: var(--_dialog-shadow);\n  width: var(--_dialog-width);\n  max-width: 100vw;\n  max-height: var(--_dialog-max-height);\n  overflow: hidden;\n  font-family: var(--typography-font-family-sans, \"DM Sans\", sans-serif);\n}\ndialog.esa-dialog[open] {\n  display: flex;\n  flex-direction: column;\n}\ndialog.esa-dialog::backdrop {\n  background: var(--color-background-overlay-backdrop, rgba(0, 0, 0, 0.5));\n}\n.esa-dialog__header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: var(--spacing-300, 0.75rem);\n  padding: var(--_dialog-padding);\n  background: var(--_dialog-header-bg);\n  border-bottom: var(--border-width-default, 1px) solid var(--_dialog-header-border);\n  flex-shrink: 0;\n}\n.esa-dialog__title {\n  margin: 0;\n  color: var(--color-content-default, #202020);\n}\n.esa-dialog__close {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  width: 32px;\n  height: 32px;\n  border: none;\n  border-radius: var(--radius-md, 0.5rem);\n  background: transparent;\n  color: var(--color-content-default-secondary, #646464);\n  cursor: pointer;\n  transition: background var(--transition-fast, 150ms ease);\n}\n.esa-dialog__body {\n  padding: var(--_dialog-padding);\n  overflow-y: auto;\n  flex: 1;\n  color: var(--color-content-default, #202020);\n}\n.esa-dialog__footer {\n  padding: var(--spacing-300, 0.75rem) var(--_dialog-padding);\n  background: var(--_dialog-footer-bg);\n  border-top: var(--border-width-default, 1px) solid var(--_dialog-header-border);\n  display: flex;\n  justify-content: flex-end;\n  gap: var(--spacing-200, 0.5rem);\n  flex-shrink: 0;\n}\n.esa-dialog__close:focus-visible {\n  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);\n  outline-offset: var(--focus-ring-offset, 2px);\n}\n:host {\n  all: initial;\n}\n.host-root {\n  position: fixed;\n  inset: 0;\n  pointer-events: none;\n  z-index: 2147483000;\n  font-family: system-ui, sans-serif;\n}\n.host-root > * {\n  pointer-events: auto;\n}\n.launch {\n  position: fixed;\n  bottom: 22px;\n  left: 22px;\n  display: inline-flex;\n  align-items: center;\n  gap: 9px;\n  padding: 13px 19px;\n  border-radius: 999px;\n  color: #fff;\n  cursor: pointer;\n  font-size: 15px;\n  font-weight: 600;\n  letter-spacing: 0.01em;\n  border: 1px solid #3d6fd6;\n  background: linear-gradient(180deg, #1f6feb, #1551c4);\n  box-shadow:\n    0 10px 28px -8px rgba(31, 111, 235, 0.65),\n    inset 0 1px 0 rgba(255, 255, 255, 0.18);\n  transition:\n    transform 0.15s ease,\n    box-shadow 0.15s ease,\n    filter 0.15s ease;\n}\n.launch svg {\n  flex: none;\n}\n.panel {\n  position: fixed;\n  top: 18px;\n  right: 18px;\n  bottom: 18px;\n  width: min(720px, 94vw);\n  display: flex;\n  flex-direction: column;\n  color: #ffffff;\n  border-radius: 16px;\n  background: linear-gradient(155deg, rgba(26, 31, 40, 0.74), rgba(11, 15, 21, 0.86));\n  backdrop-filter: blur(26px) saturate(150%);\n  -webkit-backdrop-filter: blur(26px) saturate(150%);\n  border: 1px solid rgba(255, 255, 255, 0.15);\n  box-shadow:\n    0 28px 70px -18px rgba(0, 0, 0, 0.62),\n    inset 0 1px 0 rgba(255, 255, 255, 0.1);\n  font-size: 12.5px;\n  overflow: hidden;\n  /* slide in from the right */\n  transform: translateX(calc(100% + 32px));\n  opacity: 0;\n  visibility: hidden;\n  transition:\n    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),\n    opacity 0.22s ease,\n    visibility 0s linear 0.3s;\n}\n.head {\n  display: flex;\n  align-items: center;\n  gap: 8px;\n  padding: 13px 16px;\n  border-bottom: 1px solid rgba(255, 255, 255, 0.09);\n}\n.head strong {\n  font-size: 14px;\n}\n.head .sub {\n  flex: 1;\n  color: #ccd5e0;\n  font-size: 12px;\n  overflow: hidden;\n  text-overflow: ellipsis;\n  white-space: nowrap;\n}\n.x {\n  border: 0;\n  background: none;\n  color: #c4cdd8;\n  font-size: 20px;\n  line-height: 1;\n  cursor: pointer;\n}\n.picker {\n  padding: 12px 16px;\n  border-bottom: 1px solid rgba(255, 255, 255, 0.09);\n}\n.chips {\n  display: flex;\n  flex-wrap: wrap;\n  gap: 6px;\n}\n.chip {\n  padding: 5px 12px;\n  border-radius: 999px;\n  border: 1px solid rgba(255, 255, 255, 0.14);\n  background: rgba(255, 255, 255, 0.04);\n  color: #eef2f6;\n  font: inherit;\n  font-size: 12.5px;\n  cursor: pointer;\n  white-space: nowrap;\n  transition:\n    border-color 0.12s ease,\n    background 0.12s ease,\n    color 0.12s ease;\n}\n.chip.on {\n  background: rgba(31, 111, 235, 0.28);\n  border-color: #4493f8;\n  color: #fff;\n  font-weight: 600;\n}\n.tabs {\n  display: flex;\n  gap: 4px;\n  padding: 9px 14px;\n  border-bottom: 1px solid rgba(255, 255, 255, 0.09);\n}\n.tabs button {\n  padding: 5px 12px;\n  border: 0;\n  border-radius: 6px;\n  background: none;\n  color: #ccd5e0;\n  font: inherit;\n  font-size: 12.5px;\n  cursor: pointer;\n}\n.tabs button.on {\n  background: rgba(255, 255, 255, 0.12);\n  color: #fff;\n}\n.body {\n  overflow: auto;\n  padding: 13px 16px;\n  flex: 1;\n}\n.hint {\n  margin: 0;\n  color: #c4cdd8;\n  line-height: 1.6;\n}\n.footer {\n  position: relative;\n  display: flex;\n  justify-content: flex-end;\n  gap: 8px;\n  padding: 11px 16px;\n  border-top: 1px solid rgba(255, 255, 255, 0.1);\n  background: rgba(0, 0, 0, 0.18);\n}\n[hidden] {\n  display: none !important;\n}\n.cpreview {\n  position: absolute;\n  left: 16px;\n  right: 16px;\n  bottom: calc(100% + 8px);\n  background: rgba(13, 17, 23, 0.96);\n  border: 1px solid rgba(255, 255, 255, 0.16);\n  border-radius: 12px;\n  box-shadow: 0 18px 50px -14px rgba(0, 0, 0, 0.7);\n  padding: 12px 14px;\n  max-height: 50vh;\n  overflow: auto;\n}\n.copy {\n  color: #eef2f6;\n  border: 1px solid rgba(255, 255, 255, 0.18);\n  background: rgba(255, 255, 255, 0.05);\n}\n.footer button {\n  flex: none;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: 7px;\n  padding: 8px 14px;\n  border-radius: 8px;\n  font: inherit;\n  font-size: 12.5px;\n  font-weight: 600;\n  cursor: pointer;\n}\n.claude {\n  color: #fff;\n  border: 1px solid #d97757;\n  background: linear-gradient(180deg, #e0805f, #c25e3c);\n  box-shadow:\n    0 6px 18px -6px rgba(217, 119, 87, 0.6),\n    inset 0 1px 0 rgba(255, 255, 255, 0.2);\n}\n.claude svg {\n  flex: none;\n}\n*,\n*:before,\n*:after {\n  box-sizing: border-box;\n}\nbody {\n  margin: 0;\n  font-family: var(--typography-font-family-sans, system-ui, sans-serif);\n  color: var(--color-content-default, #171717);\n  background: var(--color-background-elevation-raised, #fff);\n  -webkit-font-smoothing: antialiased;\n}\na {\n  color: var(--color-content-link, #1e5386);\n  text-decoration: none;\n}\nimg {\n  display: block;\n  max-width: 100%;\n}\nbutton {\n  font-family: inherit;\n  cursor: pointer;\n  background: none;\n  border: 0;\n}\n.legacy-chrome {\n  background: #dadada;\n  display: flow-root;\n  font-family: Montserrat, sans-serif;\n  font-size: 14px;\n  color: #333;\n}\n.legacy-chrome__utilitybar {\n  background: #13273e;\n  font-size: 14px;\n  font-family:\n    IBM Plex Sans,\n    sans-serif;\n  color: #fff;\n}\n.legacy-chrome__utilitybar-inner {\n  width: 100%;\n  box-sizing: border-box;\n  padding: 17px 20px;\n  display: flex;\n  gap: 24px;\n}\n.legacy-chrome__appbar {\n  background: var(--color-background-brand, #1e5386);\n  min-height: 80px;\n}\n.legacy-chrome__appbar-inner {\n  width: 100%;\n  box-sizing: border-box;\n  padding: 16px 20px;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  flex-wrap: wrap;\n  gap: 16px;\n}\n.legacy-chrome__brand {\n  display: flex;\n  align-items: center;\n  gap: 10px;\n}\n.legacy-chrome__logo,\n.legacy-chrome__logotype {\n  display: block;\n}\n.legacy-chrome__nav {\n  display: flex;\n  gap: 26px;\n  color: #fff;\n  font-size: 15px;\n  font-weight: 600;\n}\n.legacy-chrome__navitem {\n  display: flex;\n  align-items: center;\n  gap: 7px;\n}\n.legacy-chrome__navcaret {\n  opacity: 0.85;\n}\n.legacy-chrome__messagebar {\n  background: #fff;\n  height: 48px;\n}\n.legacy-container {\n  width: 100%;\n  margin: 0 auto;\n  padding-inline: 15px;\n  box-sizing: border-box;\n}\n.legacy-container {\n  width: 780px;\n  padding-inline: 0;\n}\n.legacy-container {\n  width: 1000px;\n}\n.legacy-container {\n  width: 1200px;\n}\n.legacy-chrome__crumbrow {\n  background: #dadada;\n  padding-block: 8px;\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: 12px;\n}\n:where(h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd, ul, ol, pre) {\n  margin: 0;\n}\n.legacy-chrome__crumbs {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  font-size: 14px;\n}\n.legacy-chrome__crumbsep {\n  margin: 0 6px;\n  color: #999;\n}\n.legacy-chrome__gotobtn {\n  background: #5bc0de;\n  color: #fff;\n  font-size: 13px;\n  padding: 3px 12px;\n  border: 1px solid #46b8da;\n  border-radius: 4px;\n  text-decoration: none;\n  white-space: nowrap;\n}\n.legacy-panel {\n  background: #fff;\n  border: 1px solid transparent;\n  border-radius: 4px;\n  box-shadow: 0 1px 1px #0000000d;\n  margin: 0 0 20px;\n}\n.legacy-panel__tabbar {\n  padding: 20px 0 10px;\n  display: flex;\n  align-items: flex-start;\n  justify-content: space-between;\n  flex-wrap: wrap;\n  gap: 8px;\n}\n.legacy-chrome__tabs {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  display: flex;\n  flex-wrap: wrap;\n  gap: 2px;\n}\n.legacy-chrome__tabs li {\n  background: #dadada;\n}\n.legacy-chrome__tab {\n  display: block;\n  padding: 10px 7px;\n  font-size: 14px;\n  color: #007090;\n  text-decoration: none;\n}\n.legacy-chrome__tab--inert {\n  cursor: default;\n}\n.legacy-chrome__tabs li.is-active {\n  background: #42a2c1;\n}\n.legacy-chrome__tabs li.is-active .legacy-chrome__tab {\n  color: #fff;\n  text-decoration: none;\n}\n.legacy-panel__body {\n  padding: 0 15px 15px;\n}\n.legacy-contract-header__help {\n  font-family: Montserrat, sans-serif;\n  font-size: 13px;\n  color: #333;\n  max-width: 900px;\n  margin: 0;\n}\n.legacy-sow-page {\n  background: #dadada;\n  min-height: calc(100vh - 260px);\n  padding-block: 20px;\n}\n.legacy-we-grid__title {\n  font-family: Montserrat, sans-serif;\n  font-size: 14px;\n  font-weight: 700;\n  color: #333;\n  margin: 0 0 14px;\n}\n.legacy-we-grid__wrap {\n  font-family: Montserrat, sans-serif;\n  overflow-x: auto;\n}\n.legacy-we-grid {\n  border-collapse: collapse;\n  width: 100%;\n  font-size: 13px;\n  background: #fff;\n}\n.legacy-we-grid th {\n  background: transparent;\n  border: 1px solid #ddd;\n  padding: 5px 8px;\n  text-align: left;\n  font-weight: 700;\n  color: #333;\n  white-space: nowrap;\n}\n.legacy-we-grid__hdcol {\n  background: #eaf6fa;\n}\n.legacy-we-grid td {\n  border: 1px solid #ddd;\n  padding: 5px 8px;\n  vertical-align: top;\n  color: #333;\n}\n.legacy-we-grid__desc {\n  max-width: 320px;\n}\n.legacy-we-grid__num {\n  text-align: right;\n  white-space: nowrap;\n}\n.legacy-we-grid a {\n  color: #007090;\n  text-decoration: none;\n}\n.legacy-we-grid__dotcell {\n  text-align: center;\n}\n.legacy-dot {\n  display: inline-block;\n  width: 10px;\n  height: 10px;\n  border-radius: 50%;\n}\n.legacy-dot--filled {\n  background: #007090;\n}\n.legacy-dot--ring {\n  background: transparent;\n  border: 2px solid #007090;\n}\n.legacy-sow-intro__body {\n  margin: 0 0 var(--spacing-300, 12px);\n  font-size: var(--font-size-200, 15px);\n  line-height: 1.5;\n  color: var(--color-content-default-secondary, #404040);\n}\n.legacy-sow-intro__body:last-of-type {\n  margin-bottom: 0;\n}\n.typography-microcopy-md {\n  font-family: var(--typography-microcopy-md-font-family);\n  font-size: var(--typography-microcopy-md-font-size);\n  font-weight: var(--typography-microcopy-md-font-weight);\n  line-height: var(--typography-microcopy-md-line-height);\n  letter-spacing: var(--typography-microcopy-md-letter-spacing);\n}\n",
+    "tokens": [
+      {
+        "name": "--border-width-default",
+        "value": "1px",
+        "tier": "semantic"
+      },
+      {
+        "name": "--button-radius-md",
+        "value": ".5rem",
+        "tier": "component"
+      },
+      {
+        "name": "--color-background-brand",
+        "value": "#1e5386",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-background-brand-hover",
+        "value": "#1a4570",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-background-elevation-floating",
+        "value": "#fcfcfc",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-background-elevation-raised",
+        "value": "#fcfcfc",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-background-overlay-backdrop",
+        "value": "rgba(0, 0, 0, .5)",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-border-default-subtle",
+        "value": "#efefef",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-content-brand",
+        "value": "#1e5386",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-content-default",
+        "value": "#3d3d3d",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-content-default-knockout",
+        "value": "#fcfcfc",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-content-default-secondary",
+        "value": "#525252",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-content-link",
+        "value": "#1e5386",
+        "tier": "semantic"
+      },
+      {
+        "name": "--dialog-width",
+        "value": "480px",
+        "tier": "component"
+      },
+      {
+        "name": "--focus-ring-color",
+        "value": "#3e9b4f",
+        "tier": "component"
+      },
+      {
+        "name": "--focus-ring-offset",
+        "value": "2px",
+        "tier": "component"
+      },
+      {
+        "name": "--focus-ring-width",
+        "value": "2px",
+        "tier": "component"
+      },
+      {
+        "name": "--font-size-200",
+        "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+        "tier": "primitive"
+      },
+      {
+        "name": "--icon-size-md",
+        "value": "20px",
+        "tier": "primitive"
+      },
+      {
+        "name": "--radius-lg",
+        "value": ".75rem",
+        "tier": "semantic"
+      },
+      {
+        "name": "--radius-md",
+        "value": ".5rem",
+        "tier": "semantic"
+      },
+      {
+        "name": "--spacing-200",
+        "value": ".5rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-300",
+        "value": ".75rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-500",
+        "value": "1.5rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--transition-fast",
+        "value": ".15s ease",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-body-md-font-family",
+        "value": "\"IBM Plex Sans\", sans-serif",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-body-md-font-size",
+        "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-body-md-font-weight",
+        "value": "400",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-body-md-letter-spacing",
+        "value": ".01em",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-body-md-line-height",
+        "value": "1.6",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-font-family-sans",
+        "value": "\"IBM Plex Sans\", sans-serif",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-label-md-font-family",
+        "value": "\"IBM Plex Sans\", sans-serif",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-label-md-font-size",
+        "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-label-md-font-weight",
+        "value": "500",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-label-md-letter-spacing",
+        "value": ".01em",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-label-md-line-height",
+        "value": "1.6",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-md-font-family",
+        "value": "\"IBM Plex Sans\", sans-serif",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-md-font-size",
+        "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-md-font-weight",
+        "value": "500",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-md-letter-spacing",
+        "value": ".01em",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-md-line-height",
+        "value": "1",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-title-font-family",
+        "value": "\"IBM Plex Sans\", sans-serif",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-title-font-size",
+        "value": "clamp(1rem, .88rem + .6vw, 1.25rem)",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-title-font-weight",
+        "value": "500",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-title-letter-spacing",
+        "value": ".01em",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-title-line-height",
+        "value": "1.6",
+        "tier": "semantic"
+      }
+    ],
+    "claudePath": "claude/full-page.md",
+    "repoPath": "public/handoff/legacy-sow/claude/full-page.md"
+  }
+}

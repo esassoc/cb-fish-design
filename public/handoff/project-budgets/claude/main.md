@@ -4,20 +4,20 @@ Re-implement this UI section faithfully on your stack. Keep the CSS custom-prope
 names (`var(--…)`) so it stays themeable — the values below are the resolved
 `cb-fish` theme of the **project-budgets** design system (an ESA Ecology spoke).
 
-- **Source prototype:** http://localhost:4321/cb-fish-design/project-budgets/
+- **Source prototype:** http://localhost:4787/cb-fish-design/project-budgets/
 - **Section element:** `<main>`
 - **Components:** cbf-app-panel (spoke), cbf-page (spoke), cbf-page-heading (spoke), cbf-related-items (spoke), cbf-report-intro (spoke), cbf-report-tabs (spoke), esa-breadcrumbs (hub), esa-button (hub), esa-card (hub), esa-container (hub)
 
 ## Markup (de-scoped, framework-free)
 ```html
 <main class="cbf-page">
-  <div class="esa-container" style="--_container-max: 1920px">
+  <div class="esa-container typography-body-md" style="--_container-max: 1920px">
     <section class="cbf-app-panel">
       <div class="cbf-app-panel__crumb">
         <nav class="esa-breadcrumbs esa-breadcrumbs--md" aria-label="Breadcrumb">
           <ol class="esa-breadcrumbs__list">
             <li class="esa-breadcrumbs__item">
-              <a href="/cb-fish-design/home" class="esa-breadcrumbs__link">
+              <a href="/cb-fish-design/home" class="esa-breadcrumbs__link typography-body-md">
                 <span class="esa-breadcrumbs__icon"
                   ><svg
                     width="14"
@@ -51,7 +51,7 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
               </svg>
             </li>
             <li class="esa-breadcrumbs__item">
-              <span class="esa-breadcrumbs__current"> Funding </span>
+              <span class="esa-breadcrumbs__current typography-label-md"> Funding </span>
               <svg
                 class="esa-breadcrumbs__separator"
                 width="16"
@@ -68,7 +68,7 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
               </svg>
             </li>
             <li class="esa-breadcrumbs__item" aria-current="page">
-              <span class="esa-breadcrumbs__current"> Project budgets </span>
+              <span class="esa-breadcrumbs__current typography-label-md"> Project budgets </span>
             </li>
           </ol>
         </nav>
@@ -78,11 +78,12 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
           <h1 class="cbf-page-heading">Project budgets: Summary</h1>
           <nav class="cbf-report-tabs" aria-label="Project budget sections">
             <a class="cbf-report-tabs__tab is-active" href="#" aria-current="page">Summary</a
-            ><a class="cbf-report-tabs__tab" href="#">Baselines</a
+            ><a class="cbf-report-tabs__tab" href="/cb-fish-design/project-budgets/baselines"
+              >Baselines</a
             ><a class="cbf-report-tabs__tab" href="#">Start-of-year (SOY)</a
             ><a class="cbf-report-tabs__tab" href="#">Decisions</a
             ><a class="cbf-report-tabs__tab" href="#">Change requests (BOG)</a>
-            <details class="cbf-report-tabs__related">
+            <details class="cbf-report-tabs__related" name="cbf-report-tabs-menu">
               <summary class="cbf-report-tabs__tab cbf-report-tabs__related-trigger">
                 Related items<span class="cbf-report-tabs__chev"
                   ><svg
@@ -127,15 +128,17 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
             </div>
           </section>
           <section class="cbf-related-items" id="related-items" aria-label="Related items">
-            <h2 class="cbf-related-items__head type-section-title">Related items</h2>
+            <h2 class="cbf-related-items__head typography-heading-md">Related items</h2>
             <div class="cbf-related-items__grid grid">
               <div class="esa-card esa-card--outlined">
                 <div class="esa-card__header">
                   <div class="esa-card__header-content">
-                    <div class="esa-card__titles"><h3 class="esa-card__title">Reviews</h3></div>
+                    <div class="esa-card__titles">
+                      <h3 class="esa-card__title typography-title-sm-strong">Reviews</h3>
+                    </div>
                   </div>
                 </div>
-                <div class="esa-card__body">
+                <div class="esa-card__body typography-body-md">
                   <div class="cbf-related-items__card">
                     <p class="cbf-related-items__overview">
                       <strong>Overview:</strong> Review project budgets across fiscal years and
@@ -144,15 +147,14 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
                     </p>
                   </div>
                 </div>
-                <div class="esa-card__footer">
+                <div class="esa-card__footer typography-meta">
                   <div class="cbf-related-items__foot">
                     <span
-                      class="esa-button esa-button--color-primary esa-button--appearance-fill esa-button--sm"
+                      class="esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--sm"
+                      ><a class="esa-button__native typography-microcopy-xs" href="#" role="button"
+                        ><span class="esa-button__label">View page</span></a
+                      ></span
                     >
-                      <a class="esa-button__native" href="#" role="button">
-                        <span class="esa-button__label"> View page </span>
-                      </a>
-                    </span>
                   </div>
                 </div>
               </div>
@@ -160,11 +162,11 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
                 <div class="esa-card__header">
                   <div class="esa-card__header-content">
                     <div class="esa-card__titles">
-                      <h3 class="esa-card__title">Featured reviews</h3>
+                      <h3 class="esa-card__title typography-title-sm-strong">Featured reviews</h3>
                     </div>
                   </div>
                 </div>
-                <div class="esa-card__body">
+                <div class="esa-card__body typography-body-md">
                   <div class="cbf-related-items__card">
                     <p class="cbf-related-items__overview">
                       <strong>Overview:</strong> Curated budget reviews highlighted for quick access
@@ -173,15 +175,14 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
                     </p>
                   </div>
                 </div>
-                <div class="esa-card__footer">
+                <div class="esa-card__footer typography-meta">
                   <div class="cbf-related-items__foot">
                     <span
-                      class="esa-button esa-button--color-primary esa-button--appearance-fill esa-button--sm"
+                      class="esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--sm"
+                      ><a class="esa-button__native typography-microcopy-xs" href="#" role="button"
+                        ><span class="esa-button__label">View page</span></a
+                      ></span
                     >
-                      <a class="esa-button__native" href="#" role="button">
-                        <span class="esa-button__label"> View page </span>
-                      </a>
-                    </span>
                   </div>
                 </div>
               </div>
@@ -196,8 +197,189 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
 
 ## Styles (only what this section uses; tokens resolved for the theme)
 ```css
-.cbf-page {
-  padding-block: var(--spacing-600) var(--spacing-800);
+.esa-button {
+  --_btn-pad-y: var(--spacing-300, 0.75rem);
+  --_btn-padding-x: var(--spacing-300, 0.75rem);
+  --_btn-radius: var(--button-radius-md, 0.5rem);
+  --_accent: var(--color-background-brand, #46a758);
+  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);
+  --_on: var(--color-content-default-knockout, #fcfcfc);
+  --_accent-text: var(--_accent);
+  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);
+  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);
+  display: inline-block;
+}
+.esa-button--sm {
+  --_btn-pad-y: var(--spacing-250, 0.625rem);
+  --_btn-padding-x: var(--spacing-250, 0.625rem);
+  --_btn-radius: var(--button-radius-sm, 4px);
+}
+.esa-button__native {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-200, 8px);
+  width: 100%;
+  padding-block: var(--_btn-pad-y);
+  padding-inline: var(--_btn-padding-x);
+  border: var(--border-width-default, 1px) solid transparent;
+  border-radius: var(--_btn-radius);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast, 0.15s ease),
+    border-color var(--transition-fast, 0.15s ease);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.esa-button--appearance-fill .esa-button__native {
+  background: var(--_accent);
+  color: var(--_on);
+  border-color: var(--_accent-border, transparent);
+}
+.esa-button--variant-chrome .esa-button__native {
+  background: transparent;
+  color: inherit;
+  border-color: transparent;
+}
+.esa-button__label {
+  white-space: nowrap;
+}
+summary.esa-button {
+  list-style: none;
+  cursor: pointer;
+}
+.esa-button--variant-primary {
+  --_accent-text: var(--color-content-brand);
+}
+.typography-label-md {
+  font-family: var(--typography-label-md-font-family);
+  font-size: var(--typography-label-md-font-size);
+  font-weight: var(--typography-label-md-font-weight);
+  line-height: var(--typography-label-md-line-height);
+  letter-spacing: var(--typography-label-md-letter-spacing);
+}
+.typography-microcopy-xs {
+  font-family: var(--typography-microcopy-xs-font-family);
+  font-size: var(--typography-microcopy-xs-font-size);
+  font-weight: var(--typography-microcopy-xs-font-weight);
+  line-height: var(--typography-microcopy-xs-line-height);
+  letter-spacing: var(--typography-microcopy-xs-letter-spacing);
+}
+.typography-body-md {
+  font-family: var(--typography-body-md-font-family);
+  font-size: var(--typography-body-md-font-size);
+  font-weight: var(--typography-body-md-font-weight);
+  line-height: var(--typography-body-md-line-height);
+  letter-spacing: var(--typography-body-md-letter-spacing);
+}
+.typography-heading-md {
+  font-family: var(--typography-heading-md-font-family);
+  font-size: var(--typography-heading-md-font-size);
+  font-weight: var(--typography-heading-md-font-weight);
+  line-height: var(--typography-heading-md-line-height);
+  letter-spacing: var(--typography-heading-md-letter-spacing);
+}
+.typography-title-sm-strong {
+  font-family: var(--typography-title-sm-strong-font-family);
+  font-size: var(--typography-title-sm-strong-font-size);
+  font-weight: var(--typography-title-sm-strong-font-weight);
+  line-height: var(--typography-title-sm-strong-line-height);
+  letter-spacing: var(--typography-title-sm-strong-letter-spacing);
+}
+.typography-meta {
+  font-family: var(--typography-meta-font-family);
+  font-size: var(--typography-meta-font-size);
+  font-weight: var(--typography-meta-font-weight);
+  line-height: var(--typography-meta-line-height);
+  letter-spacing: var(--typography-meta-letter-spacing);
+}
+.cbf-app-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 80vh;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-100);
+  overflow: clip;
+  background: var(--color-background-elevation-raised);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-background-default-knockout) 8%, transparent);
+}
+.cbf-app-panel__crumb {
+  background: var(--cbf-surface-crumb);
+  border-bottom: 1px solid var(--color-border-default);
+  padding: var(--spacing-400) var(--spacing-600);
+}
+.esa-breadcrumbs {
+  --_crumb-link-color: var(--breadcrumbs-link-color, #646464);
+  --_crumb-link-hover: var(--breadcrumbs-link-hover, #202020);
+  --_crumb-current-color: var(--color-content-default, #202020);
+  --_crumb-separator-color: var(--color-border-default-strong, #bbbbbb);
+  --_crumb-gap: var(--spacing-200, 8px);
+  display: block;
+  background: var(--breadcrumbs-bg, transparent);
+}
+.cbf-app-panel__crumb .esa-breadcrumbs {
+  --breadcrumbs-link-color: var(--color-content-default-secondary);
+  --breadcrumbs-link-hover: var(--color-background-brand);
+}
+.esa-breadcrumbs__list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--_crumb-gap);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.esa-breadcrumbs__item {
+  display: flex;
+  align-items: center;
+  gap: var(--_crumb-gap);
+}
+.esa-breadcrumbs__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-100, 4px);
+  color: var(--_crumb-link-color);
+  text-decoration-color: transparent;
+}
+.esa-breadcrumbs__icon {
+  display: inline-flex;
+  align-items: center;
+}
+.esa-breadcrumbs__separator {
+  flex-shrink: 0;
+  color: var(--_crumb-separator-color);
+}
+.esa-breadcrumbs__current {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-100, 4px);
+  color: var(--_crumb-current-color);
+}
+.cbf-app-panel__body {
+  flex: 1;
+}
+.cbf-app-panel__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-400);
+  padding: var(--spacing-600);
+}
+.cbf-page-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-300, 12px);
+  margin: 0;
+  font-family: var(--typography-font-family-display);
+  font-weight: var(--typography-font-weight-medium);
+  font-size: 40px;
+  line-height: 40px;
+  letter-spacing: -1px;
+  color: var(--color-background-default-knockout);
 }
 .cbf-report-tabs {
   display: flex;
@@ -205,23 +387,24 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
   align-items: center;
   gap: var(--spacing-100);
   padding: var(--spacing-150);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-default);
   border-radius: var(--radius-200, 8px);
-  background: var(--color-gray-50, #f4f5f7);
+  background: var(--color-gray-3);
 }
 .cbf-report-tabs__tab {
   padding: var(--spacing-200) var(--spacing-300);
   border-radius: var(--radius-100);
-  color: var(--color-primary);
+  color: var(--color-background-brand);
   font-size: 16px;
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--typography-font-weight-medium);
   white-space: nowrap;
 }
 .cbf-report-tabs__tab.is-active {
-  background: var(--color-surface, #fff);
-  color: var(--color-surface-inverse);
-  font-weight: var(--font-weight-semibold);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-surface-inverse) 12%, transparent);
+  background: var(--color-background-elevation-raised, #fff);
+  color: var(--color-background-default-knockout);
+  font-weight: var(--typography-font-weight-semibold);
+  box-shadow: 0 1px 2px
+    color-mix(in srgb, var(--color-background-default-knockout) 12%, transparent);
 }
 .cbf-report-tabs__related {
   position: relative;
@@ -250,7 +433,7 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
   aspect-ratio: 3 / 2;
   border-radius: var(--radius-100);
   overflow: hidden;
-  background: var(--color-surface-sunken);
+  background: var(--color-background-elevation-sunken);
 }
 .cbf-report-intro__media img {
   width: 100%;
@@ -269,18 +452,34 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
   margin: 0;
   font-size: 24px;
   line-height: 1.4;
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
+  font-weight: var(--typography-font-weight-semibold);
+  color: var(--color-content-default);
 }
 .cbf-report-intro__body {
   margin: 0;
   font-size: 18px;
   line-height: 1.6;
-  color: var(--color-text-secondary);
+  color: var(--color-content-default-secondary);
+}
+.grid {
+  --gap: var(--spacing-400, 1rem);
+  --grid-min: 16rem;
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: repeat(auto-fit, minmax(min(var(--grid-min), 100%), 1fr));
+}
+.cbf-page {
+  padding-block: var(--spacing-600) var(--spacing-800);
+}
+.esa-container {
+  width: 100%;
+  max-width: var(--_container-max, 1556px);
+  margin-inline: auto;
+  padding-inline: var(--spacing-600, 2rem);
 }
 .cbf-related-items {
   padding-top: var(--spacing-600);
-  border-top: 1px solid var(--color-border);
+  border-top: 1px solid var(--color-border-default);
 }
 .cbf-related-items__head {
   margin: 0 0 var(--spacing-400);
@@ -288,106 +487,22 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
 .cbf-related-items__grid {
   --grid-min: 20rem;
 }
-.cbf-related-items__card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-300);
-}
-.cbf-related-items__overview {
-  margin: 0;
-  font-size: 16px;
-  line-height: 1.5;
-  color: var(--color-text-secondary);
-}
-.cbf-related-items__overview strong,
-.cbf-related-items__meta strong {
-  color: var(--color-text-primary);
-}
-.cbf-related-items__foot {
-  display: flex;
-  justify-content: flex-end;
-}
-.esa-button {
-  --_btn-height: var(--form-height-md, 40px);
-  --_btn-padding-x: var(--form-padding-x-md, 16px);
-  --_btn-font-size: var(--form-font-size-md, 14px);
-  --_btn-radius: var(--form-radius-md, 6px);
-  --_accent: var(--color-primary, #46a758);
-  --_accent-hover: var(--color-primary-hover, #3e9b4f);
-  --_on: var(--color-text-inverse, #ffffff);
-  --_accent-text: var(--_accent);
-  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);
-  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);
-  display: inline-block;
-}
-.esa-button--sm {
-  --_btn-height: var(--form-height-sm, 32px);
-  --_btn-padding-x: var(--form-padding-x-sm, 12px);
-  --_btn-font-size: var(--form-font-size-sm, 12px);
-  --_btn-radius: var(--form-radius-sm, 4px);
-}
-.esa-button--color-primary {
-  --_accent-text: var(--color-primary-strong);
-}
-.esa-button__native {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-200, 8px);
-  width: 100%;
-  height: var(--_btn-height);
-  padding-inline: var(--_btn-padding-x);
-  border: 1px solid transparent;
-  border-radius: var(--_btn-radius);
-  font-size: var(--_btn-font-size);
-  font-family: var(--font-sans, system-ui, sans-serif);
-  font-weight: var(--font-weight-medium, 500);
-  line-height: 1;
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    background var(--transition-fast, 0.15s ease),
-    border-color var(--transition-fast, 0.15s ease);
-  -webkit-appearance: none;
-  appearance: none;
-}
-.esa-button--appearance-fill .esa-button__native {
-  background: var(--_accent);
-  color: var(--_on);
-  border-color: transparent;
-}
-.esa-button__label {
-  white-space: nowrap;
-}
-.esa-container {
-  width: 100%;
-  max-width: var(--_container-max, 1556px);
-  margin-inline: auto;
-  padding-inline: var(--container-gutter, var(--spacing-600, 2rem));
-}
-.type-section-title {
-  font-family: var(--font-display, var(--font-sans));
-  font-size: var(--type-size-500);
-  font-weight: var(--font-weight-semibold);
-  line-height: var(--line-height-tight);
-  letter-spacing: var(--letter-spacing-tight);
-}
 .esa-card {
-  --_card-bg: var(--card-bg, var(--color-surface, #ffffff));
-  --_card-border: var(--card-border-color, var(--color-border, #e5e5e5));
-  --_card-radius: var(--card-radius, var(--radius-300, 0.5rem));
-  --_card-padding: var(--card-padding, var(--spacing-500, 1.5rem));
+  --_card-bg: var(--card-bg, var(--color-background-elevation-raised, #fcfcfc));
+  --_card-border: var(--card-border-color, var(--color-border-default, #cecece));
+  --_card-radius: var(--radius-md, 0.5rem);
+  --_card-padding: var(--spacing-500, 1.5rem);
   --_card-header-bg: var(--card-header-bg, transparent);
-  --_card-header-color: var(--card-header-color, var(--color-text-primary, #171717));
-  --_card-header-border: var(--card-header-border-color, var(--color-border-light, #efefef));
+  --_card-header-color: var(--color-content-default, #202020);
+  --_card-header-border: var(--color-border-default-subtle, #d9d9d9);
   display: block;
   background: var(--_card-bg);
-  border: 1px solid var(--_card-border);
+  border: var(--border-width-default, 1px) solid var(--_card-border);
   border-radius: var(--_card-radius);
   overflow: hidden;
 }
 .esa-card--outlined {
-  --_card-border: var(--color-border, #e5e5e5);
+  --_card-border: var(--color-border-default, #cecece);
 }
 .esa-card__header {
   display: flex;
@@ -396,7 +511,7 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
   padding: var(--spacing-400, 1rem) var(--_card-padding);
   background: var(--_card-header-bg);
   color: var(--_card-header-color);
-  border-bottom: 1px solid var(--_card-header-border);
+  border-bottom: var(--border-width-default, 1px) solid var(--_card-header-border);
   min-height: 56px;
 }
 .esa-card__header-content {
@@ -410,175 +525,115 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
   gap: var(--spacing-050, 0.125rem);
 }
 .esa-card__title {
-  font-size: var(--type-size-250, 1.0625rem);
-  font-weight: 600;
   margin: 0;
   color: inherit;
-  font-family: var(--font-sans, "DM Sans", sans-serif);
 }
 .esa-card__body {
   padding: var(--_card-padding);
 }
+.cbf-related-items__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-300);
+}
+.cbf-related-items__overview {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-content-default-secondary);
+}
+.cbf-related-items__overview strong,
+.cbf-related-items__meta strong {
+  color: var(--color-content-default);
+}
 .esa-card__footer {
   padding: var(--spacing-300, 0.75rem) var(--_card-padding);
-  border-top: 1px solid var(--_card-header-border);
-  background: var(--card-footer-bg, var(--color-surface-sunken, #efefef));
+  border-top: var(--border-width-default, 1px) solid var(--_card-header-border);
+  background: var(--color-background-elevation-sunken, #f0f0f0);
 }
-.grid {
-  --gap: var(--spacing-400, 1rem);
-  --grid-min: 16rem;
-  display: grid;
-  gap: var(--gap);
-  grid-template-columns: repeat(auto-fit, minmax(min(var(--grid-min), 100%), 1fr));
-}
-.cbf-app-panel {
+.cbf-related-items__foot {
   display: flex;
-  flex-direction: column;
-  min-height: 80vh;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-100);
-  overflow: hidden;
-  background: var(--color-surface);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-surface-inverse) 8%, transparent);
+  justify-content: flex-end;
 }
-.cbf-app-panel__crumb {
-  background: var(--color-gold-50);
-  border-bottom: 1px solid var(--color-border);
-  padding: var(--spacing-400) var(--spacing-600);
-}
-.esa-breadcrumbs {
-  --_crumb-font-size: var(--type-size-200, 0.875rem);
-  --_crumb-link-color: var(--breadcrumbs-link-color, #43608a);
-  --_crumb-link-hover: var(--breadcrumbs-link-hover, #39506f);
-  --_crumb-current-color: var(--color-text-primary, #171717);
-  --_crumb-separator-color: var(--breadcrumbs-separator-color, #737373);
-  --_crumb-gap: var(--spacing-200, 8px);
-  display: block;
-}
-.cbf-app-panel__crumb .esa-breadcrumbs {
-  --breadcrumbs-link-color: var(--color-text-secondary);
-  --breadcrumbs-link-hover: var(--color-primary);
-}
-.esa-breadcrumbs__list {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--_crumb-gap);
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  font-size: var(--_crumb-font-size);
-}
-.esa-breadcrumbs__item {
-  display: flex;
-  align-items: center;
-  gap: var(--_crumb-gap);
-}
-.esa-breadcrumbs__link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-100, 4px);
-  color: var(--_crumb-link-color);
-  text-decoration: none;
-}
-.esa-breadcrumbs__icon {
-  display: inline-flex;
-  align-items: center;
-}
-.esa-breadcrumbs__separator {
-  flex-shrink: 0;
-  color: var(--_crumb-separator-color);
-}
-.esa-breadcrumbs__current {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-100, 4px);
-  color: var(--_crumb-current-color);
-  font-weight: var(--font-weight-medium, 500);
-}
-.cbf-app-panel__body {
-  flex: 1;
-}
-.cbf-app-panel__content {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-400);
-  padding: var(--spacing-600);
-}
-.cbf-page-heading {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--spacing-300, 12px);
-  margin: 0;
-  font-family: var(--font-display);
-  font-weight: var(--font-weight-medium);
-  font-size: 40px;
-  line-height: 40px;
-  letter-spacing: -1px;
-  color: var(--color-surface-inverse);
+.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {
+  transition: transform 0.15s ease;
 }
 ```
 
 ## Tokens
 | Token | Value | Tier |
 |---|---|---|
+| `--border-width-default` | `1px` | semantic |
+| `--breadcrumbs-bg` | `transparent` | component |
 | `--breadcrumbs-link-color` | `#525252` | component |
 | `--breadcrumbs-link-hover` | `#3d3d3d` | component |
-| `--breadcrumbs-separator-color` | `#bbbbbb` | component |
+| `--button-radius-md` | `.5rem` | component |
+| `--button-radius-sm` | `.25rem` | component |
 | `--card-bg` | `#fcfcfc` | component |
 | `--card-border-color` | `#dcdcdc` | component |
-| `--card-footer-bg` | `#f3f7fc` | component |
 | `--card-header-bg` | `transparent` | component |
-| `--card-header-border-color` | `#efefef` | component |
-| `--card-header-color` | `#3d3d3d` | component |
-| `--card-padding` | `1.5rem` | component |
-| `--card-radius` | `.5rem` | component |
-| `--color-border` | `#dcdcdc` | semantic |
-| `--color-border-light` | `#efefef` | semantic |
-| `--color-primary` | `#1e5386` | semantic |
-| `--color-primary-hover` | `#1a4570` | semantic |
-| `--color-primary-strong` | `#2a7e3b` | semantic |
-| `--color-surface` | `#fcfcfc` | semantic |
-| `--color-surface-inverse` | `#13273e` | semantic |
-| `--color-surface-sunken` | `#f3f7fc` | semantic |
-| `--color-text-inverse` | `#fcfcfc` | semantic |
-| `--color-text-primary` | `#3d3d3d` | semantic |
-| `--color-text-secondary` | `#525252` | semantic |
-| `--container-gutter` | `2rem` | component |
-| `--font-display` | `"IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif` | primitive |
-| `--font-sans` | `"IBM Plex Sans", sans-serif` | primitive |
-| `--font-weight-medium` | `500` | primitive |
-| `--font-weight-semibold` | `600` | primitive |
-| `--form-font-size-md` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | component |
-| `--form-font-size-sm` | `clamp(.625rem, .56rem + .32vw, .75rem)` | component |
-| `--form-height-md` | `40px` | component |
-| `--form-height-sm` | `32px` | component |
-| `--form-padding-x-md` | `.75rem` | component |
-| `--form-padding-x-sm` | `.625rem` | component |
-| `--form-radius-md` | `.5rem` | component |
-| `--form-radius-sm` | `.25rem` | component |
-| `--letter-spacing-tight` | `-.01em` | primitive |
-| `--line-height-tight` | `1.3` | primitive |
+| `--cbf-surface-crumb` | `#f4f4f4` | brand |
+| `--color-background-brand` | `#1e5386` | semantic |
+| `--color-background-brand-hover` | `#1a4570` | semantic |
+| `--color-background-default-knockout` | `#13273e` | semantic |
+| `--color-background-elevation-raised` | `#fcfcfc` | semantic |
+| `--color-background-elevation-sunken` | `#f3f7fc` | semantic |
+| `--color-border-default` | `#dcdcdc` | semantic |
+| `--color-border-default-strong` | `#bdbdbd` | semantic |
+| `--color-border-default-subtle` | `#efefef` | semantic |
+| `--color-content-brand` | `#1e5386` | semantic |
+| `--color-content-default` | `#3d3d3d` | semantic |
+| `--color-content-default-knockout` | `#fcfcfc` | semantic |
+| `--color-content-default-secondary` | `#525252` | semantic |
+| `--color-gray-3` | `#f0f0f0` | primitive |
 | `--radius-100` | `.25rem` | primitive |
 | `--radius-200` | `.5rem` | primitive |
-| `--radius-300` | `.5rem` | primitive |
+| `--radius-md` | `.5rem` | semantic |
 | `--spacing-050` | `.125rem` | primitive |
 | `--spacing-100` | `.25rem` | primitive |
 | `--spacing-150` | `.375rem` | primitive |
 | `--spacing-200` | `.5rem` | primitive |
+| `--spacing-250` | `.625rem` | primitive |
 | `--spacing-300` | `.75rem` | primitive |
 | `--spacing-400` | `1rem` | primitive |
 | `--spacing-500` | `1.5rem` | primitive |
 | `--spacing-600` | `2rem` | primitive |
 | `--spacing-700` | `3rem` | primitive |
 | `--spacing-800` | `4rem` | primitive |
-| `--transition-fast` | `.15s ease` | primitive |
-| `--type-size-200` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | primitive |
-| `--type-size-250` | `clamp(.8125rem, .71rem + .5vw, 1.0625rem)` | primitive |
-| `--type-size-500` | `clamp(1.125rem, .98rem + .72vw, 1.5rem)` | primitive |
+| `--transition-fast` | `.15s ease` | semantic |
+| `--typography-body-md-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-body-md-font-size` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | semantic |
+| `--typography-body-md-font-weight` | `400` | semantic |
+| `--typography-body-md-letter-spacing` | `.01em` | semantic |
+| `--typography-body-md-line-height` | `1.6` | semantic |
+| `--typography-font-family-display` | `"IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif` | semantic |
+| `--typography-font-weight-medium` | `500` | semantic |
+| `--typography-font-weight-semibold` | `600` | semantic |
+| `--typography-heading-md-font-family` | `"IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif` | semantic |
+| `--typography-heading-md-font-size` | `clamp(1.125rem, .98rem + .72vw, 1.5rem)` | semantic |
+| `--typography-heading-md-font-weight` | `600` | semantic |
+| `--typography-heading-md-letter-spacing` | `-.01em` | semantic |
+| `--typography-heading-md-line-height` | `1.3` | semantic |
+| `--typography-label-md-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-label-md-font-size` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | semantic |
+| `--typography-label-md-font-weight` | `500` | semantic |
+| `--typography-label-md-letter-spacing` | `.01em` | semantic |
+| `--typography-label-md-line-height` | `1.6` | semantic |
+| `--typography-meta-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-meta-font-size` | `clamp(.625rem, .56rem + .32vw, .75rem)` | semantic |
+| `--typography-meta-font-weight` | `400` | semantic |
+| `--typography-meta-letter-spacing` | `.01em` | semantic |
+| `--typography-meta-line-height` | `1.6` | semantic |
+| `--typography-microcopy-xs-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-microcopy-xs-font-size` | `clamp(.625rem, .56rem + .32vw, .75rem)` | semantic |
+| `--typography-microcopy-xs-font-weight` | `500` | semantic |
+| `--typography-microcopy-xs-letter-spacing` | `.01em` | semantic |
+| `--typography-microcopy-xs-line-height` | `1` | semantic |
+| `--typography-title-sm-strong-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-title-sm-strong-font-size` | `clamp(.8125rem, .71rem + .5vw, 1.0625rem)` | semantic |
+| `--typography-title-sm-strong-font-weight` | `600` | semantic |
+| `--typography-title-sm-strong-letter-spacing` | `.01em` | semantic |
+| `--typography-title-sm-strong-line-height` | `1.6` | semantic |
 
 ---
 _Full page, complete stylesheet, and all tokens: `./full-page.md`, `../styles.css`, `../index.html`._

@@ -4,7 +4,7 @@ Re-implement this UI section faithfully on your stack. Keep the CSS custom-prope
 names (`var(--…)`) so it stays themeable — the values below are the resolved
 `cb-fish` theme of the **project-budgets** design system (an ESA Ecology spoke).
 
-- **Source prototype:** http://localhost:4321/cb-fish-design/project-budgets/
+- **Source prototype:** http://localhost:4787/cb-fish-design/project-budgets/
 - **Section element:** `<div>`
 - **Components:** cbf-icon (spoke), cbf-omni (spoke), cbf-search-surface (spoke), esa-kbd (hub)
 
@@ -68,7 +68,8 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
           <p class="cbf-omni__hero-title">Search the Program</p>
           <p class="cbf-omni__hero-note">
             Find projects, contracts, people, and publications across the Columbia Basin. Start
-            typing, or press <kbd class="esa-kbd">Tab</kbd> to choose a scope.
+            typing, or press <kbd class="esa-kbd typography-microcopy-xs">Tab</kbd> to choose a
+            scope.
           </p>
         </div>
       </div>
@@ -94,10 +95,13 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
     </button>
     <div class="cbf-omni__footer">
       <div class="cbf-omni__hints">
-        <span><kbd class="esa-kbd">↑</kbd> <kbd class="esa-kbd">↓</kbd> Navigate</span>
-        <span><kbd class="esa-kbd">↵</kbd> Select</span>
-        <span><kbd class="esa-kbd">Tab</kbd> Scope</span>
-        <span><kbd class="esa-kbd">Esc</kbd> Close</span>
+        <span
+          ><kbd class="esa-kbd typography-microcopy-xs">↑</kbd>
+          <kbd class="esa-kbd typography-microcopy-xs">↓</kbd> Navigate</span
+        >
+        <span><kbd class="esa-kbd typography-microcopy-xs">↵</kbd> Select</span>
+        <span><kbd class="esa-kbd typography-microcopy-xs">Tab</kbd> Scope</span>
+        <span><kbd class="esa-kbd typography-microcopy-xs">Esc</kbd> Close</span>
       </div>
     </div>
   </div>
@@ -106,6 +110,13 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
 
 ## Styles (only what this section uses; tokens resolved for the theme)
 ```css
+.typography-microcopy-xs {
+  font-family: var(--typography-microcopy-xs-font-family);
+  font-size: var(--typography-microcopy-xs-font-size);
+  font-weight: var(--typography-microcopy-xs-font-weight);
+  line-height: var(--typography-microcopy-xs-line-height);
+  letter-spacing: var(--typography-microcopy-xs-letter-spacing);
+}
 .cbf-omni-trigger {
   display: flex;
   align-items: center;
@@ -147,9 +158,9 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  font-family: var(--font-sans);
+  font-family: var(--typography-font-family-sans);
   font-size: 13px;
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--typography-font-weight-medium);
   color: #ffffffd9;
   background: #ffffff1f;
   border: 1px solid rgba(255, 255, 255, 0.25);
@@ -172,10 +183,15 @@ names (`var(--…)`) so it stays themeable — the values below are the resolved
 ## Tokens
 | Token | Value | Tier |
 |---|---|---|
-| `--font-sans` | `"IBM Plex Sans", sans-serif` | primitive |
-| `--font-weight-medium` | `500` | primitive |
 | `--spacing-200` | `.5rem` | primitive |
 | `--spacing-300` | `.75rem` | primitive |
+| `--typography-font-family-sans` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-font-weight-medium` | `500` | semantic |
+| `--typography-microcopy-xs-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-microcopy-xs-font-size` | `clamp(.625rem, .56rem + .32vw, .75rem)` | semantic |
+| `--typography-microcopy-xs-font-weight` | `500` | semantic |
+| `--typography-microcopy-xs-letter-spacing` | `.01em` | semantic |
+| `--typography-microcopy-xs-line-height` | `1` | semantic |
 
 ---
 _Full page, complete stylesheet, and all tokens: `./full-page.md`, `../styles.css`, `../index.html`._
