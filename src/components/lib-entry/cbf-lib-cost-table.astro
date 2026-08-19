@@ -266,7 +266,7 @@ const reviewIssued = isIssued(review);
 /* ── View derivations ────────────────────────────────────────────────────────
    Every helper below lives in src/lib/lib-entry-view.ts and is bound here to
    THIS scope's data. The bodies used to be written twice — once here for SSR and
-   once in the client <script> — which is how the client copy of qtyFactText lost
+   once in the client script block — which is how the client copy of qtyFactText lost
    its travel branch while the SSR copy kept it. Binding instead of re-declaring
    makes that class of drift impossible: there is one body, and the two scopes
    differ only in what they pass it. */

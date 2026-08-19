@@ -798,7 +798,7 @@ export class BcnDatePicker extends LitElement {
       font-weight: var(--typography-font-weight-semibold, 600);
     }
     .calendar__day.is-selected.is-today::after {
-      background: var(--color-gold-300, #f0c040);
+      background: var(--cbf-gold-300, #f0c040);
     }
     .calendar__day.is-selected:hover {
       background: var(--color-background-brand, #13273e);

@@ -628,3 +628,36 @@ primitive always ships the pair), or (b) let a migration row carry an
 `ambiguous: true` flag that downgrades it from FAIL to an informational line naming
 the call sites, since the row itself says a human must decide.
 
+---
+
+## @esa/tokens — colour ramps
+
+### The hub's `--color-gold-*` is Radix gold, and a spoke's same-named ramp vanished into it
+
+**Status:** Open — request. Worked around locally by restoring `--cbf-gold-*` in `theme-cb-fish.css`.
+**Affects:** Any spoke whose brand ramp shares a hue NAME with a Radix ramp.
+
+**Problem:**
+This spoke deleted its own gold ramp on the belief it had been promoted to the hub —
+`theme-cb-fish.css` carried the note "The gold ramp was promoted — use the hub's
+`--color-gold-*` directly." The hub's gold is **Radix** gold on a 1–12 scale and never
+carried CBFish's values. So `--color-gold-50`, `-200`, `-300`, `-900` resolved to
+nothing. Two sites had fallbacks and kept rendering; the three breadcrumb strips did
+not, so `background` was dropped whole and every strip rendered **white** — the
+brand's most repeated surface, wrong on every app page, with no error anywhere.
+
+Substituting the nearest Radix step is not a fix either: `--color-gold-2` (#faf9f2)
+pulls red up and blue down against CBFish's cool khaki #f8f8f4, and across a strip that
+wide it reads plainly yellow. Same name, different hue — which is exactly what made the
+original mistake look reasonable.
+
+**Requested change:**
+Two things, either of which would have caught it:
+1. A brand ramp promoted to the hub should keep its brand identity in the name
+   (`--color-cbf-gold-*`, or a semantic like `--color-background-breadcrumb`), so it
+   cannot silently collide with a Radix hue that happens to share a word.
+2. `doctor` already reports "tokens read here that the hub does not declare". Reads with
+   **no fallback** should be a FAIL, not part of that informational list — those are
+   dropped declarations, which is the silent-rendering class the `removed:true` rows
+   exist to prevent. A read with a fallback still renders and can stay a warning.
+
