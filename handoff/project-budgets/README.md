@@ -11,5 +11,5 @@ snapshot of one page for a developer (or an AI agent) to re-implement on any sta
 - **`components.md`** — the component blocks composing the page + their source.
 - **`manifest.json`** — per-section data powering the live dev-mode overlay.
 
-Source URL: http://localhost:4321/cb-fish-design/project-budgets/
-Rules shipped: 109 · Tokens referenced: 107
+Source URL: http://localhost:4787/cb-fish-design/project-budgets/
+Rules shipped: 138 · Tokens referenced: 118

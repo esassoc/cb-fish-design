@@ -1,0 +1,2070 @@
+{
+  "name": "crs-commitments",
+  "url": "http://localhost:4787/cb-fish-design/biop-reporting/",
+  "theme": "cb-fish",
+  "stats": {
+    "rulesMatched": 110,
+    "originalBytes": 169070,
+    "tokensReferenced": 119
+  },
+  "tokens": [
+    {
+      "name": "--animation-overlay-enter",
+      "value": ".25s ease-out",
+      "tier": "semantic"
+    },
+    {
+      "name": "--border-width-default",
+      "value": "1px",
+      "tier": "semantic"
+    },
+    {
+      "name": "--breadcrumbs-bg",
+      "value": "transparent",
+      "tier": "component"
+    },
+    {
+      "name": "--breadcrumbs-link-color",
+      "value": "#525252",
+      "tier": "component"
+    },
+    {
+      "name": "--breadcrumbs-link-hover",
+      "value": "#3d3d3d",
+      "tier": "component"
+    },
+    {
+      "name": "--button-radius-md",
+      "value": ".5rem",
+      "tier": "component"
+    },
+    {
+      "name": "--button-radius-sm",
+      "value": ".25rem",
+      "tier": "component"
+    },
+    {
+      "name": "--card-bg",
+      "value": "#fcfcfc",
+      "tier": "component"
+    },
+    {
+      "name": "--card-border-color",
+      "value": "#dcdcdc",
+      "tier": "component"
+    },
+    {
+      "name": "--card-header-bg",
+      "value": "transparent",
+      "tier": "component"
+    },
+    {
+      "name": "--cbf-surface-crumb",
+      "value": "#f4f4f4",
+      "tier": "brand"
+    },
+    {
+      "name": "--color-background-brand",
+      "value": "#1e5386",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-background-brand-hover",
+      "value": "#1a4570",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-background-default-knockout",
+      "value": "#13273e",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-background-elevation-raised",
+      "value": "#fcfcfc",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-background-elevation-sunken",
+      "value": "#f3f7fc",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-background-field",
+      "value": "rgba(0, 0, 0, 0)",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-border-default",
+      "value": "#dcdcdc",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-border-default-strong",
+      "value": "#bdbdbd",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-border-default-subtle",
+      "value": "#efefef",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-content-brand",
+      "value": "#1e5386",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-content-default",
+      "value": "#3d3d3d",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-content-default-knockout",
+      "value": "#fcfcfc",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-content-default-secondary",
+      "value": "#525252",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-content-link",
+      "value": "#1e5386",
+      "tier": "semantic"
+    },
+    {
+      "name": "--color-content-utility-danger",
+      "value": "#ce2c31",
+      "tier": "semantic"
+    },
+    {
+      "name": "--elevation-5",
+      "value": "0 8px 32px -8px rgba(0, 0, 0, .08)",
+      "tier": "semantic"
+    },
+    {
+      "name": "--font-size-150",
+      "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+      "tier": "primitive"
+    },
+    {
+      "name": "--form-border-color",
+      "value": "#dcdcdc",
+      "tier": "component"
+    },
+    {
+      "name": "--form-border-width",
+      "value": "1px",
+      "tier": "component"
+    },
+    {
+      "name": "--form-error-color",
+      "value": "#ce2c31",
+      "tier": "component"
+    },
+    {
+      "name": "--form-help-color",
+      "value": "#525252",
+      "tier": "component"
+    },
+    {
+      "name": "--form-label-color",
+      "value": "#525252",
+      "tier": "component"
+    },
+    {
+      "name": "--form-label-gap",
+      "value": ".25rem",
+      "tier": "component"
+    },
+    {
+      "name": "--form-placeholder-color",
+      "value": "#525252",
+      "tier": "component"
+    },
+    {
+      "name": "--form-text-color",
+      "value": "#3d3d3d",
+      "tier": "component"
+    },
+    {
+      "name": "--icon-size-lg",
+      "value": "24px",
+      "tier": "primitive"
+    },
+    {
+      "name": "--icon-size-md",
+      "value": "20px",
+      "tier": "primitive"
+    },
+    {
+      "name": "--icon-size-sm",
+      "value": "16px",
+      "tier": "primitive"
+    },
+    {
+      "name": "--link-column-rule-color",
+      "value": "color-mix(in srgb, currentColor 40%, transparent)",
+      "tier": "component"
+    },
+    {
+      "name": "--radius-100",
+      "value": ".25rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--radius-full",
+      "value": "9999px",
+      "tier": "primitive"
+    },
+    {
+      "name": "--radius-md",
+      "value": ".5rem",
+      "tier": "semantic"
+    },
+    {
+      "name": "--side-dialog-inset",
+      "value": "16px",
+      "tier": "component"
+    },
+    {
+      "name": "--side-dialog-width",
+      "value": "400px",
+      "tier": "component"
+    },
+    {
+      "name": "--side-dialog-width-sm",
+      "value": "320px",
+      "tier": "component"
+    },
+    {
+      "name": "--spacing-100",
+      "value": ".25rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-200",
+      "value": ".5rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-250",
+      "value": ".625rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-300",
+      "value": ".75rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-400",
+      "value": "1rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-500",
+      "value": "1.5rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-600",
+      "value": "2rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-700",
+      "value": "3rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--spacing-800",
+      "value": "4rem",
+      "tier": "primitive"
+    },
+    {
+      "name": "--transition-fast",
+      "value": ".15s ease",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-body-md-font-family",
+      "value": "\"IBM Plex Sans\", sans-serif",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-body-md-font-size",
+      "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-body-md-font-weight",
+      "value": "400",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-body-md-letter-spacing",
+      "value": ".01em",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-body-md-line-height",
+      "value": "1.6",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-body-sm-font-family",
+      "value": "\"IBM Plex Sans\", sans-serif",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-body-sm-font-size",
+      "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-body-sm-font-weight",
+      "value": "400",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-body-sm-letter-spacing",
+      "value": ".01em",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-body-sm-line-height",
+      "value": "1.6",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-font-family-sans",
+      "value": "\"IBM Plex Sans\", sans-serif",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-font-weight-medium",
+      "value": "500",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-label-md-font-family",
+      "value": "\"IBM Plex Sans\", sans-serif",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-label-md-font-size",
+      "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-label-md-font-weight",
+      "value": "500",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-label-md-letter-spacing",
+      "value": ".01em",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-label-md-line-height",
+      "value": "1.6",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-md-font-family",
+      "value": "\"IBM Plex Sans\", sans-serif",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-md-font-size",
+      "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-md-font-weight",
+      "value": "500",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-md-letter-spacing",
+      "value": ".01em",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-md-line-height",
+      "value": "1",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-md-subtle-font-family",
+      "value": "\"IBM Plex Sans\", sans-serif",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-md-subtle-font-size",
+      "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-md-subtle-font-weight",
+      "value": "400",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-md-subtle-letter-spacing",
+      "value": ".01em",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-md-subtle-line-height",
+      "value": "1",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-xs-font-family",
+      "value": "\"IBM Plex Sans\", sans-serif",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-xs-font-size",
+      "value": "clamp(.625rem, .56rem + .32vw, .75rem)",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-xs-font-weight",
+      "value": "500",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-xs-letter-spacing",
+      "value": ".01em",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-microcopy-xs-line-height",
+      "value": "1",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-title-font-family",
+      "value": "\"IBM Plex Sans\", sans-serif",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-title-font-size",
+      "value": "clamp(1rem, .88rem + .6vw, 1.25rem)",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-title-font-weight",
+      "value": "500",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-title-letter-spacing",
+      "value": ".01em",
+      "tier": "semantic"
+    },
+    {
+      "name": "--typography-title-line-height",
+      "value": "1.6",
+      "tier": "semantic"
+    }
+  ],
+  "components": [
+    {
+      "component": "cbf-app-bar",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-app-panel",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/shared/cbf-app-panel.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-icon",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/search/cbf-icon.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-logo",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/shared/cbf-logo.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-nav-actions",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-nav-burger",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-nav-collapsible",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-nav-drawer",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-nav-link",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-omni",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-omni-trigger",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/search/cbf-omni-trigger.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-page",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-page-heading",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/shared/cbf-page-heading.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-password-gate",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/shared/cbf-password-gate.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-related-items",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/shared/cbf-related-items.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-report-intro",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/shared/cbf-report-intro.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-report-tabs",
+      "source": "/Users/mauricio/Documents/GitHub/cb-fish-design/src/components/shared/cbf-report-tabs.astro",
+      "origin": "spoke"
+    },
+    {
+      "component": "cbf-search-surface",
+      "source": null,
+      "origin": "spoke"
+    },
+    {
+      "component": "esa-app-bar",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-app-bar.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-breadcrumbs",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-breadcrumbs.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-button",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-button.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-card",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-card.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-container",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-container.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-icon",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-icon.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-kbd",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-kbd.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-link-column",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-link-column.astro",
+      "origin": "hub"
+    },
+    {
+      "component": "esa-nav-dropdown",
+      "source": "/Users/mauricio/Documents/GitHub/ecology/packages/ecology/src/components/esa-nav-dropdown.astro",
+      "origin": "hub"
+    }
+  ],
+  "sections": [
+    {
+      "index": 0,
+      "label": "Nav",
+      "tag": "nav",
+      "html": "<nav class=\"esa-app-bar esa-app-bar--brand-strong cbf-app-bar--admin\">\n  <div class=\"esa-app-bar__row\">\n    <div class=\"esa-app-bar__start typography-label-md\">\n      <div class=\"cbf-nav-collapsible\">\n        <span\n          class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm\"\n          ><button class=\"esa-button__native typography-microcopy-xs\" type=\"button\">\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <ellipse cx=\"12\" cy=\"5\" rx=\"9\" ry=\"3\"></ellipse>\n                <path d=\"M3 5V19A9 3 0 0 0 21 19V5\"></path>\n                <path d=\"M3 12A9 3 0 0 0 21 12\"></path>\n              </svg>\n            </span>\n            <span class=\"esa-button__label\">Data management</span\n            ><span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span></button\n        ></span>\n        <span\n          class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm\"\n          ><button class=\"esa-button__native typography-microcopy-xs\" type=\"button\">\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path\n                  d=\"M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2\"\n                ></path>\n              </svg>\n            </span>\n            <span class=\"esa-button__label\">System status</span\n            ><span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span></button\n        ></span>\n        <span\n          class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm\"\n          ><button class=\"esa-button__native typography-microcopy-xs\" type=\"button\">\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path\n                  d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\"\n                ></path>\n                <circle cx=\"12\" cy=\"12\" r=\"3\"></circle>\n              </svg>\n            </span>\n            <span class=\"esa-button__label\">System configuration</span\n            ><span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span></button\n        ></span>\n      </div>\n    </div>\n    <div class=\"esa-app-bar__main typography-label-md\">\n      <button class=\"cbf-omni-trigger\" type=\"button\" data-omni-open=\"\" aria-label=\"Search\">\n        <span class=\"cbf-icon\"\n          ><svg\n            width=\"14\"\n            height=\"14\"\n            viewBox=\"0 0 24 24\"\n            fill=\"none\"\n            stroke=\"currentColor\"\n            stroke-width=\"2\"\n            stroke-linecap=\"round\"\n            stroke-linejoin=\"round\"\n            aria-hidden=\"true\"\n          >\n            <circle cx=\"11\" cy=\"11\" r=\"8\"></circle>\n            <path d=\"m21 21-4.3-4.3\"></path></svg\n        ></span>\n        <span class=\"cbf-omni-trigger__ph\">Search projects, contracts, people…</span>\n        <kbd class=\"cbf-omni-trigger__kbd\">/</kbd>\n      </button>\n    </div>\n    <div class=\"esa-app-bar__end typography-label-md\">\n      <div class=\"cbf-nav-collapsible\">\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--end\">\n          <summary\n            class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm\"\n          >\n            <span class=\"esa-button__native typography-microcopy-xs\"\n              ><span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n                <svg\n                  width=\"16\"\n                  height=\"16\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n                  <path d=\"M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3\"></path>\n                  <path d=\"M12 17h.01\"></path>\n                </svg>\n              </span>\n              <span class=\"esa-button__label\">Help</span\n              ><span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n                <svg\n                  width=\"16\"\n                  height=\"16\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <path d=\"m6 9 6 6 6-6\"></path>\n                </svg>\n              </span>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel typography-body-md\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head typography-label-md\">Help</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li class=\"typography-body-sm\">Help center</li>\n                <li class=\"typography-body-sm\">Data dictionary</li>\n                <li class=\"typography-body-sm\">EF&amp;W Program documents</li>\n                <li class=\"typography-body-sm\">Request support</li>\n                <li class=\"typography-body-sm\">Send feedback</li>\n              </ul>\n            </div>\n          </div>\n        </details>\n      </div>\n    </div>\n  </div>\n</nav>\n",
+      "css": ".esa-app-bar {\n  --_bar-gap: var(--spacing-600, 32px);\n  --_bar-pad-x: var(--spacing-600, 32px);\n  --_bar-pad-y: var(--spacing-400, 16px);\n  display: block;\n  width: 100%;\n  background: var(--color-background-elevation-raised, #fcfcfc);\n  color: var(--color-content-default, #202020);\n}\n.esa-app-bar--brand-strong {\n  background: var(--color-background-default-knockout, #202020);\n  color: var(--color-content-default-knockout, #fcfcfc);\n}\n.esa-app-bar__row {\n  display: flex;\n  align-items: center;\n  gap: var(--_bar-gap);\n  padding: var(--_bar-pad-y) var(--_bar-pad-x);\n}\n.esa-app-bar__start,\n.esa-app-bar__main,\n.esa-app-bar__end {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--_bar-gap);\n}\n.esa-app-bar__start {\n  flex: none;\n}\n.esa-app-bar__main {\n  flex: 1 1 auto;\n  min-width: 0;\n}\n.esa-app-bar__end {\n  flex: none;\n  margin-left: auto;\n}\n.esa-app-bar--brand {\n  background: var(--color-background-brand, #46a758);\n  color: var(--color-content-default-knockout, #fcfcfc);\n}\n.esa-link-column {\n  color: inherit;\n}\n.esa-link-column__head {\n  display: block;\n  margin: 0 0 var(--spacing-100, 4px);\n  font-size: var(--typography-label-md-font-size);\n  color: inherit;\n  text-decoration-color: transparent;\n}\n.esa-link-column__rule {\n  height: 1px;\n  border: 0;\n  margin: 0 0 var(--spacing-200, 8px);\n  background: var(--link-column-rule-color, color-mix(in srgb, currentColor 40%, transparent));\n}\n.esa-link-column__list {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n.esa-link-column__list li {\n  font-size: var(--font-size-150, var(--typography-body-sm-font-size));\n  margin-bottom: var(--spacing-100, 4px);\n}\n.esa-link-column__list a {\n  color: inherit;\n  text-decoration-color: transparent;\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-microcopy-xs {\n  font-family: var(--typography-microcopy-xs-font-family);\n  font-size: var(--typography-microcopy-xs-font-size);\n  font-weight: var(--typography-microcopy-xs-font-weight);\n  line-height: var(--typography-microcopy-xs-line-height);\n  letter-spacing: var(--typography-microcopy-xs-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.cbf-app-bar--admin .esa-app-bar__row {\n  display: grid;\n  grid-template-columns: 1fr minmax(0, 380px) 1fr;\n}\n.cbf-app-bar--admin .esa-app-bar__start {\n  justify-self: start;\n}\n.cbf-nav-collapsible {\n  display: contents;\n}\n.cbf-app-bar--admin .esa-app-bar__main {\n  justify-content: center;\n}\n.cbf-omni-trigger {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-200);\n  width: 380px;\n  max-width: 100%;\n  padding: 5px var(--spacing-200) 5px var(--spacing-300);\n  background: #ffffff1a;\n  border: 1px solid rgba(255, 255, 255, 0.22);\n  border-radius: 999px;\n  color: #ffffffbf;\n  transition:\n    background 0.12s,\n    border-color 0.12s;\n}\n.cbf-app-bar--admin .cbf-omni-trigger {\n  min-width: 0;\n}\n.cbf-icon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: inherit;\n}\n.cbf-omni-trigger__ph {\n  flex: 1;\n  min-width: 0;\n  text-align: left;\n  font-size: 13px;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.cbf-omni-trigger__kbd {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 18px;\n  height: 18px;\n  padding: 0 5px;\n  font-family: var(--typography-font-family-sans);\n  font-size: 13px;\n  font-weight: var(--typography-font-weight-medium);\n  color: #ffffffd9;\n  background: #ffffff1f;\n  border: 1px solid rgba(255, 255, 255, 0.25);\n  border-radius: 4px;\n}\n.cbf-app-bar--admin .esa-app-bar__end {\n  justify-self: end;\n}\n.esa-nav-dropdown {\n  position: relative;\n}\n.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.cbf-nav-link .cbf-icon {\n  display: inline-flex;\n  align-items: center;\n}\n.esa-button {\n  --_btn-pad-y: var(--spacing-300, 0.75rem);\n  --_btn-padding-x: var(--spacing-300, 0.75rem);\n  --_btn-radius: var(--button-radius-md, 0.5rem);\n  --_accent: var(--color-background-brand, #46a758);\n  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);\n  --_on: var(--color-content-default-knockout, #fcfcfc);\n  --_accent-text: var(--_accent);\n  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);\n  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);\n  display: inline-block;\n}\n.esa-button--sm {\n  --_btn-pad-y: var(--spacing-250, 0.625rem);\n  --_btn-padding-x: var(--spacing-250, 0.625rem);\n  --_btn-radius: var(--button-radius-sm, 4px);\n}\n.esa-button__native {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: var(--spacing-200, 8px);\n  width: 100%;\n  padding-block: var(--_btn-pad-y);\n  padding-inline: var(--_btn-padding-x);\n  border: var(--border-width-default, 1px) solid transparent;\n  border-radius: var(--_btn-radius);\n  text-decoration: none;\n  cursor: pointer;\n  transition:\n    background var(--transition-fast, 0.15s ease),\n    border-color var(--transition-fast, 0.15s ease);\n  -webkit-appearance: none;\n  appearance: none;\n}\n.esa-button--appearance-fill .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent-border, transparent);\n}\n.esa-button--variant-chrome .esa-button__native {\n  background: transparent;\n  color: inherit;\n  border-color: transparent;\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, 20px);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  color: inherit;\n}\n.esa-icon--sm {\n  --_icon-size: var(--icon-size-sm, 16px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-button__label {\n  white-space: nowrap;\n}\nsummary.esa-button {\n  list-style: none;\n  cursor: pointer;\n}\n.esa-icon--md {\n  --_icon-size: var(--icon-size-md, 20px);\n}\n.esa-icon--lg {\n  --_icon-size: var(--icon-size-lg, 24px);\n}\n.esa-button--variant-primary {\n  --_accent-text: var(--color-content-brand);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n",
+      "tokens": [
+        {
+          "name": "--border-width-default",
+          "value": "1px",
+          "tier": "semantic"
+        },
+        {
+          "name": "--button-radius-md",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--button-radius-sm",
+          "value": ".25rem",
+          "tier": "component"
+        },
+        {
+          "name": "--color-background-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-hover",
+          "value": "#1a4570",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-default-knockout",
+          "value": "#13273e",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-raised",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-knockout",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--font-size-150",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-lg",
+          "value": "24px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-md",
+          "value": "20px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-sm",
+          "value": "16px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--link-column-rule-color",
+          "value": "color-mix(in srgb, currentColor 40%, transparent)",
+          "tier": "component"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-250",
+          "value": ".625rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-600",
+          "value": "2rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--transition-fast",
+          "value": ".15s ease",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-family-sans",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-medium",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-font-size",
+          "value": "clamp(.625rem, .56rem + .32vw, .75rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-line-height",
+          "value": "1",
+          "tier": "semantic"
+        }
+      ],
+      "claudePath": "claude/nav.md",
+      "repoPath": "public/handoff/crs-commitments/claude/nav.md"
+    },
+    {
+      "index": 1,
+      "label": "Header",
+      "tag": "header",
+      "html": "<header class=\"esa-app-bar esa-app-bar--brand cbf-app-bar--header\">\n  <div class=\"esa-app-bar__row\">\n    <div class=\"esa-app-bar__start typography-label-md\">\n      <span class=\"cbf-nav-burger\" data-nav-toggle=\"\">\n        <span\n          class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md esa-button--icon-only\"\n          ><button\n            class=\"esa-button__native typography-microcopy-md\"\n            type=\"button\"\n            aria-label=\"Open menu\"\n            title=\"Open menu\"\n          >\n            <span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n              <svg\n                width=\"20\"\n                height=\"20\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <line x1=\"4\" x2=\"20\" y1=\"6\" y2=\"6\"></line>\n                <line x1=\"4\" x2=\"20\" y1=\"12\" y2=\"12\"></line>\n                <line x1=\"4\" x2=\"20\" y1=\"18\" y2=\"18\"></line>\n              </svg>\n            </span></button\n        ></span>\n      </span>\n      <a\n        class=\"cbf-logo\"\n        href=\"/cb-fish-design/home\"\n        title=\"Columbia Basin Fish &amp; Wildlife Program\"\n      >\n        <img class=\"cbf-logo__mark\" src=\"/cb-fish-design/logo-mark.svg\" alt=\"\" />\n        <img\n          class=\"cbf-logo__type\"\n          src=\"/cb-fish-design/logo-type.svg\"\n          alt=\"Columbia Basin Fish &amp; Wildlife Program\"\n        />\n      </a>\n    </div>\n    <div class=\"esa-app-bar__main typography-label-md\">\n      <div class=\"cbf-nav-collapsible cbf-nav-collapsible--inline\">\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n          <summary\n            class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n          >\n            <span class=\"esa-button__native typography-microcopy-md\"\n              ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                <svg\n                  width=\"20\"\n                  height=\"20\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <path d=\"M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z\"></path>\n                  <path d=\"M7 16v6\"></path>\n                  <path d=\"M13 19v3\"></path>\n                  <path\n                    d=\"M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5\"\n                  ></path>\n                </svg>\n              </span>\n              <span class=\"esa-button__label\">Mitigation work</span\n              ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                <svg\n                  width=\"20\"\n                  height=\"20\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <path d=\"m6 9 6 6 6-6\"></path>\n                </svg>\n              </span>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel typography-body-md\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head typography-label-md\">Mitigation work</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li class=\"typography-body-sm\">Projects</li>\n                <li class=\"typography-body-sm\">Contracts</li>\n                <li class=\"typography-body-sm\">Portfolios</li>\n                <li class=\"typography-body-sm\">\n                  <a href=\"/cb-fish-design/legacy/sow\">Work elements</a>\n                </li>\n                <li class=\"typography-body-sm\">Estuary program</li>\n                <li class=\"typography-body-sm\">Tributary habitat</li>\n                <li class=\"typography-body-sm\">Land acquisitions</li>\n                <li class=\"typography-body-sm\">\n                  <a href=\"/cb-fish-design/rme-reporting\">RM&amp;E reporting</a>\n                </li>\n              </ul>\n            </div>\n          </div>\n        </details>\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n          <summary\n            class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n          >\n            <span class=\"esa-button__native typography-microcopy-md\"\n              ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                <svg\n                  width=\"20\"\n                  height=\"20\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <path d=\"M16 7h6v6\"></path>\n                  <path d=\"m22 7-8.5 8.5-5-5L2 17\"></path>\n                </svg>\n              </span>\n              <span class=\"esa-button__label\">Reporting</span\n              ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                <svg\n                  width=\"20\"\n                  height=\"20\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <path d=\"m6 9 6 6 6-6\"></path>\n                </svg>\n              </span>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel typography-body-md\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head typography-label-md\">Reporting</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li class=\"typography-body-sm\">Report Center</li>\n                <li class=\"typography-body-sm\">Maps</li>\n                <li class=\"typography-body-sm\">Publications</li>\n              </ul>\n            </div>\n          </div>\n        </details>\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n          <summary\n            class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n          >\n            <span class=\"esa-button__native typography-microcopy-md\"\n              ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                <svg\n                  width=\"20\"\n                  height=\"20\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <rect width=\"20\" height=\"14\" x=\"2\" y=\"5\" rx=\"2\"></rect>\n                  <line x1=\"2\" x2=\"22\" y1=\"10\" y2=\"10\"></line>\n                </svg>\n              </span>\n              <span class=\"esa-button__label\">Funding</span\n              ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                <svg\n                  width=\"20\"\n                  height=\"20\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <path d=\"m6 9 6 6 6-6\"></path>\n                </svg>\n              </span>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel typography-body-md\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head typography-label-md\">Funding</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li class=\"typography-body-sm\">Funds</li>\n                <li class=\"typography-body-sm\">Fund budgets summary</li>\n                <li class=\"typography-body-sm\">Long-term funding agreements</li>\n                <li class=\"typography-body-sm\">\n                  <a href=\"/cb-fish-design/project-budgets\">Project budgets</a>\n                </li>\n                <li class=\"typography-body-sm\">Working budgets</li>\n                <li class=\"typography-body-sm\">Expenditures</li>\n                <li class=\"typography-body-sm\">Accruals</li>\n              </ul>\n            </div>\n          </div>\n        </details>\n      </div>\n    </div>\n    <div class=\"esa-app-bar__end typography-label-md\">\n      <div class=\"cbf-nav-actions\">\n        <button class=\"cbf-nav-link cbf-nav-link--collapse\" type=\"button\">\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path>\n              <path d=\"M3 3v5h5\"></path>\n              <path d=\"M12 7v5l4 2\"></path></svg\n          ></span>\n          Recent\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path></svg\n          ></span>\n        </button>\n        <a class=\"cbf-nav-link cbf-nav-link--collapse\" href=\"/cb-fish-design/my-work\">\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <rect width=\"7\" height=\"9\" x=\"3\" y=\"3\" rx=\"1\"></rect>\n              <rect width=\"7\" height=\"5\" x=\"14\" y=\"3\" rx=\"1\"></rect>\n              <rect width=\"7\" height=\"9\" x=\"14\" y=\"12\" rx=\"1\"></rect>\n              <rect width=\"7\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\"></rect></svg\n          ></span>\n          Dashboard\n        </a>\n        <button class=\"cbf-nav-link cbf-nav-link--user\" type=\"button\" data-omni-user=\"\">\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n              <path d=\"M18 20a6 6 0 0 0-12 0\"></path>\n              <circle cx=\"12\" cy=\"10\" r=\"4\"></circle></svg\n          ></span>\n          Angela Zhao\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path></svg\n          ></span>\n        </button>\n      </div>\n    </div>\n  </div>\n</header>\n",
+      "css": ".esa-app-bar {\n  --_bar-gap: var(--spacing-600, 32px);\n  --_bar-pad-x: var(--spacing-600, 32px);\n  --_bar-pad-y: var(--spacing-400, 16px);\n  display: block;\n  width: 100%;\n  background: var(--color-background-elevation-raised, #fcfcfc);\n  color: var(--color-content-default, #202020);\n}\n.esa-app-bar--brand-strong {\n  background: var(--color-background-default-knockout, #202020);\n  color: var(--color-content-default-knockout, #fcfcfc);\n}\n.esa-app-bar__row {\n  display: flex;\n  align-items: center;\n  gap: var(--_bar-gap);\n  padding: var(--_bar-pad-y) var(--_bar-pad-x);\n}\n.esa-app-bar__start,\n.esa-app-bar__main,\n.esa-app-bar__end {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--_bar-gap);\n}\n.esa-app-bar__start {\n  flex: none;\n}\n.esa-app-bar__main {\n  flex: 1 1 auto;\n  min-width: 0;\n}\n.esa-app-bar__end {\n  flex: none;\n  margin-left: auto;\n}\n.esa-app-bar--brand {\n  background: var(--color-background-brand, #46a758);\n  color: var(--color-content-default-knockout, #fcfcfc);\n}\n.esa-link-column {\n  color: inherit;\n}\n.esa-link-column__head {\n  display: block;\n  margin: 0 0 var(--spacing-100, 4px);\n  font-size: var(--typography-label-md-font-size);\n  color: inherit;\n  text-decoration-color: transparent;\n}\n.esa-link-column__rule {\n  height: 1px;\n  border: 0;\n  margin: 0 0 var(--spacing-200, 8px);\n  background: var(--link-column-rule-color, color-mix(in srgb, currentColor 40%, transparent));\n}\n.esa-link-column__list {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n.esa-link-column__list li {\n  font-size: var(--font-size-150, var(--typography-body-sm-font-size));\n  margin-bottom: var(--spacing-100, 4px);\n}\n.esa-link-column__list a {\n  color: inherit;\n  text-decoration-color: transparent;\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-microcopy-md {\n  font-family: var(--typography-microcopy-md-font-family);\n  font-size: var(--typography-microcopy-md-font-size);\n  font-weight: var(--typography-microcopy-md-font-weight);\n  line-height: var(--typography-microcopy-md-line-height);\n  letter-spacing: var(--typography-microcopy-md-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.cbf-app-bar--admin .esa-app-bar__row {\n  display: grid;\n  grid-template-columns: 1fr minmax(0, 380px) 1fr;\n}\n.cbf-app-bar--admin .esa-app-bar__start {\n  justify-self: start;\n}\n.cbf-nav-collapsible {\n  display: contents;\n}\n.cbf-app-bar--admin .esa-app-bar__main {\n  justify-content: center;\n}\n.cbf-icon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: inherit;\n}\n.cbf-app-bar--admin .esa-app-bar__end {\n  justify-self: end;\n}\n.esa-nav-dropdown {\n  position: relative;\n}\n.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.cbf-nav-burger {\n  display: none;\n}\n.cbf-logo {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-300, 12px);\n  flex: none;\n  color: inherit;\n  text-decoration: none;\n}\n.cbf-logo__mark {\n  width: 48px;\n  height: 48px;\n  flex: none;\n}\n.cbf-logo__type {\n  height: 40px;\n  width: auto;\n}\n.cbf-nav-actions {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-600);\n}\n.cbf-nav-link {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  color: inherit;\n  background: none;\n  border: 0;\n  font-size: 16px;\n  font-weight: var(--typography-font-weight-medium);\n  white-space: nowrap;\n}\n.cbf-nav-link .cbf-icon {\n  display: inline-flex;\n  align-items: center;\n}\n.cbf-nav-link--user {\n  position: relative;\n  padding-left: var(--spacing-500);\n}\n.cbf-nav-link--user:before {\n  content: \"\";\n  position: absolute;\n  left: 0;\n  top: 50%;\n  transform: translateY(-50%);\n  width: 1px;\n  height: 1.1em;\n  background: #ffffff40;\n}\n.esa-button {\n  --_btn-pad-y: var(--spacing-300, 0.75rem);\n  --_btn-padding-x: var(--spacing-300, 0.75rem);\n  --_btn-radius: var(--button-radius-md, 0.5rem);\n  --_accent: var(--color-background-brand, #46a758);\n  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);\n  --_on: var(--color-content-default-knockout, #fcfcfc);\n  --_accent-text: var(--_accent);\n  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);\n  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);\n  display: inline-block;\n}\n.esa-button--sm {\n  --_btn-pad-y: var(--spacing-250, 0.625rem);\n  --_btn-padding-x: var(--spacing-250, 0.625rem);\n  --_btn-radius: var(--button-radius-sm, 4px);\n}\n.esa-button__native {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: var(--spacing-200, 8px);\n  width: 100%;\n  padding-block: var(--_btn-pad-y);\n  padding-inline: var(--_btn-padding-x);\n  border: var(--border-width-default, 1px) solid transparent;\n  border-radius: var(--_btn-radius);\n  text-decoration: none;\n  cursor: pointer;\n  transition:\n    background var(--transition-fast, 0.15s ease),\n    border-color var(--transition-fast, 0.15s ease);\n  -webkit-appearance: none;\n  appearance: none;\n}\n.esa-button--appearance-fill .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent-border, transparent);\n}\n.esa-button--variant-chrome .esa-button__native {\n  background: transparent;\n  color: inherit;\n  border-color: transparent;\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, 20px);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  color: inherit;\n}\n.esa-icon--sm {\n  --_icon-size: var(--icon-size-sm, 16px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-button__label {\n  white-space: nowrap;\n}\nsummary.esa-button {\n  list-style: none;\n  cursor: pointer;\n}\n.esa-icon--md {\n  --_icon-size: var(--icon-size-md, 20px);\n}\n.esa-icon--lg {\n  --_icon-size: var(--icon-size-lg, 24px);\n}\n.esa-button--variant-primary {\n  --_accent-text: var(--color-content-brand);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-microcopy-md-subtle {\n  font-family: var(--typography-microcopy-md-subtle-font-family);\n  font-size: var(--typography-microcopy-md-subtle-font-size);\n  font-weight: var(--typography-microcopy-md-subtle-font-weight);\n  line-height: var(--typography-microcopy-md-subtle-line-height);\n  letter-spacing: var(--typography-microcopy-md-subtle-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n",
+      "tokens": [
+        {
+          "name": "--border-width-default",
+          "value": "1px",
+          "tier": "semantic"
+        },
+        {
+          "name": "--button-radius-md",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--button-radius-sm",
+          "value": ".25rem",
+          "tier": "component"
+        },
+        {
+          "name": "--color-background-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-hover",
+          "value": "#1a4570",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-default-knockout",
+          "value": "#13273e",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-raised",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-knockout",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--font-size-150",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-lg",
+          "value": "24px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-md",
+          "value": "20px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-sm",
+          "value": "16px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--link-column-rule-color",
+          "value": "color-mix(in srgb, currentColor 40%, transparent)",
+          "tier": "component"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-250",
+          "value": ".625rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-500",
+          "value": "1.5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-600",
+          "value": "2rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--transition-fast",
+          "value": ".15s ease",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-medium",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-line-height",
+          "value": "1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-subtle-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-subtle-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-subtle-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-subtle-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-subtle-line-height",
+          "value": "1",
+          "tier": "semantic"
+        }
+      ],
+      "claudePath": "claude/header.md",
+      "repoPath": "public/handoff/crs-commitments/claude/header.md"
+    },
+    {
+      "index": 2,
+      "label": "Omni",
+      "tag": "div",
+      "html": "<div class=\"cbf-omni\" data-omni=\"\" hidden=\"\">\n  <div class=\"cbf-omni__scrim\" data-omni-close=\"\"></div>\n  <div\n    class=\"cbf-omni__panel cbf-search-surface\"\n    role=\"dialog\"\n    aria-modal=\"true\"\n    aria-label=\"Search\"\n  >\n    <div class=\"cbf-omni__searchrow\">\n      <span class=\"cbf-icon cbf-omni__searchicon\"\n        ><svg\n          width=\"20\"\n          height=\"20\"\n          viewBox=\"0 0 24 24\"\n          fill=\"none\"\n          stroke=\"currentColor\"\n          stroke-width=\"2\"\n          stroke-linecap=\"round\"\n          stroke-linejoin=\"round\"\n          aria-hidden=\"true\"\n        >\n          <circle cx=\"11\" cy=\"11\" r=\"8\"></circle>\n          <path d=\"m21 21-4.3-4.3\"></path></svg\n      ></span>\n      <input\n        class=\"cbf-omni__input\"\n        data-omni-input=\"\"\n        type=\"text\"\n        placeholder=\"Search projects, contracts, people, publications…\"\n        autocomplete=\"off\"\n      />\n      <button class=\"cbf-omni__clear\" data-omni-clear=\"\" type=\"button\" aria-label=\"Clear\">\n        <span class=\"cbf-icon\"\n          ><svg\n            width=\"15\"\n            height=\"15\"\n            viewBox=\"0 0 24 24\"\n            fill=\"none\"\n            stroke=\"currentColor\"\n            stroke-width=\"2\"\n            stroke-linecap=\"round\"\n            stroke-linejoin=\"round\"\n            aria-hidden=\"true\"\n          >\n            <path d=\"M18 6 6 18\"></path>\n            <path d=\"m6 6 12 12\"></path></svg\n        ></span>\n      </button>\n    </div>\n    <div class=\"cbf-omni__scopes\" data-omni-scopes=\"\"></div>\n    <div class=\"cbf-omni__body\">\n      <!-- default view: brand illustration + search note (Recent lives in the nav) -->\n      <div class=\"cbf-omni__empty\" data-omni-empty=\"\">\n        <div class=\"cbf-omni__hero\">\n          <img class=\"cbf-omni__art\" src=\"/cb-fish-design/dam-illustration.jpg\" alt=\"\" />\n          <p class=\"cbf-omni__hero-title\">Search the Program</p>\n          <p class=\"cbf-omni__hero-note\">\n            Find projects, contracts, people, and publications across the Columbia Basin. Start\n            typing, or press <kbd class=\"esa-kbd typography-microcopy-xs\">Tab</kbd> to choose a\n            scope.\n          </p>\n        </div>\n      </div>\n      <!-- query view: grouped results (injected) -->\n      <div class=\"cbf-omni__results\" data-omni-results=\"\" hidden=\"\"></div>\n    </div>\n    <button class=\"cbf-omni__showall\" data-omni-showall=\"\" type=\"button\" hidden=\"\">\n      <span data-omni-showall-label=\"\">Show all results</span>\n      <span class=\"cbf-icon\"\n        ><svg\n          width=\"18\"\n          height=\"18\"\n          viewBox=\"0 0 24 24\"\n          fill=\"none\"\n          stroke=\"currentColor\"\n          stroke-width=\"2\"\n          stroke-linecap=\"round\"\n          stroke-linejoin=\"round\"\n          aria-hidden=\"true\"\n        >\n          <path d=\"m9 18 6-6-6-6\"></path></svg\n      ></span>\n    </button>\n    <div class=\"cbf-omni__footer\">\n      <div class=\"cbf-omni__hints\">\n        <span\n          ><kbd class=\"esa-kbd typography-microcopy-xs\">↑</kbd>\n          <kbd class=\"esa-kbd typography-microcopy-xs\">↓</kbd> Navigate</span\n        >\n        <span><kbd class=\"esa-kbd typography-microcopy-xs\">↵</kbd> Select</span>\n        <span><kbd class=\"esa-kbd typography-microcopy-xs\">Tab</kbd> Scope</span>\n        <span><kbd class=\"esa-kbd typography-microcopy-xs\">Esc</kbd> Close</span>\n      </div>\n    </div>\n  </div>\n</div>\n",
+      "css": ".typography-microcopy-xs {\n  font-family: var(--typography-microcopy-xs-font-family);\n  font-size: var(--typography-microcopy-xs-font-size);\n  font-weight: var(--typography-microcopy-xs-font-weight);\n  line-height: var(--typography-microcopy-xs-line-height);\n  letter-spacing: var(--typography-microcopy-xs-letter-spacing);\n}\n.cbf-omni-trigger {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-200);\n  width: 380px;\n  max-width: 100%;\n  padding: 5px var(--spacing-200) 5px var(--spacing-300);\n  background: #ffffff1a;\n  border: 1px solid rgba(255, 255, 255, 0.22);\n  border-radius: 999px;\n  color: #ffffffbf;\n  transition:\n    background 0.12s,\n    border-color 0.12s;\n}\n.cbf-app-bar--admin .cbf-omni-trigger {\n  min-width: 0;\n}\n.cbf-icon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: inherit;\n}\n.cbf-omni-trigger__ph {\n  flex: 1;\n  min-width: 0;\n  text-align: left;\n  font-size: 13px;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.cbf-omni-trigger__kbd {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 18px;\n  height: 18px;\n  padding: 0 5px;\n  font-family: var(--typography-font-family-sans);\n  font-size: 13px;\n  font-weight: var(--typography-font-weight-medium);\n  color: #ffffffd9;\n  background: #ffffff1f;\n  border: 1px solid rgba(255, 255, 255, 0.25);\n  border-radius: 4px;\n}\n.cbf-nav-link .cbf-icon {\n  display: inline-flex;\n  align-items: center;\n}\n.cbf-omni {\n  position: fixed;\n  inset: 0;\n  z-index: 80;\n}\n.cbf-omni[hidden] {\n  display: none;\n}\n",
+      "tokens": [
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--typography-font-family-sans",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-medium",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-font-size",
+          "value": "clamp(.625rem, .56rem + .32vw, .75rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-line-height",
+          "value": "1",
+          "tier": "semantic"
+        }
+      ],
+      "claudePath": "claude/omni.md",
+      "repoPath": "public/handoff/crs-commitments/claude/omni.md"
+    },
+    {
+      "index": 3,
+      "label": "Nav drawer",
+      "tag": "esa-side-dialog",
+      "html": "<esa-side-dialog\n  position=\"left\"\n  heading=\"Menu\"\n  size=\"sm\"\n  class=\"cbf-nav-drawer\"\n  data-nav-drawer=\"true\"\n>\n  <nav class=\"stack\" data-gap=\"lg\" aria-label=\"Site navigation\">\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head typography-label-md\">Mitigation work</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li class=\"typography-body-sm\">Projects</li>\n        <li class=\"typography-body-sm\">Contracts</li>\n        <li class=\"typography-body-sm\">Portfolios</li>\n        <li class=\"typography-body-sm\"><a href=\"/cb-fish-design/legacy/sow\">Work elements</a></li>\n        <li class=\"typography-body-sm\">Estuary program</li>\n        <li class=\"typography-body-sm\">Tributary habitat</li>\n        <li class=\"typography-body-sm\">Land acquisitions</li>\n        <li class=\"typography-body-sm\">\n          <a href=\"/cb-fish-design/rme-reporting\">RM&amp;E reporting</a>\n        </li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head typography-label-md\">Reporting</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li class=\"typography-body-sm\">Report Center</li>\n        <li class=\"typography-body-sm\">Maps</li>\n        <li class=\"typography-body-sm\">Publications</li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head typography-label-md\">Funding</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li class=\"typography-body-sm\">Funds</li>\n        <li class=\"typography-body-sm\">Fund budgets summary</li>\n        <li class=\"typography-body-sm\">Long-term funding agreements</li>\n        <li class=\"typography-body-sm\">\n          <a href=\"/cb-fish-design/project-budgets\">Project budgets</a>\n        </li>\n        <li class=\"typography-body-sm\">Working budgets</li>\n        <li class=\"typography-body-sm\">Expenditures</li>\n        <li class=\"typography-body-sm\">Accruals</li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head typography-label-md\">Quick links</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li class=\"typography-body-sm\"><a href=\"#\">Recent</a></li>\n        <li class=\"typography-body-sm\"><a href=\"/my-work\">Dashboard</a></li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head typography-label-md\">System</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li class=\"typography-body-sm\">Data management</li>\n        <li class=\"typography-body-sm\">System status</li>\n        <li class=\"typography-body-sm\">System configuration</li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head typography-label-md\">Help</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li class=\"typography-body-sm\">Help center</li>\n        <li class=\"typography-body-sm\">Data dictionary</li>\n        <li class=\"typography-body-sm\">EF&amp;W Program documents</li>\n        <li class=\"typography-body-sm\">Request support</li>\n        <li class=\"typography-body-sm\">Send feedback</li>\n      </ul>\n    </div>\n  </nav>\n</esa-side-dialog>\n",
+      "css": ".stack {\n  --gap: var(--spacing-400, 1rem);\n  display: flex;\n  flex-direction: column;\n  gap: var(--gap);\n}\n.esa-link-column {\n  color: inherit;\n}\n.esa-link-column__head {\n  display: block;\n  margin: 0 0 var(--spacing-100, 4px);\n  font-size: var(--typography-label-md-font-size);\n  color: inherit;\n  text-decoration-color: transparent;\n}\n.esa-link-column__rule {\n  height: 1px;\n  border: 0;\n  margin: 0 0 var(--spacing-200, 8px);\n  background: var(--link-column-rule-color, color-mix(in srgb, currentColor 40%, transparent));\n}\n.esa-link-column__list {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n.esa-link-column__list li {\n  font-size: var(--font-size-150, var(--typography-body-sm-font-size));\n  margin-bottom: var(--spacing-100, 4px);\n}\n.esa-link-column__list a {\n  color: inherit;\n  text-decoration-color: transparent;\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n",
+      "tokens": [
+        {
+          "name": "--font-size-150",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--link-column-rule-color",
+          "value": "color-mix(in srgb, currentColor 40%, transparent)",
+          "tier": "component"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--typography-body-sm-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        }
+      ],
+      "claudePath": "claude/nav-drawer.md",
+      "repoPath": "public/handoff/crs-commitments/claude/nav-drawer.md"
+    },
+    {
+      "index": 4,
+      "label": "Main",
+      "tag": "main",
+      "html": "<main class=\"cbf-page\">\n  <div class=\"esa-container typography-body-md\" style=\"--_container-max: 1920px\">\n    <section class=\"cbf-app-panel\">\n      <div class=\"cbf-app-panel__crumb\">\n        <nav class=\"esa-breadcrumbs esa-breadcrumbs--md\" aria-label=\"Breadcrumb\">\n          <ol class=\"esa-breadcrumbs__list\">\n            <li class=\"esa-breadcrumbs__item\">\n              <a href=\"/cb-fish-design/home\" class=\"esa-breadcrumbs__link typography-body-md\">\n                <span class=\"esa-breadcrumbs__icon\"\n                  ><svg\n                    width=\"14\"\n                    height=\"14\"\n                    viewBox=\"0 0 24 24\"\n                    fill=\"none\"\n                    stroke=\"currentColor\"\n                    stroke-width=\"2\"\n                    stroke-linecap=\"round\"\n                    stroke-linejoin=\"round\"\n                    aria-hidden=\"true\"\n                  >\n                    <path d=\"m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"></path>\n                    <path d=\"M9 22V12h6v10\"></path></svg\n                ></span>\n                Home\n              </a>\n              <svg\n                class=\"esa-breadcrumbs__separator\"\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                aria-hidden=\"true\"\n              >\n                <path d=\"m9 18 6-6-6-6\"></path>\n              </svg>\n            </li>\n            <li class=\"esa-breadcrumbs__item\">\n              <span class=\"esa-breadcrumbs__current typography-label-md\"> Reporting </span>\n              <svg\n                class=\"esa-breadcrumbs__separator\"\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                aria-hidden=\"true\"\n              >\n                <path d=\"m9 18 6-6-6-6\"></path>\n              </svg>\n            </li>\n            <li class=\"esa-breadcrumbs__item\" aria-current=\"page\">\n              <span class=\"esa-breadcrumbs__current typography-label-md\"> BiOp reporting </span>\n            </li>\n          </ol>\n        </nav>\n      </div>\n      <div class=\"cbf-app-panel__body\">\n        <div class=\"cbf-app-panel__content\">\n          <div class=\"cbf-password-gate\" data-cbf-gate=\"\" data-storage-key=\"cbf-gate-unlocked\">\n            <div class=\"cbf-password-gate__lock\" data-cbf-gate-lock=\"\">\n              <div class=\"esa-card esa-card--outlined esa-card--padding-spacious\">\n                <div class=\"esa-card__body typography-body-md\">\n                  <div class=\"cbf-password-gate__body stack\" data-gap=\"lg\">\n                    <div class=\"cbf-password-gate__icon\" aria-hidden=\"true\">\n                      <span class=\"esa-icon esa-icon--lg\" aria-hidden=\"true\">\n                        <svg\n                          width=\"24\"\n                          height=\"24\"\n                          viewBox=\"0 0 24 24\"\n                          fill=\"none\"\n                          stroke=\"currentColor\"\n                          stroke-width=\"2\"\n                          stroke-linecap=\"round\"\n                          stroke-linejoin=\"round\"\n                          focusable=\"false\"\n                        >\n                          <rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect>\n                          <path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path>\n                        </svg>\n                      </span>\n                    </div>\n                    <div class=\"stack\" data-gap=\"xs\">\n                      <h1 class=\"typography-title\">This prototype is password protected</h1>\n                      <p class=\"typography-body-md cbf-password-gate__desc\">\n                        Enter the password to continue.\n                      </p>\n                    </div>\n                    <form class=\"stack\" data-gap=\"md\" data-cbf-gate-form=\"\">\n                      <esa-text-field\n                        type=\"password\"\n                        label=\"Password\"\n                        data-cbf-gate-input=\"true\"\n                        required=\"\"\n                        size=\"md\"\n                      ></esa-text-field>\n                      <span\n                        class=\"esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--md\"\n                        ><button class=\"esa-button__native typography-microcopy-md\" type=\"submit\">\n                          <span class=\"esa-button__label\">Unlock</span>\n                        </button></span\n                      >\n                    </form>\n                  </div>\n                </div>\n              </div>\n            </div>\n            <div class=\"cbf-password-gate__content\" data-cbf-gate-content=\"\" hidden=\"\">\n              <h1 class=\"cbf-page-heading\">BiOp reporting: Summary</h1>\n              <nav class=\"cbf-report-tabs\" aria-label=\"BiOp reporting sections\">\n                <a\n                  class=\"cbf-report-tabs__tab is-active\"\n                  href=\"/cb-fish-design/biop-reporting\"\n                  aria-current=\"page\"\n                  >Summary</a\n                >\n                <details class=\"cbf-report-tabs__dropdown\" name=\"cbf-report-tabs-menu\">\n                  <summary class=\"cbf-report-tabs__tab cbf-report-tabs__dropdown-trigger\">\n                    2020 CRS Commitments<span class=\"cbf-report-tabs__chev\"\n                      ><svg\n                        width=\"14\"\n                        height=\"14\"\n                        viewBox=\"0 0 24 24\"\n                        fill=\"none\"\n                        stroke=\"currentColor\"\n                        stroke-width=\"2\"\n                        stroke-linecap=\"round\"\n                        stroke-linejoin=\"round\"\n                        aria-hidden=\"true\"\n                      >\n                        <path d=\"m6 9 6 6 6-6\"></path></svg\n                    ></span>\n                  </summary>\n                  <div class=\"cbf-report-tabs__menu\" role=\"menu\">\n                    <a\n                      class=\"cbf-report-tabs__menu-item\"\n                      role=\"menuitem\"\n                      href=\"/cb-fish-design/crs-commitments\"\n                      >Commitments</a\n                    ><a\n                      class=\"cbf-report-tabs__menu-item\"\n                      role=\"menuitem\"\n                      href=\"/cb-fish-design/crs-commitments/dashboard\"\n                      >Dashboard</a\n                    ><a\n                      class=\"cbf-report-tabs__menu-item\"\n                      role=\"menuitem\"\n                      href=\"/cb-fish-design/crs-commitments/documents\"\n                      >Document Library</a\n                    >\n                  </div>\n                </details>\n                <details class=\"cbf-report-tabs__dropdown\" name=\"cbf-report-tabs-menu\">\n                  <summary class=\"cbf-report-tabs__tab cbf-report-tabs__dropdown-trigger\">\n                    CRS habitat<span class=\"cbf-report-tabs__chev\"\n                      ><svg\n                        width=\"14\"\n                        height=\"14\"\n                        viewBox=\"0 0 24 24\"\n                        fill=\"none\"\n                        stroke=\"currentColor\"\n                        stroke-width=\"2\"\n                        stroke-linecap=\"round\"\n                        stroke-linejoin=\"round\"\n                        aria-hidden=\"true\"\n                      >\n                        <path d=\"m6 9 6 6 6-6\"></path></svg\n                    ></span>\n                  </summary>\n                  <div class=\"cbf-report-tabs__menu\" role=\"menu\">\n                    <a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >CRS habitat reports</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >CRS habitat report measures</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >CRS habitat report map</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >CRS habitat measure targets</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >CRS habitat metrics report</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >CRS habitat metrics report - interactive</a\n                    >\n                  </div>\n                </details>\n                <details class=\"cbf-report-tabs__dropdown\" name=\"cbf-report-tabs-menu\">\n                  <summary class=\"cbf-report-tabs__tab cbf-report-tabs__dropdown-trigger\">\n                    FCRPS BiOp<span class=\"cbf-report-tabs__chev\"\n                      ><svg\n                        width=\"14\"\n                        height=\"14\"\n                        viewBox=\"0 0 24 24\"\n                        fill=\"none\"\n                        stroke=\"currentColor\"\n                        stroke-width=\"2\"\n                        stroke-linecap=\"round\"\n                        stroke-linejoin=\"round\"\n                        aria-hidden=\"true\"\n                      >\n                        <path d=\"m6 9 6 6 6-6\"></path></svg\n                    ></span>\n                  </summary>\n                  <div class=\"cbf-report-tabs__menu\" role=\"menu\">\n                    <a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\">FCRPS BiOp</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >FCRPS BiOp dashboard</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >FCRPS 2008 BiOp actions</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >Project associations to FCRPS 2008 BiOp</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >FCRPS BiOp RPAs and Associated BPA Projects</a\n                    >\n                  </div>\n                </details>\n                <details class=\"cbf-report-tabs__related\" name=\"cbf-report-tabs-menu\">\n                  <summary class=\"cbf-report-tabs__tab cbf-report-tabs__related-trigger\">\n                    Related items<span class=\"cbf-report-tabs__chev\"\n                      ><svg\n                        width=\"14\"\n                        height=\"14\"\n                        viewBox=\"0 0 24 24\"\n                        fill=\"none\"\n                        stroke=\"currentColor\"\n                        stroke-width=\"2\"\n                        stroke-linecap=\"round\"\n                        stroke-linejoin=\"round\"\n                        aria-hidden=\"true\"\n                      >\n                        <path d=\"m6 9 6 6 6-6\"></path></svg\n                    ></span>\n                  </summary>\n                  <div class=\"cbf-report-tabs__menu\" role=\"menu\">\n                    <a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >Reclamation uploader</a\n                    >\n                  </div>\n                </details>\n              </nav>\n              <section class=\"cbf-report-intro\">\n                <figure class=\"cbf-report-intro__media\">\n                  <img\n                    src=\"/cb-fish-design/biop-reporting-hero.png\"\n                    alt=\"A forested stream in the Columbia Basin\"\n                    loading=\"lazy\"\n                  />\n                </figure>\n                <div class=\"cbf-report-intro__copy\">\n                  <p class=\"cbf-report-intro__lede\">\n                    Under the Endangered Species Act (ESA), BPA consults with the United States Fish\n                    and Wildlife Service (USFWS) and the National Marine Fisheries Service (NMFS) to\n                    protect ESA-listed species affected by the operation and maintenance of the\n                    power system through the ESA Section 7 interagency process.\n                  </p>\n                  <p class=\"cbf-report-intro__body\">\n                    In BPA's service territory, the USFWS holds jurisdiction over terrestrial and\n                    freshwater species, while NMFS holds jurisdiction over marine mammals and\n                    anadromous salmon and steelhead. BPA works with NMFS and USFWS to make\n                    collaboration as efficient as possible through the identification and tracking\n                    of programmatic biological opinions (BiOps) for BPA's Fish and Wildlife Program.\n                    The Habitat Improvement Program Biological Opinion, or HIP4, is a BiOp that\n                    provides ESA compliance for most of the habitat improvement activities that BPA\n                    funds, and has created a streamlined process, saving time and money for federal\n                    agencies while accelerating habitat improvement project implementation. Several\n                    iterations of this BiOp have been published, and efforts have been tracked in\n                    accordance with each iteration.\n                  </p>\n                </div>\n              </section>\n              <section class=\"cbf-related-items\" id=\"related-items\" aria-label=\"Related items\">\n                <h2 class=\"cbf-related-items__head typography-heading-md\">Related items</h2>\n                <div class=\"cbf-related-items__grid grid cbf-related-items__grid--single\">\n                  <div class=\"esa-card esa-card--outlined\">\n                    <div class=\"esa-card__header\">\n                      <div class=\"esa-card__header-content\">\n                        <div class=\"esa-card__titles\">\n                          <h3 class=\"esa-card__title typography-title-sm-strong\">\n                            Reclamation uploader\n                          </h3>\n                        </div>\n                      </div>\n                    </div>\n                    <div class=\"esa-card__body typography-body-md\">\n                      <div class=\"cbf-related-items__card\">\n                        <p class=\"cbf-related-items__overview\">\n                          <strong>Overview:</strong> Upload XLSX files containing Biological Opinion\n                          Reclamation data.\n                        </p>\n                      </div>\n                    </div>\n                    <div class=\"esa-card__footer typography-meta\">\n                      <div class=\"cbf-related-items__foot\">\n                        <span\n                          class=\"esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--sm\"\n                          ><a\n                            class=\"esa-button__native typography-microcopy-xs\"\n                            href=\"#\"\n                            role=\"button\"\n                            ><span class=\"esa-button__label\">View page</span></a\n                          ></span\n                        >\n                      </div>\n                    </div>\n                  </div>\n                </div>\n              </section>\n            </div>\n            <!-- Password lives here in plain text — see the security note above; there\n       is no way to protect a value that must be checked client-side. -->\n            <script type=\"application/json\" data-cbf-gate-password=\"\">\n              \"2020crs\"\n            </script>\n          </div>\n          <script\n            type=\"module\"\n            src=\"/cb-fish-design/_astro/cbf-password-gate.astro_astro_type_script_index_0_lang.Xo-G2OVc.js\"\n          ></script>\n        </div>\n      </div>\n    </section>\n  </div>\n</main>\n",
+      "css": ".stack {\n  --gap: var(--spacing-400, 1rem);\n  display: flex;\n  flex-direction: column;\n  gap: var(--gap);\n}\n.cbf-app-panel {\n  display: flex;\n  flex-direction: column;\n  min-height: 80vh;\n  border: 1px solid var(--color-border-default);\n  border-radius: var(--radius-100);\n  overflow: clip;\n  background: var(--color-background-elevation-raised);\n  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-background-default-knockout) 8%, transparent);\n}\n.cbf-app-panel__crumb {\n  background: var(--cbf-surface-crumb);\n  border-bottom: 1px solid var(--color-border-default);\n  padding: var(--spacing-400) var(--spacing-600);\n}\n.esa-breadcrumbs {\n  --_crumb-link-color: var(--breadcrumbs-link-color, #646464);\n  --_crumb-link-hover: var(--breadcrumbs-link-hover, #202020);\n  --_crumb-current-color: var(--color-content-default, #202020);\n  --_crumb-separator-color: var(--color-border-default-strong, #bbbbbb);\n  --_crumb-gap: var(--spacing-200, 8px);\n  display: block;\n  background: var(--breadcrumbs-bg, transparent);\n}\n.cbf-app-panel__crumb .esa-breadcrumbs {\n  --breadcrumbs-link-color: var(--color-content-default-secondary);\n  --breadcrumbs-link-hover: var(--color-background-brand);\n}\n.esa-breadcrumbs__list {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: var(--_crumb-gap);\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n.esa-breadcrumbs__item {\n  display: flex;\n  align-items: center;\n  gap: var(--_crumb-gap);\n}\n.esa-breadcrumbs__link {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-100, 4px);\n  color: var(--_crumb-link-color);\n  text-decoration-color: transparent;\n}\n.esa-breadcrumbs__icon {\n  display: inline-flex;\n  align-items: center;\n}\n.esa-breadcrumbs__separator {\n  flex-shrink: 0;\n  color: var(--_crumb-separator-color);\n}\n.esa-breadcrumbs__current {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-100, 4px);\n  color: var(--_crumb-current-color);\n}\n.cbf-app-panel__body {\n  flex: 1;\n}\n.cbf-app-panel__content {\n  flex: 1;\n  min-width: 0;\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-400);\n  padding: var(--spacing-600);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-microcopy-xs {\n  font-family: var(--typography-microcopy-xs-font-family);\n  font-size: var(--typography-microcopy-xs-font-size);\n  font-weight: var(--typography-microcopy-xs-font-weight);\n  line-height: var(--typography-microcopy-xs-line-height);\n  letter-spacing: var(--typography-microcopy-xs-letter-spacing);\n}\n.typography-microcopy-md {\n  font-family: var(--typography-microcopy-md-font-family);\n  font-size: var(--typography-microcopy-md-font-size);\n  font-weight: var(--typography-microcopy-md-font-weight);\n  line-height: var(--typography-microcopy-md-line-height);\n  letter-spacing: var(--typography-microcopy-md-letter-spacing);\n}\n.typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.typography-title {\n  font-family: var(--typography-title-font-family);\n  font-size: var(--typography-title-font-size);\n  font-weight: var(--typography-title-font-weight);\n  line-height: var(--typography-title-line-height);\n  letter-spacing: var(--typography-title-letter-spacing);\n}\n.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.esa-button {\n  --_btn-pad-y: var(--spacing-300, 0.75rem);\n  --_btn-padding-x: var(--spacing-300, 0.75rem);\n  --_btn-radius: var(--button-radius-md, 0.5rem);\n  --_accent: var(--color-background-brand, #46a758);\n  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);\n  --_on: var(--color-content-default-knockout, #fcfcfc);\n  --_accent-text: var(--_accent);\n  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);\n  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);\n  display: inline-block;\n}\n.esa-button--sm {\n  --_btn-pad-y: var(--spacing-250, 0.625rem);\n  --_btn-padding-x: var(--spacing-250, 0.625rem);\n  --_btn-radius: var(--button-radius-sm, 4px);\n}\n.esa-button__native {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: var(--spacing-200, 8px);\n  width: 100%;\n  padding-block: var(--_btn-pad-y);\n  padding-inline: var(--_btn-padding-x);\n  border: var(--border-width-default, 1px) solid transparent;\n  border-radius: var(--_btn-radius);\n  text-decoration: none;\n  cursor: pointer;\n  transition:\n    background var(--transition-fast, 0.15s ease),\n    border-color var(--transition-fast, 0.15s ease);\n  -webkit-appearance: none;\n  appearance: none;\n}\n.esa-button--appearance-fill .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent-border, transparent);\n}\n.esa-button--variant-chrome .esa-button__native {\n  background: transparent;\n  color: inherit;\n  border-color: transparent;\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, 20px);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  color: inherit;\n}\n.esa-icon--sm {\n  --_icon-size: var(--icon-size-sm, 16px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-button__label {\n  white-space: nowrap;\n}\nsummary.esa-button {\n  list-style: none;\n  cursor: pointer;\n}\n.esa-icon--md {\n  --_icon-size: var(--icon-size-md, 20px);\n}\n.esa-icon--lg {\n  --_icon-size: var(--icon-size-lg, 24px);\n}\n.esa-button--variant-primary {\n  --_accent-text: var(--color-content-brand);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-microcopy-md-subtle {\n  font-family: var(--typography-microcopy-md-subtle-font-family);\n  font-size: var(--typography-microcopy-md-subtle-font-size);\n  font-weight: var(--typography-microcopy-md-subtle-font-weight);\n  line-height: var(--typography-microcopy-md-subtle-line-height);\n  letter-spacing: var(--typography-microcopy-md-subtle-letter-spacing);\n}\n.cbf-page {\n  padding-block: var(--spacing-600) var(--spacing-800);\n}\n.esa-container {\n  width: 100%;\n  max-width: var(--_container-max, 1556px);\n  margin-inline: auto;\n  padding-inline: var(--spacing-600, 2rem);\n}\n.cbf-password-gate__lock {\n  display: flex;\n  justify-content: center;\n  padding-block: var(--spacing-800, 4rem);\n}\n.esa-card {\n  --_card-bg: var(--card-bg, var(--color-background-elevation-raised, #fcfcfc));\n  --_card-border: var(--card-border-color, var(--color-border-default, #cecece));\n  --_card-radius: var(--radius-md, 0.5rem);\n  --_card-padding: var(--spacing-500, 1.5rem);\n  --_card-header-bg: var(--card-header-bg, transparent);\n  --_card-header-color: var(--color-content-default, #202020);\n  --_card-header-border: var(--color-border-default-subtle, #d9d9d9);\n  display: block;\n  background: var(--_card-bg);\n  border: var(--border-width-default, 1px) solid var(--_card-border);\n  border-radius: var(--_card-radius);\n  overflow: hidden;\n}\n.esa-card--outlined {\n  --_card-border: var(--color-border-default, #cecece);\n}\n.esa-card--padding-spacious {\n  --_card-padding: var(--spacing-700, 3rem);\n}\n.cbf-password-gate__lock .esa-card {\n  max-width: 26rem;\n  width: 100%;\n}\n.esa-card__body {\n  padding: var(--_card-padding);\n}\n.cbf-password-gate__body {\n  align-items: center;\n  text-align: center;\n}\n.cbf-password-gate__icon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 48px;\n  height: 48px;\n  border-radius: var(--radius-full, 999px);\n  background: var(--color-background-elevation-sunken);\n  color: var(--color-content-default-secondary);\n}\n.cbf-password-gate__desc {\n  color: var(--color-content-default-secondary);\n}\n.cbf-password-gate__lock form {\n  width: 100%;\n  text-align: left;\n}\n.cbf-password-gate__content {\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-400);\n}\n.cbf-password-gate__content[hidden] {\n  display: none;\n}\n",
+      "tokens": [
+        {
+          "name": "--border-width-default",
+          "value": "1px",
+          "tier": "semantic"
+        },
+        {
+          "name": "--breadcrumbs-bg",
+          "value": "transparent",
+          "tier": "component"
+        },
+        {
+          "name": "--breadcrumbs-link-color",
+          "value": "#525252",
+          "tier": "component"
+        },
+        {
+          "name": "--breadcrumbs-link-hover",
+          "value": "#3d3d3d",
+          "tier": "component"
+        },
+        {
+          "name": "--button-radius-md",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--button-radius-sm",
+          "value": ".25rem",
+          "tier": "component"
+        },
+        {
+          "name": "--card-bg",
+          "value": "#fcfcfc",
+          "tier": "component"
+        },
+        {
+          "name": "--card-border-color",
+          "value": "#dcdcdc",
+          "tier": "component"
+        },
+        {
+          "name": "--card-header-bg",
+          "value": "transparent",
+          "tier": "component"
+        },
+        {
+          "name": "--cbf-surface-crumb",
+          "value": "#f4f4f4",
+          "tier": "brand"
+        },
+        {
+          "name": "--color-background-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-hover",
+          "value": "#1a4570",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-default-knockout",
+          "value": "#13273e",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-raised",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-sunken",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default",
+          "value": "#dcdcdc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default-strong",
+          "value": "#bdbdbd",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default-subtle",
+          "value": "#efefef",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-knockout",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--icon-size-lg",
+          "value": "24px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-md",
+          "value": "20px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-sm",
+          "value": "16px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-full",
+          "value": "9999px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-md",
+          "value": ".5rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-250",
+          "value": ".625rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-500",
+          "value": "1.5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-600",
+          "value": "2rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-700",
+          "value": "3rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-800",
+          "value": "4rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--transition-fast",
+          "value": ".15s ease",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-line-height",
+          "value": "1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-subtle-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-subtle-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-subtle-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-subtle-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-subtle-line-height",
+          "value": "1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-font-size",
+          "value": "clamp(.625rem, .56rem + .32vw, .75rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-line-height",
+          "value": "1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-font-size",
+          "value": "clamp(1rem, .88rem + .6vw, 1.25rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        }
+      ],
+      "claudePath": "claude/main.md",
+      "repoPath": "public/handoff/crs-commitments/claude/main.md"
+    }
+  ],
+  "full": {
+    "label": "Full page",
+    "html": "<nav class=\"esa-app-bar esa-app-bar--brand-strong cbf-app-bar--admin\">\n  <div class=\"esa-app-bar__row\">\n    <div class=\"esa-app-bar__start typography-label-md\">\n      <div class=\"cbf-nav-collapsible\">\n        <span\n          class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm\"\n          ><button class=\"esa-button__native typography-microcopy-xs\" type=\"button\">\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <ellipse cx=\"12\" cy=\"5\" rx=\"9\" ry=\"3\"></ellipse>\n                <path d=\"M3 5V19A9 3 0 0 0 21 19V5\"></path>\n                <path d=\"M3 12A9 3 0 0 0 21 12\"></path>\n              </svg>\n            </span>\n            <span class=\"esa-button__label\">Data management</span\n            ><span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span></button\n        ></span>\n        <span\n          class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm\"\n          ><button class=\"esa-button__native typography-microcopy-xs\" type=\"button\">\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path\n                  d=\"M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2\"\n                ></path>\n              </svg>\n            </span>\n            <span class=\"esa-button__label\">System status</span\n            ><span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span></button\n        ></span>\n        <span\n          class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm\"\n          ><button class=\"esa-button__native typography-microcopy-xs\" type=\"button\">\n            <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path\n                  d=\"M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z\"\n                ></path>\n                <circle cx=\"12\" cy=\"12\" r=\"3\"></circle>\n              </svg>\n            </span>\n            <span class=\"esa-button__label\">System configuration</span\n            ><span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n              <svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span></button\n        ></span>\n      </div>\n    </div>\n    <div class=\"esa-app-bar__main typography-label-md\">\n      <button class=\"cbf-omni-trigger\" type=\"button\" data-omni-open=\"\" aria-label=\"Search\">\n        <span class=\"cbf-icon\"\n          ><svg\n            width=\"14\"\n            height=\"14\"\n            viewBox=\"0 0 24 24\"\n            fill=\"none\"\n            stroke=\"currentColor\"\n            stroke-width=\"2\"\n            stroke-linecap=\"round\"\n            stroke-linejoin=\"round\"\n            aria-hidden=\"true\"\n          >\n            <circle cx=\"11\" cy=\"11\" r=\"8\"></circle>\n            <path d=\"m21 21-4.3-4.3\"></path></svg\n        ></span>\n        <span class=\"cbf-omni-trigger__ph\">Search projects, contracts, people…</span>\n        <kbd class=\"cbf-omni-trigger__kbd\">/</kbd>\n      </button>\n    </div>\n    <div class=\"esa-app-bar__end typography-label-md\">\n      <div class=\"cbf-nav-collapsible\">\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--end\">\n          <summary\n            class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm\"\n          >\n            <span class=\"esa-button__native typography-microcopy-xs\"\n              ><span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n                <svg\n                  width=\"16\"\n                  height=\"16\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n                  <path d=\"M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3\"></path>\n                  <path d=\"M12 17h.01\"></path>\n                </svg>\n              </span>\n              <span class=\"esa-button__label\">Help</span\n              ><span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n                <svg\n                  width=\"16\"\n                  height=\"16\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <path d=\"m6 9 6 6 6-6\"></path>\n                </svg>\n              </span>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel typography-body-md\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head typography-label-md\">Help</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li class=\"typography-body-sm\">Help center</li>\n                <li class=\"typography-body-sm\">Data dictionary</li>\n                <li class=\"typography-body-sm\">EF&amp;W Program documents</li>\n                <li class=\"typography-body-sm\">Request support</li>\n                <li class=\"typography-body-sm\">Send feedback</li>\n              </ul>\n            </div>\n          </div>\n        </details>\n      </div>\n    </div>\n  </div>\n</nav>\n<header class=\"esa-app-bar esa-app-bar--brand cbf-app-bar--header\">\n  <div class=\"esa-app-bar__row\">\n    <div class=\"esa-app-bar__start typography-label-md\">\n      <span class=\"cbf-nav-burger\" data-nav-toggle=\"\">\n        <span\n          class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md esa-button--icon-only\"\n          ><button\n            class=\"esa-button__native typography-microcopy-md\"\n            type=\"button\"\n            aria-label=\"Open menu\"\n            title=\"Open menu\"\n          >\n            <span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n              <svg\n                width=\"20\"\n                height=\"20\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <line x1=\"4\" x2=\"20\" y1=\"6\" y2=\"6\"></line>\n                <line x1=\"4\" x2=\"20\" y1=\"12\" y2=\"12\"></line>\n                <line x1=\"4\" x2=\"20\" y1=\"18\" y2=\"18\"></line>\n              </svg>\n            </span></button\n        ></span>\n      </span>\n      <a\n        class=\"cbf-logo\"\n        href=\"/cb-fish-design/home\"\n        title=\"Columbia Basin Fish &amp; Wildlife Program\"\n      >\n        <img class=\"cbf-logo__mark\" src=\"/cb-fish-design/logo-mark.svg\" alt=\"\" />\n        <img\n          class=\"cbf-logo__type\"\n          src=\"/cb-fish-design/logo-type.svg\"\n          alt=\"Columbia Basin Fish &amp; Wildlife Program\"\n        />\n      </a>\n    </div>\n    <div class=\"esa-app-bar__main typography-label-md\">\n      <div class=\"cbf-nav-collapsible cbf-nav-collapsible--inline\">\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n          <summary\n            class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n          >\n            <span class=\"esa-button__native typography-microcopy-md\"\n              ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                <svg\n                  width=\"20\"\n                  height=\"20\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <path d=\"M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z\"></path>\n                  <path d=\"M7 16v6\"></path>\n                  <path d=\"M13 19v3\"></path>\n                  <path\n                    d=\"M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5\"\n                  ></path>\n                </svg>\n              </span>\n              <span class=\"esa-button__label\">Mitigation work</span\n              ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                <svg\n                  width=\"20\"\n                  height=\"20\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <path d=\"m6 9 6 6 6-6\"></path>\n                </svg>\n              </span>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel typography-body-md\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head typography-label-md\">Mitigation work</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li class=\"typography-body-sm\">Projects</li>\n                <li class=\"typography-body-sm\">Contracts</li>\n                <li class=\"typography-body-sm\">Portfolios</li>\n                <li class=\"typography-body-sm\">\n                  <a href=\"/cb-fish-design/legacy/sow\">Work elements</a>\n                </li>\n                <li class=\"typography-body-sm\">Estuary program</li>\n                <li class=\"typography-body-sm\">Tributary habitat</li>\n                <li class=\"typography-body-sm\">Land acquisitions</li>\n                <li class=\"typography-body-sm\">\n                  <a href=\"/cb-fish-design/rme-reporting\">RM&amp;E reporting</a>\n                </li>\n              </ul>\n            </div>\n          </div>\n        </details>\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n          <summary\n            class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n          >\n            <span class=\"esa-button__native typography-microcopy-md\"\n              ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                <svg\n                  width=\"20\"\n                  height=\"20\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <path d=\"M16 7h6v6\"></path>\n                  <path d=\"m22 7-8.5 8.5-5-5L2 17\"></path>\n                </svg>\n              </span>\n              <span class=\"esa-button__label\">Reporting</span\n              ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                <svg\n                  width=\"20\"\n                  height=\"20\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <path d=\"m6 9 6 6 6-6\"></path>\n                </svg>\n              </span>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel typography-body-md\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head typography-label-md\">Reporting</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li class=\"typography-body-sm\">Report Center</li>\n                <li class=\"typography-body-sm\">Maps</li>\n                <li class=\"typography-body-sm\">Publications</li>\n              </ul>\n            </div>\n          </div>\n        </details>\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n          <summary\n            class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n          >\n            <span class=\"esa-button__native typography-microcopy-md\"\n              ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                <svg\n                  width=\"20\"\n                  height=\"20\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <rect width=\"20\" height=\"14\" x=\"2\" y=\"5\" rx=\"2\"></rect>\n                  <line x1=\"2\" x2=\"22\" y1=\"10\" y2=\"10\"></line>\n                </svg>\n              </span>\n              <span class=\"esa-button__label\">Funding</span\n              ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                <svg\n                  width=\"20\"\n                  height=\"20\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <path d=\"m6 9 6 6 6-6\"></path>\n                </svg>\n              </span>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel typography-body-md\">\n            <div class=\"esa-link-column\">\n              <span class=\"esa-link-column__head typography-label-md\">Funding</span>\n              <hr class=\"esa-link-column__rule\" />\n              <ul class=\"esa-link-column__list\">\n                <li class=\"typography-body-sm\">Funds</li>\n                <li class=\"typography-body-sm\">Fund budgets summary</li>\n                <li class=\"typography-body-sm\">Long-term funding agreements</li>\n                <li class=\"typography-body-sm\">\n                  <a href=\"/cb-fish-design/project-budgets\">Project budgets</a>\n                </li>\n                <li class=\"typography-body-sm\">Working budgets</li>\n                <li class=\"typography-body-sm\">Expenditures</li>\n                <li class=\"typography-body-sm\">Accruals</li>\n              </ul>\n            </div>\n          </div>\n        </details>\n      </div>\n    </div>\n    <div class=\"esa-app-bar__end typography-label-md\">\n      <div class=\"cbf-nav-actions\">\n        <button class=\"cbf-nav-link cbf-nav-link--collapse\" type=\"button\">\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"></path>\n              <path d=\"M3 3v5h5\"></path>\n              <path d=\"M12 7v5l4 2\"></path></svg\n          ></span>\n          Recent\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path></svg\n          ></span>\n        </button>\n        <a class=\"cbf-nav-link cbf-nav-link--collapse\" href=\"/cb-fish-design/my-work\">\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <rect width=\"7\" height=\"9\" x=\"3\" y=\"3\" rx=\"1\"></rect>\n              <rect width=\"7\" height=\"5\" x=\"14\" y=\"3\" rx=\"1\"></rect>\n              <rect width=\"7\" height=\"9\" x=\"14\" y=\"12\" rx=\"1\"></rect>\n              <rect width=\"7\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\"></rect></svg\n          ></span>\n          Dashboard\n        </a>\n        <button class=\"cbf-nav-link cbf-nav-link--user\" type=\"button\" data-omni-user=\"\">\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n              <path d=\"M18 20a6 6 0 0 0-12 0\"></path>\n              <circle cx=\"12\" cy=\"10\" r=\"4\"></circle></svg\n          ></span>\n          Angela Zhao\n          <span class=\"cbf-icon\"\n            ><svg\n              width=\"14\"\n              height=\"14\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path></svg\n          ></span>\n        </button>\n      </div>\n    </div>\n  </div>\n</header>\n<div class=\"cbf-omni\" data-omni=\"\" hidden=\"\">\n  <div class=\"cbf-omni__scrim\" data-omni-close=\"\"></div>\n  <div\n    class=\"cbf-omni__panel cbf-search-surface\"\n    role=\"dialog\"\n    aria-modal=\"true\"\n    aria-label=\"Search\"\n  >\n    <div class=\"cbf-omni__searchrow\">\n      <span class=\"cbf-icon cbf-omni__searchicon\"\n        ><svg\n          width=\"20\"\n          height=\"20\"\n          viewBox=\"0 0 24 24\"\n          fill=\"none\"\n          stroke=\"currentColor\"\n          stroke-width=\"2\"\n          stroke-linecap=\"round\"\n          stroke-linejoin=\"round\"\n          aria-hidden=\"true\"\n        >\n          <circle cx=\"11\" cy=\"11\" r=\"8\"></circle>\n          <path d=\"m21 21-4.3-4.3\"></path></svg\n      ></span>\n      <input\n        class=\"cbf-omni__input\"\n        data-omni-input=\"\"\n        type=\"text\"\n        placeholder=\"Search projects, contracts, people, publications…\"\n        autocomplete=\"off\"\n      />\n      <button class=\"cbf-omni__clear\" data-omni-clear=\"\" type=\"button\" aria-label=\"Clear\">\n        <span class=\"cbf-icon\"\n          ><svg\n            width=\"15\"\n            height=\"15\"\n            viewBox=\"0 0 24 24\"\n            fill=\"none\"\n            stroke=\"currentColor\"\n            stroke-width=\"2\"\n            stroke-linecap=\"round\"\n            stroke-linejoin=\"round\"\n            aria-hidden=\"true\"\n          >\n            <path d=\"M18 6 6 18\"></path>\n            <path d=\"m6 6 12 12\"></path></svg\n        ></span>\n      </button>\n    </div>\n    <div class=\"cbf-omni__scopes\" data-omni-scopes=\"\"></div>\n    <div class=\"cbf-omni__body\">\n      <!-- default view: brand illustration + search note (Recent lives in the nav) -->\n      <div class=\"cbf-omni__empty\" data-omni-empty=\"\">\n        <div class=\"cbf-omni__hero\">\n          <img class=\"cbf-omni__art\" src=\"/cb-fish-design/dam-illustration.jpg\" alt=\"\" />\n          <p class=\"cbf-omni__hero-title\">Search the Program</p>\n          <p class=\"cbf-omni__hero-note\">\n            Find projects, contracts, people, and publications across the Columbia Basin. Start\n            typing, or press <kbd class=\"esa-kbd typography-microcopy-xs\">Tab</kbd> to choose a\n            scope.\n          </p>\n        </div>\n      </div>\n      <!-- query view: grouped results (injected) -->\n      <div class=\"cbf-omni__results\" data-omni-results=\"\" hidden=\"\"></div>\n    </div>\n    <button class=\"cbf-omni__showall\" data-omni-showall=\"\" type=\"button\" hidden=\"\">\n      <span data-omni-showall-label=\"\">Show all results</span>\n      <span class=\"cbf-icon\"\n        ><svg\n          width=\"18\"\n          height=\"18\"\n          viewBox=\"0 0 24 24\"\n          fill=\"none\"\n          stroke=\"currentColor\"\n          stroke-width=\"2\"\n          stroke-linecap=\"round\"\n          stroke-linejoin=\"round\"\n          aria-hidden=\"true\"\n        >\n          <path d=\"m9 18 6-6-6-6\"></path></svg\n      ></span>\n    </button>\n    <div class=\"cbf-omni__footer\">\n      <div class=\"cbf-omni__hints\">\n        <span\n          ><kbd class=\"esa-kbd typography-microcopy-xs\">↑</kbd>\n          <kbd class=\"esa-kbd typography-microcopy-xs\">↓</kbd> Navigate</span\n        >\n        <span><kbd class=\"esa-kbd typography-microcopy-xs\">↵</kbd> Select</span>\n        <span><kbd class=\"esa-kbd typography-microcopy-xs\">Tab</kbd> Scope</span>\n        <span><kbd class=\"esa-kbd typography-microcopy-xs\">Esc</kbd> Close</span>\n      </div>\n    </div>\n  </div>\n</div>\n<esa-side-dialog\n  position=\"left\"\n  heading=\"Menu\"\n  size=\"sm\"\n  class=\"cbf-nav-drawer\"\n  data-nav-drawer=\"true\"\n>\n  <nav class=\"stack\" data-gap=\"lg\" aria-label=\"Site navigation\">\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head typography-label-md\">Mitigation work</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li class=\"typography-body-sm\">Projects</li>\n        <li class=\"typography-body-sm\">Contracts</li>\n        <li class=\"typography-body-sm\">Portfolios</li>\n        <li class=\"typography-body-sm\"><a href=\"/cb-fish-design/legacy/sow\">Work elements</a></li>\n        <li class=\"typography-body-sm\">Estuary program</li>\n        <li class=\"typography-body-sm\">Tributary habitat</li>\n        <li class=\"typography-body-sm\">Land acquisitions</li>\n        <li class=\"typography-body-sm\">\n          <a href=\"/cb-fish-design/rme-reporting\">RM&amp;E reporting</a>\n        </li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head typography-label-md\">Reporting</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li class=\"typography-body-sm\">Report Center</li>\n        <li class=\"typography-body-sm\">Maps</li>\n        <li class=\"typography-body-sm\">Publications</li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head typography-label-md\">Funding</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li class=\"typography-body-sm\">Funds</li>\n        <li class=\"typography-body-sm\">Fund budgets summary</li>\n        <li class=\"typography-body-sm\">Long-term funding agreements</li>\n        <li class=\"typography-body-sm\">\n          <a href=\"/cb-fish-design/project-budgets\">Project budgets</a>\n        </li>\n        <li class=\"typography-body-sm\">Working budgets</li>\n        <li class=\"typography-body-sm\">Expenditures</li>\n        <li class=\"typography-body-sm\">Accruals</li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head typography-label-md\">Quick links</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li class=\"typography-body-sm\"><a href=\"#\">Recent</a></li>\n        <li class=\"typography-body-sm\"><a href=\"/my-work\">Dashboard</a></li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head typography-label-md\">System</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li class=\"typography-body-sm\">Data management</li>\n        <li class=\"typography-body-sm\">System status</li>\n        <li class=\"typography-body-sm\">System configuration</li>\n      </ul>\n    </div>\n    <div class=\"esa-link-column\">\n      <span class=\"esa-link-column__head typography-label-md\">Help</span>\n      <hr class=\"esa-link-column__rule\" />\n      <ul class=\"esa-link-column__list\">\n        <li class=\"typography-body-sm\">Help center</li>\n        <li class=\"typography-body-sm\">Data dictionary</li>\n        <li class=\"typography-body-sm\">EF&amp;W Program documents</li>\n        <li class=\"typography-body-sm\">Request support</li>\n        <li class=\"typography-body-sm\">Send feedback</li>\n      </ul>\n    </div>\n  </nav>\n</esa-side-dialog>\n<main class=\"cbf-page\">\n  <div class=\"esa-container typography-body-md\" style=\"--_container-max: 1920px\">\n    <section class=\"cbf-app-panel\">\n      <div class=\"cbf-app-panel__crumb\">\n        <nav class=\"esa-breadcrumbs esa-breadcrumbs--md\" aria-label=\"Breadcrumb\">\n          <ol class=\"esa-breadcrumbs__list\">\n            <li class=\"esa-breadcrumbs__item\">\n              <a href=\"/cb-fish-design/home\" class=\"esa-breadcrumbs__link typography-body-md\">\n                <span class=\"esa-breadcrumbs__icon\"\n                  ><svg\n                    width=\"14\"\n                    height=\"14\"\n                    viewBox=\"0 0 24 24\"\n                    fill=\"none\"\n                    stroke=\"currentColor\"\n                    stroke-width=\"2\"\n                    stroke-linecap=\"round\"\n                    stroke-linejoin=\"round\"\n                    aria-hidden=\"true\"\n                  >\n                    <path d=\"m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"></path>\n                    <path d=\"M9 22V12h6v10\"></path></svg\n                ></span>\n                Home\n              </a>\n              <svg\n                class=\"esa-breadcrumbs__separator\"\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                aria-hidden=\"true\"\n              >\n                <path d=\"m9 18 6-6-6-6\"></path>\n              </svg>\n            </li>\n            <li class=\"esa-breadcrumbs__item\">\n              <span class=\"esa-breadcrumbs__current typography-label-md\"> Reporting </span>\n              <svg\n                class=\"esa-breadcrumbs__separator\"\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                aria-hidden=\"true\"\n              >\n                <path d=\"m9 18 6-6-6-6\"></path>\n              </svg>\n            </li>\n            <li class=\"esa-breadcrumbs__item\" aria-current=\"page\">\n              <span class=\"esa-breadcrumbs__current typography-label-md\"> BiOp reporting </span>\n            </li>\n          </ol>\n        </nav>\n      </div>\n      <div class=\"cbf-app-panel__body\">\n        <div class=\"cbf-app-panel__content\">\n          <div class=\"cbf-password-gate\" data-cbf-gate=\"\" data-storage-key=\"cbf-gate-unlocked\">\n            <div class=\"cbf-password-gate__lock\" data-cbf-gate-lock=\"\">\n              <div class=\"esa-card esa-card--outlined esa-card--padding-spacious\">\n                <div class=\"esa-card__body typography-body-md\">\n                  <div class=\"cbf-password-gate__body stack\" data-gap=\"lg\">\n                    <div class=\"cbf-password-gate__icon\" aria-hidden=\"true\">\n                      <span class=\"esa-icon esa-icon--lg\" aria-hidden=\"true\">\n                        <svg\n                          width=\"24\"\n                          height=\"24\"\n                          viewBox=\"0 0 24 24\"\n                          fill=\"none\"\n                          stroke=\"currentColor\"\n                          stroke-width=\"2\"\n                          stroke-linecap=\"round\"\n                          stroke-linejoin=\"round\"\n                          focusable=\"false\"\n                        >\n                          <rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect>\n                          <path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path>\n                        </svg>\n                      </span>\n                    </div>\n                    <div class=\"stack\" data-gap=\"xs\">\n                      <h1 class=\"typography-title\">This prototype is password protected</h1>\n                      <p class=\"typography-body-md cbf-password-gate__desc\">\n                        Enter the password to continue.\n                      </p>\n                    </div>\n                    <form class=\"stack\" data-gap=\"md\" data-cbf-gate-form=\"\">\n                      <esa-text-field\n                        type=\"password\"\n                        label=\"Password\"\n                        data-cbf-gate-input=\"true\"\n                        required=\"\"\n                        size=\"md\"\n                      ></esa-text-field>\n                      <span\n                        class=\"esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--md\"\n                        ><button class=\"esa-button__native typography-microcopy-md\" type=\"submit\">\n                          <span class=\"esa-button__label\">Unlock</span>\n                        </button></span\n                      >\n                    </form>\n                  </div>\n                </div>\n              </div>\n            </div>\n            <div class=\"cbf-password-gate__content\" data-cbf-gate-content=\"\" hidden=\"\">\n              <h1 class=\"cbf-page-heading\">BiOp reporting: Summary</h1>\n              <nav class=\"cbf-report-tabs\" aria-label=\"BiOp reporting sections\">\n                <a\n                  class=\"cbf-report-tabs__tab is-active\"\n                  href=\"/cb-fish-design/biop-reporting\"\n                  aria-current=\"page\"\n                  >Summary</a\n                >\n                <details class=\"cbf-report-tabs__dropdown\" name=\"cbf-report-tabs-menu\">\n                  <summary class=\"cbf-report-tabs__tab cbf-report-tabs__dropdown-trigger\">\n                    2020 CRS Commitments<span class=\"cbf-report-tabs__chev\"\n                      ><svg\n                        width=\"14\"\n                        height=\"14\"\n                        viewBox=\"0 0 24 24\"\n                        fill=\"none\"\n                        stroke=\"currentColor\"\n                        stroke-width=\"2\"\n                        stroke-linecap=\"round\"\n                        stroke-linejoin=\"round\"\n                        aria-hidden=\"true\"\n                      >\n                        <path d=\"m6 9 6 6 6-6\"></path></svg\n                    ></span>\n                  </summary>\n                  <div class=\"cbf-report-tabs__menu\" role=\"menu\">\n                    <a\n                      class=\"cbf-report-tabs__menu-item\"\n                      role=\"menuitem\"\n                      href=\"/cb-fish-design/crs-commitments\"\n                      >Commitments</a\n                    ><a\n                      class=\"cbf-report-tabs__menu-item\"\n                      role=\"menuitem\"\n                      href=\"/cb-fish-design/crs-commitments/dashboard\"\n                      >Dashboard</a\n                    ><a\n                      class=\"cbf-report-tabs__menu-item\"\n                      role=\"menuitem\"\n                      href=\"/cb-fish-design/crs-commitments/documents\"\n                      >Document Library</a\n                    >\n                  </div>\n                </details>\n                <details class=\"cbf-report-tabs__dropdown\" name=\"cbf-report-tabs-menu\">\n                  <summary class=\"cbf-report-tabs__tab cbf-report-tabs__dropdown-trigger\">\n                    CRS habitat<span class=\"cbf-report-tabs__chev\"\n                      ><svg\n                        width=\"14\"\n                        height=\"14\"\n                        viewBox=\"0 0 24 24\"\n                        fill=\"none\"\n                        stroke=\"currentColor\"\n                        stroke-width=\"2\"\n                        stroke-linecap=\"round\"\n                        stroke-linejoin=\"round\"\n                        aria-hidden=\"true\"\n                      >\n                        <path d=\"m6 9 6 6 6-6\"></path></svg\n                    ></span>\n                  </summary>\n                  <div class=\"cbf-report-tabs__menu\" role=\"menu\">\n                    <a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >CRS habitat reports</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >CRS habitat report measures</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >CRS habitat report map</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >CRS habitat measure targets</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >CRS habitat metrics report</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >CRS habitat metrics report - interactive</a\n                    >\n                  </div>\n                </details>\n                <details class=\"cbf-report-tabs__dropdown\" name=\"cbf-report-tabs-menu\">\n                  <summary class=\"cbf-report-tabs__tab cbf-report-tabs__dropdown-trigger\">\n                    FCRPS BiOp<span class=\"cbf-report-tabs__chev\"\n                      ><svg\n                        width=\"14\"\n                        height=\"14\"\n                        viewBox=\"0 0 24 24\"\n                        fill=\"none\"\n                        stroke=\"currentColor\"\n                        stroke-width=\"2\"\n                        stroke-linecap=\"round\"\n                        stroke-linejoin=\"round\"\n                        aria-hidden=\"true\"\n                      >\n                        <path d=\"m6 9 6 6 6-6\"></path></svg\n                    ></span>\n                  </summary>\n                  <div class=\"cbf-report-tabs__menu\" role=\"menu\">\n                    <a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\">FCRPS BiOp</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >FCRPS BiOp dashboard</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >FCRPS 2008 BiOp actions</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >Project associations to FCRPS 2008 BiOp</a\n                    ><a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >FCRPS BiOp RPAs and Associated BPA Projects</a\n                    >\n                  </div>\n                </details>\n                <details class=\"cbf-report-tabs__related\" name=\"cbf-report-tabs-menu\">\n                  <summary class=\"cbf-report-tabs__tab cbf-report-tabs__related-trigger\">\n                    Related items<span class=\"cbf-report-tabs__chev\"\n                      ><svg\n                        width=\"14\"\n                        height=\"14\"\n                        viewBox=\"0 0 24 24\"\n                        fill=\"none\"\n                        stroke=\"currentColor\"\n                        stroke-width=\"2\"\n                        stroke-linecap=\"round\"\n                        stroke-linejoin=\"round\"\n                        aria-hidden=\"true\"\n                      >\n                        <path d=\"m6 9 6 6 6-6\"></path></svg\n                    ></span>\n                  </summary>\n                  <div class=\"cbf-report-tabs__menu\" role=\"menu\">\n                    <a class=\"cbf-report-tabs__menu-item\" role=\"menuitem\" href=\"#\"\n                      >Reclamation uploader</a\n                    >\n                  </div>\n                </details>\n              </nav>\n              <section class=\"cbf-report-intro\">\n                <figure class=\"cbf-report-intro__media\">\n                  <img\n                    src=\"/cb-fish-design/biop-reporting-hero.png\"\n                    alt=\"A forested stream in the Columbia Basin\"\n                    loading=\"lazy\"\n                  />\n                </figure>\n                <div class=\"cbf-report-intro__copy\">\n                  <p class=\"cbf-report-intro__lede\">\n                    Under the Endangered Species Act (ESA), BPA consults with the United States Fish\n                    and Wildlife Service (USFWS) and the National Marine Fisheries Service (NMFS) to\n                    protect ESA-listed species affected by the operation and maintenance of the\n                    power system through the ESA Section 7 interagency process.\n                  </p>\n                  <p class=\"cbf-report-intro__body\">\n                    In BPA's service territory, the USFWS holds jurisdiction over terrestrial and\n                    freshwater species, while NMFS holds jurisdiction over marine mammals and\n                    anadromous salmon and steelhead. BPA works with NMFS and USFWS to make\n                    collaboration as efficient as possible through the identification and tracking\n                    of programmatic biological opinions (BiOps) for BPA's Fish and Wildlife Program.\n                    The Habitat Improvement Program Biological Opinion, or HIP4, is a BiOp that\n                    provides ESA compliance for most of the habitat improvement activities that BPA\n                    funds, and has created a streamlined process, saving time and money for federal\n                    agencies while accelerating habitat improvement project implementation. Several\n                    iterations of this BiOp have been published, and efforts have been tracked in\n                    accordance with each iteration.\n                  </p>\n                </div>\n              </section>\n              <section class=\"cbf-related-items\" id=\"related-items\" aria-label=\"Related items\">\n                <h2 class=\"cbf-related-items__head typography-heading-md\">Related items</h2>\n                <div class=\"cbf-related-items__grid grid cbf-related-items__grid--single\">\n                  <div class=\"esa-card esa-card--outlined\">\n                    <div class=\"esa-card__header\">\n                      <div class=\"esa-card__header-content\">\n                        <div class=\"esa-card__titles\">\n                          <h3 class=\"esa-card__title typography-title-sm-strong\">\n                            Reclamation uploader\n                          </h3>\n                        </div>\n                      </div>\n                    </div>\n                    <div class=\"esa-card__body typography-body-md\">\n                      <div class=\"cbf-related-items__card\">\n                        <p class=\"cbf-related-items__overview\">\n                          <strong>Overview:</strong> Upload XLSX files containing Biological Opinion\n                          Reclamation data.\n                        </p>\n                      </div>\n                    </div>\n                    <div class=\"esa-card__footer typography-meta\">\n                      <div class=\"cbf-related-items__foot\">\n                        <span\n                          class=\"esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--sm\"\n                          ><a\n                            class=\"esa-button__native typography-microcopy-xs\"\n                            href=\"#\"\n                            role=\"button\"\n                            ><span class=\"esa-button__label\">View page</span></a\n                          ></span\n                        >\n                      </div>\n                    </div>\n                  </div>\n                </div>\n              </section>\n            </div>\n            <!-- Password lives here in plain text — see the security note above; there\n       is no way to protect a value that must be checked client-side. -->\n            <script type=\"application/json\" data-cbf-gate-password=\"\">\n              \"2020crs\"\n            </script>\n          </div>\n          <script\n            type=\"module\"\n            src=\"/cb-fish-design/_astro/cbf-password-gate.astro_astro_type_script_index_0_lang.Xo-G2OVc.js\"\n          ></script>\n        </div>\n      </div>\n    </section>\n  </div>\n</main>\n",
+    "css": ":root,\n[data-theme=\"cb-fish\"] {\n  --animation-overlay-enter: 0.25s ease-out;\n  --border-width-default: 1px;\n  --breadcrumbs-bg: transparent;\n  --breadcrumbs-link-color: #525252;\n  --breadcrumbs-link-hover: #3d3d3d;\n  --button-radius-md: 0.5rem;\n  --button-radius-sm: 0.25rem;\n  --card-bg: #fcfcfc;\n  --card-border-color: #dcdcdc;\n  --card-header-bg: transparent;\n  --cbf-surface-crumb: #f4f4f4;\n  --color-background-brand: #1e5386;\n  --color-background-brand-hover: #1a4570;\n  --color-background-default-knockout: #13273e;\n  --color-background-elevation-raised: #fcfcfc;\n  --color-background-elevation-sunken: #f3f7fc;\n  --color-background-field: rgba(0, 0, 0, 0);\n  --color-border-default: #dcdcdc;\n  --color-border-default-strong: #bdbdbd;\n  --color-border-default-subtle: #efefef;\n  --color-content-brand: #1e5386;\n  --color-content-default: #3d3d3d;\n  --color-content-default-knockout: #fcfcfc;\n  --color-content-default-secondary: #525252;\n  --color-content-link: #1e5386;\n  --color-content-utility-danger: #ce2c31;\n  --elevation-5: 0 8px 32px -8px rgba(0, 0, 0, 0.08);\n  --font-size-150: clamp(0.6875rem, 0.61rem + 0.38vw, 0.875rem);\n  --form-border-color: #dcdcdc;\n  --form-border-width: 1px;\n  --form-error-color: #ce2c31;\n  --form-help-color: #525252;\n  --form-label-color: #525252;\n  --form-label-gap: 0.25rem;\n  --form-placeholder-color: #525252;\n  --form-text-color: #3d3d3d;\n  --icon-size-lg: 24px;\n  --icon-size-md: 20px;\n  --icon-size-sm: 16px;\n  --link-column-rule-color: color-mix(in srgb, currentColor 40%, transparent);\n  --radius-100: 0.25rem;\n  --radius-full: 9999px;\n  --radius-md: 0.5rem;\n  --side-dialog-inset: 16px;\n  --side-dialog-width: 400px;\n  --side-dialog-width-sm: 320px;\n  --spacing-100: 0.25rem;\n  --spacing-200: 0.5rem;\n  --spacing-250: 0.625rem;\n  --spacing-300: 0.75rem;\n  --spacing-400: 1rem;\n  --spacing-500: 1.5rem;\n  --spacing-600: 2rem;\n  --spacing-700: 3rem;\n  --spacing-800: 4rem;\n  --transition-fast: 0.15s ease;\n  --typography-body-md-font-family: \"IBM Plex Sans\", sans-serif;\n  --typography-body-md-font-size: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);\n  --typography-body-md-font-weight: 400;\n  --typography-body-md-letter-spacing: 0.01em;\n  --typography-body-md-line-height: 1.6;\n  --typography-body-sm-font-family: \"IBM Plex Sans\", sans-serif;\n  --typography-body-sm-font-size: clamp(0.6875rem, 0.61rem + 0.38vw, 0.875rem);\n  --typography-body-sm-font-weight: 400;\n  --typography-body-sm-letter-spacing: 0.01em;\n  --typography-body-sm-line-height: 1.6;\n  --typography-font-family-sans: \"IBM Plex Sans\", sans-serif;\n  --typography-font-weight-medium: 500;\n  --typography-label-md-font-family: \"IBM Plex Sans\", sans-serif;\n  --typography-label-md-font-size: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);\n  --typography-label-md-font-weight: 500;\n  --typography-label-md-letter-spacing: 0.01em;\n  --typography-label-md-line-height: 1.6;\n  --typography-microcopy-md-font-family: \"IBM Plex Sans\", sans-serif;\n  --typography-microcopy-md-font-size: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);\n  --typography-microcopy-md-font-weight: 500;\n  --typography-microcopy-md-letter-spacing: 0.01em;\n  --typography-microcopy-md-line-height: 1;\n  --typography-microcopy-md-subtle-font-family: \"IBM Plex Sans\", sans-serif;\n  --typography-microcopy-md-subtle-font-size: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);\n  --typography-microcopy-md-subtle-font-weight: 400;\n  --typography-microcopy-md-subtle-letter-spacing: 0.01em;\n  --typography-microcopy-md-subtle-line-height: 1;\n  --typography-microcopy-xs-font-family: \"IBM Plex Sans\", sans-serif;\n  --typography-microcopy-xs-font-size: clamp(0.625rem, 0.56rem + 0.32vw, 0.75rem);\n  --typography-microcopy-xs-font-weight: 500;\n  --typography-microcopy-xs-letter-spacing: 0.01em;\n  --typography-microcopy-xs-line-height: 1;\n  --typography-title-font-family: \"IBM Plex Sans\", sans-serif;\n  --typography-title-font-size: clamp(1rem, 0.88rem + 0.6vw, 1.25rem);\n  --typography-title-font-weight: 500;\n  --typography-title-letter-spacing: 0.01em;\n  --typography-title-line-height: 1.6;\n}\n\n*,\n*:before,\n*:after {\n  box-sizing: border-box;\n}\nbody {\n  margin: 0;\n  font-family: var(--typography-font-family-sans, system-ui, sans-serif);\n  color: var(--color-content-default, #171717);\n  background: var(--color-background-elevation-raised, #fff);\n  -webkit-font-smoothing: antialiased;\n}\n.esa-app-bar {\n  --_bar-gap: var(--spacing-600, 32px);\n  --_bar-pad-x: var(--spacing-600, 32px);\n  --_bar-pad-y: var(--spacing-400, 16px);\n  display: block;\n  width: 100%;\n  background: var(--color-background-elevation-raised, #fcfcfc);\n  color: var(--color-content-default, #202020);\n}\n.esa-app-bar--brand-strong {\n  background: var(--color-background-default-knockout, #202020);\n  color: var(--color-content-default-knockout, #fcfcfc);\n}\n.esa-app-bar__row {\n  display: flex;\n  align-items: center;\n  gap: var(--_bar-gap);\n  padding: var(--_bar-pad-y) var(--_bar-pad-x);\n}\n.esa-app-bar__start,\n.esa-app-bar__main,\n.esa-app-bar__end {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--_bar-gap);\n}\n.esa-app-bar__start {\n  flex: none;\n}\nbutton {\n  font-family: inherit;\n  cursor: pointer;\n  background: none;\n  border: 0;\n}\n.esa-app-bar__main {\n  flex: 1 1 auto;\n  min-width: 0;\n}\n.esa-app-bar__end {\n  flex: none;\n  margin-left: auto;\n}\n.esa-app-bar--brand {\n  background: var(--color-background-brand, #46a758);\n  color: var(--color-content-default-knockout, #fcfcfc);\n}\na {\n  color: var(--color-content-link, #1e5386);\n  text-decoration: none;\n}\nimg {\n  display: block;\n  max-width: 100%;\n}\n.stack {\n  --gap: var(--spacing-400, 1rem);\n  display: flex;\n  flex-direction: column;\n  gap: var(--gap);\n}\n[data-gap=\"lg\"] {\n  --gap: var(--spacing-500, 1.5rem);\n}\n.esa-link-column {\n  color: inherit;\n}\n.esa-link-column__head {\n  display: block;\n  margin: 0 0 var(--spacing-100, 4px);\n  font-size: var(--typography-label-md-font-size);\n  color: inherit;\n  text-decoration-color: transparent;\n}\n.esa-link-column__rule {\n  height: 1px;\n  border: 0;\n  margin: 0 0 var(--spacing-200, 8px);\n  background: var(--link-column-rule-color, color-mix(in srgb, currentColor 40%, transparent));\n}\n:where(h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd, ul, ol, pre) {\n  margin: 0;\n}\n.esa-link-column__list {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n.esa-link-column__list li {\n  font-size: var(--font-size-150, var(--typography-body-sm-font-size));\n  margin-bottom: var(--spacing-100, 4px);\n}\n.esa-link-column__list a {\n  color: inherit;\n  text-decoration-color: transparent;\n}\n.cbf-app-panel {\n  display: flex;\n  flex-direction: column;\n  min-height: 80vh;\n  border: 1px solid var(--color-border-default);\n  border-radius: var(--radius-100);\n  overflow: clip;\n  background: var(--color-background-elevation-raised);\n  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-background-default-knockout) 8%, transparent);\n}\n.cbf-app-panel__crumb {\n  background: var(--cbf-surface-crumb);\n  border-bottom: 1px solid var(--color-border-default);\n  padding: var(--spacing-400) var(--spacing-600);\n}\n.esa-breadcrumbs {\n  --_crumb-link-color: var(--breadcrumbs-link-color, #646464);\n  --_crumb-link-hover: var(--breadcrumbs-link-hover, #202020);\n  --_crumb-current-color: var(--color-content-default, #202020);\n  --_crumb-separator-color: var(--color-border-default-strong, #bbbbbb);\n  --_crumb-gap: var(--spacing-200, 8px);\n  display: block;\n  background: var(--breadcrumbs-bg, transparent);\n}\n.cbf-app-panel__crumb .esa-breadcrumbs {\n  --breadcrumbs-link-color: var(--color-content-default-secondary);\n  --breadcrumbs-link-hover: var(--color-background-brand);\n}\n.esa-breadcrumbs__list {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: var(--_crumb-gap);\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n.esa-breadcrumbs__item {\n  display: flex;\n  align-items: center;\n  gap: var(--_crumb-gap);\n}\n.esa-breadcrumbs__link {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-100, 4px);\n  color: var(--_crumb-link-color);\n  text-decoration-color: transparent;\n}\n.esa-breadcrumbs__icon {\n  display: inline-flex;\n  align-items: center;\n}\n.esa-breadcrumbs__separator {\n  flex-shrink: 0;\n  color: var(--_crumb-separator-color);\n}\n.esa-breadcrumbs__current {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-100, 4px);\n  color: var(--_crumb-current-color);\n}\n.cbf-app-panel__body {\n  flex: 1;\n}\n.cbf-app-panel__content {\n  flex: 1;\n  min-width: 0;\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-400);\n  padding: var(--spacing-600);\n}\n[data-gap=\"xs\"] {\n  --gap: var(--spacing-200, 0.5rem);\n}\n[data-gap=\"md\"] {\n  --gap: var(--spacing-400, 1rem);\n}\n.visually-hidden {\n  position: absolute;\n  width: 1px;\n  height: 1px;\n  margin: -1px;\n  padding: 0;\n  border: 0;\n  overflow: hidden;\n  white-space: nowrap;\n  clip: rect(0 0 0 0);\n  clip-path: inset(50%);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-microcopy-xs {\n  font-family: var(--typography-microcopy-xs-font-family);\n  font-size: var(--typography-microcopy-xs-font-size);\n  font-weight: var(--typography-microcopy-xs-font-weight);\n  line-height: var(--typography-microcopy-xs-line-height);\n  letter-spacing: var(--typography-microcopy-xs-letter-spacing);\n}\n.typography-microcopy-md {\n  font-family: var(--typography-microcopy-md-font-family);\n  font-size: var(--typography-microcopy-md-font-size);\n  font-weight: var(--typography-microcopy-md-font-weight);\n  line-height: var(--typography-microcopy-md-line-height);\n  letter-spacing: var(--typography-microcopy-md-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.typography-title {\n  font-family: var(--typography-title-font-family);\n  font-size: var(--typography-title-font-size);\n  font-weight: var(--typography-title-font-weight);\n  line-height: var(--typography-title-line-height);\n  letter-spacing: var(--typography-title-letter-spacing);\n}\n.cbf-app-bar--admin .esa-app-bar__row {\n  display: grid;\n  grid-template-columns: 1fr minmax(0, 380px) 1fr;\n}\n.cbf-app-bar--admin .esa-app-bar__start {\n  justify-self: start;\n}\n.cbf-nav-collapsible {\n  display: contents;\n}\n.cbf-app-bar--admin .esa-app-bar__main {\n  justify-content: center;\n}\n.cbf-omni-trigger {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-200);\n  width: 380px;\n  max-width: 100%;\n  padding: 5px var(--spacing-200) 5px var(--spacing-300);\n  background: #ffffff1a;\n  border: 1px solid rgba(255, 255, 255, 0.22);\n  border-radius: 999px;\n  color: #ffffffbf;\n  transition:\n    background 0.12s,\n    border-color 0.12s;\n}\n.cbf-app-bar--admin .cbf-omni-trigger {\n  min-width: 0;\n}\n.cbf-icon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: inherit;\n}\n.cbf-omni-trigger__ph {\n  flex: 1;\n  min-width: 0;\n  text-align: left;\n  font-size: 13px;\n  white-space: nowrap;\n  overflow: hidden;\n  text-overflow: ellipsis;\n}\n.cbf-omni-trigger__kbd {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 18px;\n  height: 18px;\n  padding: 0 5px;\n  font-family: var(--typography-font-family-sans);\n  font-size: 13px;\n  font-weight: var(--typography-font-weight-medium);\n  color: #ffffffd9;\n  background: #ffffff1f;\n  border: 1px solid rgba(255, 255, 255, 0.25);\n  border-radius: 4px;\n}\n.cbf-app-bar--admin .esa-app-bar__end {\n  justify-self: end;\n}\n.esa-nav-dropdown {\n  position: relative;\n}\n.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.cbf-nav-burger {\n  display: none;\n}\n.cbf-logo {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-300, 12px);\n  flex: none;\n  color: inherit;\n  text-decoration: none;\n}\n.cbf-logo__mark {\n  width: 48px;\n  height: 48px;\n  flex: none;\n}\n.cbf-logo__type {\n  height: 40px;\n  width: auto;\n}\n.cbf-nav-actions {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-600);\n}\n.cbf-nav-link {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  color: inherit;\n  background: none;\n  border: 0;\n  font-size: 16px;\n  font-weight: var(--typography-font-weight-medium);\n  white-space: nowrap;\n}\n.cbf-nav-link .cbf-icon {\n  display: inline-flex;\n  align-items: center;\n}\n.cbf-nav-link--user {\n  position: relative;\n  padding-left: var(--spacing-500);\n}\n.cbf-nav-link--user:before {\n  content: \"\";\n  position: absolute;\n  left: 0;\n  top: 50%;\n  transform: translateY(-50%);\n  width: 1px;\n  height: 1.1em;\n  background: #ffffff40;\n}\n.cbf-omni {\n  position: fixed;\n  inset: 0;\n  z-index: 80;\n}\n.cbf-omni[hidden] {\n  display: none;\n}\n:host {\n  --_width: var(--side-dialog-width, 400px);\n}\n:host([size=\"sm\"]) {\n  --_width: var(--side-dialog-width-sm, 320px);\n}\ndialog.panel {\n  --_inset: var(--side-dialog-inset, 16px);\n  position: fixed;\n  top: var(--_inset);\n  bottom: var(--_inset);\n  margin: 0;\n  border: none;\n  padding: 0;\n  width: min(var(--_width), calc(100vw - var(--_inset) * 2));\n  max-width: none;\n  max-height: none;\n  background: var(--color-background-elevation-raised, #fcfcfc);\n  color: var(--color-content-default, #202020);\n  border-radius: var(--radius-md, 0.5rem);\n  box-shadow: var(--elevation-5, 0 8px 32px -8px rgba(0, 0, 0, 0.2));\n  outline: none;\n  overflow: hidden;\n  /* Hosts may re-point --side-dialog-inset while open (e.g. card-stacking a\n         second dialog on top) — ease the reposition instead of jumping. */\n  transition:\n    top 220ms ease,\n    right 220ms ease,\n    bottom 220ms ease,\n    left 220ms ease;\n}\n:host([position=\"left\"]) dialog.panel {\n  left: var(--_inset);\n  animation: slide-left var(--animation-overlay-enter, 250ms ease-out);\n}\n.esa-button {\n  --_btn-pad-y: var(--spacing-300, 0.75rem);\n  --_btn-padding-x: var(--spacing-300, 0.75rem);\n  --_btn-radius: var(--button-radius-md, 0.5rem);\n  --_accent: var(--color-background-brand, #46a758);\n  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);\n  --_on: var(--color-content-default-knockout, #fcfcfc);\n  --_accent-text: var(--_accent);\n  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);\n  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);\n  display: inline-block;\n}\n.esa-button--sm {\n  --_btn-pad-y: var(--spacing-250, 0.625rem);\n  --_btn-padding-x: var(--spacing-250, 0.625rem);\n  --_btn-radius: var(--button-radius-sm, 4px);\n}\n.esa-button__native {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: var(--spacing-200, 8px);\n  width: 100%;\n  padding-block: var(--_btn-pad-y);\n  padding-inline: var(--_btn-padding-x);\n  border: var(--border-width-default, 1px) solid transparent;\n  border-radius: var(--_btn-radius);\n  text-decoration: none;\n  cursor: pointer;\n  transition:\n    background var(--transition-fast, 0.15s ease),\n    border-color var(--transition-fast, 0.15s ease);\n  -webkit-appearance: none;\n  appearance: none;\n}\n.esa-button--appearance-fill .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent-border, transparent);\n}\n.esa-button--variant-chrome .esa-button__native {\n  background: transparent;\n  color: inherit;\n  border-color: transparent;\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, 20px);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  color: inherit;\n}\n.esa-icon--sm {\n  --_icon-size: var(--icon-size-sm, 16px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-button__label {\n  white-space: nowrap;\n}\nsummary.esa-button {\n  list-style: none;\n  cursor: pointer;\n}\n.esa-icon--md {\n  --_icon-size: var(--icon-size-md, 20px);\n}\n.esa-icon--lg {\n  --_icon-size: var(--icon-size-lg, 24px);\n}\n.esa-button--variant-primary {\n  --_accent-text: var(--color-content-brand);\n}\n:host {\n  --_field-padding-y: var(--spacing-300, 0.75rem);\n  --_field-padding-x: var(--spacing-300, 0.75rem);\n  --_field-radius: var(--radius-md, 0.5rem);\n  --_field-border-color: var(--form-border-color, #cecece);\n  display: block;\n}\n.field {\n  display: flex;\n  flex-direction: column;\n}\n.label {\n  color: var(--form-label-color, #646464);\n  margin-block-end: var(--form-label-gap, 4px);\n}\n.required {\n  color: var(--color-content-utility-danger, #ce2c31);\n  margin-inline-start: 2px;\n}\n.control {\n  display: flex;\n  align-items: stretch;\n  /* NO HEIGHT. The box is as tall as the input inside it, which is its line\n         box plus its padding. A px height could not grow with rem text, so it\n         clipped — and this rule used to pair one with overflow:hidden, which is\n         what made the clipping silent. See semantic/size.json.\n\n         line-height 1 is what leaves padding as the only variable: at 1.6 there\n         is a third term (0.6 x font-size of leading) that nobody chose and that\n         grows faster than either input. Everything else — face, size, weight,\n         tracking — still comes from .typography-body-* on this element and\n         inherits to the input and the affixes below. */\n  background: var(--color-background-field, transparent);\n  border: var(--form-border-width, 1px) solid var(--_field-border-color);\n  border-radius: var(--_field-radius);\n  box-sizing: border-box;\n  transition:\n    border-color var(--transition-fast, 150ms ease),\n    box-shadow var(--transition-fast, 150ms ease);\n}\n.input {\n  flex: 1 1 auto;\n  min-width: 0;\n  width: 100%;\n  /* No height: 100%. It used to resolve against .control's fixed height, which\n         meant this padding was ABSORBED into that height rather than adding to it.\n         With no fixed parent it would compute to auto anyway; removing it makes the\n         padding load-bearing, which is the point. .control is align-items:stretch,\n         so the affixes still match this element's height. */\n  padding: var(--_field-padding-y) var(--_field-padding-x);\n  /* A native control does not inherit type by default — this is what opts it\n         into the composite already resolved on .control. */\n  font: inherit;\n  color: var(--form-text-color, #202020);\n  background: transparent;\n  border: none;\n  outline: none;\n  box-sizing: border-box;\n}\n.input::placeholder {\n  color: var(--form-placeholder-color, #838383);\n}\n.help,\n.error {\n  margin: 0;\n}\n.error {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-100, 4px);\n  color: var(--form-error-color, var(--color-content-utility-danger, #ce2c31));\n}\n.help {\n  color: var(--form-help-color, #838383);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-microcopy-md-subtle {\n  font-family: var(--typography-microcopy-md-subtle-font-family);\n  font-size: var(--typography-microcopy-md-subtle-font-size);\n  font-weight: var(--typography-microcopy-md-subtle-font-weight);\n  line-height: var(--typography-microcopy-md-subtle-line-height);\n  letter-spacing: var(--typography-microcopy-md-subtle-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.cbf-page {\n  padding-block: var(--spacing-600) var(--spacing-800);\n}\n.esa-container {\n  width: 100%;\n  max-width: var(--_container-max, 1556px);\n  margin-inline: auto;\n  padding-inline: var(--spacing-600, 2rem);\n}\n.cbf-password-gate__lock {\n  display: flex;\n  justify-content: center;\n  padding-block: var(--spacing-800, 4rem);\n}\n.esa-card {\n  --_card-bg: var(--card-bg, var(--color-background-elevation-raised, #fcfcfc));\n  --_card-border: var(--card-border-color, var(--color-border-default, #cecece));\n  --_card-radius: var(--radius-md, 0.5rem);\n  --_card-padding: var(--spacing-500, 1.5rem);\n  --_card-header-bg: var(--card-header-bg, transparent);\n  --_card-header-color: var(--color-content-default, #202020);\n  --_card-header-border: var(--color-border-default-subtle, #d9d9d9);\n  display: block;\n  background: var(--_card-bg);\n  border: var(--border-width-default, 1px) solid var(--_card-border);\n  border-radius: var(--_card-radius);\n  overflow: hidden;\n}\n.esa-card--outlined {\n  --_card-border: var(--color-border-default, #cecece);\n}\n.esa-card--padding-spacious {\n  --_card-padding: var(--spacing-700, 3rem);\n}\n.cbf-password-gate__lock .esa-card {\n  max-width: 26rem;\n  width: 100%;\n}\n.esa-card__body {\n  padding: var(--_card-padding);\n}\n.cbf-password-gate__body {\n  align-items: center;\n  text-align: center;\n}\n.cbf-password-gate__icon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 48px;\n  height: 48px;\n  border-radius: var(--radius-full, 999px);\n  background: var(--color-background-elevation-sunken);\n  color: var(--color-content-default-secondary);\n}\n.cbf-password-gate__desc {\n  color: var(--color-content-default-secondary);\n}\n.cbf-password-gate__lock form {\n  width: 100%;\n  text-align: left;\n}\n.cbf-password-gate__content {\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-400);\n}\n.cbf-password-gate__content[hidden] {\n  display: none;\n}\n",
+    "tokens": [
+      {
+        "name": "--animation-overlay-enter",
+        "value": ".25s ease-out",
+        "tier": "semantic"
+      },
+      {
+        "name": "--border-width-default",
+        "value": "1px",
+        "tier": "semantic"
+      },
+      {
+        "name": "--breadcrumbs-bg",
+        "value": "transparent",
+        "tier": "component"
+      },
+      {
+        "name": "--breadcrumbs-link-color",
+        "value": "#525252",
+        "tier": "component"
+      },
+      {
+        "name": "--breadcrumbs-link-hover",
+        "value": "#3d3d3d",
+        "tier": "component"
+      },
+      {
+        "name": "--button-radius-md",
+        "value": ".5rem",
+        "tier": "component"
+      },
+      {
+        "name": "--button-radius-sm",
+        "value": ".25rem",
+        "tier": "component"
+      },
+      {
+        "name": "--card-bg",
+        "value": "#fcfcfc",
+        "tier": "component"
+      },
+      {
+        "name": "--card-border-color",
+        "value": "#dcdcdc",
+        "tier": "component"
+      },
+      {
+        "name": "--card-header-bg",
+        "value": "transparent",
+        "tier": "component"
+      },
+      {
+        "name": "--cbf-surface-crumb",
+        "value": "#f4f4f4",
+        "tier": "brand"
+      },
+      {
+        "name": "--color-background-brand",
+        "value": "#1e5386",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-background-brand-hover",
+        "value": "#1a4570",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-background-default-knockout",
+        "value": "#13273e",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-background-elevation-raised",
+        "value": "#fcfcfc",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-background-elevation-sunken",
+        "value": "#f3f7fc",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-background-field",
+        "value": "rgba(0, 0, 0, 0)",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-border-default",
+        "value": "#dcdcdc",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-border-default-strong",
+        "value": "#bdbdbd",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-border-default-subtle",
+        "value": "#efefef",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-content-brand",
+        "value": "#1e5386",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-content-default",
+        "value": "#3d3d3d",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-content-default-knockout",
+        "value": "#fcfcfc",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-content-default-secondary",
+        "value": "#525252",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-content-link",
+        "value": "#1e5386",
+        "tier": "semantic"
+      },
+      {
+        "name": "--color-content-utility-danger",
+        "value": "#ce2c31",
+        "tier": "semantic"
+      },
+      {
+        "name": "--elevation-5",
+        "value": "0 8px 32px -8px rgba(0, 0, 0, .08)",
+        "tier": "semantic"
+      },
+      {
+        "name": "--font-size-150",
+        "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+        "tier": "primitive"
+      },
+      {
+        "name": "--form-border-color",
+        "value": "#dcdcdc",
+        "tier": "component"
+      },
+      {
+        "name": "--form-border-width",
+        "value": "1px",
+        "tier": "component"
+      },
+      {
+        "name": "--form-error-color",
+        "value": "#ce2c31",
+        "tier": "component"
+      },
+      {
+        "name": "--form-help-color",
+        "value": "#525252",
+        "tier": "component"
+      },
+      {
+        "name": "--form-label-color",
+        "value": "#525252",
+        "tier": "component"
+      },
+      {
+        "name": "--form-label-gap",
+        "value": ".25rem",
+        "tier": "component"
+      },
+      {
+        "name": "--form-placeholder-color",
+        "value": "#525252",
+        "tier": "component"
+      },
+      {
+        "name": "--form-text-color",
+        "value": "#3d3d3d",
+        "tier": "component"
+      },
+      {
+        "name": "--icon-size-lg",
+        "value": "24px",
+        "tier": "primitive"
+      },
+      {
+        "name": "--icon-size-md",
+        "value": "20px",
+        "tier": "primitive"
+      },
+      {
+        "name": "--icon-size-sm",
+        "value": "16px",
+        "tier": "primitive"
+      },
+      {
+        "name": "--link-column-rule-color",
+        "value": "color-mix(in srgb, currentColor 40%, transparent)",
+        "tier": "component"
+      },
+      {
+        "name": "--radius-100",
+        "value": ".25rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--radius-full",
+        "value": "9999px",
+        "tier": "primitive"
+      },
+      {
+        "name": "--radius-md",
+        "value": ".5rem",
+        "tier": "semantic"
+      },
+      {
+        "name": "--side-dialog-inset",
+        "value": "16px",
+        "tier": "component"
+      },
+      {
+        "name": "--side-dialog-width",
+        "value": "400px",
+        "tier": "component"
+      },
+      {
+        "name": "--side-dialog-width-sm",
+        "value": "320px",
+        "tier": "component"
+      },
+      {
+        "name": "--spacing-100",
+        "value": ".25rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-200",
+        "value": ".5rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-250",
+        "value": ".625rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-300",
+        "value": ".75rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-400",
+        "value": "1rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-500",
+        "value": "1.5rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-600",
+        "value": "2rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-700",
+        "value": "3rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--spacing-800",
+        "value": "4rem",
+        "tier": "primitive"
+      },
+      {
+        "name": "--transition-fast",
+        "value": ".15s ease",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-body-md-font-family",
+        "value": "\"IBM Plex Sans\", sans-serif",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-body-md-font-size",
+        "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-body-md-font-weight",
+        "value": "400",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-body-md-letter-spacing",
+        "value": ".01em",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-body-md-line-height",
+        "value": "1.6",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-body-sm-font-family",
+        "value": "\"IBM Plex Sans\", sans-serif",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-body-sm-font-size",
+        "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-body-sm-font-weight",
+        "value": "400",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-body-sm-letter-spacing",
+        "value": ".01em",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-body-sm-line-height",
+        "value": "1.6",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-font-family-sans",
+        "value": "\"IBM Plex Sans\", sans-serif",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-font-weight-medium",
+        "value": "500",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-label-md-font-family",
+        "value": "\"IBM Plex Sans\", sans-serif",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-label-md-font-size",
+        "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-label-md-font-weight",
+        "value": "500",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-label-md-letter-spacing",
+        "value": ".01em",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-label-md-line-height",
+        "value": "1.6",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-md-font-family",
+        "value": "\"IBM Plex Sans\", sans-serif",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-md-font-size",
+        "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-md-font-weight",
+        "value": "500",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-md-letter-spacing",
+        "value": ".01em",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-md-line-height",
+        "value": "1",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-md-subtle-font-family",
+        "value": "\"IBM Plex Sans\", sans-serif",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-md-subtle-font-size",
+        "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-md-subtle-font-weight",
+        "value": "400",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-md-subtle-letter-spacing",
+        "value": ".01em",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-md-subtle-line-height",
+        "value": "1",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-xs-font-family",
+        "value": "\"IBM Plex Sans\", sans-serif",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-xs-font-size",
+        "value": "clamp(.625rem, .56rem + .32vw, .75rem)",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-xs-font-weight",
+        "value": "500",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-xs-letter-spacing",
+        "value": ".01em",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-microcopy-xs-line-height",
+        "value": "1",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-title-font-family",
+        "value": "\"IBM Plex Sans\", sans-serif",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-title-font-size",
+        "value": "clamp(1rem, .88rem + .6vw, 1.25rem)",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-title-font-weight",
+        "value": "500",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-title-letter-spacing",
+        "value": ".01em",
+        "tier": "semantic"
+      },
+      {
+        "name": "--typography-title-line-height",
+        "value": "1.6",
+        "tier": "semantic"
+      }
+    ],
+    "claudePath": "claude/full-page.md",
+    "repoPath": "public/handoff/crs-commitments/claude/full-page.md"
+  }
+}

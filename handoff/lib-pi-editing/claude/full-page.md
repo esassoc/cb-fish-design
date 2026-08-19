@@ -1,0 +1,3912 @@
+# Full page
+
+Re-implement this UI section faithfully on your stack. Keep the CSS custom-property
+names (`var(--…)`) so it stays themeable — the values below are the resolved
+`cb-fish` theme of the **lib-pi-editing** design system (an ESA Ecology spoke).
+
+- **Source prototype:** http://localhost:4787/cb-fish-design/lib-pi-editing/
+- **Section element:** `<page>`
+- **Components:** cbf-app-bar (spoke), cbf-app-panel (spoke), cbf-appr-table (spoke), cbf-check (spoke), cbf-demo-controls (spoke), cbf-doc-link (spoke), cbf-doc-table (spoke), cbf-edit (spoke), cbf-email (spoke), cbf-hist-table (spoke), cbf-icon (spoke), cbf-lipd (spoke), cbf-logo (spoke), cbf-na (spoke), cbf-nav-actions (spoke), cbf-nav-burger (spoke), cbf-nav-collapsible (spoke), cbf-nav-drawer (spoke), cbf-nav-link (spoke), cbf-none (spoke), cbf-num (spoke), cbf-omni (spoke), cbf-omni-trigger (spoke), cbf-page (spoke), cbf-search-surface (spoke), cbf-summary (spoke), esa-alert-box (hub), esa-app-bar (hub), esa-badge (hub), esa-breadcrumbs (hub), esa-button (hub), esa-collapsible (hub), esa-container (hub), esa-empty-state (hub), esa-icon (hub), esa-kbd (hub), esa-link-column (hub), esa-nav-dropdown (hub)
+
+## Markup (de-scoped, framework-free)
+```html
+<nav class="esa-app-bar esa-app-bar--brand-strong cbf-app-bar--admin">
+  <div class="esa-app-bar__row">
+    <div class="esa-app-bar__start typography-label-md">
+      <div class="cbf-nav-collapsible">
+        <span
+          class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm"
+          ><button class="esa-button__native typography-microcopy-xs" type="button">
+            <span class="esa-icon esa-icon--sm" aria-hidden="true">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                focusable="false"
+              >
+                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                <path d="M3 5V19A9 3 0 0 0 21 19V5"></path>
+                <path d="M3 12A9 3 0 0 0 21 12"></path>
+              </svg>
+            </span>
+            <span class="esa-button__label">Data management</span
+            ><span class="esa-icon esa-icon--sm" aria-hidden="true">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                focusable="false"
+              >
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+            </span></button
+        ></span>
+        <span
+          class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm"
+          ><button class="esa-button__native typography-microcopy-xs" type="button">
+            <span class="esa-icon esa-icon--sm" aria-hidden="true">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                focusable="false"
+              >
+                <path
+                  d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"
+                ></path>
+              </svg>
+            </span>
+            <span class="esa-button__label">System status</span
+            ><span class="esa-icon esa-icon--sm" aria-hidden="true">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                focusable="false"
+              >
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+            </span></button
+        ></span>
+        <span
+          class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm"
+          ><button class="esa-button__native typography-microcopy-xs" type="button">
+            <span class="esa-icon esa-icon--sm" aria-hidden="true">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                focusable="false"
+              >
+                <path
+                  d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+                ></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </span>
+            <span class="esa-button__label">System configuration</span
+            ><span class="esa-icon esa-icon--sm" aria-hidden="true">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                focusable="false"
+              >
+                <path d="m6 9 6 6 6-6"></path>
+              </svg>
+            </span></button
+        ></span>
+      </div>
+    </div>
+    <div class="esa-app-bar__main typography-label-md">
+      <button class="cbf-omni-trigger" type="button" data-omni-open="" aria-label="Search">
+        <span class="cbf-icon"
+          ><svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.3-4.3"></path></svg
+        ></span>
+        <span class="cbf-omni-trigger__ph">Search projects, contracts, people…</span>
+        <kbd class="cbf-omni-trigger__kbd">/</kbd>
+      </button>
+    </div>
+    <div class="esa-app-bar__end typography-label-md">
+      <div class="cbf-nav-collapsible">
+        <details class="esa-nav-dropdown esa-nav-dropdown--end">
+          <summary
+            class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm"
+          >
+            <span class="esa-button__native typography-microcopy-xs"
+              ><span class="esa-icon esa-icon--sm" aria-hidden="true">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <path d="M12 17h.01"></path>
+                </svg>
+              </span>
+              <span class="esa-button__label">Help</span
+              ><span class="esa-icon esa-icon--sm" aria-hidden="true">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <path d="m6 9 6 6 6-6"></path>
+                </svg>
+              </span>
+            </span>
+          </summary>
+          <div class="esa-nav-dropdown__panel typography-body-md">
+            <div class="esa-link-column">
+              <span class="esa-link-column__head typography-label-md">Help</span>
+              <hr class="esa-link-column__rule" />
+              <ul class="esa-link-column__list">
+                <li class="typography-body-sm">Help center</li>
+                <li class="typography-body-sm">Data dictionary</li>
+                <li class="typography-body-sm">EF&amp;W Program documents</li>
+                <li class="typography-body-sm">Request support</li>
+                <li class="typography-body-sm">Send feedback</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+  </div>
+</nav>
+<header class="esa-app-bar esa-app-bar--brand cbf-app-bar--header">
+  <div class="esa-app-bar__row">
+    <div class="esa-app-bar__start typography-label-md">
+      <span class="cbf-nav-burger" data-nav-toggle="">
+        <span
+          class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md esa-button--icon-only"
+          ><button
+            class="esa-button__native typography-microcopy-md"
+            type="button"
+            aria-label="Open menu"
+            title="Open menu"
+          >
+            <span class="esa-icon esa-icon--md" aria-hidden="true">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                focusable="false"
+              >
+                <line x1="4" x2="20" y1="6" y2="6"></line>
+                <line x1="4" x2="20" y1="12" y2="12"></line>
+                <line x1="4" x2="20" y1="18" y2="18"></line>
+              </svg>
+            </span></button
+        ></span>
+      </span>
+      <a
+        class="cbf-logo"
+        href="/cb-fish-design/home"
+        title="Columbia Basin Fish &amp; Wildlife Program"
+      >
+        <img class="cbf-logo__mark" src="/cb-fish-design/logo-mark.svg" alt="" />
+        <img
+          class="cbf-logo__type"
+          src="/cb-fish-design/logo-type.svg"
+          alt="Columbia Basin Fish &amp; Wildlife Program"
+        />
+      </a>
+    </div>
+    <div class="esa-app-bar__main typography-label-md">
+      <div class="cbf-nav-collapsible cbf-nav-collapsible--inline">
+        <details class="esa-nav-dropdown esa-nav-dropdown--start">
+          <summary
+            class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md"
+          >
+            <span class="esa-button__native typography-microcopy-md"
+              ><span class="esa-icon esa-icon--md" aria-hidden="true">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <path d="M10 10v.2A3 3 0 0 1 8.9 16H5a3 3 0 0 1-1-5.8V10a3 3 0 0 1 6 0Z"></path>
+                  <path d="M7 16v6"></path>
+                  <path d="M13 19v3"></path>
+                  <path
+                    d="M12 19h8.3a1 1 0 0 0 .7-1.7L18 14h.3a1 1 0 0 0 .7-1.7L16 9h.2a1 1 0 0 0 .8-1.7L13 3l-1.4 1.5"
+                  ></path>
+                </svg>
+              </span>
+              <span class="esa-button__label">Mitigation work</span
+              ><span class="esa-icon esa-icon--md" aria-hidden="true">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <path d="m6 9 6 6 6-6"></path>
+                </svg>
+              </span>
+            </span>
+          </summary>
+          <div class="esa-nav-dropdown__panel typography-body-md">
+            <div class="esa-link-column">
+              <span class="esa-link-column__head typography-label-md">Mitigation work</span>
+              <hr class="esa-link-column__rule" />
+              <ul class="esa-link-column__list">
+                <li class="typography-body-sm">Projects</li>
+                <li class="typography-body-sm">Contracts</li>
+                <li class="typography-body-sm">Portfolios</li>
+                <li class="typography-body-sm">
+                  <a href="/cb-fish-design/legacy/sow">Work elements</a>
+                </li>
+                <li class="typography-body-sm">Estuary program</li>
+                <li class="typography-body-sm">Tributary habitat</li>
+                <li class="typography-body-sm">Land acquisitions</li>
+                <li class="typography-body-sm">
+                  <a href="/cb-fish-design/rme-reporting">RM&amp;E reporting</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </details>
+        <details class="esa-nav-dropdown esa-nav-dropdown--start">
+          <summary
+            class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md"
+          >
+            <span class="esa-button__native typography-microcopy-md"
+              ><span class="esa-icon esa-icon--md" aria-hidden="true">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <path d="M16 7h6v6"></path>
+                  <path d="m22 7-8.5 8.5-5-5L2 17"></path>
+                </svg>
+              </span>
+              <span class="esa-button__label">Reporting</span
+              ><span class="esa-icon esa-icon--md" aria-hidden="true">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <path d="m6 9 6 6 6-6"></path>
+                </svg>
+              </span>
+            </span>
+          </summary>
+          <div class="esa-nav-dropdown__panel typography-body-md">
+            <div class="esa-link-column">
+              <span class="esa-link-column__head typography-label-md">Reporting</span>
+              <hr class="esa-link-column__rule" />
+              <ul class="esa-link-column__list">
+                <li class="typography-body-sm">Report Center</li>
+                <li class="typography-body-sm">Maps</li>
+                <li class="typography-body-sm">Publications</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+        <details class="esa-nav-dropdown esa-nav-dropdown--start">
+          <summary
+            class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md"
+          >
+            <span class="esa-button__native typography-microcopy-md"
+              ><span class="esa-icon esa-icon--md" aria-hidden="true">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+                  <line x1="2" x2="22" y1="10" y2="10"></line>
+                </svg>
+              </span>
+              <span class="esa-button__label">Funding</span
+              ><span class="esa-icon esa-icon--md" aria-hidden="true">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  focusable="false"
+                >
+                  <path d="m6 9 6 6 6-6"></path>
+                </svg>
+              </span>
+            </span>
+          </summary>
+          <div class="esa-nav-dropdown__panel typography-body-md">
+            <div class="esa-link-column">
+              <span class="esa-link-column__head typography-label-md">Funding</span>
+              <hr class="esa-link-column__rule" />
+              <ul class="esa-link-column__list">
+                <li class="typography-body-sm">Funds</li>
+                <li class="typography-body-sm">Fund budgets summary</li>
+                <li class="typography-body-sm">Long-term funding agreements</li>
+                <li class="typography-body-sm">
+                  <a href="/cb-fish-design/project-budgets">Project budgets</a>
+                </li>
+                <li class="typography-body-sm">Working budgets</li>
+                <li class="typography-body-sm">Expenditures</li>
+                <li class="typography-body-sm">Accruals</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+    <div class="esa-app-bar__end typography-label-md">
+      <div class="cbf-nav-actions">
+        <button class="cbf-nav-link cbf-nav-link--collapse" type="button">
+          <span class="cbf-icon"
+            ><svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+              <path d="M12 7v5l4 2"></path></svg
+          ></span>
+          Recent
+          <span class="cbf-icon"
+            ><svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6"></path></svg
+          ></span>
+        </button>
+        <a class="cbf-nav-link cbf-nav-link--collapse" href="/cb-fish-design/my-work">
+          <span class="cbf-icon"
+            ><svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect width="7" height="9" x="3" y="3" rx="1"></rect>
+              <rect width="7" height="5" x="14" y="3" rx="1"></rect>
+              <rect width="7" height="9" x="14" y="12" rx="1"></rect>
+              <rect width="7" height="5" x="3" y="16" rx="1"></rect></svg
+          ></span>
+          Dashboard
+        </a>
+        <button class="cbf-nav-link cbf-nav-link--user" type="button" data-omni-user="">
+          <span class="cbf-icon"
+            ><svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M18 20a6 6 0 0 0-12 0"></path>
+              <circle cx="12" cy="10" r="4"></circle></svg
+          ></span>
+          Brandon Diller
+          <span class="cbf-icon"
+            ><svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6"></path></svg
+          ></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+<div class="cbf-omni" data-omni="" hidden="">
+  <div class="cbf-omni__scrim" data-omni-close=""></div>
+  <div
+    class="cbf-omni__panel cbf-search-surface"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Search"
+  >
+    <div class="cbf-omni__searchrow">
+      <span class="cbf-icon cbf-omni__searchicon"
+        ><svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.3-4.3"></path></svg
+      ></span>
+      <input
+        class="cbf-omni__input"
+        data-omni-input=""
+        type="text"
+        placeholder="Search projects, contracts, people, publications…"
+        autocomplete="off"
+      />
+      <button class="cbf-omni__clear" data-omni-clear="" type="button" aria-label="Clear">
+        <span class="cbf-icon"
+          ><svg
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path></svg
+        ></span>
+      </button>
+    </div>
+    <div class="cbf-omni__scopes" data-omni-scopes=""></div>
+    <div class="cbf-omni__body">
+      <!-- default view: brand illustration + search note (Recent lives in the nav) -->
+      <div class="cbf-omni__empty" data-omni-empty="">
+        <div class="cbf-omni__hero">
+          <img class="cbf-omni__art" src="/cb-fish-design/dam-illustration.jpg" alt="" />
+          <p class="cbf-omni__hero-title">Search the Program</p>
+          <p class="cbf-omni__hero-note">
+            Find projects, contracts, people, and publications across the Columbia Basin. Start
+            typing, or press <kbd class="esa-kbd typography-microcopy-xs">Tab</kbd> to choose a
+            scope.
+          </p>
+        </div>
+      </div>
+      <!-- query view: grouped results (injected) -->
+      <div class="cbf-omni__results" data-omni-results="" hidden=""></div>
+    </div>
+    <button class="cbf-omni__showall" data-omni-showall="" type="button" hidden="">
+      <span data-omni-showall-label="">Show all results</span>
+      <span class="cbf-icon"
+        ><svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="m9 18 6-6-6-6"></path></svg
+      ></span>
+    </button>
+    <div class="cbf-omni__footer">
+      <div class="cbf-omni__hints">
+        <span
+          ><kbd class="esa-kbd typography-microcopy-xs">↑</kbd>
+          <kbd class="esa-kbd typography-microcopy-xs">↓</kbd> Navigate</span
+        >
+        <span><kbd class="esa-kbd typography-microcopy-xs">↵</kbd> Select</span>
+        <span><kbd class="esa-kbd typography-microcopy-xs">Tab</kbd> Scope</span>
+        <span><kbd class="esa-kbd typography-microcopy-xs">Esc</kbd> Close</span>
+      </div>
+    </div>
+  </div>
+</div>
+<esa-side-dialog
+  position="left"
+  heading="Menu"
+  size="sm"
+  class="cbf-nav-drawer"
+  data-nav-drawer="true"
+>
+  <nav class="stack" data-gap="lg" aria-label="Site navigation">
+    <div class="esa-link-column">
+      <span class="esa-link-column__head typography-label-md">Mitigation work</span>
+      <hr class="esa-link-column__rule" />
+      <ul class="esa-link-column__list">
+        <li class="typography-body-sm">Projects</li>
+        <li class="typography-body-sm">Contracts</li>
+        <li class="typography-body-sm">Portfolios</li>
+        <li class="typography-body-sm"><a href="/cb-fish-design/legacy/sow">Work elements</a></li>
+        <li class="typography-body-sm">Estuary program</li>
+        <li class="typography-body-sm">Tributary habitat</li>
+        <li class="typography-body-sm">Land acquisitions</li>
+        <li class="typography-body-sm">
+          <a href="/cb-fish-design/rme-reporting">RM&amp;E reporting</a>
+        </li>
+      </ul>
+    </div>
+    <div class="esa-link-column">
+      <span class="esa-link-column__head typography-label-md">Reporting</span>
+      <hr class="esa-link-column__rule" />
+      <ul class="esa-link-column__list">
+        <li class="typography-body-sm">Report Center</li>
+        <li class="typography-body-sm">Maps</li>
+        <li class="typography-body-sm">Publications</li>
+      </ul>
+    </div>
+    <div class="esa-link-column">
+      <span class="esa-link-column__head typography-label-md">Funding</span>
+      <hr class="esa-link-column__rule" />
+      <ul class="esa-link-column__list">
+        <li class="typography-body-sm">Funds</li>
+        <li class="typography-body-sm">Fund budgets summary</li>
+        <li class="typography-body-sm">Long-term funding agreements</li>
+        <li class="typography-body-sm">
+          <a href="/cb-fish-design/project-budgets">Project budgets</a>
+        </li>
+        <li class="typography-body-sm">Working budgets</li>
+        <li class="typography-body-sm">Expenditures</li>
+        <li class="typography-body-sm">Accruals</li>
+      </ul>
+    </div>
+    <div class="esa-link-column">
+      <span class="esa-link-column__head typography-label-md">Quick links</span>
+      <hr class="esa-link-column__rule" />
+      <ul class="esa-link-column__list">
+        <li class="typography-body-sm"><a href="#">Recent</a></li>
+        <li class="typography-body-sm"><a href="/my-work">Dashboard</a></li>
+      </ul>
+    </div>
+    <div class="esa-link-column">
+      <span class="esa-link-column__head typography-label-md">System</span>
+      <hr class="esa-link-column__rule" />
+      <ul class="esa-link-column__list">
+        <li class="typography-body-sm">Data management</li>
+        <li class="typography-body-sm">System status</li>
+        <li class="typography-body-sm">System configuration</li>
+      </ul>
+    </div>
+    <div class="esa-link-column">
+      <span class="esa-link-column__head typography-label-md">Help</span>
+      <hr class="esa-link-column__rule" />
+      <ul class="esa-link-column__list">
+        <li class="typography-body-sm">Help center</li>
+        <li class="typography-body-sm">Data dictionary</li>
+        <li class="typography-body-sm">EF&amp;W Program documents</li>
+        <li class="typography-body-sm">Request support</li>
+        <li class="typography-body-sm">Send feedback</li>
+      </ul>
+    </div>
+  </nav>
+</esa-side-dialog>
+<main class="cbf-page">
+  <div class="esa-container typography-body-md" style="--_container-max: 1920px">
+    <aside class="cbf-demo-controls" aria-label="Prototype settings">
+      <div class="cbf-demo-controls__row">
+        <div class="cbf-demo-controls__flag">
+          <span class="esa-badge esa-badge--warning esa-badge--lg typography-microcopy-md-strong">
+            <span class="esa-badge__text">Prototype settings</span>
+          </span>
+          <p class="typography-meta">
+            This bar is not part of the application. Use it to set who is viewing the pages and what
+            state the CR/CCR is in — the contract below updates to match.
+          </p>
+        </div>
+        <div class="cbf-demo-controls__toggles">
+          <esa-button-toggle
+            data-demo-role="true"
+            label="Who is viewing"
+            size="sm"
+          ></esa-button-toggle>
+          <esa-button-toggle
+            data-demo-award="true"
+            label="CR / CCR state"
+            size="sm"
+          ></esa-button-toggle>
+        </div>
+      </div>
+      <!-- Editing-state explainer: which of the three the script shows (and its text)
+       depends on the toggles above. It lives here, not in the contract. -->
+      <div class="cbf-demo-controls__explain">
+        <div data-banner="allowed">
+          <div class="esa-alert-box esa-alert-box--success typography-body-sm">
+            <div class="esa-alert-box__icon">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="m9 12 2 2 4-4"></path>
+              </svg>
+            </div>
+            <div class="esa-alert-box__body">
+              <strong class="esa-alert-box__title typography-label-sm-strong"
+                >Editing is available for this combination</strong
+              >
+              <div class="esa-alert-box__message">
+                <span data-banner-text=""
+                  >Acting as Brandon Diller (Contract manager) · CR/CCR state Pending. The SOW is
+                  Pending, so any user may replace this file from the context menu. All document
+                  specifications — type, title, authors, and sharing — are kept.</span
+                >
+              </div>
+            </div>
+          </div>
+          <script type="module">
+            document.addEventListener("click", (o) => {
+              const n = o.target.closest?.("[data-esa-alert-dismiss]");
+              if (!n) return;
+              const t = n.closest(".esa-alert-box");
+              if (!t) return;
+              const s = Array.from(document.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
+                  (e) => !t.contains(e) && e.offsetParent !== null,
+                ),
+                r =
+                  s.find((e) => t.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING) ??
+                  s[s.length - 1];
+              ((t.style.display = "none"),
+                t.dispatchEvent(new CustomEvent("dismissed", { bubbles: !0 })),
+                r?.focus());
+            });
+          </script>
+        </div>
+        <div data-banner="restricted" hidden="">
+          <div class="esa-alert-box esa-alert-box--warning typography-body-sm">
+            <div class="esa-alert-box__icon">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+                ></path>
+                <path d="M12 9v4"></path>
+                <path d="M12 17h.01"></path>
+              </svg>
+            </div>
+            <div class="esa-alert-box__body">
+              <strong class="esa-alert-box__title typography-label-sm-strong"
+                >Editing is restricted for this role right now</strong
+              >
+              <div class="esa-alert-box__message"><span data-banner-text=""></span></div>
+            </div>
+          </div>
+        </div>
+        <div data-banner="locked" hidden="">
+          <div class="esa-alert-box esa-alert-box--info typography-body-sm">
+            <div class="esa-alert-box__icon">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 16v-4"></path>
+                <path d="M12 8h.01"></path>
+              </svg>
+            </div>
+            <div class="esa-alert-box__body">
+              <strong class="esa-alert-box__title typography-label-sm-strong"
+                >Documents are locked in this state</strong
+              >
+              <div class="esa-alert-box__message"><span data-banner-text=""></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+    <section class="cbf-app-panel">
+      <div class="cbf-app-panel__crumb">
+        <nav class="esa-breadcrumbs esa-breadcrumbs--md" aria-label="Breadcrumb">
+          <ol class="esa-breadcrumbs__list">
+            <li class="esa-breadcrumbs__item">
+              <a href="/cb-fish-design/home" class="esa-breadcrumbs__link typography-body-md">
+                <span class="esa-breadcrumbs__icon"
+                  ><svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <path d="M9 22V12h6v10"></path></svg
+                ></span>
+                Home
+              </a>
+              <svg
+                class="esa-breadcrumbs__separator"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m9 18 6-6-6-6"></path>
+              </svg>
+            </li>
+            <li class="esa-breadcrumbs__item">
+              <span class="esa-breadcrumbs__current typography-label-md"> Projects </span>
+              <svg
+                class="esa-breadcrumbs__separator"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m9 18 6-6-6-6"></path>
+              </svg>
+            </li>
+            <li class="esa-breadcrumbs__item">
+              <span class="esa-breadcrumbs__current typography-label-md"> 2002-002-00 </span>
+              <svg
+                class="esa-breadcrumbs__separator"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m9 18 6-6-6-6"></path>
+              </svg>
+            </li>
+            <li class="esa-breadcrumbs__item">
+              <span class="esa-breadcrumbs__current typography-label-md"> Contracts </span>
+              <svg
+                class="esa-breadcrumbs__separator"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m9 18 6-6-6-6"></path>
+              </svg>
+            </li>
+            <li class="esa-breadcrumbs__item">
+              <span class="esa-breadcrumbs__current typography-label-md"> 84055 REL 11 </span>
+              <svg
+                class="esa-breadcrumbs__separator"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m9 18 6-6-6-6"></path>
+              </svg>
+            </li>
+            <li class="esa-breadcrumbs__item" aria-current="page">
+              <span class="esa-breadcrumbs__current typography-label-md">Contract Summary</span>
+            </li>
+          </ol>
+        </nav>
+      </div>
+      <div class="cbf-app-panel__body">
+        <div class="cbf-app-panel__content">
+          <section class="cbf-lipd stack" data-gap="md" data-lipd="">
+            <!-- The editing-state banner lives in the Prototype settings bar (cbf-doc-demo-controls),
+       not here — LIB/PI editing is a rare action and shouldn't occupy the contract. -->
+            <!-- The full contract tab strip is built by the script from CONTRACT_TABS; only
+       Documents & Workflow are enabled, and the two panels below are re-slotted to
+       their live index (it shifts when a contract manager loses the COR-only tabs). -->
+            <script type="module">
+              const t = document.querySelector("[data-contract-summary]");
+              if (t) {
+                const o = () => Array.from(t.querySelectorAll("details.esa-collapsible"));
+                (t
+                  .querySelector("[data-expand-all] button")
+                  ?.addEventListener("click", () => o().forEach((e) => (e.open = !0))),
+                  t
+                    .querySelector("[data-collapse-all] button")
+                    ?.addEventListener("click", () => o().forEach((e) => (e.open = !1))),
+                  t.querySelector("[data-sow-report] button")?.addEventListener("click", () => {
+                    const e = document.querySelector("[data-snackbar]");
+                    (e?.info ?? e?.success)?.call(
+                      e,
+                      "The SOW Report is out of scope for this prototype.",
+                      { duration: 4e3 },
+                    );
+                  }));
+              }
+            </script>
+            <esa-tab-layout
+              data-lipd-tabs="true"
+              active-index="0"
+              size="md"
+              appearance="underline"
+              variant="underline"
+            >
+              <!-- ═══════════════ Summary (enabled — default) ═══════════════ -->
+              <div data-panel="summary" slot="panel-0" class="cbf-lipd__panel stack" data-gap="md">
+                <div class="cbf-summary stack" data-gap="md" data-contract-summary="">
+                  <!-- Title + report/expand controls (mirrors the live Summary header row) -->
+                  <div class="cbf-summary__head">
+                    <h2 class="cbf-summary__title">
+                      Contract 84055 REL 11: 2002-002-00 EXP ENHANCE WHITE STURGEON HABITAT
+                    </h2>
+                    <div class="cbf-summary__actions">
+                      <span data-sow-report=""
+                        ><span
+                          class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--sm"
+                          ><button class="esa-button__native typography-microcopy-xs" type="button">
+                            <span class="esa-button__label">SOW Report</span>
+                          </button></span
+                        ></span
+                      >
+                      <span data-expand-all=""
+                        ><span
+                          class="esa-button esa-button--variant-secondary esa-button--appearance-ghost esa-button--sm"
+                          ><button class="esa-button__native typography-microcopy-xs" type="button">
+                            <span class="esa-button__label">Expand All</span>
+                          </button></span
+                        ></span
+                      >
+                      <span data-collapse-all=""
+                        ><span
+                          class="esa-button esa-button--variant-secondary esa-button--appearance-ghost esa-button--sm"
+                          ><button class="esa-button__native typography-microcopy-xs" type="button">
+                            <span class="esa-button__label">Collapse All</span>
+                          </button></span
+                        ></span
+                      >
+                    </div>
+                  </div>
+                  <!-- ═══ Basics (expanded) ═══ -->
+                  <details class="esa-collapsible" open="">
+                    <summary class="esa-collapsible__summary typography-label-sm-strong">
+                      <span class="esa-collapsible__title">Basics</span>
+                    </summary>
+                    <div class="esa-collapsible__body typography-body-md">
+                      <p class="cbf-summary__modified typography-meta">
+                        Last modified by Virgil Watts III, 03/13/2024 12:56 PM
+                      </p>
+                      <div class="cbf-summary__basics">
+                        <div class="cbf-summary__basics-main">
+                          <dl class="cbf-summary__dl">
+                            <dt>Project Number</dt>
+                            <dd><a class="cbf-doc-link" href="#">2002-002-00</a></dd>
+                            <dt>Project Title</dt>
+                            <dd>Kootenai River Habitat Restoration Program</dd>
+                            <dt>BPA PM</dt>
+                            <dd>Elizabeth Santana</dd>
+                            <dt>Project Stage</dt>
+                            <dd>Implementation</dd>
+                            <dt>Project Area</dt>
+                            <dd>
+                              <table class="cbf-summary__subtable">
+                                <thead>
+                                  <tr>
+                                    <th>Province</th>
+                                    <th>Subbasin</th>
+                                    <th>%</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td>Mountain Columbia</td>
+                                    <td>Kootenai</td>
+                                    <td>100.00%</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </dd>
+                            <dt>Contract Number</dt>
+                            <dd>84055 REL 11</dd>
+                            <dt>Contract Title</dt>
+                            <dd>2002-002-00 EXP ENHANCE WHITE STURGEON HABITAT</dd>
+                            <dt>Contract Continuation</dt>
+                            <dd>
+                              <table class="cbf-summary__subtable">
+                                <thead>
+                                  <tr>
+                                    <th>Previous</th>
+                                    <th>Will be renewed</th>
+                                    <th>Next</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td>
+                                      <span class="cbf-doc-link"
+                                        >84055 REL 3: 2002-002-00 EXP ENHANCE WHITE STURGEON
+                                        HABITAT</span
+                                      >
+                                    </td>
+                                    <td>Yes</td>
+                                    <td>
+                                      <span class="cbf-doc-link"
+                                        >84055 REL 20: 2002-002-00 ENHANCE WHITE STURGEON
+                                        HABITAT</span
+                                      >
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </dd>
+                            <dt>Contract Status</dt>
+                            <dd>Issued</dd>
+                            <dt>Contract Description</dt>
+                            <dd>
+                              <p class="cbf-summary__desc-lede">
+                                Kootenai River Habitat Restoration Program (KRHRP) - Project
+                                200200200
+                              </p>
+                              <p class="cbf-summary__desc">
+                                During FY 2024/2025, KTOI plans to partner with USFWS Kootenai
+                                National Wildlife Refuge (NWR) to reconnect floodplain habitat. As
+                                part of a large scale habitat restoration project across the
+                                Kootenai NWR, improvements to Riverside Road, including raising the
+                                elevation, must be addressed to allow the greater habitat
+                                restoration to occur. KTOI has proposed that BPA allow use of KTOI's
+                                mitigation portfolio to fund the Riverside Road Improvement Project
+                                with the Federal Highways and Boundary County. With the combined
+                                package of Riverside Road and the habitat restoration project across
+                                the Refuge, KTOI, USFWS, Federal Highways, and Boundary County are
+                                now working together under and Memorandum of Agreement to bring the
+                                project to full implementation in 2025. All road design and
+                                construction requirements will be under the direction of Federal
+                                Highways and Boundary County.
+                              </p>
+                            </dd>
+                            <dt>Account Type(s)</dt>
+                            <dd>Expense</dd>
+                            <dt>Contract Start Date</dt>
+                            <dd>05/01/2024</dd>
+                            <dt>Contract End Date</dt>
+                            <dd>04/30/2026</dd>
+                            <dt>Current Contract Value</dt>
+                            <dd>$17,461,219</dd>
+                            <dt>Expenditures</dt>
+                            <dd>
+                              $16,835,615<span class="typography-meta cbf-summary__note"
+                                >* Expenditures data includes accruals and are based on data through
+                                30-Jun-2026.</span
+                              >
+                            </dd>
+                            <dt>BPA CO</dt>
+                            <dd><a class="cbf-doc-link" href="#">Daniel Affonso</a></dd>
+                            <dt>BPA COR</dt>
+                            <dd><a class="cbf-doc-link" href="#">Elizabeth Santana</a></dd>
+                            <dt>Env. Compliance Lead</dt>
+                            <dd><a class="cbf-doc-link" href="#">Edward Gresh</a></dd>
+                            <dt>Contract Contractor</dt>
+                            <dd>
+                              <a class="cbf-doc-link" href="#">Kootenai Tribe - KOOTENAI00</a>
+                            </dd>
+                            <dt>Work Order Task(s)</dt>
+                            <dd><a class="cbf-doc-link" href="#">WO: 00103073, Task: 1</a></dd>
+                            <dt>Contract Type</dt>
+                            <dd>Coop</dd>
+                            <dt>Accrual category</dt>
+                            <dd>Habitat Improvement</dd>
+                            <dt>Pricing Method</dt>
+                            <dd>Cost Reimbursement (CNF)</dd>
+                          </dl>
+                        </div>
+                        <div class="cbf-summary__map" aria-hidden="true">
+                          <div class="cbf-summary__map-canvas">
+                            <svg
+                              viewBox="0 0 24 24"
+                              width="26"
+                              height="26"
+                              fill="var(--color-background-brand)"
+                              aria-hidden="true"
+                            >
+                              <path
+                                d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"
+                              ></path>
+                            </svg>
+                          </div>
+                          <p class="cbf-summary__map-cap typography-meta">
+                            Click the map to see this Contract's location details.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+                  <!-- ═══ Collapsed sections ═══ -->
+                  <details class="esa-collapsible">
+                    <summary class="esa-collapsible__summary typography-label-sm-strong">
+                      <span class="esa-collapsible__title">Photos</span>
+                    </summary>
+                    <div class="esa-collapsible__body typography-body-md">
+                      <div class="esa-empty-state esa-empty-state--sm">
+                        <h3 class="esa-empty-state__title typography-label-sm-strong">No photos</h3>
+                        <p class="esa-empty-state__description typography-body-xs">
+                          No photos have been added to this contract.
+                        </p>
+                        <div class="esa-empty-state__actions typography-label-md"></div>
+                      </div>
+                    </div>
+                  </details>
+                  <details class="esa-collapsible">
+                    <summary class="esa-collapsible__summary typography-label-sm-strong">
+                      <span class="esa-collapsible__title">Contract Contacts</span>
+                    </summary>
+                    <div class="esa-collapsible__body typography-body-md">
+                      <table class="cbf-summary__contacts">
+                        <thead>
+                          <tr>
+                            <th>Role</th>
+                            <th>Name</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>BPA COR</td>
+                            <td><a class="cbf-doc-link" href="#">Elizabeth Santana</a></td>
+                          </tr>
+                          <tr>
+                            <td>BPA CO</td>
+                            <td><a class="cbf-doc-link" href="#">Daniel Affonso</a></td>
+                          </tr>
+                          <tr>
+                            <td>Contract manager</td>
+                            <td><a class="cbf-doc-link" href="#">Brandon Diller</a></td>
+                          </tr>
+                          <tr>
+                            <td>QC</td>
+                            <td><a class="cbf-doc-link" href="#">Jonathan Flannery</a></td>
+                          </tr>
+                          <tr>
+                            <td>F&amp;W Approver</td>
+                            <td><a class="cbf-doc-link" href="#">David Kaplowe</a></td>
+                          </tr>
+                          <tr>
+                            <td>Env. compliance lead</td>
+                            <td><a class="cbf-doc-link" href="#">Edward Gresh</a></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </details>
+                  <details class="esa-collapsible">
+                    <summary class="esa-collapsible__summary typography-label-sm-strong">
+                      <span class="esa-collapsible__title">Statement Of Work (SOW)</span>
+                    </summary>
+                    <div class="esa-collapsible__body typography-body-md">
+                      <p class="cbf-summary__section-note">
+                        The full statement of work is on the SOW tab.
+                      </p>
+                    </div>
+                  </details>
+                  <details class="esa-collapsible">
+                    <summary class="esa-collapsible__summary typography-label-sm-strong">
+                      <span class="esa-collapsible__title">Deliverable Status</span>
+                    </summary>
+                    <div class="esa-collapsible__body typography-body-md">
+                      <p class="cbf-summary__section-note">
+                        Deliverable tracking is out of scope for this prototype.
+                      </p>
+                    </div>
+                  </details>
+                  <details class="esa-collapsible">
+                    <summary class="esa-collapsible__summary typography-label-sm-strong">
+                      <span class="esa-collapsible__title">Metrics</span>
+                    </summary>
+                    <div class="esa-collapsible__body typography-body-md">
+                      <p class="cbf-summary__section-note">
+                        Environmental and implementation metrics are out of scope for this
+                        prototype.
+                      </p>
+                    </div>
+                  </details>
+                  <details class="esa-collapsible">
+                    <summary class="esa-collapsible__summary typography-label-sm-strong">
+                      <span class="esa-collapsible__title">Focal Species</span>
+                    </summary>
+                    <div class="esa-collapsible__body typography-body-md">
+                      <p class="cbf-summary__section-note">
+                        White Sturgeon (Kootenai River population); Burbot.
+                      </p>
+                    </div>
+                  </details>
+                  <details class="esa-collapsible">
+                    <summary class="esa-collapsible__summary typography-label-sm-strong">
+                      <span class="esa-collapsible__title">Environmental Compliance</span>
+                    </summary>
+                    <div class="esa-collapsible__body typography-body-md">
+                      <p class="cbf-summary__section-note">
+                        Environmental compliance detail is out of scope for this prototype.
+                      </p>
+                    </div>
+                  </details>
+                  <details class="esa-collapsible">
+                    <summary class="esa-collapsible__summary typography-label-sm-strong">
+                      <span class="esa-collapsible__title">Reports</span>
+                    </summary>
+                    <div class="esa-collapsible__body typography-body-md">
+                      <p class="cbf-summary__section-note">
+                        Contract reports are out of scope for this prototype.
+                      </p>
+                    </div>
+                  </details>
+                </div>
+              </div>
+              <!-- ═══════════════ Documents (enabled) ═══════════════ -->
+              <div
+                data-panel="documents"
+                slot="panel-7"
+                class="cbf-lipd__panel stack"
+                data-gap="md"
+              >
+                <p class="cbf-lipd__intro">
+                  Use this area to store and manage document attachments relevant to this contract.
+                  When a replacement clears an approval the Contracting Officer's Representative
+                  (COR) has given, the COR is notified by email automatically.
+                </p>
+                <div class="cbf-lipd__toolbar repel">
+                  <span class="typography-meta">
+                    Viewing 4 of 60 attached documents — filtered to Line Item Budget &amp; Property
+                    Inventory (the transmittal memo and design report are shown for contrast).
+                  </span>
+                  <span data-add-doc="">
+                    <span
+                      class="esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--sm"
+                      ><button class="esa-button__native typography-microcopy-xs" type="button">
+                        <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            focusable="false"
+                          >
+                            <path d="M5 12h14"></path>
+                            <path d="M12 5v14"></path>
+                          </svg>
+                        </span>
+                        <span class="esa-button__label">Add…</span>
+                      </button></span
+                    >
+                  </span>
+                </div>
+                <div class="cbf-lipd__doctable">
+                  <table class="cbf-doc-table">
+                    <thead>
+                      <tr>
+                        <th class="cbf-doc-table__menu-col">
+                          <span class="visually-hidden">Actions</span>
+                        </th>
+                        <th>Title</th>
+                        <th>File</th>
+                        <th>Size</th>
+                        <th>Type</th>
+                        <th>Uploaded</th>
+                        <th>Uploaded by</th>
+                        <th>COR approval</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr data-doc-row="lib-budget">
+                        <td class="cbf-doc-table__menu-col">
+                          <esa-dropdown-menu
+                            data-doc-menu="lib-budget"
+                            position="below-start"
+                            data-edit-reason=""
+                            width="auto"
+                          >
+                            <span
+                              class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm esa-button--icon-only"
+                              ><button
+                                class="esa-button__native typography-microcopy-xs"
+                                type="button"
+                                aria-label="Actions for CR-365847 1 Budget"
+                                title="Actions for CR-365847 1 Budget"
+                                aria-haspopup="menu"
+                                aria-expanded="false"
+                                aria-controls="menu"
+                              >
+                                <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                                  <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    focusable="false"
+                                  >
+                                    <line x1="4" x2="20" y1="6" y2="6"></line>
+                                    <line x1="4" x2="20" y1="12" y2="12"></line>
+                                    <line x1="4" x2="20" y1="18" y2="18"></line>
+                                  </svg>
+                                </span></button
+                            ></span>
+                          </esa-dropdown-menu>
+                        </td>
+                        <td class="cbf-doc-table__title" data-cell="title">CR-365847 1 Budget</td>
+                        <td>
+                          <a class="cbf-doc-link" href="#" data-cell="file"
+                            >CR-365847 1 Budget.xlsx</a
+                          >
+                        </td>
+                        <td class="cbf-num" data-cell="size">137.4 KB</td>
+                        <td>Line Item Budget: Contract Budget</td>
+                        <td data-cell="uploaded">3/19/2024 11:00 AM</td>
+                        <td data-cell="uploadedBy">Miriam Ashe</td>
+                        <td data-cell="cor">
+                          <span class="cbf-check" title="Approved by the COR on 5/15/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/15/2025</span
+                          >
+                        </td>
+                      </tr>
+                      <tr data-doc-row="pi-inventory">
+                        <td class="cbf-doc-table__menu-col">
+                          <esa-dropdown-menu
+                            data-doc-menu="pi-inventory"
+                            position="below-start"
+                            data-edit-reason=""
+                            width="auto"
+                          >
+                            <span
+                              class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm esa-button--icon-only"
+                              ><button
+                                class="esa-button__native typography-microcopy-xs"
+                                type="button"
+                                aria-label="Actions for Property Inventory Contract 84055 REL11 (CCR52535)"
+                                title="Actions for Property Inventory Contract 84055 REL11 (CCR52535)"
+                                aria-haspopup="menu"
+                                aria-expanded="false"
+                                aria-controls="menu"
+                              >
+                                <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                                  <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    focusable="false"
+                                  >
+                                    <line x1="4" x2="20" y1="6" y2="6"></line>
+                                    <line x1="4" x2="20" y1="12" y2="12"></line>
+                                    <line x1="4" x2="20" y1="18" y2="18"></line>
+                                  </svg>
+                                </span></button
+                            ></span>
+                          </esa-dropdown-menu>
+                        </td>
+                        <td class="cbf-doc-table__title" data-cell="title">
+                          Property Inventory Contract 84055 REL11 (CCR52535)
+                        </td>
+                        <td>
+                          <a class="cbf-doc-link" href="#" data-cell="file"
+                            >2002-002-00_Inventory_84055 REL11_CCR52535.xlsx</a
+                          >
+                        </td>
+                        <td class="cbf-num" data-cell="size">19.1 KB</td>
+                        <td>Property Inventory</td>
+                        <td data-cell="uploaded">5/15/2025 3:20 PM</td>
+                        <td data-cell="uploadedBy">Brandon Cole</td>
+                        <td data-cell="cor">
+                          <span class="cbf-check" title="Approved by the COR on 5/15/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/15/2025</span
+                          >
+                        </td>
+                      </tr>
+                      <tr data-doc-row="design-report">
+                        <td class="cbf-doc-table__menu-col">
+                          <esa-dropdown-menu
+                            data-doc-menu="design-report"
+                            position="below-start"
+                            data-edit-reason=""
+                            width="auto"
+                          >
+                            <span
+                              class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm esa-button--icon-only"
+                              ><button
+                                class="esa-button__native typography-microcopy-xs"
+                                type="button"
+                                aria-label="Actions for 2024 Basis of Design Report USFWS KNWR"
+                                title="Actions for 2024 Basis of Design Report USFWS KNWR"
+                                aria-haspopup="menu"
+                                aria-expanded="false"
+                                aria-controls="menu"
+                              >
+                                <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                                  <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    focusable="false"
+                                  >
+                                    <line x1="4" x2="20" y1="6" y2="6"></line>
+                                    <line x1="4" x2="20" y1="12" y2="12"></line>
+                                    <line x1="4" x2="20" y1="18" y2="18"></line>
+                                  </svg>
+                                </span></button
+                            ></span>
+                          </esa-dropdown-menu>
+                        </td>
+                        <td class="cbf-doc-table__title" data-cell="title">
+                          2024 Basis of Design Report USFWS KNWR
+                        </td>
+                        <td>
+                          <a class="cbf-doc-link" href="#" data-cell="file"
+                            >2024 Basis of Design Report USFWS KNWR.pdf</a
+                          >
+                        </td>
+                        <td class="cbf-num" data-cell="size">10 MB</td>
+                        <td>Design</td>
+                        <td data-cell="uploaded">6/7/2024 7:37 AM</td>
+                        <td data-cell="uploadedBy">Virgil Watts</td>
+                        <td data-cell="cor">
+                          <span class="cbf-na" title="COR approval does not apply to this document"
+                            >N/A</span
+                          >
+                        </td>
+                      </tr>
+                      <tr data-doc-row="transmittal">
+                        <td class="cbf-doc-table__menu-col">
+                          <esa-dropdown-menu
+                            data-doc-menu="transmittal"
+                            position="below-start"
+                            data-edit-reason=""
+                            width="auto"
+                          >
+                            <span
+                              class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm esa-button--icon-only"
+                              ><button
+                                class="esa-button__native typography-microcopy-xs"
+                                type="button"
+                                aria-label="Actions for Transmittal Memo CR-365847"
+                                title="Actions for Transmittal Memo CR-365847"
+                                aria-haspopup="menu"
+                                aria-expanded="false"
+                                aria-controls="menu"
+                              >
+                                <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                                  <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    focusable="false"
+                                  >
+                                    <line x1="4" x2="20" y1="6" y2="6"></line>
+                                    <line x1="4" x2="20" y1="12" y2="12"></line>
+                                    <line x1="4" x2="20" y1="18" y2="18"></line>
+                                  </svg>
+                                </span></button
+                            ></span>
+                          </esa-dropdown-menu>
+                        </td>
+                        <td class="cbf-doc-table__title" data-cell="title">
+                          Transmittal Memo CR-365847
+                        </td>
+                        <td>
+                          <a class="cbf-doc-link" href="#" data-cell="file"
+                            >Transmittal Memo CR-365847.docx</a
+                          >
+                        </td>
+                        <td class="cbf-num" data-cell="size">48.2 KB</td>
+                        <td>Transmittal Memo</td>
+                        <td data-cell="uploaded">7/30/2025 4:07 PM</td>
+                        <td data-cell="uploadedBy">Jonathan Flannery</td>
+                        <td data-cell="cor">
+                          <span class="cbf-check" title="Approved by the COR on 5/15/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/15/2025</span
+                          >
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <!-- ═══════════════ Workflow (enabled) ═══════════════ -->
+              <div data-panel="workflow" slot="panel-5" class="cbf-lipd__panel stack" data-gap="md">
+                <div class="cbf-lipd__status repel">
+                  <div class="cbf-lipd__status-facts">
+                    <span>Contract status: <strong>Issued</strong></span>
+                    <span
+                      >Last SOW action: <span>SubmitToCOR by Brandon Diller, 5/15/2025</span></span
+                    >
+                  </div>
+                  <div class="cbf-lipd__status-rev">
+                    <esa-select data-sow-rev="true" label="SOW revision" size="sm"></esa-select>
+                  </div>
+                </div>
+                <h3 class="typography-heading-md">Document approval</h3>
+                <div data-appr-readonly="" hidden="">
+                  <div class="esa-alert-box esa-alert-box--info typography-body-sm">
+                    <div class="esa-alert-box__icon">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <path d="M12 16v-4"></path>
+                        <path d="M12 8h.01"></path>
+                      </svg>
+                    </div>
+                    <div class="esa-alert-box__body">
+                      <strong class="esa-alert-box__title typography-label-sm-strong"
+                        >Original requisition — read-only</strong
+                      >
+                      <div class="esa-alert-box__message">
+                        These approvals are the finalized record of the original contract
+                        requisition (SOW revision 1) and can't be changed. Switch to the CCR
+                        revision to work the current documents.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="cbf-lipd__scroll">
+                  <table class="cbf-appr-table">
+                    <thead>
+                      <tr>
+                        <th>Required documents</th>
+                        <th>Attached date</th>
+                        <th>EC</th>
+                        <th>COR</th>
+                        <th>QC</th>
+                        <th>F&amp;W Approver</th>
+                        <th>Last modified</th>
+                      </tr>
+                    </thead>
+                    <tbody data-appr-body="">
+                      <tr class="">
+                        <th scope="row">Line Item Budget</th>
+                        <td>3/19/2024 11:00 AM</td>
+                        <td>
+                          <span class="cbf-check" title="Approved by EC on 5/12/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/12/2025</span
+                          >
+                        </td>
+                        <td>
+                          <span class="cbf-check" title="Approved by COR on 5/15/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/15/2025</span
+                          >
+                        </td>
+                        <td>
+                          <span class="cbf-check" title="Approved by QC on 5/13/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/13/2025</span
+                          >
+                        </td>
+                        <td>
+                          <span class="cbf-check" title="Approved by F&amp;W Approver on 5/16/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/16/2025</span
+                          >
+                        </td>
+                        <td>3/19/2024 11:00 AM</td>
+                      </tr>
+                      <tr class="">
+                        <th scope="row">Property Inventory</th>
+                        <td>5/15/2025 3:20 PM</td>
+                        <td>
+                          <span class="cbf-check" title="Approved by EC on 5/12/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/12/2025</span
+                          >
+                        </td>
+                        <td>
+                          <span class="cbf-check" title="Approved by COR on 5/15/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/15/2025</span
+                          >
+                        </td>
+                        <td>
+                          <span class="cbf-check" title="Approved by QC on 5/13/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/13/2025</span
+                          >
+                        </td>
+                        <td>
+                          <span class="cbf-check" title="Approved by F&amp;W Approver on 5/16/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/16/2025</span
+                          >
+                        </td>
+                        <td>5/15/2025 3:20 PM</td>
+                      </tr>
+                      <tr class="">
+                        <th scope="row">SOW</th>
+                        <td>05/15/2025</td>
+                        <td>
+                          <span class="cbf-check" title="Approved by EC on 5/12/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/12/2025</span
+                          >
+                        </td>
+                        <td>
+                          <span class="cbf-check" title="Approved by COR on 5/15/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/15/2025</span
+                          >
+                        </td>
+                        <td>
+                          <span class="cbf-check" title="Approved by QC on 5/13/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/13/2025</span
+                          >
+                        </td>
+                        <td>
+                          <span class="cbf-check" title="Approved by F&amp;W Approver on 5/16/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/16/2025</span
+                          >
+                        </td>
+                        <td>05/16/2025</td>
+                      </tr>
+                      <tr class="">
+                        <th scope="row">Transmittal Memo</th>
+                        <td>7/30/2025 4:07 PM</td>
+                        <td><span class="cbf-none" title="Not yet approved by EC">–</span></td>
+                        <td>
+                          <span class="cbf-check" title="Approved by COR on 5/15/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/15/2025</span
+                          >
+                        </td>
+                        <td>
+                          <span class="cbf-check" title="Approved by QC on 5/13/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/13/2025</span
+                          >
+                        </td>
+                        <td>
+                          <span class="cbf-check" title="Approved by F&amp;W Approver on 5/16/2025"
+                            ><svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="3"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M20 6 9 17l-5-5"></path>
+                            </svg>
+                            5/16/2025</span
+                          >
+                        </td>
+                        <td>7/30/2025 4:07 PM</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <h3 class="typography-heading-md">Workflow history</h3>
+                <div class="cbf-lipd__scroll">
+                  <table class="cbf-hist-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Step</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Document status</th>
+                      </tr>
+                    </thead>
+                    <tbody data-history="">
+                      <tr>
+                        <td>05/15/2025 3:20 PM</td>
+                        <td>SubmitToCOR</td>
+                        <td>Brandon Diller</td>
+                        <td>Elizabeth Santana</td>
+                        <td class="cbf-hist-table__status">
+                          Line Item Budget - Attached - COR Approval = Green Property Inventory -
+                          Attached - COR Approval = Green Transmittal Memo - Attached - COR Approval
+                          = Green
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>05/13/2025 9:41 AM</td>
+                        <td>DocumentAttached</td>
+                        <td>Brandon Diller</td>
+                        <td></td>
+                        <td class="cbf-hist-table__status"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </esa-tab-layout>
+            <!-- ── Edit-properties dialog (the real modal, with the supportive fixes) ── -->
+            <esa-dialog
+              data-edit-dialog="true"
+              size="lg"
+              heading="View and edit the properties of this attachment"
+            >
+              <div class="cbf-edit stack" data-gap="md">
+                <p class="cbf-edit__lede">
+                  Replace the file or adjust its properties. Everything you don't change is kept
+                  exactly as it is — including approvals, unless you upload a new file.
+                </p>
+                <section class="cbf-edit__section">
+                  <span class="cbf-edit__num" aria-hidden="true">1</span>
+                  <div class="cbf-edit__fields">
+                    <div class="cbf-edit__specs">
+                      <div>
+                        <span class="cbf-edit__label">Type</span><strong data-ed-type=""></strong>
+                      </div>
+                      <div>
+                        <span class="cbf-edit__label">Subtype</span
+                        ><strong data-ed-subtype=""></strong>
+                      </div>
+                      <div>
+                        <span class="cbf-edit__label">WE ref</span
+                        ><strong data-ed-weref=""></strong>
+                      </div>
+                    </div>
+                    <p class="cbf-edit__guidance typography-meta" data-ed-guidance=""></p>
+                  </div>
+                </section>
+                <section class="cbf-edit__section">
+                  <span class="cbf-edit__num" aria-hidden="true">2</span>
+                  <div class="cbf-edit__fields stack" data-gap="sm">
+                    <p class="cbf-edit__file">
+                      Current file: <a href="#" class="cbf-doc-link" data-ed-file=""></a>
+                      <span class="typography-meta" data-ed-size=""></span>
+                    </p>
+                    <div data-ed-upload-slot="">
+                      <esa-file-upload
+                        data-ed-upload="true"
+                        label="Replace the file"
+                        accept=".xls,.xlsx,.doc,.docx,.pdf"
+                        max-size-mb="5"
+                        name="files"
+                      ></esa-file-upload>
+                    </div>
+                    <p class="typography-meta">
+                      Uploading a new file replaces the current one when you save — the title, type,
+                      authors, and sharing below all stay put.
+                    </p>
+                    <p class="cbf-edit__newfile" data-ed-newfile="" hidden=""></p>
+                    <div data-ed-warning="" hidden="">
+                      <div class="esa-alert-box esa-alert-box--warning typography-body-sm">
+                        <div class="esa-alert-box__icon">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+                            ></path>
+                            <path d="M12 9v4"></path>
+                            <path d="M12 17h.01"></path>
+                          </svg>
+                        </div>
+                        <div class="esa-alert-box__body">
+                          <strong class="esa-alert-box__title typography-label-sm-strong"
+                            >Replacing this file clears its approvals</strong
+                          >
+                          <div class="esa-alert-box__message">
+                            <span data-ed-warning-text=""></span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+                <section class="cbf-edit__section">
+                  <span class="cbf-edit__num" aria-hidden="true">3</span>
+                  <div class="cbf-edit__fields stack" data-gap="sm">
+                    <esa-text-field data-ed-title="true" label="Title" size="md"></esa-text-field>
+                    <esa-textarea
+                      data-ed-desc="true"
+                      label="Description"
+                      rows="3"
+                      size="md"
+                    ></esa-textarea>
+                    <div class="cbf-edit__specs">
+                      <div>
+                        <span class="cbf-edit__label">Primary author</span
+                        ><strong data-ed-author=""></strong>
+                      </div>
+                      <div>
+                        <span class="cbf-edit__label">Doc ID</span
+                        ><strong data-ed-docid=""></strong>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+                <section class="cbf-edit__section">
+                  <span class="cbf-edit__num" aria-hidden="true">4</span>
+                  <div class="cbf-edit__fields">
+                    <div class="cbf-edit__specs">
+                      <div>
+                        <span class="cbf-edit__label">View permission</span
+                        ><strong data-ed-perm=""></strong>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+                <div class="cbf-edit__history">
+                  <div>
+                    <span class="cbf-edit__label">Original upload</span
+                    ><span data-ed-orig=""></span>
+                  </div>
+                  <div>
+                    <span class="cbf-edit__label">Original uploaded by</span
+                    ><span data-ed-origby=""></span>
+                  </div>
+                  <div>
+                    <span class="cbf-edit__label">Last upload</span><span data-ed-last=""></span>
+                  </div>
+                  <div>
+                    <span class="cbf-edit__label">Last uploaded by</span
+                    ><span data-ed-lastby=""></span>
+                  </div>
+                </div>
+              </div>
+              <div slot="footer" class="cbf-edit__footer">
+                <span class="typography-meta" data-save-hint="">
+                  Nothing to save yet — replace the file or edit a property to enable Save.
+                </span>
+                <span data-ed-cancel=""
+                  ><span
+                    class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--md"
+                    ><button class="esa-button__native typography-microcopy-md" type="button">
+                      <span class="esa-button__label">Cancel</span>
+                    </button></span
+                  ></span
+                >
+                <span data-ed-save=""
+                  ><span
+                    class="esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--md esa-button--disabled"
+                    ><button
+                      class="esa-button__native typography-microcopy-md"
+                      type="button"
+                      disabled=""
+                    >
+                      <span class="esa-button__label">Save</span>
+                    </button></span
+                  ></span
+                >
+              </div>
+            </esa-dialog>
+            <!-- ── COR notification dialog (shows the email that was just sent) ── -->
+            <esa-dialog data-email-dialog="true" size="md" heading="The COR has been notified">
+              <div class="stack" data-gap="sm">
+                <p>
+                  Because <strong data-em-doc-title=""></strong> was already approved by the COR,
+                  replacing it cleared that approval — this email went out automatically:
+                </p>
+                <div data-em-preview=""></div>
+              </div>
+              <div slot="footer" class="cbf-edit__footer">
+                <span data-em-close=""
+                  ><span
+                    class="esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--md"
+                    ><button class="esa-button__native typography-microcopy-md" type="button">
+                      <span class="esa-button__label">Done</span>
+                    </button></span
+                  ></span
+                >
+              </div>
+            </esa-dialog>
+            <!-- Cloneable email envelope — the single source of the email-card markup. -->
+            <template data-email-template="">
+              <article class="cbf-email" data-astro-cid-se44uqys="">
+                <header class="cbf-email__head" data-astro-cid-se44uqys="">
+                  <div data-astro-cid-se44uqys="">
+                    <span class="cbf-email__label" data-astro-cid-se44uqys="">From</span
+                    ><span data-em-from="" data-astro-cid-se44uqys=""></span>
+                  </div>
+                  <div data-astro-cid-se44uqys="">
+                    <span class="cbf-email__label" data-astro-cid-se44uqys="">To</span
+                    ><span data-em-to="" data-astro-cid-se44uqys=""></span>
+                  </div>
+                  <div data-astro-cid-se44uqys="">
+                    <span class="cbf-email__label" data-astro-cid-se44uqys="">Sent</span
+                    ><span data-em-sent="" data-astro-cid-se44uqys=""></span>
+                  </div>
+                  <div class="cbf-email__subject" data-astro-cid-se44uqys="">
+                    <span class="cbf-email__label" data-astro-cid-se44uqys="">Subject</span
+                    ><strong data-em-subject="" data-astro-cid-se44uqys=""></strong>
+                  </div>
+                </header>
+                <div class="cbf-email__body" data-astro-cid-se44uqys="">
+                  <p data-em-p1="" data-astro-cid-se44uqys=""></p>
+                  <p data-em-p2="" data-astro-cid-se44uqys=""></p>
+                  <p class="cbf-email__meta" data-em-meta="" data-astro-cid-se44uqys=""></p>
+                </div>
+                <footer class="cbf-email__foot typography-meta" data-astro-cid-se44uqys="">
+                  System-generated notification · cbfish.org · do not reply
+                </footer>
+              </article>
+            </template>
+          </section>
+          <script
+            type="module"
+            src="/cb-fish-design/_astro/cbf-lib-pi-documents.astro_astro_type_script_index_0_lang.B1AM6UgJ.js"
+          ></script>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+<esa-snackbar-container data-snackbar="true"></esa-snackbar-container>
+```
+
+## Styles (only what this section uses; tokens resolved for the theme)
+```css
+:root,
+[data-theme="cb-fish"] {
+  --alert-box-text-color: #525252;
+  --animation-overlay-enter: 0.25s ease-out;
+  --badge-bg: #1e5386;
+  --badge-text-color: #fcfcfc;
+  --border-width-default: 1px;
+  --breadcrumbs-bg: transparent;
+  --breadcrumbs-link-color: #525252;
+  --breadcrumbs-link-hover: #3d3d3d;
+  --button-radius-md: 0.5rem;
+  --button-radius-sm: 0.25rem;
+  --cbf-surface-crumb: #f4f4f4;
+  --color-background-brand: #1e5386;
+  --color-background-brand-hover: #1a4570;
+  --color-background-brand-muted: #2770b2;
+  --color-background-brand-muted-hover: #1e5386;
+  --color-background-default-knockout: #13273e;
+  --color-background-elevation-floating: #fcfcfc;
+  --color-background-elevation-raised: #fcfcfc;
+  --color-background-elevation-sunken: #f3f7fc;
+  --color-background-utility-info-subtle: #f3f7fc;
+  --color-background-utility-success-subtle: #fbfefc;
+  --color-background-utility-warning-muted: #fff7c2;
+  --color-border-default: #dcdcdc;
+  --color-border-default-strong: #bdbdbd;
+  --color-border-default-subtle: #efefef;
+  --color-border-utility-info: #c6dcf1;
+  --color-border-utility-success: #adddc0;
+  --color-border-utility-warning: #f3d673;
+  --color-content-brand: #1e5386;
+  --color-content-default: #3d3d3d;
+  --color-content-default-knockout: #fcfcfc;
+  --color-content-default-secondary: #525252;
+  --color-content-default-tertiary: #656565;
+  --color-content-link: #1e5386;
+  --color-content-on-brand-muted: #203c25;
+  --color-content-utility-info: #0d74ce;
+  --color-content-utility-success: #218358;
+  --color-content-utility-warning: #ab6400;
+  --dialog-width: 480px;
+  --dialog-width-lg: 640px;
+  --elevation-5: 0 8px 32px -8px rgba(0, 0, 0, 0.08);
+  --font-size-100: clamp(0.625rem, 0.56rem + 0.32vw, 0.75rem);
+  --font-size-150: clamp(0.6875rem, 0.61rem + 0.38vw, 0.875rem);
+  --font-size-200: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);
+  --font-size-400: clamp(1rem, 0.88rem + 0.6vw, 1.25rem);
+  --form-border-color: #dcdcdc;
+  --form-border-width: 1px;
+  --form-label-color: #525252;
+  --icon-size-md: 20px;
+  --icon-size-sm: 16px;
+  --link-column-rule-color: color-mix(in srgb, currentColor 40%, transparent);
+  --radius-100: 0.25rem;
+  --radius-200: 0.5rem;
+  --radius-chip: 0.25rem;
+  --radius-full: 9999px;
+  --radius-lg: 0.75rem;
+  --radius-md: 0.5rem;
+  --radius-sm: 0.25rem;
+  --side-dialog-inset: 16px;
+  --side-dialog-width: 400px;
+  --side-dialog-width-sm: 320px;
+  --snackbar-container-max-width: 420px;
+  --spacing-050: 0.125rem;
+  --spacing-100: 0.25rem;
+  --spacing-150: 0.375rem;
+  --spacing-200: 0.5rem;
+  --spacing-250: 0.625rem;
+  --spacing-300: 0.75rem;
+  --spacing-400: 1rem;
+  --spacing-500: 1.5rem;
+  --spacing-600: 2rem;
+  --spacing-800: 4rem;
+  --tab-layout-height-md: 44px;
+  --transition-fast: 0.15s ease;
+  --typography-body-md-font-family: "IBM Plex Sans", sans-serif;
+  --typography-body-md-font-size: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);
+  --typography-body-md-font-weight: 400;
+  --typography-body-md-letter-spacing: 0.01em;
+  --typography-body-md-line-height: 1.6;
+  --typography-body-sm-font-family: "IBM Plex Sans", sans-serif;
+  --typography-body-sm-font-size: clamp(0.6875rem, 0.61rem + 0.38vw, 0.875rem);
+  --typography-body-sm-font-weight: 400;
+  --typography-body-sm-letter-spacing: 0.01em;
+  --typography-body-sm-line-height: 1.6;
+  --typography-font-family-sans: "IBM Plex Sans", sans-serif;
+  --typography-font-weight-medium: 500;
+  --typography-font-weight-semibold: 600;
+  --typography-heading-md-font-family: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif;
+  --typography-heading-md-font-size: clamp(1.125rem, 0.98rem + 0.72vw, 1.5rem);
+  --typography-heading-md-font-weight: 600;
+  --typography-heading-md-letter-spacing: -0.01em;
+  --typography-heading-md-line-height: 1.3;
+  --typography-label-md-font-family: "IBM Plex Sans", sans-serif;
+  --typography-label-md-font-size: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);
+  --typography-label-md-font-weight: 500;
+  --typography-label-md-letter-spacing: 0.01em;
+  --typography-label-md-line-height: 1.6;
+  --typography-label-sm-strong-font-family: "IBM Plex Sans", sans-serif;
+  --typography-label-sm-strong-font-size: clamp(0.6875rem, 0.61rem + 0.38vw, 0.875rem);
+  --typography-label-sm-strong-font-weight: 600;
+  --typography-label-sm-strong-letter-spacing: 0.01em;
+  --typography-label-sm-strong-line-height: 1.6;
+  --typography-label-xs-font-family: "IBM Plex Sans", sans-serif;
+  --typography-label-xs-font-size: clamp(0.625rem, 0.56rem + 0.32vw, 0.75rem);
+  --typography-label-xs-font-weight: 500;
+  --typography-label-xs-letter-spacing: 0.01em;
+  --typography-label-xs-line-height: 1.6;
+  --typography-meta-font-family: "IBM Plex Sans", sans-serif;
+  --typography-meta-font-size: clamp(0.625rem, 0.56rem + 0.32vw, 0.75rem);
+  --typography-meta-font-weight: 400;
+  --typography-meta-letter-spacing: 0.01em;
+  --typography-meta-line-height: 1.6;
+  --typography-microcopy-md-font-family: "IBM Plex Sans", sans-serif;
+  --typography-microcopy-md-font-size: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);
+  --typography-microcopy-md-font-weight: 500;
+  --typography-microcopy-md-letter-spacing: 0.01em;
+  --typography-microcopy-md-line-height: 1;
+  --typography-microcopy-md-strong-font-family: "IBM Plex Sans", sans-serif;
+  --typography-microcopy-md-strong-font-size: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);
+  --typography-microcopy-md-strong-font-weight: 600;
+  --typography-microcopy-md-strong-letter-spacing: 0.01em;
+  --typography-microcopy-md-strong-line-height: 1;
+  --typography-microcopy-md-subtle-font-family: "IBM Plex Sans", sans-serif;
+  --typography-microcopy-md-subtle-font-size: clamp(0.75rem, 0.66rem + 0.44vw, 0.9375rem);
+  --typography-microcopy-md-subtle-font-weight: 400;
+  --typography-microcopy-md-subtle-letter-spacing: 0.01em;
+  --typography-microcopy-md-subtle-line-height: 1;
+  --typography-microcopy-xs-font-family: "IBM Plex Sans", sans-serif;
+  --typography-microcopy-xs-font-size: clamp(0.625rem, 0.56rem + 0.32vw, 0.75rem);
+  --typography-microcopy-xs-font-weight: 500;
+  --typography-microcopy-xs-letter-spacing: 0.01em;
+  --typography-microcopy-xs-line-height: 1;
+  --typography-microcopy-xs-strong-font-family: "IBM Plex Sans", sans-serif;
+  --typography-microcopy-xs-strong-font-size: clamp(0.625rem, 0.56rem + 0.32vw, 0.75rem);
+  --typography-microcopy-xs-strong-font-weight: 600;
+  --typography-microcopy-xs-strong-letter-spacing: 0.01em;
+  --typography-microcopy-xs-strong-line-height: 1;
+  --z-toast: 500;
+}
+
+.cbf-page {
+  padding-block: var(--spacing-600) var(--spacing-800);
+}
+.cbf-demo-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-400);
+  padding: var(--spacing-400) var(--spacing-500);
+  border: 1px dashed var(--color-content-utility-warning, #b45309);
+  border-radius: var(--radius-200);
+  background: color-mix(
+    in srgb,
+    var(--color-content-utility-warning, #b45309) 6%,
+    var(--color-background-elevation-raised)
+  );
+}
+.cbf-page .cbf-demo-controls {
+  margin-block-end: var(--spacing-500);
+}
+.cbf-demo-controls__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--spacing-400);
+}
+.cbf-demo-controls__flag {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-200);
+  max-width: 42ch;
+}
+.cbf-demo-controls__flag p {
+  margin: 0;
+  color: var(--color-content-default-secondary);
+}
+.cbf-demo-controls__toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-500);
+  align-items: flex-end;
+}
+.cbf-page .cbf-app-panel {
+  overflow: visible;
+}
+.cbf-lipd__panel {
+  padding-block-start: var(--spacing-400);
+}
+.cbf-summary__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--spacing-300);
+}
+.cbf-summary__title {
+  margin: 0;
+  font-size: var(--font-size-400, 1.125rem);
+  font-weight: var(--typography-font-weight-semibold);
+  color: var(--color-content-default);
+}
+.cbf-summary__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-200);
+}
+.cbf-summary__modified {
+  margin: 0 0 var(--spacing-300);
+  color: var(--color-content-default-tertiary);
+}
+.cbf-summary__basics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-500);
+  align-items: flex-start;
+}
+.cbf-summary__basics-main {
+  flex: 1;
+  min-width: min(100%, 420px);
+}
+.cbf-summary__dl {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  margin: 0;
+}
+.cbf-summary__dl > dt {
+  grid-column: 1;
+  text-align: right;
+  padding: var(--spacing-300) var(--spacing-400);
+  border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default));
+  color: var(--color-content-default-secondary);
+  font-weight: var(--typography-font-weight-medium);
+}
+.cbf-summary__dl > dt:first-of-type,
+.cbf-summary__dl > dt:first-of-type + dd {
+  border-top: 0;
+}
+.cbf-summary__dl > dd {
+  grid-column: 2;
+  margin: 0;
+  padding: var(--spacing-300) var(--spacing-400);
+  border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default));
+  min-width: 0;
+}
+.cbf-summary .cbf-doc-link {
+  color: var(--color-background-brand);
+  text-decoration: underline;
+}
+.cbf-summary__subtable {
+  width: 100%;
+  border-collapse: collapse;
+}
+.cbf-summary__subtable th,
+.cbf-summary__subtable td {
+  text-align: left;
+  padding: var(--spacing-200) var(--spacing-300);
+  border: 1px solid var(--color-border-default);
+  font-size: var(--font-size-150, 0.875rem);
+  vertical-align: top;
+}
+.cbf-summary__subtable th {
+  background: var(--color-background-elevation-sunken, #f4f4f4);
+  font-weight: var(--typography-font-weight-semibold);
+  white-space: nowrap;
+}
+.cbf-summary__desc-lede {
+  margin: 0 0 var(--spacing-200);
+}
+.cbf-summary__desc {
+  margin: 0;
+  color: var(--color-content-default-secondary);
+  max-width: 80ch;
+}
+.cbf-summary__note {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-content-default-tertiary);
+}
+.cbf-summary__map {
+  width: 320px;
+  flex: none;
+}
+.cbf-summary__map-canvas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-200);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 23px,
+      color-mix(in srgb, var(--color-background-brand) 6%, transparent) 23px 24px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 23px,
+      color-mix(in srgb, var(--color-background-brand) 6%, transparent) 23px 24px
+    ),
+    color-mix(
+      in srgb,
+      var(--color-content-utility-success, #15803d) 8%,
+      var(--color-background-elevation-raised)
+    );
+}
+.cbf-summary__map-cap {
+  margin: var(--spacing-200) 0 0;
+  font-style: italic;
+  color: var(--color-content-default-tertiary);
+}
+.cbf-summary .esa-collapsible + .esa-collapsible {
+  margin-top: var(--spacing-300);
+}
+.cbf-lipd__intro {
+  margin: 0;
+  color: var(--color-content-default-secondary);
+  max-width: 90ch;
+}
+.cbf-lipd__toolbar {
+  align-items: center;
+}
+.cbf-lipd__doctable {
+  overflow: visible;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-200, 0.9375rem);
+}
+.cbf-doc-table__menu-col {
+  width: 48px;
+}
+thead th {
+  text-align: left;
+  padding: var(--spacing-300) var(--spacing-400);
+  background: var(--color-background-elevation-sunken, #f4f4f4);
+  color: var(--color-content-default-secondary);
+  font-weight: var(--typography-font-weight-semibold);
+  border-bottom: 1px solid var(--color-border-default);
+  white-space: nowrap;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+tbody td,
+tbody th[scope="row"] {
+  padding: var(--spacing-300) var(--spacing-400);
+  border-bottom: 1px solid var(--color-border-default-subtle, var(--color-border-default));
+  vertical-align: top;
+  text-align: left;
+}
+.cbf-doc-table__title {
+  font-weight: var(--typography-font-weight-medium);
+}
+.cbf-doc-link {
+  color: var(--color-background-brand);
+  text-decoration: underline;
+}
+.cbf-lipd .cbf-check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-100);
+  color: var(--color-content-utility-success, #15803d);
+  font-weight: var(--typography-font-weight-semibold);
+  white-space: nowrap;
+}
+.cbf-lipd .cbf-na {
+  color: var(--color-content-default-tertiary);
+  font-style: italic;
+}
+.cbf-lipd__status {
+  align-items: end;
+  gap: var(--spacing-400);
+  flex-wrap: wrap;
+}
+.cbf-lipd__status-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-500);
+  color: var(--color-content-default-secondary);
+}
+.cbf-lipd__status-rev {
+  min-width: 320px;
+}
+.cbf-lipd__scroll {
+  overflow-x: auto;
+}
+.cbf-edit__lede {
+  margin: 0;
+  color: var(--color-content-default-secondary);
+}
+.cbf-edit__section {
+  display: flex;
+  gap: var(--spacing-400);
+  padding-block: var(--spacing-300);
+  border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default));
+}
+.cbf-edit__num {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--color-background-elevation-sunken, #f4f4f4);
+  color: var(--color-content-default-secondary);
+  font-weight: var(--typography-font-weight-semibold);
+}
+.cbf-edit__fields {
+  flex: 1;
+  min-width: 0;
+}
+.cbf-edit__specs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-300) var(--spacing-500);
+}
+.cbf-edit__specs > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cbf-edit__label {
+  font-size: var(--font-size-100, 0.8125rem);
+  color: var(--color-content-default-tertiary);
+}
+.cbf-edit__guidance {
+  margin: var(--spacing-300) 0 0;
+  color: var(--color-content-default-tertiary);
+}
+.cbf-edit__file {
+  margin: 0;
+}
+.cbf-edit__newfile {
+  margin: 0;
+  font-weight: var(--typography-font-weight-semibold);
+  color: var(--color-background-brand);
+}
+.cbf-edit__history {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--spacing-300) var(--spacing-500);
+  padding: var(--spacing-400);
+  border-radius: var(--radius-200);
+  background: var(--color-background-elevation-sunken, #f4f4f4);
+}
+.cbf-edit__history > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cbf-edit__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-300);
+  width: 100%;
+}
+.cbf-edit__footer [data-save-hint] {
+  margin-inline-end: auto;
+  color: var(--color-content-default-tertiary);
+}
+.cbf-app-bar--admin .esa-app-bar__row {
+  display: grid;
+  grid-template-columns: 1fr minmax(0, 380px) 1fr;
+}
+.cbf-app-bar--admin .esa-app-bar__start {
+  justify-self: start;
+}
+.cbf-nav-collapsible {
+  display: contents;
+}
+.cbf-app-bar--admin .esa-app-bar__main {
+  justify-content: center;
+}
+.cbf-omni-trigger {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-200);
+  width: 380px;
+  max-width: 100%;
+  padding: 5px var(--spacing-200) 5px var(--spacing-300);
+  background: #ffffff1a;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  color: #ffffffbf;
+  transition:
+    background 0.12s,
+    border-color 0.12s;
+}
+.cbf-app-bar--admin .cbf-omni-trigger {
+  min-width: 0;
+}
+.cbf-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  color: inherit;
+}
+.cbf-omni-trigger__ph {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cbf-omni-trigger__kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-family: var(--typography-font-family-sans);
+  font-size: 13px;
+  font-weight: var(--typography-font-weight-medium);
+  color: #ffffffd9;
+  background: #ffffff1f;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+}
+.cbf-app-bar--admin .esa-app-bar__end {
+  justify-self: end;
+}
+.esa-nav-dropdown {
+  position: relative;
+}
+.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {
+  transition: transform 0.15s ease;
+}
+.cbf-nav-burger {
+  display: none;
+}
+.cbf-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-300, 12px);
+  flex: none;
+  color: inherit;
+  text-decoration: none;
+}
+.cbf-logo__mark {
+  width: 48px;
+  height: 48px;
+  flex: none;
+}
+.cbf-logo__type {
+  height: 40px;
+  width: auto;
+}
+.cbf-nav-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-600);
+}
+.cbf-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: inherit;
+  background: none;
+  border: 0;
+  font-size: 16px;
+  font-weight: var(--typography-font-weight-medium);
+  white-space: nowrap;
+}
+.cbf-nav-link .cbf-icon {
+  display: inline-flex;
+  align-items: center;
+}
+.cbf-nav-link--user {
+  position: relative;
+  padding-left: var(--spacing-500);
+}
+.cbf-nav-link--user:before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 1.1em;
+  background: #ffffff40;
+}
+.cbf-omni {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+.cbf-omni[hidden] {
+  display: none;
+}
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: var(--typography-font-family-sans, system-ui, sans-serif);
+  color: var(--color-content-default, #171717);
+  background: var(--color-background-elevation-raised, #fff);
+  -webkit-font-smoothing: antialiased;
+}
+button {
+  font-family: inherit;
+  cursor: pointer;
+  background: none;
+  border: 0;
+}
+a {
+  color: var(--color-content-link, #1e5386);
+  text-decoration: none;
+}
+img {
+  display: block;
+  max-width: 100%;
+}
+.esa-link-column {
+  color: inherit;
+}
+.esa-link-column__head {
+  display: block;
+  margin: 0 0 var(--spacing-100, 4px);
+  font-size: var(--typography-label-md-font-size);
+  color: inherit;
+  text-decoration-color: transparent;
+}
+.esa-link-column__rule {
+  height: 1px;
+  border: 0;
+  margin: 0 0 var(--spacing-200, 8px);
+  background: var(--link-column-rule-color, color-mix(in srgb, currentColor 40%, transparent));
+}
+.esa-link-column__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.esa-link-column__list li {
+  font-size: var(--font-size-150, var(--typography-body-sm-font-size));
+  margin-bottom: var(--spacing-100, 4px);
+}
+.esa-link-column__list a {
+  color: inherit;
+  text-decoration-color: transparent;
+}
+.esa-badge {
+  --_badge-bg: var(--badge-bg, var(--color-background-brand, #46a758));
+  --_badge-text: var(--badge-text-color, var(--color-content-default-knockout, #fcfcfc));
+  --_badge-padding-y: var(--spacing-150, 0.375rem);
+  --_badge-padding-x: var(--spacing-200, 0.5rem);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: calc(1lh + 2 * var(--_badge-padding-y));
+  padding-block: var(--_badge-padding-y);
+  padding-inline: var(--_badge-padding-x);
+  border-radius: var(--radius-chip, var(--radius-sm, 0.25rem));
+  background: var(--_badge-bg);
+  color: var(--_badge-text);
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+.esa-badge--lg {
+  --_badge-padding-y: var(--spacing-250, 0.625rem);
+  --_badge-padding-x: var(--spacing-300, 0.75rem);
+}
+.esa-badge--warning {
+  --_badge-bg: var(--color-background-utility-warning-muted, #fff7c2);
+  --_badge-text: var(--color-content-utility-warning, #ab6400);
+  --_badge-border: var(--color-border-utility-warning, #f3d673);
+}
+.esa-badge--success:not(.esa-badge--dot),
+.esa-badge--warning:not(.esa-badge--dot),
+.esa-badge--danger:not(.esa-badge--dot),
+.esa-badge--info:not(.esa-badge--dot) {
+  border: 1px solid var(--_badge-border, transparent);
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+}
+:host {
+  --_width: var(--side-dialog-width, 400px);
+}
+:host([size="sm"]) {
+  --_width: var(--side-dialog-width-sm, 320px);
+}
+dialog.panel {
+  --_inset: var(--side-dialog-inset, 16px);
+  position: fixed;
+  top: var(--_inset);
+  bottom: var(--_inset);
+  margin: 0;
+  border: none;
+  padding: 0;
+  width: min(var(--_width), calc(100vw - var(--_inset) * 2));
+  max-width: none;
+  max-height: none;
+  background: var(--color-background-elevation-raised, #fcfcfc);
+  color: var(--color-content-default, #202020);
+  border-radius: var(--radius-md, 0.5rem);
+  box-shadow: var(--elevation-5, 0 8px 32px -8px rgba(0, 0, 0, 0.2));
+  outline: none;
+  overflow: hidden;
+  /* Hosts may re-point --side-dialog-inset while open (e.g. card-stacking a
+         second dialog on top) — ease the reposition instead of jumping. */
+  transition:
+    top 220ms ease,
+    right 220ms ease,
+    bottom 220ms ease,
+    left 220ms ease;
+}
+:host([position="left"]) dialog.panel {
+  left: var(--_inset);
+  animation: slide-left var(--animation-overlay-enter, 250ms ease-out);
+}
+:host {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-100, 4px);
+  --_pad-y: var(--spacing-300, 0.75rem);
+  --_padding-x: var(--spacing-300, 0.75rem);
+  --_radius: var(--radius-md, 0.5rem);
+  --_border-width: var(--form-border-width, 1px);
+  --_border-color: var(--form-border-color, #cecece);
+  --_icon-size: 18px;
+}
+:host([size="sm"]) {
+  --_pad-y: var(--spacing-250, 0.625rem);
+  --_padding-x: var(--spacing-250, 0.625rem);
+  --_radius: var(--radius-sm, 0.25rem);
+  --_icon-size: 16px;
+}
+.label {
+  color: var(--form-label-color, #646464);
+}
+.group {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  gap: 2px;
+  padding: 2px;
+  background: var(--color-background-elevation-sunken, #f0f0f0);
+  border: var(--_border-width) solid var(--_border-color);
+  border-radius: var(--_radius);
+}
+.option {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-150, 6px);
+  /* Was calc(height - 4px) to compensate for the track's 2px padding. With no
+         height token the segment is its own text plus padding, and the track wraps
+         it — the compensation has nothing left to compensate for. */
+  padding: var(--_pad-y) var(--_padding-x);
+  color: var(--color-content-default-secondary, #646464);
+  background: transparent;
+  border: 0;
+  border-radius: calc(var(--_radius) - 2px);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--transition-fast, 150ms ease),
+    color var(--transition-fast, 150ms ease),
+    box-shadow var(--transition-fast, 150ms ease);
+}
+.option--selected {
+  background: var(--color-background-elevation-raised, #fcfcfc);
+  color: var(--color-content-brand, #2a7e3b);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+.typography-label-xs {
+  font-family: var(--typography-label-xs-font-family);
+  font-size: var(--typography-label-xs-font-size);
+  font-weight: var(--typography-label-xs-font-weight);
+  line-height: var(--typography-label-xs-line-height);
+  letter-spacing: var(--typography-label-xs-letter-spacing);
+}
+.typography-microcopy-xs-strong {
+  font-family: var(--typography-microcopy-xs-strong-font-family);
+  font-size: var(--typography-microcopy-xs-strong-font-size);
+  font-weight: var(--typography-microcopy-xs-strong-font-weight);
+  line-height: var(--typography-microcopy-xs-strong-line-height);
+  letter-spacing: var(--typography-microcopy-xs-strong-letter-spacing);
+}
+.typography-microcopy-xs {
+  font-family: var(--typography-microcopy-xs-font-family);
+  font-size: var(--typography-microcopy-xs-font-size);
+  font-weight: var(--typography-microcopy-xs-font-weight);
+  line-height: var(--typography-microcopy-xs-line-height);
+  letter-spacing: var(--typography-microcopy-xs-letter-spacing);
+}
+.typography-microcopy-md {
+  font-family: var(--typography-microcopy-md-font-family);
+  font-size: var(--typography-microcopy-md-font-size);
+  font-weight: var(--typography-microcopy-md-font-weight);
+  line-height: var(--typography-microcopy-md-line-height);
+  letter-spacing: var(--typography-microcopy-md-letter-spacing);
+}
+.typography-microcopy-md-subtle {
+  font-family: var(--typography-microcopy-md-subtle-font-family);
+  font-size: var(--typography-microcopy-md-subtle-font-size);
+  font-weight: var(--typography-microcopy-md-subtle-font-weight);
+  line-height: var(--typography-microcopy-md-subtle-line-height);
+  letter-spacing: var(--typography-microcopy-md-subtle-letter-spacing);
+}
+.typography-body-md {
+  font-family: var(--typography-body-md-font-family);
+  font-size: var(--typography-body-md-font-size);
+  font-weight: var(--typography-body-md-font-weight);
+  line-height: var(--typography-body-md-line-height);
+  letter-spacing: var(--typography-body-md-letter-spacing);
+}
+:host {
+  --_tab-height: var(--tab-layout-height-md, 44px);
+  --_tab-color: var(--color-content-default-secondary, #646464);
+  --_tab-color-active: var(--color-background-brand, #46a758);
+  --_tab-color-hover: var(--color-content-default, #202020);
+  --_tab-indicator-color: var(--color-background-brand, #46a758);
+  --_tab-indicator-height: 2px;
+  --_tab-bg-hover: var(--color-background-elevation-sunken, #f0f0f0);
+  --_tab-gap: var(--spacing-100, 4px);
+  --_tab-padding-x: var(--spacing-400, 16px);
+  --_tab-border: var(--color-border-default, #cecece);
+  --_tab-badge-bg: var(--color-background-brand, #46a758);
+  --_tab-badge-color: var(--color-content-default-knockout, #fcfcfc);
+
+  display: block;
+}
+.tabs {
+  display: flex;
+  border-bottom: var(--border-width-default, 1px) solid var(--_tab-border);
+  gap: var(--_tab-gap);
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-200, 8px);
+  height: var(--_tab-height);
+  padding-inline: var(--_tab-padding-x);
+  color: var(--_tab-color);
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+}
+.tab--active {
+  color: var(--_tab-color-active);
+}
+.tab--active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--_tab-indicator-height);
+  background: var(--_tab-indicator-color);
+  border-radius: var(--_tab-indicator-height);
+}
+.tab--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.panel {
+  padding-top: var(--spacing-400, 16px);
+}
+.esa-collapsible {
+  border: var(--border-width-default, 1px) solid var(--color-border-default, #cecece);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--color-background-elevation-raised, #fcfcfc);
+}
+.esa-collapsible__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-200, 0.5rem);
+  padding: var(--spacing-300, 0.75rem) var(--spacing-400, 1rem);
+  color: var(--color-content-default, #202020);
+  cursor: pointer;
+  list-style: none;
+}
+.esa-collapsible__summary:after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--color-content-default-secondary, #646464);
+  border-bottom: 2px solid var(--color-content-default-secondary, #646464);
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+  margin-left: auto;
+}
+.esa-collapsible[open] > .esa-collapsible__summary:after {
+  transform: rotate(45deg);
+}
+.esa-collapsible__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-400, 1rem);
+  padding: 0 var(--spacing-400, 1rem) var(--spacing-400, 1rem);
+}
+.esa-alert-box {
+  --_alert-bg: var(--color-background-utility-info-subtle, #fbfdff);
+  --_alert-border: var(--color-border-utility-info, #acd8fc);
+  --_alert-accent: var(--color-content-utility-info, #0d74ce);
+  --_alert-icon-color: var(--_alert-accent);
+  --_alert-title-color: var(--_alert-accent);
+  --_alert-text-color: var(--alert-box-text-color, var(--color-content-default-secondary, #646464));
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-300, 0.75rem);
+  padding: var(--spacing-300, 0.75rem) var(--spacing-400, 1rem);
+  border: var(--border-width-default, 1px) solid var(--_alert-border);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--_alert-bg);
+}
+.esa-alert-box--success {
+  --_alert-bg: var(--color-background-utility-success-subtle, #fbfefc);
+  --_alert-border: var(--color-border-utility-success, #adddc0);
+  --_alert-accent: var(--color-content-utility-success, #218358);
+}
+.esa-alert-box__icon {
+  flex-shrink: 0;
+  color: var(--_alert-icon-color);
+  padding-top: 1px;
+}
+.esa-alert-box__body {
+  flex: 1;
+  min-width: 0;
+}
+.esa-alert-box__title {
+  display: block;
+  color: var(--_alert-title-color);
+  margin-bottom: var(--spacing-050, 0.125rem);
+}
+.esa-alert-box__message {
+  color: var(--_alert-text-color);
+}
+:host {
+  --_dialog-bg: var(--color-background-elevation-floating, #fcfcfc);
+  --_dialog-border-radius: var(--radius-lg, 0.75rem);
+  --_dialog-padding: var(--spacing-500, 1.5rem);
+  --_dialog-header-border: var(--color-border-default-subtle, #d9d9d9);
+  /* Header/footer surface tints. These were --dialog-header-bg /
+         --dialog-footer-bg, declared in no token file — a hook offered on the
+         strength of a fallback nobody had asked to override. Folded to their
+         literal default 2026-08-16; --dialog-* is a live namespace, so they come
+         back as declarations the day a spoke actually wants to frame the body. */
+  --_dialog-header-bg: transparent;
+  --_dialog-footer-bg: transparent;
+  --_dialog-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 4px 16px rgba(0, 0, 0, 0.1);
+  --_dialog-width: var(--dialog-width, 480px);
+  --_dialog-max-height: 85vh;
+}
+:host([size="lg"]) {
+  --_dialog-width: var(--dialog-width-lg, 640px);
+}
+dialog.esa-dialog {
+  /* UA reset. The UA sheet gives <dialog> a solid border, 1em padding and
+         'max-width/max-height: calc(100% - 6px - 2em)'; without clearing those the
+         panel renders inside a second, smaller box. */
+  border: none;
+  padding: 0;
+  margin: auto;
+  background: var(--_dialog-bg);
+  color: var(--color-content-default, #202020);
+  border-radius: var(--_dialog-border-radius);
+  box-shadow: var(--_dialog-shadow);
+  width: var(--_dialog-width);
+  max-width: 100vw;
+  max-height: var(--_dialog-max-height);
+  overflow: hidden;
+  font-family: var(--typography-font-family-sans, "DM Sans", sans-serif);
+}
+:host {
+  all: initial;
+}
+.host-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2147483000;
+  font-family: system-ui, sans-serif;
+}
+.host-root > * {
+  pointer-events: auto;
+}
+.launch {
+  position: fixed;
+  bottom: 22px;
+  left: 22px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 19px;
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border: 1px solid #3d6fd6;
+  background: linear-gradient(180deg, #1f6feb, #1551c4);
+  box-shadow:
+    0 10px 28px -8px rgba(31, 111, 235, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    filter 0.15s ease;
+}
+.launch svg {
+  flex: none;
+}
+.panel {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  bottom: 18px;
+  width: min(720px, 94vw);
+  display: flex;
+  flex-direction: column;
+  color: #ffffff;
+  border-radius: 16px;
+  background: linear-gradient(155deg, rgba(26, 31, 40, 0.74), rgba(11, 15, 21, 0.86));
+  backdrop-filter: blur(26px) saturate(150%);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 28px 70px -18px rgba(0, 0, 0, 0.62),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  font-size: 12.5px;
+  overflow: hidden;
+  /* slide in from the right */
+  transform: translateX(calc(100% + 32px));
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.22s ease,
+    visibility 0s linear 0.3s;
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+.head strong {
+  font-size: 14px;
+}
+.head .sub {
+  flex: 1;
+  color: #ccd5e0;
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.x {
+  border: 0;
+  background: none;
+  color: #c4cdd8;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.picker {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
+  color: #eef2f6;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
+}
+.chip.on {
+  background: rgba(31, 111, 235, 0.28);
+  border-color: #4493f8;
+  color: #fff;
+  font-weight: 600;
+}
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+}
+.tabs button {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: #ccd5e0;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.tabs button.on {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+.body {
+  overflow: auto;
+  padding: 13px 16px;
+  flex: 1;
+}
+.hint {
+  margin: 0;
+  color: #c4cdd8;
+  line-height: 1.6;
+}
+.footer {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 11px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.18);
+}
+[hidden] {
+  display: none !important;
+}
+.cpreview {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: calc(100% + 8px);
+  background: rgba(13, 17, 23, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  box-shadow: 0 18px 50px -14px rgba(0, 0, 0, 0.7);
+  padding: 12px 14px;
+  max-height: 50vh;
+  overflow: auto;
+}
+.copy {
+  color: #eef2f6;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+}
+.footer button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.claude {
+  color: #fff;
+  border: 1px solid #d97757;
+  background: linear-gradient(180deg, #e0805f, #c25e3c);
+  box-shadow:
+    0 6px 18px -6px rgba(217, 119, 87, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.claude svg {
+  flex: none;
+}
+.esa-button {
+  --_btn-pad-y: var(--spacing-300, 0.75rem);
+  --_btn-padding-x: var(--spacing-300, 0.75rem);
+  --_btn-radius: var(--button-radius-md, 0.5rem);
+  --_accent: var(--color-background-brand, #46a758);
+  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);
+  --_on: var(--color-content-default-knockout, #fcfcfc);
+  --_accent-text: var(--_accent);
+  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);
+  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);
+  display: inline-block;
+}
+.esa-button--sm {
+  --_btn-pad-y: var(--spacing-250, 0.625rem);
+  --_btn-padding-x: var(--spacing-250, 0.625rem);
+  --_btn-radius: var(--button-radius-sm, 4px);
+}
+.esa-button__native {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-200, 8px);
+  width: 100%;
+  padding-block: var(--_btn-pad-y);
+  padding-inline: var(--_btn-padding-x);
+  border: var(--border-width-default, 1px) solid transparent;
+  border-radius: var(--_btn-radius);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast, 0.15s ease),
+    border-color var(--transition-fast, 0.15s ease);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.esa-button--appearance-fill .esa-button__native {
+  background: var(--_accent);
+  color: var(--_on);
+  border-color: var(--_accent-border, transparent);
+}
+.esa-button--variant-chrome .esa-button__native {
+  background: transparent;
+  color: inherit;
+  border-color: transparent;
+}
+.esa-icon {
+  --_icon-size: var(--icon-size-md, 20px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+  color: inherit;
+}
+.esa-icon--sm {
+  --_icon-size: var(--icon-size-sm, 16px);
+}
+.esa-icon svg {
+  display: block;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+}
+.esa-button__label {
+  white-space: nowrap;
+}
+summary.esa-button {
+  list-style: none;
+  cursor: pointer;
+}
+.esa-icon--md {
+  --_icon-size: var(--icon-size-md, 20px);
+}
+.esa-button--variant-secondary {
+  --_accent: var(--color-background-brand-muted);
+  --_accent-hover: var(--color-background-brand-muted-hover);
+  --_on: var(--color-content-on-brand-muted, var(--color-content-default));
+  --_accent-text: var(--color-content-brand);
+  --_accent-border: var(--color-border-default-strong, #bbbbbb);
+}
+.esa-button--appearance-outline .esa-button__native,
+.esa-button--appearance-dashed .esa-button__native {
+  background: transparent;
+  color: var(--_accent-text);
+  border-color: var(--_accent);
+}
+.esa-button--variant-primary {
+  --_accent-text: var(--color-content-brand);
+}
+.esa-button--icon-only .esa-button__native {
+  padding-inline: var(--_btn-pad-y);
+  aspect-ratio: 1;
+}
+.esa-button--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+:host {
+  display: contents;
+}
+.esa-snackbar-container {
+  position: fixed;
+  bottom: var(--spacing-500, 1.5rem);
+  right: var(--spacing-500, 1.5rem);
+  z-index: var(--z-toast, 500);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--spacing-200, 0.5rem);
+  max-width: var(--snackbar-container-max-width, 420px);
+}
+.typography-label-md {
+  font-family: var(--typography-label-md-font-family);
+  font-size: var(--typography-label-md-font-size);
+  font-weight: var(--typography-label-md-font-weight);
+  line-height: var(--typography-label-md-line-height);
+  letter-spacing: var(--typography-label-md-letter-spacing);
+}
+.typography-microcopy-xs {
+  font-family: var(--typography-microcopy-xs-font-family);
+  font-size: var(--typography-microcopy-xs-font-size);
+  font-weight: var(--typography-microcopy-xs-font-weight);
+  line-height: var(--typography-microcopy-xs-line-height);
+  letter-spacing: var(--typography-microcopy-xs-letter-spacing);
+}
+.typography-microcopy-md {
+  font-family: var(--typography-microcopy-md-font-family);
+  font-size: var(--typography-microcopy-md-font-size);
+  font-weight: var(--typography-microcopy-md-font-weight);
+  line-height: var(--typography-microcopy-md-line-height);
+  letter-spacing: var(--typography-microcopy-md-letter-spacing);
+}
+.typography-body-sm {
+  font-family: var(--typography-body-sm-font-family);
+  font-size: var(--typography-body-sm-font-size);
+  font-weight: var(--typography-body-sm-font-weight);
+  line-height: var(--typography-body-sm-line-height);
+  letter-spacing: var(--typography-body-sm-letter-spacing);
+}
+.typography-body-md {
+  font-family: var(--typography-body-md-font-family);
+  font-size: var(--typography-body-md-font-size);
+  font-weight: var(--typography-body-md-font-weight);
+  line-height: var(--typography-body-md-line-height);
+  letter-spacing: var(--typography-body-md-letter-spacing);
+}
+.typography-microcopy-md-strong {
+  font-family: var(--typography-microcopy-md-strong-font-family);
+  font-size: var(--typography-microcopy-md-strong-font-size);
+  font-weight: var(--typography-microcopy-md-strong-font-weight);
+  line-height: var(--typography-microcopy-md-strong-line-height);
+  letter-spacing: var(--typography-microcopy-md-strong-letter-spacing);
+}
+.typography-meta {
+  font-family: var(--typography-meta-font-family);
+  font-size: var(--typography-meta-font-size);
+  font-weight: var(--typography-meta-font-weight);
+  line-height: var(--typography-meta-line-height);
+  letter-spacing: var(--typography-meta-letter-spacing);
+}
+.typography-label-sm-strong {
+  font-family: var(--typography-label-sm-strong-font-family);
+  font-size: var(--typography-label-sm-strong-font-size);
+  font-weight: var(--typography-label-sm-strong-font-weight);
+  line-height: var(--typography-label-sm-strong-line-height);
+  letter-spacing: var(--typography-label-sm-strong-letter-spacing);
+}
+.typography-heading-md {
+  font-family: var(--typography-heading-md-font-family);
+  font-size: var(--typography-heading-md-font-size);
+  font-weight: var(--typography-heading-md-font-weight);
+  line-height: var(--typography-heading-md-line-height);
+  letter-spacing: var(--typography-heading-md-letter-spacing);
+}
+.esa-app-bar {
+  --_bar-gap: var(--spacing-600, 32px);
+  --_bar-pad-x: var(--spacing-600, 32px);
+  --_bar-pad-y: var(--spacing-400, 16px);
+  display: block;
+  width: 100%;
+  background: var(--color-background-elevation-raised, #fcfcfc);
+  color: var(--color-content-default, #202020);
+}
+.esa-app-bar--brand-strong {
+  background: var(--color-background-default-knockout, #202020);
+  color: var(--color-content-default-knockout, #fcfcfc);
+}
+.esa-app-bar__row {
+  display: flex;
+  align-items: center;
+  gap: var(--_bar-gap);
+  padding: var(--_bar-pad-y) var(--_bar-pad-x);
+}
+.esa-app-bar__start,
+.esa-app-bar__main,
+.esa-app-bar__end {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--_bar-gap);
+}
+.esa-app-bar__start {
+  flex: none;
+}
+.esa-app-bar__main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.esa-app-bar__end {
+  flex: none;
+  margin-left: auto;
+}
+.esa-app-bar--brand {
+  background: var(--color-background-brand, #46a758);
+  color: var(--color-content-default-knockout, #fcfcfc);
+}
+.stack {
+  --gap: var(--spacing-400, 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+[data-gap="lg"] {
+  --gap: var(--spacing-500, 1.5rem);
+}
+:where(h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd, ul, ol, pre) {
+  margin: 0;
+}
+.esa-container {
+  width: 100%;
+  max-width: var(--_container-max, 1556px);
+  margin-inline: auto;
+  padding-inline: var(--spacing-600, 2rem);
+}
+.cbf-app-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 80vh;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-100);
+  overflow: clip;
+  background: var(--color-background-elevation-raised);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-background-default-knockout) 8%, transparent);
+}
+.cbf-app-panel__crumb {
+  background: var(--cbf-surface-crumb);
+  border-bottom: 1px solid var(--color-border-default);
+  padding: var(--spacing-400) var(--spacing-600);
+}
+.esa-breadcrumbs {
+  --_crumb-link-color: var(--breadcrumbs-link-color, #646464);
+  --_crumb-link-hover: var(--breadcrumbs-link-hover, #202020);
+  --_crumb-current-color: var(--color-content-default, #202020);
+  --_crumb-separator-color: var(--color-border-default-strong, #bbbbbb);
+  --_crumb-gap: var(--spacing-200, 8px);
+  display: block;
+  background: var(--breadcrumbs-bg, transparent);
+}
+.cbf-app-panel__crumb .esa-breadcrumbs {
+  --breadcrumbs-link-color: var(--color-content-default-secondary);
+  --breadcrumbs-link-hover: var(--color-background-brand);
+}
+.esa-breadcrumbs__list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--_crumb-gap);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.esa-breadcrumbs__item {
+  display: flex;
+  align-items: center;
+  gap: var(--_crumb-gap);
+}
+.esa-breadcrumbs__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-100, 4px);
+  color: var(--_crumb-link-color);
+  text-decoration-color: transparent;
+}
+.esa-breadcrumbs__icon {
+  display: inline-flex;
+  align-items: center;
+}
+.esa-breadcrumbs__separator {
+  flex-shrink: 0;
+  color: var(--_crumb-separator-color);
+}
+.esa-breadcrumbs__current {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-100, 4px);
+  color: var(--_crumb-current-color);
+}
+.cbf-app-panel__body {
+  flex: 1;
+}
+.cbf-app-panel__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-400);
+  padding: var(--spacing-600);
+}
+[data-gap="md"] {
+  --gap: var(--spacing-400, 1rem);
+}
+.repel {
+  --gap: var(--spacing-400, 1rem);
+  --align: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  align-items: var(--align);
+  justify-content: space-between;
+}
+[data-gap="sm"] {
+  --gap: var(--spacing-300, 0.75rem);
+}
+```
+
+## Tokens
+| Token | Value | Tier |
+|---|---|---|
+| `--alert-box-text-color` | `#525252` | component |
+| `--animation-overlay-enter` | `.25s ease-out` | semantic |
+| `--badge-bg` | `#1e5386` | component |
+| `--badge-text-color` | `#fcfcfc` | component |
+| `--border-width-default` | `1px` | semantic |
+| `--breadcrumbs-bg` | `transparent` | component |
+| `--breadcrumbs-link-color` | `#525252` | component |
+| `--breadcrumbs-link-hover` | `#3d3d3d` | component |
+| `--button-radius-md` | `.5rem` | component |
+| `--button-radius-sm` | `.25rem` | component |
+| `--cbf-surface-crumb` | `#f4f4f4` | brand |
+| `--color-background-brand` | `#1e5386` | semantic |
+| `--color-background-brand-hover` | `#1a4570` | semantic |
+| `--color-background-brand-muted` | `#2770b2` | semantic |
+| `--color-background-brand-muted-hover` | `#1e5386` | semantic |
+| `--color-background-default-knockout` | `#13273e` | semantic |
+| `--color-background-elevation-floating` | `#fcfcfc` | semantic |
+| `--color-background-elevation-raised` | `#fcfcfc` | semantic |
+| `--color-background-elevation-sunken` | `#f3f7fc` | semantic |
+| `--color-background-utility-info-subtle` | `#f3f7fc` | semantic |
+| `--color-background-utility-success-subtle` | `#fbfefc` | semantic |
+| `--color-background-utility-warning-muted` | `#fff7c2` | semantic |
+| `--color-border-default` | `#dcdcdc` | semantic |
+| `--color-border-default-strong` | `#bdbdbd` | semantic |
+| `--color-border-default-subtle` | `#efefef` | semantic |
+| `--color-border-utility-info` | `#c6dcf1` | semantic |
+| `--color-border-utility-success` | `#adddc0` | semantic |
+| `--color-border-utility-warning` | `#f3d673` | semantic |
+| `--color-content-brand` | `#1e5386` | semantic |
+| `--color-content-default` | `#3d3d3d` | semantic |
+| `--color-content-default-knockout` | `#fcfcfc` | semantic |
+| `--color-content-default-secondary` | `#525252` | semantic |
+| `--color-content-default-tertiary` | `#656565` | semantic |
+| `--color-content-link` | `#1e5386` | semantic |
+| `--color-content-on-brand-muted` | `#203c25` | semantic |
+| `--color-content-utility-info` | `#0d74ce` | semantic |
+| `--color-content-utility-success` | `#218358` | semantic |
+| `--color-content-utility-warning` | `#ab6400` | semantic |
+| `--dialog-width` | `480px` | component |
+| `--dialog-width-lg` | `640px` | component |
+| `--elevation-5` | `0 8px 32px -8px rgba(0, 0, 0, .08)` | semantic |
+| `--font-size-100` | `clamp(.625rem, .56rem + .32vw, .75rem)` | primitive |
+| `--font-size-150` | `clamp(.6875rem, .61rem + .38vw, .875rem)` | primitive |
+| `--font-size-200` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | primitive |
+| `--font-size-400` | `clamp(1rem, .88rem + .6vw, 1.25rem)` | primitive |
+| `--form-border-color` | `#dcdcdc` | component |
+| `--form-border-width` | `1px` | component |
+| `--form-label-color` | `#525252` | component |
+| `--icon-size-md` | `20px` | primitive |
+| `--icon-size-sm` | `16px` | primitive |
+| `--link-column-rule-color` | `color-mix(in srgb, currentColor 40%, transparent)` | component |
+| `--radius-100` | `.25rem` | primitive |
+| `--radius-200` | `.5rem` | primitive |
+| `--radius-chip` | `.25rem` | semantic |
+| `--radius-full` | `9999px` | primitive |
+| `--radius-lg` | `.75rem` | semantic |
+| `--radius-md` | `.5rem` | semantic |
+| `--radius-sm` | `.25rem` | semantic |
+| `--side-dialog-inset` | `16px` | component |
+| `--side-dialog-width` | `400px` | component |
+| `--side-dialog-width-sm` | `320px` | component |
+| `--snackbar-container-max-width` | `420px` | component |
+| `--spacing-050` | `.125rem` | primitive |
+| `--spacing-100` | `.25rem` | primitive |
+| `--spacing-150` | `.375rem` | primitive |
+| `--spacing-200` | `.5rem` | primitive |
+| `--spacing-250` | `.625rem` | primitive |
+| `--spacing-300` | `.75rem` | primitive |
+| `--spacing-400` | `1rem` | primitive |
+| `--spacing-500` | `1.5rem` | primitive |
+| `--spacing-600` | `2rem` | primitive |
+| `--spacing-800` | `4rem` | primitive |
+| `--tab-layout-height-md` | `44px` | component |
+| `--transition-fast` | `.15s ease` | semantic |
+| `--typography-body-md-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-body-md-font-size` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | semantic |
+| `--typography-body-md-font-weight` | `400` | semantic |
+| `--typography-body-md-letter-spacing` | `.01em` | semantic |
+| `--typography-body-md-line-height` | `1.6` | semantic |
+| `--typography-body-sm-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-body-sm-font-size` | `clamp(.6875rem, .61rem + .38vw, .875rem)` | semantic |
+| `--typography-body-sm-font-weight` | `400` | semantic |
+| `--typography-body-sm-letter-spacing` | `.01em` | semantic |
+| `--typography-body-sm-line-height` | `1.6` | semantic |
+| `--typography-font-family-sans` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-font-weight-medium` | `500` | semantic |
+| `--typography-font-weight-semibold` | `600` | semantic |
+| `--typography-heading-md-font-family` | `"IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif` | semantic |
+| `--typography-heading-md-font-size` | `clamp(1.125rem, .98rem + .72vw, 1.5rem)` | semantic |
+| `--typography-heading-md-font-weight` | `600` | semantic |
+| `--typography-heading-md-letter-spacing` | `-.01em` | semantic |
+| `--typography-heading-md-line-height` | `1.3` | semantic |
+| `--typography-label-md-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-label-md-font-size` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | semantic |
+| `--typography-label-md-font-weight` | `500` | semantic |
+| `--typography-label-md-letter-spacing` | `.01em` | semantic |
+| `--typography-label-md-line-height` | `1.6` | semantic |
+| `--typography-label-sm-strong-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-label-sm-strong-font-size` | `clamp(.6875rem, .61rem + .38vw, .875rem)` | semantic |
+| `--typography-label-sm-strong-font-weight` | `600` | semantic |
+| `--typography-label-sm-strong-letter-spacing` | `.01em` | semantic |
+| `--typography-label-sm-strong-line-height` | `1.6` | semantic |
+| `--typography-label-xs-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-label-xs-font-size` | `clamp(.625rem, .56rem + .32vw, .75rem)` | semantic |
+| `--typography-label-xs-font-weight` | `500` | semantic |
+| `--typography-label-xs-letter-spacing` | `.01em` | semantic |
+| `--typography-label-xs-line-height` | `1.6` | semantic |
+| `--typography-meta-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-meta-font-size` | `clamp(.625rem, .56rem + .32vw, .75rem)` | semantic |
+| `--typography-meta-font-weight` | `400` | semantic |
+| `--typography-meta-letter-spacing` | `.01em` | semantic |
+| `--typography-meta-line-height` | `1.6` | semantic |
+| `--typography-microcopy-md-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-microcopy-md-font-size` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | semantic |
+| `--typography-microcopy-md-font-weight` | `500` | semantic |
+| `--typography-microcopy-md-letter-spacing` | `.01em` | semantic |
+| `--typography-microcopy-md-line-height` | `1` | semantic |
+| `--typography-microcopy-md-strong-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-microcopy-md-strong-font-size` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | semantic |
+| `--typography-microcopy-md-strong-font-weight` | `600` | semantic |
+| `--typography-microcopy-md-strong-letter-spacing` | `.01em` | semantic |
+| `--typography-microcopy-md-strong-line-height` | `1` | semantic |
+| `--typography-microcopy-md-subtle-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-microcopy-md-subtle-font-size` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | semantic |
+| `--typography-microcopy-md-subtle-font-weight` | `400` | semantic |
+| `--typography-microcopy-md-subtle-letter-spacing` | `.01em` | semantic |
+| `--typography-microcopy-md-subtle-line-height` | `1` | semantic |
+| `--typography-microcopy-xs-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-microcopy-xs-font-size` | `clamp(.625rem, .56rem + .32vw, .75rem)` | semantic |
+| `--typography-microcopy-xs-font-weight` | `500` | semantic |
+| `--typography-microcopy-xs-letter-spacing` | `.01em` | semantic |
+| `--typography-microcopy-xs-line-height` | `1` | semantic |
+| `--typography-microcopy-xs-strong-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-microcopy-xs-strong-font-size` | `clamp(.625rem, .56rem + .32vw, .75rem)` | semantic |
+| `--typography-microcopy-xs-strong-font-weight` | `600` | semantic |
+| `--typography-microcopy-xs-strong-letter-spacing` | `.01em` | semantic |
+| `--typography-microcopy-xs-strong-line-height` | `1` | semantic |
+| `--z-toast` | `500` | semantic |
+
+---
+_Full page, complete stylesheet, and all tokens: `./full-page.md`, `../styles.css`, `../index.html`._
