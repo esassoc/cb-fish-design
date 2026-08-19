@@ -99,8 +99,8 @@ const n = sorted.length;
 <section class="cbf-portfolio-health">
   <!-- Section header -->
   <div class="cbf-portfolio-health__header stack" data-gap="xs">
-    <h2 class="type-section-title cbf-portfolio-health__title">My contracts</h2>
-    <p class="type-caption cbf-portfolio-health__subtitle">
+    <h2 class="typography-heading-md cbf-portfolio-health__title">My contracts</h2>
+    <p class="typography-meta cbf-portfolio-health__subtitle">
       {n} contract{n === 1 ? '' : 's'} &middot; figures from the nightly Asset Suite feed
     </p>
   </div>
@@ -122,12 +122,12 @@ const n = sorted.length;
             <div class="cbf-portfolio-health__identity stack" data-gap="2xs">
               <a
                 href="#"
-                class="type-body cbf-portfolio-health__contract-link"
+                class="typography-body-md cbf-portfolio-health__contract-link"
                 aria-label={`${c.contract} — opens contract detail`}
               >
                 {c.contract}
               </a>
-              <span class="type-caption cbf-portfolio-health__meta-line">
+              <span class="typography-meta cbf-portfolio-health__meta-line">
                 {c.vendor} &middot; {c.project} &middot; Perf. ends {c.perfEnd}
               </span>
 
@@ -140,7 +140,7 @@ const n = sorted.length;
                     size="sm"
                     removable={false}
                   />
-                  <span class="type-caption cbf-portfolio-health__blocker-text">
+                  <span class="typography-meta cbf-portfolio-health__blocker-text">
                     {c.closeoutBlocker}
                   </span>
                 </div>
@@ -177,11 +177,11 @@ const n = sorted.length;
                     aria-label={`${expendedPct}% of contract value expended`}
                   />
                 </div>
-                <span class="type-caption cbf-portfolio-health__figures-main">
+                <span class="typography-meta cbf-portfolio-health__figures-main">
                   {fmtCompact(c.expended)} of {fmtCompact(c.value)} &middot; <strong>{fmtCompact(c.remaining)} remaining</strong>
                 </span>
                 {showRowProvenance && (
-                  <p class="type-caption cbf-portfolio-health__provenance">
+                  <p class="typography-meta cbf-portfolio-health__provenance">
                     as of {c.asOf} &middot; {c.source}
                   </p>
                 )}
@@ -195,7 +195,7 @@ const n = sorted.length;
   </ul>
 
   <!-- Band footer — absorbs uniform provenance + running-balance disclaimer -->
-  <p class="type-caption cbf-portfolio-health__footer">
+  <p class="typography-meta cbf-portfolio-health__footer">
     {isUniform
       ? `Figures as of ${uniformAsOf} · ${uniformSource} — running balances are not real-time.`
       : 'Running balances are drawn from the nightly Asset Suite feed and include accruals; they are not real-time.'
@@ -209,7 +209,7 @@ const n = sorted.length;
    * No color-coded left borders (design-principles: banned).
    * Token discipline: all colors/spacing via @esa/tokens variables with literal
    * fallbacks. Font sizes via type-roles classes, never raw --type-size-*.
-   * Dense floor: 14px body text per brief. type-caption = 12px (--type-size-100).
+   * Dense floor: 14px body text per brief. typography-meta = 12px (--font-size-100).
    * Row layout: .repel primitive provides the two-column split; .cbf-portfolio-health__health
    * adds a fixed width so the right column never shrinks/grows with content.
    */
@@ -222,12 +222,12 @@ const n = sorted.length;
 
   /* ---- Header ---- */
   .cbf-portfolio-health__title {
-    color: var(--color-text-primary, #171717);
+    color: var(--color-content-default, #171717);
     margin: 0;
   }
 
   .cbf-portfolio-health__subtitle {
-    color: var(--color-text-secondary, #525252);
+    color: var(--color-content-default-secondary, #525252);
     margin: 0;
   }
 
@@ -236,14 +236,14 @@ const n = sorted.length;
     list-style: none;
     margin: 0;
     padding: 0;
-    border-top: 1px solid var(--color-border-light, #e5e5e5);
+    border-top: 1px solid var(--color-border-default-subtle, #e5e5e5);
   }
 
   /* ---- Row ---- */
   .cbf-portfolio-health__row {
     padding-block: var(--spacing-250, 0.625rem);
     padding-inline: var(--spacing-050, 0.125rem);
-    border-bottom: 1px solid var(--color-border-light, #e5e5e5);
+    border-bottom: 1px solid var(--color-border-default-subtle, #e5e5e5);
   }
 
   .cbf-portfolio-health__row:last-child {
@@ -292,26 +292,26 @@ const n = sorted.length;
 
   /* ---- Contract link ---- */
   .cbf-portfolio-health__contract-link {
-    font-weight: var(--font-weight-medium, 500);
-    color: var(--color-text-link, var(--color-primary, #43608a));
+    font-weight: var(--typography-font-weight-medium, 500);
+    color: var(--color-content-link, var(--color-background-brand, #43608a));
     text-decoration: none;
     word-break: break-word;
   }
 
   .cbf-portfolio-health__contract-link:hover {
     text-decoration: underline;
-    color: var(--color-text-link-hover, var(--color-primary-hover, #325075));
+    color: var(--color-content-link-hover, var(--color-background-brand-hover, #325075));
   }
 
   .cbf-portfolio-health__contract-link:focus-visible {
-    outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--color-primary, #43608a));
+    outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--color-background-brand, #43608a));
     outline-offset: var(--focus-ring-offset, 2px);
     border-radius: var(--radius-sm, 2px);
   }
 
   /* ---- Meta caption line ---- */
   .cbf-portfolio-health__meta-line {
-    color: var(--color-text-secondary, #525252);
+    color: var(--color-content-default-secondary, #525252);
   }
 
   /* ---- Closeout blocker — danger text, no colored left border ---- */
@@ -322,32 +322,32 @@ const n = sorted.length;
 
   .cbf-portfolio-health__blocker-text {
     /* Darken, not gray — design principle: darken for dense small text */
-    color: var(--color-danger-strong, #ce2c31);
+    color: var(--color-content-utility-danger, #ce2c31);
   }
 
   /* ---- Budget figures ---- */
   .cbf-portfolio-health__figures-main {
-    color: var(--color-text-secondary, #525252);
+    color: var(--color-content-default-secondary, #525252);
     font-variant-numeric: tabular-nums;
   }
 
   .cbf-portfolio-health__figures-main strong {
-    font-weight: var(--font-weight-medium, 500);
-    color: var(--color-text-primary, #171717);
+    font-weight: var(--typography-font-weight-medium, 500);
+    color: var(--color-content-default, #171717);
   }
 
   /* ---- Per-row provenance (only rendered when row differs from uniform baseline) ---- */
   .cbf-portfolio-health__provenance {
-    color: var(--color-text-tertiary, #a3a3a3);
+    color: var(--color-content-default-tertiary, #a3a3a3);
     margin: 0;
     font-style: italic;
   }
 
   /* ---- Band footer: absorbs uniform provenance + disclaimer ---- */
   .cbf-portfolio-health__footer {
-    color: var(--color-text-tertiary, #a3a3a3);
+    color: var(--color-content-default-tertiary, #a3a3a3);
     margin: 0;
     padding-top: var(--spacing-200, 0.5rem);
-    border-top: 1px solid var(--color-border-light, #e5e5e5);
+    border-top: 1px solid var(--color-border-default-subtle, #e5e5e5);
   }
 </style>

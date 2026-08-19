@@ -221,13 +221,13 @@ const contractProjects: Record<string, string> = {
 
   <div class="cbf-step-actions">
     <span data-wizard-cancel>
-      <EsaButton color="danger" appearance="outline" size="md">Cancel</EsaButton>
+      <EsaButton variant="danger" appearance="outline" size="md">Cancel</EsaButton>
     </span>
     <span data-wizard-save-draft>
-      <EsaButton color="secondary" appearance="outline" size="md">Save as draft</EsaButton>
+      <EsaButton variant="secondary" appearance="outline" size="md">Save as draft</EsaButton>
     </span>
     <span data-wizard-next>
-      <EsaButton color="primary" size="md">Review &amp; submit</EsaButton>
+      <EsaButton variant="primary" size="md">Review &amp; submit</EsaButton>
     </span>
   </div>
 </div>
@@ -245,12 +245,12 @@ const contractProjects: Record<string, string> = {
 <style>
   .cbf-page-title {
     margin: 0 0 var(--spacing-400);
-    font-family: var(--font-display);
-    font-weight: var(--font-weight-medium);
+    font-family: var(--typography-font-family-display);
+    font-weight: var(--typography-font-weight-medium);
     font-size: 40px;
     line-height: 1;
     letter-spacing: -1px;
-    color: var(--color-surface-inverse);
+    color: var(--color-background-default-knockout);
   }
 
   /* ---- Flat form field stack ---- */
@@ -267,14 +267,14 @@ const contractProjects: Record<string, string> = {
     gap: var(--spacing-250);
     margin-bottom: var(--spacing-500);
     padding: var(--spacing-300) var(--spacing-400);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
-    background: var(--color-surface-sunken, #f8f9fb);
+    background: var(--color-background-elevation-sunken, #f8f9fb);
     font-size: 13px;
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
     line-height: 1.4;
   }
-  .cbf-form-lock svg { flex: none; color: var(--color-text-tertiary); }
+  .cbf-form-lock svg { flex: none; color: var(--color-content-default-tertiary); }
   .cbf-form-lock[hidden] { display: none; }
 
   /* Responsive text variants inside the lock notice */
@@ -291,17 +291,17 @@ const contractProjects: Record<string, string> = {
       margin-left: auto;
       flex: none;
       padding: var(--spacing-150) var(--spacing-300);
-      border: 1px solid var(--color-border);
+      border: 1px solid var(--color-border-default);
       border-radius: var(--radius-100);
       font-size: 13px;
-      font-weight: var(--font-weight-semibold);
-      color: var(--color-secondary);
-      background: var(--color-surface);
+      font-weight: var(--typography-font-weight-semibold);
+      color: var(--color-background-brand-muted);
+      background: var(--color-background-elevation-raised);
       transition: background 0.12s ease, border-color 0.12s ease;
     }
     .cbf-form-lock__upload-btn:hover {
-      background: var(--color-primary-subtle);
-      border-color: var(--color-primary-border);
+      background: var(--color-background-brand-subtle);
+      border-color: var(--color-border-brand);
     }
   }
 
@@ -318,14 +318,14 @@ const contractProjects: Record<string, string> = {
       gap: var(--spacing-200);
       padding: var(--spacing-300) var(--spacing-400);
       font-size: 16px;
-      color: var(--color-text-inverse, #fff);
-      background: var(--color-primary);
-      border-color: var(--color-primary);
+      color: var(--color-content-default-knockout, #fff);
+      background: var(--color-background-brand);
+      border-color: var(--color-background-brand);
     }
     .cbf-form-lock__upload-btn svg { width: 17px; height: 17px; }
     .cbf-form-lock__upload-btn:hover {
-      background: var(--color-primary-hover, var(--color-secondary));
-      border-color: var(--color-primary-hover, var(--color-secondary));
+      background: var(--color-background-brand-hover, var(--color-background-brand-muted));
+      border-color: var(--color-background-brand-hover, var(--color-background-brand-muted));
     }
   }
 
@@ -339,57 +339,57 @@ const contractProjects: Record<string, string> = {
   }
   .cbf-optional {
     font-size: 13px;
-    font-weight: var(--font-weight-regular);
-    color: var(--color-text-tertiary);
+    font-weight: var(--typography-font-weight-regular);
+    color: var(--color-content-default-tertiary);
   }
 
   /* ---- Supporting documents group ---- */
   .cbf-support-docs-group__label {
     margin: 0 0 var(--spacing-050);
-    font-size: var(--type-size-200, 13px);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-secondary);
+    font-size: var(--font-size-200, 13px);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default-secondary);
   }
   .cbf-support-docs-group__desc {
     margin: 0 0 var(--spacing-300);
     font-size: 13px;
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
     line-height: 1.5;
   }
 
   /* ---- Read-only grid ---- */
   .cbf-readonly-grid {
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
     overflow: hidden;
-    background: var(--color-surface-sunken, #f8f9fb);
+    background: var(--color-background-elevation-sunken, #f8f9fb);
   }
   .cbf-readonly-row {
     display: flex;
     align-items: baseline;
     gap: var(--spacing-400);
     padding: var(--spacing-300) var(--spacing-400);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border-default);
   }
   .cbf-readonly-row:last-child { border-bottom: 0; }
   .cbf-readonly-label {
     flex: none;
     width: 80px;
     font-size: 12px;
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--typography-font-weight-semibold);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-readonly-value {
     flex: 1;
     font-size: 14px;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
 
   /* ---- Line items ---- */
   .cbf-line-items {
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
     overflow: hidden;
   }
@@ -398,13 +398,13 @@ const contractProjects: Record<string, string> = {
     grid-template-columns: minmax(0, 1fr) 56px 96px 88px 32px;
     gap: var(--spacing-200);
     padding: var(--spacing-300) var(--spacing-400);
-    background: var(--color-surface-sunken, #f8f9fb);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--color-background-elevation-sunken, #f8f9fb);
+    border-bottom: 1px solid var(--color-border-default);
     font-size: 12px;
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--typography-font-weight-semibold);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-line-items__body { display: flex; flex-direction: column; }
   .cbf-line-items__foot {
@@ -412,33 +412,33 @@ const contractProjects: Record<string, string> = {
     align-items: center;
     justify-content: space-between;
     padding: var(--spacing-300) var(--spacing-400);
-    border-top: 1px solid var(--color-border);
-    background: var(--color-surface-sunken, #f8f9fb);
+    border-top: 1px solid var(--color-border-default);
+    background: var(--color-background-elevation-sunken, #f8f9fb);
   }
   .cbf-add-row {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-150);
     font-size: 14px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-secondary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-background-brand-muted);
     padding: var(--spacing-150) var(--spacing-200);
     border-radius: var(--radius-100);
     transition: background 0.12s ease;
   }
-  .cbf-add-row:hover { background: var(--color-primary-subtle); }
+  .cbf-add-row:hover { background: var(--color-background-brand-subtle); }
   .cbf-add-row:disabled { opacity: 0.4; cursor: not-allowed; }
   .cbf-line-items__total {
     display: flex;
     align-items: center;
     gap: var(--spacing-300);
     font-size: 15px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-line-items__total strong {
     font-size: 17px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
   }
 
   /* ---- Final invoice flag ---- */
@@ -446,35 +446,35 @@ const contractProjects: Record<string, string> = {
      padding, and a stronger accent when the wizard auto-detects a final invoice. */
   .cbf-final-invoice {
     padding: var(--spacing-400) var(--spacing-450, var(--spacing-400));
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
-    background: var(--color-surface-sunken, #f8f9fb);
+    background: var(--color-background-elevation-sunken, #f8f9fb);
     transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
   }
   /* Emphasised state once the vendor confirms (or manually checks) it. */
   .cbf-final-invoice.is-flagged {
-    border-color: var(--color-primary-border, var(--color-primary));
-    background: var(--color-primary-subtle);
-    box-shadow: 0 0 0 1px var(--color-primary-border, var(--color-primary));
+    border-color: var(--color-border-brand, var(--color-background-brand));
+    background: var(--color-background-brand-subtle);
+    box-shadow: 0 0 0 1px var(--color-border-brand, var(--color-background-brand));
   }
 
   /* ---- Backup documents ---- */
   /* The whole surface is a drop target (data-docs-zone); the button beneath the
      file list doubles as the browse affordance and the drop-hint. */
   .cbf-support-docs {
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
     overflow: hidden;
     transition: border-color 0.12s ease, background 0.12s ease;
   }
   /* Drag-over state: mirror the PDF dropzone so the whole area reads as active. */
   .cbf-support-docs.is-over {
-    border-color: var(--color-primary);
-    background: var(--color-primary-subtle);
+    border-color: var(--color-background-brand);
+    background: var(--color-background-brand-subtle);
   }
 
   .cbf-support-docs__list:not(:empty) {
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border-default);
   }
 
   .cbf-support-docs__add {
@@ -483,17 +483,17 @@ const contractProjects: Record<string, string> = {
     justify-content: center;
     gap: var(--spacing-200);
     font-size: 14px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     padding: var(--spacing-400);
     width: 100%;
     transition: background 0.12s ease, color 0.12s ease;
   }
-  .cbf-support-docs__add svg { flex: none; color: var(--color-secondary); }
+  .cbf-support-docs__add svg { flex: none; color: var(--color-background-brand-muted); }
   .cbf-support-docs__add-text strong {
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-secondary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-background-brand-muted);
   }
-  .cbf-support-docs__add:hover { background: var(--color-primary-subtle); }
+  .cbf-support-docs__add:hover { background: var(--color-background-brand-subtle); }
   /* Ignore pointer events while dragging so dragleave doesn't flicker on the button. */
   .cbf-support-docs.is-over .cbf-support-docs__add { pointer-events: none; }
   .cbf-support-docs__add:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -516,7 +516,7 @@ const contractProjects: Record<string, string> = {
     gap: var(--spacing-300);
     margin-top: var(--spacing-700);
     padding-top: var(--spacing-500);
-    border-top: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-border-default);
   }
   /* Cancel stays left; Save as draft + Review & submit are grouped at the right. */
   .cbf-step-actions [data-wizard-save-draft] { margin-left: auto; }
@@ -529,11 +529,11 @@ const contractProjects: Record<string, string> = {
     align-items: center;
     gap: var(--spacing-300);
     padding: var(--spacing-300) var(--spacing-400);
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border-default);
+    background: var(--color-background-elevation-raised);
   }
   .cbf-doc-row:last-child { border-bottom: 0; }
-  .cbf-doc-row__icon { flex: none; color: var(--color-secondary); }
+  .cbf-doc-row__icon { flex: none; color: var(--color-background-brand-muted); }
   .cbf-doc-row__info {
     flex: 1;
     min-width: 0;
@@ -543,15 +543,15 @@ const contractProjects: Record<string, string> = {
   }
   .cbf-doc-row__name {
     font-size: 14px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .cbf-doc-row__size {
     font-size: 12px;
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-doc-row__remove {
     flex: none;
@@ -561,12 +561,12 @@ const contractProjects: Record<string, string> = {
     width: 28px;
     height: 28px;
     border-radius: var(--radius-100);
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
     transition: background 0.12s ease, color 0.12s ease;
   }
   .cbf-doc-row__remove:hover {
-    background: var(--color-surface-sunken, #f8f9fb);
-    color: var(--color-text-primary);
+    background: var(--color-background-elevation-sunken, #f8f9fb);
+    color: var(--color-content-default);
   }
 
   /* Line item rows are JS-rendered and can't carry Astro's scope hash. */
@@ -575,7 +575,7 @@ const contractProjects: Record<string, string> = {
     grid-template-columns: minmax(0, 1fr) 56px 96px 88px 32px;
     gap: var(--spacing-200);
     padding: var(--spacing-250) var(--spacing-400);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border-default);
     align-items: center;
   }
   .cbf-line-item:last-child { border-bottom: 0; }
@@ -584,32 +584,32 @@ const contractProjects: Record<string, string> = {
     box-sizing: border-box;
     width: 100%;
     padding: var(--spacing-150) var(--spacing-250);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
-    font-family: var(--font-sans);
+    font-family: var(--typography-font-family-sans);
     font-size: 14px;
-    color: var(--color-text-primary);
-    background: var(--color-surface);
+    color: var(--color-content-default);
+    background: var(--color-background-elevation-raised);
     transition: border-color 0.12s ease, box-shadow 0.12s ease;
     outline: none;
   }
   .cbf-li-input:focus {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px var(--color-primary-subtle);
+    border-color: var(--color-background-brand);
+    box-shadow: 0 0 0 3px var(--color-background-brand-subtle);
   }
-  .cbf-li-input::placeholder { color: var(--color-text-tertiary); }
+  .cbf-li-input::placeholder { color: var(--color-content-default-tertiary); }
   .cbf-li-input:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    background: var(--color-surface-sunken, #f8f9fb);
+    background: var(--color-background-elevation-sunken, #f8f9fb);
   }
   .cbf-li-qty,
   .cbf-li-price { text-align: right; }
 
   .cbf-li-total {
     font-size: 14px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
     text-align: right;
   }
 
@@ -620,11 +620,11 @@ const contractProjects: Record<string, string> = {
     width: 28px;
     height: 28px;
     border-radius: var(--radius-100);
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
     transition: background 0.12s ease, color 0.12s ease;
   }
   .cbf-li-remove:hover {
-    background: var(--color-surface-sunken, #f8f9fb);
-    color: var(--color-text-primary);
+    background: var(--color-background-elevation-sunken, #f8f9fb);
+    color: var(--color-content-default);
   }
 </style>

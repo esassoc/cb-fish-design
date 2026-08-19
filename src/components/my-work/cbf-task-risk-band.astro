@@ -61,7 +61,7 @@ const KIND_LABEL: Record<string, string> = {
     aria-label="At risk — needs attention"
   >
     {/* ── Section header ─────────────────────────────────────────────── */}
-    <h2 class="type-section-title cbf-task-risk-band__heading">
+    <h2 class="typography-heading-md cbf-task-risk-band__heading">
       At risk / needs attention
     </h2>
 
@@ -89,15 +89,15 @@ const KIND_LABEL: Record<string, string> = {
 
             {/* Title + detail block */}
             <span class="cbf-task-risk-band__body stack" data-gap="xs">
-              <span class="type-body cbf-task-risk-band__title">
+              <span class="typography-body-md cbf-task-risk-band__title">
                 {item.title}
               </span>
-              <span class="type-body-small cbf-task-risk-band__detail">
+              <span class="typography-body-sm cbf-task-risk-band__detail">
                 {item.detail}
               </span>
               {/* Optional contract / due meta */}
               {(item.contract || item.due) && (
-                <span class="type-caption cbf-task-risk-band__meta">
+                <span class="typography-meta cbf-task-risk-band__meta">
                   {[item.contract, item.due ? `Due ${item.due}` : undefined]
                     .filter(Boolean)
                     .join(' · ')}
@@ -114,13 +114,13 @@ const KIND_LABEL: Record<string, string> = {
 <style>
   .cbf-task-risk-band {
     padding-block: var(--spacing-400);
-    border-top: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-border-default);
   }
 
   .cbf-task-risk-band__heading {
     /* Reset browser h2 margin so the .stack gap controls spacing. */
     margin: 0;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
 
   /* ── Quiet-row list ──────────────────────────────────────────────────── */
@@ -134,7 +134,7 @@ const KIND_LABEL: Record<string, string> = {
     /* .cluster centers by default — override to top-align mixed-height children. */
     --align: flex-start;
     padding-block: var(--spacing-200);
-    border-bottom: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--color-border-default-subtle);
   }
 
   .cbf-task-risk-band__row:last-child {
@@ -157,14 +157,14 @@ const KIND_LABEL: Record<string, string> = {
 
   .cbf-task-risk-band__title {
     font-weight: 500;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
 
   .cbf-task-risk-band__detail {
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
 
   .cbf-task-risk-band__meta {
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
   }
 </style>

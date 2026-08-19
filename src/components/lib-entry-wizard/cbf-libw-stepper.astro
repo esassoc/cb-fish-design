@@ -91,8 +91,8 @@ const { steps, active = 0 } = Astro.props;
     top: 0;
     z-index: 2;
     padding-block: var(--spacing-300);
-    background: var(--color-surface);
-    border-block-end: 1px solid var(--color-border);
+    background: var(--color-background-elevation-raised);
+    border-block-end: 1px solid var(--color-border-default);
   }
   .cbf-libwn__bar { max-width: none; }
 
@@ -123,14 +123,14 @@ const { steps, active = 0 } = Astro.props;
     border: 1px solid transparent;
     border-radius: var(--radius-100);
     background: none;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     font-family: inherit;
     font-size: 14px;
     line-height: 1.2;
     white-space: nowrap;
     cursor: pointer;
   }
-  .cbf-libwn__btn:hover { background: var(--color-surface-sunken); color: var(--color-text-primary); }
+  .cbf-libwn__btn:hover { background: var(--color-background-elevation-sunken); color: var(--color-content-default); }
   .cbf-libwn__btn:focus-visible {
     outline: var(--focus-ring-width) solid var(--focus-ring-color);
     outline-offset: var(--focus-ring-offset);
@@ -144,7 +144,7 @@ const { steps, active = 0 } = Astro.props;
     width: 22px;
     height: 22px;
     flex: none;
-    border: 1px solid var(--color-border-strong);
+    border: 1px solid var(--color-border-default-strong);
     border-radius: 50%;
     font-size: 12px;
     font-variant-numeric: tabular-nums;
@@ -158,28 +158,28 @@ const { steps, active = 0 } = Astro.props;
   [data-state='done'] .cbf-libwn__num { display: none; }
   [data-state='done'] .cbf-libwn__tick { display: block; }
   [data-state='done'] .cbf-libwn__marker {
-    border-color: var(--color-success, var(--color-primary));
-    color: var(--color-success, var(--color-primary));
+    border-color: var(--color-background-utility-success, var(--color-background-brand));
+    color: var(--color-background-utility-success, var(--color-background-brand));
   }
   [data-state='current'] .cbf-libwn__btn {
-    border-color: var(--color-border-strong);
-    background: var(--color-surface-sunken);
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-semibold);
+    border-color: var(--color-border-default-strong);
+    background: var(--color-background-elevation-sunken);
+    color: var(--color-content-default);
+    font-weight: var(--typography-font-weight-semibold);
   }
   [data-state='current'] .cbf-libwn__marker {
-    border-color: var(--color-primary);
-    background: var(--color-primary);
-    color: var(--color-text-inverse, #fff);
+    border-color: var(--color-background-brand);
+    background: var(--color-background-brand);
+    color: var(--color-content-default-knockout, #fff);
   }
 
   /* A step with a failing gate outranks its own progress state: it is the one
      thing the rail exists to surface. */
   .cbf-libwn__item:has([data-step-issues]:not([hidden])) .cbf-libwn__marker {
-    border-color: var(--color-danger);
-    color: var(--color-danger);
+    border-color: var(--color-background-utility-danger);
+    color: var(--color-background-utility-danger);
   }
-  [data-state='current'] .cbf-libwn__marker { color: var(--color-text-inverse, #fff); }
+  [data-state='current'] .cbf-libwn__marker { color: var(--color-content-default-knockout, #fff); }
 
   .cbf-libwn__sr {
     position: absolute;

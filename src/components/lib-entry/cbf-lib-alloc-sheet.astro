@@ -53,11 +53,11 @@ import { workElements } from '../../data/lib-entry.mjs';
         open cannot tell one from another. The scope is part of the name: the
         same "Mileage" sits under three trips. */}
     <div class="cbf-las__subject stack" data-gap="3xs">
-      <h3 class="cbf-las__name type-card-title" data-alloc-name></h3>
-      <p class="cbf-las__where type-body-small" data-alloc-where></p>
+      <h3 class="cbf-las__name typography-title" data-alloc-name></h3>
+      <p class="cbf-las__where typography-body-sm" data-alloc-where></p>
     </div>
 
-    <p class="cbf-las__lede type-body-small" data-alloc-line></p>
+    <p class="cbf-las__lede typography-body-sm" data-alloc-line></p>
 
     {/* The even split sits ABOVE the list it rewrites, so the vendor sees what
         it did the moment it happens rather than scrolling back up to a button
@@ -66,10 +66,10 @@ import { workElements } from '../../data/lib-entry.mjs';
       {/* Both quiet, and quieter than Save. These rewrite the list; the primary
           action of the sheet is still committing it. */}
       <span data-alloc-even>
-        <EsaButton size="sm" color="secondary" appearance="outline">Split evenly across all</EsaButton>
+        <EsaButton size="sm" variant="secondary" appearance="outline">Split evenly across all</EsaButton>
       </span>
       <span data-alloc-clear>
-        <EsaButton size="sm" color="secondary" appearance="ghost">Clear all</EsaButton>
+        <EsaButton size="sm" variant="secondary" appearance="ghost">Clear all</EsaButton>
       </span>
     </div>
 
@@ -77,8 +77,8 @@ import { workElements } from '../../data/lib-entry.mjs';
       {workElements.map((we: any) => (
         <div class="cbf-las__row" data-alloc-row={we.id}>
           <span class="stack" data-gap="3xs">
-            <span class="cbf-las__we type-body">{we.id}. {we.title}</span>
-            <span class="cbf-las__code type-body-small">Work element {we.code}</span>
+            <span class="cbf-las__we typography-body-md">{we.id}. {we.title}</span>
+            <span class="cbf-las__code typography-body-sm">Work element {we.code}</span>
           </span>
           <esa-text-field
             class="cbf-las__input"
@@ -95,7 +95,7 @@ import { workElements } from '../../data/lib-entry.mjs';
         sentence that says what is wrong when it is not 100. */}
     <div class="cbf-las__total repel" data-gap="sm">
       <span class="stack" data-gap="3xs">
-        <span class="cbf-las__total-label type-body">Allocated</span>
+        <span class="cbf-las__total-label typography-body-md">Allocated</span>
         <span data-alloc-verdict>
           <EsaBadge value="Totals 100%" variant="success" />
         </span>
@@ -109,10 +109,10 @@ import { workElements } from '../../data/lib-entry.mjs';
 
   <div slot="footer" class="repel" data-gap="sm">
     <span data-alloc-cancel>
-      <EsaButton size="sm" color="secondary" appearance="outline">Cancel</EsaButton>
+      <EsaButton size="sm" variant="secondary" appearance="outline">Cancel</EsaButton>
     </span>
     <span data-alloc-save>
-      <EsaButton size="sm" color="primary">Save allocation</EsaButton>
+      <EsaButton size="sm" variant="primary">Save allocation</EsaButton>
     </span>
   </div>
 </esa-side-dialog>
@@ -262,12 +262,12 @@ import { workElements } from '../../data/lib-entry.mjs';
 
   .cbf-las__name {
     margin: 0;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
   .cbf-las__where,
   .cbf-las__lede {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     max-width: 60ch;
   }
 
@@ -280,29 +280,29 @@ import { workElements } from '../../data/lib-entry.mjs';
     justify-content: space-between;
     gap: var(--spacing-300);
     padding: var(--spacing-200) 0;
-    border-bottom: 1px solid var(--color-border-light);
+    border-bottom: 1px solid var(--color-border-default-subtle);
   }
   .cbf-las__row:last-child { border-bottom: 0; }
-  .cbf-las__we { color: var(--color-text-primary); }
-  .cbf-las__code { color: var(--color-text-secondary); }
+  .cbf-las__we { color: var(--color-content-default); }
+  .cbf-las__code { color: var(--color-content-default-secondary); }
   .cbf-las__input { width: 104px; flex: none; }
 
   .cbf-las__total {
     --align: center;
     align-items: center;
     padding: var(--spacing-300);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
-    background: var(--color-surface-sunken);
+    background: var(--color-background-elevation-sunken);
   }
   .cbf-las__total-label {
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-medium);
+    color: var(--color-content-default);
+    font-weight: var(--typography-font-weight-medium);
   }
   .cbf-las__total-value {
-    font-size: var(--type-size-500);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-500);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
   }
 </style>

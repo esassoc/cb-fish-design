@@ -51,7 +51,7 @@ import CbfInvoiceCard from '../shared/cbf-invoice-card.astro';
 
   /* Border edge + a soft shadow so the esa-cards lift off the white page. */
   .cbf-review-summary :global(.esa-card) {
-    box-shadow: var(--shadow-100, 0 1px 3px rgba(16, 24, 40, 0.06));
+    box-shadow: var(--elevation-2, 0 1px 3px rgba(16, 24, 40, 0.06));
   }
 
   /* ---- File row (Uploaded invoice + Supporting documents) ----
@@ -63,11 +63,11 @@ import CbfInvoiceCard from '../shared/cbf-invoice-card.astro';
     align-items: center;
     gap: var(--spacing-200);
     font-size: 15px;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
-  .cbf-review-summary :global(.cbf-review-row svg) { color: var(--color-secondary); flex: none; }
+  .cbf-review-summary :global(.cbf-review-row svg) { color: var(--color-background-brand-muted); flex: none; }
   .cbf-review-summary :global(.cbf-review-row + .cbf-review-row) { margin-top: var(--spacing-300); }
-  .cbf-review-summary :global(.cbf-review-meta) { color: var(--color-text-tertiary); font-size: 13px; }
+  .cbf-review-summary :global(.cbf-review-meta) { color: var(--color-content-default-tertiary); font-size: 13px; }
 
   /* Icon-only "view" action — pushes to the row's right edge and drives the
      side PDF panel to show this document. Same in-row scale as the file rows;
@@ -82,24 +82,24 @@ import CbfInvoiceCard from '../shared/cbf-invoice-card.astro';
     justify-content: center;
     width: 30px;
     height: 30px;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
-    background: var(--color-surface);
-    color: var(--color-text-tertiary);
+    background: var(--color-background-elevation-raised);
+    color: var(--color-content-default-tertiary);
     cursor: pointer;
     transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
   }
   .cbf-review-summary :global(.cbf-doc-view[hidden]) { display: none; }
   .cbf-review-summary :global(.cbf-doc-view svg) { color: inherit; }
   .cbf-review-summary :global(.cbf-doc-view:hover) {
-    color: var(--color-secondary);
-    border-color: var(--color-primary-border);
-    background: var(--color-primary-subtle);
+    color: var(--color-background-brand-muted);
+    border-color: var(--color-border-brand);
+    background: var(--color-background-brand-subtle);
   }
   .cbf-review-summary :global(.cbf-doc-view.is-active) {
-    color: var(--color-surface);
-    background: var(--color-secondary);
-    border-color: var(--color-secondary);
+    color: var(--color-background-elevation-raised);
+    background: var(--color-background-brand-muted);
+    border-color: var(--color-background-brand-muted);
   }
 
   /* The invoice card itself is now the shared CbfInvoiceCard component. */
@@ -111,7 +111,7 @@ import CbfInvoiceCard from '../shared/cbf-invoice-card.astro';
   .cbf-review-notes {
     margin: 0;
     font-size: 14px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     line-height: 1.6;
     white-space: pre-wrap;
   }

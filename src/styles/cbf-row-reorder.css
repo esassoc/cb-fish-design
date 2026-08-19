@@ -33,7 +33,7 @@
 }
 /* Keyboard users never hover, so the handle must be reachable by focus alone. */
 .cbf-drag-handle:focus-within { opacity: 1; }
-.cbf-drag-handle button { touch-action: none; cursor: inherit; color: var(--color-text-secondary); }
+.cbf-drag-handle button { touch-action: none; cursor: inherit; color: var(--color-content-default-secondary); }
 /* An author `display` beats the UA's `[hidden] { display: none }`, so any element
    that sets one has to opt back in — the same trap logged against the layout
    primitives in docs/hub-issues.md. A surface that reveals handles per row (the
@@ -51,7 +51,7 @@
   z-index: 3;
   transform: translateY(var(--cbf-rdnd-dy, 0));
   box-shadow: var(--elevation-4);
-  background: var(--color-surface);
+  background: var(--color-background-elevation-raised);
   opacity: 0.96;
   cursor: grabbing;
 }
@@ -69,7 +69,7 @@
   position: fixed;
   z-index: 60;
   height: 2px;
-  background: var(--color-primary);
+  background: var(--color-background-brand);
   border-radius: var(--radius-full);
   pointer-events: none;
 }
@@ -80,7 +80,7 @@
   inset-inline-start: -1px;
   width: 8px;
   border-radius: var(--radius-full);
-  background: var(--color-primary);
+  background: var(--color-background-brand);
 }
 .cbf-rdnd-marker[hidden] { display: none; }
 
@@ -89,12 +89,12 @@
    the whole target tints and rings, because what is being proposed is that
    these two rows become one thing. */
 .is-drop-into {
-  background: var(--color-primary-subtle) !important;
+  background: var(--color-background-brand-subtle) !important;
   /* An OUTLINE, not an inset ring: on the wizard the row is an <article> wrapping
      an opaque esa-card, and anything drawn inside it would be covered by the
      card. An outline is drawn outside the box, so the same rule reads on a table
      row and on a card. */
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-background-brand);
   outline-offset: -1px;
 }
 .is-drop-into > :where(td, th) { background: transparent; }
@@ -105,7 +105,7 @@
 .is-lifted {
   position: relative;
   z-index: 2;
-  outline: 2px solid var(--color-primary-border);
+  outline: 2px solid var(--color-border-brand);
   outline-offset: -1px;
 }
 
@@ -114,7 +114,7 @@
    means "this is where the row you were carrying went". */
 .is-dropped { animation: cbf-rdnd-land 900ms ease-out; }
 @keyframes cbf-rdnd-land {
-  from { background: var(--color-primary-subtle); }
+  from { background: var(--color-background-brand-subtle); }
   to { background: transparent; }
 }
 

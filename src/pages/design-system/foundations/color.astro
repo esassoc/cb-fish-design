@@ -64,13 +64,13 @@ const roles = [
   </Section>
 
   <Section id="theming" title="Theming">
-    <p>One <code>[data-theme="cb-fish"]</code> block in <code>theme-cb-fish.css</code> overrides the semantic layer; primitives never move. Because the hub chains <code>--color-text-link</code> and the focus-ring tokens off <code>--color-primary</code>, re-pointing primary alone re-skins links and focus states too.</p>
+    <p>One <code>[data-theme="cb-fish"]</code> block in <code>theme-cb-fish.css</code> overrides the semantic layer; primitives never move. Because the hub chains <code>--color-content-link</code> and the focus-ring tokens off <code>--color-background-brand</code>, re-pointing primary alone re-skins links and focus states too.</p>
     <p class="note">
-      <strong>Neutral ramp —</strong> the full neutral chain (<code>--color-text-primary</code>,
+      <strong>Neutral ramp —</strong> the full neutral chain (<code>--color-content-default</code>,
       <code>-secondary</code>, <code>-tertiary</code>, <code>-muted</code>, and the borders) is re-pointed
       to the <code>--cbf-gray-*</code> ramp, so body text reads CBFish's warmer grays rather than the
       hub's cooler neutrals (<code>text-primary</code> is <code>#3d3d3d</code>, not <code>#171717</code>).
-      Surfaces stay white; <code>--color-surface-sunken</code> is intentionally blue-tinted and sits
+      Surfaces stay white; <code>--color-background-elevation-sunken</code> is intentionally blue-tinted and sits
       outside this chain.
     </p>
   </Section>
@@ -78,13 +78,13 @@ const roles = [
 
 <style>
   .roles { display: flex; flex-direction: column; gap: var(--spacing-200, 0.5rem); }
-  .role { display: flex; gap: var(--spacing-400, 1rem); align-items: center; padding: var(--spacing-300, 0.75rem) 0; border-bottom: 1px solid var(--color-border-light, #efefef); }
+  .role { display: flex; gap: var(--spacing-400, 1rem); align-items: center; padding: var(--spacing-300, 0.75rem) 0; border-bottom: 1px solid var(--color-border-default-subtle, #efefef); }
   .role:last-child { border-bottom: 0; }
-  .role__sw { width: 40px; height: 40px; border-radius: 8px; flex: none; border: 1px solid color-mix(in srgb, var(--color-text-primary, #000) 10%, transparent); }
+  .role__sw { width: 40px; height: 40px; border-radius: 8px; flex: none; border: 1px solid color-mix(in srgb, var(--color-content-default, #000) 10%, transparent); }
   .role__body { display: grid; gap: 1px; }
-  .role__body code { font-family: var(--font-mono, monospace); font-size: 13px; color: var(--color-text-primary, #171717); }
-  .role__val { font-family: var(--font-mono, monospace); font-size: 12px; color: var(--color-text-tertiary, #7c7c7c); text-transform: uppercase; }
-  .role__note { font-size: 13.5px; color: var(--color-text-secondary, #525252); }
+  .role__body code { font-family: var(--typography-font-family-mono, monospace); font-size: 13px; color: var(--color-content-default, #171717); }
+  .role__val { font-family: var(--typography-font-family-mono, monospace); font-size: 12px; color: var(--color-content-default-tertiary, #7c7c7c); text-transform: uppercase; }
+  .role__note { font-size: 13.5px; color: var(--color-content-default-secondary, #525252); }
 
-  .note { padding: var(--spacing-300, 0.75rem) var(--spacing-400, 1rem); background: var(--color-surface-sunken, #f3f7fc); border-radius: 8px; font-size: 14px; line-height: 1.55; }
+  .note { padding: var(--spacing-300, 0.75rem) var(--spacing-400, 1rem); background: var(--color-background-elevation-sunken, #f3f7fc); border-radius: 8px; font-size: 14px; line-height: 1.55; }
 </style>

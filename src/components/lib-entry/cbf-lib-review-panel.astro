@@ -95,15 +95,15 @@ const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
       <header class="cbf-lrp__head repel" data-gap="md">
         <div class="stack" data-gap="2xs">
           <div class="cluster" data-gap="xs">
-            <h2 id="cbf-lrp-title" class="type-section-title" data-rp-title>
+            <h2 id="cbf-lrp-title" class="typography-heading-md" data-rp-title>
               BPA review of this budget
             </h2>
             <span data-rp-badge>
               <EsaBadge value={badge.value} variant={badge.variant} size="sm" />
             </span>
           </div>
-          <p class="cbf-lrp__status type-body" data-rp-status>{statusText(review, 'vendor')}</p>
-          <p class="cbf-lrp__meta type-body-small">
+          <p class="cbf-lrp__status typography-body-md" data-rp-status>{statusText(review, 'vendor')}</p>
+          <p class="cbf-lrp__meta typography-body-sm">
             Cycle {reviewMeta.cycle} · submitted {reviewMeta.submittedOn} by {reviewMeta.vendorContact} ·
             reviewer {reviewMeta.reviewer}, {reviewMeta.reviewerRole}
           </p>
@@ -139,7 +139,7 @@ const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
       </div>
 
       {/* ── How the COR marks a line. Said once, where they start. ───────── */}
-      <p class="cbf-lrp__howto type-body-small" data-rp-role="cor">
+      <p class="cbf-lrp__howto typography-body-sm" data-rp-role="cor">
         Mark a line with the flag button at the end of its row. Every mark carries a reason and a
         note saying what has to change — the vendor sees them only once you return the budget.
       </p>
@@ -157,8 +157,8 @@ const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
           ></esa-textarea>
         </div>
         <blockquote class="cbf-lrp__memo" data-rp-role="vendor" data-rp-memo-read>
-          <p class="type-body">{review.memo}</p>
-          <footer class="cbf-lrp__memo-by type-body-small">
+          <p class="typography-body-md">{review.memo}</p>
+          <footer class="cbf-lrp__memo-by typography-body-sm">
             {reviewMeta.reviewer} · {reviewMeta.returnedOn}
           </footer>
         </blockquote>
@@ -167,8 +167,8 @@ const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
       {/* ── The marks ─────────────────────────────────────────────────────── */}
       <div class="stack" data-gap="sm" data-rp-list-wrap>
         <div class="repel" data-gap="sm">
-          <h3 class="type-card-title">Marked lines</h3>
-          <span class="cbf-lrp__count type-body-small" role="status" data-rp-outstanding>
+          <h3 class="typography-title">Marked lines</h3>
+          <span class="cbf-lrp__count typography-body-sm" role="status" data-rp-outstanding>
             {counts.outstanding} of {counts.total} outstanding
           </span>
         </div>
@@ -201,28 +201,28 @@ const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
                   </span>
                   <span class="cbf-lrp__line" data-rp-line>{lineLabel(f.lineId)}</span>
                   <span class="cbf-lrp__sep" aria-hidden="true">·</span>
-                  <span class="cbf-lrp__cat type-body-small" data-rp-cat>{lineCat(f.lineId)}</span>
+                  <span class="cbf-lrp__cat typography-body-sm" data-rp-cat>{lineCat(f.lineId)}</span>
                   <span data-rp-done-badge>
                     <EsaBadge value="Addressed" variant="success" size="sm" />
                   </span>
                 </div>
 
-                <p class="cbf-lrp__reason type-body-small" data-rp-reason>{reasonLabel(f.reason)}</p>
-                <p class="cbf-lrp__note type-body" data-rp-note>{f.note}</p>
-                <p class="cbf-lrp__by type-body-small" data-rp-by>{f.author} · {f.date}</p>
+                <p class="cbf-lrp__reason typography-body-sm" data-rp-reason>{reasonLabel(f.reason)}</p>
+                <p class="cbf-lrp__note typography-body-md" data-rp-note>{f.note}</p>
+                <p class="cbf-lrp__by typography-body-sm" data-rp-by>{f.author} · {f.date}</p>
               </div>
 
               <div class="cbf-lrp__item-actions cluster" data-gap="2xs">
                 <span data-rp-goto>
-                  <EsaButton size="sm" color="secondary" appearance="soft" icon="arrow-right">
+                  <EsaButton size="sm" variant="secondary" appearance="soft" icon="arrow-right">
                     Go to line
                   </EsaButton>
                 </span>
                 <span data-rp-role="cor" data-rp-edit>
-                  <EsaButton size="sm" color="secondary" appearance="outline" icon="pencil">Edit</EsaButton>
+                  <EsaButton size="sm" variant="secondary" appearance="outline" icon="pencil">Edit</EsaButton>
                 </span>
                 <span data-rp-role="cor" data-rp-remove>
-                  <EsaButton size="sm" color="ghost" icon="trash-2">Remove</EsaButton>
+                  <EsaButton size="sm" variant="ghost" icon="trash-2">Remove</EsaButton>
                 </span>
                 <span data-rp-role="vendor" class="cbf-lrp__addressed">
                   <esa-checkbox
@@ -248,24 +248,24 @@ const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
 
       {/* ── The decisions only the COR can make ───────────────────────────── */}
       <div class="cbf-lrp__decide repel" data-gap="sm" data-rp-role="cor">
-        <p class="cbf-lrp__decide-note type-body-small" data-rp-decide-note></p>
+        <p class="cbf-lrp__decide-note typography-body-sm" data-rp-decide-note></p>
         <div class="cluster" data-gap="xs">
           <span data-rp-reopen>
-            <EsaButton size="md" color="ghost">Reopen review</EsaButton>
+            <EsaButton size="md" variant="ghost">Reopen review</EsaButton>
           </span>
           <span data-rp-return>
-            <EsaButton size="md" color="warning" appearance="outline" icon="corner-up-left">
+            <EsaButton size="md" variant="warning" appearance="outline" icon="corner-up-left">
               Return for revision
             </EsaButton>
           </span>
           <span data-rp-approve>
-            <EsaButton size="md" color="primary" icon="check">Approve budget</EsaButton>
+            <EsaButton size="md" variant="primary" icon="check">Approve budget</EsaButton>
           </span>
         </div>
       </div>
 
       {/* ── What the vendor does next ────────────────────────────────────── */}
-      <p class="cbf-lrp__next type-body-small" data-rp-role="vendor" data-rp-next></p>
+      <p class="cbf-lrp__next typography-body-sm" data-rp-role="vendor" data-rp-next></p>
     </div>
   </EsaCard>
 </section>
@@ -535,26 +535,26 @@ const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
 
   /* ── Head ─────────────────────────────────────────────────────────────── */
   .cbf-lrp__head { --align: flex-start; }
-  .cbf-lrp__status { color: var(--color-text-primary); max-inline-size: 72ch; }
-  .cbf-lrp__meta { color: var(--color-text-secondary); }
+  .cbf-lrp__status { color: var(--color-content-default); max-inline-size: 72ch; }
+  .cbf-lrp__meta { color: var(--color-content-default-secondary); }
   .cbf-lrp__counts { --align: flex-end; }
   /* Supporting figures inside a strip — a step down from the page-hero stat. */
-  .cbf-lrp__num { --stat-value-size: var(--type-size-500); }
+  .cbf-lrp__num { --stat-value-size: var(--font-size-500); }
   .cbf-lrp__num :global(.esa-stat__value) { font-variant-numeric: tabular-nums; }
 
-  .cbf-lrp__howto { color: var(--color-text-secondary); max-inline-size: 76ch; }
+  .cbf-lrp__howto { color: var(--color-content-default-secondary); max-inline-size: 76ch; }
 
   /* ── The memo, quoted rather than boxed: it is someone's words. ────────── */
   .cbf-lrp__memo {
     margin: 0;
     padding-inline-start: var(--spacing-400);
-    border-inline-start: 2px solid var(--color-border-strong);
+    border-inline-start: 2px solid var(--color-border-default-strong);
   }
-  .cbf-lrp__memo p { margin: 0; color: var(--color-text-primary); max-inline-size: 76ch; }
-  .cbf-lrp__memo-by { color: var(--color-text-secondary); margin-block-start: var(--spacing-100); }
+  .cbf-lrp__memo p { margin: 0; color: var(--color-content-default); max-inline-size: 76ch; }
+  .cbf-lrp__memo-by { color: var(--color-content-default-secondary); margin-block-start: var(--spacing-100); }
 
   /* ── The marks ────────────────────────────────────────────────────────── */
-  .cbf-lrp__count { color: var(--color-text-secondary); font-variant-numeric: tabular-nums; }
+  .cbf-lrp__count { color: var(--color-content-default-secondary); font-variant-numeric: tabular-nums; }
   .cbf-lrp__list { list-style: none; margin: 0; padding: 0; }
 
   .cbf-lrp__item {
@@ -564,14 +564,14 @@ const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
     justify-content: space-between;
     gap: var(--spacing-400);
     padding: var(--spacing-300) var(--spacing-400);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
     /* Severity is carried by the badge and a background tint INSIDE the item —
        never a colored left border. */
-    background: var(--color-danger-subtle);
+    background: var(--color-background-utility-danger-subtle);
   }
-  .cbf-lrp__item[data-severity='question'] { background: var(--color-warning-subtle); }
-  .cbf-lrp__item[data-addressed='true'] { background: var(--color-surface-sunken); }
+  .cbf-lrp__item[data-severity='question'] { background: var(--color-background-utility-warning-subtle); }
+  .cbf-lrp__item[data-addressed='true'] { background: var(--color-background-elevation-sunken); }
 
   .cbf-lrp__item-body { flex: 1 1 28rem; min-inline-size: 0; }
   .cbf-lrp__item-actions { flex: none; --align: center; }
@@ -583,23 +583,23 @@ const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
   .cbf-lrp__item [data-rp-done-badge] { display: none; }
   .cbf-lrp__item[data-addressed='true'] [data-rp-done-badge] { display: inline-flex; }
   /* An addressed mark stays readable, just visibly settled. */
-  .cbf-lrp__item[data-addressed='true'] .cbf-lrp__note { color: var(--color-text-secondary); }
+  .cbf-lrp__item[data-addressed='true'] .cbf-lrp__note { color: var(--color-content-default-secondary); }
 
-  .cbf-lrp__line { font-weight: var(--font-weight-semibold); color: var(--color-text-primary); }
-  .cbf-lrp__sep { color: var(--color-text-tertiary); }
-  .cbf-lrp__cat { color: var(--color-text-secondary); }
-  .cbf-lrp__reason { color: var(--color-text-secondary); font-weight: var(--font-weight-medium); }
-  .cbf-lrp__note { color: var(--color-text-primary); max-inline-size: 76ch; }
-  .cbf-lrp__by { color: var(--color-text-secondary); }
+  .cbf-lrp__line { font-weight: var(--typography-font-weight-semibold); color: var(--color-content-default); }
+  .cbf-lrp__sep { color: var(--color-content-default-tertiary); }
+  .cbf-lrp__cat { color: var(--color-content-default-secondary); }
+  .cbf-lrp__reason { color: var(--color-content-default-secondary); font-weight: var(--typography-font-weight-medium); }
+  .cbf-lrp__note { color: var(--color-content-default); max-inline-size: 76ch; }
+  .cbf-lrp__by { color: var(--color-content-default-secondary); }
 
   /* ── Decisions ────────────────────────────────────────────────────────── */
   .cbf-lrp__decide {
     --align: center;
     padding-block-start: var(--spacing-400);
-    border-block-start: 1px solid var(--color-border-light);
+    border-block-start: 1px solid var(--color-border-default-subtle);
   }
-  .cbf-lrp__decide-note { color: var(--color-text-secondary); }
-  .cbf-lrp__next { color: var(--color-text-secondary); }
+  .cbf-lrp__decide-note { color: var(--color-content-default-secondary); }
+  .cbf-lrp__next { color: var(--color-content-default-secondary); }
 
   /* Layout primitives set display:flex, which would beat the UA [hidden] rule. */
   [hidden] { display: none !important; }

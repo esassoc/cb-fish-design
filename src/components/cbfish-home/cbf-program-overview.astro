@@ -24,8 +24,8 @@ const { heading, intro, stats } = Astro.props;
 ---
 <section class="cbf-program-overview">
   <div class="cbf-program-overview__copy">
-    <h1 class="type-page-title">{heading}</h1>
-    <p class="type-body cbf-program-overview__intro">{intro}</p>
+    <h1 class="typography-heading-lg">{heading}</h1>
+    <p class="typography-body-md cbf-program-overview__intro">{intro}</p>
   </div>
   <ul class="cbf-program-overview__stats grid">
     {stats.map((s) => (
@@ -51,7 +51,7 @@ const { heading, intro, stats } = Astro.props;
     max-width: 70ch;
   }
   .cbf-program-overview__intro {
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     font-size: 18px;
     line-height: 1.6;
   }

@@ -75,7 +75,7 @@ export function initInvoiceWizard(): void {
     // colour the connector lines between done steps
     stepperLines.forEach((line, i) => {
       line.style.background =
-        i < current ? 'var(--color-primary)' : 'var(--color-border)';
+        i < current ? 'var(--color-background-brand)' : 'var(--color-border-default)';
     });
   }
 

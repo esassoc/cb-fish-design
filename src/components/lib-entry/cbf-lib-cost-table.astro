@@ -164,7 +164,7 @@
 import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaBadge from '@esa/ecology/esa-badge.astro';
 import EsaFieldError from '@esa/ecology/esa-field-error.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import CbfDragHandle from '../shared/cbf-drag-handle.astro';
 import '../../styles/cbf-row-reorder.css';
 import {
@@ -361,7 +361,7 @@ const t0 = priced.totals;
 <section class="cbf-lct stack" data-gap="md" data-lct>
   {heading && (
     <header class="stack" data-gap="3xs">
-      <h2 class="type-section-title">{heading}</h2>
+      <h2 class="typography-heading-md">{heading}</h2>
       {lede && <p class="cbf-lct__lede">{lede}</p>}
     </header>
   )}
@@ -408,11 +408,11 @@ const t0 = priced.totals;
                    making the vendor invent a journey to hold it is the cost
                    this second control removes. */
                 <span class="cluster" data-gap="2xs">
-                  <EsaButton size="sm" color="primary" appearance="outline" icon="plus" data-add-trip>
+                  <EsaButton size="sm" variant="primary" appearance="outline" icon="plus" data-add-trip>
                     Add trip
                   </EsaButton>
                   <esa-dropdown-menu position="below-end" data-add-travel={NO_TRIP}>
-                    <EsaButton size="sm" color="secondary" appearance="soft" icon="plus">
+                    <EsaButton size="sm" variant="secondary" appearance="soft" icon="plus">
                       Add line without a trip
                     </EsaButton>
                   </esa-dropdown-menu>
@@ -421,12 +421,12 @@ const t0 = priced.totals;
                 /* More than one legal kind (or more than one sub-block): the add
                    affordance has to let the vendor pick which one, so it is a menu. */
                 <esa-dropdown-menu position="below-end" data-add-menu={cat.key}>
-                  <EsaButton size="sm" color="primary" appearance="outline" icon="plus">Add line</EsaButton>
+                  <EsaButton size="sm" variant="primary" appearance="outline" icon="plus">Add line</EsaButton>
                 </esa-dropdown-menu>
               ) : (
                 <EsaButton
                   size="sm"
-                  color="primary"
+                  variant="primary"
                   appearance="outline"
                   icon="plus"
                   data-add-line={`${cat.key}||${cat.shapes[0]}`}
@@ -540,7 +540,7 @@ const t0 = priced.totals;
                        ungrouped block gets the same menu — it is a block like any
                        other, and that is the whole reason it IS one. */
                     <esa-dropdown-menu position="below-end" data-add-travel={item.block.key}>
-                      <EsaButton size="sm" color="secondary" appearance="soft" icon="plus">
+                      <EsaButton size="sm" variant="secondary" appearance="soft" icon="plus">
                         Add travel line
                       </EsaButton>
                     </esa-dropdown-menu>
@@ -558,7 +558,7 @@ const t0 = priced.totals;
                 <td class="cbf-lct__cell cbf-lct__cell--act">
                   {item.block.trip && (
                     <span data-delete-trip>
-                      <EsaIconButton
+                      <EsaIconButton variant="chrome" iconOnly
                         icon="trash-2"
                         size="sm"
                         label={`Delete trip — ${item.block.label}`}
@@ -770,7 +770,7 @@ const t0 = priced.totals;
                           {/* The seam: a lump HERE, a full recursed category set THERE. */}
                           <EsaButton
                             size="sm"
-                            color="secondary"
+                            variant="secondary"
                             appearance="soft"
                             icon="external-link"
                             data-open-sheet={item.line.sheet}
@@ -932,7 +932,7 @@ const t0 = priced.totals;
                             data-qty-refollow
                             hidden={!item.line.qtyFromWas || !!item.line.qtyFrom}
                           >
-                            <EsaButton size="xs" color="secondary" appearance="soft" data-refollow-qty>
+                            <EsaButton size="xs" variant="secondary" appearance="soft" data-refollow-qty>
                               {item.line.qtyFromWas ? `Follow ${labelOfId(item.line.qtyFromWas)}` : 'Follow again'}
                             </EsaButton>
                           </span>
@@ -1014,7 +1014,7 @@ const t0 = priced.totals;
                               Breaking it keeps the number it resolved to, so the
                               cell never blanks. */}
                           <span data-qty-detach>
-                            <EsaButton size="xs" color="secondary" appearance="soft" data-detach-qty>
+                            <EsaButton size="xs" variant="secondary" appearance="soft" data-detach-qty>
                               Type your own
                             </EsaButton>
                           </span>
@@ -1081,7 +1081,7 @@ const t0 = priced.totals;
                           </span>
                         </span>
                         <span data-cap-toggle hidden={!capCanOverride(item.line)}>
-                          <EsaButton size="xs" color="secondary" appearance="soft">
+                          <EsaButton size="xs" variant="secondary" appearance="soft">
                             {capToggleText(item.line)}
                           </EsaButton>
                         </span>
@@ -1187,7 +1187,7 @@ const t0 = priced.totals;
                         {/* The way back INTO the claim — its year and its
                             locality are changed where they were answered. */}
                         <span data-standard-edit>
-                          <EsaIconButton
+                          <EsaIconButton variant="chrome" iconOnly
                             icon="pencil"
                             size="sm"
                             label={`Change the standard rate claim — ${displayLabel(item.line)}`}
@@ -1200,7 +1200,7 @@ const t0 = priced.totals;
                           so instead, because "no standard available" and "you
                           chose not to claim one" are different facts. */}
                       <span data-standard-toggle hidden={!canClaimStandard(item.line)}>
-                        <EsaButton size="xs" color="secondary" appearance="soft">
+                        <EsaButton size="xs" variant="secondary" appearance="soft">
                           {claimsStandard(item.line) ? 'Use my own rate' : 'Use the standard rate'}
                         </EsaButton>
                       </span>
@@ -1260,7 +1260,7 @@ const t0 = priced.totals;
                         ></esa-text-field>
                       </span>
                       <span>
-                        <EsaButton size="xs" color="secondary" appearance="soft" data-toggle-override>
+                        <EsaButton size="xs" variant="secondary" appearance="soft" data-toggle-override>
                           {overridden(item.line) ? 'Use schedule rate' : 'Override rate'}
                         </EsaButton>
                       </span>
@@ -1338,12 +1338,12 @@ const t0 = priced.totals;
                         changes. See cbf-lib-alloc-sheet. */}
                     <span data-alloc-editor hidden={derivedRow(item.line)}>
                       <span data-alloc-state="set" hidden={allocSum(item.line) !== 100}>
-                        <EsaButton size="md" color="secondary" appearance="outline" title={allocTitle(item.line)}>
+                        <EsaButton size="md" variant="secondary" appearance="outline" title={allocTitle(item.line)}>
                           {allocSummary(item.line)}
                         </EsaButton>
                       </span>
                       <span data-alloc-state="unset" hidden={allocSum(item.line) === 100}>
-                        <EsaButton size="md" color="warning" appearance="outline" title={allocTitle(item.line)}>
+                        <EsaButton size="md" variant="warning" appearance="outline" title={allocTitle(item.line)}>
                           {allocSummary(item.line)}
                         </EsaButton>
                       </span>
@@ -1377,20 +1377,20 @@ const t0 = priced.totals;
                       exists, and it stops existing when that one does. A button
                       here would be an offer the model cannot honour. */}
                   <span data-delete-line hidden={derivedRow(item.line)}>
-                    <EsaIconButton icon="trash-2" size="sm" label={`Delete line — ${displayLabel(item.line)}`} />
+                    <EsaIconButton variant="chrome" iconOnly icon="trash-2" size="sm" label={`Delete line — ${displayLabel(item.line)}`} />
                   </span>
 
                   <span data-mark-cell>
                     <esa-popover position="left" trigger="click" offset="6" data-mark-popover>
                       <span data-mark-state="off" hidden={!!flagOf(item.line)}>
-                        <EsaIconButton
+                        <EsaIconButton variant="chrome" iconOnly
                           icon="pencil"
                           size="sm"
                           label={`Mark this line for the vendor — ${displayLabel(item.line)}`}
                         />
                       </span>
                       <span data-mark-state="on" hidden={!flagOf(item.line)}>
-                        <EsaIconButton
+                        <EsaIconButton variant="chrome" iconOnly
                           icon="triangle-alert"
                           size="sm"
                           label={`Edit the mark on this line — ${displayLabel(item.line)}`}
@@ -1417,9 +1417,9 @@ const t0 = priced.totals;
                         ></esa-textarea>
                         <span class="repel" data-gap="sm">
                           <span data-mark-remove hidden={!flagOf(item.line)}>
-                            <EsaButton size="sm" color="ghost">Remove mark</EsaButton>
+                            <EsaButton size="sm" variant="ghost">Remove mark</EsaButton>
                           </span>
-                          <EsaButton size="sm" color="primary" data-mark-save>Save mark</EsaButton>
+                          <EsaButton size="sm" variant="primary" data-mark-save>Save mark</EsaButton>
                         </span>
                       </div>
                     </esa-popover>
@@ -1509,13 +1509,13 @@ const t0 = priced.totals;
   <p data-del-trip-body></p>
   <div slot="footer" class="cluster" data-gap="sm">
     <span data-del-trip-cancel>
-      <EsaButton size="sm" color="secondary" appearance="outline">Keep the trip</EsaButton>
+      <EsaButton size="sm" variant="secondary" appearance="outline">Keep the trip</EsaButton>
     </span>
     <span data-del-trip-keep>
-      <EsaButton size="sm" color="secondary" appearance="soft">Delete trip, keep the lines</EsaButton>
+      <EsaButton size="sm" variant="secondary" appearance="soft">Delete trip, keep the lines</EsaButton>
     </span>
     <span data-del-trip-confirm>
-      <EsaButton size="sm" color="danger" icon="trash-2">Delete trip and its lines</EsaButton>
+      <EsaButton size="sm" variant="danger" icon="trash-2">Delete trip and its lines</EsaButton>
     </span>
   </div>
 </esa-dialog>
@@ -3395,7 +3395,7 @@ const t0 = priced.totals;
   .cbf-lct__lede {
     margin: 0;
     font-size: 14px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-lct__sr {
     position: absolute;
@@ -3414,9 +3414,9 @@ const t0 = priced.totals;
      genuinely narrow widths, where a clipped popover is the lesser evil. */
   .cbf-lct__scroll {
     overflow: visible;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
   }
   @media (max-width: 900px) {
     .cbf-lct__scroll { overflow-x: auto; }
@@ -3427,7 +3427,7 @@ const t0 = priced.totals;
     min-width: 900px;
     border-collapse: collapse;
     font-size: 14px;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
 
   /* ── Per-category column captions ──
@@ -3439,11 +3439,11 @@ const t0 = priced.totals;
   .cbf-lct__colhead th {
     text-align: left;
     padding: var(--spacing-150) var(--spacing-300);
-    background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--color-background-elevation-raised);
+    border-bottom: 1px solid var(--color-border-default);
     font-size: 13px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-secondary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default-secondary);
     white-space: nowrap;
   }
   .cbf-lct__colhead .cbf-lct__col-num { text-align: right; }
@@ -3479,7 +3479,7 @@ const t0 = priced.totals;
   .cbf-lct__cell {
     padding: var(--spacing-250) var(--spacing-300);
     vertical-align: top;
-    border-top: 1px solid var(--color-border-light);
+    border-top: 1px solid var(--color-border-default-subtle);
   }
   .cbf-lct__cell--num {
     text-align: right;
@@ -3509,48 +3509,48 @@ const t0 = priced.totals;
   .cbf-lct__grab-void { width: var(--form-height-xs, 28px); flex: none; }
   /* A shape whose cells genuinely don't exist collapses into one spanned cell —
      never a row of dead inputs. */
-  .cbf-lct__cell--void { color: var(--color-text-secondary); }
+  .cbf-lct__cell--void { color: var(--color-content-default-secondary); }
 
   /* ── Category + sub-block header rows ── */
   .cbf-lct__cathead th {
     text-align: left;
     padding: var(--spacing-300);
-    background: var(--cbf-surface-section-head, var(--color-surface-sunken));
-    border-top: 1px solid var(--color-border-strong);
-    border-bottom: 1px solid var(--color-border);
-    font-weight: var(--font-weight-regular);
+    background: var(--cbf-surface-section-head, var(--color-background-elevation-sunken));
+    border-top: 1px solid var(--color-border-default-strong);
+    border-bottom: 1px solid var(--color-border-default);
+    font-weight: var(--typography-font-weight-regular);
   }
   .cbf-lct__cathead .cbf-lct__cell {
-    background: var(--cbf-surface-section-head, var(--color-surface-sunken));
-    border-top: 1px solid var(--color-border-strong);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--cbf-surface-section-head, var(--color-background-elevation-sunken));
+    border-top: 1px solid var(--color-border-default-strong);
+    border-bottom: 1px solid var(--color-border-default);
     vertical-align: middle;
   }
   .cbf-lct__cat-label {
     font-size: 16px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
   }
   .cbf-lct__blockhead th {
     text-align: left;
     padding: var(--spacing-200) var(--spacing-300) var(--spacing-200) var(--spacing-500);
-    border-top: 1px solid var(--color-border);
-    font-weight: var(--font-weight-regular);
+    border-top: 1px solid var(--color-border-default);
+    font-weight: var(--typography-font-weight-regular);
   }
   .cbf-lct__blockhead .cbf-lct__cell {
-    border-top: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-border-default);
     vertical-align: middle;
   }
   .cbf-lct__block-label {
     font-size: 14px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
   }
 
   /* ── Quiet second lines ── */
   .cbf-lct__note {
     font-size: 13px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     max-width: 46ch;
   }
   /* Where an item filed itself. A statement of fact the vendor did not type, so
@@ -3559,14 +3559,14 @@ const t0 = priced.totals;
      and must not look like an alarm; the consequence line under it stays quiet. */
   .cbf-lct__filed {
     font-size: 14px;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     max-width: 46ch;
   }
   /* "Nothing governs this rate" — a typed-rate line. Aligned with the controls in
      its sibling cells rather than floating at the cell's very top. */
   .cbf-lct__void-mark {
     font-size: 14px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     line-height: var(--form-height-md, 40px);
   }
   /* A value the vendor did NOT type — referenced or derived. Reads as a value,
@@ -3574,11 +3574,11 @@ const t0 = priced.totals;
   .cbf-lct__ref,
   .cbf-lct__derived {
     font-size: 14px;
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
   }
-  .cbf-lct__derived { font-weight: var(--font-weight-regular); }
+  .cbf-lct__derived { font-weight: var(--typography-font-weight-regular); }
   /* The count and the duration are one product, so they sit on one line and the
      × stays between them. align-items:center keeps the × and both unit words on
      the boxes' centre line rather than their baselines. */
@@ -3590,7 +3590,7 @@ const t0 = priced.totals;
 
   .cbf-lct__times {
     font-size: 13px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     align-self: center;
   }
 
@@ -3629,7 +3629,7 @@ const t0 = priced.totals;
      with the field it qualifies rather than as another empty box beside it. */
   .cbf-lct__unit {
     font-size: 13px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     align-self: center;
     white-space: nowrap;
   }
@@ -3643,7 +3643,7 @@ const t0 = priced.totals;
   /* ── Money ── */
   .cbf-lct__money {
     font-variant-numeric: tabular-nums;
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--typography-font-weight-semibold);
   }
 
   /* Until esa-popover upgrades it is an unknown element, so EVERY child renders
@@ -3659,8 +3659,8 @@ const t0 = priced.totals;
   .cbf-lct__alloc { width: 380px; }
   .cbf-lct__alloc-head {
     font-size: 14px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
   }
   .cbf-lct__alloc-row {
     display: flex;
@@ -3670,7 +3670,7 @@ const t0 = priced.totals;
   }
   .cbf-lct__alloc-label {
     font-size: 13px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     min-width: 0;
   }
   .cbf-lct__alloc-input { width: 104px; flex: none; }
@@ -3680,29 +3680,29 @@ const t0 = priced.totals;
     gap: var(--spacing-150);
     margin: 0;
     padding-block-start: var(--spacing-200);
-    border-top: 1px solid var(--color-border-light);
+    border-top: 1px solid var(--color-border-default-subtle);
     font-size: 14px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-lct__alloc-sum strong {
     font-variant-numeric: tabular-nums;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
 
   /* ── Row state: an inline background tint, NEVER a colored left border ── */
   tr[data-flag='gsa'] > .cbf-lct__cell,
   tr[data-flag='months'] > .cbf-lct__cell {
-    background: var(--color-danger-subtle);
+    background: var(--color-background-utility-danger-subtle);
   }
   /* The capitalization flag is no longer an ERROR. Arithmetic files every item,
      so what is left to mark is a vendor's override and a lump too large to test
      — both "this needs agreement", not "this is wrong". Warning, like the
      allocation flag, and matching the badges the row itself carries. */
   tr[data-flag='capital'] > .cbf-lct__cell {
-    background: var(--color-warning-subtle);
+    background: var(--color-background-utility-warning-subtle);
   }
   tr[data-flag='alloc'] > .cbf-lct__cell {
-    background: var(--color-warning-subtle);
+    background: var(--color-background-utility-warning-subtle);
   }
 
   /* ── The money moment: rows that just recomputed because of an edit ──────────
@@ -3717,7 +3717,7 @@ const t0 = priced.totals;
      background-color — otherwise a flagged row loses its danger/warning tint for
      the duration of the flash and then snaps back to it. */
   @keyframes cbf-lct-flash {
-    from { box-shadow: inset 0 0 0 100vmax var(--color-info-subtle); }
+    from { box-shadow: inset 0 0 0 100vmax var(--color-background-utility-info-subtle); }
     to { box-shadow: inset 0 0 0 100vmax transparent; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -3725,7 +3725,7 @@ const t0 = priced.totals;
     tr.is-recomputed > th,
     tr.is-added > .cbf-lct__cell {
       animation: none;
-      box-shadow: inset 0 0 0 100vmax var(--color-info-subtle);
+      box-shadow: inset 0 0 0 100vmax var(--color-background-utility-info-subtle);
     }
   }
 
@@ -3733,30 +3733,30 @@ const t0 = priced.totals;
   .cbf-lct__totals th {
     text-align: right;
     padding: var(--spacing-250) var(--spacing-300);
-    border-top: 1px solid var(--color-border-light);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
+    border-top: 1px solid var(--color-border-default-subtle);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default);
   }
   .cbf-lct__totals th .cbf-lct__note {
     display: block;
     max-width: none;
-    font-weight: var(--font-weight-regular);
+    font-weight: var(--typography-font-weight-regular);
   }
   .cbf-lct__totals .cbf-lct__cell {
-    border-top: 1px solid var(--color-border-light);
+    border-top: 1px solid var(--color-border-default-subtle);
     font-variant-numeric: tabular-nums;
   }
   .cbf-lct__totals tr:first-child th,
   .cbf-lct__totals tr:first-child .cbf-lct__cell {
-    border-top: 1px solid var(--color-border-strong);
-    background: var(--color-surface-sunken);
+    border-top: 1px solid var(--color-border-default-strong);
+    background: var(--color-background-elevation-sunken);
   }
   .cbf-lct__grand th,
   .cbf-lct__grand .cbf-lct__cell {
-    border-top: 1px solid var(--color-border-strong);
-    background: var(--color-surface-sunken);
+    border-top: 1px solid var(--color-border-default-strong);
+    background: var(--color-background-elevation-sunken);
     font-size: 16px;
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--typography-font-weight-semibold);
   }
   .cbf-lct__grand .cbf-lct__cell strong { font-variant-numeric: tabular-nums; }
 
@@ -3767,10 +3767,10 @@ const t0 = priced.totals;
      attribute reveals one, so switching lenses never loses an edit. */
   .cbf-lct__fact {
     font-size: 14px;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
   }
-  .cbf-lct__fact--label { font-weight: var(--font-weight-medium); }
+  .cbf-lct__fact--label { font-weight: var(--typography-font-weight-medium); }
 
   /* Vendor lens (the default): the mirrors and the mark editor stay out. */
   :global(html:not([data-cbf-role='cor'])) .cbf-lct__fact,
@@ -3863,20 +3863,20 @@ const t0 = priced.totals;
     margin-block-start: var(--spacing-150);
     padding: var(--spacing-200) var(--spacing-250);
     border-radius: var(--radius-100);
-    background: var(--color-danger-subtle);
+    background: var(--color-background-utility-danger-subtle);
   }
-  .cbf-lct__mark[data-sev='question'] { background: var(--color-warning-subtle); }
+  .cbf-lct__mark[data-sev='question'] { background: var(--color-background-utility-warning-subtle); }
   .cbf-lct__mark [data-mark-sev] { display: none; }
   .cbf-lct__mark[data-sev='required'] [data-mark-sev='required'],
   .cbf-lct__mark[data-sev='question'] [data-mark-sev='question'] { display: inline-flex; }
   .cbf-lct__mark-reason {
     font-size: 13px;
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-secondary);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default-secondary);
   }
   .cbf-lct__mark-note {
     font-size: 14px;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     max-width: 46ch;
   }
 

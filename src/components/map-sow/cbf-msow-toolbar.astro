@@ -55,7 +55,7 @@ const { contractNum, cor, fy, backHref } = Astro.props;
       disabled
     >&#10005;</button>
     <span onclick="openWEModal(null)">
-      <EsaButton color="primary" size="sm" icon="plus">Add WE</EsaButton>
+      <EsaButton variant="primary" size="sm" icon="plus">Add WE</EsaButton>
     </span>
   </div>
   -->
@@ -64,12 +64,12 @@ const { contractNum, cor, fy, backHref } = Astro.props;
     <!-- Modeled on the real CBFish "Back to SOW" button — same placement (leftmost
          in the action row, ghost/outline), same purpose: return to wherever this
          tool session was launched from. -->
-    <EsaButton color="ghost" appearance="outline" size="sm" href={backHref}>&larr; Back to Work Element</EsaButton>
+    <EsaButton variant="ghost" appearance="outline" size="sm" href={backHref}>&larr; Back to Work Element</EsaButton>
     <span onclick="clearAll()">
-      <EsaButton color="ghost" appearance="outline" size="sm">Clear All</EsaButton>
+      <EsaButton variant="ghost" appearance="outline" size="sm">Clear All</EsaButton>
     </span>
     <span onclick="openSOW()">
-      <EsaButton color="primary" size="sm">Export Metrics</EsaButton>
+      <EsaButton variant="primary" size="sm">Export Metrics</EsaButton>
     </span>
   </div>
 
@@ -77,8 +77,8 @@ const { contractNum, cor, fy, backHref } = Astro.props;
 
 <style>
   .msow-toolbar {
-    background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--color-background-elevation-raised);
+    border-bottom: 1px solid var(--color-border-default);
     padding: var(--spacing-300) var(--spacing-600);
     flex-shrink: 0;
     display: flex;
@@ -95,9 +95,9 @@ const { contractNum, cor, fy, backHref } = Astro.props;
   .msow-tool-title {
     margin: 0;
     font-size: 16px;
-    font-weight: var(--font-weight-bold);
-    font-family: var(--font-display, var(--font-sans));
-    color: var(--color-surface-inverse);
+    font-weight: var(--typography-font-weight-bold);
+    font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
+    color: var(--color-background-default-knockout);
     white-space: nowrap;
     line-height: 1.2;
   }
@@ -106,9 +106,9 @@ const { contractNum, cor, fy, backHref } = Astro.props;
     align-items: center;
     gap: var(--spacing-100);
     font-size: 11px;
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
   }
-  .msow-meta-sep { color: var(--color-border-strong); }
+  .msow-meta-sep { color: var(--color-border-default-strong); }
 
   .msow-we-selector {
     display: flex;
@@ -121,24 +121,24 @@ const { contractNum, cor, fy, backHref } = Astro.props;
     max-width: 280px;
     min-width: 160px;
     height: var(--form-height-sm, 32px);
-    border: 1px solid var(--color-border);
-    border-radius: var(--form-radius-sm, 4px);
-    padding: 0 var(--form-padding-x-sm, 12px);
-    font-size: var(--form-font-size-sm, 12px);
-    font-family: var(--font-sans, system-ui, sans-serif);
-    color: var(--color-text-primary);
-    background: var(--color-surface);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-sm, 4px);
+    padding: 0 var(--spacing-250, 12px);
+    font-size: var(--typography-label-xs-font-size, 12px);
+    font-family: var(--typography-font-family-sans, system-ui, sans-serif);
+    color: var(--color-content-default);
+    background: var(--color-background-elevation-raised);
     cursor: pointer;
   }
-  .msow-we-select:focus { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+  .msow-we-select:focus { outline: 2px solid var(--color-background-brand); outline-offset: 1px; }
 
   .msow-we-action-btn {
     height: var(--form-height-sm, 32px);
     width: var(--form-height-sm, 32px);
-    border: 1px solid var(--color-border-strong);
-    border-radius: var(--form-radius-sm, 4px);
+    border: 1px solid var(--color-border-default-strong);
+    border-radius: var(--radius-sm, 4px);
     background: transparent;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     font-size: 14px;
     cursor: pointer;
     display: inline-flex;
@@ -147,8 +147,8 @@ const { contractNum, cor, fy, backHref } = Astro.props;
     transition: background 150ms ease, color 150ms ease;
     flex-shrink: 0;
   }
-  .msow-we-action-btn:hover:not(:disabled) { background: var(--color-primary-subtle); color: var(--color-primary); }
-  .msow-we-action-btn--danger:hover:not(:disabled) { background: color-mix(in srgb, var(--color-danger, #ef4444) 8%, transparent); color: var(--color-danger, #ef4444); border-color: var(--color-danger, #ef4444); }
+  .msow-we-action-btn:hover:not(:disabled) { background: var(--color-background-brand-subtle); color: var(--color-background-brand); }
+  .msow-we-action-btn--danger:hover:not(:disabled) { background: color-mix(in srgb, var(--color-background-utility-danger, #ef4444) 8%, transparent); color: var(--color-background-utility-danger, #ef4444); border-color: var(--color-background-utility-danger, #ef4444); }
   .msow-we-action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
   .msow-toolbar-actions {

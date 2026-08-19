@@ -33,21 +33,21 @@ const { tabs } = Astro.props;
     flex-wrap: wrap;
     gap: var(--spacing-200);
     padding-bottom: var(--spacing-400);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border-default);
   }
   .cbf-pubs-tabs__tab {
     padding: var(--spacing-200) var(--spacing-400);
     border-radius: var(--radius-100);
-    color: var(--color-primary);
+    color: var(--color-background-brand);
     font-size: 16px;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--typography-font-weight-medium);
     white-space: nowrap;
   }
   .cbf-pubs-tabs__tab:hover {
-    background: var(--color-primary-subtle);
+    background: var(--color-background-brand-subtle);
   }
   .cbf-pubs-tabs__tab.is-active {
-    background: var(--color-secondary);
-    color: var(--color-text-inverse, #fff);
+    background: var(--color-background-brand-muted);
+    color: var(--color-content-default-knockout, #fff);
   }
 </style>

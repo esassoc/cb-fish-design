@@ -21,27 +21,27 @@
 <style is:global>
   /* page result sections render as cards — gray header, larger title, bright-blue icon */
   .cbf-search-surface .cbf-search-results .cbf-result-group {
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
     overflow: hidden;
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
   }
   .cbf-search-surface .cbf-search-results .cbf-result-group__head {
     background: var(--cbf-surface-section-head); /* neutral gray header */
     border-top: 0;
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border-default);
     padding: var(--spacing-300) var(--spacing-400);
   }
   .cbf-search-surface .cbf-search-results .cbf-result-group__title {
-    font-family: var(--font-display); /* IBM Plex Sans Condensed */
+    font-family: var(--typography-font-family-display); /* IBM Plex Sans Condensed */
     font-size: 20px;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--typography-font-weight-medium);
     letter-spacing: 0;
     text-transform: none;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
   .cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon {
-    color: var(--color-secondary); /* bright blue */
+    color: var(--color-background-brand-muted); /* bright blue */
   }
   .cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon svg {
     width: 18px;
@@ -58,15 +58,15 @@
     padding: var(--spacing-400) var(--spacing-500);
   }
   .cbf-search-surface .cbf-result--allbtn .cbf-result__title {
-    color: var(--color-secondary);
-    font-weight: var(--font-weight-semibold);
+    color: var(--color-background-brand-muted);
+    font-weight: var(--typography-font-weight-semibold);
   }
   .cbf-search-surface .cbf-result--allbtn .cbf-result__chevron {
-    color: var(--color-secondary);
+    color: var(--color-background-brand-muted);
     opacity: 1;
   }
   .cbf-search-surface .cbf-result--allbtn:hover,
   .cbf-search-surface .cbf-result--allbtn.is-active {
-    background: var(--color-primary-subtle);
+    background: var(--color-background-brand-subtle);
   }
 </style>

@@ -122,10 +122,10 @@ const attnLabel = (a: Attention): string =>
 <section class="cbf-portfolio-explorer-section stack" data-gap="sm" data-portfolio-explorer>
   <!-- Lede + live breadcrumb of the current selection path -->
   <header class="cbf-portfolio-explorer__intro stack" data-gap="2xs">
-    <p class="type-caption cbf-portfolio-explorer__lede">
+    <p class="typography-meta cbf-portfolio-explorer__lede">
       Walk the data model: project &rsaquo; contract &rsaquo; artifact &rsaquo; record.
     </p>
-    <p class="type-caption cbf-portfolio-explorer__crumb" data-crumb aria-live="polite"></p>
+    <p class="typography-meta cbf-portfolio-explorer__crumb" data-crumb aria-live="polite"></p>
   </header>
 
   <!-- The explorer CARD: the Miller-columns band plus an inline project-detail
@@ -138,7 +138,7 @@ const attnLabel = (a: Attention): string =>
 
     <!-- Column 1 · My projects (SSR'd; client re-selects the first row) -->
     <div class="cbf-pe-col" data-col="projects">
-      <h3 class="type-label cbf-pe-col__head">My projects</h3>
+      <h3 class="typography-label cbf-pe-col__head">My projects</h3>
       <ul class="cbf-pe-list" role="listbox" aria-label="My projects" data-list="projects">
         {projects.map((p, i) => (
           <li
@@ -150,8 +150,8 @@ const attnLabel = (a: Attention): string =>
             tabindex={i === 0 ? '0' : '-1'}
           >
             <span class="cbf-pe-row__body">
-              <span class="type-caption cbf-pe-row__caption cbf-num">{p.number}</span>
-              <span class="type-body cbf-pe-row__title">{p.name}</span>
+              <span class="typography-meta cbf-pe-row__caption cbf-num">{p.number}</span>
+              <span class="typography-body-md cbf-pe-row__title">{p.name}</span>
             </span>
             <span class="cbf-pe-row__trail">
               {p.attention && (
@@ -170,23 +170,23 @@ const attnLabel = (a: Attention): string =>
 
     <!-- Column 2 · Contracts (client-rendered from the selected project) -->
     <div class="cbf-pe-col" data-col="contracts">
-      <h3 class="type-label cbf-pe-col__head">Contracts</h3>
+      <h3 class="typography-label cbf-pe-col__head">Contracts</h3>
       <ul class="cbf-pe-list" role="listbox" aria-label="Contracts" data-list="contracts"></ul>
-      <p class="cbf-pe-prompt type-caption" data-prompt="contracts" hidden>Select a project</p>
+      <p class="cbf-pe-prompt typography-meta" data-prompt="contracts" hidden>Select a project</p>
     </div>
 
     <!-- Column 3 · Artifacts (four fixed types for the selected contract) -->
     <div class="cbf-pe-col" data-col="artifacts">
-      <h3 class="type-label cbf-pe-col__head">Artifacts</h3>
+      <h3 class="typography-label cbf-pe-col__head">Artifacts</h3>
       <ul class="cbf-pe-list" role="listbox" aria-label="Artifact types" data-list="artifacts"></ul>
-      <p class="cbf-pe-prompt type-caption" data-prompt="artifacts">Select a contract</p>
+      <p class="cbf-pe-prompt typography-meta" data-prompt="artifacts">Select a contract</p>
     </div>
 
     <!-- Column 4 · Items (records of the selected artifact type) -->
     <div class="cbf-pe-col cbf-pe-col--items" data-col="items">
-      <h3 class="type-label cbf-pe-col__head" data-items-head>Items</h3>
+      <h3 class="typography-label cbf-pe-col__head" data-items-head>Items</h3>
       <ul class="cbf-pe-list" role="listbox" aria-label="Records" data-list="items"></ul>
-      <p class="cbf-pe-prompt type-caption" data-prompt="items">Select an artifact</p>
+      <p class="cbf-pe-prompt typography-meta" data-prompt="items">Select an artifact</p>
       <!-- Empty-collection state (an artifact type with zero records) -->
       <div class="cbf-pe-empty" data-items-empty hidden>
         <EsaEmptyState title="Nothing here yet" description="No records on this contract yet." size="sm" />
@@ -202,34 +202,34 @@ const attnLabel = (a: Attention): string =>
     <div class="cbf-pe-detail" data-detail>
       <div class="cbf-pe-detail__head repel">
         <span class="cbf-pe-detail__ident stack" data-gap="3xs">
-          <span class="type-caption cbf-pe-detail__num cbf-num" data-detail-num>{firstProject?.number}</span>
-          <span class="type-card-title cbf-pe-detail__name" data-detail-name>{firstProject?.name}</span>
+          <span class="typography-meta cbf-pe-detail__num cbf-num" data-detail-num>{firstProject?.number}</span>
+          <span class="typography-title cbf-pe-detail__name" data-detail-name>{firstProject?.name}</span>
         </span>
-        <span class="type-caption cbf-pe-detail__meta cbf-num" data-detail-count>
+        <span class="typography-meta cbf-pe-detail__meta cbf-num" data-detail-count>
           {firstProject ? contractsText(firstProject.contracts.length) : ''}
         </span>
       </div>
       <div class="cbf-pe-detail__facts grid" style="--grid-min: 12rem" data-gap="md" aria-live="polite">
         <div class="stack" data-gap="2xs">
-          <span class="type-label cbf-pe-detail__label">Sponsor</span>
-          <span class="type-body cbf-pe-detail__sponsor" data-detail-sponsor>{fp?.sponsor}</span>
+          <span class="typography-label cbf-pe-detail__label">Sponsor</span>
+          <span class="typography-body-md cbf-pe-detail__sponsor" data-detail-sponsor>{fp?.sponsor}</span>
         </div>
         <div class="stack" data-gap="2xs">
           <div class="repel">
-            <span class="type-label cbf-pe-detail__label">Budget position</span>
+            <span class="typography-label cbf-pe-detail__label">Budget position</span>
             <span
-              class:list={['type-caption cbf-pe-detail__pace', fp && `cbf-pe-detail__pace--${fp.budget.pace}`]}
+              class:list={['typography-meta cbf-pe-detail__pace', fp && `cbf-pe-detail__pace--${fp.budget.pace}`]}
               data-detail-pace
             >{fp ? paceText(fp.budget) : ''}</span>
           </div>
           <div class="cbf-pe-detail__bar" data-detail-bar>
             <EsaProgressBar value={fp?.budget.spentPct ?? 0} size="sm" variant="primary" />
           </div>
-          <span class="type-caption cbf-pe-detail__budget" data-detail-budget>{fp ? budgetText(fp.budget) : ''}</span>
+          <span class="typography-meta cbf-pe-detail__budget" data-detail-budget>{fp ? budgetText(fp.budget) : ''}</span>
         </div>
         <div class="stack" data-gap="2xs">
-          <span class="type-label cbf-pe-detail__label">Last activity</span>
-          <span class="type-caption cbf-pe-detail__activity" data-detail-activity>{fp ? activityText(fp.lastActivity) : ''}</span>
+          <span class="typography-label cbf-pe-detail__label">Last activity</span>
+          <span class="typography-meta cbf-pe-detail__activity" data-detail-activity>{fp ? activityText(fp.lastActivity) : ''}</span>
         </div>
       </div>
     </div>
@@ -267,21 +267,21 @@ const attnLabel = (a: Attention): string =>
    * banned). Dense 14px floor: darken small text, never gray it out. */
 
   /* Intro band */
-  .cbf-portfolio-explorer__lede { color: var(--color-text-secondary, #525252); margin: 0; }
+  .cbf-portfolio-explorer__lede { color: var(--color-content-default-secondary, #525252); margin: 0; }
   .cbf-portfolio-explorer__crumb {
-    color: var(--color-text-primary, #171717);
+    color: var(--color-content-default, #171717);
     margin: 0;
     min-height: 1.2em; /* reserve space so the band doesn't jump on first paint */
     font-variant-numeric: tabular-nums;
   }
-  .cbf-portfolio-explorer__crumb :global(.cbf-pe-crumb-sep) { color: var(--color-text-tertiary, #a3a3a3); }
-  .cbf-portfolio-explorer__crumb :global(.cbf-pe-crumb-cur) { font-weight: var(--font-weight-medium, 500); }
+  .cbf-portfolio-explorer__crumb :global(.cbf-pe-crumb-sep) { color: var(--color-content-default-tertiary, #a3a3a3); }
+  .cbf-portfolio-explorer__crumb :global(.cbf-pe-crumb-cur) { font-weight: var(--typography-font-weight-medium, 500); }
 
   /* The explorer CARD: one bordered surface wrapping the band + inline detail. */
   .cbf-portfolio-explorer {
-    border: 1px solid var(--color-border, #e5e5e5);
+    border: 1px solid var(--color-border-default, #e5e5e5);
     border-radius: var(--radius-200, 8px);
-    background: var(--color-surface, #fff);
+    background: var(--color-background-elevation-raised, #fff);
     overflow: hidden; /* clip band + detail to the card's rounded corners */
   }
 
@@ -300,7 +300,7 @@ const attnLabel = (a: Attention): string =>
     flex-direction: column;
     min-width: 0;
     min-height: 0; /* let the inner list scroll instead of stretching the band */
-    border-left: 1px solid var(--color-border-light, #e5e5e5);
+    border-left: 1px solid var(--color-border-default-subtle, #e5e5e5);
   }
   .cbf-pe-col:first-child { border-left: none; }
 
@@ -308,9 +308,9 @@ const attnLabel = (a: Attention): string =>
   .cbf-pe-col__head {
     margin: 0;
     padding: var(--spacing-250, 0.625rem) var(--spacing-300, 0.75rem);
-    color: var(--color-text-secondary, #525252);
-    background: var(--color-surface, #fff);
-    border-bottom: 1px solid var(--color-border-light, #e5e5e5);
+    color: var(--color-content-default-secondary, #525252);
+    background: var(--color-background-elevation-raised, #fff);
+    border-bottom: 1px solid var(--color-border-default-subtle, #e5e5e5);
     position: sticky;
     top: 0;
     z-index: 1;
@@ -341,7 +341,7 @@ const attnLabel = (a: Attention): string =>
 
   /* Muted prompt shown in a column when nothing upstream is selected. */
   .cbf-pe-prompt {
-    color: var(--color-text-tertiary, #a3a3a3);
+    color: var(--color-content-default-tertiary, #a3a3a3);
     margin: 0;
     padding: var(--spacing-400, 1rem) var(--spacing-300, 0.75rem);
   }
@@ -358,8 +358,8 @@ const attnLabel = (a: Attention): string =>
      bar composed here, plus type-roles + grid/stack/repel layout — nothing
      hand-rolled that a lego provides. */
   .cbf-pe-detail {
-    border-top: 1px solid var(--color-border, #e5e5e5);
-    background: var(--color-surface-subtle, var(--color-surface-sunken, #fafafa));
+    border-top: 1px solid var(--color-border-default, #e5e5e5);
+    background: var(--color-surface-subtle, var(--color-background-elevation-sunken, #fafafa));
     padding: var(--spacing-300, 0.75rem) var(--spacing-350, 0.875rem);
     display: flex;
     flex-direction: column;
@@ -368,16 +368,16 @@ const attnLabel = (a: Attention): string =>
 
   /* Header: project number + name on the left, contract count on the right. */
   .cbf-pe-detail__head { align-items: flex-start; }
-  .cbf-pe-detail__num { color: var(--color-text-secondary, #525252); }
-  .cbf-pe-detail__name { margin: 0; color: var(--color-text-primary, #171717); }
-  .cbf-pe-detail__meta { color: var(--color-text-secondary, #525252); white-space: nowrap; }
+  .cbf-pe-detail__num { color: var(--color-content-default-secondary, #525252); }
+  .cbf-pe-detail__name { margin: 0; color: var(--color-content-default, #171717); }
+  .cbf-pe-detail__meta { color: var(--color-content-default-secondary, #525252); white-space: nowrap; }
 
   /* Functional field labels (sentence case, secondary) — not ornamental overlines. */
-  .cbf-pe-detail__label { color: var(--color-text-secondary, #525252); }
-  .cbf-pe-detail__sponsor { color: var(--color-text-primary, #171717); }
+  .cbf-pe-detail__label { color: var(--color-content-default-secondary, #525252); }
+  .cbf-pe-detail__sponsor { color: var(--color-content-default, #171717); }
   .cbf-pe-detail__budget,
   .cbf-pe-detail__activity {
-    color: var(--color-text-secondary, #525252);
+    color: var(--color-content-default-secondary, #525252);
     font-variant-numeric: tabular-nums;
   }
 
@@ -385,11 +385,11 @@ const attnLabel = (a: Attention): string =>
      on/under-plan stay calm — same quiet-badge restraint as the row dots. */
   .cbf-pe-detail__pace {
     font-variant-numeric: tabular-nums;
-    color: var(--color-text-tertiary, #737373);
+    color: var(--color-content-default-tertiary, #737373);
   }
-  .cbf-pe-detail__pace--over { color: var(--color-warning-strong, var(--color-warning, #b45309)); }
-  .cbf-pe-detail__pace--on { color: var(--color-success-strong, var(--color-success, #15803d)); }
-  .cbf-pe-detail__pace--under { color: var(--color-text-secondary, #525252); }
+  .cbf-pe-detail__pace--over { color: var(--color-content-utility-warning, var(--color-background-utility-warning, #b45309)); }
+  .cbf-pe-detail__pace--on { color: var(--color-content-utility-success, var(--color-background-utility-success, #15803d)); }
+  .cbf-pe-detail__pace--under { color: var(--color-content-default-secondary, #525252); }
 </style>
 
 <style is:global>
@@ -409,21 +409,21 @@ const attnLabel = (a: Attention): string =>
     padding: var(--spacing-200, 0.5rem) var(--spacing-250, 0.625rem);
     border-radius: var(--radius-100, 4px);
     cursor: pointer;
-    color: var(--color-text-primary, #171717);
+    color: var(--color-content-default, #171717);
     text-decoration: none;
     scroll-margin: var(--spacing-400, 1rem);
   }
   .cbf-portfolio-explorer .cbf-pe-row:hover {
-    background: var(--color-surface-subtle, var(--color-surface-sunken, #f5f5f5));
+    background: var(--color-surface-subtle, var(--color-background-elevation-sunken, #f5f5f5));
   }
   .cbf-portfolio-explorer .cbf-pe-row[aria-selected='true'] {
-    background: var(--color-surface-sunken, #efefef);
+    background: var(--color-background-elevation-sunken, #efefef);
   }
   .cbf-portfolio-explorer .cbf-pe-row[aria-selected='true'] .cbf-pe-row__title {
-    font-weight: var(--font-weight-medium, 500);
+    font-weight: var(--typography-font-weight-medium, 500);
   }
   .cbf-portfolio-explorer .cbf-pe-row:focus-visible {
-    outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--color-primary, #43608a));
+    outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--color-background-brand, #43608a));
     outline-offset: -2px;
   }
 
@@ -437,11 +437,11 @@ const attnLabel = (a: Attention): string =>
     flex: 1 1 auto;
   }
   .cbf-portfolio-explorer .cbf-pe-row__caption {
-    color: var(--color-text-secondary, #525252);
+    color: var(--color-content-default-secondary, #525252);
     line-height: 1.2;
   }
   .cbf-portfolio-explorer .cbf-pe-row__title {
-    color: var(--color-text-primary, #171717);
+    color: var(--color-content-default, #171717);
     line-height: 1.25;
     /* two-line clamp keeps rows dense but readable */
     display: -webkit-box;
@@ -451,7 +451,7 @@ const attnLabel = (a: Attention): string =>
     overflow: hidden;
   }
   .cbf-portfolio-explorer .cbf-pe-row__sub {
-    color: var(--color-text-secondary, #525252);
+    color: var(--color-content-default-secondary, #525252);
     line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
@@ -465,12 +465,12 @@ const attnLabel = (a: Attention): string =>
     align-self: center;
     min-width: 1.5rem;
     padding: 1px var(--spacing-150, 0.375rem);
-    border: 1px solid var(--color-border-light, #e5e5e5);
+    border: 1px solid var(--color-border-default-subtle, #e5e5e5);
     border-radius: var(--radius-100, 4px);
-    font-size: var(--type-size-100, 0.75rem);
+    font-size: var(--font-size-100, 0.75rem);
     line-height: 1.4;
     text-align: center;
-    color: var(--color-text-secondary, #525252);
+    color: var(--color-content-default-secondary, #525252);
     font-variant-numeric: tabular-nums;
   }
 
@@ -507,7 +507,7 @@ const attnLabel = (a: Attention): string =>
     bottom: -2px;
     width: 2px;
     border-radius: 1px;
-    background: var(--color-text-secondary, #525252);
+    background: var(--color-content-default-secondary, #525252);
     transform: translateX(-50%);
   }
 </style>
@@ -670,7 +670,7 @@ const attnLabel = (a: Attention): string =>
       // Pace chip: quiet on plan; names the gap to the planned baseline otherwise.
       detail.pace.textContent =
         pace === 'on' ? 'On plan' : `${Math.abs(variancePct)} pts ${pace === 'over' ? 'over' : 'under'} plan`;
-      detail.pace.className = `type-caption cbf-pe-detail__pace cbf-pe-detail__pace--${pace}`;
+      detail.pace.className = `typography-meta cbf-pe-detail__pace cbf-pe-detail__pace--${pace}`;
 
       // Move the SSR bar's fill + baseline tick to this project's figures.
       if (detail.bar) {
@@ -727,9 +727,9 @@ const attnLabel = (a: Attention): string =>
       // calm-status contract with an attention descendant) still renders it.
       const trailInner = `${opts.dot ?? ''}${opts.trail ?? ''}`;
       const trail = trailInner ? `<span class="cbf-pe-row__trail">${trailInner}</span>` : '';
-      const cap = opts.caption ? `<span class="type-caption cbf-pe-row__caption cbf-num">${esc(opts.caption)}</span>` : '';
-      const sub = opts.sub ? `<span class="type-caption cbf-pe-row__sub">${esc(opts.sub)}</span>` : '';
-      const body = `<span class="cbf-pe-row__body">${cap}<span class="type-body cbf-pe-row__title">${esc(opts.title)}</span>${sub}</span>`;
+      const cap = opts.caption ? `<span class="typography-meta cbf-pe-row__caption cbf-num">${esc(opts.caption)}</span>` : '';
+      const sub = opts.sub ? `<span class="typography-meta cbf-pe-row__sub">${esc(opts.sub)}</span>` : '';
+      const body = `<span class="cbf-pe-row__body">${cap}<span class="typography-body-md cbf-pe-row__title">${esc(opts.title)}</span>${sub}</span>`;
       return `${body}${trail}`;
     }
 

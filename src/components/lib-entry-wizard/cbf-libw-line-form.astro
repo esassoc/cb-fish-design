@@ -39,7 +39,7 @@
 import EsaCard from '@esa/ecology/esa-card.astro';
 import EsaBadge from '@esa/ecology/esa-badge.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaFieldError from '@esa/ecology/esa-field-error.astro';
 import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
@@ -73,8 +73,8 @@ const { id } = Astro.props;
             <CbfDragHandle size="sm" label="this line" />
           </span>
           <span class="stack" data-gap="3xs">
-            <span class="cbf-libwl__ord type-body-small" data-ord></span>
-            <span class="cbf-libwl__name type-card-title" data-name></span>
+            <span class="cbf-libwl__ord typography-body-sm" data-ord></span>
+            <span class="cbf-libwl__name typography-title" data-name></span>
           </span>
         </span>
         <span class="cluster" data-gap="sm">
@@ -82,7 +82,7 @@ const { id } = Astro.props;
           <!-- No delete on a derived row: it exists because a salary line
                exists, and it stops existing when that one does. -->
           <span data-delete>
-            <EsaIconButton icon="trash-2" size="sm" label="Delete this line" />
+            <EsaIconButton variant="chrome" iconOnly icon="trash-2" size="sm" label="Delete this line" />
           </span>
         </span>
       </header>
@@ -107,10 +107,10 @@ const { id } = Astro.props;
               size="sm"
             />
           </span>
-          <span class="cbf-libwl__mark-reason type-body-small" data-mark-reason></span>
+          <span class="cbf-libwl__mark-reason typography-body-sm" data-mark-reason></span>
         </span>
-        <span class="cbf-libwl__mark-note type-body-small" data-mark-note></span>
-        <span class="cbf-libwl__quiet type-body-small" data-mark-by></span>
+        <span class="cbf-libwl__mark-note typography-body-sm" data-mark-note></span>
+        <span class="cbf-libwl__quiet typography-body-sm" data-mark-by></span>
       </div>
 
       <!-- ── 1 · What the line IS ─────────────────────────────────────────
@@ -196,8 +196,8 @@ const { id } = Astro.props;
         ></esa-select>
 
         <p class="cbf-libwl__static" data-ident="derived">
-          <span class="cbf-libwl__static-label type-body-small">Fringe on</span>
-          <span class="cbf-libwl__static-value type-body" data-ident-derived></span>
+          <span class="cbf-libwl__static-label typography-body-sm">Fringe on</span>
+          <span class="cbf-libwl__static-value typography-body-md" data-ident-derived></span>
         </p>
 
         {/* No second line under the identity control. It mixed a kind's RULE
@@ -215,8 +215,8 @@ const { id } = Astro.props;
                beside it means. -->
           <esa-select data-time-unit-select data-unit-select size="md" label="Time unit"></esa-select>
           <p class="cbf-libwl__static" data-unit-static hidden>
-            <span class="cbf-libwl__static-label type-body-small">Unit</span>
-            <span class="cbf-libwl__static-value type-body" data-unit-static-value></span>
+            <span class="cbf-libwl__static-label typography-body-sm">Unit</span>
+            <span class="cbf-libwl__static-value typography-body-md" data-unit-static-value></span>
           </p>
 
           <!-- The second quantity shares this row: it multiplies the first, and a
@@ -224,8 +224,8 @@ const { id } = Astro.props;
           <esa-text-field data-field="qty2" data-qty2 size="md" label="Second quantity" hidden></esa-text-field>
           <esa-text-field data-field="qty2Unit" data-unit2-open size="md" label="Unit" placeholder="unit" hidden></esa-text-field>
           <p class="cbf-libwl__static" data-unit2-static hidden>
-            <span class="cbf-libwl__static-label type-body-small">Unit</span>
-            <span class="cbf-libwl__static-value type-body" data-unit2-static-value></span>
+            <span class="cbf-libwl__static-label typography-body-sm">Unit</span>
+            <span class="cbf-libwl__static-value typography-body-md" data-unit2-static-value></span>
           </p>
         </div>
 
@@ -243,9 +243,9 @@ const { id } = Astro.props;
         </div>
 
         <p class="cbf-libwl__static" data-qty-derived hidden>
-          <span class="cbf-libwl__static-label type-body-small">Quantity</span>
-          <span class="cbf-libwl__static-value type-body" data-qty-derived-value></span>
-          <span class="cbf-libwl__quiet type-body-small" data-qty-derived-src></span>
+          <span class="cbf-libwl__static-label typography-body-sm">Quantity</span>
+          <span class="cbf-libwl__static-value typography-body-md" data-qty-derived-value></span>
+          <span class="cbf-libwl__quiet typography-body-sm" data-qty-derived-src></span>
         </p>
 
         <div data-gate="months" hidden>
@@ -253,7 +253,7 @@ const { id } = Astro.props;
             <span data-gate-msg="months"></span>
           </EsaAlertBox>
         </div>
-        <p class="cbf-libwl__quiet type-body-small" data-months-note hidden></p>
+        <p class="cbf-libwl__quiet typography-body-sm" data-months-note hidden></p>
 
       </div>
 
@@ -280,7 +280,7 @@ const { id } = Astro.props;
              typed rate without erasing it, so the field above stays filled. -->
         <div class="stack" data-gap="sm" data-standard hidden>
           <span data-standard-toggle>
-            <EsaButton size="xs" color="secondary" appearance="soft">Use the standard rate</EsaButton>
+            <EsaButton size="xs" variant="secondary" appearance="soft">Use the standard rate</EsaButton>
           </span>
           <div class="stack" data-gap="sm" data-standard-fields hidden>
             <span data-standard-where hidden>
@@ -300,13 +300,13 @@ const { id } = Astro.props;
               help-text="Published rates change every 1 October, so a claim says which year's schedule it is claiming."
             ></esa-select>
             <p class="cbf-libwl__static">
-              <span class="cbf-libwl__static-label type-body-small">Standard rate</span>
-              <span class="cbf-libwl__static-value type-body" data-standard-rate></span>
-              <span class="cbf-libwl__quiet type-body-small" data-standard-src></span>
-              <span class="cbf-libwl__quiet type-body-small" data-standard-superseded></span>
+              <span class="cbf-libwl__static-label typography-body-sm">Standard rate</span>
+              <span class="cbf-libwl__static-value typography-body-md" data-standard-rate></span>
+              <span class="cbf-libwl__quiet typography-body-sm" data-standard-src></span>
+              <span class="cbf-libwl__quiet typography-body-sm" data-standard-superseded></span>
             </p>
           </div>
-          <p class="cbf-libwl__quiet type-body-small" data-standard-none hidden></p>
+          <p class="cbf-libwl__quiet typography-body-sm" data-standard-none hidden></p>
         </div>
 
         <!-- Referenced, not typed. A combobox because the real schedule is
@@ -321,12 +321,12 @@ const { id } = Astro.props;
             search-placeholder="Search locality or rate type…"
           ></esa-combobox>
           <p class="cbf-libwl__static">
-            <span class="cbf-libwl__static-label type-body-small">Scheduled rate</span>
-            <span class="cbf-libwl__static-value type-body" data-ref-rate></span>
-            <span class="cbf-libwl__quiet type-body-small" data-ref-src></span>
+            <span class="cbf-libwl__static-label typography-body-sm">Scheduled rate</span>
+            <span class="cbf-libwl__static-value typography-body-md" data-ref-rate></span>
+            <span class="cbf-libwl__quiet typography-body-sm" data-ref-src></span>
           </p>
           <span data-override-toggle>
-            <EsaButton size="xs" color="secondary" appearance="soft">Override rate</EsaButton>
+            <EsaButton size="xs" variant="secondary" appearance="soft">Override rate</EsaButton>
           </span>
           <esa-text-field
             data-field="rateOverride"
@@ -348,10 +348,10 @@ const { id } = Astro.props;
              input — the percentage was typed on a salary line, and the only
              thing this owes the reader is the route back. -->
         <p class="cbf-libwl__static" data-rate-derived hidden>
-          <span class="cbf-libwl__static-label type-body-small">Rate and base</span>
-          <span class="cbf-libwl__static-value type-body" data-derived-pct></span>
-          <span class="cbf-libwl__quiet type-body-small" data-derived-base></span>
-          <span class="cbf-libwl__quiet type-body-small" data-derived-src></span>
+          <span class="cbf-libwl__static-label typography-body-sm">Rate and base</span>
+          <span class="cbf-libwl__static-value typography-body-md" data-derived-pct></span>
+          <span class="cbf-libwl__quiet typography-body-sm" data-derived-base></span>
+          <span class="cbf-libwl__quiet typography-body-sm" data-derived-src></span>
         </p>
 
         <!-- Fringe is not a budgeting choice — it is the organization's rate
@@ -359,7 +359,7 @@ const { id } = Astro.props;
              it, and a note saying what it just added to the Fringe step. -->
         <div class="stack" data-gap="2xs" data-fringe hidden>
           <esa-text-field data-field="fringePct" size="md" suffix="%" label="Fringe rate"></esa-text-field>
-          <p class="cbf-libwl__quiet type-body-small" data-fringe-note></p>
+          <p class="cbf-libwl__quiet typography-body-sm" data-fringe-note></p>
         </div>
 
         <!-- The capitalization threshold FILES the item rather than grading it,
@@ -375,9 +375,9 @@ const { id } = Astro.props;
             <span data-gate-msg="capital"></span>
           </EsaAlertBox>
         </div>
-        <p class="cbf-libwl__quiet type-body-small" data-cap-note hidden></p>
+        <p class="cbf-libwl__quiet typography-body-sm" data-cap-note hidden></p>
         <span data-cap-move hidden>
-          <EsaButton size="sm" color="secondary" appearance="soft">Override the threshold</EsaButton>
+          <EsaButton size="sm" variant="secondary" appearance="soft">Override the threshold</EsaButton>
         </span>
       </div>
 
@@ -396,7 +396,7 @@ const { id } = Astro.props;
             <div class="stack" data-gap="2xs">
               {workElements.map((we: any) => (
                 <div class="cbf-libwl__alloc repel" data-gap="sm">
-                  <span class="cbf-libwl__alloc-label type-body">{weLabel(we.id)}</span>
+                  <span class="cbf-libwl__alloc-label typography-body-md">{weLabel(we.id)}</span>
                   <esa-text-field
                     class="cbf-libwl__alloc-input"
                     data-alloc-we={we.id}
@@ -414,9 +414,9 @@ const { id } = Astro.props;
              inside the fold — repeating them here is a paragraph of prose
              where a card wants a value. -->
         <p class="cbf-libwl__alloc-sum">
-          <span class="type-body-small">Allocated</span>
+          <span class="typography-body-sm">Allocated</span>
           <strong data-alloc-sum>0%</strong>
-          <span class="cbf-libwl__quiet type-body-small" data-alloc-split></span>
+          <span class="cbf-libwl__quiet typography-body-sm" data-alloc-split></span>
         </p>
         <span data-alloc-err hidden>
           <EsaFieldError message="" icon />
@@ -426,15 +426,15 @@ const { id } = Astro.props;
              the dollars of the salary lines it follows. An editor here would be
              a way to make the two disagree. -->
         <p class="cbf-libwl__static" data-alloc-derived hidden>
-          <span class="cbf-libwl__static-label type-body-small">Work element</span>
-          <span class="cbf-libwl__static-value type-body" data-alloc-derived-value></span>
-          <span class="cbf-libwl__quiet type-body-small" data-alloc-derived-src></span>
+          <span class="cbf-libwl__static-label typography-body-sm">Work element</span>
+          <span class="cbf-libwl__static-value typography-body-md" data-alloc-derived-value></span>
+          <span class="cbf-libwl__quiet typography-body-sm" data-alloc-derived-src></span>
         </p>
       </div>
 
       <!-- The subcontract seam: a lump HERE, a full recursed category set THERE. -->
       <span data-open-sheet hidden>
-        <EsaButton size="sm" color="secondary" appearance="soft" icon="external-link">
+        <EsaButton size="sm" variant="secondary" appearance="soft" icon="external-link">
           Open subcontract sheet
         </EsaButton>
       </span>
@@ -452,21 +452,21 @@ const { id } = Astro.props;
     --align: flex-start;
     align-items: flex-start;
     padding-block-end: var(--spacing-300);
-    border-block-end: 1px solid var(--color-border-light);
+    border-block-end: 1px solid var(--color-border-default-subtle);
   }
   .cbf-libwl__ord {
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
   .cbf-libwl__name {
     margin: 0;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
   .cbf-libwl__amount {
-    font-size: var(--type-size-400);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-400);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
@@ -475,7 +475,7 @@ const { id } = Astro.props;
      gray, and never under the 13px absolute floor. */
   .cbf-libwl__quiet {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     max-width: 62ch;
   }
 
@@ -484,7 +484,7 @@ const { id } = Astro.props;
      the same thing for a fraction of the ink. */
   .cbf-libwl__group + .cbf-libwl__group {
     padding-block-start: var(--spacing-400);
-    border-block-start: 1px solid var(--color-border-light);
+    border-block-start: 1px solid var(--color-border-default-subtle);
   }
   /* The allocation disclosure IS that group's heading, so it sits exactly where
      a group label would: no leading padding of its own, and its body flush to
@@ -525,10 +525,10 @@ const { id } = Astro.props;
     gap: var(--spacing-050, 2px);
     margin: 0;
   }
-  .cbf-libwl__static-label { color: var(--color-text-secondary); }
+  .cbf-libwl__static-label { color: var(--color-content-default-secondary); }
   .cbf-libwl__static-value {
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-medium);
+    color: var(--color-content-default);
+    font-weight: var(--typography-font-weight-medium);
     font-variant-numeric: tabular-nums;
   }
 
@@ -539,7 +539,7 @@ const { id } = Astro.props;
      different controls. So the row does not wrap: the NAME wraps inside its own
      column and the box stays put. */
   .cbf-libwl__alloc { --align: center; align-items: center; flex-wrap: nowrap; }
-  .cbf-libwl__alloc-label { color: var(--color-text-primary); flex: 1 1 auto; min-width: 0; }
+  .cbf-libwl__alloc-label { color: var(--color-content-default); flex: 1 1 auto; min-width: 0; }
   .cbf-libwl__alloc-input { width: 7rem; flex: none; }
   /* The read-out sits directly under the disclosure when the split is folded —
      so it carries NO rule of its own there, or the card grows a stray line
@@ -551,24 +551,24 @@ const { id } = Astro.props;
     align-items: baseline;
     gap: var(--spacing-150);
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   [data-alloc-list]:has(details[open]) + .cbf-libwl__alloc-sum {
     padding-block-start: var(--spacing-200);
-    border-block-start: 1px solid var(--color-border-light);
+    border-block-start: 1px solid var(--color-border-default-subtle);
   }
   .cbf-libwl__alloc-sum strong {
     font-variant-numeric: tabular-nums;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
 
   /* ── The COR's mark ── */
   .cbf-libwl__mark-reason,
   .cbf-libwl__mark-note {
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     max-width: 62ch;
   }
-  .cbf-libwl__mark-reason { font-weight: var(--font-weight-medium); }
+  .cbf-libwl__mark-reason { font-weight: var(--typography-font-weight-medium); }
   /* One severity badge is revealed by the mark's own severity. */
   .cbf-libwl__mark[data-sev='required'] [data-mark-sev='question'],
   .cbf-libwl__mark[data-sev='question'] [data-mark-sev='required'],
@@ -583,10 +583,10 @@ const { id } = Astro.props;
   .cbf-libwl[data-flag='gsa'] :global(.esa-card),
   .cbf-libwl[data-flag='capital'] :global(.esa-card),
   .cbf-libwl[data-flag='months'] :global(.esa-card) {
-    --card-bg: var(--color-danger-subtle);
+    --card-bg: var(--color-background-utility-danger-subtle);
   }
   .cbf-libwl[data-flag='alloc'] :global(.esa-card) {
-    --card-bg: var(--color-warning-subtle);
+    --card-bg: var(--color-background-utility-warning-subtle);
   }
 
   /* The money moment: a card that just moved because of an edit elsewhere. */
@@ -595,14 +595,14 @@ const { id } = Astro.props;
     animation: cbf-libwl-flash 1.5s var(--easing-out) 1;
   }
   @keyframes cbf-libwl-flash {
-    from { box-shadow: inset 0 0 0 100vmax var(--color-info-subtle); }
+    from { box-shadow: inset 0 0 0 100vmax var(--color-background-utility-info-subtle); }
     to { box-shadow: inset 0 0 0 100vmax transparent; }
   }
   @media (prefers-reduced-motion: reduce) {
     .cbf-libwl.is-recomputed :global(.esa-card),
     .cbf-libwl.is-added :global(.esa-card) {
       animation: none;
-      box-shadow: inset 0 0 0 100vmax var(--color-info-subtle);
+      box-shadow: inset 0 0 0 100vmax var(--color-background-utility-info-subtle);
     }
   }
 </style>

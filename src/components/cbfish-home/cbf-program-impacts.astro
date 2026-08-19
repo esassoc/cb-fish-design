@@ -22,8 +22,8 @@ const chartH = H - padBottom;
 ---
 <section class="cbf-program-impacts">
   <div class="cbf-program-impacts__head">
-    <h2 class="type-section-title">Program impacts</h2>
-    <p class="type-body cbf-program-impacts__lede">
+    <h2 class="typography-heading-md">Program impacts</h2>
+    <p class="typography-body-md cbf-program-impacts__lede">
       Funding invested in fish &amp; wildlife mitigation across the Columbia River Basin,
       fiscal years 2005&ndash;2026.
     </p>
@@ -61,25 +61,25 @@ const chartH = H - padBottom;
     gap: var(--spacing-200);
     max-width: 70ch;
   }
-  .cbf-program-impacts__lede { color: var(--color-text-secondary); }
+  .cbf-program-impacts__lede { color: var(--color-content-default-secondary); }
   .cbf-program-impacts__chart {
     margin: 0;
     padding: var(--spacing-500);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-300);
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
   }
   .cbf-program-impacts__chart svg { width: 100%; height: auto; display: block; }
-  .cbf-program-impacts__bar { fill: var(--color-primary); }
-  .cbf-program-impacts__bar:hover { fill: var(--color-secondary); }
+  .cbf-program-impacts__bar { fill: var(--color-background-brand); }
+  .cbf-program-impacts__bar:hover { fill: var(--color-background-brand-muted); }
   .cbf-program-impacts__xlabel {
-    fill: var(--color-text-tertiary);
+    fill: var(--color-content-default-tertiary);
     font-size: 12px;
-    font-family: var(--font-sans);
+    font-family: var(--typography-font-family-sans);
   }
   .cbf-program-impacts__caption {
     margin-top: var(--spacing-300);
     font-size: 14px;
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
   }
 </style>

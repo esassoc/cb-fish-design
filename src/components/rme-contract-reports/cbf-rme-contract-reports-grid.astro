@@ -26,7 +26,7 @@
 // filter, esa-icon-button for the report download action and the CSV
 // download.
 import CbfSearchField from '../search/cbf-search-field.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import '../shared/cbf-data-grid-chrome.css';
 import {
   rmeContractReports as defaultRows,
@@ -50,7 +50,7 @@ const yearOptions = [
   <div class="cbf-data-grid__controls repel">
     <div class="cbf-data-grid__filters cluster" data-gap="lg">
       <label class="cbf-data-grid__filter">
-        <span class="type-caption">Calendar year</span>
+        <span class="typography-meta">Calendar year</span>
         <esa-select
           data-rme-year-filter
           size="sm"
@@ -75,10 +75,10 @@ const yearOptions = [
   <div class="cbf-data-grid__grid" data-rme-contract-grid></div>
 
   <footer class="cbf-data-grid__footer repel">
-    <span class="type-caption" data-rme-contract-count>
+    <span class="typography-meta" data-rme-contract-count>
       Showing {rows.length} of {rows.length} contract reports
     </span>
-    <EsaIconButton icon="download" label="Download CSV" size="sm" data-rme-contract-csv />
+    <EsaIconButton variant="chrome" iconOnly icon="download" label="Download CSV" size="sm" data-rme-contract-csv />
   </footer>
 
   <!-- Row data, serialized so the client module (which imports ag-grid-community)
@@ -89,7 +89,7 @@ const yearOptions = [
        system scope hash intact. The grid's "Report" cell renderer clones this
        markup (never hand-rolled) for every row that has a document. -->
   <div class="cbf-rme-contract-reports__templates" data-report-btn-template hidden aria-hidden="true">
-    <EsaIconButton icon="download" label="Download report" size="sm" />
+    <EsaIconButton variant="chrome" iconOnly icon="download" label="Download report" size="sm" />
   </div>
 </section>
 
@@ -222,7 +222,7 @@ const yearOptions = [
      carry no Astro scope hash, so their styling is global, prefixed by the
      component's own root class. */
   .cbf-rme-contract-reports .cbf-rme-contract-reports__na {
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
   }
   /* The cloned esa-icon-button owns its own box; just center it in the cell. */
   .cbf-rme-contract-reports .cbf-rme-contract-reports__report-cell {

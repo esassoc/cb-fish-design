@@ -31,7 +31,7 @@
 import CbfSearchField from '../search/cbf-search-field.astro';
 import EsaPill from '@esa/ecology/esa-pill.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 import { reviewQueue as defaultQueue } from '../../data/invoice-review.mjs';
@@ -79,7 +79,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
 ---
 <section class="cbf-invoice-review-queue stack" data-gap="md" data-variant={variant}>
   <header class="cbf-invoice-review-queue__header repel">
-    <h2 class="type-section-title">{title}</h2>
+    <h2 class="typography-heading-md">{title}</h2>
     <div class="cbf-invoice-review-queue__search">
       <CbfSearchField
         placeholder="Search invoices, vendors or contracts…"
@@ -117,7 +117,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
   </div>
 
   <footer class="cbf-invoice-review-queue__footer">
-    <span class="type-caption" data-queue-count>
+    <span class="typography-meta" data-queue-count>
       Showing {invoices.length} of {invoices.length} invoices
     </span>
   </footer>
@@ -139,7 +139,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
     ))}
     {/* The quick-view control, server-rendered once as a real esa-icon-button and
         cloned into every row's peek cell — so the grid never hand-rolls a button. */}
-    <span data-peek-button><EsaIconButton icon="eye" label="Quick view" size="sm" /></span>
+    <span data-peek-button><EsaIconButton variant="chrome" iconOnly icon="eye" label="Quick view" size="sm" /></span>
   </div>
 
   <!-- Row data for the client grid module (avoids a second fetch). -->
@@ -190,14 +190,14 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
             <dt class="cbf-review__label">Invoice</dt>
             <dd class="cbf-review-fields__value cbf-num" data-f-number-panel></dd>
             <span class="cbf-review-fields__copy" data-copy>
-              <EsaIconButton icon="copy" label="Copy invoice number" size="xs" />
+              <EsaIconButton variant="chrome" iconOnly icon="copy" label="Copy invoice number" size="xs" />
             </span>
           </div>
           <div class="cbf-review-fields__row">
             <dt class="cbf-review__label">Vendor</dt>
             <dd class="cbf-review-fields__value" data-f-vendor-panel></dd>
             <span class="cbf-review-fields__copy" data-copy>
-              <EsaIconButton icon="copy" label="Copy vendor" size="xs" />
+              <EsaIconButton variant="chrome" iconOnly icon="copy" label="Copy vendor" size="xs" />
             </span>
           </div>
           <div class="cbf-review-fields__row">
@@ -207,7 +207,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
               <span class="cbf-review-fields__sub" data-f-contract-name></span>
             </dd>
             <span class="cbf-review-fields__copy" data-copy data-f-contract-copy>
-              <EsaIconButton icon="copy" label="Copy contract number" size="xs" />
+              <EsaIconButton variant="chrome" iconOnly icon="copy" label="Copy contract number" size="xs" />
             </span>
           </div>
           <div class="cbf-review-fields__row">
@@ -217,14 +217,14 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
               <span class="cbf-review-fields__sub" data-f-project-name></span>
             </dd>
             <span class="cbf-review-fields__copy" data-copy data-f-project-copy>
-              <EsaIconButton icon="copy" label="Copy project number" size="xs" />
+              <EsaIconButton variant="chrome" iconOnly icon="copy" label="Copy project number" size="xs" />
             </span>
           </div>
           <div class="cbf-review-fields__row">
             <dt class="cbf-review__label">Perf. start</dt>
             <dd class="cbf-review-fields__value" data-f-perf-start></dd>
             <span class="cbf-review-fields__copy" data-copy>
-              <EsaIconButton icon="copy" label="Copy performance start date" size="xs" />
+              <EsaIconButton variant="chrome" iconOnly icon="copy" label="Copy performance start date" size="xs" />
             </span>
           </div>
           <div class="cbf-review-fields__row">
@@ -234,7 +234,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
               <span class="cbf-review-fields__sub" data-f-contract-end></span>
             </dd>
             <span class="cbf-review-fields__copy" data-copy data-f-perf-end-copy>
-              <EsaIconButton icon="copy" label="Copy performance end date" size="xs" />
+              <EsaIconButton variant="chrome" iconOnly icon="copy" label="Copy performance end date" size="xs" />
             </span>
           </div>
         </dl>
@@ -245,7 +245,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
             <dt class="cbf-review__label">Amount</dt>
             <dd class="cbf-review-fields__value cbf-review-money__amount cbf-num" data-f-amount-hero></dd>
             <span class="cbf-review-fields__copy" data-copy data-f-amount-copy>
-              <EsaIconButton icon="copy" label="Copy amount" size="xs" />
+              <EsaIconButton variant="chrome" iconOnly icon="copy" label="Copy amount" size="xs" />
             </span>
           </div>
           <div class="cbf-review-fields__row">
@@ -268,14 +268,14 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
           <div class="cbf-review-attachments__head repel">
             <h3 class="cbf-review__section-title" data-f-attach-title>Backup documentation</h3>
             <span data-attach-all>
-              <EsaButton appearance="outline" color="secondary" size="sm" icon="download">Download all</EsaButton>
+              <EsaButton appearance="outline" variant="secondary" size="sm" icon="download">Download all</EsaButton>
             </span>
           </div>
           <ul class="cbf-review-attachments__list" data-f-attachments></ul>
         </section>
 
         <div data-dl-template hidden aria-hidden="true">
-          <EsaIconButton icon="download" label="Download file" size="sm" />
+          <EsaIconButton variant="chrome" iconOnly icon="download" label="Download file" size="sm" />
         </div>
 
         <!-- Single action: this overlay is a quick preview. Processing the invoice
@@ -283,7 +283,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
              happens on the invoice's own page. EsaButton renders as a link; its href
              is set to the invoice's process page per record in populate(). -->
         <div class="cbf-review-process" data-process>
-          <EsaButton href="#" color="primary" size="md" icon="arrow-right">Process invoice</EsaButton>
+          <EsaButton href="#" variant="primary" size="md" icon="arrow-right">Process invoice</EsaButton>
         </div>
       </aside>
 
@@ -338,8 +338,8 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
     <div slot="footer" class="cbf-review-footer repel">
       <span class="cbf-review-footer__position" data-f-position></span>
       <div class="cluster" data-gap="xs">
-        <span data-review-prev><EsaButton appearance="outline" color="secondary" icon="chevron-left">Previous</EsaButton></span>
-        <span data-review-next><EsaButton appearance="outline" color="secondary" icon="chevron-right">Next</EsaButton></span>
+        <span data-review-prev><EsaButton appearance="outline" variant="secondary" icon="chevron-left">Previous</EsaButton></span>
+        <span data-review-next><EsaButton appearance="outline" variant="secondary" icon="chevron-right">Next</EsaButton></span>
       </div>
     </div>
   </esa-side-dialog>
@@ -368,12 +368,12 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
   /* No trailing controls (review variant / empty slot) → the wrapper adds no gap. */
   .cbf-invoice-review-queue__controls-end:empty { display: none; }
   .cbf-invoice-review-queue__grid {
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
     overflow: hidden;
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
   }
-  .cbf-invoice-review-queue__footer { color: var(--color-text-tertiary); }
+  .cbf-invoice-review-queue__footer { color: var(--color-content-default-tertiary); }
 
   /* A wide overlay so the split breathes — clamps to the viewport on small screens.
      Effectively a full-bleed review surface on desktop, like the Acctual reference.
@@ -390,23 +390,23 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
      in the top-left. flex:1 + right-align places it beside the close button. */
   .cbf-review-dialog__titlebar { flex: 1; min-width: 0; text-align: right; }
   .cbf-review-dialog__title {
-    font-size: var(--type-size-500);
-    font-weight: var(--font-weight-bold);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-500);
+    font-weight: var(--typography-font-weight-bold);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
   }
 
   /* Panel ----------------------------------------------------------------- */
   .cbf-review__label {
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-tertiary);
+    font-size: var(--font-size-150);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-review__section-title {
     margin: 0;
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-tertiary);
+    font-size: var(--font-size-150);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default-tertiary);
   }
 
   /* Deadline leads the panel (matches the detail page); standard text color, red
@@ -416,28 +416,28 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
   .cbf-review-hero__status { flex: none; }
   .cbf-review-deadline { display: flex; flex-direction: column; gap: var(--spacing-100); min-width: 0; }
   .cbf-review-deadline__date {
-    font-size: var(--type-size-500);
-    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-500);
+    font-weight: var(--typography-font-weight-bold);
     line-height: var(--line-height-tight);
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
   }
-  .cbf-review-deadline__date--overdue { color: var(--color-danger, #b42318); }
+  .cbf-review-deadline__date--overdue { color: var(--color-background-utility-danger, #b42318); }
   .cbf-review-deadline__urgency { display: block; }
   .cbf-review-deadline__urgency:empty { display: none; }
   .cbf-review-deadline__support {
     margin: var(--spacing-100) 0 0;
-    font-size: var(--type-size-100);
-    color: var(--color-text-tertiary);
+    font-size: var(--font-size-100);
+    color: var(--color-content-default-tertiary);
   }
 
   /* Amount block reuses the field-row grid; a top/bottom hairline sets it off. The
      amount is emphasized by size only (no bold), left-aligned in the shared column. */
-  .cbf-review-money { padding-block: var(--spacing-200); border-block: 1px solid var(--color-border); }
+  .cbf-review-money { padding-block: var(--spacing-200); border-block: 1px solid var(--color-border-default); }
   .cbf-review-money__amount {
-    font-size: var(--type-size-400);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-400);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default);
   }
 
   .cbf-review-fields { margin: 0; }
@@ -447,18 +447,18 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
     gap: var(--spacing-300);
     align-items: baseline;
     padding-block: var(--spacing-250);
-    border-top: 1px solid var(--color-border-light, var(--color-border));
+    border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default));
   }
   .cbf-review-fields__row:first-child { border-top: 0; padding-top: 0; }
-  .cbf-review-fields__value { margin: 0; font-size: var(--type-size-200); color: var(--color-text-secondary); }
+  .cbf-review-fields__value { margin: 0; font-size: var(--font-size-200); color: var(--color-content-default-secondary); }
   /* Secondary line under a value — the contract/project NAME (the number leads) or
      the contract-end note under the performance end date. Quieter than the value. */
   .cbf-review-fields__sub {
     display: block;
     margin-top: var(--spacing-50);
-    font-size: var(--type-size-100);
-    font-weight: var(--font-weight-regular);
-    color: var(--color-text-tertiary);
+    font-size: var(--font-size-100);
+    font-weight: var(--typography-font-weight-regular);
+    color: var(--color-content-default-tertiary);
   }
 
   /* Per-field copy control — the esa-icon-button lego, quiet until hovered.
@@ -468,17 +468,17 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
     align-self: center;
     position: relative;
     line-height: 0;
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-review-fields__copy :global(.esa-icon-button) { color: inherit; }
   .cbf-review-fields__copy :global(.esa-icon-button:hover) {
-    background: color-mix(in srgb, var(--color-text-tertiary) 14%, transparent);
-    color: var(--color-text-primary);
+    background: color-mix(in srgb, var(--color-content-default-tertiary) 14%, transparent);
+    color: var(--color-content-default);
   }
   /* Copied feedback: tint the control + a transient "Copied" label beside it.
-     -strong is the accessible TEXT step; plain --color-success is the solid-FILL
+     -strong is the accessible TEXT step; plain --color-background-utility-success is the solid-FILL
      step and lands near 2:1 painted onto a glyph. */
-  .cbf-review-fields__copy[data-state='copied'] { color: var(--color-success-strong); }
+  .cbf-review-fields__copy[data-state='copied'] { color: var(--color-content-utility-success); }
   .cbf-review-fields__copy[data-state='copied']::after {
     content: 'Copied';
     position: absolute;
@@ -486,9 +486,9 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
     top: 50%;
     transform: translateY(-50%);
     white-space: nowrap;
-    font-size: var(--type-size-050);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-success-strong);
+    font-size: var(--font-size-050);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-utility-success);
     pointer-events: none;
   }
 
@@ -504,7 +504,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
     list-style: none;
     margin: 0;
     padding: 0;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
     overflow: hidden;
   }
@@ -521,8 +521,8 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
 
   /* Document pane --------------------------------------------------------- */
   .cbf-review-docpane {
-    background: var(--color-surface-sunken);
-    border: 1px solid var(--color-border);
+    background: var(--color-background-elevation-sunken);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
     display: flex;
     flex-direction: column;
@@ -545,24 +545,24 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
     flex: 1 0 auto;
     width: 100%;
     max-width: 620px;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
+    background: var(--color-background-elevation-raised);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
-    box-shadow: 0 1px 4px color-mix(in srgb, var(--color-surface-inverse) 10%, transparent);
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--color-background-default-knockout) 10%, transparent);
     padding: var(--spacing-700) var(--spacing-700) var(--spacing-600);
-    color: var(--color-text-primary);
-    font-size: var(--type-size-150);
+    color: var(--color-content-default);
+    font-size: var(--font-size-150);
     line-height: var(--line-height-normal);
   }
   .cbf-invoice-doc__stamp {
     position: absolute;
     top: var(--spacing-500);
     right: var(--spacing-500);
-    font-size: var(--type-size-100);
-    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-100);
+    font-weight: var(--typography-font-weight-semibold);
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--color-danger, #b42318);
+    color: var(--color-background-utility-danger, #b42318);
     border: 1.5px solid currentColor;
     border-radius: var(--radius-100);
     padding: 2px var(--spacing-200);
@@ -573,41 +573,41 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
     display: flex; justify-content: space-between; gap: var(--spacing-400);
     align-items: flex-start; margin-bottom: var(--spacing-500);
   }
-  .cbf-invoice-doc__vendor { margin: 0; font-size: var(--type-size-400); font-weight: var(--font-weight-bold); }
-  .cbf-invoice-doc__sub { margin: 0; color: var(--color-text-tertiary); font-size: var(--type-size-100); }
+  .cbf-invoice-doc__vendor { margin: 0; font-size: var(--font-size-400); font-weight: var(--typography-font-weight-bold); }
+  .cbf-invoice-doc__sub { margin: 0; color: var(--color-content-default-tertiary); font-size: var(--font-size-100); }
   .cbf-invoice-doc__meta { text-align: right; }
   .cbf-invoice-doc__meta p { margin: 0 0 var(--spacing-100); }
-  .cbf-invoice-doc__meta span { color: var(--color-text-tertiary); margin-right: var(--spacing-200); }
+  .cbf-invoice-doc__meta span { color: var(--color-content-default-tertiary); margin-right: var(--spacing-200); }
   .cbf-invoice-doc__billto { margin-bottom: var(--spacing-500); }
   .cbf-invoice-doc__billto p { margin: 0; }
 
   .cbf-invoice-doc__items { width: 100%; border-collapse: collapse; }
   .cbf-invoice-doc__items th, .cbf-invoice-doc__items td { text-align: left; padding: var(--spacing-250) 0; vertical-align: top; }
   .cbf-invoice-doc__items thead th {
-    border-bottom: 1px solid var(--color-text-primary);
-    font-weight: var(--font-weight-semibold); font-size: var(--type-size-100); color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--color-content-default);
+    font-weight: var(--typography-font-weight-semibold); font-size: var(--font-size-100); color: var(--color-content-default-secondary);
   }
-  .cbf-invoice-doc__items tbody tr + tr td { border-top: 1px solid var(--color-border-light, var(--color-border)); }
+  .cbf-invoice-doc__items tbody tr + tr td { border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default)); }
   .cbf-invoice-doc__items tfoot th, .cbf-invoice-doc__items tfoot td { padding: var(--spacing-150) 0; text-align: right; }
-  .cbf-invoice-doc__items tfoot th { font-weight: var(--font-weight-regular); color: var(--color-text-secondary); }
+  .cbf-invoice-doc__items tfoot th { font-weight: var(--typography-font-weight-regular); color: var(--color-content-default-secondary); }
   .cbf-invoice-doc__items tfoot tr:first-child th, .cbf-invoice-doc__items tfoot tr:first-child td { padding-top: var(--spacing-400); }
   .cbf-invoice-doc__total th, .cbf-invoice-doc__total td {
-    border-top: 1px solid var(--color-text-primary); font-weight: var(--font-weight-bold);
-    font-size: var(--type-size-200); padding-top: var(--spacing-300) !important;
+    border-top: 1px solid var(--color-content-default); font-weight: var(--typography-font-weight-bold);
+    font-size: var(--font-size-200); padding-top: var(--spacing-300) !important;
   }
   .cbf-invoice-doc .cbf-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .cbf-invoice-doc__items th.cbf-num { text-align: right; }
-  .cbf-invoice-doc__memo { margin: var(--spacing-600) 0 0; color: var(--color-text-secondary); line-height: var(--line-height-relaxed); }
-  .cbf-invoice-doc__memo span { color: var(--color-text-tertiary); }
+  .cbf-invoice-doc__memo { margin: var(--spacing-600) 0 0; color: var(--color-content-default-secondary); line-height: var(--line-height-relaxed); }
+  .cbf-invoice-doc__memo span { color: var(--color-content-default-tertiary); }
   .cbf-invoice-doc__generated {
     margin: var(--spacing-600) 0 0; padding-top: var(--spacing-400);
-    border-top: 1px solid var(--color-border-light, var(--color-border));
-    color: var(--color-text-tertiary); font-size: var(--type-size-100); font-style: italic;
+    border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default));
+    color: var(--color-content-default-tertiary); font-size: var(--font-size-100); font-style: italic;
   }
 
   .cbf-review-footer { align-items: center; gap: var(--spacing-400); width: 100%; }
   .cbf-review-footer__position {
-    font-size: var(--type-size-150); color: var(--color-text-tertiary); font-variant-numeric: tabular-nums;
+    font-size: var(--font-size-150); color: var(--color-content-default-tertiary); font-variant-numeric: tabular-nums;
   }
 </style>
 
@@ -617,11 +617,11 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
   .cbf-invoice-review-queue__grid .cbf-grid-num .ag-header-cell-label {
     justify-content: flex-end; text-align: right; font-variant-numeric: tabular-nums;
   }
-  .cbf-invoice-review-queue__grid .cbf-grid-id { font-variant-numeric: tabular-nums; color: var(--color-text-secondary); }
+  .cbf-invoice-review-queue__grid .cbf-grid-id { font-variant-numeric: tabular-nums; color: var(--color-content-default-secondary); }
   /* Workspace Invoice # cell: number + inline Final pill (Final? column dropped). */
   .cbf-invoice-review-queue__grid .cbf-grid-idcell { display: inline-flex; align-items: center; gap: var(--spacing-200); height: 100%; }
   /* Terminal-stage Days-left cell: a quiet placeholder, not an urgency pill. */
-  .cbf-invoice-review-queue__grid .cbf-grid-muted { color: var(--color-text-tertiary); }
+  .cbf-invoice-review-queue__grid .cbf-grid-muted { color: var(--color-content-default-tertiary); }
   .cbf-invoice-review-queue__grid .ag-row { cursor: pointer; }
 
   /* Invoice-number anchor → the invoice's processing page. Injected by the cell
@@ -634,11 +634,11 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
     border-radius: var(--radius-100, 4px);
   }
   .cbf-invoice-review-queue__grid .cbf-grid-link:hover {
-    color: var(--color-primary);
+    color: var(--color-background-brand);
     text-decoration: underline;
   }
   .cbf-invoice-review-queue__grid .cbf-grid-link:focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--color-background-brand);
     outline-offset: 2px;
   }
 
@@ -648,7 +648,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
   .cbf-invoice-review-queue__grid .cbf-grid-peek { display: flex; align-items: center; justify-content: center; }
   .cbf-invoice-review-queue__grid .cbf-grid-peek__btn {
     display: inline-flex;
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
     opacity: 0;
     transition: opacity 120ms ease;
   }
@@ -660,7 +660,7 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
   }
 
   /* Document line items are injected by JS (no Astro scope hash) — styled globally. */
-  .cbf-invoice-doc__items tbody td { font-size: var(--type-size-150); }
+  .cbf-invoice-doc__items tbody td { font-size: var(--font-size-150); }
 
   /* Backup-documentation rows are injected by JS — styled globally. The filename
      carries its own extension; the affordances are the view control (renders the
@@ -671,21 +671,21 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
     gap: var(--spacing-300);
     padding: var(--spacing-150) var(--spacing-200) var(--spacing-150) var(--spacing-400);
   }
-  .cbf-review-attach + .cbf-review-attach { border-top: 1px solid var(--color-border-light, var(--color-border)); }
+  .cbf-review-attach + .cbf-review-attach { border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default)); }
   .cbf-review-attach__name {
     flex: 1;
     min-width: 0;
-    font-size: var(--type-size-150);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-150);
+    color: var(--color-content-default);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .cbf-review-attach--empty .cbf-review-attach__name { color: var(--color-text-tertiary); }
-  .cbf-review-attach__dl { flex: none; line-height: 0; color: var(--color-text-tertiary); }
+  .cbf-review-attach--empty .cbf-review-attach__name { color: var(--color-content-default-tertiary); }
+  .cbf-review-attach__dl { flex: none; line-height: 0; color: var(--color-content-default-tertiary); }
   .cbf-review-attach__dl .esa-icon-button:hover {
-    background: color-mix(in srgb, var(--color-text-tertiary) 14%, transparent);
-    color: var(--color-text-primary);
+    background: color-mix(in srgb, var(--color-content-default-tertiary) 14%, transparent);
+    color: var(--color-content-default);
   }
 </style>
 
@@ -796,12 +796,12 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
 
   const cbfTheme = themeQuartz.withParams({
     fontFamily: 'inherit', fontSize: '14px',
-    foregroundColor: 'var(--color-text-primary)', backgroundColor: 'var(--color-surface)',
-    headerBackgroundColor: 'var(--color-surface-sunken, transparent)',
-    headerTextColor: 'var(--color-text-secondary)', headerFontWeight: 600,
-    borderColor: 'var(--color-border)',
-    rowHoverColor: 'var(--color-surface-subtle, var(--color-primary-subtle))',
-    accentColor: 'var(--color-primary)', wrapperBorderRadius: 0, borderRadius: 'var(--radius-100, 4px)',
+    foregroundColor: 'var(--color-content-default)', backgroundColor: 'var(--color-background-elevation-raised)',
+    headerBackgroundColor: 'var(--color-background-elevation-sunken, transparent)',
+    headerTextColor: 'var(--color-content-default-secondary)', headerFontWeight: 600,
+    borderColor: 'var(--color-border-default)',
+    rowHoverColor: 'var(--color-surface-subtle, var(--color-background-brand-subtle))',
+    accentColor: 'var(--color-background-brand)', wrapperBorderRadius: 0, borderRadius: 'var(--radius-100, 4px)',
   });
 
   function initQueue(root: HTMLElement) {

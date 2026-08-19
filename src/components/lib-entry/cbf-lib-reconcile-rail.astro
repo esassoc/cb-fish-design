@@ -151,8 +151,8 @@ const blockedText = (n: number) =>
   aria-label="Budget reconciliation and submit gate"
 >
   <header class="stack" data-gap="3xs">
-    <h2 class="type-section-title">{title}</h2>
-    <p class="cbf-lib-rail__lede type-body-small">{lede}</p>
+    <h2 class="typography-heading-md">{title}</h2>
+    <p class="cbf-lib-rail__lede typography-body-sm">{lede}</p>
   </header>
 
   {/* ── Running total vs the Contract Value ──────────────────────────────── */}
@@ -172,39 +172,39 @@ const blockedText = (n: number) =>
       size="lg"
       label="Committed against Contract Value"
     />
-    <p class="cbf-lib-rail__remaining type-body-small" data-remaining>{remainingText}</p>
+    <p class="cbf-lib-rail__remaining typography-body-sm" data-remaining>{remainingText}</p>
   </div>
 
   {/* ── Direct / indirect split ──────────────────────────────────────────── */}
   <dl class="cbf-lib-rail__ledger stack" data-gap="xs">
     <div class="repel" data-gap="sm">
-      <dt class="type-body-small">Direct costs</dt>
-      <dd class="cbf-lib-rail__amount type-body-small" data-ledger="direct">{usd(totals.direct)}</dd>
+      <dt class="typography-body-sm">Direct costs</dt>
+      <dd class="cbf-lib-rail__amount typography-body-sm" data-ledger="direct">{usd(totals.direct)}</dd>
     </div>
     <div class="repel" data-gap="sm">
-      <dt class="type-body-small">
+      <dt class="typography-body-sm">
         <span>Indirect at <span data-ledger="indirect-rate">{ratePct}</span></span>
         {/* Scope first, then the dollars it produces — the base is a consequence
             of the scope, and saying so is what makes the number arguable. */}
-        <span class="cbf-lib-rail__ledger-note type-body-small">
+        <span class="cbf-lib-rail__ledger-note typography-body-sm">
           <span data-ledger="indirect-scope">{scopeText}</span>
           <span aria-hidden="true"> · </span>
           <span data-ledger="indirect-base">{usd(totals.indirectBase)} base</span>
         </span>
       </dt>
-      <dd class="cbf-lib-rail__amount type-body-small" data-ledger="indirect">{usd(totals.indirect)}</dd>
+      <dd class="cbf-lib-rail__amount typography-body-sm" data-ledger="indirect">{usd(totals.indirect)}</dd>
     </div>
     <div class="repel cbf-lib-rail__ledger-rule" data-gap="sm">
-      <dt class="type-body-small">Contract Value</dt>
-      <dd class="cbf-lib-rail__amount type-body-small">{usd(contract.contractValue)}</dd>
+      <dt class="typography-body-sm">Contract Value</dt>
+      <dd class="cbf-lib-rail__amount typography-body-sm">{usd(contract.contractValue)}</dd>
     </div>
   </dl>
 
   {/* ── The submit gate ──────────────────────────────────────────────────── */}
   <section class="cbf-lib-rail__gate stack" data-gap="sm" aria-label="Submit checklist">
     <div class="repel" data-gap="sm">
-      <h3 class="type-card-title">Before you submit</h3>
-      <span class="cbf-lib-rail__count type-body-small" role="status" data-gate-count>
+      <h3 class="typography-title">Before you submit</h3>
+      <span class="cbf-lib-rail__count typography-body-sm" role="status" data-gate-count>
         {cleared} of {liveChecks.length} clear
       </span>
     </div>
@@ -227,8 +227,8 @@ const blockedText = (n: number) =>
               <EsaIcon name="circle-alert" size="sm" label="Needs attention" />
             </span>
             <span class="cbf-lib-rail__check-text">
-              <span class="cbf-lib-rail__check-label type-body-small">{c.label}</span>
-              <span class="cbf-lib-rail__check-detail type-body-small" data-check-detail>{c.detail}</span>
+              <span class="cbf-lib-rail__check-label typography-body-sm">{c.label}</span>
+              <span class="cbf-lib-rail__check-detail typography-body-sm" data-check-detail>{c.detail}</span>
             </span>
           </span>
           {/* Badge only on the failing rows — the passing rows already read
@@ -245,7 +245,7 @@ const blockedText = (n: number) =>
   {/* ── The COR reads this rail; they do not act on it. Their two decisions —
        return and approve — belong to the review panel, next to the marks that
        justify them, not beside the vendor's submit button. ── */}
-  <p class="cbf-lib-rail__cor type-body-small" data-rail-cor>
+  <p class="cbf-lib-rail__cor typography-body-sm" data-rail-cor>
     You are reading the vendor's reconciliation. Returning or approving this budget happens in the
     review panel above, with the marks you made.
   </p>
@@ -253,7 +253,7 @@ const blockedText = (n: number) =>
   {/* ── The submit action the vendor still owns ──────────────────────────── */}
   <div class="cbf-lib-rail__submit stack" data-gap="xs" data-rail-vendor>
     <EsaButton
-      color="primary"
+      variant="primary"
       size="lg"
       disabled={blocked.length > 0}
       data-submit
@@ -262,14 +262,14 @@ const blockedText = (n: number) =>
       {submitLabel}
     </EsaButton>
 
-    <p class="cbf-lib-rail__reason type-body-small" id="cbf-lib-rail-reason" data-submit-reason>
+    <p class="cbf-lib-rail__reason typography-body-sm" id="cbf-lib-rail-reason" data-submit-reason>
       {blockedText(blocked.length)}
     </p>
 
     <ul class="cbf-lib-rail__blockers stack" data-gap="3xs" data-submit-blockers hidden={blocked.length === 0}>
       {checks.map((c) => (
         <li
-          class="cbf-lib-rail__blocker type-body-small"
+          class="cbf-lib-rail__blocker typography-body-sm"
           data-blocker={c.key}
           hidden={c.pass || (c.key === 'review' && !reviewGateApplies)}
         >{c.label}</li>
@@ -541,8 +541,8 @@ const blockedText = (n: number) =>
     top: var(--spacing-500);
     align-self: start;
     padding: var(--spacing-500);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
+    background: var(--color-background-elevation-raised);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
     /* The gate can outgrow a short viewport; the rail scrolls itself rather than
        dragging the page or jacking the scroll. */
@@ -561,56 +561,56 @@ const blockedText = (n: number) =>
   }
 
   .cbf-lib-rail__lede {
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
 
   /* ── money band ───────────────────────────────────────────────────────── */
   .cbf-lib-rail__remaining {
-    color: var(--color-text-secondary);
-    font-weight: var(--font-weight-medium);
+    color: var(--color-content-default-secondary);
+    font-weight: var(--typography-font-weight-medium);
   }
 
   /* Over the ceiling: the headline figure and the remaining line both say so. */
   .cbf-lib-rail.is-over .cbf-lib-rail__total :global(.esa-stat__value),
   .cbf-lib-rail.is-over .cbf-lib-rail__remaining {
-    color: var(--color-danger-strong);
+    color: var(--color-content-utility-danger);
   }
 
   /* ── ledger ───────────────────────────────────────────────────────────── */
   .cbf-lib-rail__ledger {
     padding-top: var(--spacing-400);
-    border-top: 1px solid var(--color-border-light);
+    border-top: 1px solid var(--color-border-default-subtle);
   }
-  /* Sizes come from .type-body-small in the markup — the 14px floor holds
+  /* Sizes come from .typography-body-sm in the markup — the 14px floor holds
      everywhere in this rail, so nothing here sets a raw type size. */
   .cbf-lib-rail__ledger dt {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-050);
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-lib-rail__ledger-note {
     /* Dense, but not faint — still 14px, and the color stays readable. */
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-lib-rail__amount {
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
   }
   .cbf-lib-rail__ledger-rule {
     padding-top: var(--spacing-200);
-    border-top: 1px solid var(--color-border-light);
+    border-top: 1px solid var(--color-border-default-subtle);
   }
 
   /* ── gate ─────────────────────────────────────────────────────────────── */
   .cbf-lib-rail__gate {
     padding-top: var(--spacing-400);
-    border-top: 1px solid var(--color-border-light);
+    border-top: 1px solid var(--color-border-default-subtle);
   }
   .cbf-lib-rail__count {
-    color: var(--color-text-secondary);
-    font-weight: var(--font-weight-medium);
+    color: var(--color-content-default-secondary);
+    font-weight: var(--typography-font-weight-medium);
     font-variant-numeric: tabular-nums;
   }
 
@@ -625,7 +625,7 @@ const blockedText = (n: number) =>
   }
   /* Status lives INSIDE the row — glyph, tint, badge. Never a left border. */
   .cbf-lib-rail__check.is-fail {
-    background: var(--color-warning-subtle);
+    background: var(--color-background-utility-warning-subtle);
   }
 
   .cbf-lib-rail__check-body {
@@ -640,8 +640,8 @@ const blockedText = (n: number) =>
     /* nudge the 16px glyph onto the label's optical baseline */
     margin-top: var(--spacing-050);
   }
-  .cbf-lib-rail__check.is-pass .cbf-lib-rail__mark--pass { display: inline-flex; color: var(--color-success-strong); }
-  .cbf-lib-rail__check.is-fail .cbf-lib-rail__mark--fail { display: inline-flex; color: var(--color-warning-strong); }
+  .cbf-lib-rail__check.is-pass .cbf-lib-rail__mark--pass { display: inline-flex; color: var(--color-content-utility-success); }
+  .cbf-lib-rail__check.is-fail .cbf-lib-rail__mark--fail { display: inline-flex; color: var(--color-content-utility-warning); }
 
   .cbf-lib-rail__check-text {
     display: flex;
@@ -649,11 +649,11 @@ const blockedText = (n: number) =>
     gap: var(--spacing-050);
   }
   .cbf-lib-rail__check-label {
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-medium);
+    color: var(--color-content-default);
+    font-weight: var(--typography-font-weight-medium);
   }
   .cbf-lib-rail__check-detail {
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     font-variant-numeric: tabular-nums;
   }
 
@@ -666,8 +666,8 @@ const blockedText = (n: number) =>
   .cbf-lib-rail__cor {
     display: none;
     padding-top: var(--spacing-400);
-    border-top: 1px solid var(--color-border-light);
-    color: var(--color-text-secondary);
+    border-top: 1px solid var(--color-border-default-subtle);
+    color: var(--color-content-default-secondary);
   }
   :global(html[data-cbf-role='cor']) .cbf-lib-rail__cor { display: block; }
   :global(html[data-cbf-role='cor']) .cbf-lib-rail__submit { display: none; }
@@ -675,13 +675,13 @@ const blockedText = (n: number) =>
   /* ── submit ───────────────────────────────────────────────────────────── */
   .cbf-lib-rail__submit {
     padding-top: var(--spacing-400);
-    border-top: 1px solid var(--color-border-light);
+    border-top: 1px solid var(--color-border-default-subtle);
   }
   /* The single saturated element in the rail, full width so it reads as THE action. */
   .cbf-lib-rail__submit :global(.esa-button) { display: block; }
 
   .cbf-lib-rail__reason {
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-lib-rail__blockers {
     list-style: none;
@@ -689,11 +689,11 @@ const blockedText = (n: number) =>
   }
   .cbf-lib-rail__blocker {
     padding-left: var(--spacing-300);
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     text-indent: calc(-1 * var(--spacing-300));
   }
   .cbf-lib-rail__blocker::before {
     content: '— ';
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
   }
 </style>

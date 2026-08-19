@@ -19,22 +19,22 @@ import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 import { contractSummary as s, contractContacts, summarySections } from '../../data/lib-pi-editing.mjs';
 
 const pinSvg =
-  '<svg viewBox="0 0 24 24" width="26" height="26" fill="var(--color-primary)" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg>';
+  '<svg viewBox="0 0 24 24" width="26" height="26" fill="var(--color-background-brand)" aria-hidden="true"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5A2.5 2.5 0 1 1 12 6a2.5 2.5 0 0 1 0 5.5z"/></svg>';
 ---
 <div class="cbf-summary stack" data-gap="md" data-contract-summary>
   <!-- Title + report/expand controls (mirrors the live Summary header row) -->
   <div class="cbf-summary__head">
     <h2 class="cbf-summary__title">Contract {s.contractNumber}: {s.contractTitle}</h2>
     <div class="cbf-summary__actions">
-      <span data-sow-report><EsaButton color="secondary" appearance="outline" size="sm">SOW Report</EsaButton></span>
-      <span data-expand-all><EsaButton color="secondary" appearance="ghost" size="sm">Expand All</EsaButton></span>
-      <span data-collapse-all><EsaButton color="secondary" appearance="ghost" size="sm">Collapse All</EsaButton></span>
+      <span data-sow-report><EsaButton variant="secondary" appearance="outline" size="sm">SOW Report</EsaButton></span>
+      <span data-expand-all><EsaButton variant="secondary" appearance="ghost" size="sm">Expand All</EsaButton></span>
+      <span data-collapse-all><EsaButton variant="secondary" appearance="ghost" size="sm">Collapse All</EsaButton></span>
     </div>
   </div>
 
   <!-- ═══ Basics (expanded) ═══ -->
   <EsaCollapsible title="Basics" open>
-    <p class="cbf-summary__modified type-caption">Last modified by {s.lastModifiedBy}, {s.lastModifiedAt}</p>
+    <p class="cbf-summary__modified typography-meta">Last modified by {s.lastModifiedBy}, {s.lastModifiedAt}</p>
     <div class="cbf-summary__basics">
       <div class="cbf-summary__basics-main">
         <dl class="cbf-summary__dl">
@@ -70,7 +70,7 @@ const pinSvg =
           <dt>Contract End Date</dt><dd>{s.endDate}</dd>
           <dt>Current Contract Value</dt><dd>{s.currentValue}</dd>
           <dt>Expenditures</dt>
-          <dd>{s.expenditures}<span class="type-caption cbf-summary__note">* {s.expendituresNote}</span></dd>
+          <dd>{s.expenditures}<span class="typography-meta cbf-summary__note">* {s.expendituresNote}</span></dd>
           <dt>BPA CO</dt><dd><a class="cbf-doc-link" href="#">{s.bpaCo}</a></dd>
           <dt>BPA COR</dt><dd><a class="cbf-doc-link" href="#">{s.bpaCor}</a></dd>
           <dt>Env. Compliance Lead</dt><dd><a class="cbf-doc-link" href="#">{s.envComplianceLead}</a></dd>
@@ -83,7 +83,7 @@ const pinSvg =
       </div>
       <div class="cbf-summary__map" aria-hidden="true">
         <div class="cbf-summary__map-canvas"><Fragment set:html={pinSvg} /></div>
-        <p class="cbf-summary__map-cap type-caption">Click the map to see this Contract's location details.</p>
+        <p class="cbf-summary__map-cap typography-meta">Click the map to see this Contract's location details.</p>
       </div>
     </div>
   </EsaCollapsible>
@@ -140,13 +140,13 @@ const pinSvg =
   }
   .cbf-summary__title {
     margin: 0;
-    font-size: var(--type-size-400, 1.125rem);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-400, 1.125rem);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
   }
   .cbf-summary__actions { display: flex; flex-wrap: wrap; gap: var(--spacing-200); }
 
-  .cbf-summary__modified { margin: 0 0 var(--spacing-300); color: var(--color-text-tertiary); }
+  .cbf-summary__modified { margin: 0 0 var(--spacing-300); color: var(--color-content-default-tertiary); }
 
   .cbf-summary__basics { display: flex; flex-wrap: wrap; gap: var(--spacing-500); align-items: flex-start; }
   .cbf-summary__basics-main { flex: 1; min-width: min(100%, 420px); }
@@ -157,33 +157,33 @@ const pinSvg =
     grid-column: 1;
     text-align: right;
     padding: var(--spacing-300) var(--spacing-400);
-    border-top: 1px solid var(--color-border-light, var(--color-border));
-    color: var(--color-text-secondary);
-    font-weight: var(--font-weight-medium);
+    border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default));
+    color: var(--color-content-default-secondary);
+    font-weight: var(--typography-font-weight-medium);
   }
   .cbf-summary__dl > dd {
     grid-column: 2;
     margin: 0;
     padding: var(--spacing-300) var(--spacing-400);
-    border-top: 1px solid var(--color-border-light, var(--color-border));
+    border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default));
     min-width: 0;
   }
   .cbf-summary__dl > dt:first-of-type,
   .cbf-summary__dl > dt:first-of-type + dd { border-top: 0; }
 
   .cbf-summary__desc-lede { margin: 0 0 var(--spacing-200); }
-  .cbf-summary__desc { margin: 0; color: var(--color-text-secondary); max-width: 80ch; }
-  .cbf-summary__note { display: block; margin-top: 2px; color: var(--color-text-tertiary); }
+  .cbf-summary__desc { margin: 0; color: var(--color-content-default-secondary); max-width: 80ch; }
+  .cbf-summary__note { display: block; margin-top: 2px; color: var(--color-content-default-tertiary); }
 
   .cbf-summary__subtable { width: 100%; border-collapse: collapse; }
   .cbf-summary__subtable th, .cbf-summary__subtable td {
     text-align: left;
     padding: var(--spacing-200) var(--spacing-300);
-    border: 1px solid var(--color-border);
-    font-size: var(--type-size-150, 0.875rem);
+    border: 1px solid var(--color-border-default);
+    font-size: var(--font-size-150, 0.875rem);
     vertical-align: top;
   }
-  .cbf-summary__subtable th { background: var(--color-surface-sunken, #f4f4f4); font-weight: var(--font-weight-semibold); white-space: nowrap; }
+  .cbf-summary__subtable th { background: var(--color-background-elevation-sunken, #f4f4f4); font-weight: var(--typography-font-weight-semibold); white-space: nowrap; }
 
   /* Location map — static placeholder (no external map embed). */
   .cbf-summary__map { width: 320px; flex: none; }
@@ -192,26 +192,26 @@ const pinSvg =
     align-items: center;
     justify-content: center;
     height: 220px;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
     background:
-      repeating-linear-gradient(0deg, transparent 0 23px, color-mix(in srgb, var(--color-primary) 6%, transparent) 23px 24px),
-      repeating-linear-gradient(90deg, transparent 0 23px, color-mix(in srgb, var(--color-primary) 6%, transparent) 23px 24px),
-      color-mix(in srgb, var(--color-success-strong, #15803d) 8%, var(--color-surface));
+      repeating-linear-gradient(0deg, transparent 0 23px, color-mix(in srgb, var(--color-background-brand) 6%, transparent) 23px 24px),
+      repeating-linear-gradient(90deg, transparent 0 23px, color-mix(in srgb, var(--color-background-brand) 6%, transparent) 23px 24px),
+      color-mix(in srgb, var(--color-content-utility-success, #15803d) 8%, var(--color-background-elevation-raised));
   }
-  .cbf-summary__map-cap { margin: var(--spacing-200) 0 0; font-style: italic; color: var(--color-text-tertiary); }
+  .cbf-summary__map-cap { margin: var(--spacing-200) 0 0; font-style: italic; color: var(--color-content-default-tertiary); }
 
   .cbf-summary__contacts, .cbf-summary__section-note { margin: 0; }
   .cbf-summary__contacts { width: 100%; border-collapse: collapse; }
   .cbf-summary__contacts th, .cbf-summary__contacts td {
     text-align: left;
     padding: var(--spacing-200) var(--spacing-400);
-    border-bottom: 1px solid var(--color-border-light, var(--color-border));
+    border-bottom: 1px solid var(--color-border-default-subtle, var(--color-border-default));
   }
-  .cbf-summary__contacts th { background: var(--color-surface-sunken, #f4f4f4); font-weight: var(--font-weight-semibold); }
-  .cbf-summary__section-note { color: var(--color-text-secondary); }
+  .cbf-summary__contacts th { background: var(--color-background-elevation-sunken, #f4f4f4); font-weight: var(--typography-font-weight-semibold); }
+  .cbf-summary__section-note { color: var(--color-content-default-secondary); }
 
-  .cbf-summary :global(.cbf-doc-link) { color: var(--color-primary); text-decoration: underline; }
+  .cbf-summary :global(.cbf-doc-link) { color: var(--color-background-brand); text-decoration: underline; }
 
   /* Space the stacked disclosures. */
   .cbf-summary :global(.esa-collapsible + .esa-collapsible) { margin-top: var(--spacing-300); }

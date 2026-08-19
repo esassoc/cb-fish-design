@@ -81,7 +81,7 @@
 // .sidebar layout primitive.
 import EsaPill from '@esa/ecology/esa-pill.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaBadge from '@esa/ecology/esa-badge.astro';
 import CbfInvoiceField from './cbf-invoice-field.astro';
@@ -351,7 +351,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
         <div class="cbf-review-attachments__head repel">
           <h3 class="cbf-review__section-title" data-f-attach-title>Submitted documents</h3>
           <span data-attach-all>
-            <EsaButton appearance="outline" color="secondary" size="sm" icon="download">Download all</EsaButton>
+            <EsaButton appearance="outline" variant="secondary" size="sm" icon="download">Download all</EsaButton>
           </span>
         </div>
         <ul class="cbf-review-attachments__list" data-f-attachments></ul>
@@ -395,13 +395,13 @@ const hasDocHeader = Astro.slots.has('doc-header');
         </details>
       </section>
       <div data-open-template hidden aria-hidden="true">
-        <EsaIconButton icon="external-link" label="Open in a new tab" size="sm" />
+        <EsaIconButton variant="chrome" iconOnly icon="external-link" label="Open in a new tab" size="sm" />
       </div>
       <div data-dl-template hidden aria-hidden="true">
-        <EsaIconButton icon="download" label="Download file" size="sm" />
+        <EsaIconButton variant="chrome" iconOnly icon="download" label="Download file" size="sm" />
       </div>
       <div data-view-template hidden aria-hidden="true">
-        <EsaIconButton icon="eye" label="View file" size="sm" />
+        <EsaIconButton variant="chrome" iconOnly icon="eye" label="View file" size="sm" />
       </div>
 
       <!-- Everything the COR has flagged, and the source of the return memo. LAST
@@ -414,8 +414,8 @@ const hasDocHeader = Astro.slots.has('doc-header');
       <div class="cbf-review-actions" data-actions>
         <!-- Return left, Approve right — the primary action sits at the right edge. -->
         <div class="repel cbf-review-actions__default" data-actions-default>
-          <span data-act-return><EsaButton color="danger" appearance="outline" size="md">Return for revision</EsaButton></span>
-          <span data-act-approve><EsaButton color="primary" size="md">Approve</EsaButton></span>
+          <span data-act-return><EsaButton variant="danger" appearance="outline" size="md">Return for revision</EsaButton></span>
+          <span data-act-approve><EsaButton variant="primary" size="md">Approve</EsaButton></span>
         </div>
         <!-- Why Approve is shut, said where the COR is looking when they find it
              shut. Empty (and hidden) whenever nothing is flagged. -->
@@ -426,8 +426,8 @@ const hasDocHeader = Astro.slots.has('doc-header');
             Approve <strong class="cbf-num" data-f-num-approve></strong> for <span data-f-amount-approve></span> and route it to the Contracting Officer for payment? Your QA/QC sign-off goes on the record.
           </p>
           <div class="repel">
-            <span data-act-approve-cancel><EsaButton appearance="outline" color="secondary" size="md">Cancel</EsaButton></span>
-            <span data-act-approve-confirm><EsaButton color="primary" size="md">Confirm approval</EsaButton></span>
+            <span data-act-approve-cancel><EsaButton appearance="outline" variant="secondary" size="md">Cancel</EsaButton></span>
+            <span data-act-approve-confirm><EsaButton variant="primary" size="md">Confirm approval</EsaButton></span>
           </div>
         </div>
 
@@ -439,8 +439,8 @@ const hasDocHeader = Astro.slots.has('doc-header');
             rows="4"
           ></esa-textarea>
           <div class="repel">
-            <span data-act-return-cancel><EsaButton appearance="outline" color="secondary" size="md">Cancel</EsaButton></span>
-            <span data-act-return-confirm><EsaButton color="danger" size="md">Return for revision</EsaButton></span>
+            <span data-act-return-cancel><EsaButton appearance="outline" variant="secondary" size="md">Cancel</EsaButton></span>
+            <span data-act-return-confirm><EsaButton variant="danger" size="md">Return for revision</EsaButton></span>
           </div>
         </div>
       </div>
@@ -453,7 +453,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
           <span data-result-text></span>
         </EsaAlertBox>
         <div class="cbf-review-result__actions">
-          <EsaButton href={dashboardHref} color="primary" size="md" icon="arrow-left">Return to dashboard</EsaButton>
+          <EsaButton href={dashboardHref} variant="primary" size="md" icon="arrow-left">Return to dashboard</EsaButton>
         </div>
       </div>
     </aside>
@@ -475,7 +475,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
       <div class="cbf-review-docpane__bar" data-doc-bar hidden>
         <span class="cbf-review-docpane__name" data-doc-name></span>
         <span data-doc-back>
-          <EsaButton appearance="outline" color="secondary" size="sm" icon="chevron-left">Back to invoice</EsaButton>
+          <EsaButton appearance="outline" variant="secondary" size="sm" icon="chevron-left">Back to invoice</EsaButton>
         </span>
       </div>
       <div class="cbf-review-docpane__scroll">
@@ -533,7 +533,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
           <p class="cbf-doc-placeholder__name" data-f-backup-name></p>
           <p class="cbf-invoice-doc__sub">No preview available. Download the file to read it.</p>
           <span data-doc-placeholder-dl>
-            <EsaButton appearance="outline" color="secondary" size="sm" icon="download">Download file</EsaButton>
+            <EsaButton appearance="outline" variant="secondary" size="sm" icon="download">Download file</EsaButton>
           </span>
         </article>
       </div>
@@ -554,10 +554,10 @@ const hasDocHeader = Astro.slots.has('doc-header');
     <span data-flag="final"><EsaPill label="Final" variant="default" size="md" removable={false} /></span>
     {/* Per-line controls for the injected ledger rows — real legos, cloned so the
         document table never hand-rolls a button or an input. */}
-    <span data-tmpl="line-flag"><EsaIconButton icon="triangle-alert" label="Flag this line as an issue" size="xs" /></span>
-    <span data-tmpl="line-issue-clear"><EsaIconButton icon="x" label="Clear the issue on this line" size="xs" /></span>
-    <span data-tmpl="line-note-save"><EsaButton color="primary" size="sm">Save issue</EsaButton></span>
-    <span data-tmpl="line-note-cancel"><EsaButton appearance="outline" color="secondary" size="sm">Cancel</EsaButton></span>
+    <span data-tmpl="line-flag"><EsaIconButton variant="chrome" iconOnly icon="triangle-alert" label="Flag this line as an issue" size="xs" /></span>
+    <span data-tmpl="line-issue-clear"><EsaIconButton variant="chrome" iconOnly icon="x" label="Clear the issue on this line" size="xs" /></span>
+    <span data-tmpl="line-note-save"><EsaButton variant="primary" size="sm">Save issue</EsaButton></span>
+    <span data-tmpl="line-note-cancel"><EsaButton appearance="outline" variant="secondary" size="sm">Cancel</EsaButton></span>
   </div>
 
   <!-- Single-invoice record for the client script (no second fetch). -->
@@ -585,15 +585,15 @@ const hasDocHeader = Astro.slots.has('doc-header');
 
   /* Panel ----------------------------------------------------------------- */
   .cbf-review__label {
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-tertiary);
+    font-size: var(--font-size-150);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-review__section-title {
     margin: 0;
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-tertiary);
+    font-size: var(--font-size-150);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default-tertiary);
   }
 
   /* Invoice-information hero — the review-by DEADLINE leads. Large and red so it
@@ -603,19 +603,19 @@ const hasDocHeader = Astro.slots.has('doc-header');
   /* Prominent by size/weight; standard text color unless the invoice is OVERDUE,
      in which case it goes red — so red always means "this is late", nothing else. */
   .cbf-review-deadline__date {
-    font-size: var(--type-size-500);
-    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-500);
+    font-weight: var(--typography-font-weight-bold);
     line-height: var(--line-height-tight);
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
   }
-  .cbf-review-deadline__date--overdue { color: var(--color-danger, #b42318); }
+  .cbf-review-deadline__date--overdue { color: var(--color-background-utility-danger, #b42318); }
   .cbf-review-deadline__urgency { display: block; }
   .cbf-review-deadline__urgency:empty { display: none; }
   .cbf-review-deadline__support {
     margin: var(--spacing-100) 0 0;
-    font-size: var(--type-size-100);
-    color: var(--color-text-tertiary);
+    font-size: var(--font-size-100);
+    color: var(--color-content-default-tertiary);
   }
 
   /* The field BLOCKS. Each is a <dl> of cbf-invoice-field rows (which own the row
@@ -623,20 +623,20 @@ const hasDocHeader = Astro.slots.has('doc-header');
      here is how the blocks are separated from one another. A hairline top/bottom rule
      sets the contract block and the money block off as groups. */
   .cbf-review-fields { margin: 0; }
-  .cbf-review-fields__value { margin: 0; font-size: var(--type-size-200); color: var(--color-text-secondary); }
+  .cbf-review-fields__value { margin: 0; font-size: var(--font-size-200); color: var(--color-content-default-secondary); }
   /* Inside the collapse the term rows need no rule of their own — the collapse is
      already the group boundary. Only the top hairline stays, to separate them from
      the draw-down block above. */
-  .cbf-review-contract { padding-block-start: var(--spacing-300); border-block-start: 1px solid var(--color-border); }
+  .cbf-review-contract { padding-block-start: var(--spacing-300); border-block-start: 1px solid var(--color-border-default); }
 
   /* Contract collapse ----------------------------------------------------- */
   /* Native <details>. The whole summary row is the hit target, so the chevron is
      decoration and the accessible name is the row's text — <summary> supplies the
      expanded/collapsed state to assistive tech on its own. */
   .cbf-review-collapse {
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
   }
   .cbf-review-collapse__summary {
     display: flex;
@@ -649,16 +649,16 @@ const hasDocHeader = Astro.slots.has('doc-header');
   }
   /* Safari still paints the default disclosure triangle without this. */
   .cbf-review-collapse__summary::-webkit-details-marker { display: none; }
-  .cbf-review-collapse__summary:hover { background: var(--color-surface-sunken); }
+  .cbf-review-collapse__summary:hover { background: var(--color-background-elevation-sunken); }
   .cbf-review-collapse__summary:focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--color-background-brand);
     outline-offset: -2px;
   }
   .cbf-review-collapse__chevron {
     display: inline-flex;
     align-self: center;
     flex: none;
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
     transition: transform 150ms ease;
   }
   .cbf-review-collapse[open] .cbf-review-collapse__chevron { transform: rotate(90deg); }
@@ -666,16 +666,16 @@ const hasDocHeader = Astro.slots.has('doc-header');
     .cbf-review-collapse__chevron { transition: none; }
   }
   .cbf-review-collapse__title {
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-tertiary);
+    font-size: var(--font-size-150);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default-tertiary);
   }
   /* The digest carries the numbers, so it is NOT the faint end of the row — it sits
      at the same size as the title and right-aligns to the edge. */
   .cbf-review-collapse__digest {
     margin-inline-start: auto;
-    font-size: var(--type-size-150);
-    color: var(--color-text-secondary);
+    font-size: var(--font-size-150);
+    color: var(--color-content-default-secondary);
     font-variant-numeric: tabular-nums;
   }
   /* Nested variant: a disclosure INSIDE a section that already has a heading, so it
@@ -695,14 +695,14 @@ const hasDocHeader = Astro.slots.has('doc-header');
   .cbf-review-collapse--sub .cbf-review-collapse__summary:hover { background: transparent; }
   .cbf-review-collapse--sub .cbf-review-collapse__summary:hover .cbf-review-collapse__title,
   .cbf-review-collapse--sub .cbf-review-collapse__summary:hover .cbf-review-collapse__chevron {
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
   .cbf-review-collapse--sub .cbf-review-collapse__summary:focus-visible { outline-offset: 2px; }
   .cbf-review-collapse--sub .cbf-review-collapse__body { padding: 0; }
   /* The title is the only thing on this summary, so it carries the weight of a
      regular row rather than a section heading. */
   .cbf-review-collapse--sub .cbf-review-collapse__title {
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--typography-font-weight-medium);
   }
 
   .cbf-review-collapse__warn { display: inline-flex; align-self: center; flex: none; }
@@ -721,8 +721,8 @@ const hasDocHeader = Astro.slots.has('doc-header');
     margin-bottom: var(--spacing-150);
   }
   .cbf-review-drawdown__pct {
-    font-size: var(--type-size-150);
-    color: var(--color-text-secondary);
+    font-size: var(--font-size-150);
+    color: var(--color-content-default-secondary);
     font-variant-numeric: tabular-nums;
   }
 
@@ -734,21 +734,21 @@ const hasDocHeader = Astro.slots.has('doc-header');
     display: flex;
     height: 8px;
     border-radius: var(--radius-full, 9999px);
-    background: var(--color-surface-sunken);
+    background: var(--color-background-elevation-sunken);
     overflow: hidden;
   }
   .cbf-review-meter__seg { transition: width 300ms ease; }
   @media (prefers-reduced-motion: reduce) {
     .cbf-review-meter__seg { transition: none; }
   }
-  .cbf-review-meter__seg--drawn { background: var(--color-primary); }
+  .cbf-review-meter__seg--drawn { background: var(--color-background-brand); }
   /* Pending is the SAME hue stepped back toward the surface, so it reads as "more of
      the same thing, not yet real" rather than as a second, unrelated category. */
   .cbf-review-meter__seg--pending {
-    background: color-mix(in srgb, var(--color-primary) 38%, var(--color-surface));
+    background: color-mix(in srgb, var(--color-background-brand) 38%, var(--color-background-elevation-raised));
   }
   /* Unless it doesn't fit — then it is not "pending", it is over the line. */
-  .cbf-review-meter__seg--pending.is-over { background: var(--color-warning); }
+  .cbf-review-meter__seg--pending.is-over { background: var(--color-background-utility-warning); }
 
   /* Label/figure pairs on one baseline grid so the money aligns on its decimal —
      the whole point of showing related figures together. */
@@ -764,26 +764,26 @@ const hasDocHeader = Astro.slots.has('doc-header');
     gap: var(--spacing-300);
   }
   .cbf-review-drawdown__figures dt {
-    font-size: var(--type-size-150);
-    color: var(--color-text-secondary);
+    font-size: var(--font-size-150);
+    color: var(--color-content-default-secondary);
   }
   .cbf-review-drawdown__figures dd {
     margin: 0;
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-150);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
   }
-  .cbf-review-drawdown__asof { color: var(--color-text-tertiary); }
+  .cbf-review-drawdown__asof { color: var(--color-content-default-tertiary); }
   /* The bottom line of the block: ruled off from the inputs above it and carried in
      primary text, because it is the figure the decision actually rests on. */
   .cbf-review-drawdown__after {
     margin-top: var(--spacing-100);
     padding-block-start: var(--spacing-200);
-    border-block-start: 1px solid var(--color-border);
+    border-block-start: 1px solid var(--color-border-default);
   }
-  .cbf-review-drawdown__after dt { color: var(--color-text-primary); }
-  .cbf-review-drawdown__after dd { font-weight: var(--font-weight-semibold); }
+  .cbf-review-drawdown__after dt { color: var(--color-content-default); }
+  .cbf-review-drawdown__after dd { font-weight: var(--typography-font-weight-semibold); }
   /* An invoice that outruns the award is a finding, not a footnote — the status
      pair, so the row sits on its own tint rather than going bare red. */
   .cbf-review-drawdown__after.is-over {
@@ -791,8 +791,8 @@ const hasDocHeader = Astro.slots.has('doc-header');
     padding: var(--spacing-200) var(--spacing-250);
     border-block-start: 0;
     border-radius: var(--radius-100);
-    background: var(--color-warning-subtle);
-    color: var(--color-warning-strong);
+    background: var(--color-background-utility-warning-subtle);
+    color: var(--color-content-utility-warning);
   }
   .cbf-review-drawdown__after.is-over dt,
   .cbf-review-drawdown__after.is-over dd { color: inherit; }
@@ -802,8 +802,8 @@ const hasDocHeader = Astro.slots.has('doc-header');
      issues" or "you have an edit still open". */
   .cbf-review-actions__note {
     margin: var(--spacing-200) 0 0;
-    font-size: var(--type-size-150);
-    color: var(--color-text-secondary);
+    font-size: var(--font-size-150);
+    color: var(--color-content-default-secondary);
   }
   .cbf-review-actions__note[hidden] { display: none; }
 
@@ -820,7 +820,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
     list-style: none;
     margin: 0;
     padding: 0;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
     overflow: hidden;
   }
@@ -857,8 +857,8 @@ const hasDocHeader = Astro.slots.has('doc-header');
   .cbf-invoice-processor__doctitle { flex: none; }
   .cbf-invoice-processor__docpane { flex: 1; min-height: 0; }
   .cbf-review-docpane {
-    background: var(--color-surface-sunken);
-    border: 1px solid var(--color-border);
+    background: var(--color-background-elevation-sunken);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
     display: flex;
     flex-direction: column;
@@ -873,15 +873,15 @@ const hasDocHeader = Astro.slots.has('doc-header');
     gap: var(--spacing-300);
     flex: none;
     padding: var(--spacing-300) var(--spacing-400);
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border-default);
+    background: var(--color-background-elevation-raised);
   }
   .cbf-review-docpane__bar[hidden] { display: none; }
   .cbf-review-docpane__name {
     min-width: 0;
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-secondary);
+    font-size: var(--font-size-150);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -928,12 +928,12 @@ const hasDocHeader = Astro.slots.has('doc-header');
     text-align: center;
     flex: 1 0 auto;
   }
-  .cbf-doc-placeholder__icon { color: var(--color-text-tertiary); }
+  .cbf-doc-placeholder__icon { color: var(--color-content-default-tertiary); }
   .cbf-doc-placeholder__name {
     margin: 0;
-    font-size: var(--type-size-250);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-250);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
     word-break: break-word;
   }
   .cbf-doc-placeholder .cbf-invoice-doc__sub { margin-bottom: var(--spacing-200); }
@@ -942,24 +942,24 @@ const hasDocHeader = Astro.slots.has('doc-header');
     flex: 1 0 auto;
     width: 100%;
     max-width: 620px;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
+    background: var(--color-background-elevation-raised);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
-    box-shadow: 0 1px 4px color-mix(in srgb, var(--color-surface-inverse) 10%, transparent);
+    box-shadow: 0 1px 4px color-mix(in srgb, var(--color-background-default-knockout) 10%, transparent);
     padding: var(--spacing-700) var(--spacing-700) var(--spacing-600);
-    color: var(--color-text-primary);
-    font-size: var(--type-size-150);
+    color: var(--color-content-default);
+    font-size: var(--font-size-150);
     line-height: var(--line-height-normal);
   }
   .cbf-invoice-doc__stamp {
     position: absolute;
     top: var(--spacing-500);
     right: var(--spacing-500);
-    font-size: var(--type-size-100);
-    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-100);
+    font-weight: var(--typography-font-weight-semibold);
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--color-danger, #b42318);
+    color: var(--color-background-utility-danger, #b42318);
     border: 1.5px solid currentColor;
     border-radius: var(--radius-100);
     padding: 2px var(--spacing-200);
@@ -970,42 +970,42 @@ const hasDocHeader = Astro.slots.has('doc-header');
     display: flex; justify-content: space-between; gap: var(--spacing-400);
     align-items: flex-start; margin-bottom: var(--spacing-500);
   }
-  .cbf-invoice-doc__vendor { margin: 0; font-size: var(--type-size-400); font-weight: var(--font-weight-bold); }
-  .cbf-invoice-doc__sub { margin: 0; color: var(--color-text-tertiary); font-size: var(--type-size-100); }
+  .cbf-invoice-doc__vendor { margin: 0; font-size: var(--font-size-400); font-weight: var(--typography-font-weight-bold); }
+  .cbf-invoice-doc__sub { margin: 0; color: var(--color-content-default-tertiary); font-size: var(--font-size-100); }
   .cbf-invoice-doc__meta { text-align: right; }
   .cbf-invoice-doc__meta p { margin: 0 0 var(--spacing-100); }
-  .cbf-invoice-doc__meta span { color: var(--color-text-tertiary); margin-right: var(--spacing-200); }
+  .cbf-invoice-doc__meta span { color: var(--color-content-default-tertiary); margin-right: var(--spacing-200); }
   .cbf-invoice-doc__billto { margin-bottom: var(--spacing-500); }
   .cbf-invoice-doc__billto p { margin: 0; }
 
   .cbf-invoice-doc__items { width: 100%; border-collapse: collapse; }
   .cbf-invoice-doc__items th, .cbf-invoice-doc__items td { text-align: left; padding: var(--spacing-250) 0; vertical-align: top; }
   .cbf-invoice-doc__items thead th {
-    border-bottom: 1px solid var(--color-text-primary);
-    font-weight: var(--font-weight-semibold); font-size: var(--type-size-100); color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--color-content-default);
+    font-weight: var(--typography-font-weight-semibold); font-size: var(--font-size-100); color: var(--color-content-default-secondary);
   }
-  .cbf-invoice-doc__items tbody tr + tr td { border-top: 1px solid var(--color-border-light, var(--color-border)); }
+  .cbf-invoice-doc__items tbody tr + tr td { border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default)); }
   .cbf-invoice-doc__items tfoot th, .cbf-invoice-doc__items tfoot td { padding: var(--spacing-150) 0; text-align: right; }
-  .cbf-invoice-doc__items tfoot th { font-weight: var(--font-weight-regular); color: var(--color-text-secondary); }
+  .cbf-invoice-doc__items tfoot th { font-weight: var(--typography-font-weight-regular); color: var(--color-content-default-secondary); }
   .cbf-invoice-doc__items tfoot tr:first-child th, .cbf-invoice-doc__items tfoot tr:first-child td { padding-top: var(--spacing-400); }
   .cbf-invoice-doc__total th, .cbf-invoice-doc__total td {
-    border-top: 1px solid var(--color-text-primary); font-weight: var(--font-weight-bold);
-    font-size: var(--type-size-200); padding-top: var(--spacing-300) !important;
+    border-top: 1px solid var(--color-content-default); font-weight: var(--typography-font-weight-bold);
+    font-size: var(--font-size-200); padding-top: var(--spacing-300) !important;
   }
   .cbf-invoice-doc .cbf-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .cbf-invoice-doc__items th.cbf-num { text-align: right; }
-  .cbf-invoice-doc__memo { margin: var(--spacing-600) 0 0; color: var(--color-text-secondary); line-height: var(--line-height-relaxed); }
-  .cbf-invoice-doc__memo span { color: var(--color-text-tertiary); }
+  .cbf-invoice-doc__memo { margin: var(--spacing-600) 0 0; color: var(--color-content-default-secondary); line-height: var(--line-height-relaxed); }
+  .cbf-invoice-doc__memo span { color: var(--color-content-default-tertiary); }
   .cbf-invoice-doc__generated {
     margin: var(--spacing-600) 0 0; padding-top: var(--spacing-400);
-    border-top: 1px solid var(--color-border-light, var(--color-border));
-    color: var(--color-text-tertiary); font-size: var(--type-size-100); font-style: italic;
+    border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default));
+    color: var(--color-content-default-tertiary); font-size: var(--font-size-100); font-style: italic;
   }
 </style>
 
 <style is:global>
   /* Document line items are injected by JS (no Astro scope hash) — styled globally. */
-  .cbf-invoice-doc__items tbody td { font-size: var(--type-size-150); }
+  .cbf-invoice-doc__items tbody td { font-size: var(--font-size-150); }
 
   /* Per-line controls — flag and edit at rest, save/cancel while that line is being
      edited (the same two-state cluster the panel field rows use). Quiet until the
@@ -1015,21 +1015,21 @@ const hasDocHeader = Astro.slots.has('doc-header');
   .cbf-invoice-line__actions { width: 1%; white-space: nowrap; text-align: right; }
   .cbf-invoice-line__act {
     display: inline-flex;
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
     opacity: 0;
     transition: opacity 120ms ease;
   }
   .cbf-invoice-line:hover .cbf-invoice-line__act,
   .cbf-invoice-line__act:focus-within,
   .cbf-invoice-line[data-flagged] .cbf-invoice-line__act { opacity: 1; }
-  .cbf-invoice-line[data-flagged] [data-line-flag] { color: var(--color-warning-strong); }
+  .cbf-invoice-line[data-flagged] [data-line-flag] { color: var(--color-content-utility-warning); }
   @media (hover: none) { .cbf-invoice-line__act { opacity: 1; } }
 
   /* A flagged line and the objection to it read as one unit: the line takes a soft
      warning tint (never a colored left border) and the reason sits in the row
      directly beneath, spanning the full ledger width. */
   .cbf-invoice-line[data-flagged] > td {
-    background: var(--color-warning-subtle);
+    background: var(--color-background-utility-warning-subtle);
   }
   /* The objection row takes the status PAIR — -subtle surface, -strong text — since
      everything in it is warning content the COR wrote. The flagged LINE above it
@@ -1038,12 +1038,12 @@ const hasDocHeader = Astro.slots.has('doc-header');
      warning rather than that the line carries one. */
   .cbf-invoice-line__note > td {
     padding-top: 0;
-    background: var(--color-warning-subtle);
-    color: var(--color-warning-strong);
+    background: var(--color-background-utility-warning-subtle);
+    color: var(--color-content-utility-warning);
   }
   .cbf-invoice-line__note-text,
   .cbf-review-attach__note-text {
-    font-size: var(--type-size-150);
+    font-size: var(--font-size-150);
   }
   .cbf-invoice-line__note-clear,
   .cbf-review-attach__note-clear {
@@ -1122,14 +1122,14 @@ const hasDocHeader = Astro.slots.has('doc-header');
   }
   @keyframes cbf-issue-note-flash {
     0%, 55% { background-color: transparent; }
-    100% { background-color: var(--color-warning-subtle); }
+    100% { background-color: var(--color-background-utility-warning-subtle); }
   }
 
   @media (prefers-reduced-motion: reduce) {
     .is-flash,
     .cbf-invoice-field.is-flash {
       animation: none;
-      outline: 2px solid var(--color-warning-strong);
+      outline: 2px solid var(--color-content-utility-warning);
       outline-offset: var(--spacing-150);
     }
   }
@@ -1148,11 +1148,11 @@ const hasDocHeader = Astro.slots.has('doc-header');
     align-items: center;
     gap: var(--spacing-300);
   }
-  .cbf-review-attach + .cbf-review-attach { border-top: 1px solid var(--color-border-light, var(--color-border)); }
+  .cbf-review-attach + .cbf-review-attach { border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default)); }
   /* A flagged document takes the same warning pair as every other flagged thing. */
   .cbf-review-attach[data-flagged] {
-    background: var(--color-warning-subtle);
-    color: var(--color-warning-strong);
+    background: var(--color-background-utility-warning-subtle);
+    color: var(--color-content-utility-warning);
   }
   .cbf-review-attach[data-flagged] .cbf-review-attach__name,
   .cbf-review-attach[data-flagged] [data-doc-flag] { color: inherit; }
@@ -1173,20 +1173,20 @@ const hasDocHeader = Astro.slots.has('doc-header');
      below the caption floor. */
   .cbf-review-attach__tag {
     flex: none;
-    font-size: var(--type-size-100);
-    color: var(--color-text-tertiary);
+    font-size: var(--font-size-100);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-review-attach[data-flagged] .cbf-review-attach__tag { color: inherit; }
   .cbf-review-attach__name {
     flex: 1;
     min-width: 0;
-    font-size: var(--type-size-150);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-150);
+    color: var(--color-content-default);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .cbf-review-attach--empty .cbf-review-attach__name { color: var(--color-text-tertiary); }
+  .cbf-review-attach--empty .cbf-review-attach__name { color: var(--color-content-default-tertiary); }
   /* The row's own gap separates the NAME from its controls; the controls sit closer
      to each other than that, at the same spacing a field row uses, so a cluster of
      icons reads as one cluster on both surfaces. */
@@ -1198,14 +1198,14 @@ const hasDocHeader = Astro.slots.has('doc-header');
   .cbf-review-attach__dl,
   .cbf-review-attach__flag,
   .cbf-review-attach__open,
-  .cbf-review-attach__view { flex: none; line-height: 0; color: var(--color-text-tertiary); }
+  .cbf-review-attach__view { flex: none; line-height: 0; color: var(--color-content-default-tertiary); }
   /* Which budget this is, and why it moved. Sits under the name because it is what
      makes the row identifiable — a list of "Line Item Budget" rows is useless without
      it. Aligned to the name, clear of the label-free left gutter. */
   .cbf-review-attach__meta {
     margin: var(--spacing-050, 2px) 0 0;
-    font-size: var(--type-size-100);
-    color: var(--color-text-tertiary);
+    font-size: var(--font-size-100);
+    color: var(--color-content-default-tertiary);
     line-height: var(--line-height-tight, 1.3);
   }
   /* Row controls recede until the row is engaged, exactly as field-row controls do —
@@ -1240,14 +1240,14 @@ const hasDocHeader = Astro.slots.has('doc-header');
   .cbf-review-attach__flag .esa-icon-button:hover,
   .cbf-review-attach__open .esa-icon-button:hover,
   .cbf-review-attach__view .esa-icon-button:hover {
-    background: color-mix(in srgb, var(--color-text-tertiary) 14%, transparent);
-    color: var(--color-text-primary);
+    background: color-mix(in srgb, var(--color-content-default-tertiary) 14%, transparent);
+    color: var(--color-content-default);
   }
   /* Active view control: the file it points at is the one on screen in the pane. */
-  .cbf-review-attach__view.is-active { color: var(--color-primary); }
+  .cbf-review-attach__view.is-active { color: var(--color-background-brand); }
   .cbf-review-attach__view.is-active .esa-icon-button {
-    background: var(--color-primary-subtle, color-mix(in srgb, var(--color-primary) 12%, transparent));
-    color: var(--color-primary);
+    background: var(--color-background-brand-subtle, color-mix(in srgb, var(--color-background-brand) 12%, transparent));
+    color: var(--color-background-brand);
   }
 </style>
 

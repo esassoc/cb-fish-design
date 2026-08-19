@@ -43,7 +43,7 @@ const hasSidebar = Astro.slots.has('sidebar');
     display: flex;
     flex-direction: column;
     min-height: 80vh;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
     /* `clip`, not `hidden`: both clip the gold crumb strip to the rounded corner,
        but `hidden` makes this panel a SCROLL CONTAINER — which silently kills
@@ -51,18 +51,18 @@ const hasSidebar = Astro.slots.has('sidebar');
        box that never scrolls, so it just scrolls away with the page). `clip`
        establishes no scrollport, so sticky descendants track the viewport. */
     overflow: clip;
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
     /* soft navy lift — tokenized off the deepest brand surface, no raw rgba */
-    box-shadow: 0 1px 3px color-mix(in srgb, var(--color-surface-inverse) 8%, transparent);
+    box-shadow: 0 1px 3px color-mix(in srgb, var(--color-background-default-knockout) 8%, transparent);
   }
   .cbf-app-panel__crumb {
     background: var(--color-gold-50); /* the app's breadcrumb strip */
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border-default);
     padding: var(--spacing-400) var(--spacing-600);
   }
   .cbf-app-panel__crumb :global(.esa-breadcrumbs) {
-    --breadcrumbs-link-color: var(--color-text-secondary);
-    --breadcrumbs-link-hover: var(--color-primary);
+    --breadcrumbs-link-color: var(--color-content-default-secondary);
+    --breadcrumbs-link-hover: var(--color-background-brand);
   }
   .cbf-app-panel__body {
     flex: 1;
@@ -74,7 +74,7 @@ const hasSidebar = Astro.slots.has('sidebar');
   .cbf-app-panel__rail {
     width: 300px;
     flex: none;
-    border-right: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border-default);
     padding: var(--spacing-500);
   }
   .cbf-app-panel__content {

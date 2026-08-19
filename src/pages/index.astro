@@ -62,8 +62,8 @@ const STATUS_LABEL: Record<PrototypeStatus, string> = {
 
     <section class="home__protos" aria-label="Prototypes">
       <div class="home__protos-head">
-        <h2 class="type-section-title">Prototypes</h2>
-        <p class="type-body">Working screens for the program, built on the system.</p>
+        <h2 class="typography-heading-md">Prototypes</h2>
+        <p class="typography-body-md">Working screens for the program, built on the system.</p>
       </div>
       <ul class="home__proto-list grid">
         {activeRows.map((p) => (
@@ -86,8 +86,8 @@ const STATUS_LABEL: Record<PrototypeStatus, string> = {
     {pastRows.length > 0 && (
       <section class="home__protos" aria-label="Past explorations">
         <div class="home__protos-head">
-          <h2 class="type-section-title">Past explorations</h2>
-          <p class="type-body">Earlier prototypes that have shipped or landed live.</p>
+          <h2 class="typography-heading-md">Past explorations</h2>
+          <p class="typography-body-md">Earlier prototypes that have shipped or landed live.</p>
         </div>
         <ul class="home__proto-list grid">
           {pastRows.map((p) => (
@@ -119,6 +119,6 @@ const STATUS_LABEL: Record<PrototypeStatus, string> = {
   .home__layers { padding-bottom: var(--spacing-800); --switcher-threshold: 36rem; }
   .home__protos { padding-bottom: var(--spacing-800); }
   .home__protos-head { margin-bottom: var(--spacing-400); }
-  .home__protos-head p { margin-top: var(--spacing-100); color: var(--color-text-secondary); }
+  .home__protos-head p { margin-top: var(--spacing-100); color: var(--color-content-default-secondary); }
   .home__proto-list { list-style: none; margin: 0; padding: 0; --grid-min: 20rem; }
 </style>

@@ -4,7 +4,7 @@
 import '@esa/tokens/tokens.css';
 import '@esa/tokens/component-tokens.css';
 // Composition layer — layout primitives (.stack/.cluster/.grid/.sidebar/.switcher/…)
-// and type roles (.type-page-title/.type-body/…). Shipped as separate CSS exports
+// and type roles (.typography-heading-lg/.typography-body-md/…). Shipped as separate CSS exports
 // (not bundled into tokens.css), so a spoke must load them for pages to read as a
 // manifest of primitives + roles rather than hand-rolled flex/grid + raw type.
 import '@esa/tokens/layouts.css';
@@ -34,12 +34,12 @@ const { title = 'Columbia Basin Fish & Wildlife Program' } = Astro.props;
       *, *::before, *::after { box-sizing: border-box; }
       body {
         margin: 0;
-        font-family: var(--font-sans, system-ui, sans-serif);
-        color: var(--color-text-primary, #171717);
-        background: var(--color-surface, #fff);
+        font-family: var(--typography-font-family-sans, system-ui, sans-serif);
+        color: var(--color-content-default, #171717);
+        background: var(--color-background-elevation-raised, #fff);
         -webkit-font-smoothing: antialiased;
       }
-      a { color: var(--color-text-link, #1e5386); text-decoration: none; }
+      a { color: var(--color-content-link, #1e5386); text-decoration: none; }
       img { display: block; max-width: 100%; }
       button { font-family: inherit; cursor: pointer; background: none; border: 0; }
     </style>

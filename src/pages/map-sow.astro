@@ -173,22 +173,22 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
     display: flex;
     flex-direction: column;
     min-height: 0;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
     overflow: hidden;
-    background: var(--color-surface);
-    box-shadow: 0 1px 3px color-mix(in srgb, var(--color-surface-inverse) 8%, transparent);
+    background: var(--color-background-elevation-raised);
+    box-shadow: 0 1px 3px color-mix(in srgb, var(--color-background-default-knockout) 8%, transparent);
   }
 
   .msow-crumb-strip {
     background: var(--color-gold-50);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border-default);
     padding: var(--spacing-400) var(--spacing-600);
     flex-shrink: 0;
   }
   .msow-crumb-strip .esa-breadcrumbs {
-    --breadcrumbs-link-color: var(--color-text-secondary);
-    --breadcrumbs-link-hover: var(--color-primary);
+    --breadcrumbs-link-color: var(--color-content-default-secondary);
+    --breadcrumbs-link-hover: var(--color-background-brand);
   }
 
   .msow-root {

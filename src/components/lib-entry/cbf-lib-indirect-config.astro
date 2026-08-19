@@ -131,15 +131,15 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
     <div class="cbf-lic__strip repel">
       <div class="cbf-lic__ident stack" data-gap="xs">
         <div class="cluster" data-gap="xs">
-          <h2 class="type-section-title">{heading}</h2>
+          <h2 class="typography-heading-md">{heading}</h2>
           <EsaBadge value="Single rate" variant="secondary" size="sm" />
         </div>
-        <p class="cbf-lic__authority type-body">
+        <p class="cbf-lic__authority typography-body-md">
           <strong data-lic-rate>{pct(config.rate)}</strong>
           <span class="cbf-lic__sep" aria-hidden="true">·</span>
           <span data-lic-doc>{config.referenceDoc}</span>
         </p>
-        <p class="cbf-lic__meta type-body-small">
+        <p class="cbf-lic__meta typography-body-sm">
           Effective <span data-lic-start>{config.effectiveStart}</span> through
           <span data-lic-end>{config.effectiveEnd}</span>
           <span class="cbf-lic__sep" aria-hidden="true">·</span>
@@ -154,7 +154,7 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
         <div class="cbf-lic__num" data-lic-stat="indirect">
           <EsaStat value={usd(priced.totals.indirect)} label="Indirect" sub={`at ${pct(config.rate)}`} />
         </div>
-        <EsaButton color="primary" appearance="outline" size="md" icon="settings" data-lic-open>
+        <EsaButton variant="primary" appearance="outline" size="md" icon="settings" data-lic-open>
           Configure…
         </EsaButton>
       </div>
@@ -170,7 +170,7 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
       page. `undefined` is the only value Astro omits. */}
   <esa-side-dialog data-lic-dialog heading="Configure the indirect rate" size="lg" open={open || undefined}>
     <div class="stack" data-gap="lg">
-      <p class="cbf-lic__lede type-body">
+      <p class="cbf-lic__lede typography-body-md">
         The rate, the document that authorizes it, the period it covers, and — the part that gets
         checked — exactly which cost subtotals it is applied to. Every change here re-bases the
         indirect calculation immediately, both below and in the cost grid.
@@ -204,7 +204,7 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
       </div>
 
       <div class="stack" data-gap="sm">
-        <h3 class="type-card-title">Rate structure</h3>
+        <h3 class="typography-title">Rate structure</h3>
         <esa-radio-group data-lic-mode orientation="horizontal" size="md"></esa-radio-group>
         <EsaAlertBox variant="info" title="Dual rates are not entered on this screen">
           A dual rate charges on-site and off-site work at two different rates, and a rate that
@@ -215,8 +215,8 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
       </div>
 
       <div class="stack" data-gap="sm">
-        <h3 class="type-card-title">What this rate is applied to</h3>
-        <p class="cbf-lic__hint type-body-small">
+        <h3 class="typography-title">What this rate is applied to</h3>
+        <p class="cbf-lic__hint typography-body-sm">
           A subtotal counts toward the indirect base only while it is checked. Uncheck one and watch
           the base and the indirect dollars below drop by that amount. Supplies &amp; Equipment is
           listed as its two classes rather than as one line, because capitalizing an item is exactly
@@ -262,10 +262,10 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
         </div>
       </div>
       <div class="cbf-lic__actions repel">
-        <EsaButton color="ghost" size="md" data-lic-reset>
+        <EsaButton variant="ghost" size="md" data-lic-reset>
           Reset to the approved scope
         </EsaButton>
-        <EsaButton color="primary" size="md" data-lic-done>Done</EsaButton>
+        <EsaButton variant="primary" size="md" data-lic-done>Done</EsaButton>
       </div>
     </div>
   </esa-side-dialog>
@@ -495,17 +495,17 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
     flex: 1 1 22rem;
   }
   .cbf-lic__authority {
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
   .cbf-lic__authority strong {
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--typography-font-weight-semibold);
     font-variant-numeric: tabular-nums;
   }
   .cbf-lic__meta {
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-lic__sep {
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
     padding-inline: var(--spacing-100);
   }
   .cbf-lic__figures {
@@ -514,7 +514,7 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
   /* Step the stat value down from the 36px page-hero role — these are supporting
      figures inside a strip, not the headline number of the screen. */
   .cbf-lic__num {
-    --stat-value-size: var(--type-size-500);
+    --stat-value-size: var(--font-size-500);
   }
   .cbf-lic__num :global(.esa-stat__value) {
     font-variant-numeric: tabular-nums;
@@ -522,14 +522,14 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
 
   /* ── Drawer body ── */
   .cbf-lic__lede {
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     max-inline-size: 68ch;
   }
   .cbf-lic__fields {
     --grid-min: 18rem;
   }
   .cbf-lic__hint {
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     max-inline-size: 68ch;
   }
 
@@ -540,15 +540,15 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
     list-style: none;
     margin: 0;
     padding: 0;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
     overflow: hidden;
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
   }
   .cbf-lic__row {
     --gap: var(--spacing-400);
     padding: var(--spacing-300) var(--spacing-400);
-    border-block-start: 1px solid var(--color-border-light);
+    border-block-start: 1px solid var(--color-border-default-subtle);
   }
   .cbf-lic__row:first-child {
     border-block-start: none;
@@ -556,18 +556,18 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
   /* Out-of-scope rows read as a neutral sunken band inline with the content —
      never a colored left border. */
   .cbf-lic__row[data-in='false'] {
-    background: var(--color-surface-sunken);
+    background: var(--color-background-elevation-sunken);
   }
   .cbf-lic__amount {
-    font-size: var(--type-size-200);
-    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-200);
+    font-weight: var(--typography-font-weight-semibold);
     font-variant-numeric: tabular-nums;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     white-space: nowrap;
   }
   .cbf-lic__row[data-in='false'] .cbf-lic__amount {
-    font-weight: var(--font-weight-regular);
-    color: var(--color-text-tertiary);
+    font-weight: var(--typography-font-weight-regular);
+    color: var(--color-content-default-tertiary);
   }
 
   /* ── Drawer footer: the computation band, then the actions ── */
@@ -580,8 +580,8 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
     --align: flex-start;
   }
   .cbf-lic__op {
-    font-size: var(--type-size-400);
-    color: var(--color-text-tertiary);
+    font-size: var(--font-size-400);
+    color: var(--color-content-default-tertiary);
     padding-block-start: var(--spacing-100);
   }
   /* Windows order: tertiary far left, primary right. */

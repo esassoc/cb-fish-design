@@ -23,7 +23,7 @@
 import CbfSearchField from '../search/cbf-search-field.astro';
 import EsaPill from '@esa/ecology/esa-pill.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import CbfCrsCreateCommitmentDialog from './cbf-crs-create-commitment-dialog.astro';
 import '../shared/cbf-data-grid-chrome.css';
 import { commitments as defaultCommitments, STATUS_TONE } from '../../data/crs-commitments.mjs';
@@ -85,8 +85,8 @@ const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
 ---
 <section class="cbf-crs-grid stack" data-gap="md">
   <header class="cbf-data-grid__header repel">
-    <span class="type-caption cbf-data-grid__count-label">All commitments</span>
-    <EsaButton color="primary" icon="plus" data-crs-create-open>Create new CRS Commitment</EsaButton>
+    <span class="typography-meta cbf-data-grid__count-label">All commitments</span>
+    <EsaButton variant="primary" icon="plus" data-crs-create-open>Create new CRS Commitment</EsaButton>
   </header>
 
   <CbfCrsCreateCommitmentDialog
@@ -108,7 +108,7 @@ const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
   <div class="cbf-data-grid__controls repel">
     <div class="cbf-data-grid__filters cluster" data-gap="lg">
       <label class="cbf-data-grid__filter">
-        <span class="type-caption">Category</span>
+        <span class="typography-meta">Category</span>
         <esa-chip-group
           data-crs-category-filter
           size="sm"
@@ -118,7 +118,7 @@ const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
         ></esa-chip-group>
       </label>
       <label class="cbf-data-grid__filter">
-        <span class="type-caption">Status</span>
+        <span class="typography-meta">Status</span>
         <esa-chip-group
           data-crs-status-filter
           size="sm"
@@ -143,10 +143,10 @@ const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
   <div class="cbf-data-grid__grid" data-crs-grid></div>
 
   <footer class="cbf-data-grid__footer repel">
-    <span class="type-caption" data-crs-count>
+    <span class="typography-meta" data-crs-count>
       Showing {commitments.length} of {commitments.length} commitments
     </span>
-    <EsaIconButton icon="download" label="Download CSV" size="sm" data-crs-csv />
+    <EsaIconButton variant="chrome" iconOnly icon="download" label="Download CSV" size="sm" data-crs-csv />
   </footer>
 
   <!-- The real esa-pill lego, server-rendered once per status with the design-

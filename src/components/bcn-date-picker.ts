@@ -506,9 +506,9 @@ export class BcnDatePicker extends LitElement {
     :host {
       display: block;
       --_height: var(--form-height-md, 40px);
-      --_pad-x: var(--form-padding-x-md, 12px);
-      --_font-size: var(--form-font-size-md, 14px);
-      --_radius: var(--form-radius-md, 6px);
+      --_pad-x: var(--spacing-300, 12px);
+      --_font-size: var(--typography-label-md-font-size, 14px);
+      --_radius: var(--radius-md, 6px);
       --_border: var(--form-border-color, #d4d4d4);
       --_cell: 36px;
     }
@@ -517,24 +517,24 @@ export class BcnDatePicker extends LitElement {
     .field { display: flex; flex-direction: column; gap: var(--spacing-100, 4px); }
 
     .field__label {
-      font-family: var(--font-sans, sans-serif);
-      font-size: var(--type-size-200, 13px);
-      font-weight: var(--font-weight-medium, 500);
-      color: var(--color-text-secondary, #464646);
+      font-family: var(--typography-font-family-sans, sans-serif);
+      font-size: var(--font-size-200, 13px);
+      font-weight: var(--typography-font-weight-medium, 500);
+      color: var(--color-content-default-secondary, #464646);
       line-height: 1.4;
       cursor: default;
     }
-    .field__req { color: var(--color-danger, #dc2626); }
+    .field__req { color: var(--color-background-utility-danger, #dc2626); }
 
     .field__wrap { position: relative; }
 
     .field__message {
-      font-family: var(--font-sans, sans-serif);
+      font-family: var(--typography-font-family-sans, sans-serif);
       font-size: 12px;
-      color: var(--color-text-tertiary, #737373);
+      color: var(--color-content-default-tertiary, #737373);
       margin: 0;
     }
-    .field__message--error { color: var(--color-danger, #dc2626); }
+    .field__message--error { color: var(--color-background-utility-danger, #dc2626); }
 
     /* ---- Input + button row ---- */
     .field__row {
@@ -552,28 +552,28 @@ export class BcnDatePicker extends LitElement {
       border: 1px solid var(--_border);
       border-right: none;
       border-radius: var(--_radius) 0 0 var(--_radius);
-      background: var(--color-surface, #fff);
-      font-family: var(--font-sans, sans-serif);
+      background: var(--color-background-elevation-raised, #fff);
+      font-family: var(--typography-font-family-sans, sans-serif);
       font-size: var(--_font-size);
-      color: var(--color-text-primary, #171717);
+      color: var(--color-content-default, #171717);
       outline: none;
       transition: border-color 0.12s ease;
     }
-    .date-input::placeholder { color: var(--color-text-tertiary, #737373); }
-    .date-input:hover { border-color: var(--color-primary, #13273e); }
+    .date-input::placeholder { color: var(--color-content-default-tertiary, #737373); }
+    .date-input:hover { border-color: var(--color-background-brand, #13273e); }
     .date-input:focus { outline: none; }
-    .date-input:disabled { opacity: 0.5; cursor: not-allowed; background: var(--color-surface-sunken, #f8f9fb); }
+    .date-input:disabled { opacity: 0.5; cursor: not-allowed; background: var(--color-background-elevation-sunken, #f8f9fb); }
 
     .field__row:focus-within .date-input,
     .field__row:focus-within .cal-btn {
-      border-color: var(--color-primary, #13273e);
+      border-color: var(--color-background-brand, #13273e);
     }
     .field__row:focus-within {
       border-radius: var(--_radius);
-      box-shadow: 0 0 0 3px var(--color-primary-subtle, #e8edf2);
+      box-shadow: 0 0 0 3px var(--color-background-brand-subtle, #e8edf2);
     }
     .field__row.has-error .date-input,
-    .field__row.has-error .cal-btn { border-color: var(--color-danger, #dc2626); }
+    .field__row.has-error .cal-btn { border-color: var(--color-background-utility-danger, #dc2626); }
     .field__row.has-error:focus-within {
       box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15);
     }
@@ -588,20 +588,20 @@ export class BcnDatePicker extends LitElement {
       height: var(--_height);
       border: 1px solid var(--_border);
       border-radius: 0 var(--_radius) var(--_radius) 0;
-      background: var(--color-surface-sunken, #f8f9fb);
-      color: var(--color-text-tertiary, #737373);
+      background: var(--color-background-elevation-sunken, #f8f9fb);
+      color: var(--color-content-default-tertiary, #737373);
       cursor: pointer;
       transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
     }
     .cal-btn:hover {
-      background: var(--color-primary-subtle, #e8edf2);
-      border-color: var(--color-primary, #13273e);
-      color: var(--color-primary, #13273e);
+      background: var(--color-background-brand-subtle, #e8edf2);
+      border-color: var(--color-background-brand, #13273e);
+      color: var(--color-background-brand, #13273e);
     }
     .cal-btn.is-open {
-      background: var(--color-primary-subtle, #e8edf2);
-      border-color: var(--color-primary, #13273e);
-      color: var(--color-primary, #13273e);
+      background: var(--color-background-brand-subtle, #e8edf2);
+      border-color: var(--color-background-brand, #13273e);
+      color: var(--color-background-brand, #13273e);
     }
     .cal-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -611,8 +611,8 @@ export class BcnDatePicker extends LitElement {
       top: calc(100% + 6px);
       left: 0;
       z-index: var(--z-dropdown, 50);
-      background: var(--color-surface, #fff);
-      border: 1px solid var(--color-border, #e5e5e5);
+      background: var(--color-background-elevation-raised, #fff);
+      border: 1px solid var(--color-border-default, #e5e5e5);
       border-radius: var(--radius-100, 8px);
       box-shadow: 0 8px 24px rgba(19, 39, 62, 0.12), 0 2px 6px rgba(19, 39, 62, 0.06);
       padding: var(--spacing-400, 16px);
@@ -639,27 +639,27 @@ export class BcnDatePicker extends LitElement {
       border: 1px solid transparent;
       border-radius: var(--radius-050, 4px);
       background: none;
-      font-family: var(--font-sans, sans-serif);
+      font-family: var(--typography-font-family-sans, sans-serif);
       font-size: 14px;
-      font-weight: var(--font-weight-semibold, 600);
-      color: var(--color-text-primary, #171717);
+      font-weight: var(--typography-font-weight-semibold, 600);
+      color: var(--color-content-default, #171717);
       cursor: pointer;
       transition: background 0.12s ease, border-color 0.12s ease;
     }
     .cal-nav__trigger:hover {
-      background: var(--color-surface-sunken, #f4f5f7);
-      border-color: var(--color-border, #e5e5e5);
+      background: var(--color-background-elevation-sunken, #f4f5f7);
+      border-color: var(--color-border-default, #e5e5e5);
     }
     .cal-nav__trigger.is-open {
-      background: var(--color-surface-sunken, #f4f5f7);
-      border-color: var(--color-primary, #13273e);
+      background: var(--color-background-elevation-sunken, #f4f5f7);
+      border-color: var(--color-background-brand, #13273e);
     }
     .cal-nav__trigger:focus-visible {
-      outline: 2px solid var(--color-primary, #13273e);
+      outline: 2px solid var(--color-background-brand, #13273e);
       outline-offset: 2px;
     }
     .cal-nav__chevron {
-      color: var(--color-text-tertiary, #737373);
+      color: var(--color-content-default-tertiary, #737373);
       transition: transform 0.12s ease;
     }
     .cal-nav__trigger.is-open .cal-nav__chevron { transform: rotate(180deg); }
@@ -669,8 +669,8 @@ export class BcnDatePicker extends LitElement {
       top: calc(100% + 4px);
       left: 0;
       z-index: 10;
-      background: var(--color-surface, #fff);
-      border: 1px solid var(--color-border, #e5e5e5);
+      background: var(--color-background-elevation-raised, #fff);
+      border: 1px solid var(--color-border-default, #e5e5e5);
       border-radius: var(--radius-100, 6px);
       box-shadow: 0 4px 16px rgba(19, 39, 62, 0.12);
       width: 180px;
@@ -682,16 +682,16 @@ export class BcnDatePicker extends LitElement {
       width: 100%;
       padding: 8px 10px;
       border: none;
-      border-bottom: 1px solid var(--color-border, #e5e5e5);
-      font-family: var(--font-sans, sans-serif);
+      border-bottom: 1px solid var(--color-border-default, #e5e5e5);
+      font-family: var(--typography-font-family-sans, sans-serif);
       font-size: 13px;
-      color: var(--color-text-primary, #171717);
-      background: var(--color-surface, #fff);
+      color: var(--color-content-default, #171717);
+      background: var(--color-background-elevation-raised, #fff);
       box-sizing: border-box;
       outline: none;
     }
-    .cal-nav__search::placeholder { color: var(--color-text-tertiary, #737373); }
-    .cal-nav__search:focus { border-bottom-color: var(--color-primary, #13273e); }
+    .cal-nav__search::placeholder { color: var(--color-content-default-tertiary, #737373); }
+    .cal-nav__search:focus { border-bottom-color: var(--color-background-brand, #13273e); }
 
     .cal-nav__options {
       max-height: 188px;
@@ -703,23 +703,23 @@ export class BcnDatePicker extends LitElement {
       padding: 7px 10px;
       border: none;
       background: none;
-      font-family: var(--font-sans, sans-serif);
+      font-family: var(--typography-font-family-sans, sans-serif);
       font-size: 13px;
-      color: var(--color-text-primary, #171717);
+      color: var(--color-content-default, #171717);
       text-align: left;
       cursor: pointer;
       transition: background 0.1s ease;
     }
-    .cal-nav__option:hover { background: var(--color-surface-sunken, #f4f5f7); }
+    .cal-nav__option:hover { background: var(--color-background-elevation-sunken, #f4f5f7); }
     .cal-nav__option.is-selected {
-      background: var(--color-primary-subtle, #e8edf2);
-      color: var(--color-primary, #13273e);
-      font-weight: var(--font-weight-semibold, 600);
+      background: var(--color-background-brand-subtle, #e8edf2);
+      color: var(--color-background-brand, #13273e);
+      font-weight: var(--typography-font-weight-semibold, 600);
     }
     .cal-nav__empty {
       padding: 10px;
       font-size: 13px;
-      color: var(--color-text-tertiary, #737373);
+      color: var(--color-content-default-tertiary, #737373);
       text-align: center;
       margin: 0;
     }
@@ -736,11 +736,11 @@ export class BcnDatePicker extends LitElement {
       align-items: center;
       justify-content: center;
       height: var(--_cell);
-      font-family: var(--font-sans, sans-serif);
+      font-family: var(--typography-font-family-sans, sans-serif);
       font-size: 11px;
-      font-weight: var(--font-weight-semibold, 600);
+      font-weight: var(--typography-font-weight-semibold, 600);
       letter-spacing: 0.04em;
-      color: var(--color-text-tertiary, #737373);
+      color: var(--color-content-default-tertiary, #737373);
       text-transform: uppercase;
     }
 
@@ -759,23 +759,23 @@ export class BcnDatePicker extends LitElement {
       border: none;
       border-radius: var(--radius-050, 4px);
       background: none;
-      font-family: var(--font-sans, sans-serif);
+      font-family: var(--typography-font-family-sans, sans-serif);
       font-size: 13px;
-      color: var(--color-text-primary, #171717);
+      color: var(--color-content-default, #171717);
       cursor: pointer;
       transition: background 0.1s ease, color 0.1s ease;
     }
     .calendar__day.is-empty { pointer-events: none; }
     .calendar__day:not(.is-empty):hover {
-      background: var(--color-surface-sunken, #f4f5f7);
+      background: var(--color-background-elevation-sunken, #f4f5f7);
     }
     .calendar__day:focus-visible {
-      outline: 2px solid var(--color-primary, #13273e);
+      outline: 2px solid var(--color-background-brand, #13273e);
       outline-offset: 2px;
     }
     .calendar__day.is-today {
-      font-weight: var(--font-weight-semibold, 600);
-      color: var(--color-secondary, #1a4d7c);
+      font-weight: var(--typography-font-weight-semibold, 600);
+      color: var(--color-background-brand-muted, #1a4d7c);
       position: relative;
     }
     .calendar__day.is-today::after {
@@ -787,18 +787,18 @@ export class BcnDatePicker extends LitElement {
       width: 4px;
       height: 4px;
       border-radius: 50%;
-      background: var(--color-secondary, #1a4d7c);
+      background: var(--color-background-brand-muted, #1a4d7c);
     }
     .calendar__day.is-selected {
-      background: var(--color-primary, #13273e);
-      color: var(--color-surface, #fff);
-      font-weight: var(--font-weight-semibold, 600);
+      background: var(--color-background-brand, #13273e);
+      color: var(--color-background-elevation-raised, #fff);
+      font-weight: var(--typography-font-weight-semibold, 600);
     }
     .calendar__day.is-selected.is-today::after {
       background: var(--color-gold-300, #f0c040);
     }
     .calendar__day.is-selected:hover {
-      background: var(--color-primary, #13273e);
+      background: var(--color-background-brand, #13273e);
       opacity: 0.9;
     }
 
@@ -807,17 +807,17 @@ export class BcnDatePicker extends LitElement {
       margin-left: auto;
       border: none;
       background: none;
-      font-family: var(--font-sans, sans-serif);
+      font-family: var(--typography-font-family-sans, sans-serif);
       font-size: 13px;
-      font-weight: var(--font-weight-semibold, 600);
-      color: var(--color-secondary, #1a4d7c);
+      font-weight: var(--typography-font-weight-semibold, 600);
+      color: var(--color-background-brand-muted, #1a4d7c);
       cursor: pointer;
       padding: var(--spacing-100, 4px) var(--spacing-300, 12px);
       border-radius: var(--radius-050, 4px);
       transition: background 0.12s ease;
     }
     .calendar__today-btn:hover {
-      background: var(--color-primary-subtle, #e8edf2);
+      background: var(--color-background-brand-subtle, #e8edf2);
     }
   `;
 }

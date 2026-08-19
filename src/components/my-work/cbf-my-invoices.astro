@@ -11,7 +11,7 @@
 //
 // bcn-lego-checked: no esa-* lego covers a data-provenance caption paired with a
 // delegated queue section, so the wrapper stays minimal. The caption is plain text
-// styled via the .type-caption role; the "View processed invoices" affordance is the
+// styled via the .typography-meta role; the "View processed invoices" affordance is the
 // esa-button lego rendered as a link (href). The metrics strip + queue are existing
 // spoke components. The only script is the cbf:queue-filter bridge (mirrors the
 // cbf:open-invoice bridge in cbf-mywork-tabs). No bespoke primitives introduced here.
@@ -37,7 +37,7 @@ const metrics = deriveWorkspaceMetrics(invoices);
 ---
 
 <div class="stack cbf-my-invoices" data-gap="sm">
-  <p class="type-caption cbf-my-invoices__provenance">
+  <p class="typography-meta cbf-my-invoices__provenance">
     Asset Suite processing status refreshes nightly &middot; last feed {feedAsOf}
   </p>
   <CbfInvoiceQueueMetrics metrics={metrics} />
@@ -46,7 +46,7 @@ const metrics = deriveWorkspaceMetrics(invoices);
       slot="controls-end"
       href={withBase('/invoice-history')}
       appearance="outline"
-      color="secondary"
+      variant="secondary"
       size="sm"
       icon="history"
     >
@@ -57,7 +57,7 @@ const metrics = deriveWorkspaceMetrics(invoices);
 
 <style>
   .cbf-my-invoices__provenance {
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
 </style>
 

@@ -45,7 +45,7 @@ import EsaButton from '@esa/ecology/esa-button.astro';
 
 <esa-side-dialog size="md" position="right" heading="Trip" data-libs-trip-editor>
   <div class="cbf-lste stack" data-gap="lg">
-    <p class="cbf-lste__lede type-body-small">
+    <p class="cbf-lste__lede typography-body-sm">
       A trip carries what every line under it would otherwise repeat. Raise how many times
       it happens and every cost in the trip moves together.
     </p>
@@ -74,11 +74,11 @@ import EsaButton from '@esa/ecology/esa-button.astro';
 
     <div class="cbf-lste__effect repel" data-gap="sm">
       <span class="stack" data-gap="3xs">
-        <span class="cbf-lste__effect-label type-body">Lines in this trip</span>
-        <span class="cbf-lste__note type-body-small" data-effect-note></span>
+        <span class="cbf-lste__effect-label typography-body-md">Lines in this trip</span>
+        <span class="cbf-lste__note typography-body-sm" data-effect-note></span>
         {/* What the delete below would do to those lines, said beside the count
             it is about rather than inside a button label. */}
-        <span class="cbf-lste__note type-body-small" data-delete-note hidden></span>
+        <span class="cbf-lste__note typography-body-sm" data-delete-note hidden></span>
       </span>
       <strong class="cbf-lste__effect-value" data-effect-total>$0</strong>
     </div>
@@ -100,18 +100,18 @@ import EsaButton from '@esa/ecology/esa-button.astro';
         and the line count and total are two rows up. */}
     <span class="cluster" data-gap="2xs" data-delete hidden>
       <span data-delete-keep>
-        <EsaButton size="sm" color="secondary" appearance="soft">Delete trip, keep the lines</EsaButton>
+        <EsaButton size="sm" variant="secondary" appearance="soft">Delete trip, keep the lines</EsaButton>
       </span>
       <span data-delete-all>
-        <EsaButton size="sm" color="danger" appearance="soft" icon="trash-2">Delete trip and lines</EsaButton>
+        <EsaButton size="sm" variant="danger" appearance="soft" icon="trash-2">Delete trip and lines</EsaButton>
       </span>
     </span>
     <span class="cluster" data-gap="sm">
       <span data-cancel>
-        <EsaButton size="sm" color="secondary" appearance="outline">Cancel</EsaButton>
+        <EsaButton size="sm" variant="secondary" appearance="outline">Cancel</EsaButton>
       </span>
       <span data-save>
-        <EsaButton size="sm" color="primary">Save trip</EsaButton>
+        <EsaButton size="sm" variant="primary">Save trip</EsaButton>
       </span>
     </span>
   </div>
@@ -257,7 +257,7 @@ import EsaButton from '@esa/ecology/esa-button.astro';
   .cbf-lste__lede,
   .cbf-lste__note {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     max-width: 56ch;
   }
 
@@ -265,18 +265,18 @@ import EsaButton from '@esa/ecology/esa-button.astro';
     --align: center;
     align-items: center;
     padding: var(--spacing-300);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
-    background: var(--color-surface-sunken);
+    background: var(--color-background-elevation-sunken);
   }
   .cbf-lste__effect-label {
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-medium);
+    color: var(--color-content-default);
+    font-weight: var(--typography-font-weight-medium);
   }
   .cbf-lste__effect-value {
-    font-size: var(--type-size-500);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-500);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }

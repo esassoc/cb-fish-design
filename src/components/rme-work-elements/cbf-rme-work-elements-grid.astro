@@ -27,7 +27,7 @@
 // is the reusable home for this report. Every other control is a lego:
 // cbf-search-field for search, esa-icon-button for the CSV download.
 import CbfSearchField from '../search/cbf-search-field.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import '../shared/cbf-data-grid-chrome.css';
 import {
   rmeWorkElements as defaultRows,
@@ -43,7 +43,7 @@ const { rows = defaultRows } = Astro.props;
 ---
 <section class="cbf-rme-grid stack" data-gap="md">
   <header class="cbf-data-grid__header repel">
-    <span class="type-caption cbf-data-grid__count-label">All work statement elements</span>
+    <span class="typography-meta cbf-data-grid__count-label">All work statement elements</span>
     <div class="cbf-data-grid__search">
       <CbfSearchField
         placeholder="Search project, contractor, contract, or title…"
@@ -59,10 +59,10 @@ const { rows = defaultRows } = Astro.props;
   <div class="cbf-data-grid__grid" data-rme-grid></div>
 
   <footer class="cbf-data-grid__footer repel">
-    <span class="type-caption" data-rme-count>
+    <span class="typography-meta" data-rme-count>
       Showing {rows.length} of {rows.length} work statement elements
     </span>
-    <EsaIconButton icon="download" label="Download CSV" size="sm" data-rme-csv />
+    <EsaIconButton variant="chrome" iconOnly icon="download" label="Download CSV" size="sm" data-rme-csv />
   </footer>
 
   <!-- Row data + the two edit dropdowns' option lists, serialized so the
@@ -80,7 +80,7 @@ const { rows = defaultRows } = Astro.props;
      (unlike the CRS dashboard's Edit Status Mode) there's no separate toggle
      announcing which cells are interactive. */
   .cbf-data-grid__grid :global(.cbf-rme-editable-cell) {
-    background: var(--color-primary-subtle);
+    background: var(--color-background-brand-subtle);
   }
 </style>
 

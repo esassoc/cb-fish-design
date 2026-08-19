@@ -20,7 +20,7 @@
 // empty archive = esa-empty-state; badges = esa-badge.
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import CbfContractSummary from './cbf-contract-summary.astro';
 import {
   contract,
@@ -53,13 +53,13 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
       </p>
 
       <div class="cbf-lipd__toolbar repel">
-        <span class="type-caption">
+        <span class="typography-meta">
           Viewing {documents.length} of {contract.totalDocs} attached documents — filtered to
           Line Item Budget &amp; Property Inventory (the transmittal memo and design report are shown
           for contrast).
         </span>
         <span data-add-doc>
-          <EsaButton color="primary" size="sm" icon="plus">Add…</EsaButton>
+          <EsaButton variant="primary" size="sm" icon="plus">Add…</EsaButton>
         </span>
       </div>
 
@@ -82,7 +82,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
               <tr data-doc-row={d.id}>
                 <td class="cbf-doc-table__menu-col">
                   <esa-dropdown-menu data-doc-menu={d.id} position="below-start">
-                    <EsaIconButton icon="menu" label={`Actions for ${d.title}`} size="sm" />
+                    <EsaIconButton variant="chrome" iconOnly icon="menu" label={`Actions for ${d.title}`} size="sm" />
                   </esa-dropdown-menu>
                 </td>
                 <td class="cbf-doc-table__title" data-cell="title">{d.title}</td>
@@ -119,7 +119,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
         </div>
       </div>
 
-      <h3 class="type-section-title">Document approval</h3>
+      <h3 class="typography-heading-md">Document approval</h3>
       <div data-appr-readonly hidden>
         <EsaAlertBox variant="info" title="Original requisition — read-only">
           These approvals are the finalized record of the original contract requisition (SOW revision 1) and can't be changed. Switch to the CCR revision to work the current documents.
@@ -139,7 +139,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
         </table>
       </div>
 
-      <h3 class="type-section-title">Workflow history</h3>
+      <h3 class="typography-heading-md">Workflow history</h3>
       <div class="cbf-lipd__scroll">
         <table class="cbf-hist-table">
           <thead>
@@ -167,7 +167,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
             <div><span class="cbf-edit__label">Subtype</span><strong data-ed-subtype></strong></div>
             <div><span class="cbf-edit__label">WE ref</span><strong data-ed-weref></strong></div>
           </div>
-          <p class="cbf-edit__guidance type-caption" data-ed-guidance></p>
+          <p class="cbf-edit__guidance typography-meta" data-ed-guidance></p>
         </div>
       </section>
 
@@ -176,7 +176,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
         <div class="cbf-edit__fields stack" data-gap="sm">
           <p class="cbf-edit__file">
             Current file: <a href="#" class="cbf-doc-link" data-ed-file></a>
-            <span class="type-caption" data-ed-size></span>
+            <span class="typography-meta" data-ed-size></span>
           </p>
           <div data-ed-upload-slot>
             <esa-file-upload
@@ -186,7 +186,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
               max-size-mb="5"
             ></esa-file-upload>
           </div>
-          <p class="type-caption">
+          <p class="typography-meta">
             Uploading a new file replaces the current one when you save — the title, type, authors,
             and sharing below all stay put.
           </p>
@@ -229,11 +229,11 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     </div>
 
     <div slot="footer" class="cbf-edit__footer">
-      <span class="type-caption" data-save-hint>
+      <span class="typography-meta" data-save-hint>
         Nothing to save yet — replace the file or edit a property to enable Save.
       </span>
-      <span data-ed-cancel><EsaButton color="secondary" appearance="outline">Cancel</EsaButton></span>
-      <span data-ed-save><EsaButton color="primary" disabled>Save</EsaButton></span>
+      <span data-ed-cancel><EsaButton variant="secondary" appearance="outline">Cancel</EsaButton></span>
+      <span data-ed-save><EsaButton variant="primary" disabled>Save</EsaButton></span>
     </div>
   </esa-dialog>
 
@@ -247,7 +247,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
       <div data-em-preview></div>
     </div>
     <div slot="footer" class="cbf-edit__footer">
-      <span data-em-close><EsaButton color="primary">Done</EsaButton></span>
+      <span data-em-close><EsaButton variant="primary">Done</EsaButton></span>
     </div>
   </esa-dialog>
 
@@ -265,7 +265,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
         <p data-em-p2></p>
         <p class="cbf-email__meta" data-em-meta></p>
       </div>
-      <footer class="cbf-email__foot type-caption">
+      <footer class="cbf-email__foot typography-meta">
         System-generated notification · cbfish.org · do not reply
       </footer>
     </article>
@@ -781,7 +781,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
 
 <style>
   .cbf-lipd__panel { padding-block-start: var(--spacing-400); }
-  .cbf-lipd__intro { margin: 0; color: var(--color-text-secondary); max-width: 90ch; }
+  .cbf-lipd__intro { margin: 0; color: var(--color-content-default-secondary); max-width: 90ch; }
   .cbf-lipd__toolbar { align-items: center; }
   /* Wide workflow tables scroll horizontally. NB: overflow-x:auto forces overflow-y
      to compute to auto too, so this ALSO clips vertically — fine for these tables
@@ -797,44 +797,44 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
   }
 
   /* ── Tables (ported from the CBFish contract-documents / workflow tables) ── */
-  table { width: 100%; border-collapse: collapse; font-size: var(--type-size-200, 0.9375rem); }
+  table { width: 100%; border-collapse: collapse; font-size: var(--font-size-200, 0.9375rem); }
   thead th {
     text-align: left;
     padding: var(--spacing-300) var(--spacing-400);
-    background: var(--color-surface-sunken, #f4f4f4);
-    color: var(--color-text-secondary);
-    font-weight: var(--font-weight-semibold);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--color-background-elevation-sunken, #f4f4f4);
+    color: var(--color-content-default-secondary);
+    font-weight: var(--typography-font-weight-semibold);
+    border-bottom: 1px solid var(--color-border-default);
     white-space: nowrap;
   }
   tbody td, tbody th[scope='row'] {
     padding: var(--spacing-300) var(--spacing-400);
-    border-bottom: 1px solid var(--color-border-light, var(--color-border));
+    border-bottom: 1px solid var(--color-border-default-subtle, var(--color-border-default));
     vertical-align: top;
     text-align: left;
   }
-  tbody th[scope='row'] { font-weight: var(--font-weight-semibold); white-space: nowrap; }
+  tbody th[scope='row'] { font-weight: var(--typography-font-weight-semibold); white-space: nowrap; }
   .cbf-doc-table__menu-col { width: 48px; }
-  .cbf-doc-table__title { font-weight: var(--font-weight-medium); }
-  .cbf-doc-link { color: var(--color-primary); text-decoration: underline; }
-  .cbf-hist-table__status { white-space: pre-line; color: var(--color-text-secondary); }
+  .cbf-doc-table__title { font-weight: var(--typography-font-weight-medium); }
+  .cbf-doc-link { color: var(--color-background-brand); text-decoration: underline; }
+  .cbf-hist-table__status { white-space: pre-line; color: var(--color-content-default-secondary); }
 
-  /* --color-success (#22c55e) is a bright FILL, not a text color (~2.3:1 on white,
+  /* --color-background-utility-success (#22c55e) is a bright FILL, not a text color (~2.3:1 on white,
      fails WCAG). Use the -strong text token (#15803d, ~4.6:1) for the check + date. */
   .cbf-lipd :global(.cbf-check) {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-100);
-    color: var(--color-success-strong, #15803d);
-    font-weight: var(--font-weight-semibold);
+    color: var(--color-content-utility-success, #15803d);
+    font-weight: var(--typography-font-weight-semibold);
     white-space: nowrap;
   }
-  .cbf-lipd :global(.cbf-none) { color: var(--color-text-secondary); }
+  .cbf-lipd :global(.cbf-none) { color: var(--color-content-default-secondary); }
   /* Not-applicable approval (e.g. a design report doesn't route through the COR). */
-  .cbf-lipd :global(.cbf-na) { color: var(--color-text-tertiary); font-style: italic; }
+  .cbf-lipd :global(.cbf-na) { color: var(--color-content-default-tertiary); font-style: italic; }
   /* Locked (read-only) approval — the original requisition. Muted grey to read as
      disabled; contrast minimums don't apply to disabled/inactive content. */
-  .cbf-lipd :global(.cbf-check--locked) { color: var(--color-text-tertiary); font-weight: var(--font-weight-medium); }
+  .cbf-lipd :global(.cbf-check--locked) { color: var(--color-content-default-tertiary); font-weight: var(--typography-font-weight-medium); }
   /* Solid burnt-amber chip with white text (#b45309 vs #fff ≈ 4.9:1, AA-compliant).
      The old pale-amber-on-pale-amber treatment was well under WCAG minimums. */
   .cbf-lipd :global(.cbf-reappr) {
@@ -842,18 +842,18 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     margin-inline-start: var(--spacing-200);
     padding: 2px var(--spacing-200);
     border-radius: var(--radius-full, 9999px);
-    background: var(--color-warning-strong, #b45309);
-    color: var(--color-text-inverse, #fff);
-    font-size: var(--type-size-100, 0.8125rem);
-    font-weight: var(--font-weight-semibold);
+    background: var(--color-content-utility-warning, #b45309);
+    color: var(--color-content-default-knockout, #fff);
+    font-size: var(--font-size-100, 0.8125rem);
+    font-weight: var(--typography-font-weight-semibold);
     white-space: nowrap;
   }
   .cbf-appr-table :global(tr.is-reset) th[scope='row'],
   .cbf-appr-table :global(tr.is-reset) td {
-    background: color-mix(in srgb, var(--color-warning-strong, #b45309) 8%, var(--color-surface));
+    background: color-mix(in srgb, var(--color-content-utility-warning, #b45309) 8%, var(--color-background-elevation-raised));
   }
   .cbf-hist-table :global(tr.is-new) td {
-    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-surface));
+    background: color-mix(in srgb, var(--color-background-brand) 6%, var(--color-background-elevation-raised));
   }
 
   /* ── Workflow status strip ── */
@@ -862,17 +862,17 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-500);
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-lipd__status-rev { min-width: 320px; }
 
   /* ── Edit dialog ── */
-  .cbf-edit__lede { margin: 0; color: var(--color-text-secondary); }
+  .cbf-edit__lede { margin: 0; color: var(--color-content-default-secondary); }
   .cbf-edit__section {
     display: flex;
     gap: var(--spacing-400);
     padding-block: var(--spacing-300);
-    border-top: 1px solid var(--color-border-light, var(--color-border));
+    border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default));
   }
   .cbf-edit__num {
     flex: none;
@@ -882,9 +882,9 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     align-items: center;
     justify-content: center;
     border-radius: var(--radius-full, 9999px);
-    background: var(--color-surface-sunken, #f4f4f4);
-    color: var(--color-text-secondary);
-    font-weight: var(--font-weight-semibold);
+    background: var(--color-background-elevation-sunken, #f4f4f4);
+    color: var(--color-content-default-secondary);
+    font-weight: var(--typography-font-weight-semibold);
   }
   .cbf-edit__fields { flex: 1; min-width: 0; }
   .cbf-edit__specs {
@@ -894,15 +894,15 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
   }
   .cbf-edit__specs > div { display: flex; flex-direction: column; gap: 2px; }
   .cbf-edit__label {
-    font-size: var(--type-size-100, 0.8125rem);
-    color: var(--color-text-tertiary);
+    font-size: var(--font-size-100, 0.8125rem);
+    color: var(--color-content-default-tertiary);
   }
-  .cbf-edit__guidance { margin: var(--spacing-300) 0 0; color: var(--color-text-tertiary); }
+  .cbf-edit__guidance { margin: var(--spacing-300) 0 0; color: var(--color-content-default-tertiary); }
   .cbf-edit__file { margin: 0; }
   .cbf-edit__newfile {
     margin: 0;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-primary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-background-brand);
   }
   .cbf-edit__history {
     display: grid;
@@ -910,7 +910,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     gap: var(--spacing-300) var(--spacing-500);
     padding: var(--spacing-400);
     border-radius: var(--radius-200);
-    background: var(--color-surface-sunken, #f4f4f4);
+    background: var(--color-background-elevation-sunken, #f4f4f4);
   }
   .cbf-edit__history > div { display: flex; flex-direction: column; gap: 2px; }
   .cbf-edit__footer {
@@ -920,13 +920,13 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     gap: var(--spacing-300);
     width: 100%;
   }
-  .cbf-edit__footer [data-save-hint] { margin-inline-end: auto; color: var(--color-text-tertiary); }
+  .cbf-edit__footer [data-save-hint] { margin-inline-end: auto; color: var(--color-content-default-tertiary); }
 
   /* ── Email envelope ── */
   .cbf-lipd :global(.cbf-email) {
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
     overflow: hidden;
   }
   .cbf-lipd :global(.cbf-email__head) {
@@ -934,14 +934,14 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: var(--spacing-200) var(--spacing-500);
     padding: var(--spacing-400) var(--spacing-500);
-    background: var(--color-surface-sunken, #f4f4f4);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--color-background-elevation-sunken, #f4f4f4);
+    border-bottom: 1px solid var(--color-border-default);
   }
   .cbf-lipd :global(.cbf-email__head > div) { display: flex; flex-direction: column; gap: 2px; }
   .cbf-lipd :global(.cbf-email__subject) { grid-column: 1 / -1; }
   .cbf-lipd :global(.cbf-email__label) {
-    font-size: var(--type-size-100, 0.8125rem);
-    color: var(--color-text-tertiary);
+    font-size: var(--font-size-100, 0.8125rem);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-lipd :global(.cbf-email__body) {
     padding: var(--spacing-400) var(--spacing-500);
@@ -950,11 +950,11 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     gap: var(--spacing-300);
   }
   .cbf-lipd :global(.cbf-email__body p) { margin: 0; }
-  .cbf-lipd :global(.cbf-email__meta) { color: var(--color-text-tertiary); }
+  .cbf-lipd :global(.cbf-email__meta) { color: var(--color-content-default-tertiary); }
   .cbf-lipd :global(.cbf-email__foot) {
     padding: var(--spacing-200) var(--spacing-500);
-    border-top: 1px solid var(--color-border-light, var(--color-border));
-    color: var(--color-text-tertiary);
+    border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default));
+    color: var(--color-content-default-tertiary);
   }
 
   .visually-hidden {

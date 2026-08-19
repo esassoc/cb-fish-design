@@ -63,7 +63,7 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
   .cbf-pdf-panel {
     flex: 1;
     min-width: 0;
-    border-right: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border-default);
     display: flex;
     flex-direction: column;
     position: relative;
@@ -72,7 +72,7 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 
   /* ---- Drop zone (idle) ---- */
   .cbf-pdf-panel {
-    background: var(--color-surface-sunken, #f8f9fb);
+    background: var(--color-background-elevation-sunken, #f8f9fb);
   }
 
   .cbf-pdf-drop {
@@ -85,16 +85,16 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     text-align: center;
     margin: var(--spacing-500);
     padding: var(--spacing-700) var(--spacing-600);
-    border: 2px dashed var(--color-border);
+    border: 2px dashed var(--color-border-default);
     border-radius: var(--radius-100);
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
     transition: border-color 0.15s ease, background 0.15s ease;
   }
   .cbf-pdf-drop[hidden] { display: none; }
 
   .cbf-pdf-panel.is-over .cbf-pdf-drop {
-    border-color: var(--color-primary);
-    background: var(--color-primary-subtle);
+    border-color: var(--color-background-brand);
+    background: var(--color-background-brand-subtle);
   }
 
   .cbf-pdf-drop__input {
@@ -105,33 +105,33 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     pointer-events: none;
   }
 
-  .cbf-pdf-drop__icon { color: var(--color-text-tertiary); }
+  .cbf-pdf-drop__icon { color: var(--color-content-default-tertiary); }
 
   .cbf-pdf-drop__heading {
     margin: 0;
     font-size: 16px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
   }
 
   .cbf-pdf-drop__sub {
     margin: 0;
     font-size: 14px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
 
   .cbf-pdf-drop__browse {
-    color: var(--color-secondary);
-    font-weight: var(--font-weight-semibold);
+    color: var(--color-background-brand-muted);
+    font-weight: var(--typography-font-weight-semibold);
     text-decoration: underline;
     text-underline-offset: 2px;
   }
-  .cbf-pdf-drop__browse:hover { color: var(--color-primary); }
+  .cbf-pdf-drop__browse:hover { color: var(--color-background-brand); }
 
   .cbf-pdf-drop__hint {
     margin: 0;
     font-size: 12px;
-    color: var(--color-text-tertiary);
+    color: var(--color-content-default-tertiary);
   }
 
   /* Inline upload error — sits in the drop zone, directly under the hint.
@@ -161,15 +161,15 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     padding: 0 var(--spacing-400);
     height: 40px;
     flex: none;
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border-default);
+    background: var(--color-background-elevation-raised);
   }
 
   .cbf-pdf-viewer__name {
     flex: 1;
     min-width: 0;
     font-size: 13px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -181,18 +181,18 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     align-items: center;
     gap: var(--spacing-150);
     font-size: 12px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-tertiary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default-tertiary);
     padding: var(--spacing-100) var(--spacing-250);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
     transition: color 0.12s ease, border-color 0.12s ease, background 0.12s ease;
   }
   .cbf-pdf-viewer__remove:hover {
-    color: var(--color-danger, #dc2626);
-    border-color: var(--color-danger, #dc2626);
-    background: var(--color-danger-subtle, #fef2f2);
+    color: var(--color-background-utility-danger, #dc2626);
+    border-color: var(--color-background-utility-danger, #dc2626);
+    background: var(--color-background-utility-danger-subtle, #fef2f2);
   }
   /* Removal is a step-0 edit action; the wizard hides this on the review step, where
      the viewer is a read-only preview. An explicit rule is needed because the
@@ -213,7 +213,7 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
       flex: none;
       height: 420px;
       border-right: none;
-      border-bottom: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border-default);
     }
   }
 
