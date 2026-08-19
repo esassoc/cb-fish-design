@@ -1,6 +1,7 @@
 ---
 // cbf-app-panel — the CBFish "application page" chrome (Report Center v2 pattern,
-// Figma 2614:11113): a bordered white card with a gold breadcrumb strip on top, an
+// Figma 2614:11113): a bordered white card with a breadcrumb strip on top (grey, not
+// the gold in Figma — see --cbf-surface-crumb for why), an
 // OPTIONAL left rail (the "Links Sidebar" / scope facets), and a padded content
 // column that stacks its children. Shared by /search and /publications so the
 // app-page shell never drifts.
@@ -45,7 +46,7 @@ const hasSidebar = Astro.slots.has('sidebar');
     min-height: 80vh;
     border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
-    /* `clip`, not `hidden`: both clip the gold crumb strip to the rounded corner,
+    /* `clip`, not `hidden`: both clip the crumb strip to the rounded corner,
        but `hidden` makes this panel a SCROLL CONTAINER — which silently kills
        `position: sticky` on anything inside it (the sticky child then sticks to a
        box that never scrolls, so it just scrolls away with the page). `clip`
@@ -56,7 +57,7 @@ const hasSidebar = Astro.slots.has('sidebar');
     box-shadow: 0 1px 3px color-mix(in srgb, var(--color-background-default-knockout) 8%, transparent);
   }
   .cbf-app-panel__crumb {
-    background: var(--cbf-gold-50); /* the app's breadcrumb strip */
+    background: var(--cbf-surface-crumb); /* the app's breadcrumb strip */
     border-bottom: 1px solid var(--color-border-default);
     padding: var(--spacing-400) var(--spacing-600);
   }

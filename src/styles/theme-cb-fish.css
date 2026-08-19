@@ -131,7 +131,7 @@
 
      A HUB PROMOTION IS STILL THE RIGHT END STATE, but as CBFish's own named surface,
      not by borrowing a same-named Radix step. Logged in docs/hub-issues.md. */
-  --cbf-gold-50:  #f8f8f4;  /* crumb strips — cool khaki, NOT Radix gold-2 */
+  --cbf-gold-50:  #f8f8f4;  /* documented brand step; no reader since the crumb strip went grey */
   --cbf-gold-200: #f3d99b;  /* eyebrow text on the navy welcome hero */
   --cbf-gold-300: #f0c040;  /* today-dot on a selected calendar day */
   --cbf-gold-500: #a9a379;
@@ -140,6 +140,17 @@
   /* App-page chrome (CBFish Modernization page pattern — Report Center, Search).
      Spoke surfaces with no hub semantic equivalent yet; consumed directly by the
      cbf-* app-page components. Promote to the hub if they stabilize across spokes. */
+  /* Breadcrumb strip on the app panel. DELIBERATELY HUE-FREE, and that is a change
+     from the Figma reference (2614:11113), which specifies a gold strip.
+
+     The gold was drawn against a WHITE panel, where #f8f8f4 had a real lightness step
+     under it. The hub moved --color-background-elevation-raised onto Radix gray-1
+     (#fcfcfc) on 2026-08-15, which left the strip only 4 levels lighter than its own
+     container — so nearly all the separation had to come from hue, and a 4-point blue
+     deficit across a full-width band reads as a yellow stain rather than a band.
+     Deepening the gold restores the step but makes it MORE saturated, not less.
+     Grey separates by lightness alone, which is what the strip was always doing. */
+  --cbf-surface-crumb:        #f4f4f4;  /* app-panel breadcrumb strip */
   --cbf-surface-section-head: #f5f5f5;  /* result section header bar */
   --cbf-amber-attention:      #f6c244;  /* impersonation state badge/text */
   --cbf-text-placeholder:     #9aa3ad;  /* input placeholder text */

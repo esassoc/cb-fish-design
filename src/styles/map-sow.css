@@ -64,7 +64,7 @@
 
 /* Wizard-toggle: raw button in the crumb strip. map-sow.js sets .textContent
    and .style.background on it directly, so it can't use esa-button.
-   Styled to match esa-button--sm outline on the gold crumb strip background. */
+   Styled to match esa-button--sm outline on the crumb strip background. */
 .msow-wizard-toggle {
   display: inline-flex;
   align-items: center;
