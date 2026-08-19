@@ -592,7 +592,7 @@ const { id } = Astro.props;
   /* The money moment: a card that just moved because of an edit elsewhere. */
   .cbf-libwl.is-recomputed :global(.esa-card),
   .cbf-libwl.is-added :global(.esa-card) {
-    animation: cbf-libwl-flash 1.5s var(--easing-out) 1;
+    animation: cbf-libwl-flash 1.5s var(--easing-enter) 1;
   }
   @keyframes cbf-libwl-flash {
     from { box-shadow: inset 0 0 0 100vmax var(--color-background-utility-info-subtle); }

@@ -127,7 +127,7 @@
   /* Document-path link green — prod's Report Center renders the /Document.mvc path in
      green; a DELIBERATE non-success green tell (NEEDS.md #1). Consumed by
      cbf-pubs-results; promote to a hub semantic if it stabilizes across spokes. */
-  --cbf-document-link:        var(--color-green-700);
+  --cbf-document-link:        var(--color-grass-11);
 
 }
 

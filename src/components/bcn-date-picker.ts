@@ -505,7 +505,10 @@ export class BcnDatePicker extends LitElement {
   static styles = css`
     :host {
       display: block;
-      --_height: var(--form-height-md, 40px);
+      /* No --_height. esa-text-field dropped its fixed height when the hub retired
+         --form-height-* — the box is padding plus text, so it grows with rem type.
+         A px lock here would leave this picker short beside a sibling field. */
+      --_pad-y: var(--spacing-300, 12px);
       --_pad-x: var(--spacing-300, 12px);
       --_font-size: var(--typography-label-md-font-size, 14px);
       --_radius: var(--radius-md, 6px);
@@ -547,8 +550,7 @@ export class BcnDatePicker extends LitElement {
       min-width: 0;
       box-sizing: border-box;
       appearance: none;
-      height: var(--_height);
-      padding: 0 var(--_pad-x);
+      padding: var(--_pad-y) var(--_pad-x);
       border: 1px solid var(--_border);
       border-right: none;
       border-radius: var(--_radius) 0 0 var(--_radius);
@@ -584,8 +586,9 @@ export class BcnDatePicker extends LitElement {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 40px;
-      height: var(--_height);
+      /* .field__row is align-items:stretch, so the button takes the input's height;
+         aspect-ratio keeps it square at whatever that turns out to be. */
+      aspect-ratio: 1;
       border: 1px solid var(--_border);
       border-radius: 0 var(--_radius) var(--_radius) 0;
       background: var(--color-background-elevation-sunken, #f8f9fb);

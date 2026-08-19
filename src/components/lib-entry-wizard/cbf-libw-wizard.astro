@@ -1707,7 +1707,7 @@ const stepIndexOf: Record<string, number> = Object.fromEntries(steps.map((s, i) 
   .cbf-libw__nav-sub { color: var(--color-content-default-secondary); }
 
   /* A trip container that was just added. */
-  .cbf-libw :global(.is-added) { animation: cbf-libw-flash 1.5s var(--easing-out) 1; }
+  .cbf-libw :global(.is-added) { animation: cbf-libw-flash 1.5s var(--easing-enter) 1; }
   @keyframes cbf-libw-flash {
     from { box-shadow: inset 0 0 0 100vmax var(--color-background-utility-info-subtle); }
     to { box-shadow: inset 0 0 0 100vmax transparent; }

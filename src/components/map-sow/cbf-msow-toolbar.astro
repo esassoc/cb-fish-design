@@ -120,10 +120,11 @@ const { contractNum, cor, fy, backHref } = Astro.props;
     flex: 1;
     max-width: 280px;
     min-width: 160px;
-    height: var(--form-height-sm, 32px);
     border: 1px solid var(--color-border-default);
     border-radius: var(--radius-sm, 4px);
-    padding: 0 var(--spacing-250, 12px);
+    /* A native <select> gets no sizing from the hub, and --form-height-* is gone —
+       block padding carries the height, matching esa-select on the same row. */
+    padding: var(--spacing-200) var(--spacing-250, 12px);
     font-size: var(--typography-label-xs-font-size, 12px);
     font-family: var(--typography-font-family-sans, system-ui, sans-serif);
     color: var(--color-content-default);
@@ -133,8 +134,11 @@ const { contractNum, cor, fy, backHref } = Astro.props;
   .msow-we-select:focus { outline: 2px solid var(--color-background-brand); outline-offset: 1px; }
 
   .msow-we-action-btn {
-    height: var(--form-height-sm, 32px);
-    width: var(--form-height-sm, 32px);
+    /* Square icon button: padding sets the height, aspect-ratio keeps the width
+       equal to it, so it tracks the select beside it as text scales. */
+    padding: var(--spacing-200);
+    aspect-ratio: 1;
+    line-height: 1;
     border: 1px solid var(--color-border-default-strong);
     border-radius: var(--radius-sm, 4px);
     background: transparent;
