@@ -506,7 +506,7 @@ export class BcnDatePicker extends LitElement {
     :host {
       display: block;
       /* No --_height. esa-text-field dropped its fixed height when the hub retired
-         --form-height-* — the box is padding plus text, so it grows with rem type.
+         the form-height ramp — the box is padding plus text, so it grows with rem type.
          A px lock here would leave this picker short beside a sibling field. */
       --_pad-y: var(--spacing-300, 12px);
       --_pad-x: var(--spacing-300, 12px);

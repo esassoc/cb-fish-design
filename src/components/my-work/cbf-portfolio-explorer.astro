@@ -138,7 +138,7 @@ const attnLabel = (a: Attention): string =>
 
     <!-- Column 1 · My projects (SSR'd; client re-selects the first row) -->
     <div class="cbf-pe-col" data-col="projects">
-      <h3 class="typography-label cbf-pe-col__head">My projects</h3>
+      <h3 class="typography-label-xs cbf-pe-col__head">My projects</h3>
       <ul class="cbf-pe-list" role="listbox" aria-label="My projects" data-list="projects">
         {projects.map((p, i) => (
           <li
@@ -170,21 +170,21 @@ const attnLabel = (a: Attention): string =>
 
     <!-- Column 2 · Contracts (client-rendered from the selected project) -->
     <div class="cbf-pe-col" data-col="contracts">
-      <h3 class="typography-label cbf-pe-col__head">Contracts</h3>
+      <h3 class="typography-label-xs cbf-pe-col__head">Contracts</h3>
       <ul class="cbf-pe-list" role="listbox" aria-label="Contracts" data-list="contracts"></ul>
       <p class="cbf-pe-prompt typography-meta" data-prompt="contracts" hidden>Select a project</p>
     </div>
 
     <!-- Column 3 · Artifacts (four fixed types for the selected contract) -->
     <div class="cbf-pe-col" data-col="artifacts">
-      <h3 class="typography-label cbf-pe-col__head">Artifacts</h3>
+      <h3 class="typography-label-xs cbf-pe-col__head">Artifacts</h3>
       <ul class="cbf-pe-list" role="listbox" aria-label="Artifact types" data-list="artifacts"></ul>
       <p class="cbf-pe-prompt typography-meta" data-prompt="artifacts">Select a contract</p>
     </div>
 
     <!-- Column 4 · Items (records of the selected artifact type) -->
     <div class="cbf-pe-col cbf-pe-col--items" data-col="items">
-      <h3 class="typography-label cbf-pe-col__head" data-items-head>Items</h3>
+      <h3 class="typography-label-xs cbf-pe-col__head" data-items-head>Items</h3>
       <ul class="cbf-pe-list" role="listbox" aria-label="Records" data-list="items"></ul>
       <p class="cbf-pe-prompt typography-meta" data-prompt="items">Select an artifact</p>
       <!-- Empty-collection state (an artifact type with zero records) -->
@@ -211,12 +211,12 @@ const attnLabel = (a: Attention): string =>
       </div>
       <div class="cbf-pe-detail__facts grid" style="--grid-min: 12rem" data-gap="md" aria-live="polite">
         <div class="stack" data-gap="2xs">
-          <span class="typography-label cbf-pe-detail__label">Sponsor</span>
+          <span class="typography-label-xs cbf-pe-detail__label">Sponsor</span>
           <span class="typography-body-md cbf-pe-detail__sponsor" data-detail-sponsor>{fp?.sponsor}</span>
         </div>
         <div class="stack" data-gap="2xs">
           <div class="repel">
-            <span class="typography-label cbf-pe-detail__label">Budget position</span>
+            <span class="typography-label-xs cbf-pe-detail__label">Budget position</span>
             <span
               class:list={['typography-meta cbf-pe-detail__pace', fp && `cbf-pe-detail__pace--${fp.budget.pace}`]}
               data-detail-pace
@@ -228,7 +228,7 @@ const attnLabel = (a: Attention): string =>
           <span class="typography-meta cbf-pe-detail__budget" data-detail-budget>{fp ? budgetText(fp.budget) : ''}</span>
         </div>
         <div class="stack" data-gap="2xs">
-          <span class="typography-label cbf-pe-detail__label">Last activity</span>
+          <span class="typography-label-xs cbf-pe-detail__label">Last activity</span>
           <span class="typography-meta cbf-pe-detail__activity" data-detail-activity>{fp ? activityText(fp.lastActivity) : ''}</span>
         </div>
       </div>
@@ -359,7 +359,7 @@ const attnLabel = (a: Attention): string =>
      hand-rolled that a lego provides. */
   .cbf-pe-detail {
     border-top: 1px solid var(--color-border-default, #e5e5e5);
-    background: var(--color-surface-subtle, var(--color-background-elevation-sunken, #fafafa));
+    background: var(--color-background-elevation-sunken, #fafafa);
     padding: var(--spacing-300, 0.75rem) var(--spacing-350, 0.875rem);
     display: flex;
     flex-direction: column;
@@ -414,7 +414,7 @@ const attnLabel = (a: Attention): string =>
     scroll-margin: var(--spacing-400, 1rem);
   }
   .cbf-portfolio-explorer .cbf-pe-row:hover {
-    background: var(--color-surface-subtle, var(--color-background-elevation-sunken, #f5f5f5));
+    background: var(--color-background-elevation-sunken, #f5f5f5);
   }
   .cbf-portfolio-explorer .cbf-pe-row[aria-selected='true'] {
     background: var(--color-background-elevation-sunken, #efefef);

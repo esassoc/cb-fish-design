@@ -131,9 +131,9 @@ const hasAlert = Astro.slots.has('alert');
          it gets the honest version of the same thing: `hide-label` drops the visible
          label and keeps `label` as the accessible name.
 
-         All are left at their DEFAULT `md` size: bcn-date-picker is fixed at
-         --form-height-md, so anything smaller elsewhere would make sibling rows
-         disagree in height as the COR moved down the panel — and md is the house
+         All are left at their DEFAULT `md` size: bcn-date-picker now sizes itself
+         from padding like the hub legos do, so anything smaller elsewhere would make
+         sibling rows disagree in height as the COR moved down the panel — and md is the house
          default for form controls anyway (they err one step bigger, never smaller). -->
     {editable && control === 'date' && (
       <bcn-date-picker

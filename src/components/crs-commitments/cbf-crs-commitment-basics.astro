@@ -138,7 +138,7 @@ const notesEmpty = (commitment.notes ?? '') === '';
             data-crs-basics-pair={f.key}
             hidden={f.key === 'notes' && notesEmpty}
           >
-            <dt class="typography-label cbf-basics__label">{f.label}</dt>
+            <dt class="typography-label-xs cbf-basics__label">{f.label}</dt>
             <dd class="typography-body-md cbf-basics__value" data-crs-basics-value={f.key}>{commitment[f.key]}</dd>
           </div>
         ))}
@@ -150,7 +150,7 @@ const notesEmpty = (commitment.notes ?? '') === '';
       <dl class="cbf-basics__fields grid" data-gap="md">
         {partyFields.map((f) => (
           <div class="cbf-basics__pair" data-crs-basics-pair={f.key}>
-            <dt class="typography-label cbf-basics__label">{f.label}</dt>
+            <dt class="typography-label-xs cbf-basics__label">{f.label}</dt>
             <dd class="typography-body-md cbf-basics__value" data-crs-basics-value={f.key}>{commitment[f.key]}</dd>
           </div>
         ))}

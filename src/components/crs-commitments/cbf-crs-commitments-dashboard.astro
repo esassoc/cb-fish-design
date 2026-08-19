@@ -327,13 +327,13 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
       <!-- Document legend — the status legend above folded into the status
            filter chips, so only the document markers need their own key. -->
       <div class="cbf-crs-dashboard__legend cluster" data-gap="md" aria-label="Document legend">
-        <span class="typography-label cbf-crs-dashboard__legend-lead">Documents</span>
+        <span class="typography-label-xs cbf-crs-dashboard__legend-lead">Documents</span>
         {docLegend.map((d) => (
           <span class="cbf-crs-dashboard__legend-item">
             <span class:list={['cbf-crs-dashboard__docmark', `cbf-crs-dashboard__docmark--${d.state}`]}>
               <EsaIcon name="file-text" size="xs" />
             </span>
-            <span class="typography-label">{d.label}</span>
+            <span class="typography-label-xs">{d.label}</span>
           </span>
         ))}
       </div>
@@ -347,7 +347,7 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
             <div class="cbf-crs-dashboard__strip">
               {YEARS.map((year) => (
                 <span class:list={['cbf-crs-dashboard__cell', 'cbf-crs-dashboard__cell--year', { 'is-current': year === CURRENT_YEAR }]}>
-                  <span class="typography-label cbf-crs-dashboard__yearlabel">&rsquo;{year2(year)}</span>
+                  <span class="typography-label-xs cbf-crs-dashboard__yearlabel">&rsquo;{year2(year)}</span>
                 </span>
               ))}
             </div>
@@ -380,7 +380,7 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
                 <a class="typography-body-md cbf-crs-dashboard__title" href={withBase(`/crs-commitments/${c.number}`)}>
                   {c.title}
                 </a>
-                <span class="typography-label cbf-crs-dashboard__number">{c.number}</span>
+                <span class="typography-label-xs cbf-crs-dashboard__number">{c.number}</span>
               </div>
               <div class="cbf-crs-dashboard__timeline stack" data-gap="2xs">
                 <div

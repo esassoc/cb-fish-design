@@ -3506,7 +3506,7 @@ const t0 = priced.totals;
   .cbf-lct__grab > .stack { flex: 1; min-width: 0; }
   /* A derived row has no handle, and its identity must still line up with the
      rows above it — so the space the handle would occupy is held, not removed. */
-  /* A reserved gutter, not a control — the hub retired --form-height-xs, and
+  /* A reserved gutter, not a control — the hub retired the form-height ramp, and
      28px is the width the handle beside it occupies. */
   .cbf-lct__grab-void { width: 28px; flex: none; }
   /* A shape whose cells genuinely don't exist collapses into one spanned cell —
@@ -3569,7 +3569,7 @@ const t0 = priced.totals;
   .cbf-lct__void-mark {
     font-size: 14px;
     color: var(--color-content-default-secondary);
-    /* Centres the mark against a control-height row; --form-height-md is gone. */
+    /* Centres the mark against a control-height row; the form-height ramp is gone. */
     line-height: 40px;
   }
   /* A value the vendor did NOT type — referenced or derived. Reads as a value,

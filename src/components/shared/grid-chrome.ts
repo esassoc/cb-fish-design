@@ -22,7 +22,7 @@ export const cbfGridTheme = themeQuartz.withParams({
   headerTextColor: 'var(--color-content-default-secondary)',
   headerFontWeight: 600,
   borderColor: 'var(--color-border-default)',
-  rowHoverColor: 'var(--color-surface-subtle, var(--color-background-brand-subtle))',
+  rowHoverColor: 'var(--color-background-brand-subtle)',
   accentColor: 'var(--color-background-brand)',
   wrapperBorderRadius: 0,
   borderRadius: 'var(--radius-100, 4px)',

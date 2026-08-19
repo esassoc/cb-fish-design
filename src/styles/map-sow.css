@@ -68,7 +68,7 @@
 .msow-wizard-toggle {
   display: inline-flex;
   align-items: center;
-  /* The hub retired --form-height-* — a control is its padding plus its text now,
+  /* The hub retired the form-height ramp — a control is its padding plus its text,
      which is how esa-button sizes. Block padding replaces the old 32px lock. */
   padding-block: var(--spacing-200);
   padding-inline: var(--spacing-250, 12px);
