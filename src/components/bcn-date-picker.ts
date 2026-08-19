@@ -531,7 +531,7 @@ export class BcnDatePicker extends LitElement {
     .field__message {
       font-family: var(--font-sans, sans-serif);
       font-size: 12px;
-      color: var(--color-text-muted, #737373);
+      color: var(--color-text-tertiary, #737373);
       margin: 0;
     }
     .field__message--error { color: var(--color-danger, #dc2626); }
@@ -559,7 +559,7 @@ export class BcnDatePicker extends LitElement {
       outline: none;
       transition: border-color 0.12s ease;
     }
-    .date-input::placeholder { color: var(--color-text-muted, #737373); }
+    .date-input::placeholder { color: var(--color-text-tertiary, #737373); }
     .date-input:hover { border-color: var(--color-primary, #13273e); }
     .date-input:focus { outline: none; }
     .date-input:disabled { opacity: 0.5; cursor: not-allowed; background: var(--color-surface-sunken, #f8f9fb); }
@@ -589,7 +589,7 @@ export class BcnDatePicker extends LitElement {
       border: 1px solid var(--_border);
       border-radius: 0 var(--_radius) var(--_radius) 0;
       background: var(--color-surface-sunken, #f8f9fb);
-      color: var(--color-text-muted, #737373);
+      color: var(--color-text-tertiary, #737373);
       cursor: pointer;
       transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
     }
@@ -659,7 +659,7 @@ export class BcnDatePicker extends LitElement {
       outline-offset: 2px;
     }
     .cal-nav__chevron {
-      color: var(--color-text-muted, #737373);
+      color: var(--color-text-tertiary, #737373);
       transition: transform 0.12s ease;
     }
     .cal-nav__trigger.is-open .cal-nav__chevron { transform: rotate(180deg); }
@@ -690,7 +690,7 @@ export class BcnDatePicker extends LitElement {
       box-sizing: border-box;
       outline: none;
     }
-    .cal-nav__search::placeholder { color: var(--color-text-muted, #737373); }
+    .cal-nav__search::placeholder { color: var(--color-text-tertiary, #737373); }
     .cal-nav__search:focus { border-bottom-color: var(--color-primary, #13273e); }
 
     .cal-nav__options {
@@ -719,7 +719,7 @@ export class BcnDatePicker extends LitElement {
     .cal-nav__empty {
       padding: 10px;
       font-size: 13px;
-      color: var(--color-text-muted, #737373);
+      color: var(--color-text-tertiary, #737373);
       text-align: center;
       margin: 0;
     }
@@ -740,7 +740,7 @@ export class BcnDatePicker extends LitElement {
       font-size: 11px;
       font-weight: var(--font-weight-semibold, 600);
       letter-spacing: 0.04em;
-      color: var(--color-text-muted, #737373);
+      color: var(--color-text-tertiary, #737373);
       text-transform: uppercase;
     }
 

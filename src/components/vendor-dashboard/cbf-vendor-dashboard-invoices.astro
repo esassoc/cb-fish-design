@@ -392,7 +392,7 @@ const { invoices = defaultInvoices } = Astro.props;
   }
   .cbf-vendor-dashboard-invoices__group .type-caption,
   .cbf-vendor-dashboard-invoices__view .type-caption {
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
     white-space: nowrap;
   }
 
@@ -455,7 +455,7 @@ const { invoices = defaultInvoices } = Astro.props;
   }
 
   .cbf-vendor-dashboard-invoices__footer {
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
   }
 
   /* ---- Detail drawer ---------------------------------------------------- */
@@ -503,7 +503,7 @@ const { invoices = defaultInvoices } = Astro.props;
   .cbf-invoice-detail__label {
     font-size: var(--type-size-150);
     font-weight: var(--font-weight-medium);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
   }
 
   /* Hero: the billed amount on a sunken surface, status badge alongside. */
@@ -571,7 +571,7 @@ const { invoices = defaultInvoices } = Astro.props;
     display: block;
     margin-top: var(--spacing-100);
     font-size: var(--type-size-100, 0.75rem);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
   }
 
   /* Section header (Attachments): readable, primary, modest weight — not the
@@ -650,7 +650,7 @@ const { invoices = defaultInvoices } = Astro.props;
   .cbf-invoice-detail__add-hint {
     margin: var(--spacing-200) 0 0;
     font-size: var(--type-size-100, 0.75rem);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
     line-height: 1.5;
   }
   .cbf-invoice-detail__docs-input {
@@ -663,7 +663,7 @@ const { invoices = defaultInvoices } = Astro.props;
 
   .cbf-invoice-detail__position {
     font-size: var(--type-size-150);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
     font-variant-numeric: tabular-nums;
   }
 
@@ -697,7 +697,7 @@ const { invoices = defaultInvoices } = Astro.props;
   }
   .cbf-invoice-group-header__meta {
     font-size: 13px;
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
     font-variant-numeric: tabular-nums;
   }
 
@@ -753,7 +753,7 @@ const { invoices = defaultInvoices } = Astro.props;
   .cbf-doc__supplier-meta {
     margin: var(--spacing-050) 0 0;
     font-size: var(--type-size-150);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
   }
   .cbf-doc__mark { text-align: right; flex: none; }
   .cbf-doc__mark-word {
@@ -762,7 +762,7 @@ const { invoices = defaultInvoices } = Astro.props;
     font-weight: var(--font-weight-semibold);
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
   }
   .cbf-doc__mark-number {
     margin: var(--spacing-050) 0 0;
@@ -790,7 +790,7 @@ const { invoices = defaultInvoices } = Astro.props;
     display: block;
     font-size: var(--type-size-100, 0.75rem);
     font-weight: var(--font-weight-medium);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
   }
   .cbf-doc__parties p {
     margin: var(--spacing-050) 0 0;
@@ -819,7 +819,7 @@ const { invoices = defaultInvoices } = Astro.props;
   .cbf-doc__items td:last-child { padding-right: 0; }
   .cbf-doc__items thead th {
     font-weight: var(--font-weight-medium);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
     border-bottom: 1px solid var(--color-border);
   }
   .cbf-doc__items tbody tr + tr td { border-top: 1px solid var(--color-border-light, var(--color-border)); }
@@ -916,7 +916,7 @@ const { invoices = defaultInvoices } = Astro.props;
   }
   .cbf-invoice-pipeline__label {
     font-size: var(--type-size-050, 0.6875rem);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
     line-height: 1.2;
   }
   .cbf-invoice-pipeline__step[data-state='done'] .cbf-invoice-pipeline__label,
@@ -943,10 +943,10 @@ const { invoices = defaultInvoices } = Astro.props;
     text-overflow: ellipsis;
   }
   .cbf-invoice-attach[data-primary='true'] .cbf-invoice-attach__name { font-weight: var(--font-weight-medium); }
-  .cbf-invoice-attach__role { flex: none; font-size: var(--type-size-100, 0.75rem); color: var(--color-text-muted); }
-  .cbf-invoice-attach__dl { flex: none; line-height: 0; color: var(--color-text-muted); }
+  .cbf-invoice-attach__role { flex: none; font-size: var(--type-size-100, 0.75rem); color: var(--color-text-tertiary); }
+  .cbf-invoice-attach__dl { flex: none; line-height: 0; color: var(--color-text-tertiary); }
   .cbf-invoice-attach__dl .esa-icon-button:hover {
-    background: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
+    background: color-mix(in srgb, var(--color-text-tertiary) 14%, transparent);
     color: var(--color-text-primary);
   }
 </style>

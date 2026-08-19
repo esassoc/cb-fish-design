@@ -274,7 +274,7 @@ const attnLabel = (a: Attention): string =>
     min-height: 1.2em; /* reserve space so the band doesn't jump on first paint */
     font-variant-numeric: tabular-nums;
   }
-  .cbf-portfolio-explorer__crumb :global(.cbf-pe-crumb-sep) { color: var(--color-text-muted, #a3a3a3); }
+  .cbf-portfolio-explorer__crumb :global(.cbf-pe-crumb-sep) { color: var(--color-text-tertiary, #a3a3a3); }
   .cbf-portfolio-explorer__crumb :global(.cbf-pe-crumb-cur) { font-weight: var(--font-weight-medium, 500); }
 
   /* The explorer CARD: one bordered surface wrapping the band + inline detail. */
@@ -341,7 +341,7 @@ const attnLabel = (a: Attention): string =>
 
   /* Muted prompt shown in a column when nothing upstream is selected. */
   .cbf-pe-prompt {
-    color: var(--color-text-muted, #a3a3a3);
+    color: var(--color-text-tertiary, #a3a3a3);
     margin: 0;
     padding: var(--spacing-400, 1rem) var(--spacing-300, 0.75rem);
   }
@@ -385,7 +385,7 @@ const attnLabel = (a: Attention): string =>
      on/under-plan stay calm — same quiet-badge restraint as the row dots. */
   .cbf-pe-detail__pace {
     font-variant-numeric: tabular-nums;
-    color: var(--color-text-muted, #737373);
+    color: var(--color-text-tertiary, #737373);
   }
   .cbf-pe-detail__pace--over { color: var(--color-warning-strong, var(--color-warning, #b45309)); }
   .cbf-pe-detail__pace--on { color: var(--color-success-strong, var(--color-success, #15803d)); }

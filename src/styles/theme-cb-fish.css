@@ -24,16 +24,13 @@
   --color-primary:         #1e5386;
   --color-primary-hover:   #1a4570;
   --color-primary-active:  #163758;
-  /* Step 11 — colored TEXT for links and primary-toned outline controls. Without
-     this the hub default (--color-grass-11, GREEN) leaks through, exactly like
-     --color-secondary-strong below — same gap, just on the primary ramp. */
+  /* Step 11 — colored TEXT for links and for primary- AND secondary-toned outline
+     controls. Without this the hub default (--color-grass-11, GREEN) leaks through.
+     The hub collapsed --color-secondary-strong into this same role, so one navy now
+     serves both; the old #1c4a76 secondary variant was retired with it. */
   --color-primary-strong:  var(--color-primary);
   --color-secondary:       #2770b2;
   --color-secondary-hover: #1e5386;
-  /* Step 11 — colored TEXT for secondary outline/dashed buttons. Without this the
-     hub default (--color-grass-11, GREEN) leaks through and secondary outline
-     buttons render blue-bordered but green-texted. Re-point to the blue ramp. */
-  --color-secondary-strong: #1c4a76;
 
   /* Blue-tinted sunken surface — stat tiles, control pill */
   --color-surface-sunken:  #f3f7fc;
@@ -59,7 +56,9 @@
   --color-text-primary:   var(--cbf-gray-900);
   --color-text-secondary: var(--cbf-gray-700);
   --color-text-tertiary:  var(--cbf-gray-600);
-  --color-text-muted:     var(--cbf-gray-500);
+  /* The hub retired its fourth text step, so --color-text-muted (--cbf-gray-500) is
+     gone: every reader moved up to tertiary, which the hub kept alive expressly for
+     this ramp. --cbf-gray-500 stays in the ramp below as re-point material. */
   --color-border:         var(--cbf-gray-200);
   --color-border-light:   var(--cbf-gray-100);
   --color-border-strong:  var(--cbf-gray-300);

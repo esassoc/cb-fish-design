@@ -587,13 +587,13 @@ const hasDocHeader = Astro.slots.has('doc-header');
   .cbf-review__label {
     font-size: var(--type-size-150);
     font-weight: var(--font-weight-medium);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
   }
   .cbf-review__section-title {
     margin: 0;
     font-size: var(--type-size-150);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
   }
 
   /* Invoice-information hero — the review-by DEADLINE leads. Large and red so it
@@ -615,7 +615,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
   .cbf-review-deadline__support {
     margin: var(--spacing-100) 0 0;
     font-size: var(--type-size-100);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
   }
 
   /* The field BLOCKS. Each is a <dl> of cbf-invoice-field rows (which own the row
@@ -658,7 +658,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
     display: inline-flex;
     align-self: center;
     flex: none;
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
     transition: transform 150ms ease;
   }
   .cbf-review-collapse[open] .cbf-review-collapse__chevron { transform: rotate(90deg); }
@@ -668,7 +668,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
   .cbf-review-collapse__title {
     font-size: var(--type-size-150);
     font-weight: var(--font-weight-semibold);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
   }
   /* The digest carries the numbers, so it is NOT the faint end of the row — it sits
      at the same size as the title and right-aligns to the edge. */
@@ -774,7 +774,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
     color: var(--color-text-primary);
     font-variant-numeric: tabular-nums;
   }
-  .cbf-review-drawdown__asof { color: var(--color-text-muted); }
+  .cbf-review-drawdown__asof { color: var(--color-text-tertiary); }
   /* The bottom line of the block: ruled off from the inputs above it and carried in
      primary text, because it is the figure the decision actually rests on. */
   .cbf-review-drawdown__after {
@@ -928,7 +928,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
     text-align: center;
     flex: 1 0 auto;
   }
-  .cbf-doc-placeholder__icon { color: var(--color-text-muted); }
+  .cbf-doc-placeholder__icon { color: var(--color-text-tertiary); }
   .cbf-doc-placeholder__name {
     margin: 0;
     font-size: var(--type-size-250);
@@ -971,10 +971,10 @@ const hasDocHeader = Astro.slots.has('doc-header');
     align-items: flex-start; margin-bottom: var(--spacing-500);
   }
   .cbf-invoice-doc__vendor { margin: 0; font-size: var(--type-size-400); font-weight: var(--font-weight-bold); }
-  .cbf-invoice-doc__sub { margin: 0; color: var(--color-text-muted); font-size: var(--type-size-100); }
+  .cbf-invoice-doc__sub { margin: 0; color: var(--color-text-tertiary); font-size: var(--type-size-100); }
   .cbf-invoice-doc__meta { text-align: right; }
   .cbf-invoice-doc__meta p { margin: 0 0 var(--spacing-100); }
-  .cbf-invoice-doc__meta span { color: var(--color-text-muted); margin-right: var(--spacing-200); }
+  .cbf-invoice-doc__meta span { color: var(--color-text-tertiary); margin-right: var(--spacing-200); }
   .cbf-invoice-doc__billto { margin-bottom: var(--spacing-500); }
   .cbf-invoice-doc__billto p { margin: 0; }
 
@@ -995,11 +995,11 @@ const hasDocHeader = Astro.slots.has('doc-header');
   .cbf-invoice-doc .cbf-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .cbf-invoice-doc__items th.cbf-num { text-align: right; }
   .cbf-invoice-doc__memo { margin: var(--spacing-600) 0 0; color: var(--color-text-secondary); line-height: var(--line-height-relaxed); }
-  .cbf-invoice-doc__memo span { color: var(--color-text-muted); }
+  .cbf-invoice-doc__memo span { color: var(--color-text-tertiary); }
   .cbf-invoice-doc__generated {
     margin: var(--spacing-600) 0 0; padding-top: var(--spacing-400);
     border-top: 1px solid var(--color-border-light, var(--color-border));
-    color: var(--color-text-muted); font-size: var(--type-size-100); font-style: italic;
+    color: var(--color-text-tertiary); font-size: var(--type-size-100); font-style: italic;
   }
 </style>
 
@@ -1015,7 +1015,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
   .cbf-invoice-line__actions { width: 1%; white-space: nowrap; text-align: right; }
   .cbf-invoice-line__act {
     display: inline-flex;
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
     opacity: 0;
     transition: opacity 120ms ease;
   }
@@ -1174,7 +1174,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
   .cbf-review-attach__tag {
     flex: none;
     font-size: var(--type-size-100);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
   }
   .cbf-review-attach[data-flagged] .cbf-review-attach__tag { color: inherit; }
   .cbf-review-attach__name {
@@ -1186,7 +1186,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .cbf-review-attach--empty .cbf-review-attach__name { color: var(--color-text-muted); }
+  .cbf-review-attach--empty .cbf-review-attach__name { color: var(--color-text-tertiary); }
   /* The row's own gap separates the NAME from its controls; the controls sit closer
      to each other than that, at the same spacing a field row uses, so a cluster of
      icons reads as one cluster on both surfaces. */
@@ -1198,14 +1198,14 @@ const hasDocHeader = Astro.slots.has('doc-header');
   .cbf-review-attach__dl,
   .cbf-review-attach__flag,
   .cbf-review-attach__open,
-  .cbf-review-attach__view { flex: none; line-height: 0; color: var(--color-text-muted); }
+  .cbf-review-attach__view { flex: none; line-height: 0; color: var(--color-text-tertiary); }
   /* Which budget this is, and why it moved. Sits under the name because it is what
      makes the row identifiable — a list of "Line Item Budget" rows is useless without
      it. Aligned to the name, clear of the label-free left gutter. */
   .cbf-review-attach__meta {
     margin: var(--spacing-050, 2px) 0 0;
     font-size: var(--type-size-100);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
     line-height: var(--line-height-tight, 1.3);
   }
   /* Row controls recede until the row is engaged, exactly as field-row controls do —
@@ -1240,7 +1240,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
   .cbf-review-attach__flag .esa-icon-button:hover,
   .cbf-review-attach__open .esa-icon-button:hover,
   .cbf-review-attach__view .esa-icon-button:hover {
-    background: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
+    background: color-mix(in srgb, var(--color-text-tertiary) 14%, transparent);
     color: var(--color-text-primary);
   }
   /* Active view control: the file it points at is the one on screen in the pane. */

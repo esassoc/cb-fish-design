@@ -831,10 +831,10 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
   }
   .cbf-lipd :global(.cbf-none) { color: var(--color-text-secondary); }
   /* Not-applicable approval (e.g. a design report doesn't route through the COR). */
-  .cbf-lipd :global(.cbf-na) { color: var(--color-text-muted); font-style: italic; }
+  .cbf-lipd :global(.cbf-na) { color: var(--color-text-tertiary); font-style: italic; }
   /* Locked (read-only) approval — the original requisition. Muted grey to read as
      disabled; contrast minimums don't apply to disabled/inactive content. */
-  .cbf-lipd :global(.cbf-check--locked) { color: var(--color-text-muted); font-weight: var(--font-weight-medium); }
+  .cbf-lipd :global(.cbf-check--locked) { color: var(--color-text-tertiary); font-weight: var(--font-weight-medium); }
   /* Solid burnt-amber chip with white text (#b45309 vs #fff ≈ 4.9:1, AA-compliant).
      The old pale-amber-on-pale-amber treatment was well under WCAG minimums. */
   .cbf-lipd :global(.cbf-reappr) {
@@ -895,9 +895,9 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
   .cbf-edit__specs > div { display: flex; flex-direction: column; gap: 2px; }
   .cbf-edit__label {
     font-size: var(--type-size-100, 0.8125rem);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
   }
-  .cbf-edit__guidance { margin: var(--spacing-300) 0 0; color: var(--color-text-muted); }
+  .cbf-edit__guidance { margin: var(--spacing-300) 0 0; color: var(--color-text-tertiary); }
   .cbf-edit__file { margin: 0; }
   .cbf-edit__newfile {
     margin: 0;
@@ -920,7 +920,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     gap: var(--spacing-300);
     width: 100%;
   }
-  .cbf-edit__footer [data-save-hint] { margin-inline-end: auto; color: var(--color-text-muted); }
+  .cbf-edit__footer [data-save-hint] { margin-inline-end: auto; color: var(--color-text-tertiary); }
 
   /* ── Email envelope ── */
   .cbf-lipd :global(.cbf-email) {
@@ -941,7 +941,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
   .cbf-lipd :global(.cbf-email__subject) { grid-column: 1 / -1; }
   .cbf-lipd :global(.cbf-email__label) {
     font-size: var(--type-size-100, 0.8125rem);
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
   }
   .cbf-lipd :global(.cbf-email__body) {
     padding: var(--spacing-400) var(--spacing-500);
@@ -950,11 +950,11 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     gap: var(--spacing-300);
   }
   .cbf-lipd :global(.cbf-email__body p) { margin: 0; }
-  .cbf-lipd :global(.cbf-email__meta) { color: var(--color-text-muted); }
+  .cbf-lipd :global(.cbf-email__meta) { color: var(--color-text-tertiary); }
   .cbf-lipd :global(.cbf-email__foot) {
     padding: var(--spacing-200) var(--spacing-500);
     border-top: 1px solid var(--color-border-light, var(--color-border));
-    color: var(--color-text-muted);
+    color: var(--color-text-tertiary);
   }
 
   .visually-hidden {

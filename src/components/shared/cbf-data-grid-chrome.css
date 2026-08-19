@@ -22,7 +22,7 @@
   flex-wrap: wrap;
 }
 .cbf-data-grid__count-label {
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 .cbf-data-grid__controls {
@@ -40,7 +40,7 @@
   gap: var(--spacing-150);
 }
 .cbf-data-grid__filter .type-caption {
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
   white-space: nowrap;
 }
 .cbf-data-grid__search {
@@ -60,7 +60,7 @@
 
 .cbf-data-grid__footer {
   align-items: center;
-  color: var(--color-text-muted);
+  color: var(--color-text-tertiary);
 }
 
 /* AG Grid status cell: a cloned esa-pill sits in a flex cell so it centers
