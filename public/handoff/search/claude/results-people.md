@@ -183,6 +183,44 @@ People-scoped results — each row resolves to a person with an Impersonate affo
 
 ## Styles
 ```css
+.cbf-search-surface .cbf-facet .cbf-icon {
+  color: var(--color-background-brand-muted);
+}
+.cbf-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-400);
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group {
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-100);
+  overflow: hidden;
+  background: var(--color-background-elevation-raised);
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group__head {
+  background: var(--cbf-surface-section-head);
+  border-top: 0;
+  border-bottom: 1px solid var(--color-border-default);
+  padding: var(--spacing-300) var(--spacing-400);
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group__title {
+  font-family: var(--typography-font-family-display);
+  font-size: 20px;
+  font-weight: var(--typography-font-weight-medium);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-content-default);
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon {
+  color: var(--color-background-brand-muted);
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.cbf-search-surface .cbf-search-results .cbf-result-group__count {
+  font-size: 16px;
+}
 .cbf-icon {
   display: inline-flex;
   align-items: center;
@@ -201,7 +239,7 @@ People-scoped results — each row resolves to a person with an Impersonate affo
 .cbf-search-surface .cbf-result-empty {
   padding: var(--spacing-600) var(--spacing-500);
   text-align: center;
-  color: var(--color-text-muted);
+  color: var(--color-content-default-tertiary);
   font-size: 15px;
 }
 .cbf-search-surface .cbf-result-group {
@@ -212,9 +250,9 @@ People-scoped results — each row resolves to a person with an Impersonate affo
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-200) var(--spacing-500);
-  background: var(--color-surface-sunken);
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-background-elevation-sunken);
+  border-top: 1px solid var(--color-border-default);
+  border-bottom: 1px solid var(--color-border-default);
 }
 .cbf-search-surface .cbf-result-group:first-child .cbf-result-group__head {
   border-top: 0;
@@ -224,17 +262,17 @@ People-scoped results — each row resolves to a person with an Impersonate affo
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--typography-font-weight-semibold);
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: var(--color-text-primary);
+  color: var(--color-content-default);
 }
 .cbf-search-surface .cbf-result-group__title .cbf-icon {
-  color: var(--color-text-muted);
+  color: var(--color-content-default-tertiary);
 }
 .cbf-search-surface .cbf-result-group__count {
   font-size: 13px;
-  color: var(--color-text-muted);
+  color: var(--color-content-default-tertiary);
 }
 .cbf-search-surface .cbf-result {
   display: flex;
@@ -249,80 +287,42 @@ People-scoped results — each row resolves to a person with an Impersonate affo
 }
 .cbf-search-surface .cbf-result__title {
   font-size: 15px;
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
+  font-weight: var(--typography-font-weight-medium);
+  color: var(--color-content-default);
 }
 .cbf-search-surface .cbf-result__sub {
   font-size: 13px;
-  color: var(--color-text-muted);
+  color: var(--color-content-default-tertiary);
   margin-top: 1px;
 }
 .cbf-search-surface .cbf-result__chevron {
-  color: var(--color-secondary);
+  color: var(--color-background-brand-muted);
   opacity: 0;
   flex: none;
 }
 .cbf-search-field .cbf-icon {
-  color: var(--color-text-muted);
+  color: var(--color-content-default-tertiary);
   display: inline-flex;
-}
-.cbf-search-results {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-400);
-}
-.cbf-search-surface .cbf-facet .cbf-icon {
-  color: var(--color-secondary);
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-100);
-  overflow: hidden;
-  background: var(--color-surface);
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group__head {
-  background: var(--cbf-surface-section-head);
-  border-top: 0;
-  border-bottom: 1px solid var(--color-border);
-  padding: var(--spacing-300) var(--spacing-400);
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group__title {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: var(--font-weight-medium);
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--color-text-primary);
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon {
-  color: var(--color-secondary);
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon svg {
-  width: 18px;
-  height: 18px;
-}
-.cbf-search-surface .cbf-search-results .cbf-result-group__count {
-  font-size: 16px;
 }
 ```
 
 ## Tokens
 - `--cbf-surface-section-head`: #f5f5f5 _(brand)_
-- `--color-border`: #dcdcdc _(semantic)_
-- `--color-secondary`: #2770b2 _(semantic)_
-- `--color-surface`: #fcfcfc _(semantic)_
-- `--color-surface-sunken`: #f3f7fc _(semantic)_
-- `--color-text-muted`: #7c7c7c _(semantic)_
-- `--color-text-primary`: #3d3d3d _(semantic)_
-- `--font-display`: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif _(primitive)_
-- `--font-weight-medium`: 500 _(primitive)_
-- `--font-weight-semibold`: 600 _(primitive)_
+- `--color-background-brand-muted`: #2770b2 _(semantic)_
+- `--color-background-elevation-raised`: #fcfcfc _(semantic)_
+- `--color-background-elevation-sunken`: #f3f7fc _(semantic)_
+- `--color-border-default`: #dcdcdc _(semantic)_
+- `--color-content-default`: #3d3d3d _(semantic)_
+- `--color-content-default-tertiary`: #656565 _(semantic)_
 - `--radius-100`: .25rem _(primitive)_
 - `--spacing-200`: .5rem _(primitive)_
 - `--spacing-300`: .75rem _(primitive)_
 - `--spacing-400`: 1rem _(primitive)_
 - `--spacing-500`: 1.5rem _(primitive)_
 - `--spacing-600`: 2rem _(primitive)_
+- `--typography-font-family-display`: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif _(semantic)_
+- `--typography-font-weight-medium`: 500 _(semantic)_
+- `--typography-font-weight-semibold`: 600 _(semantic)_
 
 ## Behavior
 ```ts
