@@ -125,12 +125,12 @@ const notesEmpty = (commitment.notes ?? '') === '';
         removable={false}
       />
     </span>
-    <span data-crs-edit-commitment-open><EsaButton color="secondary" appearance="outline" size="sm" icon="pencil">Edit</EsaButton></span>
+    <span data-crs-edit-commitment-open><EsaButton variant="secondary" appearance="outline" size="sm" icon="pencil">Edit</EsaButton></span>
   </div>
 
   <div class="cbf-basics stack" data-gap="xl" data-crs-basics-number={commitment.number}>
     <section class="stack" data-gap="sm">
-      <h3 class="type-section-title">Overview</h3>
+      <h3 class="typography-heading-md">Overview</h3>
       <dl class="cbf-basics__fields grid" data-gap="md">
         {overviewFields.map((f) => (
           <div
@@ -138,20 +138,20 @@ const notesEmpty = (commitment.notes ?? '') === '';
             data-crs-basics-pair={f.key}
             hidden={f.key === 'notes' && notesEmpty}
           >
-            <dt class="type-label cbf-basics__label">{f.label}</dt>
-            <dd class="type-body cbf-basics__value" data-crs-basics-value={f.key}>{commitment[f.key]}</dd>
+            <dt class="typography-label-xs cbf-basics__label">{f.label}</dt>
+            <dd class="typography-body-md cbf-basics__value" data-crs-basics-value={f.key}>{commitment[f.key]}</dd>
           </div>
         ))}
       </dl>
     </section>
 
     <section class="stack" data-gap="sm">
-      <h3 class="type-section-title">Responsible parties</h3>
+      <h3 class="typography-heading-md">Responsible parties</h3>
       <dl class="cbf-basics__fields grid" data-gap="md">
         {partyFields.map((f) => (
           <div class="cbf-basics__pair" data-crs-basics-pair={f.key}>
-            <dt class="type-label cbf-basics__label">{f.label}</dt>
-            <dd class="type-body cbf-basics__value" data-crs-basics-value={f.key}>{commitment[f.key]}</dd>
+            <dt class="typography-label-xs cbf-basics__label">{f.label}</dt>
+            <dd class="typography-body-md cbf-basics__value" data-crs-basics-value={f.key}>{commitment[f.key]}</dd>
           </div>
         ))}
       </dl>
@@ -227,10 +227,10 @@ const notesEmpty = (commitment.notes ?? '') === '';
   /* Labels: quiet supporting metadata. Values: full-strength text — darkened,
      never grayed, as they shrink to the dense record floor. */
   .cbf-basics__label {
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-basics__value {
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     /* free-text values can carry hard breaks / long tokens gracefully */
     overflow-wrap: anywhere;
   }

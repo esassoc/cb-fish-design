@@ -121,20 +121,20 @@ const vendor = {
     display: flex;
     flex-direction: column;
     min-height: 80vh;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
     overflow: clip;
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
     box-shadow: 0 1px 3px rgba(19, 39, 62, 0.08);
   }
   .cbf-app-card__crumb {
-    background: var(--color-gold-50);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--cbf-surface-crumb);
+    border-bottom: 1px solid var(--color-border-default);
     padding: var(--spacing-400) var(--spacing-600);
   }
   .cbf-app-card__crumb :global(.esa-breadcrumbs) {
-    --breadcrumbs-link-color: var(--color-text-secondary, #464646);
-    --breadcrumbs-link-hover: var(--color-primary);
+    --breadcrumbs-link-color: var(--color-content-default-secondary, #464646);
+    --breadcrumbs-link-hover: var(--color-background-brand);
   }
   .cbf-app-card__body {
     flex: 1;
@@ -221,55 +221,55 @@ const vendor = {
     gap: var(--spacing-300);
     margin-top: var(--spacing-700);
     padding: var(--spacing-250) var(--spacing-400);
-    border: 1px dashed color-mix(in srgb, var(--color-border) 60%, transparent);
+    border: 1px dashed color-mix(in srgb, var(--color-border-default) 60%, transparent);
     border-radius: var(--radius-100);
-    background: color-mix(in srgb, var(--color-surface-sunken, #f8f9fb) 60%, transparent);
+    background: color-mix(in srgb, var(--color-background-elevation-sunken, #f8f9fb) 60%, transparent);
   }
   .cbf-dev-bar__label {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-150);
     font-size: 11px;
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--typography-font-weight-semibold);
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
     flex: none;
   }
   .cbf-dev-bar__options {
     display: flex;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
     overflow: hidden;
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
   }
   .cbf-dev-bar__opt {
     padding: var(--spacing-100) var(--spacing-300);
     font-size: 12px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-muted);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default-tertiary);
     background: none;
     border: none;
-    border-right: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border-default);
     cursor: pointer;
     transition: background 0.1s ease, color 0.1s ease;
   }
   .cbf-dev-bar__opt:last-child { border-right: none; }
-  .cbf-dev-bar__opt:hover { background: var(--color-surface-sunken, #f8f9fb); color: var(--color-text-primary); }
+  .cbf-dev-bar__opt:hover { background: var(--color-background-elevation-sunken, #f8f9fb); color: var(--color-content-default); }
   .cbf-dev-bar__opt.is-active {
-    background: var(--color-primary);
-    color: var(--color-surface);
+    background: var(--color-background-brand);
+    color: var(--color-background-elevation-raised);
   }
   /* Standalone autofill button (outside the segmented toggle). */
   .cbf-dev-bar__autofill {
     margin-left: auto;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
   }
   .cbf-dev-bar__autofill:hover {
-    background: var(--color-primary-subtle);
-    border-color: var(--color-primary-border);
-    color: var(--color-secondary);
+    background: var(--color-background-brand-subtle);
+    border-color: var(--color-border-brand);
+    color: var(--color-background-brand-muted);
   }
 </style>

@@ -70,14 +70,14 @@ import { workElements, weLabel,
     <!-- Where this line sits in the budget. On create it is the answer the vendor
          already gave by choosing a menu item; on edit it is the thing the
          capitalization gate can change out from under them, so it is stated. -->
-    <p class="cbf-lse__scope type-body-small" data-scope></p>
+    <p class="cbf-lse__scope typography-body-sm" data-scope></p>
 
     <!-- ── 1 · What this line IS ──────────────────────────────────────────────
          Four categories know the name better than the vendor does, so the
          description is replaced by the control that actually decides it. One of
          these four is revealed; the rest are inert. -->
     <section class="stack" data-gap="sm" data-group="identity">
-      <h3 class="cbf-lse__h3 type-card-title">The line</h3>
+      <h3 class="cbf-lse__h3 typography-title">The line</h3>
 
       <esa-text-field
         data-field="label"
@@ -164,7 +164,7 @@ import { workElements, weLabel,
 
     <!-- ── 2 · How much of it ───────────────────────────────────────────────── -->
     <section class="stack" data-gap="sm" data-group="quantity">
-      <h3 class="cbf-lse__h3 type-card-title">Quantity</h3>
+      <h3 class="cbf-lse__h3 typography-title">Quantity</h3>
 
       <!-- One row, because it is one multiplication: the quantity, its unit, and
            the second quantity that multiplies it. A second row put a line break
@@ -176,15 +176,15 @@ import { workElements, weLabel,
         <esa-text-field data-field="qtyUnit" data-unit-open size="md" label="Unit" placeholder="unit"></esa-text-field>
         <esa-select data-time-unit-select data-unit-select size="md" label="Time unit"></esa-select>
         <p class="cbf-lse__static" data-unit-static hidden>
-          <span class="cbf-lse__static-label type-body-small">Unit</span>
-          <span class="cbf-lse__static-value type-body" data-unit-static-value></span>
+          <span class="cbf-lse__static-label typography-body-sm">Unit</span>
+          <span class="cbf-lse__static-value typography-body-md" data-unit-static-value></span>
         </p>
 
         <esa-text-field data-field="qty2" data-qty2 size="md" label="Second quantity" hidden></esa-text-field>
         <esa-text-field data-field="qty2Unit" data-unit2-open size="md" label="Unit" placeholder="unit" hidden></esa-text-field>
         <p class="cbf-lse__static" data-unit2-static hidden>
-          <span class="cbf-lse__static-label type-body-small">Unit</span>
-          <span class="cbf-lse__static-value type-body" data-unit2-static-value></span>
+          <span class="cbf-lse__static-label typography-body-sm">Unit</span>
+          <span class="cbf-lse__static-value typography-body-md" data-unit2-static-value></span>
         </p>
       </div>
       <!-- No "add a second quantity" control: the categories that offered it —
@@ -201,12 +201,12 @@ import { workElements, weLabel,
       </div>
 
       <p class="cbf-lse__static" data-qty-derived hidden>
-        <span class="cbf-lse__static-label type-body-small">Quantity</span>
-        <span class="cbf-lse__static-value type-body" data-qty-derived-value></span>
-        <span class="cbf-lse__note type-body-small" data-qty-derived-src></span>
+        <span class="cbf-lse__static-label typography-body-sm">Quantity</span>
+        <span class="cbf-lse__static-value typography-body-md" data-qty-derived-value></span>
+        <span class="cbf-lse__note typography-body-sm" data-qty-derived-src></span>
       </p>
 
-      <p class="cbf-lse__note type-body-small" data-qty-void hidden>
+      <p class="cbf-lse__note typography-body-sm" data-qty-void hidden>
         This shape has no quantity — the amount is entered directly.
       </p>
 
@@ -217,13 +217,13 @@ import { workElements, weLabel,
           <span data-gate-msg="months"></span>
         </EsaAlertBox>
       </div>
-      <p class="cbf-lse__note type-body-small" data-months-note hidden></p>
+      <p class="cbf-lse__note typography-body-sm" data-months-note hidden></p>
 
     </section>
 
     <!-- ── 3 · What it costs ────────────────────────────────────────────────── -->
     <section class="stack" data-gap="sm" data-group="rate">
-      <h3 class="cbf-lse__h3 type-card-title">Rate</h3>
+      <h3 class="cbf-lse__h3 typography-title">Rate</h3>
 
       <esa-text-field data-field="rate" data-rate-typed size="md" prefix="$" label="Cost per unit"></esa-text-field>
 
@@ -246,7 +246,7 @@ import { workElements, weLabel,
            erasing it, which is why the field above stays filled. -->
       <div class="stack" data-gap="sm" data-standard hidden>
         <span data-standard-toggle>
-          <EsaButton size="xs" color="secondary" appearance="soft">Use the standard rate</EsaButton>
+          <EsaButton size="xs" variant="secondary" appearance="soft">Use the standard rate</EsaButton>
         </span>
 
         <div class="stack" data-gap="sm" data-standard-fields hidden>
@@ -267,13 +267,13 @@ import { workElements, weLabel,
             help-text="Published rates change every 1 October. A claim says which year's schedule it is claiming, so it stays checkable after the schedule moves."
           ></esa-select>
           <p class="cbf-lse__static">
-            <span class="cbf-lse__static-label type-body-small">Standard rate</span>
-            <span class="cbf-lse__static-value type-body" data-standard-rate></span>
-            <span class="cbf-lse__note type-body-small" data-standard-src></span>
-            <span class="cbf-lse__note type-body-small" data-standard-superseded></span>
+            <span class="cbf-lse__static-label typography-body-sm">Standard rate</span>
+            <span class="cbf-lse__static-value typography-body-md" data-standard-rate></span>
+            <span class="cbf-lse__note typography-body-sm" data-standard-src></span>
+            <span class="cbf-lse__note typography-body-sm" data-standard-superseded></span>
           </p>
         </div>
-        <p class="cbf-lse__note type-body-small" data-standard-none hidden></p>
+        <p class="cbf-lse__note typography-body-sm" data-standard-none hidden></p>
       </div>
 
       <!-- Referenced, not typed. A combobox because the real schedule is
@@ -288,12 +288,12 @@ import { workElements, weLabel,
           search-placeholder="Search locality or rate type…"
         ></esa-combobox>
         <p class="cbf-lse__static">
-          <span class="cbf-lse__static-label type-body-small">Scheduled rate</span>
-          <span class="cbf-lse__static-value type-body" data-ref-rate></span>
-          <span class="cbf-lse__note type-body-small" data-ref-src></span>
+          <span class="cbf-lse__static-label typography-body-sm">Scheduled rate</span>
+          <span class="cbf-lse__static-value typography-body-md" data-ref-rate></span>
+          <span class="cbf-lse__note typography-body-sm" data-ref-src></span>
         </p>
         <span data-override-toggle>
-          <EsaButton size="xs" color="secondary" appearance="soft">Override rate</EsaButton>
+          <EsaButton size="xs" variant="secondary" appearance="soft">Override rate</EsaButton>
         </span>
         <esa-text-field
           data-field="rateOverride"
@@ -321,7 +321,7 @@ import { workElements, weLabel,
           suffix="%"
           label="Fringe rate"
         ></esa-text-field>
-        <p class="cbf-lse__note type-body-small" data-fringe-note></p>
+        <p class="cbf-lse__note typography-body-sm" data-fringe-note></p>
       </div>
 
       <!-- The capitalization threshold FILES the item rather than grading it, so
@@ -335,9 +335,9 @@ import { workElements, weLabel,
           <span data-gate-msg="capital"></span>
         </EsaAlertBox>
       </div>
-      <p class="cbf-lse__note type-body-small" data-cap-note hidden></p>
+      <p class="cbf-lse__note typography-body-sm" data-cap-note hidden></p>
       <span data-cap-move hidden>
-        <EsaButton size="sm" color="secondary" appearance="soft">Override the threshold</EsaButton>
+        <EsaButton size="sm" variant="secondary" appearance="soft">Override the threshold</EsaButton>
       </span>
     </section>
 
@@ -346,11 +346,11 @@ import { workElements, weLabel,
          is a labelled field per work element with the element's full name — the
          thing the popover could never fit. -->
     <section class="stack" data-gap="sm" data-group="allocation">
-      <h3 class="cbf-lse__h3 type-card-title">Work-element allocation</h3>
+      <h3 class="cbf-lse__h3 typography-title">Work-element allocation</h3>
       <div class="stack" data-gap="2xs">
         {workElements.map((we: any) => (
           <div class="cbf-lse__alloc repel" data-gap="sm">
-            <span class="cbf-lse__alloc-label type-body">{weLabel(we.id)}</span>
+            <span class="cbf-lse__alloc-label typography-body-md">{weLabel(we.id)}</span>
             <esa-text-field
               class="cbf-lse__alloc-input"
               data-alloc-we={we.id}
@@ -362,26 +362,26 @@ import { workElements, weLabel,
         ))}
       </div>
       <p class="cbf-lse__alloc-sum">
-        <span class="type-body-small">Allocated</span>
+        <span class="typography-body-sm">Allocated</span>
         <strong data-alloc-sum>0%</strong>
-        <span class="cbf-lse__note type-body-small">of 100%</span>
+        <span class="cbf-lse__note typography-body-sm">of 100%</span>
       </p>
       <span data-alloc-err hidden>
         <EsaFieldError message="" icon />
       </span>
-      <p class="cbf-lse__note type-body-small" data-alloc-derived hidden></p>
+      <p class="cbf-lse__note typography-body-sm" data-alloc-derived hidden></p>
     </section>
 
     <!-- ── 5 · The COR's lens: the line as facts, and the mark ───────────────
          A reviewer reads the same numbers the vendor typed and writes the one
          thing they own — what has to change, on the line it is about. -->
     <section class="stack" data-gap="sm" data-group="facts" hidden>
-      <h3 class="cbf-lse__h3 type-card-title">The line</h3>
+      <h3 class="cbf-lse__h3 typography-title">The line</h3>
       <dl class="cbf-lse__facts stack" data-gap="2xs" data-facts></dl>
     </section>
 
     <section class="stack" data-gap="sm" data-group="mark" hidden>
-      <h3 class="cbf-lse__h3 type-card-title">Mark this line for the vendor</h3>
+      <h3 class="cbf-lse__h3 typography-title">Mark this line for the vendor</h3>
       <esa-radio-group data-mark-sev size="md" label="How hard is this?"></esa-radio-group>
       <esa-select data-mark-reason size="md" label="Reason" placeholder="Pick a reason"></esa-select>
       <esa-textarea
@@ -400,8 +400,8 @@ import { workElements, weLabel,
          see is still the dependency you can still read. -->
     <div class="cbf-lse__amount repel" data-gap="sm">
       <span class="stack" data-gap="3xs">
-        <span class="cbf-lse__amount-label type-body">Amount</span>
-        <span class="cbf-lse__note type-body-small" data-amount-note></span>
+        <span class="cbf-lse__amount-label typography-body-md">Amount</span>
+        <span class="cbf-lse__note typography-body-sm" data-amount-note></span>
       </span>
       <strong class="cbf-lse__amount-value" data-amount>$0</strong>
     </div>
@@ -409,17 +409,17 @@ import { workElements, weLabel,
 
   <div slot="footer" class="repel" data-gap="sm">
     <span data-delete hidden>
-      <EsaButton size="sm" color="danger" appearance="soft" icon="trash-2">Delete line</EsaButton>
+      <EsaButton size="sm" variant="danger" appearance="soft" icon="trash-2">Delete line</EsaButton>
     </span>
     <span data-mark-remove hidden>
-      <EsaButton size="sm" color="ghost">Remove mark</EsaButton>
+      <EsaButton size="sm" variant="ghost">Remove mark</EsaButton>
     </span>
     <span class="cluster" data-gap="sm">
       <span data-cancel>
-        <EsaButton size="sm" color="secondary" appearance="outline">Cancel</EsaButton>
+        <EsaButton size="sm" variant="secondary" appearance="outline">Cancel</EsaButton>
       </span>
       <span data-save>
-        <EsaButton size="sm" color="primary">Save line</EsaButton>
+        <EsaButton size="sm" variant="primary">Save line</EsaButton>
       </span>
     </span>
   </div>
@@ -1004,10 +1004,10 @@ import { workElements, weLabel,
           row.className = 'cbf-lse__fact repel';
           row.dataset.gap = 'sm';
           const dt = document.createElement('dt');
-          dt.className = 'type-body-small';
+          dt.className = 'typography-body-sm';
           dt.textContent = k;
           const dd = document.createElement('dd');
-          dd.className = 'type-body';
+          dd.className = 'typography-body-md';
           dd.textContent = v;
           row.append(dt, dd);
           return row;
@@ -1274,16 +1274,16 @@ import { workElements, weLabel,
   }
   .cbf-lse__h3 {
     margin: 0;
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-semibold);
+    color: var(--color-content-default);
+    font-weight: var(--typography-font-weight-semibold);
   }
   .cbf-lse__scope {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-lse__note {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     max-width: 56ch;
   }
 
@@ -1313,10 +1313,10 @@ import { workElements, weLabel,
     gap: var(--spacing-050, 2px);
     margin: 0;
   }
-  .cbf-lse__static-label { color: var(--color-text-secondary); }
+  .cbf-lse__static-label { color: var(--color-content-default-secondary); }
   .cbf-lse__static-value {
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-medium);
+    color: var(--color-content-default);
+    font-weight: var(--typography-font-weight-medium);
     font-variant-numeric: tabular-nums;
   }
 
@@ -1329,7 +1329,7 @@ import { workElements, weLabel,
      the box stays put, which is what makes the column of boxes scannable. */
   .cbf-lse__alloc { --align: center; align-items: center; flex-wrap: nowrap; }
   .cbf-lse__alloc-label {
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     flex: 1 1 auto;
     min-width: 0;
   }
@@ -1340,12 +1340,12 @@ import { workElements, weLabel,
     gap: var(--spacing-150);
     margin: 0;
     padding-block-start: var(--spacing-200);
-    border-block-start: 1px solid var(--color-border-light);
-    color: var(--color-text-secondary);
+    border-block-start: 1px solid var(--color-border-default-subtle);
+    color: var(--color-content-default-secondary);
   }
   .cbf-lse__alloc-sum strong {
     font-variant-numeric: tabular-nums;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
 
   /* ── The COR's read-only facts ──
@@ -1359,18 +1359,18 @@ import { workElements, weLabel,
     --align: center;
     align-items: center;
     padding: var(--spacing-300);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
-    background: var(--color-surface-sunken);
+    background: var(--color-background-elevation-sunken);
   }
   .cbf-lse__amount-label {
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-medium);
+    color: var(--color-content-default);
+    font-weight: var(--typography-font-weight-medium);
   }
   .cbf-lse__amount-value {
-    font-size: var(--type-size-500);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-500);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
@@ -1387,10 +1387,10 @@ import { workElements, weLabel,
      Global, but every selector is anchored to this component's root class. -->
 <style is:global>
   .cbf-lse .cbf-lse__fact { --align: baseline; align-items: baseline; }
-  .cbf-lse .cbf-lse__fact dt { color: var(--color-text-secondary); min-width: 0; }
+  .cbf-lse .cbf-lse__fact dt { color: var(--color-content-default-secondary); min-width: 0; }
   .cbf-lse .cbf-lse__fact dd {
     margin: 0;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     text-align: end;
   }
 </style>

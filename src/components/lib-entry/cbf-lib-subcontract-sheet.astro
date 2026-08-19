@@ -89,14 +89,14 @@ const views = sheetIds
       <header class="cbf-lss__head stack" data-gap="sm">
         <div class="repel" data-gap="md">
           <div class="stack" data-gap="3xs">
-            <h2 class="cbf-lss__title type-card-title">{sheet.title}</h2>
-            <p class="cbf-lss__meta type-body-small">
+            <h2 class="cbf-lss__title typography-title">{sheet.title}</h2>
+            <p class="cbf-lss__meta typography-body-sm">
               {sheet.vendor} · Contract {contract.number} · {contract.fiscalYear}
             </p>
           </div>
           <div class="cbf-lss__total stack" data-gap="3xs">
             <span class="cbf-lss__total-value">{usd(sheet.total)}</span>
-            <span class="cbf-lss__meta type-body-small">Subcontract total</span>
+            <span class="cbf-lss__meta typography-body-sm">Subcontract total</span>
           </div>
         </div>
       </header>
@@ -104,32 +104,32 @@ const views = sheetIds
       {/* ── The parent line: one lump in the grid, tied to work elements ── */}
       <EsaCard variant="filled">
         <div class="stack" data-gap="sm">
-          <p class="cbf-lss__lede type-body">
+          <p class="cbf-lss__lede typography-body-md">
             Carried on the LIB as a single lump-sum line
             {parent ? <> — <strong>{parent.label}</strong> at {usd(parent.amount)}</> : null}.
             The itemized detail lives here, on the subcontract's own sheet.
           </p>
-          {parent?.detail ? <p class="cbf-lss__meta type-body-small">{parent.detail}</p> : null}
+          {parent?.detail ? <p class="cbf-lss__meta typography-body-sm">{parent.detail}</p> : null}
 
           <div class="stack" data-gap="2xs">
-            <h3 class="cbf-lss__h3 type-body">Work elements the parent line is tied to</h3>
+            <h3 class="cbf-lss__h3 typography-body-md">Work elements the parent line is tied to</h3>
             {allocations.length ? (
               <>
                 <dl class="cbf-lss__rows stack" data-gap="2xs">
                   {allocations.map((a) => (
                     <div class="cbf-lss__row repel" data-gap="sm">
-                      <dt class="type-body">{a.label}</dt>
-                      <dd class="cbf-lss__num type-body">{a.share}%</dd>
+                      <dt class="typography-body-md">{a.label}</dt>
+                      <dd class="cbf-lss__num typography-body-md">{a.share}%</dd>
                     </div>
                   ))}
                 </dl>
-                <p class="cbf-lss__meta type-body-small">
+                <p class="cbf-lss__meta typography-body-sm">
                   {allocations.length} of the {workElements.length} work elements on this
                   contract's SOW.
                 </p>
               </>
             ) : (
-              <p class="cbf-lss__meta type-body-small">
+              <p class="cbf-lss__meta typography-body-sm">
                 The parent line carries no work-element allocation yet — assign it in the grid
                 before this subcontract can be submitted.
               </p>
@@ -143,11 +143,11 @@ const views = sheetIds
         <EsaAlertBox variant="info" title="This sheet runs under different rules">
           <ul class="cbf-lss__rules stack" data-gap="2xs">
             {sheet.rules.map((rule: string) => (
-              <li class="type-body">{rule}</li>
+              <li class="typography-body-md">{rule}</li>
             ))}
           </ul>
         </EsaAlertBox>
-        <p class="cbf-lss__meta type-body-small">
+        <p class="cbf-lss__meta typography-body-sm">
           The state tax on construction is the same percentage-of-a-base shape as fringe and
           indirect on the parent LIB — it just sits down here, on the sub-sheet, computed off
           items 1–3 rather than off anything in the grid above. It is entered and resolved on
@@ -158,8 +158,8 @@ const views = sheetIds
       {/* ── 3 · The recursed category set — read-only stand-in, labeled as one ── */}
       <section class="stack" data-gap="sm">
         <div class="stack" data-gap="3xs">
-          <h3 class="cbf-lss__h3 type-body">The category set, run again</h3>
-          <p class="cbf-lss__meta type-body-small">
+          <h3 class="cbf-lss__h3 typography-body-md">The category set, run again</h3>
+          <p class="cbf-lss__meta typography-body-sm">
             Summary only — the full category set opens in the subcontract's own sheet. No line
             detail, quantities, or rates are carried here, and nothing on this panel is editable.
           </p>
@@ -170,16 +170,16 @@ const views = sheetIds
             <dl class="cbf-lss__rows stack" data-gap="2xs">
               {sheet.categorySummary.map((c: any) => (
                 <div class="cbf-lss__row repel" data-gap="sm">
-                  <dt class="type-body">{c.label}</dt>
-                  <dd class="cbf-lss__num type-body">{usd(c.amount)}</dd>
+                  <dt class="typography-body-md">{c.label}</dt>
+                  <dd class="cbf-lss__num typography-body-md">{usd(c.amount)}</dd>
                 </div>
               ))}
               <div class="cbf-lss__row cbf-lss__row--total repel" data-gap="sm">
-                <dt class="type-body">Subtotal — {sheet.categorySummary.length} categories</dt>
-                <dd class="cbf-lss__num type-body">{usd(summaryTotal)}</dd>
+                <dt class="typography-body-md">Subtotal — {sheet.categorySummary.length} categories</dt>
+                <dd class="cbf-lss__num typography-body-md">{usd(summaryTotal)}</dd>
               </div>
             </dl>
-            <p class="cbf-lss__meta type-body-small">
+            <p class="cbf-lss__meta typography-body-sm">
               {reconciles
                 ? `Ties to the ${usd(sheet.total)} lump carried on the LIB. No indirect is added on top.`
                 : `Does not yet tie to the ${usd(sheet.total)} lump carried on the LIB — the full sheet reconciles it.`}
@@ -187,7 +187,7 @@ const views = sheetIds
           </div>
         </EsaCard>
 
-        <p class="cbf-lss__meta type-body-small">
+        <p class="cbf-lss__meta typography-body-sm">
           The full subcontract entry sheet is a separate screen and is not part of this
           prototype.
         </p>
@@ -245,35 +245,35 @@ const views = sheetIds
 
   .cbf-lss__title {
     margin: 0;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
   .cbf-lss__h3 {
     margin: 0;
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-semibold);
+    color: var(--color-content-default);
+    font-weight: var(--typography-font-weight-semibold);
   }
   /* Dense meta stays at the 14px role and DARKENS rather than graying out. */
   .cbf-lss__meta {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-lss__lede {
     margin: 0;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
 
   .cbf-lss__head {
     padding-block-end: var(--spacing-300);
-    border-block-end: 1px solid var(--color-border-light, var(--color-border));
+    border-block-end: 1px solid var(--color-border-default-subtle, var(--color-border-default));
   }
   /* The number this whole drawer is about — a step up, right-aligned to its label. */
   .cbf-lss__total {
     text-align: end;
   }
   .cbf-lss__total-value {
-    font-size: var(--type-size-500);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-500);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
   }
 
@@ -286,25 +286,25 @@ const views = sheetIds
     align-items: baseline;
   }
   .cbf-lss__row dt {
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     min-width: 0;
   }
   .cbf-lss__row dd {
     margin: 0;
   }
   .cbf-lss__num {
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
   .cbf-lss__row--total {
     margin-block-start: var(--spacing-100);
     padding-block-start: var(--spacing-200);
-    border-block-start: 1px solid var(--color-border);
+    border-block-start: 1px solid var(--color-border-default);
   }
   .cbf-lss__row--total dt,
   .cbf-lss__row--total dd {
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--typography-font-weight-semibold);
   }
 
   .cbf-lss__rules {
@@ -312,6 +312,6 @@ const views = sheetIds
     padding-inline-start: var(--spacing-500);
   }
   .cbf-lss__rules li {
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
 </style>

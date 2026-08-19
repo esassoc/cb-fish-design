@@ -29,7 +29,7 @@
 // cbf-invoice-issues is the reusable home for the pattern.
 import EsaBadge from '@esa/ecology/esa-badge.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 
 interface Props {
   /** Heading for the section. */
@@ -47,7 +47,7 @@ const { title = 'Issues raised' } = Astro.props;
       </span>
     </h3>
     <span data-issues-clear-all hidden>
-      <EsaButton appearance="outline" color="secondary" size="sm">Clear all</EsaButton>
+      <EsaButton appearance="outline" variant="secondary" size="sm">Clear all</EsaButton>
     </span>
   </div>
 
@@ -61,8 +61,8 @@ const { title = 'Issues raised' } = Astro.props;
   <!-- Row control templates: server-rendered real legos, cloned into each injected
        <li> so the list never hand-rolls a button. -->
   <div class="cbf-invoice-issues__templates" data-issues-templates hidden aria-hidden="true">
-    <span data-tmpl="goto"><EsaIconButton icon="arrow-right" label="Go to field" size="xs" /></span>
-    <span data-tmpl="clear"><EsaIconButton icon="x" label="Clear issue" size="xs" /></span>
+    <span data-tmpl="goto"><EsaIconButton variant="chrome" iconOnly icon="arrow-right" label="Go to field" size="xs" /></span>
+    <span data-tmpl="clear"><EsaIconButton variant="chrome" iconOnly icon="x" label="Clear issue" size="xs" /></span>
   </div>
 </section>
 
@@ -74,17 +74,17 @@ const { title = 'Issues raised' } = Astro.props;
     align-items: center;
     gap: var(--spacing-200);
     margin: 0;
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-muted);
+    font-size: var(--font-size-150);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-invoice-issues__count[hidden] { display: none; }
 
   /* Darker rather than fainter as it shrinks — small text is never grayed out. */
   .cbf-invoice-issues__empty {
     margin: 0;
-    font-size: var(--type-size-150);
-    color: var(--color-text-secondary);
+    font-size: var(--font-size-150);
+    color: var(--color-content-default-secondary);
   }
   .cbf-invoice-issues__empty[hidden] { display: none; }
 
@@ -112,21 +112,21 @@ const { title = 'Issues raised' } = Astro.props;
     border-radius: var(--radius-100, 4px);
     /* The status pair: -subtle is the surface, -strong is the text on it. Set on the
        row so the field name, the reason and the row's controls all inherit it. */
-    background: var(--color-warning-subtle);
-    color: var(--color-warning-strong);
+    background: var(--color-background-utility-warning-subtle);
+    color: var(--color-content-utility-warning);
   }
   .cbf-invoice-issue__field {
     grid-column: 1;
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-150);
+    font-weight: var(--typography-font-weight-semibold);
   }
   /* The reason steps back from the field name by WEIGHT, not by going grey — a grey
      here would be neither the neutral ramp nor the warning ramp, and would read as
      washed out against the tint. */
   .cbf-invoice-issue__comment {
     grid-column: 1 / -1;
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-regular);
+    font-size: var(--font-size-150);
+    font-weight: var(--typography-font-weight-regular);
     overflow-wrap: anywhere;
   }
   .cbf-invoice-issue__actions {

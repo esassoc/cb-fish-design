@@ -50,9 +50,9 @@ const { href, tone, statusLabel, title, body, cta } = Astro.props;
     display: flex;
     flex-direction: column;
     padding: var(--spacing-600);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-400);
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
     text-decoration: none;
     transition:
       border-color 0.14s ease,
@@ -61,13 +61,13 @@ const { href, tone, statusLabel, title, body, cta } = Astro.props;
   }
 
   .cbf-layer:hover {
-    border-color: var(--color-primary-border);
-    box-shadow: 0 12px 32px color-mix(in srgb, var(--color-primary) 12%, transparent);
+    border-color: var(--color-border-brand);
+    box-shadow: 0 12px 32px color-mix(in srgb, var(--color-background-brand) 12%, transparent);
     transform: translateY(-2px);
   }
 
   .cbf-layer--soon {
-    background: var(--color-surface-sunken);
+    background: var(--color-background-elevation-sunken);
   }
 
   .cbf-layer__status {
@@ -75,7 +75,7 @@ const { href, tone, statusLabel, title, body, cta } = Astro.props;
     align-items: center;
     gap: var(--spacing-150);
     font-size: 14px;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--typography-font-weight-medium);
   }
 
   .cbf-layer__dot {
@@ -85,33 +85,33 @@ const { href, tone, statusLabel, title, body, cta } = Astro.props;
   }
 
   .cbf-layer__status--live {
-    color: var(--color-success-strong);
+    color: var(--color-content-utility-success);
   }
   .cbf-layer__status--live .cbf-layer__dot {
-    background: var(--color-success);
+    background: var(--color-background-utility-success);
   }
 
   .cbf-layer__status--soon {
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-layer__status--soon .cbf-layer__dot {
-    background: var(--color-secondary);
+    background: var(--color-background-brand-muted);
   }
 
   .cbf-layer__title {
     margin: var(--spacing-300) 0 var(--spacing-200);
-    font-family: var(--font-display);
-    font-size: var(--type-size-600, 2rem);
-    font-weight: var(--font-weight-semibold);
+    font-family: var(--typography-font-family-display);
+    font-size: var(--font-size-600, 2rem);
+    font-weight: var(--typography-font-weight-semibold);
     letter-spacing: -0.01em;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
 
   .cbf-layer__body {
     margin: 0;
     font-size: 16px;
     line-height: 1.55;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
 
   .cbf-layer__go {
@@ -119,9 +119,9 @@ const { href, tone, statusLabel, title, body, cta } = Astro.props;
     align-items: center;
     gap: var(--spacing-150);
     margin-top: var(--spacing-500);
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--typography-font-weight-semibold);
     font-size: 16px;
-    color: var(--color-text-link);
+    color: var(--color-content-link);
   }
 
   .cbf-layer__go svg {
@@ -133,6 +133,6 @@ const { href, tone, statusLabel, title, body, cta } = Astro.props;
   }
 
   .cbf-layer--soon .cbf-layer__go {
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
   }
 </style>

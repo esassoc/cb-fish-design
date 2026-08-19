@@ -25,7 +25,7 @@ const statusVariant = workElement.status === 'in-progress' ? 'warning' : 'defaul
   <div class="cbf-we-card__foot">
     <span class="cbf-we-card__budget">{workElement.budgetPct}% of contract budget</span>
     {workElement.designToolHref ? (
-      <EsaButton color="primary" size="sm" href={withBase(workElement.designToolHref)}>Open design tool</EsaButton>
+      <EsaButton variant="primary" size="sm" href={withBase(workElement.designToolHref)}>Open design tool</EsaButton>
     ) : (
       <span class="cbf-we-card__pending">Design tool not yet started for this work element</span>
     )}
@@ -37,7 +37,7 @@ const statusVariant = workElement.status === 'in-progress' ? 'warning' : 'defaul
     margin: 0 0 var(--spacing-300, 12px);
     font-size: 16px;
     line-height: 1.5;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-we-card__foot {
     display: flex;
@@ -48,12 +48,12 @@ const statusVariant = workElement.status === 'in-progress' ? 'warning' : 'defaul
   }
   .cbf-we-card__budget {
     font-size: 14px;
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
     font-variant-numeric: tabular-nums;
   }
   .cbf-we-card__pending {
     font-size: 14px;
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
     font-style: italic;
   }
 </style>

@@ -64,9 +64,9 @@ const { note = '', label = 'Prototype controls' } = Astro.props;
     gap: var(--spacing-400);
     padding: var(--spacing-300) var(--spacing-400);
     margin-block-end: var(--spacing-400);
-    border: 1px dashed var(--color-border-strong);
+    border: 1px dashed var(--color-border-default-strong);
     border-radius: var(--radius-200);
-    background: var(--color-surface-sunken);
+    background: var(--color-background-elevation-sunken);
   }
   .cbf-proto-strip__ident {
     min-inline-size: 16rem;
@@ -74,7 +74,7 @@ const { note = '', label = 'Prototype controls' } = Astro.props;
   }
   .cbf-proto-strip__note {
     font-size: 14px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   /* The devices sit at the end of the row and keep their order, so a presenter
      finds the same control in the same place on every screen that carries it. */

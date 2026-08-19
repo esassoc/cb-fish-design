@@ -240,7 +240,7 @@ const t0 = priced.totals;
 <section class="cbf-lsg stack" data-gap="md" data-libs-table>
   {heading && (
     <header class="stack" data-gap="3xs">
-      <h2 class="type-section-title">{heading}</h2>
+      <h2 class="typography-heading-md">{heading}</h2>
       {lede && <p class="cbf-lsg__lede">{lede}</p>}
     </header>
   )}
@@ -272,23 +272,23 @@ const t0 = priced.totals;
                    with no journey behind it has none of them to answer, so it
                    goes straight to the line sheet like any other line. */
                 <span class="cluster" data-gap="2xs">
-                  <EsaButton size="sm" color="primary" appearance="outline" icon="plus" data-add-trip>
+                  <EsaButton size="sm" variant="primary" appearance="outline" icon="plus" data-add-trip>
                     Add trip
                   </EsaButton>
                   <esa-dropdown-menu position="below-end" data-add-travel={NO_TRIP}>
-                    <EsaButton size="sm" color="secondary" appearance="soft" icon="plus">
+                    <EsaButton size="sm" variant="secondary" appearance="soft" icon="plus">
                       Add line without a trip
                     </EsaButton>
                   </esa-dropdown-menu>
                 </span>
               ) : cat.shapes.length > 1 || cat.blocks ? (
                 <esa-dropdown-menu position="below-end" data-add-menu={cat.key}>
-                  <EsaButton size="sm" color="primary" appearance="outline" icon="plus">Add line</EsaButton>
+                  <EsaButton size="sm" variant="primary" appearance="outline" icon="plus">Add line</EsaButton>
                 </esa-dropdown-menu>
               ) : (
                 <EsaButton
                   size="sm"
-                  color="primary"
+                  variant="primary"
                   appearance="outline"
                   icon="plus"
                   data-add-line={`${cat.key}||${cat.shapes[0]}|`}
@@ -328,7 +328,7 @@ const t0 = priced.totals;
                         /* A trip's four facts are edited on the trip sheet, so the
                            head states them and offers the one way in. */
                         <span data-edit-trip={item.block.key}>
-                          <EsaButton size="xs" color="secondary" appearance="soft" icon="pencil">
+                          <EsaButton size="xs" variant="secondary" appearance="soft" icon="pencil">
                             Edit trip
                           </EsaButton>
                         </span>
@@ -361,7 +361,7 @@ const t0 = priced.totals;
                     /* The ungrouped block is a block like any other, which is the
                        whole reason it IS one — it gets the same add menu. */
                     <esa-dropdown-menu position="below-end" data-add-travel={item.block.key}>
-                      <EsaButton size="xs" color="secondary" appearance="soft" icon="plus">
+                      <EsaButton size="xs" variant="secondary" appearance="soft" icon="plus">
                         Add travel line
                       </EsaButton>
                     </esa-dropdown-menu>
@@ -399,7 +399,7 @@ const t0 = priced.totals;
                     )}
                   <div class="stack" data-gap="3xs">
                     <span data-open-line hidden={derivedRow(item.line)}>
-                      <EsaButton size="sm" color="ghost">
+                      <EsaButton size="sm" variant="ghost">
                         {displayLabel(item.line) || 'Untitled line'}
                       </EsaButton>
                     </span>
@@ -510,7 +510,7 @@ const t0 = priced.totals;
                     <strong class="cbf-lsg__money" data-cell="amount">{usd(amt(item.line.id))}</strong>
                     {item.line.sheet && (
                       <span data-open-sheet={item.line.sheet} data-open-sheet-line={item.line.id}>
-                        <EsaButton size="xs" color="secondary" appearance="soft" icon="external-link">
+                        <EsaButton size="xs" variant="secondary" appearance="soft" icon="external-link">
                           Subcontract sheet
                         </EsaButton>
                       </span>
@@ -1622,7 +1622,7 @@ const typedSrcText = V.typedSrcText;
   .cbf-lsg__lede {
     margin: 0;
     font-size: 14px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-lsg__sr {
     position: absolute;
@@ -1645,9 +1645,9 @@ const typedSrcText = V.typedSrcText;
      moved to the sheet, which is the quiet structural win of this version. */
   .cbf-lsg__scroll {
     overflow: visible;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
   }
   @media (max-width: 900px) {
     .cbf-lsg__scroll { overflow-x: auto; }
@@ -1658,17 +1658,17 @@ const typedSrcText = V.typedSrcText;
     min-width: 820px;
     border-collapse: collapse;
     font-size: 14px;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
 
   .cbf-lsg__colhead th {
     text-align: left;
     padding: var(--spacing-150) var(--spacing-300);
-    background: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--color-background-elevation-raised);
+    border-bottom: 1px solid var(--color-border-default);
     font-size: 13px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-secondary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default-secondary);
     white-space: nowrap;
   }
   .cbf-lsg__colhead .cbf-lsg__col-num { text-align: right; }
@@ -1684,7 +1684,7 @@ const typedSrcText = V.typedSrcText;
   .cbf-lsg__cell {
     padding: var(--spacing-250) var(--spacing-300);
     vertical-align: top;
-    border-top: 1px solid var(--color-border-light);
+    border-top: 1px solid var(--color-border-default-subtle);
   }
   .cbf-lsg__cell--num {
     text-align: right;
@@ -1707,42 +1707,44 @@ const typedSrcText = V.typedSrcText;
   }
   .cbf-lsg__grab > .stack { flex: 1; min-width: 0; }
   /* A derived row has no handle and must still line up with the rows above it. */
-  .cbf-lsg__grab-void { width: var(--form-height-xs, 28px); flex: none; }
+  /* A reserved gutter, not a control — the hub retired the form-height ramp, and
+     28px is the width the handle beside it occupies. */
+  .cbf-lsg__grab-void { width: 28px; flex: none; }
 
   /* ── Category + sub-block header rows ── */
   .cbf-lsg__cathead th {
     text-align: left;
     padding: var(--spacing-300);
-    background: var(--cbf-surface-section-head, var(--color-surface-sunken));
-    border-top: 1px solid var(--color-border-strong);
-    border-bottom: 1px solid var(--color-border);
-    font-weight: var(--font-weight-regular);
+    background: var(--cbf-surface-section-head, var(--color-background-elevation-sunken));
+    border-top: 1px solid var(--color-border-default-strong);
+    border-bottom: 1px solid var(--color-border-default);
+    font-weight: var(--typography-font-weight-regular);
   }
   .cbf-lsg__cathead .cbf-lsg__cell {
-    background: var(--cbf-surface-section-head, var(--color-surface-sunken));
-    border-top: 1px solid var(--color-border-strong);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--cbf-surface-section-head, var(--color-background-elevation-sunken));
+    border-top: 1px solid var(--color-border-default-strong);
+    border-bottom: 1px solid var(--color-border-default);
     vertical-align: middle;
   }
   .cbf-lsg__cat-label {
     font-size: 16px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
   }
   .cbf-lsg__blockhead th {
     text-align: left;
     padding: var(--spacing-200) var(--spacing-300) var(--spacing-200) var(--spacing-500);
-    border-top: 1px solid var(--color-border);
-    font-weight: var(--font-weight-regular);
+    border-top: 1px solid var(--color-border-default);
+    font-weight: var(--typography-font-weight-regular);
   }
   .cbf-lsg__blockhead .cbf-lsg__cell {
-    border-top: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-border-default);
     vertical-align: middle;
   }
   .cbf-lsg__block-label {
     font-size: 14px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
   }
 
   /* ── Values and their quiet second lines ────────────────────────────────────
@@ -1751,22 +1753,22 @@ const typedSrcText = V.typedSrcText;
      would read as "you failed to fill this in" about a budget that is complete. */
   .cbf-lsg__value {
     font-size: 14px;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
   }
   .cbf-lsg__name {
     font-size: 14px;
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default);
   }
   .cbf-lsg__note {
     font-size: 13px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     max-width: 46ch;
   }
   .cbf-lsg__money {
     font-variant-numeric: tabular-nums;
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--typography-font-weight-semibold);
   }
 
   /* ── The line name IS the way in ──────────────────────────────────────────
@@ -1793,10 +1795,10 @@ const typedSrcText = V.typedSrcText;
     text-align: left;
   }
   [data-open-line] :global(.esa-button__label) {
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--typography-font-weight-medium);
     text-align: left;
     text-decoration: underline;
-    text-decoration-color: var(--color-border-strong);
+    text-decoration-color: var(--color-border-default-strong);
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;
   }
@@ -1812,10 +1814,10 @@ const typedSrcText = V.typedSrcText;
   .cbf-lsg__mark-reason,
   .cbf-lsg__mark-note {
     font-size: 13px;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     max-width: 46ch;
   }
-  .cbf-lsg__mark-reason { font-weight: var(--font-weight-medium); }
+  .cbf-lsg__mark-reason { font-weight: var(--typography-font-weight-medium); }
   /* One severity badge is revealed by the mark's own severity. */
   .cbf-lsg__mark[data-sev='required'] [data-mark-sev='question'],
   .cbf-lsg__mark[data-sev='question'] [data-mark-sev='required'],
@@ -1827,17 +1829,17 @@ const typedSrcText = V.typedSrcText;
   /* ── Row state: an inline background tint, NEVER a colored left border ── */
   tr[data-flag='gsa'] > .cbf-lsg__cell,
   tr[data-flag='months'] > .cbf-lsg__cell {
-    background: var(--color-danger-subtle);
+    background: var(--color-background-utility-danger-subtle);
   }
   /* The capitalization flag is no longer an ERROR. Arithmetic files every item,
      so what is left to mark is a vendor's override and a lump too large to test
      — both "this needs agreement", not "this is wrong". Warning, like the
      allocation flag, and matching the badges the row itself carries. */
   tr[data-flag='capital'] > .cbf-lsg__cell {
-    background: var(--color-warning-subtle);
+    background: var(--color-background-utility-warning-subtle);
   }
   tr[data-flag='alloc'] > .cbf-lsg__cell {
-    background: var(--color-warning-subtle);
+    background: var(--color-background-utility-warning-subtle);
   }
 
   /* ── The money moment: rows that just recomputed because of a save ── */
@@ -1845,12 +1847,12 @@ const typedSrcText = V.typedSrcText;
   tr.is-recomputed > th,
   tr.is-added > .cbf-lsg__cell,
   tr.is-added > th {
-    animation: cbf-lsg-flash 1.5s var(--easing-out) 1;
+    animation: cbf-lsg-flash 1.5s var(--easing-enter) 1;
   }
   /* The flash LAYERS over the cell (inset shadow) rather than replacing its
      background-color — otherwise a flagged row loses its tint for the duration. */
   @keyframes cbf-lsg-flash {
-    from { box-shadow: inset 0 0 0 100vmax var(--color-info-subtle); }
+    from { box-shadow: inset 0 0 0 100vmax var(--color-background-utility-info-subtle); }
     to { box-shadow: inset 0 0 0 100vmax transparent; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -1859,7 +1861,7 @@ const typedSrcText = V.typedSrcText;
     tr.is-added > .cbf-lsg__cell,
     tr.is-added > th {
       animation: none;
-      box-shadow: inset 0 0 0 100vmax var(--color-info-subtle);
+      box-shadow: inset 0 0 0 100vmax var(--color-background-utility-info-subtle);
     }
   }
 
@@ -1867,30 +1869,30 @@ const typedSrcText = V.typedSrcText;
   .cbf-lsg__totals th {
     text-align: right;
     padding: var(--spacing-250) var(--spacing-300);
-    border-top: 1px solid var(--color-border-light);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
+    border-top: 1px solid var(--color-border-default-subtle);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default);
   }
   .cbf-lsg__totals th .cbf-lsg__note {
     display: block;
     max-width: none;
-    font-weight: var(--font-weight-regular);
+    font-weight: var(--typography-font-weight-regular);
   }
   .cbf-lsg__totals .cbf-lsg__cell {
-    border-top: 1px solid var(--color-border-light);
+    border-top: 1px solid var(--color-border-default-subtle);
     font-variant-numeric: tabular-nums;
   }
   .cbf-lsg__totals tr:first-child th,
   .cbf-lsg__totals tr:first-child .cbf-lsg__cell {
-    border-top: 1px solid var(--color-border-strong);
-    background: var(--color-surface-sunken);
+    border-top: 1px solid var(--color-border-default-strong);
+    background: var(--color-background-elevation-sunken);
   }
   .cbf-lsg__grand th,
   .cbf-lsg__grand .cbf-lsg__cell {
-    border-top: 1px solid var(--color-border-strong);
-    background: var(--color-surface-sunken);
+    border-top: 1px solid var(--color-border-default-strong);
+    background: var(--color-background-elevation-sunken);
     font-size: 16px;
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--typography-font-weight-semibold);
   }
   .cbf-lsg__grand .cbf-lsg__cell strong { font-variant-numeric: tabular-nums; }
 

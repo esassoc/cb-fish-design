@@ -28,7 +28,7 @@
  * `grip-vertical`, so this uses `menu` — the same three-rule glyph, but the
  * registry entry is the thing that should exist.
  */
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 
 interface Props {
   /** What this handle moves — folded into the accessible name. */
@@ -42,7 +42,7 @@ const { label = 'this line', size = 'sm', class: extra } = Astro.props;
 ---
 
 <span class:list={['cbf-drag-handle', extra]} data-drag-handle>
-  <EsaIconButton
+  <EsaIconButton variant="chrome" iconOnly
     icon="menu"
     size={size}
     label={`Reorder ${label} — press Space to lift it, then use the arrow keys`}

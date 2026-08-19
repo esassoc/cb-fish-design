@@ -74,7 +74,7 @@ const dayUnit = (n: number) => (n === 1 ? '1 day in queue' : `${n} days in queue
 <style>
   .cbf-invoice-queue-metrics {
     padding-bottom: var(--spacing-500);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border-default);
   }
   .cbf-invoice-queue-metrics__row {
     /* Top-align the stats instead of the .cluster default (center). */
@@ -99,18 +99,18 @@ const dayUnit = (n: number) => (n === 1 ? '1 day in queue' : `${n} days in queue
   }
   /* Overdue is a payment-timeliness alarm — tint its value danger when non-zero. */
   .cbf-invoice-queue-metrics__overdue {
-    --stat-value-color: var(--color-danger, #b42318);
-    --stat-accent-color: var(--color-danger, #b42318);
+    --stat-value-color: var(--color-background-utility-danger, #b42318);
+    --stat-accent-color: var(--color-background-utility-danger, #b42318);
   }
   .cbf-invoice-queue-metrics__trigger:hover {
-    background: color-mix(in srgb, var(--color-danger, #b42318) 8%, transparent);
+    background: color-mix(in srgb, var(--color-background-utility-danger, #b42318) 8%, transparent);
   }
   .cbf-invoice-queue-metrics__trigger:focus-visible {
-    outline: 2px solid var(--color-danger, #b42318);
+    outline: 2px solid var(--color-background-utility-danger, #b42318);
     outline-offset: 2px;
   }
   .cbf-invoice-queue-metrics__trigger[aria-pressed='true'] {
-    background: color-mix(in srgb, var(--color-danger, #b42318) 14%, transparent);
+    background: color-mix(in srgb, var(--color-background-utility-danger, #b42318) 14%, transparent);
   }
 </style>
 

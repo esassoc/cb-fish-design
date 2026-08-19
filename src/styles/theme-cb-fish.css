@@ -6,8 +6,8 @@
  * @esa/tokens) defines the primitives + default teal semantics on :root; this
  * re-skins to CBFish's navy-blue + IBM Plex brand without touching primitives.
  *
- * Because the hub chains --color-text-link / --focus-ring-color / --color-border-focus
- * off --color-primary, overriding --color-primary alone re-points links & focus rings.
+ * Because the hub chains --color-content-link / --focus-ring-color / --color-border-default-focus
+ * off --color-background-brand, overriding --color-background-brand alone re-points links & focus rings.
  *
  * TOKEN TIERS (see ecology README "Spoke-specific tokens"):
  *   - ecology tokens (--color-*, --spacing-*, --font-*): the durable hub vocabulary.
@@ -21,77 +21,76 @@
 
 [data-theme="cb-fish"] {
   /* ===== PRIMARY — navy blue replaces ecology teal ===== */
-  --color-primary:         #1e5386;
-  --color-primary-hover:   #1a4570;
-  --color-primary-active:  #163758;
-  /* Step 11 — colored TEXT for links and primary-toned outline controls. Without
-     this the hub default (--color-grass-11, GREEN) leaks through, exactly like
-     --color-secondary-strong below — same gap, just on the primary ramp. */
-  --color-primary-strong:  var(--color-primary);
-  --color-secondary:       #2770b2;
-  --color-secondary-hover: #1e5386;
-  /* Step 11 — colored TEXT for secondary outline/dashed buttons. Without this the
-     hub default (--color-grass-11, GREEN) leaks through and secondary outline
-     buttons render blue-bordered but green-texted. Re-point to the blue ramp. */
-  --color-secondary-strong: #1c4a76;
+  --color-background-brand:         #1e5386;
+  --color-background-brand-hover:   #1a4570;
+  --color-background-brand-active:  #163758;
+  /* Step 11 — colored TEXT for links and for primary- AND secondary-toned outline
+     controls. Without this the hub default (--color-grass-11, GREEN) leaks through.
+     The hub collapsed --color-content-brand into this same role, so one navy now
+     serves both; the old #1c4a76 secondary variant was retired with it. */
+  --color-content-brand:  var(--color-background-brand);
+  --color-background-brand-muted:       #2770b2;
+  --color-background-brand-muted-hover: #1e5386;
 
   /* Blue-tinted sunken surface — stat tiles, control pill */
-  --color-surface-sunken:  #f3f7fc;
+  --color-background-elevation-sunken:  #f3f7fc;
 
   /* Brand-tinted surface/border pair (hub tokens default to teal under any theme
-     because they chain off teal primitives, not --color-primary — re-point to blue).
+     because they chain off teal primitives, not --color-background-brand — re-point to blue).
      Consumed by the stat tiles + control pill (the specimen's "brand-subtle"). */
-  --color-primary-subtle:  var(--cbf-blue-50);
-  --color-primary-border:  var(--cbf-blue-200);
+  --color-background-brand-subtle:  var(--cbf-blue-50);
+  --color-border-brand:  var(--cbf-blue-200);
 
   /* Darkest chrome surface — the navy admin bar. Re-points the hub's
-     --color-surface-inverse (default gray-900) to CBFish's deepest blue.
+     --color-background-default-knockout (default gray-900) to CBFish's deepest blue.
      Consumed by esa-app-bar tone="brand-strong". (The blue header bar just uses
-     tone="brand" → --color-primary, already navy above.) */
-  --color-surface-inverse:       var(--cbf-blue-950);
-  --color-surface-inverse-hover: #0d1b2c;
+     tone="brand" → --color-background-brand, already navy above.) */
+  --color-background-default-knockout:       var(--cbf-blue-950);
+  --color-background-default-knockout-hover: #0d1b2c;
 
   /* Re-point the full neutral chain to CBFish's grays (--cbf-gray-* ramp below;
      primitives never move). Symmetric with the blue ramp: ramp = raw material,
      semantics = var chains. This warms all body text vs the hub's cool grays —
      text-primary goes #171717 → #3d3d3d. Surfaces stay white; surface-sunken is
      intentionally blue-tinted (set above), not part of this neutral chain. */
-  --color-text-primary:   var(--cbf-gray-900);
-  --color-text-secondary: var(--cbf-gray-700);
-  --color-text-tertiary:  var(--cbf-gray-600);
-  --color-text-muted:     var(--cbf-gray-500);
-  --color-border:         var(--cbf-gray-200);
-  --color-border-light:   var(--cbf-gray-100);
-  --color-border-strong:  var(--cbf-gray-300);
-  --color-background:      var(--cbf-gray-50);
+  --color-content-default:   var(--cbf-gray-900);
+  --color-content-default-secondary: var(--cbf-gray-700);
+  --color-content-default-tertiary:  var(--cbf-gray-600);
+  /* The hub retired its fourth text step, so --color-content-default-secondary (--cbf-gray-500) is
+     gone: every reader moved up to tertiary, which the hub kept alive expressly for
+     this ramp. --cbf-gray-500 stays in the ramp below as re-point material. */
+  --color-border-default:         var(--cbf-gray-200);
+  --color-border-default-subtle:   var(--cbf-gray-100);
+  --color-border-default-strong:  var(--cbf-gray-300);
+  --color-background-default:      var(--cbf-gray-50);
 
-  /* The hub bakes --color-active-overlay as a literal teal rgba on :root, so it
-     can't be re-pointed by overriding --color-primary — set it explicitly to navy. */
-  --color-active-overlay: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  /* The hub bakes --color-background-overlay-active as a literal teal rgba on :root, so it
+     can't be re-pointed by overriding --color-background-brand — set it explicitly to navy. */
+  --color-background-overlay-active: color-mix(in srgb, var(--color-background-brand) 8%, transparent);
 
   /* Brand the info tone — the hub's info defaults to a generic blue; CBFish wants its
      own navy. Re-pointing the semantic here brands every esa-alert-box variant="info"
      spoke-wide (replaces the per-page .cbf-search-note override /search used to carry). */
-  --color-info:        var(--color-secondary);
-  --color-info-subtle: var(--color-primary-subtle);
-  --color-info-border: var(--color-primary-border);
+  --color-background-utility-info:        var(--color-background-brand-muted);
+  --color-background-utility-info-subtle: var(--color-background-brand-subtle);
+  --color-border-utility-info: var(--color-border-brand);
 
   /* ===== TYPE — IBM Plex replaces DM Sans ===== */
-  --font-sans: 'IBM Plex Sans', sans-serif;
+  --typography-font-family-sans: 'IBM Plex Sans', sans-serif;
   /* Mono — the hub default is DM Mono; without this, code/kbd render DM Mono even
      though the docs layout loads IBM Plex Mono. Re-point so the loaded face is used. */
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --typography-font-family-mono: 'IBM Plex Mono', ui-monospace, monospace;
   /* IBM Plex ships discrete weights; remap the hub's DM Sans scale (350/450/550/650).
      Values verified against cbfish.org prod CSS, which uses 400/500/600/700. */
-  --font-weight-regular:  400;
-  --font-weight-medium:   500;
-  --font-weight-semibold: 600;
-  --font-weight-bold:     700;
+  --typography-font-weight-regular:  400;
+  --typography-font-weight-medium:   500;
+  --typography-font-weight-semibold: 600;
+  --typography-font-weight-bold:     700;
 
   /* ===== CBFish-specific additions (no ecology equivalent) ===== */
 
   /* Condensed display face — logotype, big stat numbers, section titles */
-  --font-display: 'IBM Plex Sans Condensed', 'IBM Plex Sans', sans-serif;
+  --typography-font-family-display: 'IBM Plex Sans Condensed', 'IBM Plex Sans', sans-serif;
 
   /* Brand navy ramp (the hub's --color-blue-* is a muted blue; CBFish is deeper).
      Raw material only — re-points ecology tokens above; components never read these. */
@@ -117,10 +116,41 @@
   --cbf-gray-800: #464646;
   --cbf-gray-900: #3d3d3d;
 
+  /* Brand gold ramp — CBFish's authoritative golds from Figma, and the ONE spoke ramp
+     that components read directly (the crumb strips and the search sub-header), because
+     no hub semantic names "the gold strip".
+
+     THIS RAMP CAME BACK, and the reason is worth keeping. It was deleted on the belief
+     that it had been promoted to the hub — the note here used to read "use the hub's
+     --color-gold-* directly". The hub's gold is RADIX gold, which is a different, warmer
+     hue on a 1-12 scale, and it never carried these values. So `var(--color-gold-50)`
+     resolved to nothing, `background` was dropped whole, and all three crumb strips
+     rendered WHITE with no error to say so — for as long as it took anyone to notice.
+     The Radix step nearest 50 is gold-2 #faf9f2, which pulls red up and blue down and
+     reads visibly yellow across a strip that wide. Cool khaki is the brand; keep it here.
+
+     A HUB PROMOTION IS STILL THE RIGHT END STATE, but as CBFish's own named surface,
+     not by borrowing a same-named Radix step. Logged in docs/hub-issues.md. */
+  --cbf-gold-50:  #f8f8f4;  /* documented brand step; no reader since the crumb strip went grey */
+  --cbf-gold-200: #f3d99b;  /* eyebrow text on the navy welcome hero */
+  --cbf-gold-300: #f0c040;  /* today-dot on a selected calendar day */
+  --cbf-gold-500: #a9a379;
+  --cbf-gold-900: #534c3b;  /* sidebar sub-header text */
+
   /* App-page chrome (CBFish Modernization page pattern — Report Center, Search).
      Spoke surfaces with no hub semantic equivalent yet; consumed directly by the
-     cbf-* app-page components. Promote to the hub if they stabilize across spokes.
-     (The gold ramp was promoted — use the hub's --color-gold-* directly.) */
+     cbf-* app-page components. Promote to the hub if they stabilize across spokes. */
+  /* Breadcrumb strip on the app panel. DELIBERATELY HUE-FREE, and that is a change
+     from the Figma reference (2614:11113), which specifies a gold strip.
+
+     The gold was drawn against a WHITE panel, where #f8f8f4 had a real lightness step
+     under it. The hub moved --color-background-elevation-raised onto Radix gray-1
+     (#fcfcfc) on 2026-08-15, which left the strip only 4 levels lighter than its own
+     container — so nearly all the separation had to come from hue, and a 4-point blue
+     deficit across a full-width band reads as a yellow stain rather than a band.
+     Deepening the gold restores the step but makes it MORE saturated, not less.
+     Grey separates by lightness alone, which is what the strip was always doing. */
+  --cbf-surface-crumb:        #f4f4f4;  /* app-panel breadcrumb strip */
   --cbf-surface-section-head: #f5f5f5;  /* result section header bar */
   --cbf-amber-attention:      #f6c244;  /* impersonation state badge/text */
   --cbf-text-placeholder:     #9aa3ad;  /* input placeholder text */
@@ -128,11 +158,17 @@
   /* Document-path link green — prod's Report Center renders the /Document.mvc path in
      green; a DELIBERATE non-success green tell (NEEDS.md #1). Consumed by
      cbf-pubs-results; promote to a hub semantic if it stabilizes across spokes. */
-  --cbf-document-link:        var(--color-green-700);
+  --cbf-document-link:        var(--color-grass-11);
 
 }
 
-/* esa-app-bar gap, tuned per bar via the hub's --app-bar-gap component token.
-   Both values are ecology tokens — the 40px step was promoted to --spacing-650. */
-.cbf-app-bar--admin  { --app-bar-gap: var(--spacing-650); }   /* 40px */
-.cbf-app-bar--header { --app-bar-gap: var(--spacing-800); }   /* 64px */
+/* NO per-bar gap any more. app-bar-hooks-removed (2026-08-16) deleted
+   the app-bar-gap hook and replaced it with a PRIVATE --_bar-gap that esa-app-bar
+   declares on itself, so a spoke override loses on specificity even before you
+   count that the hub closed the knob deliberately: "Density belongs in a
+   variant, not a per-instance override."
+
+   Both bars now take the hub's 32px (--spacing-600). The two-tier rhythm this
+   spoke wanted — 40px on the admin tray, 64px on the header — is the concrete
+   demand recorded against the density variant in docs/hub-issues.md. Restore
+   the distinction there, not here. */

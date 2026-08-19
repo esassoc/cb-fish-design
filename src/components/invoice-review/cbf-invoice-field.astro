@@ -57,7 +57,7 @@
 // Beacon is not on this machine. cbf-invoice-field is the reusable home for the
 // pattern — the processor renders fifteen of them across the submitted block and the
 // contract-context block.
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 
 interface Props {
@@ -131,9 +131,9 @@ const hasAlert = Astro.slots.has('alert');
          it gets the honest version of the same thing: `hide-label` drops the visible
          label and keeps `label` as the accessible name.
 
-         All are left at their DEFAULT `md` size: bcn-date-picker is fixed at
-         --form-height-md, so anything smaller elsewhere would make sibling rows
-         disagree in height as the COR moved down the panel — and md is the house
+         All are left at their DEFAULT `md` size: bcn-date-picker now sizes itself
+         from padding like the hub legos do, so anything smaller elsewhere would make
+         sibling rows disagree in height as the COR moved down the panel — and md is the house
          default for form controls anyway (they err one step bigger, never smaller). -->
     {editable && control === 'date' && (
       <bcn-date-picker
@@ -190,10 +190,10 @@ const hasAlert = Astro.slots.has('alert');
       ></esa-textarea>
       <div class="cluster" data-gap="sm">
         <span data-field-note-save>
-          <EsaButton color="primary" size="sm">Save issue</EsaButton>
+          <EsaButton variant="primary" size="sm">Save issue</EsaButton>
         </span>
         <span data-field-note-cancel>
-          <EsaButton appearance="outline" color="secondary" size="sm">Cancel</EsaButton>
+          <EsaButton appearance="outline" variant="secondary" size="sm">Cancel</EsaButton>
         </span>
       </div>
     </div>
@@ -209,10 +209,10 @@ const hasAlert = Astro.slots.has('alert');
       <span class="cbf-invoice-field__issue-text" data-field-issue-text></span>
       <span class="cbf-invoice-field__issue-actions">
         <span data-field-issue-edit>
-          <EsaIconButton icon="pencil" label={`Edit the issue raised on ${label}`} size="xs" />
+          <EsaIconButton variant="chrome" iconOnly icon="pencil" label={`Edit the issue raised on ${label}`} size="xs" />
         </span>
         <span data-field-issue-clear>
-          <EsaIconButton icon="x" label={`Clear the issue raised on ${label}`} size="xs" />
+          <EsaIconButton variant="chrome" iconOnly icon="x" label={`Clear the issue raised on ${label}`} size="xs" />
         </span>
       </span>
     </div>
@@ -241,12 +241,12 @@ const hasAlert = Astro.slots.has('alert');
          sits in a different place from one row to the next. -->
     {editable && (
       <span class="cbf-invoice-field__control cbf-invoice-field__control--rest" data-field-edit>
-        <EsaIconButton icon="pencil" label={`Edit ${label}`} size="xs" />
+        <EsaIconButton variant="chrome" iconOnly icon="pencil" label={`Edit ${label}`} size="xs" />
       </span>
     )}
     {flaggable && (
       <span class="cbf-invoice-field__control cbf-invoice-field__control--rest" data-field-flag>
-        <EsaIconButton icon="triangle-alert" label={`Flag ${label} as an issue`} size="xs" />
+        <EsaIconButton variant="chrome" iconOnly icon="triangle-alert" label={`Flag ${label} as an issue`} size="xs" />
       </span>
     )}
     {copy && (
@@ -255,19 +255,19 @@ const hasAlert = Astro.slots.has('alert');
         data-copy
         data-copy-target={`[data-field="${field}"] [data-field-display]`}
       >
-        <EsaIconButton icon="copy" label={`Copy ${label}`} size="xs" />
+        <EsaIconButton variant="chrome" iconOnly icon="copy" label={`Copy ${label}`} size="xs" />
       </span>
     )}
 
     <!-- While editing: save · cancel, primary first (Windows order). -->
     {editable && (
       <span class="cbf-invoice-field__control cbf-invoice-field__control--editing" data-field-edit-save>
-        <EsaIconButton icon="check" label={`Save ${label}`} size="xs" />
+        <EsaIconButton variant="chrome" iconOnly icon="check" label={`Save ${label}`} size="xs" />
       </span>
     )}
     {editable && (
       <span class="cbf-invoice-field__control cbf-invoice-field__control--editing" data-field-edit-cancel>
-        <EsaIconButton icon="x" label={`Cancel editing ${label}`} size="xs" />
+        <EsaIconButton variant="chrome" iconOnly icon="x" label={`Cancel editing ${label}`} size="xs" />
       </span>
     )}
   </div>
@@ -287,21 +287,21 @@ const hasAlert = Astro.slots.has('alert');
     gap: var(--spacing-300);
     align-items: baseline;
     padding-block: var(--spacing-250);
-    border-top: 1px solid var(--color-border-light, var(--color-border));
+    border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default));
   }
   .cbf-invoice-field:first-child { border-top: 0; padding-top: 0; }
 
   .cbf-invoice-field__label {
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-muted);
+    font-size: var(--font-size-150);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default-tertiary);
   }
 
   .cbf-invoice-field__body { margin: 0; min-width: 0; }
   .cbf-invoice-field__value {
     display: block;
-    font-size: var(--type-size-200);
-    color: var(--color-text-secondary);
+    font-size: var(--font-size-200);
+    color: var(--color-content-default-secondary);
     overflow-wrap: anywhere;
   }
   /* `display: block` above outranks the UA's `[hidden] { display: none }`, so the
@@ -310,17 +310,17 @@ const hasAlert = Astro.slots.has('alert');
   .cbf-invoice-field__value[hidden] { display: none; }
   /* The money line in its block — emphasized by SIZE, not weight or color. */
   .cbf-invoice-field[data-emphasis='amount'] .cbf-invoice-field__value {
-    font-size: var(--type-size-400);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-400);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default);
   }
   /* Derived context under the value: a percentage, a projected balance, a date gap.
      Darker than the label despite being smaller — small text is never faint. */
   .cbf-invoice-field__sub {
     display: block;
     margin-top: var(--spacing-050, 2px);
-    font-size: var(--type-size-100);
-    color: var(--color-text-muted);
+    font-size: var(--font-size-100);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-invoice-field__sub[hidden] { display: none; }
 
@@ -368,8 +368,8 @@ const hasAlert = Astro.slots.has('alert');
        Set once on the container so the icon, the reason, and the note's own
        controls all inherit it and the block reads as one warning-coloured unit
        instead of neutral text that happens to be sitting on yellow. */
-    background: var(--color-warning-subtle);
-    color: var(--color-warning-strong);
+    background: var(--color-background-utility-warning-subtle);
+    color: var(--color-content-utility-warning);
   }
   .cbf-invoice-field__issue[hidden] { display: none; }
 
@@ -383,13 +383,13 @@ const hasAlert = Astro.slots.has('alert');
     margin-top: var(--spacing-200);
     padding: var(--spacing-200) var(--spacing-250);
     border-radius: var(--radius-100, 4px);
-    background: var(--color-warning-subtle);
-    color: var(--color-warning-strong);
+    background: var(--color-background-utility-warning-subtle);
+    color: var(--color-content-utility-warning);
   }
   .cbf-invoice-field__alert[hidden] { display: none; }
   .cbf-invoice-field__alert-text {
     min-width: 0;
-    font-size: var(--type-size-150);
+    font-size: var(--font-size-150);
     overflow-wrap: anywhere;
   }
   .cbf-invoice-field__issue-icon {
@@ -400,7 +400,7 @@ const hasAlert = Astro.slots.has('alert');
   .cbf-invoice-field__issue-text {
     flex: 1;
     min-width: 0;
-    font-size: var(--type-size-150);
+    font-size: var(--font-size-150);
     overflow-wrap: anywhere;
   }
   /* The note's own controls stand in the SAME vertical column as the row's controls
@@ -420,7 +420,7 @@ const hasAlert = Astro.slots.has('alert');
   .cbf-invoice-field__controls {
     display: inline-flex;
     gap: var(--spacing-050, 2px);
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-invoice-field__control {
     display: inline-flex;
@@ -432,7 +432,7 @@ const hasAlert = Astro.slots.has('alert');
   /* A field that already carries an issue keeps its flag control lit — the state is
      persistent, so its control must be too. */
   .cbf-invoice-field[data-flagged] .cbf-invoice-field__control { opacity: 1; }
-  .cbf-invoice-field[data-flagged] [data-field-flag] { color: var(--color-warning-strong); }
+  .cbf-invoice-field[data-flagged] [data-field-flag] { color: var(--color-content-utility-warning); }
   @media (hover: none) {
     .cbf-invoice-field__control { opacity: 1; }
   }
@@ -444,7 +444,7 @@ const hasAlert = Astro.slots.has('alert');
   .cbf-invoice-field:not([data-editing]) .cbf-invoice-field__control--editing { display: none; }
   .cbf-invoice-field[data-editing] .cbf-invoice-field__control--rest { display: none; }
   .cbf-invoice-field[data-editing] .cbf-invoice-field__control { opacity: 1; }
-  .cbf-invoice-field[data-editing] [data-field-edit-save] { color: var(--color-primary, currentColor); }
+  .cbf-invoice-field[data-editing] [data-field-edit-save] { color: var(--color-background-brand, currentColor); }
 
   /* An editing row keeps its shape exactly: same three columns, same label in the
      same place. Only the read VALUE gives way, and the control stands precisely where
@@ -458,10 +458,10 @@ const hasAlert = Astro.slots.has('alert');
   .cbf-invoice-field[data-editing] .cbf-invoice-field__controls { padding-top: var(--spacing-150); }
 
   /* Copy feedback — the delegated copy handler stamps data-state="copied". */
-  /* -strong (the accessible TEXT step), never plain --color-success: that is the
+  /* -strong (the accessible TEXT step), never plain --color-background-utility-success: that is the
      SOLID-FILL step, meant to sit behind white text, and painting a glyph with it
      lands around 2:1 on this surface. Same rule the warning icons follow. No hex
      fallback — the token always resolves, so a literal here would only be a second,
      unreviewed value that never renders. */
-  .cbf-invoice-field__control[data-state='copied'] { color: var(--color-success-strong); }
+  .cbf-invoice-field__control[data-state='copied'] { color: var(--color-content-utility-success); }
 </style>

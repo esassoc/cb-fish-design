@@ -66,7 +66,7 @@ const asOptions = (values: string[]) => values.map((v) => ({ label: v, value: v 
 <esa-dialog heading="Create new CRS Commitment" show-close-button size="lg" data-crs-create-dialog>
   <form class="cbf-crs-create-form stack" data-gap="lg" data-crs-create-form>
     <section class="stack" data-gap="md">
-      <h3 class="type-section-title">Overview</h3>
+      <h3 class="typography-heading-md">Overview</h3>
 
       <esa-text-field
         label="Title"
@@ -171,7 +171,7 @@ const asOptions = (values: string[]) => values.map((v) => ({ label: v, value: v 
     </section>
 
     <section class="stack" data-gap="md">
-      <h3 class="type-section-title">Responsible parties</h3>
+      <h3 class="typography-heading-md">Responsible parties</h3>
 
       <div class="cbf-crs-create-form__row">
         <esa-select label="Lead agency" multiple chip-mode placeholder="Select…" options={JSON.stringify(asOptions(leadAgencies))} data-field="leadAgency"></esa-select>
@@ -194,17 +194,17 @@ const asOptions = (values: string[]) => values.map((v) => ({ label: v, value: v 
       </div>
     </section>
 
-    <p class="type-caption cbf-crs-create-form__error" data-crs-create-error hidden>
+    <p class="typography-meta cbf-crs-create-form__error" data-crs-create-error hidden>
       Enter a title and choose a category to continue.
     </p>
   </form>
 
   <div slot="footer">
     <span data-crs-create-cancel>
-      <EsaButton color="ghost" appearance="outline">Cancel</EsaButton>
+      <EsaButton variant="ghost" appearance="outline">Cancel</EsaButton>
     </span>
     <span data-crs-create-submit>
-      <EsaButton color="primary" icon="plus">Create commitment</EsaButton>
+      <EsaButton variant="primary" icon="plus">Create commitment</EsaButton>
     </span>
   </div>
 </esa-dialog>
@@ -221,7 +221,7 @@ const asOptions = (values: string[]) => values.map((v) => ({ label: v, value: v 
   }
 
   .cbf-crs-create-form__error {
-    color: var(--color-danger-strong);
+    color: var(--color-content-utility-danger);
   }
 </style>
 

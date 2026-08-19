@@ -5,7 +5,7 @@
 // paragraph, optional keyword/owner meta, and a trailing action button
 // (esa-button). Mirrors the live CBFish accruals summary "Related items" block.
 //
-// The .grid / .type-section-title classes ship from @esa/tokens as separate CSS
+// The .grid / .typography-heading-md classes ship from @esa/tokens as separate CSS
 // modules (not bundled into tokens.css), so import them here to stay self-contained.
 //
 // bcn-lego-checked: the card SURFACE is esa-card and the CTA is esa-button — no
@@ -42,7 +42,7 @@ const { items, heading = 'Related items', id = 'related-items' } = Astro.props;
 const isSingle = items.length === 1;
 ---
 <section class="cbf-related-items" id={id} aria-label={heading}>
-  <h2 class="cbf-related-items__head type-section-title">{heading}</h2>
+  <h2 class="cbf-related-items__head typography-heading-md">{heading}</h2>
   <div class:list={['cbf-related-items__grid', 'grid', isSingle && 'cbf-related-items__grid--single']}>
     {items.map((item) => (
       <EsaCard title={item.title} variant="outlined" padding="default">
@@ -58,7 +58,7 @@ const isSingle = items.length === 1;
           )}
         </div>
         <div slot="footer" class="cbf-related-items__foot">
-          <EsaButton color="primary" size="sm" href={item.href ?? '#'}>
+          <EsaButton variant="primary" size="sm" href={item.href ?? '#'}>
             {item.cta ?? 'View page'}
           </EsaButton>
         </div>
@@ -70,7 +70,7 @@ const isSingle = items.length === 1;
 <style>
   .cbf-related-items {
     padding-top: var(--spacing-600);
-    border-top: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-border-default);
   }
   .cbf-related-items__head {
     margin: 0 0 var(--spacing-400);
@@ -94,16 +94,16 @@ const isSingle = items.length === 1;
     margin: 0;
     font-size: 16px;
     line-height: 1.5;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-related-items__overview strong,
   .cbf-related-items__meta strong {
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
   .cbf-related-items__meta {
     margin: 0;
     font-size: 15px;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   /* esa-card's footer slot supplies the band, divider, and padding; we only
      push the action to the trailing edge. */

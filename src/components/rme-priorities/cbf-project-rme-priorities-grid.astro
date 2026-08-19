@@ -18,7 +18,7 @@
 // form.
 import CbfSearchField from '../search/cbf-search-field.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import '../shared/cbf-data-grid-chrome.css';
 import { projectRmePriorities as defaultRows, RME_PRIORITIES } from '../../data/rme-priorities.mjs';
 
@@ -32,9 +32,9 @@ const priorityOptions = RME_PRIORITIES.map((p) => ({ value: String(p.id), label:
 ---
 <section class="cbf-project-rme-priorities stack" data-gap="md">
   <header class="cbf-data-grid__header repel">
-    <span class="type-caption cbf-data-grid__count-label">All project RM&E priorities</span>
+    <span class="typography-meta cbf-data-grid__count-label">All project RM&E priorities</span>
     <span data-rme-bulk-edit-open>
-      <EsaButton color="primary" appearance="outline" disabled>Bulk edit project RM&E priorities and project SME</EsaButton>
+      <EsaButton variant="primary" appearance="outline" disabled>Bulk edit project RM&E priorities and project SME</EsaButton>
     </span>
   </header>
 
@@ -54,10 +54,10 @@ const priorityOptions = RME_PRIORITIES.map((p) => ({ value: String(p.id), label:
   <div class="cbf-data-grid__grid" data-rme-priorities-grid></div>
 
   <footer class="cbf-data-grid__footer repel">
-    <span class="type-caption" data-rme-priorities-count>
+    <span class="typography-meta" data-rme-priorities-count>
       Showing {rows.length} of {rows.length} project RM&E priorities
     </span>
-    <EsaIconButton icon="download" label="Download CSV" size="sm" data-rme-priorities-csv />
+    <EsaIconButton variant="chrome" iconOnly icon="download" label="Download CSV" size="sm" data-rme-priorities-csv />
   </footer>
 
   <!-- Row data, serialized so the client module (which imports ag-grid-community)
@@ -66,7 +66,7 @@ const priorityOptions = RME_PRIORITIES.map((p) => ({ value: String(p.id), label:
 
   <esa-dialog heading="Bulk edit project RM&E priorities and project SME" show-close-button size="md" data-rme-bulk-edit-dialog>
     <form class="stack" data-gap="md" data-rme-bulk-edit-form>
-      <p class="type-body" data-rme-bulk-edit-summary></p>
+      <p class="typography-body-md" data-rme-bulk-edit-summary></p>
       <esa-select
         label="RM&E priority"
         placeholder="Select…"
@@ -85,17 +85,17 @@ const priorityOptions = RME_PRIORITIES.map((p) => ({ value: String(p.id), label:
         placeholder="Leave blank to keep each project's current comments"
         data-field="comments"
       ></esa-textarea>
-      <p class="type-caption cbf-project-rme-priorities__error" data-rme-bulk-edit-error hidden>
+      <p class="typography-meta cbf-project-rme-priorities__error" data-rme-bulk-edit-error hidden>
         Choose an RM&E priority to apply.
       </p>
     </form>
 
     <div slot="footer">
       <span data-rme-bulk-edit-cancel>
-        <EsaButton color="ghost" appearance="outline">Cancel</EsaButton>
+        <EsaButton variant="ghost" appearance="outline">Cancel</EsaButton>
       </span>
       <span data-rme-bulk-edit-submit>
-        <EsaButton color="primary">Apply to selected</EsaButton>
+        <EsaButton variant="primary">Apply to selected</EsaButton>
       </span>
     </div>
   </esa-dialog>
@@ -103,7 +103,7 @@ const priorityOptions = RME_PRIORITIES.map((p) => ({ value: String(p.id), label:
 
 <style>
   .cbf-project-rme-priorities__error {
-    color: var(--color-danger-strong);
+    color: var(--color-content-utility-danger);
   }
 </style>
 

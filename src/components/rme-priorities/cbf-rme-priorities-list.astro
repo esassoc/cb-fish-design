@@ -16,7 +16,7 @@
 // matching small-taxonomy-list pattern). cbf-rme-priorities-list is the
 // reusable home.
 import EsaButton from '@esa/ecology/esa-button.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import { RME_PRIORITIES as defaultPriorities } from '../../data/rme-priorities.mjs';
 
 interface Props {
@@ -27,11 +27,11 @@ const { priorities = defaultPriorities } = Astro.props;
 ---
 <section class="cbf-rme-priorities-list stack" data-gap="md">
   <header class="cbf-rme-priorities-list__header repel">
-    <span class="type-caption cbf-rme-priorities-list__count-label">
+    <span class="typography-meta cbf-rme-priorities-list__count-label">
       Viewing {priorities.length} of {priorities.length} RM&E priorities
     </span>
     <span data-rme-priority-create-open>
-      <EsaButton color="primary" icon="plus">Create new RM&E priority</EsaButton>
+      <EsaButton variant="primary" icon="plus">Create new RM&E priority</EsaButton>
     </span>
   </header>
 
@@ -51,7 +51,7 @@ const { priorities = defaultPriorities } = Astro.props;
             <td data-priority-title>{p.title}</td>
             <td class="cbf-rme-priorities-list__actions">
               <span data-rme-priority-edit>
-                <EsaIconButton icon="pencil" label={`Edit ${p.title}`} size="sm" />
+                <EsaIconButton variant="chrome" iconOnly icon="pencil" label={`Edit ${p.title}`} size="sm" />
               </span>
             </td>
           </tr>
@@ -67,7 +67,7 @@ const { priorities = defaultPriorities } = Astro.props;
        cbf-crs-commitment-documents. -->
   <template data-rme-priority-action-template hidden aria-hidden="true">
     <span data-rme-priority-edit>
-      <EsaIconButton icon="pencil" label="Edit" size="sm" />
+      <EsaIconButton variant="chrome" iconOnly icon="pencil" label="Edit" size="sm" />
     </span>
   </template>
 
@@ -79,17 +79,17 @@ const { priorities = defaultPriorities } = Astro.props;
         required
         data-field="title"
       ></esa-text-field>
-      <p class="type-caption cbf-rme-priorities-list__error" data-rme-priority-create-error hidden>
+      <p class="typography-meta cbf-rme-priorities-list__error" data-rme-priority-create-error hidden>
         Enter a title to continue.
       </p>
     </form>
 
     <div slot="footer">
       <span data-rme-priority-create-cancel>
-        <EsaButton color="ghost" appearance="outline">Cancel</EsaButton>
+        <EsaButton variant="ghost" appearance="outline">Cancel</EsaButton>
       </span>
       <span data-rme-priority-create-submit>
-        <EsaButton color="primary" icon="plus">Create priority</EsaButton>
+        <EsaButton variant="primary" icon="plus">Create priority</EsaButton>
       </span>
     </div>
   </esa-dialog>
@@ -101,17 +101,17 @@ const { priorities = defaultPriorities } = Astro.props;
         required
         data-field="edit-title"
       ></esa-text-field>
-      <p class="type-caption cbf-rme-priorities-list__error" data-rme-priority-edit-error hidden>
+      <p class="typography-meta cbf-rme-priorities-list__error" data-rme-priority-edit-error hidden>
         Enter a title to continue.
       </p>
     </form>
 
     <div slot="footer">
       <span data-rme-priority-edit-cancel>
-        <EsaButton color="ghost" appearance="outline">Cancel</EsaButton>
+        <EsaButton variant="ghost" appearance="outline">Cancel</EsaButton>
       </span>
       <span data-rme-priority-edit-submit>
-        <EsaButton color="primary">Save changes</EsaButton>
+        <EsaButton variant="primary">Save changes</EsaButton>
       </span>
     </div>
   </esa-dialog>
@@ -124,18 +124,18 @@ const { priorities = defaultPriorities } = Astro.props;
     flex-wrap: wrap;
   }
   .cbf-rme-priorities-list__count-label {
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
   }
 
   .cbf-rme-priorities-list__table-wrap {
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
     overflow: hidden;
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
   }
 
   .cbf-rme-priorities-list__error {
-    color: var(--color-danger-strong);
+    color: var(--color-content-utility-danger);
   }
 
   .cbf-rme-priorities-list__sr-only {
@@ -170,17 +170,17 @@ const { priorities = defaultPriorities } = Astro.props;
     padding: var(--spacing-300) var(--spacing-400);
   }
   .cbf-rme-priorities-list__table thead th {
-    background: var(--color-surface-sunken, transparent);
-    color: var(--color-text-secondary);
-    font-weight: var(--font-weight-semibold);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--color-background-elevation-sunken, transparent);
+    color: var(--color-content-default-secondary);
+    font-weight: var(--typography-font-weight-semibold);
+    border-bottom: 1px solid var(--color-border-default);
   }
   .cbf-rme-priorities-list__table tbody tr + tr td {
-    border-top: 1px solid var(--color-border-light, var(--color-border));
+    border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default));
   }
   .cbf-rme-priorities-list__id {
     font-variant-numeric: tabular-nums;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     width: 1%;
     white-space: nowrap;
   }

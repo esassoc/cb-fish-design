@@ -21,7 +21,7 @@ import EsaButton from '@esa/ecology/esa-button.astro';
 
   <div slot="footer">
     <span onclick="document.getElementById('sow-intro-modal').close()">
-      <EsaButton color="primary" icon="check">Got it</EsaButton>
+      <EsaButton variant="primary" icon="check">Got it</EsaButton>
     </span>
   </div>
 </esa-dialog>
@@ -33,9 +33,9 @@ import EsaButton from '@esa/ecology/esa-button.astro';
 <style>
   .legacy-sow-intro__body {
     margin: 0 0 var(--spacing-300, 12px);
-    font-size: var(--type-size-200, 15px);
+    font-size: var(--font-size-200, 15px);
     line-height: 1.5;
-    color: var(--color-text-secondary, #404040);
+    color: var(--color-content-default-secondary, #404040);
   }
   .legacy-sow-intro__body:last-of-type {
     margin-bottom: 0;

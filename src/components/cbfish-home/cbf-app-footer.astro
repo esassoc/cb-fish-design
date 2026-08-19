@@ -35,8 +35,8 @@ const based = (links: NavLink[]): NavLink[] =>
 <style>
   .cbf-app-footer {
     margin-top: var(--spacing-800);
-    background: var(--color-surface-inverse);
-    color: var(--color-text-inverse, #fff);
+    background: var(--color-background-default-knockout);
+    color: var(--color-content-default-knockout, #fff);
   }
   .cbf-app-footer__inner {
     max-width: 1280px;
@@ -55,9 +55,9 @@ const based = (links: NavLink[]): NavLink[] =>
     gap: var(--spacing-300);
     margin-top: var(--spacing-700);
     padding-top: var(--spacing-400);
-    border-top: 1px solid color-mix(in srgb, var(--color-text-inverse, #fff) 22%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--color-content-default-knockout, #fff) 22%, transparent);
     font-size: 14px;
   }
-  .cbf-app-footer__org { color: color-mix(in srgb, var(--color-text-inverse, #fff) 82%, transparent); }
+  .cbf-app-footer__org { color: color-mix(in srgb, var(--color-content-default-knockout, #fff) 82%, transparent); }
   .cbf-app-footer__policy { color: inherit; text-decoration: underline; }
 </style>

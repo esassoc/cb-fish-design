@@ -173,22 +173,22 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
     display: flex;
     flex-direction: column;
     min-height: 0;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
     overflow: hidden;
-    background: var(--color-surface);
-    box-shadow: 0 1px 3px color-mix(in srgb, var(--color-surface-inverse) 8%, transparent);
+    background: var(--color-background-elevation-raised);
+    box-shadow: 0 1px 3px color-mix(in srgb, var(--color-background-default-knockout) 8%, transparent);
   }
 
   .msow-crumb-strip {
-    background: var(--color-gold-50);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--cbf-surface-crumb);
+    border-bottom: 1px solid var(--color-border-default);
     padding: var(--spacing-400) var(--spacing-600);
     flex-shrink: 0;
   }
   .msow-crumb-strip .esa-breadcrumbs {
-    --breadcrumbs-link-color: var(--color-text-secondary);
-    --breadcrumbs-link-hover: var(--color-primary);
+    --breadcrumbs-link-color: var(--color-content-default-secondary);
+    --breadcrumbs-link-hover: var(--color-background-brand);
   }
 
   .msow-root {
@@ -211,7 +211,15 @@ const mapSowSrc = import.meta.env.BASE_URL + 'scripts/map-sow.js?v=' + Date.now(
      see the CSS :has() invalidation note elsewhere in this spoke. */
   @media (max-height: 800px) {
     html:has(.msow-page) .cbf-app-bar--admin { display: none; }
-    html:has(.msow-page) .cbf-app-bar--header { --app-bar-pad-y: var(--spacing-200, 8px); }
+    /* DELIBERATE REACH INTO A PRIVATE HUB TOKEN, and the only one in this spoke.
+       The app-bar-pad-y hook was removed (app-bar-hooks-removed) and its replacement
+       --_bar-pad-y is private, declared by esa-app-bar on itself — so this needs
+       !important to win, which is exactly the smell that says it is temporary.
+       It stays because this one is FUNCTIONAL, not cosmetic: under 800px tall the
+       map needs the height, and the stock 16px costs enough of it to matter.
+       REMOVE THIS the moment esa-app-bar ships the density variant requested in
+       docs/hub-issues.md. If a hub change breaks it, the bar merely gets taller. */
+    html:has(.msow-page) .cbf-app-bar--header { --_bar-pad-y: var(--spacing-200) !important; }
     html:has(.msow-page) .msow-page { padding-block: var(--spacing-200, 8px); }
     html:has(.msow-page) .msow-crumb-strip { padding-block: var(--spacing-200, 8px); }
     html:has(.msow-page) .msow-toolbar { padding-block: var(--spacing-200, 8px); }

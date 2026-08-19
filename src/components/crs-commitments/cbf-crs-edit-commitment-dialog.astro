@@ -67,10 +67,10 @@ const yearStatusOptions = [
 ---
 <esa-dialog heading="Edit CRS Commitment" show-close-button size="lg" data-crs-edit-commitment-dialog>
   <form class="cbf-crs-edit-commitment-form stack" data-gap="lg" data-crs-edit-commitment-form>
-    <p class="type-caption cbf-crs-edit-commitment-form__number" data-crs-edit-commitment-number></p>
+    <p class="typography-meta cbf-crs-edit-commitment-form__number" data-crs-edit-commitment-number></p>
 
     <section class="stack" data-gap="md">
-      <h3 class="type-section-title">Overview</h3>
+      <h3 class="typography-heading-md">Overview</h3>
 
       <esa-text-field
         label="Title"
@@ -175,7 +175,7 @@ const yearStatusOptions = [
     </section>
 
     <section class="stack" data-gap="md">
-      <h3 class="type-section-title">Responsible parties</h3>
+      <h3 class="typography-heading-md">Responsible parties</h3>
 
       <div class="cbf-crs-edit-commitment-form__row">
         <esa-select label="Lead agency" multiple chip-mode placeholder="Select…" options={JSON.stringify(asOptions(leadAgencies))} data-field="leadAgency"></esa-select>
@@ -199,7 +199,7 @@ const yearStatusOptions = [
     </section>
 
     <section class="stack" data-gap="md">
-      <h3 class="type-section-title">Status by year</h3>
+      <h3 class="typography-heading-md">Status by year</h3>
       <div class="cbf-crs-edit-commitment-form__years grid" data-gap="sm">
         {YEARS.map((year) => (
           <esa-select
@@ -212,17 +212,17 @@ const yearStatusOptions = [
       </div>
     </section>
 
-    <p class="type-caption cbf-crs-edit-commitment-form__error" data-crs-edit-commitment-error hidden>
+    <p class="typography-meta cbf-crs-edit-commitment-form__error" data-crs-edit-commitment-error hidden>
       Enter a title and choose a category to continue.
     </p>
   </form>
 
   <div slot="footer">
     <span data-crs-edit-commitment-cancel>
-      <EsaButton color="ghost" appearance="outline">Cancel</EsaButton>
+      <EsaButton variant="ghost" appearance="outline">Cancel</EsaButton>
     </span>
     <span data-crs-edit-commitment-save>
-      <EsaButton color="primary">Save changes</EsaButton>
+      <EsaButton variant="primary">Save changes</EsaButton>
     </span>
   </div>
 </esa-dialog>
@@ -239,10 +239,10 @@ const yearStatusOptions = [
   }
   .cbf-crs-edit-commitment-form__number {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-crs-edit-commitment-form__error {
-    color: var(--color-danger-strong);
+    color: var(--color-content-utility-danger);
   }
   /* One compact select per tracked year — wraps to as many rows as the dialog
      width needs rather than one fixed 15-column strip (unlike the read-only

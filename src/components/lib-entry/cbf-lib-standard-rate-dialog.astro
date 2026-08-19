@@ -58,8 +58,8 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
         subject: "Lodging" sits under three trips, and a vendor cannot tell one
         dialog from another by its heading. */}
     <div class="cbf-lsr__subject stack" data-gap="3xs">
-      <h3 class="cbf-lsr__name type-card-title" data-std-name></h3>
-      <p class="cbf-lsr__scope type-body-small" data-std-scope></p>
+      <h3 class="cbf-lsr__name typography-title" data-std-name></h3>
+      <p class="cbf-lsr__scope typography-body-sm" data-std-scope></p>
     </div>
 
     <div class="stack" data-gap="sm">
@@ -84,30 +84,30 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
         help-text="Rates change every 1 October, so the claim has to say which year's schedule it is claiming."
       ></esa-select>
       {/* Said out loud, never silently: this destination is not on the list. */}
-      <p class="cbf-lsr__note type-body-small" data-std-seed hidden></p>
+      <p class="cbf-lsr__note typography-body-sm" data-std-seed hidden></p>
     </div>
 
     {/* What the two answers RESOLVE to, before the claim is made. This is the
         whole argument for the dialog: the vendor confirms a number, not a pair
         of dropdowns. */}
     <div class="cbf-lsr__result stack" data-gap="2xs">
-      <span class="cbf-lsr__result-label type-label">This line would be rated at</span>
+      <span class="cbf-lsr__result-label typography-label-xs">This line would be rated at</span>
       <span class="cluster" data-gap="sm">
         <strong class="cbf-lsr__amount" data-std-amount></strong>
         <span data-std-badge hidden>
           <EsaBadge value="Standard rate" variant="info" size="sm" />
         </span>
       </span>
-      <p class="cbf-lsr__note type-body-small" data-std-kept></p>
+      <p class="cbf-lsr__note typography-body-sm" data-std-kept></p>
     </div>
   </div>
 
   <div slot="footer" class="repel" data-gap="sm">
     <span data-std-cancel>
-      <EsaButton size="sm" color="secondary" appearance="outline">Cancel</EsaButton>
+      <EsaButton size="sm" variant="secondary" appearance="outline">Cancel</EsaButton>
     </span>
     <span data-std-confirm>
-      <EsaButton size="sm" color="primary">Use this standard rate</EsaButton>
+      <EsaButton size="sm" variant="primary">Use this standard rate</EsaButton>
     </span>
   </div>
 </esa-dialog>
@@ -270,7 +270,7 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
   .cbf-lsr__scope,
   .cbf-lsr__note {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     max-width: 46ch;
   }
   .cbf-lsr__field { display: block; }
@@ -280,13 +280,13 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
   .cbf-lsr__result {
     padding: var(--spacing-400);
     border-radius: var(--radius-200, 8px);
-    background: var(--color-surface-sunken);
+    background: var(--color-background-elevation-sunken);
   }
-  .cbf-lsr__result-label { color: var(--color-text-secondary); }
+  .cbf-lsr__result-label { color: var(--color-content-default-secondary); }
   .cbf-lsr__amount {
-    font-size: var(--type-size-500, 1.25rem);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-500, 1.25rem);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
   }
 </style>
