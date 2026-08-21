@@ -168,13 +168,13 @@ const hasDocHeader = Astro.slots.has('doc-header');
              strip on the submission form — they never type it, so there is nothing
              here for them to correct. -->
         <CbfInvoiceField field="vendor" label="Vendor" copy />
-        <!-- Invoice date and Amount are the vendor's own claims: read-only here (the
-             COR does not silently rewrite the bill), but flaggable, so a wrong figure
-             is returned to the vendor to fix rather than edited in place. -->
-        <CbfInvoiceField field="invoiceDate" label="Invoice date" copy flaggable />
-        <!-- Contract is reference, not invoice input: a read-only link out to the
-             contract record (opens in a new tab). Not editable, not flaggable. -->
-        <CbfInvoiceField field="contractNumber" label="Contract" copy />
+        <!-- Invoice date is editable in place; Amount is read-only but flaggable, so a
+             wrong total is returned to the vendor to fix rather than rewritten here. -->
+        <CbfInvoiceField field="invoiceDate" label="Invoice date" copy editable flaggable control="date" />
+        <!-- Contract is a read-only link out to the contract record (opens in a new
+             tab); not editable, but flaggable so the COR can raise an issue and return
+             the invoice with a comment. -->
+        <CbfInvoiceField field="contractNumber" label="Contract" copy flaggable />
         <!-- Project is DERIVED from the contract on the submission form (disabled,
              "Read-only — determined by the selected contract"). Objecting to it would
              ask the vendor to change a field their own form won't let them touch; if
@@ -381,7 +381,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
         <div class="stack" data-gap="sm" data-actions-return hidden>
           <esa-textarea
             data-return-reason
-            label="Comments for the vendor"
+            label="Comments"
             placeholder="e.g. the mileage rate exceeds the contract, or line 3 needs a receipt"
             rows="4"
           ></esa-textarea>
@@ -2253,10 +2253,8 @@ const hasDocHeader = Astro.slots.has('doc-header');
       // The optional Payment Request (PR) number the COR recorded on approval.
       const pr = (approvePr?.value ?? '').trim();
       const dec: Decision = {
-        variant: 'success', title: 'Approved', badge: 'Approved',
-        text: pr
-          ? `Routed to the Contracting Officer for payment · PR ${pr}.`
-          : 'Routed to the Contracting Officer for payment.',
+        variant: 'success', title: 'Invoice approved', badge: 'Approved',
+        text: pr ? `PR ${pr}` : '',
       };
       decision = dec;
       if (statusSlot) statusSlot.innerHTML = `<span class="cbf-grid-status">${stageHTML.get('Approved') ?? 'Approved'}</span>`;
