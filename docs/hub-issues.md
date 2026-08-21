@@ -551,3 +551,113 @@ the read-out on its own quiet line below the disclosure —
 `Allocated 100%  A. 119 60% · B. 157 40%` — with the separating rule suppressed
 while folded (`[data-alloc-list]:has(details[open]) + …`) so a collapsed card does
 not grow a hairline under a heading. Collapse to one row once the slot lands.
+
+---
+
+## Hub tooling — `doctor.mjs` / `migrations.json`
+
+### `mode="autocomplete"` is counted as a deprecated prop, but the hub asks you to write it
+
+**Status:** Open — needs upstream change. No local workaround; the 5 call sites are correct as written.
+**Affects:** `npm run doctor` in any spoke that took the `esa-combobox` default-flip guidance.
+
+**Problem:**
+`combobox-mode-select-to-select` lists `mode` in `deprecatedProps`, so `doctor.mjs`
+counts every `mode="…"` on an `esa-combobox` as a deprecated use. But
+`esa-combobox.ts:224` says the opposite for one value: after `mode` flipped its
+default from `select` to `autocomplete` on 2026-08-15, "writing `mode="autocomplete"`
+is both the confirmation and the way to silence this" runtime warning. A spoke that
+followed that instruction — this one, at 5 sites — now fails the doctor check for
+doing what the component told it to do, and the only way to clear the warning is to
+re-introduce the console warning the attribute exists to suppress.
+
+**Requested change:**
+Scope the deprecation to the value, not the prop: flag `mode="select"` and
+`triggerStyle`, and treat `mode="autocomplete"` as current. If `deprecatedProps`
+cannot express a value predicate, a `deprecatedPropValues` map keyed
+`{ mode: ['select'] }` would cover it, and `renameProp` already parses the
+attribute value it would need.
+
+---
+
+### `esa-app-bar`'s `class` prop still documents a hook removed in `app-bar-hooks-removed`
+
+**Status:** Open — docs-only, but it is the first thing a spoke author reads.
+**Affects:** Anyone re-skinning a bar per instance.
+
+**Problem:**
+`esa-app-bar.astro:46` documents the `class` prop as "Extra class on the root — e.g.
+to set `--app-bar-gap` per instance." `--app-bar-gap` was removed on 2026-08-16 by
+`app-bar-hooks-removed`, and the same file's `<style>` block now says the replacement
+is private on purpose: "These are `--_` prefixed for a reason: there is no public knob
+behind them any more … Density belongs in a variant, not a per-instance override."
+So the prop doc points at the exact override the style block forbids. A spoke follows
+the doc, the declaration silently does nothing, and nothing reports it.
+
+**Requested change:**
+Reword the prop doc to drop the example, and — since the style block names the
+intended replacement — consider shipping the `density` variant it alludes to.
+This spoke wanted two different gaps (40px on the admin tray, 64px on the header)
+and one tighter `padding-block` on short viewports for the map page; that is the
+concrete demand for such a variant.
+
+---
+
+### `doctor` fails on `--sidebar-width` even when `migrations.json` says to keep it
+
+**Status:** Open — needs upstream change. Nothing to fix locally; all 5 sites are correct.
+**Affects:** `npm run doctor` in any spoke using the `.sidebar` layout primitive.
+
+**Problem:**
+`sidebar-width-to-sidenav-width` retired the *semantic* `--sidebar-width`, and its own
+row leads with the instruction: "If your declaration sits on an element that carries
+the `.sidebar` LAYOUT PRIMITIVE class, KEEP IT EXACTLY AS IT IS — layouts.css still
+reads `--sidebar-width` and your override still works. Deleting it as inert is the one
+wrong move." This spoke has 5 such declarations, every one on an element carrying
+`.sidebar` and paired with `--sidebar-content-min`.
+
+`doctor.mjs` matches token rows by whole name with no scope, so it reports all 5 as
+REMOVED names read, and the check hard-FAILs. Following the migration correctly and
+failing the gate are the same state, which trains a reader to ignore a red line —
+the exact failure mode the `removed:true` rows exist to prevent.
+
+**Requested change:**
+Teach the scan the distinction the row already documents. Either (a) skip a
+`--sidebar-width` declaration whose rule also declares `--sidebar-content-min` (the
+primitive always ships the pair), or (b) let a migration row carry an
+`ambiguous: true` flag that downgrades it from FAIL to an informational line naming
+the call sites, since the row itself says a human must decide.
+
+---
+
+## @esa/tokens — colour ramps
+
+### The hub's `--color-gold-*` is Radix gold, and a spoke's same-named ramp vanished into it
+
+**Status:** Open — request. Worked around locally by restoring `--cbf-gold-*` in `theme-cb-fish.css`.
+**Affects:** Any spoke whose brand ramp shares a hue NAME with a Radix ramp.
+
+**Problem:**
+This spoke deleted its own gold ramp on the belief it had been promoted to the hub —
+`theme-cb-fish.css` carried the note "The gold ramp was promoted — use the hub's
+`--color-gold-*` directly." The hub's gold is **Radix** gold on a 1–12 scale and never
+carried CBFish's values. So `--color-gold-50`, `-200`, `-300`, `-900` resolved to
+nothing. Two sites had fallbacks and kept rendering; the three breadcrumb strips did
+not, so `background` was dropped whole and every strip rendered **white** — the
+brand's most repeated surface, wrong on every app page, with no error anywhere.
+
+Substituting the nearest Radix step is not a fix either: `--color-gold-2` (#faf9f2)
+pulls red up and blue down against CBFish's cool khaki #f8f8f4, and across a strip that
+wide it reads plainly yellow. Same name, different hue — which is exactly what made the
+original mistake look reasonable.
+
+**Requested change:**
+Two things, either of which would have caught it:
+1. A brand ramp promoted to the hub should keep its brand identity in the name
+   (`--color-cbf-gold-*`, or a semantic like `--color-background-breadcrumb`), so it
+   cannot silently collide with a Radix hue that happens to share a word.
+2. `doctor` already reports "tokens read here that the hub does not declare". Reads with
+   **no fallback** should be a FAIL, not part of that informational list — those are
+   dropped declarations, which is the silent-rendering class the `removed:true` rows
+   exist to prevent. A read with a fallback still renders and can stay a warning.
+

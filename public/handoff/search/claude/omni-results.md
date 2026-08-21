@@ -161,7 +161,8 @@ The palette mid-query — grouped results across types with scope pills, matched
           <p class="cbf-omni__hero-title">Search the Program</p>
           <p class="cbf-omni__hero-note">
             Find projects, contracts, people, and publications across the Columbia Basin.
-            Start typing, or press <kbd class="esa-kbd">Tab</kbd> to choose a scope.
+            Start typing, or press
+            <kbd class="esa-kbd typography-microcopy-xs">Tab</kbd> to choose a scope.
           </p>
         </div>
       </div>
@@ -616,10 +617,13 @@ The palette mid-query — grouped results across types with scope pills, matched
     </button>
     <div class="cbf-omni__footer">
       <div class="cbf-omni__hints">
-        <span><kbd class="esa-kbd">↑</kbd> <kbd class="esa-kbd">↓</kbd> Navigate</span>
-        <span><kbd class="esa-kbd">↵</kbd> Select</span>
-        <span><kbd class="esa-kbd">Tab</kbd> Scope</span>
-        <span><kbd class="esa-kbd">Esc</kbd> Close</span>
+        <span
+          ><kbd class="esa-kbd typography-microcopy-xs">↑</kbd>
+          <kbd class="esa-kbd typography-microcopy-xs">↓</kbd> Navigate</span
+        >
+        <span><kbd class="esa-kbd typography-microcopy-xs">↵</kbd> Select</span>
+        <span><kbd class="esa-kbd typography-microcopy-xs">Tab</kbd> Scope</span>
+        <span><kbd class="esa-kbd typography-microcopy-xs">Esc</kbd> Close</span>
       </div>
     </div>
   </div>
@@ -628,33 +632,6 @@ The palette mid-query — grouped results across types with scope pills, matched
 
 ## Styles
 ```css
-.cbf-search-surface .cbf-facet {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-250);
-  width: 100%;
-  padding: var(--spacing-200) var(--spacing-300);
-  border-radius: var(--radius-100);
-  color: var(--color-primary);
-  font-family: var(--font-sans);
-  font-size: 16px;
-  font-weight: var(--font-weight-regular);
-  text-align: left;
-}
-.cbf-search-surface .cbf-facet.is-active {
-  background: var(--color-primary-subtle);
-  font-weight: var(--font-weight-semibold);
-}
-.cbf-search-surface .cbf-facet .cbf-icon {
-  color: var(--color-secondary);
-}
-.cbf-search-surface .cbf-facet__label {
-  flex: 1;
-}
-.cbf-search-field .cbf-icon {
-  color: var(--color-text-muted);
-  display: inline-flex;
-}
 .cbf-omni-trigger {
   display: flex;
   align-items: center;
@@ -696,9 +673,9 @@ The palette mid-query — grouped results across types with scope pills, matched
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  font-family: var(--font-sans);
+  font-family: var(--typography-font-family-sans);
   font-size: 13px;
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--typography-font-weight-medium);
   color: #ffffffd9;
   background: #ffffff1f;
   border: 1px solid rgba(255, 255, 255, 0.25);
@@ -723,7 +700,7 @@ The palette mid-query — grouped results across types with scope pills, matched
 .cbf-search-surface .cbf-result-empty {
   padding: var(--spacing-600) var(--spacing-500);
   text-align: center;
-  color: var(--color-text-muted);
+  color: var(--color-content-default-tertiary);
   font-size: 15px;
 }
 .cbf-omni-trigger:hover {
@@ -745,7 +722,7 @@ The palette mid-query — grouped results across types with scope pills, matched
   margin: 56px auto 0;
   display: flex;
   flex-direction: column;
-  background: var(--color-surface);
+  background: var(--color-background-elevation-raised);
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 24px 64px #13273e52;
@@ -756,16 +733,16 @@ The palette mid-query — grouped results across types with scope pills, matched
   gap: var(--spacing-300);
   flex: none;
   padding: var(--spacing-300) var(--spacing-500);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-default);
 }
 .cbf-omni__input {
   flex: 1;
   border: 0;
   outline: 0;
   background: transparent;
-  font-family: var(--font-sans);
+  font-family: var(--typography-font-family-sans);
   font-size: 18px;
-  color: var(--color-text-primary);
+  color: var(--color-content-default);
 }
 .cbf-omni__input::placeholder {
   color: var(--cbf-text-placeholder);
@@ -778,8 +755,8 @@ The palette mid-query — grouped results across types with scope pills, matched
   height: 26px;
   border-radius: 999px;
   flex: none;
-  background: var(--color-surface-sunken);
-  color: var(--color-text-muted);
+  background: var(--color-background-elevation-sunken);
+  color: var(--color-content-default-tertiary);
 }
 .cbf-omni__scopes {
   display: flex;
@@ -787,7 +764,7 @@ The palette mid-query — grouped results across types with scope pills, matched
   gap: var(--spacing-200);
   flex: none;
   padding: var(--spacing-200) var(--spacing-500);
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-default);
 }
 .cbf-search-surface .cbf-scope-pill {
   display: inline-flex;
@@ -795,21 +772,21 @@ The palette mid-query — grouped results across types with scope pills, matched
   gap: 6px;
   padding: 5px var(--spacing-300);
   border-radius: 999px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-primary);
-  font-family: var(--font-sans);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-background-elevation-raised);
+  color: var(--color-background-brand);
+  font-family: var(--typography-font-family-sans);
   font-size: 13px;
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--typography-font-weight-medium);
   transition:
     background 0.1s,
     border-color 0.1s,
     color 0.1s;
 }
 .cbf-search-surface .cbf-scope-pill.is-active {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: var(--color-text-inverse, #fff);
+  background: var(--color-background-brand);
+  border-color: var(--color-background-brand);
+  color: var(--color-content-default-knockout, #fff);
 }
 .cbf-omni__body {
   flex: 1 1 auto;
@@ -839,34 +816,31 @@ The palette mid-query — grouped results across types with scope pills, matched
 }
 .cbf-omni__hero-title {
   margin: 0;
-  font-family: var(--font-display);
+  font-family: var(--typography-font-family-display);
   font-size: 22px;
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-primary);
+  font-weight: var(--typography-font-weight-semibold);
+  color: var(--color-background-brand);
 }
 .cbf-omni__hero-note {
   margin: 0;
   max-width: 420px;
   font-size: 14px;
   line-height: 1.55;
-  color: var(--color-text-muted);
+  color: var(--color-content-default-tertiary);
 }
 .esa-kbd {
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 19px;
   height: 19px;
   padding: 0 5px;
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: var(--font-weight-medium);
-  line-height: 1;
-  color: var(--kbd-color, var(--color-text-muted));
-  background: var(--kbd-bg, var(--color-surface));
-  border: 1px solid var(--kbd-border-color, var(--color-border));
+  color: var(--color-content-default-secondary, #646464);
+  background: var(--color-background-elevation-raised, #fcfcfc);
+  border: var(--border-width-default, 1px) solid var(--color-border-default, #cecece);
   border-bottom-width: 2px;
-  border-radius: var(--kbd-radius, 4px);
+  border-radius: var(--radius-sm, 0.25rem);
 }
 .cbf-omni__results {
   padding: var(--spacing-100) 0;
@@ -879,11 +853,11 @@ The palette mid-query — grouped results across types with scope pills, matched
   flex: none;
   width: 100%;
   padding: var(--spacing-300);
-  background: var(--color-primary);
-  color: var(--color-text-inverse, #fff);
-  font-family: var(--font-sans);
+  background: var(--color-background-brand);
+  color: var(--color-content-default-knockout, #fff);
+  font-family: var(--typography-font-family-sans);
   font-size: 15px;
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--typography-font-weight-semibold);
 }
 .cbf-omni__showall[hidden] {
   display: none;
@@ -894,8 +868,8 @@ The palette mid-query — grouped results across types with scope pills, matched
   justify-content: center;
   flex: none;
   padding: var(--spacing-200) var(--spacing-500);
-  border-top: 1px solid var(--color-border);
-  background: var(--color-surface-sunken);
+  border-top: 1px solid var(--color-border-default);
+  background: var(--color-background-elevation-sunken);
 }
 .cbf-omni__hints {
   display: flex;
@@ -906,11 +880,11 @@ The palette mid-query — grouped results across types with scope pills, matched
   align-items: center;
   gap: 5px;
   font-size: 13px;
-  color: var(--color-text-muted);
+  color: var(--color-content-default-tertiary);
 }
 .cbf-search-surface .cbf-scope-pill__count {
   opacity: 0.65;
-  font-weight: var(--font-weight-regular);
+  font-weight: var(--typography-font-weight-regular);
 }
 .cbf-omni__empty[hidden] {
   display: none;
@@ -923,9 +897,9 @@ The palette mid-query — grouped results across types with scope pills, matched
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-200) var(--spacing-500);
-  background: var(--color-surface-sunken);
-  border-top: 1px solid var(--color-border);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-background-elevation-sunken);
+  border-top: 1px solid var(--color-border-default);
+  border-bottom: 1px solid var(--color-border-default);
 }
 .cbf-search-surface .cbf-result-group:first-child .cbf-result-group__head {
   border-top: 0;
@@ -935,17 +909,17 @@ The palette mid-query — grouped results across types with scope pills, matched
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--typography-font-weight-semibold);
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: var(--color-text-primary);
+  color: var(--color-content-default);
 }
 .cbf-search-surface .cbf-result-group__title .cbf-icon {
-  color: var(--color-text-muted);
+  color: var(--color-content-default-tertiary);
 }
 .cbf-search-surface .cbf-result-group__count {
   font-size: 13px;
-  color: var(--color-text-muted);
+  color: var(--color-content-default-tertiary);
 }
 .cbf-search-surface .cbf-result {
   display: flex;
@@ -956,7 +930,7 @@ The palette mid-query — grouped results across types with scope pills, matched
 }
 .cbf-search-surface .cbf-result:hover,
 .cbf-search-surface .cbf-result.is-active {
-  background: var(--color-primary-subtle);
+  background: var(--color-background-brand-subtle);
 }
 .cbf-search-surface .cbf-result__body {
   flex: 1;
@@ -964,8 +938,8 @@ The palette mid-query — grouped results across types with scope pills, matched
 }
 .cbf-search-surface .cbf-result__title {
   font-size: 15px;
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
+  font-weight: var(--typography-font-weight-medium);
+  color: var(--color-content-default);
 }
 .cbf-search-surface .cbf-result__title mark {
   background: var(--cbf-search-highlight);
@@ -975,41 +949,69 @@ The palette mid-query — grouped results across types with scope pills, matched
 }
 .cbf-search-surface .cbf-result__sub {
   font-size: 13px;
-  color: var(--color-text-muted);
+  color: var(--color-content-default-tertiary);
   margin-top: 1px;
 }
 .cbf-search-surface .cbf-result__chevron {
-  color: var(--color-secondary);
+  color: var(--color-background-brand-muted);
   opacity: 0;
   flex: none;
 }
 .cbf-search-surface .cbf-result.is-active .cbf-result__chevron {
   opacity: 1;
 }
+.cbf-search-field .cbf-icon {
+  color: var(--color-content-default-tertiary);
+  display: inline-flex;
+}
+.typography-microcopy-xs {
+  font-family: var(--typography-microcopy-xs-font-family);
+  font-size: var(--typography-microcopy-xs-font-size);
+  font-weight: var(--typography-microcopy-xs-font-weight);
+  line-height: var(--typography-microcopy-xs-line-height);
+  letter-spacing: var(--typography-microcopy-xs-letter-spacing);
+}
+.cbf-search-surface .cbf-facet {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-250);
+  width: 100%;
+  padding: var(--spacing-200) var(--spacing-300);
+  border-radius: var(--radius-100);
+  color: var(--color-background-brand);
+  font-family: var(--typography-font-family-sans);
+  font-size: 16px;
+  font-weight: var(--typography-font-weight-regular);
+  text-align: left;
+}
+.cbf-search-surface .cbf-facet.is-active {
+  background: var(--color-background-brand-subtle);
+  font-weight: var(--typography-font-weight-semibold);
+}
+.cbf-search-surface .cbf-facet .cbf-icon {
+  color: var(--color-background-brand-muted);
+}
+.cbf-search-surface .cbf-facet__label {
+  flex: 1;
+}
 ```
 
 ## Tokens
+- `--border-width-default`: 1px _(semantic)_
 - `--cbf-search-highlight`: #ffe9b0 _(brand)_
 - `--cbf-text-placeholder`: #9aa3ad _(brand)_
-- `--color-border`: #dcdcdc _(semantic)_
-- `--color-primary`: #1e5386 _(semantic)_
-- `--color-primary-subtle`: #f3f7fc _(semantic)_
-- `--color-secondary`: #2770b2 _(semantic)_
-- `--color-surface`: #fcfcfc _(semantic)_
-- `--color-surface-sunken`: #f3f7fc _(semantic)_
-- `--color-text-inverse`: #fcfcfc _(semantic)_
-- `--color-text-muted`: #7c7c7c _(semantic)_
-- `--color-text-primary`: #3d3d3d _(semantic)_
-- `--font-display`: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif _(primitive)_
-- `--font-sans`: "IBM Plex Sans", sans-serif _(primitive)_
-- `--font-weight-medium`: 500 _(primitive)_
-- `--font-weight-regular`: 400 _(primitive)_
-- `--font-weight-semibold`: 600 _(primitive)_
-- `--kbd-bg`: #fcfcfc _(component)_
-- `--kbd-border-color`: #dcdcdc _(component)_
-- `--kbd-color`: #7c7c7c _(component)_
-- `--kbd-radius`: 4px _(component)_
+- `--color-background-brand`: #1e5386 _(semantic)_
+- `--color-background-brand-muted`: #2770b2 _(semantic)_
+- `--color-background-brand-subtle`: #f3f7fc _(semantic)_
+- `--color-background-elevation-raised`: #fcfcfc _(semantic)_
+- `--color-background-elevation-sunken`: #f3f7fc _(semantic)_
+- `--color-border-default`: #dcdcdc _(semantic)_
+- `--color-content-default`: #3d3d3d _(semantic)_
+- `--color-content-default-knockout`: #fcfcfc _(semantic)_
+- `--color-content-default-secondary`: #525252 _(semantic)_
+- `--color-content-default-tertiary`: #656565 _(semantic)_
 - `--radius-100`: .25rem _(primitive)_
+- `--radius-sm`: .25rem _(semantic)_
 - `--spacing-100`: .25rem _(primitive)_
 - `--spacing-200`: .5rem _(primitive)_
 - `--spacing-250`: .625rem _(primitive)_
@@ -1018,6 +1020,16 @@ The palette mid-query — grouped results across types with scope pills, matched
 - `--spacing-500`: 1.5rem _(primitive)_
 - `--spacing-600`: 2rem _(primitive)_
 - `--spacing-700`: 3rem _(primitive)_
+- `--typography-font-family-display`: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif _(semantic)_
+- `--typography-font-family-sans`: "IBM Plex Sans", sans-serif _(semantic)_
+- `--typography-font-weight-medium`: 500 _(semantic)_
+- `--typography-font-weight-regular`: 400 _(semantic)_
+- `--typography-font-weight-semibold`: 600 _(semantic)_
+- `--typography-microcopy-xs-font-family`: "IBM Plex Sans", sans-serif _(semantic)_
+- `--typography-microcopy-xs-font-size`: clamp(.625rem, .56rem + .32vw, .75rem) _(semantic)_
+- `--typography-microcopy-xs-font-weight`: 500 _(semantic)_
+- `--typography-microcopy-xs-letter-spacing`: .01em _(semantic)_
+- `--typography-microcopy-xs-line-height`: 1 _(semantic)_
 
 ## Behavior
 ```ts

@@ -30,7 +30,7 @@ const span = (r: { startFY: string; endFY: string }) =>
 ---
 <section class="cbf-baselines stack" data-gap="md" aria-label={`${FY.current} baseline budgets`}>
   <header class="repel">
-    <h2 class="type-section-title">{FY.current} baseline budgets</h2>
+    <h2 class="typography-heading-md">{FY.current} baseline budgets</h2>
   </header>
 
   {/* esa-stat forwards no extra attrs — the update hooks live on wrapper divs */}
@@ -84,7 +84,7 @@ const span = (r: { startFY: string; endFY: string }) =>
   </div>
 
   <footer>
-    <span class="type-caption">Showing {baselineRows.length} of {stats.activeProjects} projects</span>
+    <span class="typography-meta">Showing {baselineRows.length} of {stats.activeProjects} projects</span>
   </footer>
 </section>
 
@@ -101,7 +101,7 @@ const span = (r: { startFY: string; endFY: string }) =>
   /* Wide table scrolls inside its own frame; the page never scrolls sideways. */
   .cbf-baselines__scroll {
     overflow-x: auto;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200, 8px);
   }
   .cbf-baselines__table {
@@ -119,27 +119,27 @@ const span = (r: { startFY: string; endFY: string }) =>
   .cbf-baselines__comment {
     white-space: normal;
     min-width: 240px;
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
     font-size: 14px;
   }
   .cbf-baselines__table thead th {
-    background: var(--color-gray-50, #f4f5f7);
-    border-bottom: 1px solid var(--color-border);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    background: var(--color-gray-3);
+    border-bottom: 1px solid var(--color-border-default);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
   }
-  .cbf-baselines__table tbody tr + tr td { border-top: 1px solid var(--color-border); }
+  .cbf-baselines__table tbody tr + tr td { border-top: 1px solid var(--color-border-default); }
   .cbf-baselines__num { text-align: right; }
   .cbf-baselines__id {
-    font-weight: var(--font-weight-medium);
-    color: var(--color-primary);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-background-brand);
   }
   /* Row flash when the bulk upload fills a missing baseline. */
   .cbf-baselines__table tbody tr.is-updated td {
     animation: cbf-baseline-updated 1.6s ease-out 1;
   }
   @keyframes cbf-baseline-updated {
-    from { background: var(--color-primary-subtle); }
+    from { background: var(--color-background-brand-subtle); }
     to { background: transparent; }
   }
 </style>

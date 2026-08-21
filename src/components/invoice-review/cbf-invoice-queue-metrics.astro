@@ -57,7 +57,7 @@ const { overdue, awaitingReview, returned, recentlyApproved } = metrics;
 <style>
   .cbf-invoice-queue-metrics {
     padding-bottom: var(--spacing-500);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border-default);
   }
   .cbf-invoice-queue-metrics__row {
     /* Top-align the stats instead of the .cluster default (center). */
@@ -66,6 +66,6 @@ const { overdue, awaitingReview, returned, recentlyApproved } = metrics;
   }
   /* Overdue is a payment-timeliness alarm — tint its value danger. */
   .cbf-invoice-queue-metrics__overdue {
-    --stat-value-color: var(--color-danger, #b42318);
+    --stat-value-color: var(--color-background-utility-danger, #b42318);
   }
 </style>

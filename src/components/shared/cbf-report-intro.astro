@@ -44,7 +44,7 @@ const paragraphs = Array.isArray(body) ? body : [body];
     aspect-ratio: 3 / 2;   /* shorter, landscape frame */
     border-radius: var(--radius-100);
     overflow: hidden;
-    background: var(--color-surface-sunken);
+    background: var(--color-background-elevation-sunken);
   }
   /* cover-crop anchored to the BOTTOM (object-position: bottom) so the crop eats
      the TOP of the photo and keeps its lower focal point; fills the frame at any
@@ -66,14 +66,14 @@ const paragraphs = Array.isArray(body) ? body : [body];
     margin: 0;
     font-size: 24px;
     line-height: 1.4;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
   }
   .cbf-report-intro__body {
     margin: 0;
     font-size: 18px;
     line-height: 1.6;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
 
   /* Stack on narrow viewports — photo on top, prose below. */

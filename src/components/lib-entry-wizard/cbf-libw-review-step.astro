@@ -62,9 +62,9 @@ const t0 = priced.totals;
 
 <section class="cbf-libwr stack" data-gap="lg" data-step="review" data-step-kind="review" hidden>
   <header class="stack" data-gap="2xs">
-    <p class="cbf-libwr__ord type-body-small">Step {index} of {count}</p>
-    <h2 class="cbf-libwr__title type-page-title">Review &amp; submit</h2>
-    <p class="cbf-libwr__lede type-body">
+    <p class="cbf-libwr__ord typography-body-sm">Step {index} of {count}</p>
+    <h2 class="cbf-libwr__title typography-heading-lg">Review &amp; submit</h2>
+    <p class="cbf-libwr__lede typography-body-md">
       The whole budget, in the order you built it. Every line jumps back to the step it came
       from — the checks and the submit action are in the reconciliation rail beside this one.
     </p>
@@ -84,39 +84,39 @@ const t0 = priced.totals;
         <div class="cbf-libwr__row repel" data-gap="sm" data-summary-cat={cat.key}>
           <dt class="cbf-libwr__row-label">
             <span data-goto-step={stepIndexOf[cat.key]}>
-              <EsaButton size="sm" color="ghost">{cat.label}</EsaButton>
+              <EsaButton size="sm" variant="ghost">{cat.label}</EsaButton>
             </span>
             <span class="cbf-libwr__issues" data-summary-issues hidden></span>
           </dt>
-          <dd class="cbf-libwr__num type-body" data-summary-total={cat.key}>
+          <dd class="cbf-libwr__num typography-body-md" data-summary-total={cat.key}>
             {usd(priced.byCategory[cat.key] ?? 0)}
           </dd>
         </div>
       ))}
 
       <div class="cbf-libwr__row cbf-libwr__row--rule repel" data-gap="sm">
-        <dt class="type-body">Direct cost</dt>
-        <dd class="cbf-libwr__num type-body" data-total="direct">{usd(t0.direct)}</dd>
+        <dt class="typography-body-md">Direct cost</dt>
+        <dd class="cbf-libwr__num typography-body-md" data-total="direct">{usd(t0.direct)}</dd>
       </div>
       <div class="cbf-libwr__row repel" data-gap="sm">
-        <dt class="type-body">
+        <dt class="typography-body-md">
           Indirect base
-          <span class="cbf-libwr__quiet type-body-small" data-indirect-scope></span>
+          <span class="cbf-libwr__quiet typography-body-sm" data-indirect-scope></span>
         </dt>
-        <dd class="cbf-libwr__num type-body" data-total="indirectBase">{usd(t0.indirectBase)}</dd>
+        <dd class="cbf-libwr__num typography-body-md" data-total="indirectBase">{usd(t0.indirectBase)}</dd>
       </div>
       <div class="cbf-libwr__row repel" data-gap="sm">
-        <dt class="type-body">
+        <dt class="typography-body-md">
           Indirect at <span data-indirect-rate>{pct(indirectConfig.rate)}</span>
-          <span class="cbf-libwr__quiet type-body-small" data-indirect-ref>{indirectConfig.referenceDoc}</span>
+          <span class="cbf-libwr__quiet typography-body-sm" data-indirect-ref>{indirectConfig.referenceDoc}</span>
         </dt>
-        <dd class="cbf-libwr__num type-body" data-total="indirect">{usd(t0.indirect)}</dd>
+        <dd class="cbf-libwr__num typography-body-md" data-total="indirect">{usd(t0.indirect)}</dd>
       </div>
 
       <div class="cbf-libwr__row cbf-libwr__row--total repel" data-gap="sm">
         <dt>
           Total this contract period
-          <span class="cbf-libwr__quiet type-body-small" data-total-note>
+          <span class="cbf-libwr__quiet typography-body-sm" data-total-note>
             {pct(t0.pctOfValue, 1)} of the {usd(contract.contractValue)} Contract Value ·
             {' '}{usd(t0.remaining)} remaining
           </span>
@@ -137,42 +137,42 @@ const t0 = priced.totals;
 
   .cbf-libwr__ord {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
-  .cbf-libwr__title { margin: 0; color: var(--color-text-primary); }
+  .cbf-libwr__title { margin: 0; color: var(--color-content-default); }
   .cbf-libwr__lede {
     margin: 0;
     max-width: 78ch;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-libwr__quiet {
     display: block;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
 
   /* Read-only name/value rows — .repel does the layout, this only types them. */
   .cbf-libwr__rows { margin: 0; }
   .cbf-libwr__row { --align: baseline; align-items: baseline; }
-  .cbf-libwr__row dt { color: var(--color-text-primary); min-width: 0; }
+  .cbf-libwr__row dt { color: var(--color-content-default); min-width: 0; }
   .cbf-libwr__row dd { margin: 0; }
   .cbf-libwr__num {
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
   .cbf-libwr__row--rule {
     margin-block-start: var(--spacing-200);
     padding-block-start: var(--spacing-300);
-    border-block-start: 1px solid var(--color-border);
+    border-block-start: 1px solid var(--color-border-default);
   }
   .cbf-libwr__row--total {
     margin-block-start: var(--spacing-200);
     padding-block-start: var(--spacing-300);
-    border-block-start: 1px solid var(--color-border-strong);
+    border-block-start: 1px solid var(--color-border-default-strong);
     font-size: 16px;
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--typography-font-weight-semibold);
   }
 
   /* A category label is the way back to its step, so it is a button — pulled
@@ -191,7 +191,7 @@ const t0 = priced.totals;
   }
   [data-goto-step] :global(.esa-button__label) {
     text-decoration: underline;
-    text-decoration-color: var(--color-border-strong);
+    text-decoration-color: var(--color-border-default-strong);
     text-decoration-thickness: 1px;
     text-underline-offset: 3px;
   }

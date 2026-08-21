@@ -21,10 +21,9 @@ The component blocks composing this page. Hub (`esa-*`) components are the share
 | `cbf-search-surface` | spoke | — |
 | `cbf-welcome-hero` | spoke | src/components/cbfish-home/cbf-welcome-hero.astro |
 | `esa-app-bar` | hub | src/components/esa-app-bar.astro |
+| `esa-button` | hub | src/components/esa-button.astro |
 | `esa-card` | hub | src/components/esa-card.astro |
 | `esa-icon` | hub | src/components/esa-icon.astro |
-| `esa-icon-button` | hub | src/components/esa-icon-button.astro |
-| `esa-icon-link` | hub | src/components/esa-icon-link.astro |
 | `esa-kbd` | hub | src/components/esa-kbd.astro |
 | `esa-link-column` | hub | src/components/esa-link-column.astro |
 | `esa-nav-dropdown` | hub | src/components/esa-nav-dropdown.astro |

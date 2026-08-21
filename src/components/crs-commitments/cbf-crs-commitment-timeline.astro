@@ -31,7 +31,7 @@
 //
 // bcn-lego-checked: the status chips ARE esa-pill and the surface IS esa-card — no
 // reinvented pill/card. The only bespoke CSS is layout scaffolding (a .grid of
-// centered year columns) + a light current-year tint reading --color-surface-sunken;
+// centered year columns) + a light current-year tint reading --color-background-elevation-sunken;
 // no esa- lego lays out a fixed year-column strip. Checked Beacon (no timeline
 // widget). cbf-crs-commitment-timeline is the reusable home for the section.
 import '@esa/tokens/layouts.css';
@@ -65,7 +65,7 @@ const statusOrder = ['Not Started', 'In Progress', 'Delayed', 'Future', 'Complet
               class:list={['cbf-timeline__year', { 'is-current': isCurrent }]}
               role="listitem"
             >
-              <span class="cbf-timeline__label type-label">
+              <span class="cbf-timeline__label typography-label-xs">
                 {year}{isCurrent && <span class="cbf-timeline__now">now</span>}
               </span>
               <span data-crs-timeline-value={year}>
@@ -117,27 +117,27 @@ const statusOrder = ['Not Started', 'In Progress', 'Delayed', 'Future', 'Complet
 
   /* Current year: quiet tint + a bold label — subtle, no saturated block. */
   .cbf-timeline__year.is-current {
-    background: var(--color-surface-sunken);
+    background: var(--color-background-elevation-sunken);
   }
   .cbf-timeline__year.is-current .cbf-timeline__label {
-    font-weight: var(--font-weight-bold);
+    font-weight: var(--typography-font-weight-bold);
   }
 
   .cbf-timeline__label {
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-100);
   }
 
   .cbf-timeline__now {
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-primary);
+    font-size: var(--font-size-150);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-background-brand);
   }
 
   .cbf-timeline__none {
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
     line-height: 1;
   }
 </style>

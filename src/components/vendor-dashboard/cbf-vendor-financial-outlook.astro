@@ -25,8 +25,8 @@ const { stats, caption } = Astro.props;
 ---
 <section class="cbf-vendor-financial-outlook stack" data-gap="sm" aria-label="Financial outlook">
   <header class="cbf-vendor-financial-outlook__head repel">
-    <h2 class="type-section-title">Financial outlook</h2>
-    <span class="type-caption cbf-vendor-financial-outlook__caption">{caption}</span>
+    <h2 class="typography-heading-md">Financial outlook</h2>
+    <span class="typography-meta cbf-vendor-financial-outlook__caption">{caption}</span>
   </header>
 
   <div class="cbf-vendor-financial-outlook__stats cluster" data-gap="xl">
@@ -37,7 +37,7 @@ const { stats, caption } = Astro.props;
 <style>
   .cbf-vendor-financial-outlook {
     padding-bottom: var(--spacing-600);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border-default);
   }
   .cbf-vendor-financial-outlook__head {
     align-items: baseline;
@@ -45,7 +45,7 @@ const { stats, caption } = Astro.props;
     flex-wrap: wrap;
   }
   .cbf-vendor-financial-outlook__caption {
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
   }
   /* Let the metrics breathe into a row, wrapping on narrow viewports. */
   .cbf-vendor-financial-outlook__stats {

@@ -1,7 +1,7 @@
 ---
 // cbf-public-nav — CBFish's two-tier public chrome, assembled from ecology
 // bricks. No structural CSS, no brand values: the look comes from the theme
-// re-pointing --color-primary (header) and --color-surface-inverse (admin bar).
+// re-pointing --color-background-brand (header) and --color-background-default-knockout (admin bar).
 //
 // CBF-8117: search moved OUT of the blue header and UP into the dark admin tray
 // (centered), freeing the header for the Recent menu, My Work, and the user —
@@ -19,8 +19,8 @@
 // chrome rather than esa-icon-link: it needs the `history` glyph (absent from the
 // hub icon set) and the user menu's markup is rewritten live during impersonation.
 import EsaAppBar from '@esa/ecology/esa-app-bar.astro';
-import EsaIconLink from '@esa/ecology/esa-icon-link.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconLink from '@esa/ecology/esa-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import EsaNavDropdown from '@esa/ecology/esa-nav-dropdown.astro';
 import EsaLinkColumn from '@esa/ecology/esa-link-column.astro';
 import CbfLogo from './cbf-logo.astro';
@@ -38,9 +38,9 @@ const based = (links: NavLink[]): NavLink[] =>
 ---
 <EsaAppBar tone="brand-strong" as="nav" class="cbf-app-bar--admin">
   <div class="cbf-nav-collapsible" slot="start">
-    <EsaIconLink size="sm" icon="database" trailing="chevron-down">Data management</EsaIconLink>
-    <EsaIconLink size="sm" icon="activity" trailing="chevron-down">System status</EsaIconLink>
-    <EsaIconLink size="sm" icon="settings" trailing="chevron-down">System configuration</EsaIconLink>
+    <EsaIconLink variant="chrome" size="sm" icon="database" iconRight="chevron-down">Data management</EsaIconLink>
+    <EsaIconLink variant="chrome" size="sm" icon="activity" iconRight="chevron-down">System status</EsaIconLink>
+    <EsaIconLink variant="chrome" size="sm" icon="settings" iconRight="chevron-down">System configuration</EsaIconLink>
   </div>
   <CbfOmniTrigger />
   <div class="cbf-nav-collapsible" slot="end">
@@ -53,7 +53,7 @@ const based = (links: NavLink[]): NavLink[] =>
 <EsaAppBar tone="brand" as="header" class="cbf-app-bar--header">
   <Fragment slot="start">
     <span class="cbf-nav-burger" data-nav-toggle>
-      <EsaIconButton icon="menu" label="Open menu" />
+      <EsaIconButton variant="chrome" iconOnly icon="menu" label="Open menu" />
     </span>
     <CbfLogo />
   </Fragment>
@@ -131,7 +131,7 @@ const based = (links: NavLink[]): NavLink[] =>
     background: none;
     border: 0;
     font-size: 16px;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--typography-font-weight-medium);
     white-space: nowrap;
   }
   .cbf-nav-link:hover {
@@ -188,10 +188,11 @@ const based = (links: NavLink[]): NavLink[] =>
 
 <style is:global>
   /* Admin tray: 3-column grid so the search trigger sits dead-center between the
-     left admin links and Help, regardless of their differing widths. Also tighten
-     the bar's vertical padding (the gap is set in theme-cb-fish.css). */
+     left admin links and Help, regardless of their differing widths. The bar's
+     own gap and vertical padding are the hub's now — the app-bar-pad-y hook went
+     out with app-bar-gap in app-bar-hooks-removed, so the tray sits at the stock
+     16px block padding until the density variant lands. */
   .cbf-app-bar--admin {
-    --app-bar-pad-y: var(--spacing-300);
   }
   .cbf-app-bar--admin .esa-app-bar__row {
     display: grid;
@@ -221,8 +222,8 @@ const based = (links: NavLink[]): NavLink[] =>
     margin-right: 2px;
     border-radius: 999px;
     background: var(--cbf-amber-attention);
-    color: var(--color-surface-inverse, #13273e);
+    color: var(--color-background-default-knockout, #13273e);
     font-size: 13px;
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--typography-font-weight-semibold);
   }
 </style>

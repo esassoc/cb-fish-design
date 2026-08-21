@@ -38,7 +38,7 @@
  * what this file owns is composition only. Beacon is not cloned on this machine.
  */
 import EsaButton from '@esa/ecology/esa-button.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 import CbfLibwLineForm from './cbf-libw-line-form.astro';
@@ -78,9 +78,9 @@ const hasLines = lines.some((l) => l.category === cat.key);
   hidden
 >
   <header class="stack" data-gap="2xs">
-    <p class="cbf-libws__ord type-body-small">Step {index} of {count}</p>
-    <h2 class="cbf-libws__title type-page-title">{cat.label}</h2>
-    {cat.note && <p class="cbf-libws__lede type-body">{cat.note}</p>}
+    <p class="cbf-libws__ord typography-body-sm">Step {index} of {count}</p>
+    <h2 class="cbf-libws__title typography-heading-lg">{cat.label}</h2>
+    {cat.note && <p class="cbf-libws__lede typography-body-md">{cat.note}</p>}
   </header>
 
   {cat.derived && (
@@ -105,12 +105,12 @@ const hasLines = lines.some((l) => l.category === cat.key);
       >
         <div class="cbf-libws__block-head repel" data-gap="sm">
           <span class="stack" data-gap="3xs">
-            <h3 class="cbf-libws__block-title type-card-title" data-block-label>{block.label}</h3>
+            <h3 class="cbf-libws__block-title typography-title" data-block-label>{block.label}</h3>
             {/* A sub-block that states a RULE says it here. The two equipment
                 classes do, because which one an item lands in decides whether
                 the indirect rate reaches it and whether it becomes tracked
                 property — not a filing detail. */}
-            {block.note && <p class="cbf-libws__quiet type-body-small">{block.note}</p>}
+            {block.note && <p class="cbf-libws__quiet typography-body-sm">{block.note}</p>}
           </span>
           <span class="cluster" data-gap="sm">
             <strong class="cbf-libws__block-total" data-block-total={`${cat.key}:${block.key}`}>
@@ -130,10 +130,10 @@ const hasLines = lines.some((l) => l.category === cat.key);
                  every line. */
               <>
                 <span data-ungroup-trip>
-                  <EsaButton size="xs" color="secondary" appearance="soft">Delete trip, keep lines</EsaButton>
+                  <EsaButton size="xs" variant="secondary" appearance="soft">Delete trip, keep lines</EsaButton>
                 </span>
                 <span data-delete-trip>
-                  <EsaIconButton icon="trash-2" size="sm" label={`Delete trip and its lines — ${block.label}`} />
+                  <EsaIconButton variant="chrome" iconOnly icon="trash-2" size="sm" label={`Delete trip and its lines — ${block.label}`} />
                 </span>
               </>
             )}
@@ -176,7 +176,7 @@ const hasLines = lines.some((l) => l.category === cat.key);
           /* The ungrouped block is a block like any other, which is the whole
              reason it IS one — same container, same add menu, no trip fields. */
           <esa-dropdown-menu position="below-start" data-add-travel={block.key}>
-            <EsaButton size="sm" color="secondary" appearance="soft" icon="plus">
+            <EsaButton size="sm" variant="secondary" appearance="soft" icon="plus">
               Add travel line
             </EsaButton>
           </esa-dropdown-menu>
@@ -225,23 +225,23 @@ const hasLines = lines.some((l) => l.category === cat.key);
            that to say, and making the vendor invent a journey to hold it is the
            cost the second control removes. */
         <>
-          <EsaButton size="sm" color="primary" appearance="outline" icon="plus" data-add-trip>
+          <EsaButton size="sm" variant="primary" appearance="outline" icon="plus" data-add-trip>
             Add trip
           </EsaButton>
           <esa-dropdown-menu position="below-start" data-add-travel={NO_TRIP}>
-            <EsaButton size="sm" color="secondary" appearance="soft" icon="plus">
+            <EsaButton size="sm" variant="secondary" appearance="soft" icon="plus">
               Add line without a trip
             </EsaButton>
           </esa-dropdown-menu>
         </>
       ) : cat.shapes.length > 1 || cat.blocks ? (
         <esa-dropdown-menu position="below-start" data-add-menu={cat.key}>
-          <EsaButton size="sm" color="primary" appearance="outline" icon="plus">Add line</EsaButton>
+          <EsaButton size="sm" variant="primary" appearance="outline" icon="plus">Add line</EsaButton>
         </esa-dropdown-menu>
       ) : (
         <EsaButton
           size="sm"
-          color="primary"
+          variant="primary"
           appearance="outline"
           icon="plus"
           data-add-line={`${cat.key}||${cat.shapes[0]}|`}
@@ -254,8 +254,8 @@ const hasLines = lines.some((l) => l.category === cat.key);
        vendor hold nine subtotals in their head to know where the money went. -->
   <div class="cbf-libws__subtotal repel" data-gap="sm">
     <span class="stack" data-gap="3xs">
-      <span class="cbf-libws__subtotal-label type-body">{cat.label} subtotal</span>
-      <span class="cbf-libws__quiet type-body-small" data-step-count></span>
+      <span class="cbf-libws__subtotal-label typography-body-md">{cat.label} subtotal</span>
+      <span class="cbf-libws__quiet typography-body-sm" data-step-count></span>
     </span>
     <strong class="cbf-libws__subtotal-value" data-cat-total={cat.key}>
       {usd(priced.byCategory[cat.key] ?? 0)}
@@ -271,24 +271,24 @@ const hasLines = lines.some((l) => l.category === cat.key);
 
   .cbf-libws__ord {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
   .cbf-libws__title {
     margin: 0;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
   /* The step's standing rule, at full body size — this is the one place the
      category's vocabulary gets explained, so it is not a footnote. */
   .cbf-libws__lede {
     margin: 0;
     max-width: 78ch;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
   .cbf-libws__quiet {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     max-width: 70ch;
   }
 
@@ -299,25 +299,25 @@ const hasLines = lines.some((l) => l.category === cat.key);
     --align: baseline;
     align-items: baseline;
     padding-block-end: var(--spacing-200);
-    border-block-end: 1px solid var(--color-border);
+    border-block-end: 1px solid var(--color-border-default);
   }
   .cbf-libws__block-title {
     margin: 0;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
   .cbf-libws__block-total {
     font-variant-numeric: tabular-nums;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
     white-space: nowrap;
   }
 
   /* The trip container reads as the frame its lines sit inside. */
   .cbf-libws__trip {
     padding: var(--spacing-400);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
-    background: var(--color-surface-sunken);
+    background: var(--color-background-elevation-sunken);
   }
   .cbf-libws__row {
     display: flex;
@@ -332,18 +332,18 @@ const hasLines = lines.some((l) => l.category === cat.key);
     --align: center;
     align-items: center;
     padding: var(--spacing-400);
-    border: 1px solid var(--color-border-strong);
+    border: 1px solid var(--color-border-default-strong);
     border-radius: var(--radius-200);
-    background: var(--color-surface-sunken);
+    background: var(--color-background-elevation-sunken);
   }
   .cbf-libws__subtotal-label {
-    color: var(--color-text-primary);
-    font-weight: var(--font-weight-medium);
+    color: var(--color-content-default);
+    font-weight: var(--typography-font-weight-medium);
   }
   .cbf-libws__subtotal-value {
-    font-size: var(--type-size-500);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-500);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }

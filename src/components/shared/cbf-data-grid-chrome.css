@@ -22,7 +22,7 @@
   flex-wrap: wrap;
 }
 .cbf-data-grid__count-label {
-  color: var(--color-text-muted);
+  color: var(--color-content-default-tertiary);
 }
 
 .cbf-data-grid__controls {
@@ -39,8 +39,8 @@
   flex-direction: column;
   gap: var(--spacing-150);
 }
-.cbf-data-grid__filter .type-caption {
-  color: var(--color-text-muted);
+.cbf-data-grid__filter .typography-meta {
+  color: var(--color-content-default-tertiary);
   white-space: nowrap;
 }
 .cbf-data-grid__search {
@@ -52,15 +52,15 @@
 /* The grid wrapper owns the framed surface; AG Grid's own border is disabled
    via the theme so the frame reads like the rest of the spoke's data cards. */
 .cbf-data-grid__grid {
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-default);
   border-radius: var(--radius-200);
   overflow: hidden;
-  background: var(--color-surface);
+  background: var(--color-background-elevation-raised);
 }
 
 .cbf-data-grid__footer {
   align-items: center;
-  color: var(--color-text-muted);
+  color: var(--color-content-default-tertiary);
 }
 
 /* AG Grid status cell: a cloned esa-pill sits in a flex cell so it centers
@@ -76,15 +76,15 @@
 }
 /* Row links to a detail page - brand-colored, underline on hover. */
 .cbf-data-grid__grid .cbf-grid-link {
-  color: var(--color-primary-strong, var(--color-primary));
+  color: var(--color-content-brand, var(--color-background-brand));
   text-decoration: none;
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--typography-font-weight-medium);
 }
 .cbf-data-grid__grid .cbf-grid-link:hover {
   text-decoration: underline;
 }
 .cbf-data-grid__grid .cbf-grid-link:focus-visible {
-  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--color-primary));
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--color-background-brand));
   outline-offset: 2px;
   border-radius: var(--radius-050, 2px);
 }

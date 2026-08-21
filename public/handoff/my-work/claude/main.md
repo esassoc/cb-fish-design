@@ -1,0 +1,4206 @@
+# Main
+
+Re-implement this UI section faithfully on your stack. Keep the CSS custom-property
+names (`var(--…)`) so it stays themeable — the values below are the resolved
+`cb-fish` theme of the **my-work** design system (an ESA Ecology spoke).
+
+- **Source prototype:** http://localhost:4787/cb-fish-design/my-work/
+- **Section element:** `<main>`
+- **Components:** cbf-app-panel (spoke), cbf-icon (spoke), cbf-invoice-doc (spoke), cbf-invoice-queue-metrics (spoke), cbf-invoice-review-queue (spoke), cbf-my-invoices (spoke), cbf-my-portfolio (spoke), cbf-mywork-tabs (spoke), cbf-num (spoke), cbf-page (spoke), cbf-pe-band (spoke), cbf-pe-baseline (spoke), cbf-pe-col (spoke), cbf-pe-count (spoke), cbf-pe-crumb-cur (spoke), cbf-pe-detail (spoke), cbf-pe-dot (spoke), cbf-pe-dot-templates (spoke), cbf-pe-empty (spoke), cbf-pe-list (spoke), cbf-pe-pill-templates (spoke), cbf-pe-prompt (spoke), cbf-pe-row (spoke), cbf-portfolio-explorer (spoke), cbf-portfolio-explorer-section (spoke), cbf-portfolio-health (spoke), cbf-review (spoke), cbf-review-attachments (spoke), cbf-review-deadline (spoke), cbf-review-dialog (spoke), cbf-review-docpane (spoke), cbf-review-fields (spoke), cbf-review-footer (spoke), cbf-review-hero (spoke), cbf-review-money (spoke), cbf-review-panel (spoke), cbf-review-process (spoke), cbf-review-split (spoke), cbf-search-field (spoke), cbf-task-queue (spoke), cbf-task-risk-band (spoke), esa-alert-box (hub), esa-badge (hub), esa-breadcrumbs (hub), esa-button (hub), esa-container (hub), esa-empty-state (hub), esa-icon (hub), esa-page-header (hub), esa-pill (hub), esa-progress-bar (hub), esa-stat (hub)
+
+## Markup (de-scoped, framework-free)
+```html
+<main class="cbf-page">
+  <div class="esa-container typography-body-md" style="--_container-max: 1920px">
+    <section class="cbf-app-panel">
+      <div class="cbf-app-panel__crumb">
+        <nav class="esa-breadcrumbs esa-breadcrumbs--md" aria-label="Breadcrumb">
+          <ol class="esa-breadcrumbs__list">
+            <li class="esa-breadcrumbs__item">
+              <a href="/cb-fish-design/home" class="esa-breadcrumbs__link typography-body-md">
+                <span class="esa-breadcrumbs__icon"
+                  ><svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <path d="M9 22V12h6v10"></path></svg
+                ></span>
+                Home
+              </a>
+              <svg
+                class="esa-breadcrumbs__separator"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m9 18 6-6-6-6"></path>
+              </svg>
+            </li>
+            <li class="esa-breadcrumbs__item" aria-current="page">
+              <span class="esa-breadcrumbs__current typography-label-md"> Dashboard </span>
+            </li>
+          </ol>
+        </nav>
+      </div>
+      <div class="cbf-app-panel__body">
+        <div class="cbf-app-panel__content">
+          <header class="esa-page-header">
+            <div class="esa-page-header__bar">
+              <div class="esa-page-header__titles">
+                <p class="esa-page-header__eyebrow typography-label-md">
+                  <span>James Whitfield · Contracting Officer's Representative</span>
+                </p>
+                <h1 class="esa-page-header__title typography-heading-lg">Dashboard: My Tasks</h1>
+              </div>
+            </div>
+          </header>
+          <script type="module">
+            document.addEventListener(
+              "click",
+              (t) => {
+                const s = t.target.closest?.("[data-esa-pill-remove]");
+                if (!s) return;
+                t.stopPropagation();
+                const e = s.closest(".esa-pill");
+                e && (e.dispatchEvent(new CustomEvent("removed", { bubbles: !0 })), e.remove());
+              },
+              !0,
+            );
+          </script>
+          <script type="module">
+            (function () {
+              document.querySelectorAll(".cbf-task-queue").forEach((n) => {
+                n.addEventListener("click", (c) => {
+                  const e = c.target.closest("[data-open-invoice]");
+                  if (!e) return;
+                  const t = e.dataset.openInvoice;
+                  t &&
+                    e.dispatchEvent(
+                      new CustomEvent("cbf:open-invoice", {
+                        bubbles: !0,
+                        composed: !0,
+                        detail: { number: t },
+                      }),
+                    );
+                });
+              });
+            })();
+          </script>
+          <script type="module">
+            document.addEventListener("click", (o) => {
+              const n = o.target.closest?.("[data-esa-alert-dismiss]");
+              if (!n) return;
+              const t = n.closest(".esa-alert-box");
+              if (!t) return;
+              const s = Array.from(document.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
+                  (e) => !t.contains(e) && e.offsetParent !== null,
+                ),
+                r =
+                  s.find((e) => t.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING) ??
+                  s[s.length - 1];
+              ((t.style.display = "none"),
+                t.dispatchEvent(new CustomEvent("dismissed", { bubbles: !0 })),
+                r?.focus());
+            });
+          </script>
+          <script type="module">
+            document.querySelectorAll("[data-overdue-toggle]").forEach((e) => {
+              e.addEventListener("click", () => {
+                const t = e.getAttribute("aria-pressed") !== "true";
+                (e.setAttribute("aria-pressed", String(t)),
+                  e.dispatchEvent(
+                    new CustomEvent("cbf:queue-filter", { bubbles: !0, detail: { overdue: t } }),
+                  ));
+              });
+            });
+          </script>
+          <script
+            type="module"
+            src="/cb-fish-design/_astro/cbf-invoice-review-queue.astro_astro_type_script_index_0_lang.DlE-TSVn.js"
+          ></script>
+          <script type="module">
+            document.querySelectorAll(".cbf-my-invoices").forEach((e) => {
+              const t = e.querySelector(".cbf-invoice-review-queue");
+              t &&
+                e.addEventListener("cbf:queue-filter", (i) => {
+                  const c = i;
+                  c.target?.closest?.(".cbf-invoice-review-queue") ||
+                    t.dispatchEvent(new CustomEvent("cbf:queue-filter", { detail: c.detail }));
+                });
+            });
+          </script>
+          <script
+            type="module"
+            src="/cb-fish-design/_astro/cbf-portfolio-explorer.astro_astro_type_script_index_0_lang.BnecOgeH.js"
+          ></script>
+          <script
+            type="module"
+            src="/cb-fish-design/_astro/cbf-my-portfolio.astro_astro_type_script_index_0_lang.DCD6HaiX.js"
+          ></script>
+          <esa-tab-layout
+            class="cbf-mywork-tabs"
+            size="lg"
+            appearance="segmented"
+            active-index="0"
+            tabs='[{"label":"My Tasks","badge":9},{"label":"My Invoices","badge":"1 overdue"},{"label":"My Portfolio","badge":3}]'
+            data-title-prefix="Dashboard"
+            variant="underline"
+          >
+            <div slot="panel-0" class="cbf-mywork-tabs__panel stack" data-gap="lg">
+              <section class="cbf-task-queue stack" data-gap="md" aria-label="Action queue">
+                <!-- Section header: title + actionable item caption -->
+                <header class="cbf-task-queue__head repel">
+                  <h2 class="typography-heading-md">Action queue</h2>
+                  <span class="typography-meta cbf-task-queue__count" aria-live="polite">
+                    9 items waiting on you
+                  </span>
+                </header>
+                <!-- Semantic ordered list — order is meaningful (overdue first) -->
+                <ol class="cbf-task-queue__list" role="list">
+                  <li class="cbf-task-queue__row" data-task-id="task-sr-lg-q1-2026">
+                    <!-- Main content: what + meta -->
+                    <span class="cbf-task-queue__body stack" data-gap="xs">
+                      <span class="cbf-task-queue__what typography-body-md"
+                        >Approve or reject Q1 2026 Status Report — PIT Tag Detection System
+                        O&amp;M</span
+                      >
+                      <span class="cbf-task-queue__meta typography-meta">
+                        PIT Tag Detection System O&amp;M — Lower Granite · Lower Granite Dam Passage
+                        · Pacific States Marine Fisheries Commission
+                      </span>
+                    </span>
+                    <!-- Due-state pill -->
+                    <span class="cbf-task-queue__due">
+                      <span class="esa-pill esa-pill--danger esa-pill--sm typography-microcopy-xs">
+                        <span class="esa-pill__label">4 days past due</span>
+                      </span>
+                    </span>
+                    <!-- Trailing action (omitted for waiting rows) -->
+                    <span class="cbf-task-queue__action">
+                      <span
+                        class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--sm"
+                        ><a
+                          class="esa-button__native typography-microcopy-xs"
+                          href="#"
+                          role="button"
+                          ><span class="esa-button__label">Review report</span></a
+                        ></span
+                      >
+                    </span>
+                  </li>
+                  <li class="cbf-task-queue__row" data-task-id="task-inv-INV-2026-0047">
+                    <!-- Main content: what + meta -->
+                    <span class="cbf-task-queue__body stack" data-gap="xs">
+                      <span class="cbf-task-queue__what typography-body-md"
+                        >Review &amp; approve invoice INV-2026-0047</span
+                      >
+                      <span class="cbf-task-queue__meta typography-meta">
+                        Riparian Vegetation Monitoring — Methow · Methow Restoration Partners ·
+                        $3,960.00
+                      </span>
+                    </span>
+                    <!-- Due-state pill -->
+                    <span class="cbf-task-queue__due">
+                      <span class="esa-pill esa-pill--danger esa-pill--sm typography-microcopy-xs">
+                        <span class="esa-pill__label">2 days past due</span>
+                      </span>
+                    </span>
+                    <!-- Trailing action (omitted for waiting rows) -->
+                    <span class="cbf-task-queue__action" data-open-invoice="INV-2026-0047">
+                      <span
+                        class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--sm"
+                        ><button class="esa-button__native typography-microcopy-xs" type="button">
+                          <span class="esa-button__label">Review &amp; approve</span>
+                        </button></span
+                      >
+                    </span>
+                  </li>
+                  <li class="cbf-task-queue__row" data-task-id="task-inv-INV-2026-0049">
+                    <!-- Main content: what + meta -->
+                    <span class="cbf-task-queue__body stack" data-gap="xs">
+                      <span class="cbf-task-queue__what typography-body-md"
+                        >Review &amp; approve invoice INV-2026-0049</span
+                      >
+                      <span class="cbf-task-queue__meta typography-meta">
+                        Smolt Survival Telemetry Study · Cascade Fisheries Consulting · $12,480.00
+                      </span>
+                    </span>
+                    <!-- Due-state pill -->
+                    <span class="cbf-task-queue__due">
+                      <span class="esa-pill esa-pill--warning esa-pill--sm typography-microcopy-xs">
+                        <span class="esa-pill__label">Due in 1 day</span>
+                      </span>
+                    </span>
+                    <!-- Trailing action (omitted for waiting rows) -->
+                    <span class="cbf-task-queue__action" data-open-invoice="INV-2026-0049">
+                      <span
+                        class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--sm"
+                        ><button class="esa-button__native typography-microcopy-xs" type="button">
+                          <span class="esa-button__label">Review &amp; approve</span>
+                        </button></span
+                      >
+                    </span>
+                  </li>
+                  <li class="cbf-task-queue__row" data-task-id="task-inv-INV-2026-0051">
+                    <!-- Main content: what + meta -->
+                    <span class="cbf-task-queue__body stack" data-gap="xs">
+                      <span class="cbf-task-queue__what typography-body-md"
+                        >Review &amp; approve invoice INV-2026-0051</span
+                      >
+                      <span class="cbf-task-queue__meta typography-meta">
+                        Salmon Habitat Restoration — Wenatchee · Pacific Environmental Services, LLC
+                        · $6,120.00
+                      </span>
+                    </span>
+                    <!-- Due-state pill -->
+                    <span class="cbf-task-queue__due">
+                      <span class="esa-pill esa-pill--warning esa-pill--sm typography-microcopy-xs">
+                        <span class="esa-pill__label">Due in 2 days</span>
+                      </span>
+                    </span>
+                    <!-- Trailing action (omitted for waiting rows) -->
+                    <span class="cbf-task-queue__action" data-open-invoice="INV-2026-0051">
+                      <span
+                        class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--sm"
+                        ><button class="esa-button__native typography-microcopy-xs" type="button">
+                          <span class="esa-button__label">Review &amp; approve</span>
+                        </button></span
+                      >
+                    </span>
+                  </li>
+                  <li class="cbf-task-queue__row" data-task-id="task-ec-wenatchee-hip">
+                    <!-- Main content: what + meta -->
+                    <span class="cbf-task-queue__body stack" data-gap="xs">
+                      <span class="cbf-task-queue__what typography-body-md"
+                        >Fulfill HIP gate EC requirements — Wenatchee Riparian Restoration WE</span
+                      >
+                      <span class="cbf-task-queue__meta typography-meta">
+                        Salmon Habitat Restoration — Wenatchee · Wenatchee Subbasin
+                      </span>
+                    </span>
+                    <!-- Due-state pill -->
+                    <span class="cbf-task-queue__due">
+                      <span class="esa-pill esa-pill--warning esa-pill--sm typography-microcopy-xs">
+                        <span class="esa-pill__label">Due in 7 days</span>
+                      </span>
+                    </span>
+                    <!-- Trailing action (omitted for waiting rows) -->
+                    <span class="cbf-task-queue__action">
+                      <span
+                        class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--sm"
+                        ><a
+                          class="esa-button__native typography-microcopy-xs"
+                          href="#"
+                          role="button"
+                          ><span class="esa-button__label">Fulfill requirements</span></a
+                        ></span
+                      >
+                    </span>
+                  </li>
+                  <li class="cbf-task-queue__row" data-task-id="task-inv-INV-2026-0044">
+                    <!-- Main content: what + meta -->
+                    <span class="cbf-task-queue__body stack" data-gap="xs">
+                      <span class="cbf-task-queue__what typography-body-md"
+                        >Review &amp; approve invoice INV-2026-0044</span
+                      >
+                      <span class="cbf-task-queue__meta typography-meta">
+                        Water Quality Sampling — Okanogan · Okanogan Water Sciences · $18,750.00
+                      </span>
+                    </span>
+                    <!-- Due-state pill -->
+                    <span class="cbf-task-queue__due">
+                      <span class="esa-pill esa-pill--default esa-pill--sm typography-microcopy-xs">
+                        <span class="esa-pill__label">Due Jul 1, 2026</span>
+                      </span>
+                    </span>
+                    <!-- Trailing action (omitted for waiting rows) -->
+                    <span class="cbf-task-queue__action" data-open-invoice="INV-2026-0044">
+                      <span
+                        class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--sm"
+                        ><button class="esa-button__native typography-microcopy-xs" type="button">
+                          <span class="esa-button__label">Review &amp; approve</span>
+                        </button></span
+                      >
+                    </span>
+                  </li>
+                  <li class="cbf-task-queue__row" data-task-id="task-final-inv-okanogan">
+                    <!-- Main content: what + meta -->
+                    <span class="cbf-task-queue__body stack" data-gap="xs">
+                      <span class="cbf-task-queue__what typography-body-md"
+                        >Process final invoice — Water Quality Sampling — Okanogan</span
+                      >
+                      <span class="cbf-task-queue__meta typography-meta">
+                        Water Quality Sampling — Okanogan · Okanogan Subbasin
+                      </span>
+                    </span>
+                    <!-- Due-state pill -->
+                    <span class="cbf-task-queue__due">
+                      <span class="esa-pill esa-pill--default esa-pill--sm typography-microcopy-xs">
+                        <span class="esa-pill__label">Due Jul 1, 2026</span>
+                      </span>
+                    </span>
+                    <!-- Trailing action (omitted for waiting rows) -->
+                    <span class="cbf-task-queue__action">
+                      <span
+                        class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--sm"
+                        ><a
+                          class="esa-button__native typography-microcopy-xs"
+                          href="#"
+                          role="button"
+                          ><span class="esa-button__label">View contract</span></a
+                        ></span
+                      >
+                    </span>
+                  </li>
+                  <li class="cbf-task-queue__row" data-task-id="task-inv-INV-2026-0046">
+                    <!-- Main content: what + meta -->
+                    <span class="cbf-task-queue__body stack" data-gap="xs">
+                      <span class="cbf-task-queue__what typography-body-md"
+                        >Review &amp; approve invoice INV-2026-0046</span
+                      >
+                      <span class="cbf-task-queue__meta typography-meta">
+                        Hatchery Supplementation — Entiat · Pacific Environmental Services, LLC ·
+                        $2,280.00
+                      </span>
+                    </span>
+                    <!-- Due-state pill -->
+                    <span class="cbf-task-queue__due">
+                      <span class="esa-pill esa-pill--default esa-pill--sm typography-microcopy-xs">
+                        <span class="esa-pill__label">Due Jul 5, 2026</span>
+                      </span>
+                    </span>
+                    <!-- Trailing action (omitted for waiting rows) -->
+                    <span class="cbf-task-queue__action" data-open-invoice="INV-2026-0046">
+                      <span
+                        class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--sm"
+                        ><button class="esa-button__native typography-microcopy-xs" type="button">
+                          <span class="esa-button__label">Review &amp; approve</span>
+                        </button></span
+                      >
+                    </span>
+                  </li>
+                  <li
+                    class="cbf-task-queue__row cbf-task-queue__row--waiting"
+                    data-task-id="task-sr-chiwawa-q1-2026"
+                  >
+                    <!-- Main content: what + meta -->
+                    <span class="cbf-task-queue__body stack" data-gap="xs">
+                      <span class="cbf-task-queue__what typography-body-md"
+                        >Status Report awaiting acceptance — Rotary Screw Trap Juvenile
+                        M&amp;E</span
+                      >
+                      <span class="cbf-task-queue__meta typography-meta">
+                        Rotary Screw Trap Juvenile M&amp;E — Chiwawa · Chiwawa River Juvenile
+                        Salmonid M&amp;E · Yakama Nation Fisheries
+                      </span>
+                    </span>
+                    <!-- Due-state pill -->
+                    <span class="cbf-task-queue__due">
+                      <span class="esa-pill esa-pill--default esa-pill--sm typography-microcopy-xs">
+                        <span class="esa-pill__label">Due Jul 10, 2026</span>
+                      </span>
+                    </span>
+                    <!-- Trailing action (omitted for waiting rows) -->
+                    <span class="cbf-task-queue__waiting-label typography-meta">
+                      Waiting to be accepted
+                    </span>
+                  </li>
+                  <li class="cbf-task-queue__row" data-task-id="task-closeout-winthrop">
+                    <!-- Main content: what + meta -->
+                    <span class="cbf-task-queue__body stack" data-gap="xs">
+                      <span class="cbf-task-queue__what typography-body-md"
+                        >Submit closeout form — Hatchery Effectiveness M&amp;E — Winthrop NFH</span
+                      >
+                      <span class="cbf-task-queue__meta typography-meta">
+                        Hatchery Effectiveness M&amp;E — Winthrop NFH · Winthrop National Fish
+                        Hatchery Effectiveness
+                      </span>
+                    </span>
+                    <!-- Due-state pill -->
+                    <span class="cbf-task-queue__due">
+                      <span class="esa-pill esa-pill--default esa-pill--sm typography-microcopy-xs">
+                        <span class="esa-pill__label">Due Jul 29, 2026</span>
+                      </span>
+                    </span>
+                    <!-- Trailing action (omitted for waiting rows) -->
+                    <span class="cbf-task-queue__action">
+                      <span
+                        class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--sm"
+                        ><a
+                          class="esa-button__native typography-microcopy-xs"
+                          href="#"
+                          role="button"
+                          ><span class="esa-button__label">Submit closeout</span></a
+                        ></span
+                      >
+                    </span>
+                  </li>
+                </ol>
+              </section>
+              <!-- Delegated click handler: [data-open-invoice] → dispatch cbf:open-invoice
+     PINNED CONTRACT: event name `cbf:open-invoice`, detail `{ number }`.
+     The parent cbf-mywork-tabs catches this, switches to the My Invoices panel,
+     awaits updateComplete, then forwards to the queue root to open the peek drawer
+     (which carries on to the invoice's full page via "Process invoice").
+-->
+              <section
+                class="cbf-task-risk-band stack"
+                data-gap="sm"
+                aria-label="At risk — needs attention"
+              >
+                <h2 class="typography-heading-md cbf-task-risk-band__heading">
+                  At risk / needs attention
+                </h2>
+                <div class="esa-alert-box esa-alert-box--danger typography-body-sm">
+                  <div class="esa-alert-box__icon">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <path d="M12 8v4"></path>
+                      <path d="M12 16h.01"></path>
+                    </svg>
+                  </div>
+                  <div class="esa-alert-box__body">
+                    <strong class="esa-alert-box__title typography-label-sm-strong"
+                      >2 tasks past due — oldest 4 days</strong
+                    >
+                    <div class="esa-alert-box__message">
+                      2 obligations past their due date. Review and act immediately to avoid
+                      contract compliance issues.
+                    </div>
+                  </div>
+                </div>
+                <ul class="cbf-task-risk-band__list stack" data-gap="xs" role="list">
+                  <li class="cbf-task-risk-band__row cluster" data-gap="sm">
+                    <span class="cbf-task-risk-band__pill-wrap"
+                      ><span
+                        class="esa-pill esa-pill--warning esa-pill--sm typography-microcopy-xs"
+                      >
+                        <span class="esa-pill__label">EC gate</span>
+                      </span> </span
+                    ><span class="cbf-task-risk-band__body stack" data-gap="xs"
+                      ><span class="typography-body-md cbf-task-risk-band__title"
+                        >EC gate deadline approaching — Wenatchee Riparian Restoration WE</span
+                      ><span class="typography-body-sm cbf-task-risk-band__detail"
+                        >HIP compliance documentation must be uploaded and approved before Jun 28,
+                        2026 or the Work Element will be blocked from further expenditure.</span
+                      ><span class="typography-meta cbf-task-risk-band__meta"
+                        >Salmon Habitat Restoration — Wenatchee · Due Jun 28, 2026</span
+                      ></span
+                    >
+                  </li>
+                  <li class="cbf-task-risk-band__row cluster" data-gap="sm">
+                    <span class="cbf-task-risk-band__pill-wrap"
+                      ><span
+                        class="esa-pill esa-pill--warning esa-pill--sm typography-microcopy-xs"
+                      >
+                        <span class="esa-pill__label">Pending mod</span>
+                      </span> </span
+                    ><span class="cbf-task-risk-band__body stack" data-gap="xs"
+                      ><span class="typography-body-md cbf-task-risk-band__title"
+                        >Contract modification pending — Smolt Survival Telemetry Study</span
+                      ><span class="typography-body-sm cbf-task-risk-band__detail"
+                        >Downstream budget figures are unstable until the modification executes; do
+                        not approve invoices against the new ceiling until the mod is
+                        countersigned.</span
+                      ><span class="typography-meta cbf-task-risk-band__meta"
+                        >Smolt Survival Telemetry Study</span
+                      ></span
+                    >
+                  </li>
+                  <li class="cbf-task-risk-band__row cluster" data-gap="sm">
+                    <span class="cbf-task-risk-band__pill-wrap"
+                      ><span
+                        class="esa-pill esa-pill--warning esa-pill--sm typography-microcopy-xs"
+                      >
+                        <span class="esa-pill__label">Closeout blocked</span>
+                      </span> </span
+                    ><span class="cbf-task-risk-band__body stack" data-gap="xs"
+                      ><span class="typography-body-md cbf-task-risk-band__title"
+                        >Closeout blocked — Hatchery Effectiveness M&amp;E — Winthrop NFH</span
+                      ><span class="typography-body-sm cbf-task-risk-band__detail"
+                        >CCR property inventory must be re-uploaded before closeout can proceed. The
+                        previous upload was rejected due to a missing asset tag on equipment item
+                        #WFH-2024-07.</span
+                      ><span class="typography-meta cbf-task-risk-band__meta"
+                        >Hatchery Effectiveness M&amp;E — Winthrop NFH</span
+                      ></span
+                    >
+                  </li>
+                </ul>
+              </section>
+            </div>
+            <div slot="panel-1" class="cbf-mywork-tabs__panel stack" data-gap="lg">
+              <div class="stack cbf-my-invoices" data-gap="sm">
+                <p class="typography-meta cbf-my-invoices__provenance">
+                  Asset Suite processing status refreshes nightly · last feed Jun 21, 2026
+                </p>
+                <section class="cbf-invoice-queue-metrics" aria-label="Invoice review summary">
+                  <div class="cbf-invoice-queue-metrics__row cluster" data-gap="xl">
+                    <div class="esa-stat">
+                      <div class="esa-stat__value typography-display-sm">5</div>
+                      <div class="esa-stat__label typography-label-md">Awaiting my review</div>
+                      <div class="esa-stat__sub typography-body-sm">Submitted or in review</div>
+                    </div>
+                    <button
+                      type="button"
+                      class="cbf-invoice-queue-metrics__trigger cbf-invoice-queue-metrics__overdue"
+                      data-overdue-toggle=""
+                      aria-pressed="false"
+                    >
+                      <div class="esa-stat">
+                        <div class="esa-stat__value typography-display-sm">1</div>
+                        <div class="esa-stat__label typography-label-md">Overdue</div>
+                        <div class="esa-stat__sub typography-body-sm">Filter the queue →</div>
+                      </div>
+                    </button>
+                    <div class="esa-stat">
+                      <div class="esa-stat__value typography-display-sm">24</div>
+                      <div class="esa-stat__label typography-label-md">Oldest waiting</div>
+                      <div class="esa-stat__sub typography-body-sm">24 days in queue</div>
+                    </div>
+                    <div class="esa-stat esa-stat--accent">
+                      <div class="esa-stat__value typography-display-sm">1</div>
+                      <div class="esa-stat__label typography-label-md">Final in queue</div>
+                      <div class="esa-stat__sub typography-body-sm">Triggers closeout</div>
+                    </div>
+                  </div>
+                </section>
+                <section
+                  class="cbf-invoice-review-queue stack"
+                  data-gap="md"
+                  data-variant="workspace"
+                >
+                  <header class="cbf-invoice-review-queue__header repel">
+                    <h2 class="typography-heading-md">My invoices</h2>
+                    <div class="cbf-invoice-review-queue__search">
+                      <label class="cbf-search-field">
+                        <span class="cbf-icon"
+                          ><svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.3-4.3"></path></svg
+                        ></span>
+                        <input
+                          type="text"
+                          autocomplete="off"
+                          placeholder="Search invoices, vendors or contracts…"
+                          data-queue-search="true"
+                          aria-label="Search the review queue"
+                          class="astro-lfax72z2"
+                        />
+                      </label>
+                    </div>
+                  </header>
+                  <div class="cbf-invoice-review-queue__controls">
+                    <esa-chip-group
+                      data-queue-stage-filter="true"
+                      size="sm"
+                      label="Filter by status"
+                      value=""
+                      options='[{"value":"","label":"All"},{"value":"Submitted","label":"Submitted"},{"value":"In review","label":"In review"},{"value":"Returned","label":"Returned"},{"value":"Approved","label":"Approved"}]'
+                    ></esa-chip-group>
+                    <div class="cbf-invoice-review-queue__controls-end">
+                      <span
+                        class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--sm"
+                        slot="controls-end"
+                        ><a
+                          class="esa-button__native typography-microcopy-xs"
+                          href="/cb-fish-design/invoice-history"
+                          role="button"
+                          ><span class="esa-icon esa-icon--sm" aria-hidden="true">
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              focusable="false"
+                            >
+                              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                              <path d="M3 3v5h5"></path>
+                              <path d="M12 7v5l4 2"></path>
+                            </svg>
+                          </span>
+                          <span class="esa-button__label"> View processed invoices (2)</span></a
+                        ></span
+                      >
+                    </div>
+                  </div>
+                  <!-- AG Grid mounts here; auto-height grows with rows so the page owns scroll. -->
+                  <div class="cbf-invoice-review-queue__grid" data-queue-grid=""></div>
+                  <div class="cbf-invoice-review-queue__empty" data-queue-empty="" hidden="">
+                    <div class="esa-empty-state esa-empty-state--sm">
+                      <h3 class="esa-empty-state__title typography-label-sm-strong">
+                        No invoices match your filters
+                      </h3>
+                      <p class="esa-empty-state__description typography-body-xs">
+                        Try a different invoice number, vendor, contract, or status.
+                      </p>
+                      <div class="esa-empty-state__actions typography-label-md"></div>
+                    </div>
+                  </div>
+                  <footer class="cbf-invoice-review-queue__footer">
+                    <span class="typography-meta" data-queue-count="">
+                      Showing 7 of 7 invoices
+                    </span>
+                  </footer>
+                  <!-- Real esa-pill legos, server-rendered once per stage AND per urgency bucket
+       with the design-system scope hash intact. Grid cells + the panel clone the
+       matching template's markup — so every pill is byte-identical to the lego,
+       matching the vendor dashboard invoices grid's status chips. -->
+                  <div
+                    class="cbf-invoice-review-queue__badge-templates"
+                    data-badge-templates=""
+                    hidden=""
+                    aria-hidden="true"
+                  >
+                    <span data-stage="Submitted"
+                      ><span class="esa-pill esa-pill--info esa-pill--md typography-microcopy-sm">
+                        <span class="esa-pill__label">Submitted</span>
+                      </span> </span
+                    ><span data-stage="In review"
+                      ><span
+                        class="esa-pill esa-pill--warning esa-pill--md typography-microcopy-sm"
+                      >
+                        <span class="esa-pill__label">In review</span>
+                      </span> </span
+                    ><span data-stage="Returned"
+                      ><span class="esa-pill esa-pill--danger esa-pill--md typography-microcopy-sm">
+                        <span class="esa-pill__label">Returned</span>
+                      </span> </span
+                    ><span data-stage="Approved"
+                      ><span
+                        class="esa-pill esa-pill--success esa-pill--md typography-microcopy-sm"
+                      >
+                        <span class="esa-pill__label">Approved</span>
+                      </span>
+                    </span>
+                    <span data-urgency="overdue"
+                      ><span class="esa-pill esa-pill--danger esa-pill--md typography-microcopy-sm">
+                        <span class="esa-pill__label">overdue</span>
+                      </span> </span
+                    ><span data-urgency="due-soon"
+                      ><span
+                        class="esa-pill esa-pill--warning esa-pill--md typography-microcopy-sm"
+                      >
+                        <span class="esa-pill__label">due-soon</span>
+                      </span> </span
+                    ><span data-urgency="on-track"
+                      ><span
+                        class="esa-pill esa-pill--default esa-pill--md typography-microcopy-sm"
+                      >
+                        <span class="esa-pill__label">on-track</span>
+                      </span>
+                    </span>
+                    <span data-flag="final"
+                      ><span
+                        class="esa-pill esa-pill--default esa-pill--md typography-microcopy-sm"
+                      >
+                        <span class="esa-pill__label">Final</span>
+                      </span>
+                    </span>
+                    <span data-asset="not-sent"
+                      ><span
+                        class="esa-pill esa-pill--default esa-pill--md typography-microcopy-sm"
+                      >
+                        <span class="esa-pill__label">not-sent</span>
+                      </span> </span
+                    ><span data-asset="processing"
+                      ><span class="esa-pill esa-pill--info esa-pill--md typography-microcopy-sm">
+                        <span class="esa-pill__label">processing</span>
+                      </span> </span
+                    ><span data-asset="paid"
+                      ><span
+                        class="esa-pill esa-pill--success esa-pill--md typography-microcopy-sm"
+                      >
+                        <span class="esa-pill__label">paid</span>
+                      </span>
+                    </span>
+                    <span data-peek-button=""
+                      ><span
+                        class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm esa-button--icon-only"
+                        ><button
+                          class="esa-button__native typography-microcopy-xs"
+                          type="button"
+                          aria-label="Quick view"
+                          title="Quick view"
+                        >
+                          <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              focusable="false"
+                            >
+                              <path
+                                d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"
+                              ></path>
+                              <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                          </span></button></span
+                    ></span>
+                  </div>
+                  <!-- Row data for the client grid module (avoids a second fetch). -->
+                  <script type="application/json" data-queue-data="">
+                    [
+                      {
+                        "number": "INV-2026-0051",
+                        "vendor": "Pacific Environmental Services, LLC",
+                        "contract": "Salmon Habitat Restoration — Wenatchee",
+                        "project": "Wenatchee Subbasin",
+                        "besVendor": "BES-10442",
+                        "submitted": "Jun 19, 2026",
+                        "reviewBy": "Jun 24, 2026",
+                        "daysRemaining": 2,
+                        "amount": 6120,
+                        "stage": "Submitted",
+                        "final": false,
+                        "invoiceDate": "Jun 17, 2026",
+                        "perfStart": "Jun 1, 2026",
+                        "perfEnd": "Jun 15, 2026",
+                        "billTo": "BPA — Columbia Basin Fish & Wildlife Program",
+                        "pdfName": "INV-2026-0051-PacificEnv.pdf",
+                        "supportingDocs": [
+                          "timesheet-jun-2026.pdf",
+                          "equipment-rental-receipt.pdf"
+                        ],
+                        "lineItems": [
+                          { "description": "Field biologist labor", "qty": 52, "unitPrice": 95 },
+                          {
+                            "description": "Habitat survey equipment rental",
+                            "qty": 1,
+                            "unitPrice": 650
+                          },
+                          { "description": "Field mileage", "qty": 940, "unitPrice": 0.5 }
+                        ],
+                        "contractValue": 420000,
+                        "expended": 318400,
+                        "remaining": 101600,
+                        "asOf": "Jun 21, 2026",
+                        "assetSuite": "Not sent",
+                        "inStatusDays": 2,
+                        "contractNumber": "C-2024-042",
+                        "projectNumber": "PRJ-2024-112",
+                        "contractStart": "Oct 1, 2024",
+                        "contractEnd": "Sep 30, 2026",
+                        "netTerms": "Net 30"
+                      },
+                      {
+                        "number": "INV-2026-0049",
+                        "vendor": "Cascade Fisheries Consulting",
+                        "contract": "Smolt Survival Telemetry Study",
+                        "project": "Mainstem Survival",
+                        "besVendor": "BES-20817",
+                        "submitted": "Jun 15, 2026",
+                        "reviewBy": "Jun 23, 2026",
+                        "daysRemaining": 1,
+                        "amount": 12480,
+                        "stage": "In review",
+                        "final": false,
+                        "invoiceDate": "Jun 10, 2026",
+                        "perfStart": "May 1, 2026",
+                        "perfEnd": "May 31, 2026",
+                        "billTo": "BPA — Columbia Basin Fish & Wildlife Program",
+                        "pdfName": "INV-2026-0049-Cascade.pdf",
+                        "supportingDocs": [
+                          "receiver-deployment-log.pdf",
+                          "data-analysis-summary.pdf"
+                        ],
+                        "notes": "Receivers redeployed after the spring high-water event; deployment hours above baseline.",
+                        "lineItems": [
+                          {
+                            "description": "Acoustic telemetry tag deployment",
+                            "qty": 64,
+                            "unitPrice": 135
+                          },
+                          {
+                            "description": "Receiver maintenance & retrieval",
+                            "qty": 18,
+                            "unitPrice": 100
+                          },
+                          { "description": "Data analysis", "qty": 16, "unitPrice": 120 }
+                        ],
+                        "contractValue": 680000,
+                        "expended": 612300,
+                        "remaining": 67700,
+                        "asOf": "Jun 21, 2026",
+                        "assetSuite": "Not sent",
+                        "inStatusDays": 6,
+                        "contractNumber": "C-2024-067",
+                        "projectNumber": "PRJ-2024-201",
+                        "contractStart": "Nov 1, 2024",
+                        "contractEnd": "Oct 31, 2026",
+                        "netTerms": "Net 30"
+                      },
+                      {
+                        "number": "INV-2026-0047",
+                        "vendor": "Methow Restoration Partners",
+                        "contract": "Riparian Vegetation Monitoring — Methow",
+                        "project": "Methow Subbasin",
+                        "besVendor": "BES-31164",
+                        "submitted": "May 28, 2026",
+                        "reviewBy": "Jun 20, 2026",
+                        "daysRemaining": -2,
+                        "amount": 3960,
+                        "stage": "In review",
+                        "final": false,
+                        "invoiceDate": "May 22, 2026",
+                        "perfStart": "Apr 1, 2026",
+                        "perfEnd": "Apr 30, 2026",
+                        "billTo": "BPA — Columbia Basin Fish & Wildlife Program",
+                        "pdfName": "INV-2026-0047-Methow.pdf",
+                        "supportingDocs": ["timesheet-apr-2026.pdf", "field-receipts.pdf"],
+                        "lineItems": [
+                          {
+                            "description": "Vegetation transect monitoring",
+                            "qty": 30,
+                            "unitPrice": 110
+                          },
+                          {
+                            "description": "Data processing & reporting",
+                            "qty": 6,
+                            "unitPrice": 110
+                          }
+                        ],
+                        "contractValue": 240000,
+                        "expended": 196800,
+                        "remaining": 43200,
+                        "asOf": "Jun 21, 2026",
+                        "assetSuite": "Not sent",
+                        "inStatusDays": 24,
+                        "contractNumber": "C-2024-051",
+                        "projectNumber": "PRJ-2024-088",
+                        "contractStart": "Dec 1, 2024",
+                        "contractEnd": "Nov 30, 2026",
+                        "netTerms": "Net 30"
+                      },
+                      {
+                        "number": "INV-2026-0046",
+                        "vendor": "Pacific Environmental Services, LLC",
+                        "contract": "Hatchery Supplementation — Entiat",
+                        "project": "Entiat Subbasin",
+                        "besVendor": "BES-10487",
+                        "submitted": "Jun 18, 2026",
+                        "reviewBy": "Jul 5, 2026",
+                        "daysRemaining": 13,
+                        "amount": 2280,
+                        "stage": "Submitted",
+                        "final": false,
+                        "invoiceDate": "Jun 12, 2026",
+                        "perfStart": "May 1, 2026",
+                        "perfEnd": "May 31, 2026",
+                        "billTo": "BPA — Columbia Basin Fish & Wildlife Program",
+                        "pdfName": "INV-2026-0046-PacificEnv.pdf",
+                        "supportingDocs": ["broodstock-field-log.pdf"],
+                        "lineItems": [
+                          {
+                            "description": "Broodstock collection labor",
+                            "qty": 22,
+                            "unitPrice": 95
+                          },
+                          { "description": "Field supplies", "qty": 1, "unitPrice": 190 }
+                        ],
+                        "contractValue": 180000,
+                        "expended": 88500,
+                        "remaining": 91500,
+                        "asOf": "Jun 21, 2026",
+                        "assetSuite": "Not sent",
+                        "inStatusDays": 3,
+                        "contractNumber": "C-2024-073",
+                        "projectNumber": "PRJ-2024-095",
+                        "contractStart": "Sep 1, 2024",
+                        "contractEnd": "Aug 31, 2026",
+                        "netTerms": "Net 45"
+                      },
+                      {
+                        "number": "INV-2026-0044",
+                        "vendor": "Okanogan Water Sciences",
+                        "contract": "Water Quality Sampling — Okanogan",
+                        "project": "Okanogan Subbasin",
+                        "besVendor": "BES-40529",
+                        "submitted": "Jun 16, 2026",
+                        "reviewBy": "Jul 1, 2026",
+                        "daysRemaining": 9,
+                        "amount": 18750,
+                        "stage": "Submitted",
+                        "final": true,
+                        "invoiceDate": "Jun 14, 2026",
+                        "perfStart": "Apr 1, 2026",
+                        "perfEnd": "Jun 13, 2026",
+                        "billTo": "BPA — Columbia Basin Fish & Wildlife Program",
+                        "pdfName": "INV-2026-0044-Okanogan-FINAL.pdf",
+                        "supportingDocs": [
+                          "lab-analysis-report.pdf",
+                          "sampling-field-notes.pdf",
+                          "final-data-deliverable.xlsx"
+                        ],
+                        "notes": "Final invoice — closes out the FY26 sampling contract. Includes the held-back retainage.",
+                        "lineItems": [
+                          { "description": "Water sample collection", "qty": 120, "unitPrice": 85 },
+                          { "description": "Lab analysis", "qty": 60, "unitPrice": 115 },
+                          {
+                            "description": "Final report & data deliverable",
+                            "qty": 1,
+                            "unitPrice": 1650
+                          }
+                        ],
+                        "contractValue": 96000,
+                        "expended": 77250,
+                        "remaining": 18750,
+                        "asOf": "Jun 21, 2026",
+                        "assetSuite": "Not sent",
+                        "inStatusDays": 5,
+                        "contractNumber": "C-2024-058",
+                        "projectNumber": "PRJ-2024-143",
+                        "contractStart": "Jun 14, 2024",
+                        "contractEnd": "Jun 13, 2026",
+                        "netTerms": "Net 30"
+                      },
+                      {
+                        "number": "INV-2026-0041",
+                        "vendor": "Cascade Fisheries Consulting",
+                        "contract": "Smolt Survival Telemetry Study",
+                        "project": "Mainstem Survival",
+                        "besVendor": "BES-20817",
+                        "submitted": "Jun 5, 2026",
+                        "reviewBy": "Jun 28, 2026",
+                        "daysRemaining": 6,
+                        "amount": 4310,
+                        "stage": "Returned",
+                        "final": false,
+                        "invoiceDate": "May 30, 2026",
+                        "perfStart": "May 1, 2026",
+                        "perfEnd": "May 31, 2026",
+                        "billTo": "BPA — Columbia Basin Fish & Wildlife Program",
+                        "pdfName": "INV-2026-0041-Cascade.pdf",
+                        "supportingDocs": [],
+                        "notes": "Returned Jun 8 — receiver-maintenance line lacks a supporting field log; mileage exceeds the approved rate.",
+                        "lineItems": [
+                          { "description": "Receiver maintenance", "qty": 22, "unitPrice": 100 },
+                          { "description": "Field mileage", "qty": 1200, "unitPrice": 0.62 }
+                        ],
+                        "contractValue": 680000,
+                        "expended": 612300,
+                        "remaining": 67700,
+                        "asOf": "Jun 21, 2026",
+                        "assetSuite": "Not sent",
+                        "inStatusDays": 13,
+                        "contractNumber": "C-2024-067",
+                        "projectNumber": "PRJ-2024-201",
+                        "contractStart": "Nov 1, 2024",
+                        "contractEnd": "Oct 31, 2026",
+                        "netTerms": "Net 30"
+                      },
+                      {
+                        "number": "INV-2026-0027",
+                        "vendor": "Okanogan Water Sciences",
+                        "contract": "Water Quality Sampling — Okanogan",
+                        "project": "Okanogan Subbasin",
+                        "besVendor": "BES-40529",
+                        "submitted": "May 8, 2026",
+                        "reviewBy": "Jun 1, 2026",
+                        "daysRemaining": -20,
+                        "amount": 9450,
+                        "stage": "Approved",
+                        "final": false,
+                        "invoiceDate": "May 3, 2026",
+                        "perfStart": "Feb 1, 2026",
+                        "perfEnd": "Mar 31, 2026",
+                        "billTo": "BPA — Columbia Basin Fish & Wildlife Program",
+                        "pdfName": "INV-2026-0027-Okanogan.pdf",
+                        "supportingDocs": [
+                          "lab-analysis-feb-mar.pdf",
+                          "sampling-field-notes-q1.pdf"
+                        ],
+                        "notes": "Q1 sampling period; includes winter low-flow and spring runoff events.",
+                        "lineItems": [
+                          { "description": "Water sample collection", "qty": 72, "unitPrice": 85 },
+                          { "description": "Lab analysis", "qty": 36, "unitPrice": 115 },
+                          { "description": "Data summary & QA", "qty": 6, "unitPrice": 120 }
+                        ],
+                        "contractValue": 96000,
+                        "expended": 58050,
+                        "remaining": 37950,
+                        "asOf": "Jun 21, 2026",
+                        "assetSuite": "Processing — sent Jun 18",
+                        "inStatusDays": 11,
+                        "contractNumber": "C-2024-058",
+                        "projectNumber": "PRJ-2024-143",
+                        "contractStart": "Jun 14, 2024",
+                        "contractEnd": "Jun 13, 2026",
+                        "netTerms": "Net 30"
+                      }
+                    ]
+                  </script>
+                  <!-- ───────── Review overlay: the split-view QA/QC surface (lego drawer) ─────────
+       Populated from the clicked row; prev/next step through the displayed rows. -->
+                  <esa-side-dialog
+                    data-review-dialog="true"
+                    size="lg"
+                    heading="Invoice"
+                    class="cbf-review-dialog"
+                    position="right"
+                  >
+                    <!-- Custom header: a large invoice-number title pushed to the right so it sits
+         over the info panel (the side strip), instead of a small title lost top-left. -->
+                    <div slot="header" class="cbf-review-dialog__titlebar">
+                      <span class="cbf-review-dialog__title cbf-num" data-f-dialog-title=""></span>
+                    </div>
+                    <div
+                      class="cbf-review-split sidebar"
+                      data-side="end"
+                      style="
+                        --sidebar-width: 22rem;
+                        --sidebar-content-min: 50%;
+                        --gap: var(--spacing-600);
+                      "
+                    >
+                      <!-- Panel (first child → ordered right by data-side=end). -->
+                      <aside class="cbf-review-panel stack" data-gap="lg" aria-label="Review">
+                        <!-- Deadline leads (matches the detail page); the status pill stays on the
+             right because the preview must still show where the invoice sits in the
+             pipeline. The review-by date goes red only when overdue; the urgency
+             alert + a quiet submitted/net-terms line sit beneath it. -->
+                        <header class="cbf-review-hero repel">
+                          <div class="cbf-review-deadline">
+                            <span class="cbf-review__label">Review by</span>
+                            <span class="cbf-review-deadline__date" data-f-reviewby=""></span>
+                            <span class="cbf-review-deadline__urgency" data-f-urgency=""></span>
+                            <p class="cbf-review-deadline__support">
+                              Submitted <span data-f-submitted=""></span> ·
+                              <span data-f-net-terms=""></span>
+                            </p>
+                          </div>
+                          <span class="cbf-review-hero__status" data-f-status=""></span>
+                        </header>
+                        <div data-f-final-alert="" hidden="">
+                          <div class="esa-alert-box esa-alert-box--info typography-body-sm">
+                            <div class="esa-alert-box__icon">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                              >
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 16v-4"></path>
+                                <path d="M12 8h.01"></path>
+                              </svg>
+                            </div>
+                            <div class="esa-alert-box__body">
+                              <strong class="esa-alert-box__title typography-label-sm-strong"
+                                >Final invoice</strong
+                              >
+                              <div class="esa-alert-box__message">
+                                Closes out this contract. Confirm all deliverables are accepted and
+                                any retainage is accounted for before approving.
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <!-- Invoice information — uniform-weight fields; contract & project lead with
+             the reference NUMBER (that's what's copied), the name as a quiet sub. The
+             performance-end row notes how close it runs to the contract end date. -->
+                        <dl class="cbf-review-fields">
+                          <div class="cbf-review-fields__row">
+                            <dt class="cbf-review__label">Invoice</dt>
+                            <dd
+                              class="cbf-review-fields__value cbf-num"
+                              data-f-number-panel=""
+                            ></dd>
+                            <span class="cbf-review-fields__copy" data-copy="">
+                              <span
+                                class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--xs esa-button--icon-only"
+                                ><button
+                                  class="esa-button__native typography-microcopy-2xs"
+                                  type="button"
+                                  aria-label="Copy invoice number"
+                                  title="Copy invoice number"
+                                >
+                                  <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="2"
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      focusable="false"
+                                    >
+                                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                                      <path
+                                        d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+                                      ></path>
+                                    </svg>
+                                  </span></button
+                              ></span>
+                            </span>
+                          </div>
+                          <div class="cbf-review-fields__row">
+                            <dt class="cbf-review__label">Vendor</dt>
+                            <dd class="cbf-review-fields__value" data-f-vendor-panel=""></dd>
+                            <span class="cbf-review-fields__copy" data-copy="">
+                              <span
+                                class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--xs esa-button--icon-only"
+                                ><button
+                                  class="esa-button__native typography-microcopy-2xs"
+                                  type="button"
+                                  aria-label="Copy vendor"
+                                  title="Copy vendor"
+                                >
+                                  <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="2"
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      focusable="false"
+                                    >
+                                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                                      <path
+                                        d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+                                      ></path>
+                                    </svg>
+                                  </span></button
+                              ></span>
+                            </span>
+                          </div>
+                          <div class="cbf-review-fields__row">
+                            <dt class="cbf-review__label">Contract</dt>
+                            <dd class="cbf-review-fields__value cbf-num" data-f-contract="">
+                              <span data-f-contract-num=""></span>
+                              <span class="cbf-review-fields__sub" data-f-contract-name=""></span>
+                            </dd>
+                            <span
+                              class="cbf-review-fields__copy"
+                              data-copy=""
+                              data-f-contract-copy=""
+                            >
+                              <span
+                                class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--xs esa-button--icon-only"
+                                ><button
+                                  class="esa-button__native typography-microcopy-2xs"
+                                  type="button"
+                                  aria-label="Copy contract number"
+                                  title="Copy contract number"
+                                >
+                                  <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="2"
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      focusable="false"
+                                    >
+                                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                                      <path
+                                        d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+                                      ></path>
+                                    </svg>
+                                  </span></button
+                              ></span>
+                            </span>
+                          </div>
+                          <div class="cbf-review-fields__row">
+                            <dt class="cbf-review__label">Project</dt>
+                            <dd class="cbf-review-fields__value cbf-num" data-f-project="">
+                              <span data-f-project-num=""></span>
+                              <span class="cbf-review-fields__sub" data-f-project-name=""></span>
+                            </dd>
+                            <span
+                              class="cbf-review-fields__copy"
+                              data-copy=""
+                              data-f-project-copy=""
+                            >
+                              <span
+                                class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--xs esa-button--icon-only"
+                                ><button
+                                  class="esa-button__native typography-microcopy-2xs"
+                                  type="button"
+                                  aria-label="Copy project number"
+                                  title="Copy project number"
+                                >
+                                  <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="2"
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      focusable="false"
+                                    >
+                                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                                      <path
+                                        d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+                                      ></path>
+                                    </svg>
+                                  </span></button
+                              ></span>
+                            </span>
+                          </div>
+                          <div class="cbf-review-fields__row">
+                            <dt class="cbf-review__label">Perf. start</dt>
+                            <dd class="cbf-review-fields__value" data-f-perf-start=""></dd>
+                            <span class="cbf-review-fields__copy" data-copy="">
+                              <span
+                                class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--xs esa-button--icon-only"
+                                ><button
+                                  class="esa-button__native typography-microcopy-2xs"
+                                  type="button"
+                                  aria-label="Copy performance start date"
+                                  title="Copy performance start date"
+                                >
+                                  <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="2"
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      focusable="false"
+                                    >
+                                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                                      <path
+                                        d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+                                      ></path>
+                                    </svg>
+                                  </span></button
+                              ></span>
+                            </span>
+                          </div>
+                          <div class="cbf-review-fields__row">
+                            <dt class="cbf-review__label">Perf. end</dt>
+                            <dd class="cbf-review-fields__value" data-f-perf-end="">
+                              <span data-f-perf-end-date=""></span>
+                              <span class="cbf-review-fields__sub" data-f-contract-end=""></span>
+                            </dd>
+                            <span
+                              class="cbf-review-fields__copy"
+                              data-copy=""
+                              data-f-perf-end-copy=""
+                            >
+                              <span
+                                class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--xs esa-button--icon-only"
+                                ><button
+                                  class="esa-button__native typography-microcopy-2xs"
+                                  type="button"
+                                  aria-label="Copy performance end date"
+                                  title="Copy performance end date"
+                                >
+                                  <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="2"
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      focusable="false"
+                                    >
+                                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                                      <path
+                                        d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+                                      ></path>
+                                    </svg>
+                                  </span></button
+                              ></span>
+                            </span>
+                          </div>
+                        </dl>
+                        <!-- Amount information — left-aligned rows matching the fields above. -->
+                        <dl class="cbf-review-fields cbf-review-money" aria-label="Amount">
+                          <div class="cbf-review-fields__row">
+                            <dt class="cbf-review__label">Amount</dt>
+                            <dd
+                              class="cbf-review-fields__value cbf-review-money__amount cbf-num"
+                              data-f-amount-hero=""
+                            ></dd>
+                            <span
+                              class="cbf-review-fields__copy"
+                              data-copy=""
+                              data-f-amount-copy=""
+                            >
+                              <span
+                                class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--xs esa-button--icon-only"
+                                ><button
+                                  class="esa-button__native typography-microcopy-2xs"
+                                  type="button"
+                                  aria-label="Copy amount"
+                                  title="Copy amount"
+                                >
+                                  <span class="esa-icon esa-icon--xs" aria-hidden="true">
+                                    <svg
+                                      width="14"
+                                      height="14"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="2"
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      focusable="false"
+                                    >
+                                      <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                                      <path
+                                        d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
+                                      ></path>
+                                    </svg>
+                                  </span></button
+                              ></span>
+                            </span>
+                          </div>
+                          <div class="cbf-review-fields__row">
+                            <dt class="cbf-review__label">Contract remaining</dt>
+                            <dd class="cbf-review-fields__value cbf-num" data-f-remaining="">
+                              <span data-f-remaining-val=""></span>
+                              <span class="cbf-review-fields__sub" data-f-rem-after=""></span>
+                            </dd>
+                          </div>
+                        </dl>
+                        <!-- Backup documentation: the supporting files the vendor uploaded with
+             the invoice. Each row carries a "view" control that renders the file in
+             the document pane (left) and a download control. The COR downloads any
+             single file or all at once. Rows are injected by JS; the per-row view +
+             download controls clone the server-rendered esa-icon-button templates
+             below so the lego markup stays byte-identical. (Mock files — download
+             produces a named placeholder PDF, since no real blob exists.) -->
+                        <section class="cbf-review-attachments" aria-label="Backup documentation">
+                          <div class="cbf-review-attachments__head repel">
+                            <h3 class="cbf-review__section-title" data-f-attach-title="">
+                              Backup documentation
+                            </h3>
+                            <span data-attach-all="">
+                              <span
+                                class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--sm"
+                                ><button
+                                  class="esa-button__native typography-microcopy-xs"
+                                  type="button"
+                                >
+                                  <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                                    <svg
+                                      width="16"
+                                      height="16"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      stroke-width="2"
+                                      stroke-linecap="round"
+                                      stroke-linejoin="round"
+                                      focusable="false"
+                                    >
+                                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                      <polyline points="7 10 12 15 17 10"></polyline>
+                                      <line x1="12" x2="12" y1="15" y2="3"></line>
+                                    </svg>
+                                  </span>
+                                  <span class="esa-button__label">Download all</span>
+                                </button></span
+                              >
+                            </span>
+                          </div>
+                          <ul class="cbf-review-attachments__list" data-f-attachments=""></ul>
+                        </section>
+                        <div data-dl-template="" hidden="" aria-hidden="true">
+                          <span
+                            class="esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--sm esa-button--icon-only"
+                            ><button
+                              class="esa-button__native typography-microcopy-xs"
+                              type="button"
+                              aria-label="Download file"
+                              title="Download file"
+                            >
+                              <span class="esa-icon esa-icon--sm" aria-hidden="true">
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  focusable="false"
+                                >
+                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                  <polyline points="7 10 12 15 17 10"></polyline>
+                                  <line x1="12" x2="12" y1="15" y2="3"></line>
+                                </svg>
+                              </span></button
+                          ></span>
+                        </div>
+                        <!-- Single action: this overlay is a quick preview. Processing the invoice
+             (reviewing the documents + Line Item Budget and approving or returning)
+             happens on the invoice's own page. EsaButton renders as a link; its href
+             is set to the invoice's process page per record in populate(). -->
+                        <div class="cbf-review-process" data-process="">
+                          <span
+                            class="esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--md"
+                            ><a
+                              class="esa-button__native typography-microcopy-md"
+                              href="#"
+                              role="button"
+                              ><span class="esa-icon esa-icon--md" aria-hidden="true">
+                                <svg
+                                  width="20"
+                                  height="20"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  focusable="false"
+                                >
+                                  <path d="M5 12h14"></path>
+                                  <path d="m12 5 7 7-7 7"></path>
+                                </svg>
+                              </span>
+                              <span class="esa-button__label">Process invoice</span></a
+                            ></span
+                          >
+                        </div>
+                      </aside>
+                      <!-- Document (last child → fluid, left). A read-only preview of the submitted
+           invoice so the COR can eyeball the bill from the queue. The full document
+           workspace (Line Item Budget, backup files side by side, approve / return)
+           lives on the invoice's Process page, not this preview. -->
+                      <div class="cbf-review-docpane">
+                        <div class="cbf-review-docpane__scroll">
+                          <article
+                            class="cbf-invoice-doc"
+                            data-doc-view="invoice"
+                            aria-label="Submitted invoice document"
+                          >
+                            <div class="cbf-invoice-doc__stamp" data-f-stamp="" hidden="">
+                              Final invoice
+                            </div>
+                            <header class="cbf-invoice-doc__head">
+                              <div>
+                                <p class="cbf-invoice-doc__vendor" data-f-vendor-doc=""></p>
+                                <p class="cbf-invoice-doc__sub">Vendor</p>
+                              </div>
+                              <div class="cbf-invoice-doc__meta">
+                                <p>
+                                  <span>Invoice #</span>
+                                  <strong class="cbf-num" data-f-num-doc=""></strong>
+                                </p>
+                                <p><span>Date</span> <strong data-f-date=""></strong></p>
+                              </div>
+                            </header>
+                            <div class="cbf-invoice-doc__billto">
+                              <p class="cbf-invoice-doc__sub">Bill to</p>
+                              <p data-f-billto=""></p>
+                            </div>
+                            <table class="cbf-invoice-doc__items">
+                              <thead>
+                                <tr>
+                                  <th scope="col">Description</th>
+                                  <th scope="col" class="cbf-num">Qty</th>
+                                  <th scope="col" class="cbf-num">Unit</th>
+                                  <th scope="col" class="cbf-num">Total</th>
+                                </tr>
+                              </thead>
+                              <tbody data-f-items=""></tbody>
+                              <tfoot>
+                                <tr>
+                                  <th scope="row" colspan="3">Subtotal</th>
+                                  <td class="cbf-num" data-f-subtotal=""></td>
+                                </tr>
+                                <tr>
+                                  <th scope="row" colspan="3">Tax</th>
+                                  <td class="cbf-num" data-f-tax=""></td>
+                                </tr>
+                                <tr class="cbf-invoice-doc__total">
+                                  <th scope="row" colspan="3">Total</th>
+                                  <td class="cbf-num" data-f-total=""></td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                            <p class="cbf-invoice-doc__memo" data-f-memo-wrap="" hidden="">
+                              <span>Memo:</span> <span data-f-memo=""></span>
+                            </p>
+                            <p class="cbf-invoice-doc__generated" data-f-pdf=""></p>
+                          </article>
+                        </div>
+                      </div>
+                    </div>
+                    <div slot="footer" class="cbf-review-footer repel">
+                      <span class="cbf-review-footer__position" data-f-position=""></span>
+                      <div class="cluster" data-gap="xs">
+                        <span data-review-prev=""
+                          ><span
+                            class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--md"
+                            ><button
+                              class="esa-button__native typography-microcopy-md"
+                              type="button"
+                            >
+                              <span class="esa-icon esa-icon--md" aria-hidden="true">
+                                <svg
+                                  width="20"
+                                  height="20"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  focusable="false"
+                                >
+                                  <path d="m15 18-6-6 6-6"></path>
+                                </svg>
+                              </span>
+                              <span class="esa-button__label">Previous</span>
+                            </button></span
+                          ></span
+                        >
+                        <span data-review-next=""
+                          ><span
+                            class="esa-button esa-button--variant-secondary esa-button--appearance-outline esa-button--md"
+                            ><button
+                              class="esa-button__native typography-microcopy-md"
+                              type="button"
+                            >
+                              <span class="esa-icon esa-icon--md" aria-hidden="true">
+                                <svg
+                                  width="20"
+                                  height="20"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  focusable="false"
+                                >
+                                  <path d="m9 18 6-6-6-6"></path>
+                                </svg>
+                              </span>
+                              <span class="esa-button__label">Next</span>
+                            </button></span
+                          ></span
+                        >
+                      </div>
+                    </div>
+                  </esa-side-dialog>
+                </section>
+              </div>
+            </div>
+            <div slot="panel-2" class="cbf-mywork-tabs__panel stack" data-gap="lg">
+              <div class="cbf-my-portfolio stack" data-gap="md">
+                <!-- Header row: section title (left) + view toggle (right) -->
+                <div class="cbf-my-portfolio__header repel">
+                  <h2 class="typography-heading-md cbf-my-portfolio__heading">My Portfolio</h2>
+                  <!-- esa-button-toggle: segmented single-select for list vs. explorer view -->
+                  <esa-button-toggle
+                    id="cbf-portfolio-view-toggle"
+                    size="sm"
+                    aria-label="Portfolio view"
+                  ></esa-button-toggle>
+                </div>
+                <!-- List view (default — shown on load) -->
+                <div id="cbf-portfolio-view-list" class="cbf-my-portfolio__view">
+                  <section class="cbf-portfolio-health">
+                    <!-- Section header -->
+                    <div class="cbf-portfolio-health__header stack" data-gap="xs">
+                      <h2 class="typography-heading-md cbf-portfolio-health__title">
+                        My contracts
+                      </h2>
+                      <p class="typography-meta cbf-portfolio-health__subtitle">
+                        10 contracts · figures from the nightly Asset Suite feed
+                      </p>
+                    </div>
+                    <!-- Contract list -->
+                    <ul class="cbf-portfolio-health__list" role="list">
+                      <li class="cbf-portfolio-health__row">
+                        <!-- Two-column row: LEFT identity (fluid) · RIGHT health (fixed) -->
+                        <div class="cbf-portfolio-health__row-body repel" data-gap="sm">
+                          <!-- LEFT: contract name + vendor·project caption + perf end + optional blocker -->
+                          <div class="cbf-portfolio-health__identity stack" data-gap="2xs">
+                            <a
+                              href="#"
+                              class="typography-body-md cbf-portfolio-health__contract-link"
+                              aria-label="Smolt Survival Telemetry Study — opens contract detail"
+                            >
+                              Smolt Survival Telemetry Study
+                            </a>
+                            <span class="typography-meta cbf-portfolio-health__meta-line">
+                              Cascade Fisheries Consulting · Mainstem Survival · Perf. ends Oct 31,
+                              2026
+                            </span>
+                            <!-- Closeout blocker earns its own line (no colored left border — banned) -->
+                          </div>
+                          <!-- RIGHT: status pills + compact budget block (fixed width, right-aligned) -->
+                          <div class="cbf-portfolio-health__health stack" data-gap="xs">
+                            <!-- Status pills -->
+                            <div class="cbf-portfolio-health__pills cluster" data-gap="xs">
+                              <span
+                                class="esa-pill esa-pill--warning esa-pill--sm typography-microcopy-xs"
+                              >
+                                <span class="esa-pill__label">Pending modification</span>
+                              </span>
+                            </div>
+                            <!-- Budget: constrained-width progress bar + figures caption -->
+                            <div class="cbf-portfolio-health__budget stack" data-gap="2xs">
+                              <div class="cbf-portfolio-health__bar-wrap">
+                                <div
+                                  class="esa-progress-bar esa-progress-bar--sm esa-progress-bar--warning"
+                                  role="progressbar"
+                                  aria-valuenow="90"
+                                  aria-valuemin="0"
+                                  aria-valuemax="100"
+                                  aria-label="Progress"
+                                >
+                                  <div class="esa-progress-bar__header typography-body-xs">
+                                    <span class="esa-progress-bar__value">90%</span>
+                                  </div>
+                                  <div class="esa-progress-bar__track">
+                                    <div class="esa-progress-bar__fill" style="width: 90%"></div>
+                                  </div>
+                                </div>
+                              </div>
+                              <span class="typography-meta cbf-portfolio-health__figures-main">
+                                $612.3K of $680K · <strong>$67.7K remaining</strong>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                      <li class="cbf-portfolio-health__row">
+                        <!-- Two-column row: LEFT identity (fluid) · RIGHT health (fixed) -->
+                        <div class="cbf-portfolio-health__row-body repel" data-gap="sm">
+                          <!-- LEFT: contract name + vendor·project caption + perf end + optional blocker -->
+                          <div class="cbf-portfolio-health__identity stack" data-gap="2xs">
+                            <a
+                              href="#"
+                              class="typography-body-md cbf-portfolio-health__contract-link"
+                              aria-label="Water Quality Sampling — Okanogan — opens contract detail"
+                            >
+                              Water Quality Sampling — Okanogan
+                            </a>
+                            <span class="typography-meta cbf-portfolio-health__meta-line">
+                              Okanogan Water Sciences · Okanogan Subbasin · Perf. ends Jun 13, 2026
+                            </span>
+                            <!-- Closeout blocker earns its own line (no colored left border — banned) -->
+                          </div>
+                          <!-- RIGHT: status pills + compact budget block (fixed width, right-aligned) -->
+                          <div class="cbf-portfolio-health__health stack" data-gap="xs">
+                            <!-- Status pills -->
+                            <div class="cbf-portfolio-health__pills cluster" data-gap="xs">
+                              <span
+                                class="esa-pill esa-pill--warning esa-pill--sm typography-microcopy-xs"
+                              >
+                                <span class="esa-pill__label">Expiring soon</span>
+                              </span>
+                            </div>
+                            <!-- Budget: constrained-width progress bar + figures caption -->
+                            <div class="cbf-portfolio-health__budget stack" data-gap="2xs">
+                              <div class="cbf-portfolio-health__bar-wrap">
+                                <div
+                                  class="esa-progress-bar esa-progress-bar--sm esa-progress-bar--primary"
+                                  role="progressbar"
+                                  aria-valuenow="80"
+                                  aria-valuemin="0"
+                                  aria-valuemax="100"
+                                  aria-label="Progress"
+                                >
+                                  <div class="esa-progress-bar__header typography-body-xs">
+                                    <span class="esa-progress-bar__value">80%</span>
+                                  </div>
+                                  <div class="esa-progress-bar__track">
+                                    <div class="esa-progress-bar__fill" style="width: 80%"></div>
+                                  </div>
+                                </div>
+                              </div>
+                              <span class="typography-meta cbf-portfolio-health__figures-main">
+                                $77.25K of $96K · <strong>$18.75K remaining</strong>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                      <li class="cbf-portfolio-health__row">
+                        <!-- Two-column row: LEFT identity (fluid) · RIGHT health (fixed) -->
+                        <div class="cbf-portfolio-health__row-body repel" data-gap="sm">
+                          <!-- LEFT: contract name + vendor·project caption + perf end + optional blocker -->
+                          <div class="cbf-portfolio-health__identity stack" data-gap="2xs">
+                            <a
+                              href="#"
+                              class="typography-body-md cbf-portfolio-health__contract-link"
+                              aria-label="Hatchery Effectiveness M&amp;E — Winthrop NFH — opens contract detail"
+                            >
+                              Hatchery Effectiveness M&amp;E — Winthrop NFH
+                            </a>
+                            <span class="typography-meta cbf-portfolio-health__meta-line">
+                              Fish Pro Inc. · Winthrop National Fish Hatchery Effectiveness · Perf.
+                              ends Apr 30, 2026
+                            </span>
+                            <!-- Closeout blocker earns its own line (no colored left border — banned) -->
+                            <div class="cbf-portfolio-health__blocker cluster" data-gap="xs">
+                              <span
+                                class="esa-pill esa-pill--danger esa-pill--sm typography-microcopy-xs"
+                              >
+                                <span class="esa-pill__label">Closeout blocked</span>
+                              </span>
+                              <span class="typography-meta cbf-portfolio-health__blocker-text">
+                                CCR property inventory must be re-uploaded before closeout can
+                                proceed
+                              </span>
+                            </div>
+                          </div>
+                          <!-- RIGHT: status pills + compact budget block (fixed width, right-aligned) -->
+                          <div class="cbf-portfolio-health__health stack" data-gap="xs">
+                            <!-- Status pills -->
+                            <div class="cbf-portfolio-health__pills cluster" data-gap="xs">
+                              <span
+                                class="esa-pill esa-pill--info esa-pill--sm typography-microcopy-xs"
+                              >
+                                <span class="esa-pill__label">Closeout eligible</span>
+                              </span>
+                            </div>
+                            <!-- Budget: constrained-width progress bar + figures caption -->
+                            <div class="cbf-portfolio-health__budget stack" data-gap="2xs">
+                              <div class="cbf-portfolio-health__bar-wrap">
+                                <div
+                                  class="esa-progress-bar esa-progress-bar--sm esa-progress-bar--warning"
+                                  role="progressbar"
+                                  aria-valuenow="99"
+                                  aria-valuemin="0"
+                                  aria-valuemax="100"
+                                  aria-label="Progress"
+                                >
+                                  <div class="esa-progress-bar__header typography-body-xs">
+                                    <span class="esa-progress-bar__value">99%</span>
+                                  </div>
+                                  <div class="esa-progress-bar__track">
+                                    <div class="esa-progress-bar__fill" style="width: 99%"></div>
+                                  </div>
+                                </div>
+                              </div>
+                              <span class="typography-meta cbf-portfolio-health__figures-main">
+                                $193.8K of $195K · <strong>$1.2K remaining</strong>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                      <li class="cbf-portfolio-health__row">
+                        <!-- Two-column row: LEFT identity (fluid) · RIGHT health (fixed) -->
+                        <div class="cbf-portfolio-health__row-body repel" data-gap="sm">
+                          <!-- LEFT: contract name + vendor·project caption + perf end + optional blocker -->
+                          <div class="cbf-portfolio-health__identity stack" data-gap="2xs">
+                            <a
+                              href="#"
+                              class="typography-body-md cbf-portfolio-health__contract-link"
+                              aria-label="Salmon Habitat Restoration — Wenatchee — opens contract detail"
+                            >
+                              Salmon Habitat Restoration — Wenatchee
+                            </a>
+                            <span class="typography-meta cbf-portfolio-health__meta-line">
+                              Pacific Environmental Services, LLC · Wenatchee Subbasin · Perf. ends
+                              Sep 30, 2026
+                            </span>
+                            <!-- Closeout blocker earns its own line (no colored left border — banned) -->
+                          </div>
+                          <!-- RIGHT: status pills + compact budget block (fixed width, right-aligned) -->
+                          <div class="cbf-portfolio-health__health stack" data-gap="xs">
+                            <!-- Status pills -->
+                            <div class="cbf-portfolio-health__pills cluster" data-gap="xs">
+                              <span
+                                class="esa-pill esa-pill--default esa-pill--sm typography-microcopy-xs"
+                              >
+                                <span class="esa-pill__label">Active</span>
+                              </span>
+                              <span
+                                class="esa-pill esa-pill--warning esa-pill--sm typography-microcopy-xs"
+                              >
+                                <span class="esa-pill__label">EC gate Jun 28, 2026</span>
+                              </span>
+                            </div>
+                            <!-- Budget: constrained-width progress bar + figures caption -->
+                            <div class="cbf-portfolio-health__budget stack" data-gap="2xs">
+                              <div class="cbf-portfolio-health__bar-wrap">
+                                <div
+                                  class="esa-progress-bar esa-progress-bar--sm esa-progress-bar--primary"
+                                  role="progressbar"
+                                  aria-valuenow="76"
+                                  aria-valuemin="0"
+                                  aria-valuemax="100"
+                                  aria-label="Progress"
+                                >
+                                  <div class="esa-progress-bar__header typography-body-xs">
+                                    <span class="esa-progress-bar__value">76%</span>
+                                  </div>
+                                  <div class="esa-progress-bar__track">
+                                    <div class="esa-progress-bar__fill" style="width: 76%"></div>
+                                  </div>
+                                </div>
+                              </div>
+                              <span class="typography-meta cbf-portfolio-health__figures-main">
+                                $318.4K of $420K · <strong>$101.6K remaining</strong>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                      <li class="cbf-portfolio-health__row">
+                        <!-- Two-column row: LEFT identity (fluid) · RIGHT health (fixed) -->
+                        <div class="cbf-portfolio-health__row-body repel" data-gap="sm">
+                          <!-- LEFT: contract name + vendor·project caption + perf end + optional blocker -->
+                          <div class="cbf-portfolio-health__identity stack" data-gap="2xs">
+                            <a
+                              href="#"
+                              class="typography-body-md cbf-portfolio-health__contract-link"
+                              aria-label="Riparian Vegetation Monitoring — Methow — opens contract detail"
+                            >
+                              Riparian Vegetation Monitoring — Methow
+                            </a>
+                            <span class="typography-meta cbf-portfolio-health__meta-line">
+                              Methow Restoration Partners · Methow Subbasin · Perf. ends Nov 30,
+                              2026
+                            </span>
+                            <!-- Closeout blocker earns its own line (no colored left border — banned) -->
+                          </div>
+                          <!-- RIGHT: status pills + compact budget block (fixed width, right-aligned) -->
+                          <div class="cbf-portfolio-health__health stack" data-gap="xs">
+                            <!-- Status pills -->
+                            <div class="cbf-portfolio-health__pills cluster" data-gap="xs">
+                              <span
+                                class="esa-pill esa-pill--default esa-pill--sm typography-microcopy-xs"
+                              >
+                                <span class="esa-pill__label">Active</span>
+                              </span>
+                            </div>
+                            <!-- Budget: constrained-width progress bar + figures caption -->
+                            <div class="cbf-portfolio-health__budget stack" data-gap="2xs">
+                              <div class="cbf-portfolio-health__bar-wrap">
+                                <div
+                                  class="esa-progress-bar esa-progress-bar--sm esa-progress-bar--primary"
+                                  role="progressbar"
+                                  aria-valuenow="82"
+                                  aria-valuemin="0"
+                                  aria-valuemax="100"
+                                  aria-label="Progress"
+                                >
+                                  <div class="esa-progress-bar__header typography-body-xs">
+                                    <span class="esa-progress-bar__value">82%</span>
+                                  </div>
+                                  <div class="esa-progress-bar__track">
+                                    <div class="esa-progress-bar__fill" style="width: 82%"></div>
+                                  </div>
+                                </div>
+                              </div>
+                              <span class="typography-meta cbf-portfolio-health__figures-main">
+                                $196.8K of $240K · <strong>$43.2K remaining</strong>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                      <li class="cbf-portfolio-health__row">
+                        <!-- Two-column row: LEFT identity (fluid) · RIGHT health (fixed) -->
+                        <div class="cbf-portfolio-health__row-body repel" data-gap="sm">
+                          <!-- LEFT: contract name + vendor·project caption + perf end + optional blocker -->
+                          <div class="cbf-portfolio-health__identity stack" data-gap="2xs">
+                            <a
+                              href="#"
+                              class="typography-body-md cbf-portfolio-health__contract-link"
+                              aria-label="Hatchery Supplementation — Entiat — opens contract detail"
+                            >
+                              Hatchery Supplementation — Entiat
+                            </a>
+                            <span class="typography-meta cbf-portfolio-health__meta-line">
+                              Pacific Environmental Services, LLC · Entiat Subbasin · Perf. ends Aug
+                              31, 2026
+                            </span>
+                            <!-- Closeout blocker earns its own line (no colored left border — banned) -->
+                          </div>
+                          <!-- RIGHT: status pills + compact budget block (fixed width, right-aligned) -->
+                          <div class="cbf-portfolio-health__health stack" data-gap="xs">
+                            <!-- Status pills -->
+                            <div class="cbf-portfolio-health__pills cluster" data-gap="xs">
+                              <span
+                                class="esa-pill esa-pill--default esa-pill--sm typography-microcopy-xs"
+                              >
+                                <span class="esa-pill__label">Active</span>
+                              </span>
+                            </div>
+                            <!-- Budget: constrained-width progress bar + figures caption -->
+                            <div class="cbf-portfolio-health__budget stack" data-gap="2xs">
+                              <div class="cbf-portfolio-health__bar-wrap">
+                                <div
+                                  class="esa-progress-bar esa-progress-bar--sm esa-progress-bar--primary"
+                                  role="progressbar"
+                                  aria-valuenow="49"
+                                  aria-valuemin="0"
+                                  aria-valuemax="100"
+                                  aria-label="Progress"
+                                >
+                                  <div class="esa-progress-bar__header typography-body-xs">
+                                    <span class="esa-progress-bar__value">49%</span>
+                                  </div>
+                                  <div class="esa-progress-bar__track">
+                                    <div class="esa-progress-bar__fill" style="width: 49%"></div>
+                                  </div>
+                                </div>
+                              </div>
+                              <span class="typography-meta cbf-portfolio-health__figures-main">
+                                $88.5K of $180K · <strong>$91.5K remaining</strong>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                      <li class="cbf-portfolio-health__row">
+                        <!-- Two-column row: LEFT identity (fluid) · RIGHT health (fixed) -->
+                        <div class="cbf-portfolio-health__row-body repel" data-gap="sm">
+                          <!-- LEFT: contract name + vendor·project caption + perf end + optional blocker -->
+                          <div class="cbf-portfolio-health__identity stack" data-gap="2xs">
+                            <a
+                              href="#"
+                              class="typography-body-md cbf-portfolio-health__contract-link"
+                              aria-label="PIT Tag Detection System O&amp;M — Lower Granite — opens contract detail"
+                            >
+                              PIT Tag Detection System O&amp;M — Lower Granite
+                            </a>
+                            <span class="typography-meta cbf-portfolio-health__meta-line">
+                              Pacific States Marine Fisheries Commission · Lower Granite Dam Passage
+                              · Perf. ends Sep 30, 2026
+                            </span>
+                            <!-- Closeout blocker earns its own line (no colored left border — banned) -->
+                          </div>
+                          <!-- RIGHT: status pills + compact budget block (fixed width, right-aligned) -->
+                          <div class="cbf-portfolio-health__health stack" data-gap="xs">
+                            <!-- Status pills -->
+                            <div class="cbf-portfolio-health__pills cluster" data-gap="xs">
+                              <span
+                                class="esa-pill esa-pill--default esa-pill--sm typography-microcopy-xs"
+                              >
+                                <span class="esa-pill__label">Active</span>
+                              </span>
+                            </div>
+                            <!-- Budget: constrained-width progress bar + figures caption -->
+                            <div class="cbf-portfolio-health__budget stack" data-gap="2xs">
+                              <div class="cbf-portfolio-health__bar-wrap">
+                                <div
+                                  class="esa-progress-bar esa-progress-bar--sm esa-progress-bar--primary"
+                                  role="progressbar"
+                                  aria-valuenow="60"
+                                  aria-valuemin="0"
+                                  aria-valuemax="100"
+                                  aria-label="Progress"
+                                >
+                                  <div class="esa-progress-bar__header typography-body-xs">
+                                    <span class="esa-progress-bar__value">60%</span>
+                                  </div>
+                                  <div class="esa-progress-bar__track">
+                                    <div class="esa-progress-bar__fill" style="width: 60%"></div>
+                                  </div>
+                                </div>
+                              </div>
+                              <span class="typography-meta cbf-portfolio-health__figures-main">
+                                $188.4K of $312K · <strong>$123.6K remaining</strong>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                      <li class="cbf-portfolio-health__row">
+                        <!-- Two-column row: LEFT identity (fluid) · RIGHT health (fixed) -->
+                        <div class="cbf-portfolio-health__row-body repel" data-gap="sm">
+                          <!-- LEFT: contract name + vendor·project caption + perf end + optional blocker -->
+                          <div class="cbf-portfolio-health__identity stack" data-gap="2xs">
+                            <a
+                              href="#"
+                              class="typography-body-md cbf-portfolio-health__contract-link"
+                              aria-label="Rotary Screw Trap Juvenile M&amp;E — Chiwawa — opens contract detail"
+                            >
+                              Rotary Screw Trap Juvenile M&amp;E — Chiwawa
+                            </a>
+                            <span class="typography-meta cbf-portfolio-health__meta-line">
+                              Yakama Nation Fisheries · Chiwawa River Juvenile Salmonid M&amp;E ·
+                              Perf. ends Nov 15, 2026
+                            </span>
+                            <!-- Closeout blocker earns its own line (no colored left border — banned) -->
+                          </div>
+                          <!-- RIGHT: status pills + compact budget block (fixed width, right-aligned) -->
+                          <div class="cbf-portfolio-health__health stack" data-gap="xs">
+                            <!-- Status pills -->
+                            <div class="cbf-portfolio-health__pills cluster" data-gap="xs">
+                              <span
+                                class="esa-pill esa-pill--default esa-pill--sm typography-microcopy-xs"
+                              >
+                                <span class="esa-pill__label">Active</span>
+                              </span>
+                            </div>
+                            <!-- Budget: constrained-width progress bar + figures caption -->
+                            <div class="cbf-portfolio-health__budget stack" data-gap="2xs">
+                              <div class="cbf-portfolio-health__bar-wrap">
+                                <div
+                                  class="esa-progress-bar esa-progress-bar--sm esa-progress-bar--primary"
+                                  role="progressbar"
+                                  aria-valuenow="46"
+                                  aria-valuemin="0"
+                                  aria-valuemax="100"
+                                  aria-label="Progress"
+                                >
+                                  <div class="esa-progress-bar__header typography-body-xs">
+                                    <span class="esa-progress-bar__value">46%</span>
+                                  </div>
+                                  <div class="esa-progress-bar__track">
+                                    <div class="esa-progress-bar__fill" style="width: 46%"></div>
+                                  </div>
+                                </div>
+                              </div>
+                              <span class="typography-meta cbf-portfolio-health__figures-main">
+                                $104.6K of $228K · <strong>$123.4K remaining</strong>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                      <li class="cbf-portfolio-health__row">
+                        <!-- Two-column row: LEFT identity (fluid) · RIGHT health (fixed) -->
+                        <div class="cbf-portfolio-health__row-body repel" data-gap="sm">
+                          <!-- LEFT: contract name + vendor·project caption + perf end + optional blocker -->
+                          <div class="cbf-portfolio-health__identity stack" data-gap="2xs">
+                            <a
+                              href="#"
+                              class="typography-body-md cbf-portfolio-health__contract-link"
+                              aria-label="Pacific Lamprey Passage — Umatilla — opens contract detail"
+                            >
+                              Pacific Lamprey Passage — Umatilla
+                            </a>
+                            <span class="typography-meta cbf-portfolio-health__meta-line">
+                              Confederated Tribes of the Umatilla Indian Reservation · Umatilla
+                              River Lamprey Restoration · Perf. ends Oct 31, 2026
+                            </span>
+                            <!-- Closeout blocker earns its own line (no colored left border — banned) -->
+                          </div>
+                          <!-- RIGHT: status pills + compact budget block (fixed width, right-aligned) -->
+                          <div class="cbf-portfolio-health__health stack" data-gap="xs">
+                            <!-- Status pills -->
+                            <div class="cbf-portfolio-health__pills cluster" data-gap="xs">
+                              <span
+                                class="esa-pill esa-pill--default esa-pill--sm typography-microcopy-xs"
+                              >
+                                <span class="esa-pill__label">Active</span>
+                              </span>
+                            </div>
+                            <!-- Budget: constrained-width progress bar + figures caption -->
+                            <div class="cbf-portfolio-health__budget stack" data-gap="2xs">
+                              <div class="cbf-portfolio-health__bar-wrap">
+                                <div
+                                  class="esa-progress-bar esa-progress-bar--sm esa-progress-bar--primary"
+                                  role="progressbar"
+                                  aria-valuenow="42"
+                                  aria-valuemin="0"
+                                  aria-valuemax="100"
+                                  aria-label="Progress"
+                                >
+                                  <div class="esa-progress-bar__header typography-body-xs">
+                                    <span class="esa-progress-bar__value">42%</span>
+                                  </div>
+                                  <div class="esa-progress-bar__track">
+                                    <div class="esa-progress-bar__fill" style="width: 42%"></div>
+                                  </div>
+                                </div>
+                              </div>
+                              <span class="typography-meta cbf-portfolio-health__figures-main">
+                                $62.3K of $148K · <strong>$85.7K remaining</strong>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                      <li class="cbf-portfolio-health__row">
+                        <!-- Two-column row: LEFT identity (fluid) · RIGHT health (fixed) -->
+                        <div class="cbf-portfolio-health__row-body repel" data-gap="sm">
+                          <!-- LEFT: contract name + vendor·project caption + perf end + optional blocker -->
+                          <div class="cbf-portfolio-health__identity stack" data-gap="2xs">
+                            <a
+                              href="#"
+                              class="typography-body-md cbf-portfolio-health__contract-link"
+                              aria-label="Riparian Fencing &amp; Off-site Watering — John Day — opens contract detail"
+                            >
+                              Riparian Fencing &amp; Off-site Watering — John Day
+                            </a>
+                            <span class="typography-meta cbf-portfolio-health__meta-line">
+                              High Desert Ecological Services · John Day Subbasin Riparian
+                              Restoration · Perf. ends Aug 15, 2026
+                            </span>
+                            <!-- Closeout blocker earns its own line (no colored left border — banned) -->
+                          </div>
+                          <!-- RIGHT: status pills + compact budget block (fixed width, right-aligned) -->
+                          <div class="cbf-portfolio-health__health stack" data-gap="xs">
+                            <!-- Status pills -->
+                            <div class="cbf-portfolio-health__pills cluster" data-gap="xs">
+                              <span
+                                class="esa-pill esa-pill--default esa-pill--sm typography-microcopy-xs"
+                              >
+                                <span class="esa-pill__label">Active</span>
+                              </span>
+                            </div>
+                            <!-- Budget: constrained-width progress bar + figures caption -->
+                            <div class="cbf-portfolio-health__budget stack" data-gap="2xs">
+                              <div class="cbf-portfolio-health__bar-wrap">
+                                <div
+                                  class="esa-progress-bar esa-progress-bar--sm esa-progress-bar--primary"
+                                  role="progressbar"
+                                  aria-valuenow="36"
+                                  aria-valuemin="0"
+                                  aria-valuemax="100"
+                                  aria-label="Progress"
+                                >
+                                  <div class="esa-progress-bar__header typography-body-xs">
+                                    <span class="esa-progress-bar__value">36%</span>
+                                  </div>
+                                  <div class="esa-progress-bar__track">
+                                    <div class="esa-progress-bar__fill" style="width: 36%"></div>
+                                  </div>
+                                </div>
+                              </div>
+                              <span class="typography-meta cbf-portfolio-health__figures-main">
+                                $31.2K of $87.5K · <strong>$56.3K remaining</strong>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    </ul>
+                    <!-- Band footer — absorbs uniform provenance + running-balance disclaimer -->
+                    <p class="typography-meta cbf-portfolio-health__footer">
+                      Figures as of Jun 21, 2026 · Asset Suite nightly feed · includes accruals —
+                      running balances are not real-time.
+                    </p>
+                  </section>
+                </div>
+                <!-- Explorer view (hidden on load) -->
+                <div id="cbf-portfolio-view-explorer" class="cbf-my-portfolio__view" hidden="">
+                  <section
+                    class="cbf-portfolio-explorer-section stack"
+                    data-gap="sm"
+                    data-portfolio-explorer=""
+                  >
+                    <!-- Lede + live breadcrumb of the current selection path -->
+                    <header class="cbf-portfolio-explorer__intro stack" data-gap="2xs">
+                      <p class="typography-meta cbf-portfolio-explorer__lede">
+                        Walk the data model: project › contract › artifact › record.
+                      </p>
+                      <p
+                        class="typography-meta cbf-portfolio-explorer__crumb"
+                        data-crumb=""
+                        aria-live="polite"
+                      >
+                        <span class="cbf-pe-crumb-cur"
+                          >Wenatchee &amp; Methow Habitat Restoration</span
+                        >
+                      </p>
+                    </header>
+                    <!-- The explorer CARD: the Miller-columns band plus an inline project-detail
+       region beneath it, sharing one bordered surface (no floating overlay). -->
+                    <div
+                      class="cbf-portfolio-explorer"
+                      role="group"
+                      aria-label="Portfolio explorer"
+                    >
+                      <!-- The Miller-columns band. overflow-x lets four ~16rem columns scroll
+         horizontally on narrow viewports instead of crushing. -->
+                      <div class="cbf-pe-band">
+                        <!-- Column 1 · My projects (SSR'd; client re-selects the first row) -->
+                        <div class="cbf-pe-col" data-col="projects">
+                          <h3 class="typography-label-xs cbf-pe-col__head">My projects</h3>
+                          <ul
+                            class="cbf-pe-list"
+                            role="listbox"
+                            aria-label="My projects"
+                            data-list="projects"
+                          >
+                            <li
+                              class="cbf-pe-row"
+                              role="option"
+                              data-row=""
+                              data-project-id="proj-wenatchee-methow"
+                              aria-selected="true"
+                              tabindex="0"
+                            >
+                              <span class="cbf-pe-row__body">
+                                <span class="typography-meta cbf-pe-row__caption cbf-num"
+                                  >2003-024-00</span
+                                >
+                                <span class="typography-body-md cbf-pe-row__title"
+                                  >Wenatchee &amp; Methow Habitat Restoration</span
+                                >
+                              </span>
+                              <span class="cbf-pe-row__trail">
+                                <span
+                                  class="cbf-pe-dot"
+                                  role="img"
+                                  aria-label="Has an item needing attention"
+                                  title="Has an item needing attention"
+                                >
+                                  <span
+                                    class="esa-badge esa-badge--warning esa-badge--md typography-microcopy-sm-strong esa-badge--dot"
+                                  >
+                                  </span>
+                                </span>
+                                <span class="cbf-pe-count cbf-num" aria-label="3 contracts">
+                                  3
+                                </span>
+                              </span>
+                            </li>
+                            <li
+                              class="cbf-pe-row"
+                              role="option"
+                              data-row=""
+                              data-project-id="proj-okanogan-entiat"
+                              aria-selected="false"
+                              tabindex="-1"
+                            >
+                              <span class="cbf-pe-row__body">
+                                <span class="typography-meta cbf-pe-row__caption cbf-num"
+                                  >1997-031-00</span
+                                >
+                                <span class="typography-body-md cbf-pe-row__title"
+                                  >Okanogan Water Quality &amp; Hatchery Supplementation</span
+                                >
+                              </span>
+                              <span class="cbf-pe-row__trail">
+                                <span
+                                  class="cbf-pe-dot"
+                                  role="img"
+                                  aria-label="Has an item needing attention"
+                                  title="Has an item needing attention"
+                                >
+                                  <span
+                                    class="esa-badge esa-badge--warning esa-badge--md typography-microcopy-sm-strong esa-badge--dot"
+                                  >
+                                  </span>
+                                </span>
+                                <span class="cbf-pe-count cbf-num" aria-label="2 contracts">
+                                  2
+                                </span>
+                              </span>
+                            </li>
+                            <li
+                              class="cbf-pe-row"
+                              role="option"
+                              data-row=""
+                              data-project-id="proj-mainstem-passage"
+                              aria-selected="false"
+                              tabindex="-1"
+                            >
+                              <span class="cbf-pe-row__body">
+                                <span class="typography-meta cbf-pe-row__caption cbf-num"
+                                  >2001-017-00</span
+                                >
+                                <span class="typography-body-md cbf-pe-row__title"
+                                  >Mainstem Passage — Telemetry, PIT Tag &amp; Lamprey</span
+                                >
+                              </span>
+                              <span class="cbf-pe-row__trail">
+                                <span
+                                  class="cbf-pe-dot"
+                                  role="img"
+                                  aria-label="Has an item needing urgent attention"
+                                  title="Has an item needing urgent attention"
+                                >
+                                  <span
+                                    class="esa-badge esa-badge--danger esa-badge--md typography-microcopy-sm-strong esa-badge--dot"
+                                  >
+                                  </span>
+                                </span>
+                                <span class="cbf-pe-count cbf-num" aria-label="3 contracts">
+                                  3
+                                </span>
+                              </span>
+                            </li>
+                            <li
+                              class="cbf-pe-row"
+                              role="option"
+                              data-row=""
+                              data-project-id="proj-hatchery-juvenile-me"
+                              aria-selected="false"
+                              tabindex="-1"
+                            >
+                              <span class="cbf-pe-row__body">
+                                <span class="typography-meta cbf-pe-row__caption cbf-num"
+                                  >2005-088-00</span
+                                >
+                                <span class="typography-body-md cbf-pe-row__title"
+                                  >Hatchery &amp; Juvenile Trapping M&amp;E</span
+                                >
+                              </span>
+                              <span class="cbf-pe-row__trail">
+                                <span
+                                  class="cbf-pe-dot"
+                                  role="img"
+                                  aria-label="Has an item needing attention"
+                                  title="Has an item needing attention"
+                                >
+                                  <span
+                                    class="esa-badge esa-badge--warning esa-badge--md typography-microcopy-sm-strong esa-badge--dot"
+                                  >
+                                  </span>
+                                </span>
+                                <span class="cbf-pe-count cbf-num" aria-label="2 contracts">
+                                  2
+                                </span>
+                              </span>
+                            </li>
+                          </ul>
+                        </div>
+                        <!-- Column 2 · Contracts (client-rendered from the selected project) -->
+                        <div class="cbf-pe-col" data-col="contracts">
+                          <h3 class="typography-label-xs cbf-pe-col__head">Contracts</h3>
+                          <ul
+                            class="cbf-pe-list"
+                            role="listbox"
+                            aria-label="Contracts"
+                            data-list="contracts"
+                          >
+                            <li
+                              class="cbf-pe-row cbf-pe-row--injected"
+                              role="option"
+                              data-row=""
+                              aria-selected="false"
+                              tabindex="-1"
+                              data-contract-id="pc-wenatchee"
+                            >
+                              <span class="cbf-pe-row__body"
+                                ><span class="typography-meta cbf-pe-row__caption cbf-num"
+                                  >56344 REL 12</span
+                                ><span class="typography-body-md cbf-pe-row__title"
+                                  >Salmon Habitat Restoration — Wenatchee</span
+                                ><span class="typography-meta cbf-pe-row__sub"
+                                  >Pacific Environmental Services, LLC</span
+                                ></span
+                              >
+                            </li>
+                            <li
+                              class="cbf-pe-row cbf-pe-row--injected"
+                              role="option"
+                              data-row=""
+                              aria-selected="false"
+                              tabindex="-1"
+                              data-contract-id="pc-methow"
+                            >
+                              <span class="cbf-pe-row__body"
+                                ><span class="typography-meta cbf-pe-row__caption cbf-num"
+                                  >56344 REL 17</span
+                                ><span class="typography-body-md cbf-pe-row__title"
+                                  >Riparian Vegetation Monitoring — Methow</span
+                                ><span class="typography-meta cbf-pe-row__sub"
+                                  >Methow Restoration Partners</span
+                                ></span
+                              ><span class="cbf-pe-row__trail"
+                                ><span
+                                  class="cbf-pe-dot"
+                                  role="img"
+                                  aria-label="Has an item needing attention"
+                                  title="Has an item needing attention"
+                                  ><span
+                                    class="esa-badge esa-badge--warning esa-badge--md typography-microcopy-sm-strong esa-badge--dot"
+                                  >
+                                  </span> </span
+                              ></span>
+                            </li>
+                            <li
+                              class="cbf-pe-row cbf-pe-row--injected"
+                              role="option"
+                              data-row=""
+                              aria-selected="false"
+                              tabindex="-1"
+                              data-contract-id="pc-riparian-john-day"
+                            >
+                              <span class="cbf-pe-row__body"
+                                ><span class="typography-meta cbf-pe-row__caption cbf-num"
+                                  >56344 REL 23</span
+                                ><span class="typography-body-md cbf-pe-row__title"
+                                  >Riparian Fencing &amp; Off-site Watering — John Day</span
+                                ><span class="typography-meta cbf-pe-row__sub"
+                                  >High Desert Ecological Services</span
+                                ></span
+                              >
+                            </li>
+                          </ul>
+                          <p
+                            class="cbf-pe-prompt typography-meta"
+                            data-prompt="contracts"
+                            hidden=""
+                          >
+                            Select a project
+                          </p>
+                        </div>
+                        <!-- Column 3 · Artifacts (four fixed types for the selected contract) -->
+                        <div class="cbf-pe-col" data-col="artifacts">
+                          <h3 class="typography-label-xs cbf-pe-col__head">Artifacts</h3>
+                          <ul
+                            class="cbf-pe-list"
+                            role="listbox"
+                            aria-label="Artifact types"
+                            data-list="artifacts"
+                          ></ul>
+                          <p class="cbf-pe-prompt typography-meta" data-prompt="artifacts">
+                            Select a contract
+                          </p>
+                        </div>
+                        <!-- Column 4 · Items (records of the selected artifact type) -->
+                        <div class="cbf-pe-col cbf-pe-col--items" data-col="items">
+                          <h3 class="typography-label-xs cbf-pe-col__head" data-items-head="">
+                            Items
+                          </h3>
+                          <ul
+                            class="cbf-pe-list"
+                            role="listbox"
+                            aria-label="Records"
+                            data-list="items"
+                          ></ul>
+                          <p class="cbf-pe-prompt typography-meta" data-prompt="items">
+                            Select an artifact
+                          </p>
+                          <!-- Empty-collection state (an artifact type with zero records) -->
+                          <div class="cbf-pe-empty" data-items-empty="" hidden="">
+                            <div class="esa-empty-state esa-empty-state--sm">
+                              <h3 class="esa-empty-state__title typography-label-sm-strong">
+                                Nothing here yet
+                              </h3>
+                              <p class="esa-empty-state__description typography-body-xs">
+                                No records on this contract yet.
+                              </p>
+                              <div class="esa-empty-state__actions typography-label-md"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- /.cbf-pe-band -->
+                      <!-- Inline project detail — part of the card, re-rendered on hover/selection.
+         Sponsor, budget position (spent vs an authored baseline), and last
+         activity for the focused project. The budget bar is a real esa-progress-bar
+         lego; the client mutates its fill width + baseline tick per project
+         (never hand-rolls the bar). -->
+                      <div class="cbf-pe-detail" data-detail="">
+                        <div class="cbf-pe-detail__head repel">
+                          <span class="cbf-pe-detail__ident stack" data-gap="3xs">
+                            <span
+                              class="typography-meta cbf-pe-detail__num cbf-num"
+                              data-detail-num=""
+                              >2003-024-00</span
+                            >
+                            <span class="typography-title cbf-pe-detail__name" data-detail-name=""
+                              >Wenatchee &amp; Methow Habitat Restoration</span
+                            >
+                          </span>
+                          <span
+                            class="typography-meta cbf-pe-detail__meta cbf-num"
+                            data-detail-count=""
+                            >3 contracts</span
+                          >
+                        </div>
+                        <div
+                          class="cbf-pe-detail__facts grid"
+                          style="--grid-min: 12rem"
+                          data-gap="md"
+                          aria-live="polite"
+                        >
+                          <div class="stack" data-gap="2xs">
+                            <span class="typography-label-xs cbf-pe-detail__label">Sponsor</span>
+                            <span
+                              class="typography-body-md cbf-pe-detail__sponsor"
+                              data-detail-sponsor=""
+                              >Chelan County Natural Resources</span
+                            >
+                          </div>
+                          <div class="stack" data-gap="2xs">
+                            <div class="repel">
+                              <span class="typography-label-xs cbf-pe-detail__label"
+                                >Budget position</span
+                              >
+                              <span
+                                class="typography-meta cbf-pe-detail__pace cbf-pe-detail__pace--over"
+                                data-detail-pace=""
+                                >3 pts over plan</span
+                              >
+                            </div>
+                            <div class="cbf-pe-detail__bar" data-detail-bar="">
+                              <div
+                                class="esa-progress-bar esa-progress-bar--sm esa-progress-bar--primary"
+                                role="progressbar"
+                                aria-valuenow="73"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                aria-label="Budget spent: 73% of 70% planned"
+                              >
+                                <div class="esa-progress-bar__header typography-body-xs">
+                                  <span class="esa-progress-bar__value">73%</span>
+                                </div>
+                                <div class="esa-progress-bar__track">
+                                  <div class="esa-progress-bar__fill" style="width: 73%"></div>
+                                  <span
+                                    class="cbf-pe-baseline"
+                                    role="img"
+                                    aria-label="Planned baseline 70%"
+                                    style="left: 70%"
+                                  ></span>
+                                </div>
+                              </div>
+                            </div>
+                            <span
+                              class="typography-meta cbf-pe-detail__budget"
+                              data-detail-budget=""
+                              >73% spent · $546.4K of $747.5K · 70% planned</span
+                            >
+                          </div>
+                          <div class="stack" data-gap="2xs">
+                            <span class="typography-label-xs cbf-pe-detail__label"
+                              >Last activity</span
+                            >
+                            <span
+                              class="typography-meta cbf-pe-detail__activity"
+                              data-detail-activity=""
+                              >Invoice INV-2026-0047 submitted · Jun 12, 2026</span
+                            >
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <!-- /.cbf-portfolio-explorer card -->
+                    <!-- Real esa-pill legos, server-rendered once per variant with the design-system
+       scope hash intact. Contract/item rows clone the matching template's markup
+       and swap the label text — so every status chip is byte-identical to the lego,
+       never hand-rolled in JS (same pattern as cbf-invoice-review-queue). -->
+                    <div
+                      class="cbf-pe-pill-templates"
+                      data-pill-templates=""
+                      hidden=""
+                      aria-hidden="true"
+                    >
+                      <span data-pill-variant="default"
+                        ><span
+                          class="esa-pill esa-pill--default esa-pill--sm typography-microcopy-xs"
+                        >
+                          <span class="esa-pill__label">default</span>
+                        </span> </span
+                      ><span data-pill-variant="info"
+                        ><span class="esa-pill esa-pill--info esa-pill--sm typography-microcopy-xs">
+                          <span class="esa-pill__label">info</span>
+                        </span> </span
+                      ><span data-pill-variant="success"
+                        ><span
+                          class="esa-pill esa-pill--success esa-pill--sm typography-microcopy-xs"
+                        >
+                          <span class="esa-pill__label">success</span>
+                        </span> </span
+                      ><span data-pill-variant="warning"
+                        ><span
+                          class="esa-pill esa-pill--warning esa-pill--sm typography-microcopy-xs"
+                        >
+                          <span class="esa-pill__label">warning</span>
+                        </span> </span
+                      ><span data-pill-variant="danger"
+                        ><span
+                          class="esa-pill esa-pill--danger esa-pill--sm typography-microcopy-xs"
+                        >
+                          <span class="esa-pill__label">danger</span>
+                        </span>
+                      </span>
+                    </div>
+                    <!-- Real esa-badge dot legos (warning/danger), server-rendered once per severity so
+       the client-injected contract/artifact rows clone byte-identical dots — same
+       clone-a-real-lego discipline as the pills above, never hand-rolled in JS. -->
+                    <div
+                      class="cbf-pe-dot-templates"
+                      data-dot-templates=""
+                      hidden=""
+                      aria-hidden="true"
+                    >
+                      <span data-dot-variant="warning"
+                        ><span
+                          class="esa-badge esa-badge--warning esa-badge--md typography-microcopy-sm-strong esa-badge--dot"
+                        >
+                        </span> </span
+                      ><span data-dot-variant="danger"
+                        ><span
+                          class="esa-badge esa-badge--danger esa-badge--md typography-microcopy-sm-strong esa-badge--dot"
+                        >
+                        </span>
+                      </span>
+                    </div>
+                    <!-- Data for the client module: full project graph (avoids a second fetch).
+       Column 1 is SSR'd; columns 2-4 render from here. -->
+                    <script type="application/json" data-explorer-data="">
+                      [
+                        {
+                          "id": "proj-wenatchee-methow",
+                          "number": "2003-024-00",
+                          "name": "Wenatchee & Methow Habitat Restoration",
+                          "contracts": [
+                            {
+                              "id": "pc-wenatchee",
+                              "number": "56344 REL 12",
+                              "title": "Salmon Habitat Restoration — Wenatchee",
+                              "vendor": "Pacific Environmental Services, LLC",
+                              "status": "Active",
+                              "clusters": {
+                                "sow": [
+                                  {
+                                    "id": "sow-wenatchee-orig",
+                                    "label": "Statement of Work — original",
+                                    "sub": "Effective Oct 1, 2023",
+                                    "status": { "label": "Current", "variant": "success" },
+                                    "href": "/map-sow"
+                                  },
+                                  {
+                                    "id": "sow-wenatchee-amd1",
+                                    "label": "SOW Amendment 1",
+                                    "sub": "Effective Mar 15, 2024",
+                                    "status": { "label": "Current", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "lib": [
+                                  {
+                                    "id": "lib-wenatchee-r1",
+                                    "label": "LIB Rev 1",
+                                    "sub": "Effective Oct 1, 2023",
+                                    "status": { "label": "Superseded", "variant": "default" },
+                                    "href": "/project-budgets"
+                                  },
+                                  {
+                                    "id": "lib-wenatchee-r2",
+                                    "label": "LIB Rev 2",
+                                    "sub": "Effective Mar 15, 2024",
+                                    "status": { "label": "Superseded", "variant": "default" },
+                                    "href": "/project-budgets"
+                                  },
+                                  {
+                                    "id": "lib-wenatchee-r3",
+                                    "label": "LIB Rev 3",
+                                    "sub": "Effective Oct 1, 2024",
+                                    "status": { "label": "Active", "variant": "success" },
+                                    "href": "/project-budgets"
+                                  }
+                                ],
+                                "statusReports": [
+                                  {
+                                    "id": "sr-wenatchee-q1-2026",
+                                    "label": "Q1 2026 Status Report",
+                                    "sub": "Period: Jan–Mar 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sr-wenatchee-q4-2025",
+                                    "label": "Q4 2025 Status Report",
+                                    "sub": "Submitted Jan 15, 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sr-wenatchee-q3-2025",
+                                    "label": "Q3 2025 Status Report",
+                                    "sub": "Submitted Oct 10, 2025",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "invoices": [
+                                  {
+                                    "id": "inv-INV-2026-0051",
+                                    "label": "INV-2026-0051",
+                                    "sub": "$6,120.00 · submitted Jun 19, 2026",
+                                    "status": { "label": "Submitted", "variant": "info" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "inv-INV-2026-0038",
+                                    "label": "INV-2026-0038",
+                                    "sub": "$5,210.00 · submitted May 29, 2026",
+                                    "status": { "label": "Approved", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ]
+                              },
+                              "clusterAttention": {
+                                "sow": null,
+                                "lib": null,
+                                "statusReports": null,
+                                "invoices": null
+                              },
+                              "attention": null
+                            },
+                            {
+                              "id": "pc-methow",
+                              "number": "56344 REL 17",
+                              "title": "Riparian Vegetation Monitoring — Methow",
+                              "vendor": "Methow Restoration Partners",
+                              "status": "Active",
+                              "clusters": {
+                                "sow": [
+                                  {
+                                    "id": "sow-methow-orig",
+                                    "label": "Statement of Work — original",
+                                    "sub": "Effective Oct 1, 2022",
+                                    "status": { "label": "Current", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "lib": [
+                                  {
+                                    "id": "lib-methow-r1",
+                                    "label": "LIB Rev 1",
+                                    "sub": "Effective Oct 1, 2022",
+                                    "status": { "label": "Superseded", "variant": "default" },
+                                    "href": "/project-budgets"
+                                  },
+                                  {
+                                    "id": "lib-methow-r2",
+                                    "label": "LIB Rev 2",
+                                    "sub": "Effective Oct 1, 2023",
+                                    "status": { "label": "Active", "variant": "success" },
+                                    "href": "/project-budgets"
+                                  }
+                                ],
+                                "statusReports": [
+                                  {
+                                    "id": "sr-methow-q1-2026",
+                                    "label": "Q1 2026 Status Report",
+                                    "sub": "Submitted Apr 12, 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sr-methow-q4-2025",
+                                    "label": "Q4 2025 Status Report",
+                                    "sub": "Submitted Jan 9, 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "invoices": [
+                                  {
+                                    "id": "inv-INV-2026-0047",
+                                    "label": "INV-2026-0047",
+                                    "sub": "$3,960.00 · submitted May 28, 2026",
+                                    "status": { "label": "In review", "variant": "warning" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "inv-INV-2026-0032",
+                                    "label": "INV-2026-0032",
+                                    "sub": "$4,180.00 · submitted May 15, 2026",
+                                    "status": { "label": "Approved", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ]
+                              },
+                              "clusterAttention": {
+                                "sow": null,
+                                "lib": null,
+                                "statusReports": null,
+                                "invoices": "warning"
+                              },
+                              "attention": "warning"
+                            },
+                            {
+                              "id": "pc-riparian-john-day",
+                              "number": "56344 REL 23",
+                              "title": "Riparian Fencing & Off-site Watering — John Day",
+                              "vendor": "High Desert Ecological Services",
+                              "status": "Active",
+                              "clusters": {
+                                "sow": [
+                                  {
+                                    "id": "sow-johnday-orig",
+                                    "label": "Statement of Work — original",
+                                    "sub": "Effective Nov 1, 2025",
+                                    "status": { "label": "Current", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "lib": [
+                                  {
+                                    "id": "lib-johnday-r1",
+                                    "label": "LIB Rev 1",
+                                    "sub": "Effective Nov 1, 2025",
+                                    "status": { "label": "Active", "variant": "success" },
+                                    "href": "/project-budgets"
+                                  }
+                                ],
+                                "statusReports": [
+                                  {
+                                    "id": "sr-johnday-q1-2026",
+                                    "label": "Q1 2026 Status Report",
+                                    "sub": "Period: Jan–Mar 2026",
+                                    "status": { "label": "Draft", "variant": "default" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "invoices": []
+                              },
+                              "clusterAttention": {
+                                "sow": null,
+                                "lib": null,
+                                "statusReports": null,
+                                "invoices": null
+                              },
+                              "attention": null
+                            }
+                          ],
+                          "attention": "warning",
+                          "preview": {
+                            "sponsor": "Chelan County Natural Resources",
+                            "budget": {
+                              "value": 747500,
+                              "expended": 546400,
+                              "remaining": 201100,
+                              "valueLabel": "$747.5K",
+                              "expendedLabel": "$546.4K",
+                              "spentPct": 73,
+                              "plannedPct": 70,
+                              "variancePct": 3,
+                              "pace": "over"
+                            },
+                            "lastActivity": {
+                              "label": "Invoice INV-2026-0047 submitted",
+                              "date": "Jun 12, 2026"
+                            }
+                          }
+                        },
+                        {
+                          "id": "proj-okanogan-entiat",
+                          "number": "1997-031-00",
+                          "name": "Okanogan Water Quality & Hatchery Supplementation",
+                          "contracts": [
+                            {
+                              "id": "pc-okanogan",
+                              "number": "56512 REL 08",
+                              "title": "Water Quality Sampling — Okanogan",
+                              "vendor": "Okanogan Water Sciences",
+                              "status": "Expiring soon",
+                              "clusters": {
+                                "sow": [
+                                  {
+                                    "id": "sow-okanogan-orig",
+                                    "label": "Statement of Work — original",
+                                    "sub": "Effective Oct 1, 2024",
+                                    "status": { "label": "Current", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "lib": [
+                                  {
+                                    "id": "lib-okanogan-r1",
+                                    "label": "LIB Rev 1",
+                                    "sub": "Effective Oct 1, 2024",
+                                    "status": { "label": "Superseded", "variant": "default" },
+                                    "href": "/project-budgets"
+                                  },
+                                  {
+                                    "id": "lib-okanogan-r2",
+                                    "label": "LIB Rev 2",
+                                    "sub": "Effective Feb 1, 2025",
+                                    "status": { "label": "Active", "variant": "success" },
+                                    "href": "/project-budgets"
+                                  }
+                                ],
+                                "statusReports": [
+                                  {
+                                    "id": "sr-okanogan-q1-2026",
+                                    "label": "Q1 2026 Status Report",
+                                    "sub": "Submitted Apr 5, 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sr-okanogan-q4-2025",
+                                    "label": "Q4 2025 Status Report",
+                                    "sub": "Submitted Jan 8, 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sr-okanogan-q3-2025",
+                                    "label": "Q3 2025 Status Report",
+                                    "sub": "Submitted Oct 7, 2025",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sr-okanogan-q2-2025",
+                                    "label": "Q2 2025 Status Report",
+                                    "sub": "Submitted Jul 11, 2025",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "invoices": [
+                                  {
+                                    "id": "inv-INV-2026-0044",
+                                    "label": "INV-2026-0044",
+                                    "sub": "$18,750.00 · submitted Jun 16, 2026",
+                                    "status": { "label": "Submitted", "variant": "info" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "inv-INV-2026-0027",
+                                    "label": "INV-2026-0027",
+                                    "sub": "$9,450.00 · submitted May 8, 2026",
+                                    "status": { "label": "Approved", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ]
+                              },
+                              "clusterAttention": {
+                                "sow": null,
+                                "lib": null,
+                                "statusReports": null,
+                                "invoices": null
+                              },
+                              "attention": null
+                            },
+                            {
+                              "id": "pc-entiat",
+                              "number": "56512 REL 14",
+                              "title": "Hatchery Supplementation — Entiat",
+                              "vendor": "Pacific Environmental Services, LLC",
+                              "status": "Active",
+                              "clusters": {
+                                "sow": [
+                                  {
+                                    "id": "sow-entiat-orig",
+                                    "label": "Statement of Work — original",
+                                    "sub": "Effective Oct 1, 2023",
+                                    "status": { "label": "Current", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sow-entiat-amd1",
+                                    "label": "SOW Amendment 1",
+                                    "sub": "Effective Jun 1, 2024",
+                                    "status": { "label": "Current", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "lib": [
+                                  {
+                                    "id": "lib-entiat-r1",
+                                    "label": "LIB Rev 1",
+                                    "sub": "Effective Oct 1, 2023",
+                                    "status": { "label": "Superseded", "variant": "default" },
+                                    "href": "/project-budgets"
+                                  },
+                                  {
+                                    "id": "lib-entiat-r2",
+                                    "label": "LIB Rev 2",
+                                    "sub": "Effective Jun 1, 2024",
+                                    "status": { "label": "Active", "variant": "success" },
+                                    "href": "/project-budgets"
+                                  }
+                                ],
+                                "statusReports": [
+                                  {
+                                    "id": "sr-entiat-q1-2026",
+                                    "label": "Q1 2026 Status Report",
+                                    "sub": "Submitted Apr 8, 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sr-entiat-q4-2025",
+                                    "label": "Q4 2025 Status Report",
+                                    "sub": "Submitted Jan 12, 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "invoices": [
+                                  {
+                                    "id": "inv-INV-2026-0046",
+                                    "label": "INV-2026-0046",
+                                    "sub": "$2,280.00 · submitted Jun 18, 2026",
+                                    "status": { "label": "Submitted", "variant": "info" },
+                                    "href": "#"
+                                  }
+                                ]
+                              },
+                              "clusterAttention": {
+                                "sow": null,
+                                "lib": null,
+                                "statusReports": null,
+                                "invoices": null
+                              },
+                              "attention": null
+                            }
+                          ],
+                          "attention": "warning",
+                          "preview": {
+                            "sponsor": "Colville Confederated Tribes",
+                            "budget": {
+                              "value": 276000,
+                              "expended": 165750,
+                              "remaining": 110250,
+                              "valueLabel": "$276K",
+                              "expendedLabel": "$165.75K",
+                              "spentPct": 60,
+                              "plannedPct": 65,
+                              "variancePct": -5,
+                              "pace": "under"
+                            },
+                            "lastActivity": {
+                              "label": "Final invoice submitted — Okanogan",
+                              "date": "Jun 10, 2026"
+                            }
+                          }
+                        },
+                        {
+                          "id": "proj-mainstem-passage",
+                          "number": "2001-017-00",
+                          "name": "Mainstem Passage — Telemetry, PIT Tag & Lamprey",
+                          "contracts": [
+                            {
+                              "id": "pc-telemetry",
+                              "number": "56721 REL 31",
+                              "title": "Smolt Survival Telemetry Study",
+                              "vendor": "Cascade Fisheries Consulting",
+                              "status": "Pending modification",
+                              "clusters": {
+                                "sow": [
+                                  {
+                                    "id": "sow-telemetry-orig",
+                                    "label": "Statement of Work — original",
+                                    "sub": "Effective Oct 1, 2022",
+                                    "status": { "label": "Superseded", "variant": "default" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sow-telemetry-amd1",
+                                    "label": "SOW Amendment 1",
+                                    "sub": "Effective Oct 1, 2023",
+                                    "status": { "label": "Current", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "lib": [
+                                  {
+                                    "id": "lib-telemetry-r1",
+                                    "label": "LIB Rev 1",
+                                    "sub": "Effective Oct 1, 2022",
+                                    "status": { "label": "Superseded", "variant": "default" },
+                                    "href": "/project-budgets"
+                                  },
+                                  {
+                                    "id": "lib-telemetry-r2",
+                                    "label": "LIB Rev 2",
+                                    "sub": "Effective Oct 1, 2023",
+                                    "status": { "label": "Superseded", "variant": "default" },
+                                    "href": "/project-budgets"
+                                  },
+                                  {
+                                    "id": "lib-telemetry-r3",
+                                    "label": "LIB Rev 3",
+                                    "sub": "Effective Oct 1, 2024",
+                                    "status": { "label": "Active", "variant": "success" },
+                                    "href": "/project-budgets"
+                                  },
+                                  {
+                                    "id": "lib-telemetry-r4-draft",
+                                    "label": "LIB Rev 4 (draft under Mod 2)",
+                                    "sub": "Pending countersignature",
+                                    "status": { "label": "Draft", "variant": "warning" },
+                                    "href": "/project-budgets"
+                                  }
+                                ],
+                                "statusReports": [
+                                  {
+                                    "id": "sr-telemetry-q1-2026",
+                                    "label": "Q1 2026 Status Report",
+                                    "sub": "Submitted Apr 14, 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sr-telemetry-q4-2025",
+                                    "label": "Q4 2025 Status Report",
+                                    "sub": "Submitted Jan 14, 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sr-telemetry-q3-2025",
+                                    "label": "Q3 2025 Status Report",
+                                    "sub": "Submitted Oct 9, 2025",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "invoices": [
+                                  {
+                                    "id": "inv-INV-2026-0049",
+                                    "label": "INV-2026-0049",
+                                    "sub": "$12,480.00 · submitted Jun 15, 2026",
+                                    "status": { "label": "In review", "variant": "warning" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "inv-INV-2026-0041",
+                                    "label": "INV-2026-0041",
+                                    "sub": "$4,310.00 · submitted Jun 5, 2026",
+                                    "status": { "label": "Returned", "variant": "danger" },
+                                    "href": "#"
+                                  }
+                                ]
+                              },
+                              "clusterAttention": {
+                                "sow": null,
+                                "lib": "warning",
+                                "statusReports": null,
+                                "invoices": "danger"
+                              },
+                              "attention": "danger"
+                            },
+                            {
+                              "id": "pc-pit-tag-lg",
+                              "number": "56721 REL 38",
+                              "title": "PIT Tag Detection System O&M — Lower Granite",
+                              "vendor": "Pacific States Marine Fisheries Commission",
+                              "status": "Active",
+                              "clusters": {
+                                "sow": [
+                                  {
+                                    "id": "sow-pittag-orig",
+                                    "label": "Statement of Work — original",
+                                    "sub": "Effective Oct 1, 2023",
+                                    "status": { "label": "Current", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "lib": [
+                                  {
+                                    "id": "lib-pittag-r1",
+                                    "label": "LIB Rev 1",
+                                    "sub": "Effective Oct 1, 2023",
+                                    "status": { "label": "Superseded", "variant": "default" },
+                                    "href": "/project-budgets"
+                                  },
+                                  {
+                                    "id": "lib-pittag-r2",
+                                    "label": "LIB Rev 2",
+                                    "sub": "Effective Oct 1, 2024",
+                                    "status": { "label": "Active", "variant": "success" },
+                                    "href": "/project-budgets"
+                                  }
+                                ],
+                                "statusReports": [
+                                  {
+                                    "id": "sr-pittag-q1-2026",
+                                    "label": "Q1 2026 Status Report",
+                                    "sub": "Submitted May 30, 2026",
+                                    "status": { "label": "Awaiting review", "variant": "warning" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sr-pittag-q4-2025",
+                                    "label": "Q4 2025 Status Report",
+                                    "sub": "Submitted Jan 13, 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sr-pittag-q3-2025",
+                                    "label": "Q3 2025 Status Report",
+                                    "sub": "Submitted Oct 8, 2025",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "invoices": [
+                                  {
+                                    "id": "inv-hist-pittag-0029",
+                                    "label": "INV-2026-0029",
+                                    "sub": "$28,400.00 · submitted Apr 3, 2026",
+                                    "status": { "label": "Approved", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "inv-hist-pittag-0018",
+                                    "label": "INV-2026-0018",
+                                    "sub": "$31,200.00 · submitted Jan 22, 2026",
+                                    "status": { "label": "Approved", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ]
+                              },
+                              "clusterAttention": {
+                                "sow": null,
+                                "lib": null,
+                                "statusReports": "warning",
+                                "invoices": null
+                              },
+                              "attention": "warning"
+                            },
+                            {
+                              "id": "pc-lamprey-umatilla",
+                              "number": "56721 REL 45",
+                              "title": "Pacific Lamprey Passage — Umatilla",
+                              "vendor": "Confederated Tribes of the Umatilla Indian Reservation",
+                              "status": "Active",
+                              "clusters": {
+                                "sow": [
+                                  {
+                                    "id": "sow-lamprey-orig",
+                                    "label": "Statement of Work — original",
+                                    "sub": "Effective Oct 1, 2024",
+                                    "status": { "label": "Current", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "lib": [
+                                  {
+                                    "id": "lib-lamprey-r1",
+                                    "label": "LIB Rev 1",
+                                    "sub": "Effective Oct 1, 2024",
+                                    "status": { "label": "Active", "variant": "success" },
+                                    "href": "/project-budgets"
+                                  }
+                                ],
+                                "statusReports": [
+                                  {
+                                    "id": "sr-lamprey-q1-2026",
+                                    "label": "Q1 2026 Status Report",
+                                    "sub": "Submitted Apr 10, 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sr-lamprey-q4-2025",
+                                    "label": "Q4 2025 Status Report",
+                                    "sub": "Submitted Jan 10, 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "invoices": [
+                                  {
+                                    "id": "inv-hist-lamprey-0023",
+                                    "label": "INV-2026-0023",
+                                    "sub": "$19,600.00 · submitted Mar 18, 2026",
+                                    "status": { "label": "Approved", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ]
+                              },
+                              "clusterAttention": {
+                                "sow": null,
+                                "lib": null,
+                                "statusReports": null,
+                                "invoices": null
+                              },
+                              "attention": null
+                            }
+                          ],
+                          "attention": "danger",
+                          "preview": {
+                            "sponsor": "Pacific States Marine Fisheries Commission",
+                            "budget": {
+                              "value": 1140000,
+                              "expended": 863000,
+                              "remaining": 277000,
+                              "valueLabel": "$1.14M",
+                              "expendedLabel": "$863K",
+                              "spentPct": 76,
+                              "plannedPct": 72,
+                              "variancePct": 4,
+                              "pace": "over"
+                            },
+                            "lastActivity": {
+                              "label": "Q1 2026 Status Report submitted — PIT Tag O&M",
+                              "date": "May 30, 2026"
+                            }
+                          }
+                        },
+                        {
+                          "id": "proj-hatchery-juvenile-me",
+                          "number": "2005-088-00",
+                          "name": "Hatchery & Juvenile Trapping M&E",
+                          "contracts": [
+                            {
+                              "id": "pc-chiwawa-rst",
+                              "number": "56921 REL 09",
+                              "title": "Rotary Screw Trap Juvenile M&E — Chiwawa",
+                              "vendor": "Yakama Nation Fisheries",
+                              "status": "Active",
+                              "clusters": {
+                                "sow": [
+                                  {
+                                    "id": "sow-chiwawa-orig",
+                                    "label": "Statement of Work — original",
+                                    "sub": "Effective Oct 1, 2024",
+                                    "status": { "label": "Current", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "lib": [
+                                  {
+                                    "id": "lib-chiwawa-r1",
+                                    "label": "LIB Rev 1",
+                                    "sub": "Effective Oct 1, 2024",
+                                    "status": { "label": "Active", "variant": "success" },
+                                    "href": "/project-budgets"
+                                  }
+                                ],
+                                "statusReports": [
+                                  {
+                                    "id": "sr-chiwawa-q1-2026",
+                                    "label": "Q1 2026 Status Report",
+                                    "sub": "Submitted Jun 5, 2026 · awaiting acceptance",
+                                    "status": { "label": "Awaiting review", "variant": "warning" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sr-chiwawa-q4-2025",
+                                    "label": "Q4 2025 Status Report",
+                                    "sub": "Submitted Jan 7, 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "invoices": [
+                                  {
+                                    "id": "inv-hist-chiwawa-0033",
+                                    "label": "INV-2026-0033",
+                                    "sub": "$16,800.00 · submitted May 12, 2026",
+                                    "status": { "label": "Approved", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "inv-hist-chiwawa-0021",
+                                    "label": "INV-2026-0021",
+                                    "sub": "$17,400.00 · submitted Feb 18, 2026",
+                                    "status": { "label": "Approved", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ]
+                              },
+                              "clusterAttention": {
+                                "sow": null,
+                                "lib": null,
+                                "statusReports": "warning",
+                                "invoices": null
+                              },
+                              "attention": "warning"
+                            },
+                            {
+                              "id": "pc-winthrop-hatchery",
+                              "number": "56921 REL 16",
+                              "title": "Hatchery Effectiveness M&E — Winthrop NFH",
+                              "vendor": "Fish Pro Inc.",
+                              "status": "Closeout eligible",
+                              "clusters": {
+                                "sow": [
+                                  {
+                                    "id": "sow-winthrop-orig",
+                                    "label": "Statement of Work — original",
+                                    "sub": "Effective Oct 1, 2022",
+                                    "status": { "label": "Superseded", "variant": "default" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sow-winthrop-amd1",
+                                    "label": "SOW Amendment 1",
+                                    "sub": "Effective Oct 1, 2023",
+                                    "status": { "label": "Current", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "lib": [
+                                  {
+                                    "id": "lib-winthrop-r1",
+                                    "label": "LIB Rev 1",
+                                    "sub": "Effective Oct 1, 2022",
+                                    "status": { "label": "Superseded", "variant": "default" },
+                                    "href": "/project-budgets"
+                                  },
+                                  {
+                                    "id": "lib-winthrop-r2",
+                                    "label": "LIB Rev 2",
+                                    "sub": "Effective Oct 1, 2023",
+                                    "status": { "label": "Superseded", "variant": "default" },
+                                    "href": "/project-budgets"
+                                  },
+                                  {
+                                    "id": "lib-winthrop-r3",
+                                    "label": "LIB Rev 3",
+                                    "sub": "Effective Oct 1, 2024",
+                                    "status": { "label": "Active", "variant": "success" },
+                                    "href": "/project-budgets"
+                                  }
+                                ],
+                                "statusReports": [
+                                  {
+                                    "id": "sr-winthrop-q1-2026",
+                                    "label": "Q1 2026 Status Report",
+                                    "sub": "Submitted Apr 9, 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sr-winthrop-q4-2025",
+                                    "label": "Q4 2025 Status Report",
+                                    "sub": "Submitted Jan 11, 2026",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "sr-winthrop-q3-2025",
+                                    "label": "Q3 2025 Status Report",
+                                    "sub": "Submitted Oct 14, 2025",
+                                    "status": { "label": "Accepted", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ],
+                                "invoices": [
+                                  {
+                                    "id": "inv-hist-winthrop-0036",
+                                    "label": "INV-2026-0036",
+                                    "sub": "$22,600.00 · submitted Apr 28, 2026",
+                                    "status": { "label": "Approved", "variant": "success" },
+                                    "href": "#"
+                                  },
+                                  {
+                                    "id": "inv-hist-winthrop-0024",
+                                    "label": "INV-2026-0024",
+                                    "sub": "$24,100.00 · submitted Feb 5, 2026",
+                                    "status": { "label": "Approved", "variant": "success" },
+                                    "href": "#"
+                                  }
+                                ]
+                              },
+                              "clusterAttention": {
+                                "sow": null,
+                                "lib": null,
+                                "statusReports": null,
+                                "invoices": null
+                              },
+                              "attention": null
+                            }
+                          ],
+                          "attention": "warning",
+                          "preview": {
+                            "sponsor": "Yakama Nation Fisheries",
+                            "budget": {
+                              "value": 423000,
+                              "expended": 298400,
+                              "remaining": 124600,
+                              "valueLabel": "$423K",
+                              "expendedLabel": "$298.4K",
+                              "spentPct": 71,
+                              "plannedPct": 68,
+                              "variancePct": 3,
+                              "pace": "over"
+                            },
+                            "lastActivity": {
+                              "label": "Q1 2026 Status Report submitted — Chiwawa RST",
+                              "date": "Jun 5, 2026"
+                            }
+                          }
+                        }
+                      ]
+                    </script>
+                  </section>
+                </div>
+              </div>
+              <!-- Guard: .stack and other layout primitives use display:flex which can override
+     the [hidden] attribute. Pin it to none so toggling is reliable. -->
+            </div>
+          </esa-tab-layout>
+          <script
+            type="module"
+            src="/cb-fish-design/_astro/cbf-mywork-tabs.astro_astro_type_script_index_0_lang.C08G3kbk.js"
+          ></script>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+```
+
+## Styles (only what this section uses; tokens resolved for the theme)
+```css
+.typography-label-md {
+  font-family: var(--typography-label-md-font-family);
+  font-size: var(--typography-label-md-font-size);
+  font-weight: var(--typography-label-md-font-weight);
+  line-height: var(--typography-label-md-line-height);
+  letter-spacing: var(--typography-label-md-letter-spacing);
+}
+.typography-microcopy-xs {
+  font-family: var(--typography-microcopy-xs-font-family);
+  font-size: var(--typography-microcopy-xs-font-size);
+  font-weight: var(--typography-microcopy-xs-font-weight);
+  line-height: var(--typography-microcopy-xs-line-height);
+  letter-spacing: var(--typography-microcopy-xs-letter-spacing);
+}
+.typography-microcopy-md {
+  font-family: var(--typography-microcopy-md-font-family);
+  font-size: var(--typography-microcopy-md-font-size);
+  font-weight: var(--typography-microcopy-md-font-weight);
+  line-height: var(--typography-microcopy-md-line-height);
+  letter-spacing: var(--typography-microcopy-md-letter-spacing);
+}
+.typography-body-sm {
+  font-family: var(--typography-body-sm-font-family);
+  font-size: var(--typography-body-sm-font-size);
+  font-weight: var(--typography-body-sm-font-weight);
+  line-height: var(--typography-body-sm-line-height);
+  letter-spacing: var(--typography-body-sm-letter-spacing);
+}
+.typography-body-md {
+  font-family: var(--typography-body-md-font-family);
+  font-size: var(--typography-body-md-font-size);
+  font-weight: var(--typography-body-md-font-weight);
+  line-height: var(--typography-body-md-line-height);
+  letter-spacing: var(--typography-body-md-letter-spacing);
+}
+.typography-heading-lg {
+  font-family: var(--typography-heading-lg-font-family);
+  font-size: var(--typography-heading-lg-font-size);
+  font-weight: var(--typography-heading-lg-font-weight);
+  line-height: var(--typography-heading-lg-line-height);
+  letter-spacing: var(--typography-heading-lg-letter-spacing);
+}
+.typography-heading-md {
+  font-family: var(--typography-heading-md-font-family);
+  font-size: var(--typography-heading-md-font-size);
+  font-weight: var(--typography-heading-md-font-weight);
+  line-height: var(--typography-heading-md-line-height);
+  letter-spacing: var(--typography-heading-md-letter-spacing);
+}
+.typography-meta {
+  font-family: var(--typography-meta-font-family);
+  font-size: var(--typography-meta-font-size);
+  font-weight: var(--typography-meta-font-weight);
+  line-height: var(--typography-meta-line-height);
+  letter-spacing: var(--typography-meta-letter-spacing);
+}
+.typography-label-sm-strong {
+  font-family: var(--typography-label-sm-strong-font-family);
+  font-size: var(--typography-label-sm-strong-font-size);
+  font-weight: var(--typography-label-sm-strong-font-weight);
+  line-height: var(--typography-label-sm-strong-line-height);
+  letter-spacing: var(--typography-label-sm-strong-letter-spacing);
+}
+.esa-alert-box {
+  --_alert-bg: var(--color-background-utility-info-subtle, #fbfdff);
+  --_alert-border: var(--color-border-utility-info, #acd8fc);
+  --_alert-accent: var(--color-content-utility-info, #0d74ce);
+  --_alert-icon-color: var(--_alert-accent);
+  --_alert-title-color: var(--_alert-accent);
+  --_alert-text-color: var(--alert-box-text-color, var(--color-content-default-secondary, #646464));
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-300, 0.75rem);
+  padding: var(--spacing-300, 0.75rem) var(--spacing-400, 1rem);
+  border: var(--border-width-default, 1px) solid var(--_alert-border);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--_alert-bg);
+}
+.esa-alert-box--danger {
+  --_alert-bg: var(--color-background-utility-danger-subtle, #fffcfc);
+  --_alert-border: var(--color-border-utility-danger, #fdbdbe);
+  --_alert-accent: var(--color-content-utility-danger, #ce2c31);
+}
+.esa-alert-box__icon {
+  flex-shrink: 0;
+  color: var(--_alert-icon-color);
+  padding-top: 1px;
+}
+.esa-alert-box__body {
+  flex: 1;
+  min-width: 0;
+}
+.esa-alert-box__title {
+  display: block;
+  color: var(--_alert-title-color);
+  margin-bottom: var(--spacing-050, 0.125rem);
+}
+.esa-alert-box__message {
+  color: var(--_alert-text-color);
+}
+.typography-microcopy-xs-strong {
+  font-family: var(--typography-microcopy-xs-strong-font-family);
+  font-size: var(--typography-microcopy-xs-strong-font-size);
+  font-weight: var(--typography-microcopy-xs-strong-font-weight);
+  line-height: var(--typography-microcopy-xs-strong-line-height);
+  letter-spacing: var(--typography-microcopy-xs-strong-letter-spacing);
+}
+.typography-body-md {
+  font-family: var(--typography-body-md-font-family);
+  font-size: var(--typography-body-md-font-size);
+  font-weight: var(--typography-body-md-font-weight);
+  line-height: var(--typography-body-md-line-height);
+  letter-spacing: var(--typography-body-md-letter-spacing);
+}
+.esa-button {
+  --_btn-pad-y: var(--spacing-300, 0.75rem);
+  --_btn-padding-x: var(--spacing-300, 0.75rem);
+  --_btn-radius: var(--button-radius-md, 0.5rem);
+  --_accent: var(--color-background-brand, #46a758);
+  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);
+  --_on: var(--color-content-default-knockout, #fcfcfc);
+  --_accent-text: var(--_accent);
+  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);
+  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);
+  display: inline-block;
+}
+.esa-button--sm {
+  --_btn-pad-y: var(--spacing-250, 0.625rem);
+  --_btn-padding-x: var(--spacing-250, 0.625rem);
+  --_btn-radius: var(--button-radius-sm, 4px);
+}
+.esa-button__native {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-200, 8px);
+  width: 100%;
+  padding-block: var(--_btn-pad-y);
+  padding-inline: var(--_btn-padding-x);
+  border: var(--border-width-default, 1px) solid transparent;
+  border-radius: var(--_btn-radius);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast, 0.15s ease),
+    border-color var(--transition-fast, 0.15s ease);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.esa-button--appearance-fill .esa-button__native {
+  background: var(--_accent);
+  color: var(--_on);
+  border-color: var(--_accent-border, transparent);
+}
+.esa-button--variant-chrome .esa-button__native {
+  background: transparent;
+  color: inherit;
+  border-color: transparent;
+}
+.esa-icon {
+  --_icon-size: var(--icon-size-md, 20px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+  color: inherit;
+}
+.esa-icon--sm {
+  --_icon-size: var(--icon-size-sm, 16px);
+}
+.esa-icon svg {
+  display: block;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+}
+.esa-button__label {
+  white-space: nowrap;
+}
+summary.esa-button {
+  list-style: none;
+  cursor: pointer;
+}
+.esa-icon--md {
+  --_icon-size: var(--icon-size-md, 20px);
+}
+.esa-button--variant-secondary {
+  --_accent: var(--color-background-brand-muted);
+  --_accent-hover: var(--color-background-brand-muted-hover);
+  --_on: var(--color-content-on-brand-muted, var(--color-content-default));
+  --_accent-text: var(--color-content-brand);
+  --_accent-border: var(--color-border-default-strong, #bbbbbb);
+}
+.esa-button--appearance-outline .esa-button__native,
+.esa-button--appearance-dashed .esa-button__native {
+  background: transparent;
+  color: var(--_accent-text);
+  border-color: var(--_accent);
+}
+.cbf-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  color: inherit;
+}
+.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {
+  transition: transform 0.15s ease;
+}
+.cbf-nav-link .cbf-icon {
+  display: inline-flex;
+  align-items: center;
+}
+.esa-pill {
+  --_pill-bg: var(--color-background-elevation-sunken, #f0f0f0);
+  --_pill-text: var(--color-content-default, #202020);
+  --_pill-border: var(--color-border-default-subtle, #d9d9d9);
+  --_pill-padding-y: var(--spacing-150, 0.375rem);
+  --_pill-padding-x: var(--spacing-200, 0.5rem);
+  --_pill-gap: var(--spacing-100, 0.25rem);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--_pill-gap);
+  padding-block: var(--_pill-padding-y);
+  padding-inline: var(--_pill-padding-x);
+  border: var(--border-width-default, 1px) solid var(--_pill-border);
+  border-radius: var(--radius-chip, var(--radius-sm, 0.25rem));
+  background: var(--_pill-bg);
+  color: var(--_pill-text);
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+.esa-pill--sm {
+  --_pill-padding-y: var(--spacing-100, 0.25rem);
+  --_pill-padding-x: var(--spacing-150, 0.375rem);
+}
+.esa-pill--danger {
+  --_pill-bg: var(--color-background-utility-danger-subtle, var(--color-red-2));
+  --_pill-text: var(--color-content-utility-danger, #ce2c31);
+  --_pill-border: var(--color-border-utility-danger, var(--color-red-6));
+}
+.esa-pill--warning {
+  --_pill-bg: var(--color-background-utility-warning-subtle, var(--color-yellow-2));
+  --_pill-text: var(--color-content-utility-warning, #ab6400);
+  --_pill-border: var(--color-border-utility-warning, var(--color-yellow-6));
+}
+.stack {
+  --gap: var(--spacing-400, 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+.esa-container {
+  width: 100%;
+  max-width: var(--_container-max, 1556px);
+  margin-inline: auto;
+  padding-inline: var(--spacing-600, 2rem);
+}
+.cbf-app-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 80vh;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-100);
+  overflow: clip;
+  background: var(--color-background-elevation-raised);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-background-default-knockout) 8%, transparent);
+}
+.cbf-app-panel__crumb {
+  background: var(--cbf-surface-crumb);
+  border-bottom: 1px solid var(--color-border-default);
+  padding: var(--spacing-400) var(--spacing-600);
+}
+.esa-breadcrumbs {
+  --_crumb-link-color: var(--breadcrumbs-link-color, #646464);
+  --_crumb-link-hover: var(--breadcrumbs-link-hover, #202020);
+  --_crumb-current-color: var(--color-content-default, #202020);
+  --_crumb-separator-color: var(--color-border-default-strong, #bbbbbb);
+  --_crumb-gap: var(--spacing-200, 8px);
+  display: block;
+  background: var(--breadcrumbs-bg, transparent);
+}
+.cbf-app-panel__crumb .esa-breadcrumbs {
+  --breadcrumbs-link-color: var(--color-content-default-secondary);
+  --breadcrumbs-link-hover: var(--color-background-brand);
+}
+.esa-breadcrumbs__list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--_crumb-gap);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.esa-breadcrumbs__item {
+  display: flex;
+  align-items: center;
+  gap: var(--_crumb-gap);
+}
+.esa-breadcrumbs__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-100, 4px);
+  color: var(--_crumb-link-color);
+  text-decoration-color: transparent;
+}
+.esa-breadcrumbs__icon {
+  display: inline-flex;
+  align-items: center;
+}
+.esa-breadcrumbs__separator {
+  flex-shrink: 0;
+  color: var(--_crumb-separator-color);
+}
+.esa-breadcrumbs__current {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-100, 4px);
+  color: var(--_crumb-current-color);
+}
+.cbf-app-panel__body {
+  flex: 1;
+}
+.cbf-app-panel__content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-400);
+  padding: var(--spacing-600);
+}
+.esa-page-header {
+  --_ph-title-color: var(--color-content-default, #202020);
+  --_ph-title-font: var(
+    --typography-heading-lg-font-family,
+    var(--typography-font-family-display, "DM Sans", sans-serif)
+  );
+  --_ph-title-size: var(--typography-heading-lg-font-size, var(--font-size-600, 1.875rem));
+  --_ph-title-weight: var(
+    --typography-heading-lg-font-weight,
+    var(--typography-font-weight-semibold, 550)
+  );
+  --_ph-eyebrow-color: var(--color-content-default-secondary, #646464);
+  --_ph-eyebrow-size: var(--typography-label-md-font-size, var(--font-size-200, 0.9375rem));
+  --_ph-gap: var(--spacing-200, 0.5rem);
+  --_ph-bar-gap: var(--spacing-500, 1.5rem);
+  --_ph-crumb-gap: var(--spacing-300, 0.75rem);
+  display: block;
+  background: transparent;
+}
+.esa-page-header__bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--_ph-bar-gap);
+  flex-wrap: wrap;
+}
+.esa-page-header__titles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--_ph-gap);
+  min-width: 0;
+}
+.esa-page-header__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-100, 0.25rem);
+  margin: 0;
+  font-size: var(--_ph-eyebrow-size);
+  color: var(--_ph-eyebrow-color);
+}
+.esa-page-header__title {
+  margin: 0;
+  font-family: var(--_ph-title-font);
+  font-size: var(--_ph-title-size);
+  font-weight: var(--_ph-title-weight);
+  color: var(--_ph-title-color);
+}
+.repel {
+  --gap: var(--spacing-400, 1rem);
+  --align: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  align-items: var(--align);
+  justify-content: space-between;
+}
+.cluster {
+  --gap: var(--spacing-300, 0.75rem);
+  --align: center;
+  --justify: flex-start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--gap);
+  align-items: var(--align);
+  justify-content: var(--justify);
+}
+.cbf-page {
+  padding-block: var(--spacing-600) var(--spacing-800);
+}
+.cbf-mywork-tabs__panel {
+  min-width: 0;
+}
+.cbf-task-queue__head {
+  align-items: baseline;
+  gap: var(--spacing-400, 1rem);
+  flex-wrap: wrap;
+}
+.cbf-task-queue__count {
+  color: var(--color-content-default-tertiary, #737373);
+  white-space: nowrap;
+}
+.cbf-task-queue__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--color-border-default-subtle, #e5e5e5);
+}
+.cbf-task-queue__row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-300, 0.75rem);
+  padding-block: var(--spacing-300, 0.75rem);
+  padding-inline: var(--spacing-200, 0.5rem);
+  border-bottom: 1px solid var(--color-border-default-subtle, #e5e5e5);
+  min-height: 52px;
+}
+.cbf-task-queue__body {
+  flex: 1 1 0;
+  min-width: 0;
+}
+.cbf-task-queue__what {
+  font-weight: var(--typography-font-weight-medium, 500);
+  color: var(--color-content-default, #171717);
+  font-size: var(--type-body-size, 14px);
+  line-height: 1.4;
+}
+.cbf-task-queue__meta {
+  color: var(--color-content-default-tertiary, #737373);
+  line-height: 1.3;
+}
+.cbf-task-queue__due,
+.cbf-task-queue__action {
+  flex-shrink: 0;
+}
+.cbf-task-queue__row--waiting {
+  opacity: 0.65;
+}
+.cbf-task-queue__waiting-label {
+  flex-shrink: 0;
+  color: var(--color-content-default-tertiary, #737373);
+  font-style: italic;
+  white-space: nowrap;
+}
+.cbf-task-risk-band {
+  padding-block: var(--spacing-400);
+  border-top: 1px solid var(--color-border-default);
+}
+.cbf-task-risk-band__heading {
+  margin: 0;
+  color: var(--color-content-default);
+}
+.cbf-task-risk-band__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.cbf-task-risk-band__row {
+  --align: flex-start;
+  padding-block: var(--spacing-200);
+  border-bottom: 1px solid var(--color-border-default-subtle);
+}
+.cbf-task-risk-band__pill-wrap {
+  flex-shrink: 0;
+  padding-top: 2px;
+  min-width: 7rem;
+}
+.cbf-task-risk-band__body {
+  flex: 1;
+  min-width: 0;
+}
+.cbf-task-risk-band__title {
+  font-weight: 500;
+  color: var(--color-content-default);
+}
+.cbf-task-risk-band__detail {
+  color: var(--color-content-default-secondary);
+}
+.cbf-task-risk-band__meta {
+  color: var(--color-content-default-tertiary);
+}
+.cbf-task-risk-band__row:last-child {
+  border-bottom: none;
+}
+```
+
+## Tokens
+| Token | Value | Tier |
+|---|---|---|
+| `--alert-box-text-color` | `#525252` | component |
+| `--border-width-default` | `1px` | semantic |
+| `--breadcrumbs-bg` | `transparent` | component |
+| `--breadcrumbs-link-color` | `#525252` | component |
+| `--breadcrumbs-link-hover` | `#3d3d3d` | component |
+| `--button-radius-md` | `.5rem` | component |
+| `--button-radius-sm` | `.25rem` | component |
+| `--cbf-surface-crumb` | `#f4f4f4` | brand |
+| `--color-background-brand` | `#1e5386` | semantic |
+| `--color-background-brand-hover` | `#1a4570` | semantic |
+| `--color-background-brand-muted` | `#2770b2` | semantic |
+| `--color-background-brand-muted-hover` | `#1e5386` | semantic |
+| `--color-background-default-knockout` | `#13273e` | semantic |
+| `--color-background-elevation-raised` | `#fcfcfc` | semantic |
+| `--color-background-elevation-sunken` | `#f3f7fc` | semantic |
+| `--color-background-utility-danger-subtle` | `#fffcfc` | semantic |
+| `--color-background-utility-info-subtle` | `#f3f7fc` | semantic |
+| `--color-background-utility-warning-subtle` | `#fefdfb` | semantic |
+| `--color-border-default` | `#dcdcdc` | semantic |
+| `--color-border-default-strong` | `#bdbdbd` | semantic |
+| `--color-border-default-subtle` | `#efefef` | semantic |
+| `--color-border-utility-danger` | `#fdbdbe` | semantic |
+| `--color-border-utility-info` | `#c6dcf1` | semantic |
+| `--color-border-utility-warning` | `#f3d673` | semantic |
+| `--color-content-brand` | `#1e5386` | semantic |
+| `--color-content-default` | `#3d3d3d` | semantic |
+| `--color-content-default-knockout` | `#fcfcfc` | semantic |
+| `--color-content-default-secondary` | `#525252` | semantic |
+| `--color-content-default-tertiary` | `#656565` | semantic |
+| `--color-content-on-brand-muted` | `#203c25` | semantic |
+| `--color-content-utility-danger` | `#ce2c31` | semantic |
+| `--color-content-utility-info` | `#0d74ce` | semantic |
+| `--color-content-utility-warning` | `#ab6400` | semantic |
+| `--color-red-2` | `#fff7f7` | primitive |
+| `--color-red-6` | `#fdbdbe` | primitive |
+| `--color-yellow-2` | `#fefbe9` | primitive |
+| `--color-yellow-6` | `#f3d673` | primitive |
+| `--font-size-200` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | primitive |
+| `--font-size-600` | `clamp(1.375rem, 1.2rem + .88vw, 1.875rem)` | primitive |
+| `--icon-size-md` | `20px` | primitive |
+| `--icon-size-sm` | `16px` | primitive |
+| `--radius-100` | `.25rem` | primitive |
+| `--radius-chip` | `.25rem` | semantic |
+| `--radius-md` | `.5rem` | semantic |
+| `--radius-sm` | `.25rem` | semantic |
+| `--spacing-050` | `.125rem` | primitive |
+| `--spacing-100` | `.25rem` | primitive |
+| `--spacing-150` | `.375rem` | primitive |
+| `--spacing-200` | `.5rem` | primitive |
+| `--spacing-250` | `.625rem` | primitive |
+| `--spacing-300` | `.75rem` | primitive |
+| `--spacing-400` | `1rem` | primitive |
+| `--spacing-500` | `1.5rem` | primitive |
+| `--spacing-600` | `2rem` | primitive |
+| `--spacing-800` | `4rem` | primitive |
+| `--transition-fast` | `.15s ease` | semantic |
+| `--typography-body-md-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-body-md-font-size` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | semantic |
+| `--typography-body-md-font-weight` | `400` | semantic |
+| `--typography-body-md-letter-spacing` | `.01em` | semantic |
+| `--typography-body-md-line-height` | `1.6` | semantic |
+| `--typography-body-sm-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-body-sm-font-size` | `clamp(.6875rem, .61rem + .38vw, .875rem)` | semantic |
+| `--typography-body-sm-font-weight` | `400` | semantic |
+| `--typography-body-sm-letter-spacing` | `.01em` | semantic |
+| `--typography-body-sm-line-height` | `1.6` | semantic |
+| `--typography-font-family-display` | `"IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif` | semantic |
+| `--typography-font-weight-medium` | `500` | semantic |
+| `--typography-font-weight-semibold` | `600` | semantic |
+| `--typography-heading-lg-font-family` | `"IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif` | semantic |
+| `--typography-heading-lg-font-size` | `clamp(1.375rem, 1.2rem + .88vw, 1.875rem)` | semantic |
+| `--typography-heading-lg-font-weight` | `600` | semantic |
+| `--typography-heading-lg-letter-spacing` | `-.01em` | semantic |
+| `--typography-heading-lg-line-height` | `1.3` | semantic |
+| `--typography-heading-md-font-family` | `"IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif` | semantic |
+| `--typography-heading-md-font-size` | `clamp(1.125rem, .98rem + .72vw, 1.5rem)` | semantic |
+| `--typography-heading-md-font-weight` | `600` | semantic |
+| `--typography-heading-md-letter-spacing` | `-.01em` | semantic |
+| `--typography-heading-md-line-height` | `1.3` | semantic |
+| `--typography-label-md-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-label-md-font-size` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | semantic |
+| `--typography-label-md-font-weight` | `500` | semantic |
+| `--typography-label-md-letter-spacing` | `.01em` | semantic |
+| `--typography-label-md-line-height` | `1.6` | semantic |
+| `--typography-label-sm-strong-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-label-sm-strong-font-size` | `clamp(.6875rem, .61rem + .38vw, .875rem)` | semantic |
+| `--typography-label-sm-strong-font-weight` | `600` | semantic |
+| `--typography-label-sm-strong-letter-spacing` | `.01em` | semantic |
+| `--typography-label-sm-strong-line-height` | `1.6` | semantic |
+| `--typography-meta-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-meta-font-size` | `clamp(.625rem, .56rem + .32vw, .75rem)` | semantic |
+| `--typography-meta-font-weight` | `400` | semantic |
+| `--typography-meta-letter-spacing` | `.01em` | semantic |
+| `--typography-meta-line-height` | `1.6` | semantic |
+| `--typography-microcopy-md-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-microcopy-md-font-size` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | semantic |
+| `--typography-microcopy-md-font-weight` | `500` | semantic |
+| `--typography-microcopy-md-letter-spacing` | `.01em` | semantic |
+| `--typography-microcopy-md-line-height` | `1` | semantic |
+| `--typography-microcopy-xs-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-microcopy-xs-font-size` | `clamp(.625rem, .56rem + .32vw, .75rem)` | semantic |
+| `--typography-microcopy-xs-font-weight` | `500` | semantic |
+| `--typography-microcopy-xs-letter-spacing` | `.01em` | semantic |
+| `--typography-microcopy-xs-line-height` | `1` | semantic |
+| `--typography-microcopy-xs-strong-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-microcopy-xs-strong-font-size` | `clamp(.625rem, .56rem + .32vw, .75rem)` | semantic |
+| `--typography-microcopy-xs-strong-font-weight` | `600` | semantic |
+| `--typography-microcopy-xs-strong-letter-spacing` | `.01em` | semantic |
+| `--typography-microcopy-xs-strong-line-height` | `1` | semantic |
+
+---
+_Full page, complete stylesheet, and all tokens: `./full-page.md`, `../styles.css`, `../index.html`._

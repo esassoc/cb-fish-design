@@ -22,10 +22,10 @@ const plural = count === 1 ? 'invoice needs' : 'invoices need';
   <section class="cbf-vendor-attention" aria-label="Needs your attention">
     <EsaAlertBox variant="warning" title="Needs your attention">
       <div class="cbf-vendor-attention__body repel">
-        <span class="type-body">
+        <span class="typography-body-md">
           {`${count} ${plural} revision before BPA can continue review. Resubmit to keep payment on track.`}
         </span>
-        <EsaButton color="primary" size="sm" icon="arrow-right" data-review-needs-revision>
+        <EsaButton variant="primary" size="sm" icon="arrow-right" data-review-needs-revision>
           Review
         </EsaButton>
       </div>

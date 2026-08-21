@@ -21,7 +21,7 @@
 // reuses cbf-search-field, the Category filter uses esa-chip-group, the CSV
 // download uses esa-icon-button.
 import CbfSearchField from '../search/cbf-search-field.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import '../shared/cbf-data-grid-chrome.css';
 import { documents as defaultDocuments, findCommitment } from '../../data/crs-commitments.mjs';
 
@@ -61,13 +61,13 @@ const categoryFilters = [
 ---
 <section class="cbf-crs-docs stack" data-gap="md">
   <header class="cbf-data-grid__header repel">
-    <span class="type-caption cbf-data-grid__count-label">All documents</span>
+    <span class="typography-meta cbf-data-grid__count-label">All documents</span>
   </header>
 
   <div class="cbf-data-grid__controls repel">
     <div class="cbf-data-grid__filters cluster" data-gap="lg">
       <label class="cbf-data-grid__filter">
-        <span class="type-caption">Document category</span>
+        <span class="typography-meta">Document category</span>
         <esa-chip-group
           data-crs-category-filter
           size="sm"
@@ -92,10 +92,10 @@ const categoryFilters = [
   <div class="cbf-data-grid__grid" data-crs-grid></div>
 
   <footer class="cbf-data-grid__footer repel">
-    <span class="type-caption" data-crs-count>
+    <span class="typography-meta" data-crs-count>
       Showing {rows.length} of {rows.length} documents
     </span>
-    <EsaIconButton icon="download" label="Download CSV" size="sm" data-crs-csv />
+    <EsaIconButton variant="chrome" iconOnly icon="download" label="Download CSV" size="sm" data-crs-csv />
   </footer>
 
   <!-- Row data for the grid (documents joined to their parent commitment),

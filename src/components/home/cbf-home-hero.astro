@@ -25,32 +25,32 @@ import CbfMark from '../shared/cbf-mark.astro';
   }
 
   .cbf-home-hero__mark {
-    color: var(--color-primary);
+    color: var(--color-background-brand);
     line-height: 0;
-    background: radial-gradient(circle at center, var(--color-primary-subtle) 0%, transparent 68%);
+    background: radial-gradient(circle at center, var(--color-background-brand-subtle) 0%, transparent 68%);
     padding: var(--spacing-700);
     margin: calc(-1 * var(--spacing-500)) 0 var(--spacing-400);
-    filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--color-primary) 18%, transparent));
+    filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--color-background-brand) 18%, transparent));
   }
 
   .cbf-home-hero__eyebrow {
     margin: 0;
     /* eyebrow — brand-colored, NOT a gray ornamental micro-label */
     font-size: 14px;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--typography-font-weight-medium);
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--color-secondary);
+    color: var(--color-background-brand-muted);
   }
 
   .cbf-home-hero__title {
     margin: var(--spacing-200) 0 0;
-    font-family: var(--font-display);
-    font-weight: var(--font-weight-semibold);
+    font-family: var(--typography-font-family-display);
+    font-weight: var(--typography-font-weight-semibold);
     font-size: clamp(2.75rem, 2rem + 3.5vw, 4.5rem);
     line-height: 1.02;
     letter-spacing: -0.02em;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
 
   .cbf-home-hero__tagline {
@@ -58,7 +58,7 @@ import CbfMark from '../shared/cbf-mark.astro';
     max-width: 56ch;
     font-size: 18px;
     line-height: 1.6;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
 
   @media (max-width: 720px) {

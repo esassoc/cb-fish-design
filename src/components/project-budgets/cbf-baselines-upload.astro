@@ -32,7 +32,7 @@ const warningCount = uploadIssues.filter((i) => i.severity === 'Warning').length
 <section class="cbf-baselines-upload" aria-label="Bulk upload baseline budgets">
   <header class="cbf-baselines-upload__header">
     <div class="repel">
-      <h2 class="type-section-title">Bulk upload baseline budgets</h2>
+      <h2 class="typography-heading-md">Bulk upload baseline budgets</h2>
       <EsaPill label="FundManager" variant="info" removable={false} />
     </div>
     <p class="cbf-baselines-upload__lede">
@@ -55,7 +55,7 @@ const warningCount = uploadIssues.filter((i) => i.severity === 'Warning').length
       <p>Prefilled with every active {FY.current} project, its cycle type, and its fiscal-year span.</p>
       {/* esa-button forwards no extra attrs (data hooks, download) — they live on wrapper spans */}
       <span data-template-download>
-        <EsaButton color="primary" appearance="outline" icon="download" size="sm"
+        <EsaButton variant="primary" appearance="outline" icon="download" size="sm"
           href={withBase('/project-baselines-template.csv')}>Download template</EsaButton>
       </span>
     </li>
@@ -117,11 +117,11 @@ const warningCount = uploadIssues.filter((i) => i.severity === 'Warning').length
 
     <div class="cluster" data-gap="sm">
       <span data-error-report>
-        <EsaButton color="primary" appearance="outline" icon="download" size="sm">
+        <EsaButton variant="primary" appearance="outline" icon="download" size="sm">
           Download error report
         </EsaButton>
       </span>
-      <span class="type-caption">Then fix your sheet and upload it again above.</span>
+      <span class="typography-meta">Then fix your sheet and upload it again above.</span>
     </div>
   </div>
 
@@ -134,9 +134,9 @@ const warningCount = uploadIssues.filter((i) => i.severity === 'Warning').length
     </EsaAlertBox>
     <div class="cluster" data-gap="sm">
       <span data-apply>
-        <EsaButton color="primary" icon="check">Apply {cleanSummary.rows} updates</EsaButton>
+        <EsaButton variant="primary" icon="check">Apply {cleanSummary.rows} updates</EsaButton>
       </span>
-      <span class="type-caption">Applies every row in one transaction.</span>
+      <span class="typography-meta">Applies every row in one transaction.</span>
     </div>
   </div>
 
@@ -282,9 +282,9 @@ const warningCount = uploadIssues.filter((i) => i.severity === 'Warning').length
     flex-direction: column;
     gap: var(--spacing-500);
     padding: var(--spacing-500);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200, 8px);
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
   }
   .cbf-baselines-upload__header {
     display: flex;
@@ -294,7 +294,7 @@ const warningCount = uploadIssues.filter((i) => i.severity === 'Warning').length
   .cbf-baselines-upload__lede {
     margin: 0;
     max-width: 72ch;
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
   }
 
   /* Numbered steps row — layout only, every control inside is a lego. */
@@ -322,15 +322,15 @@ const warningCount = uploadIssues.filter((i) => i.severity === 'Warning').length
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: var(--color-primary-subtle);
-    color: var(--color-primary);
-    font-weight: var(--font-weight-semibold);
+    background: var(--color-background-brand-subtle);
+    color: var(--color-background-brand);
+    font-weight: var(--typography-font-weight-semibold);
   }
-  .cbf-baselines-upload__step-title { font-weight: var(--font-weight-semibold); }
+  .cbf-baselines-upload__step-title { font-weight: var(--typography-font-weight-semibold); }
   .cbf-baselines-upload__steps p {
     margin: 0;
     font-size: 15px;
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
   }
   @media (max-width: 800px) {
     .cbf-baselines-upload__steps { grid-template-columns: 1fr; }
@@ -340,12 +340,12 @@ const warningCount = uploadIssues.filter((i) => i.severity === 'Warning').length
     display: flex;
     align-items: center;
     gap: var(--spacing-300);
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
   }
 
   .cbf-baselines-upload__scroll {
     overflow-x: auto;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200, 8px);
   }
   .cbf-baselines-upload__issues {
@@ -361,11 +361,11 @@ const warningCount = uploadIssues.filter((i) => i.severity === 'Warning').length
     white-space: nowrap;
   }
   .cbf-baselines-upload__issues thead th {
-    background: var(--color-gray-50, #f4f5f7);
-    border-bottom: 1px solid var(--color-border);
-    font-weight: var(--font-weight-semibold);
+    background: var(--color-gray-3);
+    border-bottom: 1px solid var(--color-border-default);
+    font-weight: var(--typography-font-weight-semibold);
   }
-  .cbf-baselines-upload__issues tbody tr + tr td { border-top: 1px solid var(--color-border); }
+  .cbf-baselines-upload__issues tbody tr + tr td { border-top: 1px solid var(--color-border-default); }
   .cbf-baselines-upload__issue-text { white-space: normal; min-width: 320px; }
 
   .cbf-baselines-upload__rules {
@@ -375,6 +375,6 @@ const warningCount = uploadIssues.filter((i) => i.severity === 'Warning').length
     flex-direction: column;
     gap: var(--spacing-150);
     font-size: 15px;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
 </style>

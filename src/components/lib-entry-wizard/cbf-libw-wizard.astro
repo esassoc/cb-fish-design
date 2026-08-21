@@ -115,9 +115,9 @@ const stepIndexOf: Record<string, number> = Object.fromEntries(steps.map((s, i) 
            on the same event this wizard already listens to. -->
       <section class="cbf-libw__step stack" data-gap="lg" data-step="indirect" data-step-kind="indirect" hidden>
         <header class="stack" data-gap="2xs">
-          <p class="cbf-libw__ord type-body-small">Step {count - 1} of {count}</p>
-          <h2 class="cbf-libw__title type-page-title">Indirect rate</h2>
-          <p class="cbf-libw__lede type-body">
+          <p class="cbf-libw__ord typography-body-sm">Step {count - 1} of {count}</p>
+          <h2 class="cbf-libw__title typography-heading-lg">Indirect rate</h2>
+          <p class="cbf-libw__lede typography-body-md">
             The rate is not yours to set — it comes from your approved indirect cost rate
             agreement. What this step asks is which of the nine categories it applies to, because
             that decides the base, and the base decides the total.
@@ -135,14 +135,14 @@ const stepIndexOf: Record<string, number> = Object.fromEntries(steps.map((s, i) 
   <nav class="cbf-libw__nav" aria-label="Wizard navigation">
     <div class="cbf-libw__nav-inner repel" data-gap="sm">
       <span data-nav-back>
-        <EsaButton size="md" color="secondary" appearance="outline" icon="arrow-left">Back</EsaButton>
+        <EsaButton size="md" variant="secondary" appearance="outline" icon="arrow-left">Back</EsaButton>
       </span>
       <span class="cbf-libw__nav-where stack" data-gap="3xs">
-        <span class="cbf-libw__nav-step type-body" data-nav-label></span>
-        <span class="cbf-libw__nav-sub type-body-small" data-nav-sub></span>
+        <span class="cbf-libw__nav-step typography-body-md" data-nav-label></span>
+        <span class="cbf-libw__nav-sub typography-body-sm" data-nav-sub></span>
       </span>
       <span data-nav-next>
-        <EsaButton size="md" color="primary" icon="arrow-right">Continue</EsaButton>
+        <EsaButton size="md" variant="primary" icon="arrow-right">Continue</EsaButton>
       </span>
     </div>
   </nav>
@@ -1676,15 +1676,15 @@ const stepIndexOf: Record<string, number> = Object.fromEntries(steps.map((s, i) 
 
   .cbf-libw__ord {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
-  .cbf-libw__title { margin: 0; color: var(--color-text-primary); }
+  .cbf-libw__title { margin: 0; color: var(--color-content-default); }
   .cbf-libw__lede {
     margin: 0;
     max-width: 78ch;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
 
   /* ── The pinned nav ──────────────────────────────────────────────────────
@@ -1696,20 +1696,20 @@ const stepIndexOf: Record<string, number> = Object.fromEntries(steps.map((s, i) 
     bottom: 0;
     z-index: 2;
     padding-block: var(--spacing-300);
-    background: var(--color-surface);
-    border-block-start: 1px solid var(--color-border);
+    background: var(--color-background-elevation-raised);
+    border-block-start: 1px solid var(--color-border-default);
   }
   .cbf-libw__nav-inner { --align: center; align-items: center; }
   /* Kept in flow, not rendered — see goto(). */
   .cbf-libw__nav-inner .is-spent { visibility: hidden; }
   .cbf-libw__nav-where { text-align: center; }
-  .cbf-libw__nav-step { color: var(--color-text-primary); font-weight: var(--font-weight-medium); }
-  .cbf-libw__nav-sub { color: var(--color-text-secondary); }
+  .cbf-libw__nav-step { color: var(--color-content-default); font-weight: var(--typography-font-weight-medium); }
+  .cbf-libw__nav-sub { color: var(--color-content-default-secondary); }
 
   /* A trip container that was just added. */
-  .cbf-libw :global(.is-added) { animation: cbf-libw-flash 1.5s var(--easing-out) 1; }
+  .cbf-libw :global(.is-added) { animation: cbf-libw-flash 1.5s var(--easing-enter) 1; }
   @keyframes cbf-libw-flash {
-    from { box-shadow: inset 0 0 0 100vmax var(--color-info-subtle); }
+    from { box-shadow: inset 0 0 0 100vmax var(--color-background-utility-info-subtle); }
     to { box-shadow: inset 0 0 0 100vmax transparent; }
   }
   @media (prefers-reduced-motion: reduce) {

@@ -17,9 +17,9 @@ The component blocks composing this page. Hub (`esa-*`) components are the share
 | `cbf-omni-trigger` | spoke | src/components/search/cbf-omni-trigger.astro |
 | `cbf-page` | spoke | — |
 | `cbf-page-heading` | spoke | src/components/shared/cbf-page-heading.astro |
-| `cbf-related-items` | spoke | src/components/project-budgets/cbf-related-items.astro |
-| `cbf-report-intro` | spoke | src/components/project-budgets/cbf-report-intro.astro |
-| `cbf-report-tabs` | spoke | src/components/project-budgets/cbf-report-tabs.astro |
+| `cbf-related-items` | spoke | src/components/shared/cbf-related-items.astro |
+| `cbf-report-intro` | spoke | src/components/shared/cbf-report-intro.astro |
+| `cbf-report-tabs` | spoke | src/components/shared/cbf-report-tabs.astro |
 | `cbf-search-surface` | spoke | — |
 | `esa-app-bar` | hub | src/components/esa-app-bar.astro |
 | `esa-breadcrumbs` | hub | src/components/esa-breadcrumbs.astro |
@@ -27,8 +27,6 @@ The component blocks composing this page. Hub (`esa-*`) components are the share
 | `esa-card` | hub | src/components/esa-card.astro |
 | `esa-container` | hub | src/components/esa-container.astro |
 | `esa-icon` | hub | src/components/esa-icon.astro |
-| `esa-icon-button` | hub | src/components/esa-icon-button.astro |
-| `esa-icon-link` | hub | src/components/esa-icon-link.astro |
 | `esa-kbd` | hub | src/components/esa-kbd.astro |
 | `esa-link-column` | hub | src/components/esa-link-column.astro |
 | `esa-nav-dropdown` | hub | src/components/esa-nav-dropdown.astro |

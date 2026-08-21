@@ -22,7 +22,7 @@ import CbfInvoiceCard from '../shared/cbf-invoice-card.astro';
 import EsaPill from '@esa/ecology/esa-pill.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 import '@esa/tokens/layouts.css'; // .grid auto-fit primitive for the card view
 import { invoices as defaultInvoices, fmtExact } from '../../data/vendor-dashboard-invoices.mjs';
@@ -110,7 +110,7 @@ const { invoices = defaultInvoices } = Astro.props;
 ---
 <section class="cbf-vendor-dashboard-invoices stack" data-gap="md">
   <header class="cbf-vendor-dashboard-invoices__header repel">
-    <h2 class="type-section-title">Invoices</h2>
+    <h2 class="typography-heading-md">Invoices</h2>
     <div class="cbf-vendor-dashboard-invoices__search">
       <CbfSearchField
         placeholder="Search invoices, contracts or status…"
@@ -131,7 +131,7 @@ const { invoices = defaultInvoices } = Astro.props;
     ></esa-chip-group>
     <div class="cbf-vendor-dashboard-invoices__right cluster" data-gap="md">
       <label class="cbf-vendor-dashboard-invoices__group">
-        <span class="type-caption">Group by</span>
+        <span class="typography-meta">Group by</span>
         <esa-chip-group
           data-invoice-group
           size="sm"
@@ -141,7 +141,7 @@ const { invoices = defaultInvoices } = Astro.props;
         ></esa-chip-group>
       </label>
       <label class="cbf-vendor-dashboard-invoices__view">
-        <span class="type-caption">View</span>
+        <span class="typography-meta">View</span>
         <esa-button-toggle
           data-invoice-view
           size="sm"
@@ -204,7 +204,7 @@ const { invoices = defaultInvoices } = Astro.props;
   </div>
 
   <footer class="cbf-vendor-dashboard-invoices__footer">
-    <span class="type-caption" data-invoice-count>
+    <span class="typography-meta" data-invoice-count>
       Showing {invoices.length} of {invoices.length} invoices
     </span>
   </footer>
@@ -247,7 +247,7 @@ const { invoices = defaultInvoices } = Astro.props;
         <div class="cbf-invoice-detail__hero">
           <div class="cbf-invoice-detail__amount-group">
             <span class="cbf-invoice-detail__label">Amount billed</span>
-            <span class="type-page-title cbf-invoice-detail__amount cbf-num" data-detail-amount></span>
+            <span class="typography-heading-lg cbf-invoice-detail__amount cbf-num" data-detail-amount></span>
             <span class="cbf-invoice-detail__state" data-detail-state></span>
           </div>
           <div class="cbf-invoice-detail__status" data-detail-status></div>
@@ -283,7 +283,7 @@ const { invoices = defaultInvoices } = Astro.props;
           <div class="cbf-invoice-detail__attach-head repel">
             <h3 class="cbf-invoice-detail__section-title" data-detail-attach-title>Attachments</h3>
             <span data-detail-download-all>
-              <EsaButton appearance="outline" color="secondary" size="sm" icon="download">Download all</EsaButton>
+              <EsaButton appearance="outline" variant="secondary" size="sm" icon="download">Download all</EsaButton>
             </span>
           </div>
           <ul class="cbf-invoice-attach-list" data-detail-attachments></ul>
@@ -313,7 +313,7 @@ const { invoices = defaultInvoices } = Astro.props;
           </div>
         </section>
         <div data-detail-dl-template hidden aria-hidden="true">
-          <EsaIconButton icon="download" label="Download file" size="sm" />
+          <EsaIconButton variant="chrome" iconOnly icon="download" label="Download file" size="sm" />
         </div>
 
         <!-- Vendor-action unit (Draft / Needs revision) — kept in the invoice's own
@@ -331,10 +331,10 @@ const { invoices = defaultInvoices } = Astro.props;
           </div>
           <div class="cbf-invoice-detail__actions" data-detail-vendor-actions hidden>
             <span data-detail-discard>
-              <EsaButton color="danger" appearance="outline" size="md">Discard</EsaButton>
+              <EsaButton variant="danger" appearance="outline" size="md">Discard</EsaButton>
             </span>
             <span data-detail-continue>
-              <EsaButton color="primary" size="md">Continue editing</EsaButton>
+              <EsaButton variant="primary" size="md">Continue editing</EsaButton>
             </span>
           </div>
         </div>
@@ -356,10 +356,10 @@ const { invoices = defaultInvoices } = Astro.props;
       <span class="cbf-invoice-detail__position" data-detail-position></span>
       <div class="cluster" data-gap="xs">
         <span data-detail-prev>
-          <EsaButton appearance="outline" color="secondary" icon="chevron-left">Previous</EsaButton>
+          <EsaButton appearance="outline" variant="secondary" icon="chevron-left">Previous</EsaButton>
         </span>
         <span data-detail-next>
-          <EsaButton appearance="outline" color="secondary" icon="chevron-right">Next</EsaButton>
+          <EsaButton appearance="outline" variant="secondary" icon="chevron-right">Next</EsaButton>
         </span>
       </div>
     </div>
@@ -390,9 +390,9 @@ const { invoices = defaultInvoices } = Astro.props;
     align-items: center;
     gap: var(--spacing-200);
   }
-  .cbf-vendor-dashboard-invoices__group .type-caption,
-  .cbf-vendor-dashboard-invoices__view .type-caption {
-    color: var(--color-text-muted);
+  .cbf-vendor-dashboard-invoices__group .typography-meta,
+  .cbf-vendor-dashboard-invoices__view .typography-meta {
+    color: var(--color-content-default-tertiary);
     white-space: nowrap;
   }
 
@@ -431,11 +431,11 @@ const { invoices = defaultInvoices } = Astro.props;
     border-radius: inherit;
   }
   .cbf-invoice-card-link:hover > :global(.esa-card) {
-    border-color: var(--color-primary);
-    box-shadow: var(--shadow-200, 0 2px 8px -2px rgba(19, 39, 62, 0.12));
+    border-color: var(--color-background-brand);
+    box-shadow: var(--elevation-3, 0 2px 8px -2px rgba(19, 39, 62, 0.12));
   }
   .cbf-invoice-card-link:focus-within {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--color-background-brand);
     outline-offset: 2px;
     border-radius: var(--radius-200);
   }
@@ -448,14 +448,14 @@ const { invoices = defaultInvoices } = Astro.props;
   /* The grid wrapper owns the framed surface; AG Grid's own border is disabled
      via the theme so the frame reads like the rest of the spoke's data cards. */
   .cbf-vendor-dashboard-invoices__grid {
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
     overflow: hidden;
-    background: var(--color-surface);
+    background: var(--color-background-elevation-raised);
   }
 
   .cbf-vendor-dashboard-invoices__footer {
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
   }
 
   /* ---- Detail drawer ---------------------------------------------------- */
@@ -487,8 +487,8 @@ const { invoices = defaultInvoices } = Astro.props;
      PDF viewer's page on its canvas. A flex column so the sheet fills the
      pane's full height; the gutter scrolls when a long invoice overflows it. */
   .cbf-invoice-detail__doc {
-    background: var(--color-surface-sunken);
-    border: 1px solid var(--color-border);
+    background: var(--color-background-elevation-sunken);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
     padding: var(--spacing-400);
     min-width: 0;
@@ -501,9 +501,9 @@ const { invoices = defaultInvoices } = Astro.props;
   /* Labels are content, not ornament: normal-case, 14px, muted — never an
      uppercase micro-eyebrow. One shared role for every label in the drawer. */
   .cbf-invoice-detail__label {
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-muted);
+    font-size: var(--font-size-150);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default-tertiary);
   }
 
   /* Hero: the billed amount on a sunken surface, status badge alongside. */
@@ -513,8 +513,8 @@ const { invoices = defaultInvoices } = Astro.props;
     justify-content: space-between;
     gap: var(--spacing-400);
     padding: var(--spacing-450, var(--spacing-400));
-    background: var(--color-surface-sunken);
-    border: 1px solid var(--color-border);
+    background: var(--color-background-elevation-sunken);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
   }
   .cbf-invoice-detail__amount-group {
@@ -524,7 +524,7 @@ const { invoices = defaultInvoices } = Astro.props;
     min-width: 0;
   }
   .cbf-invoice-detail__amount {
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
   }
   .cbf-invoice-detail__status { flex: none; }
@@ -532,12 +532,12 @@ const { invoices = defaultInvoices } = Astro.props;
   /* Plain-language state line under the amount — the emphasis the vendor reads
      first ("where is my money"). Danger tone only when it needs their action. */
   .cbf-invoice-detail__state {
-    font-size: var(--type-size-150);
-    color: var(--color-text-secondary);
+    font-size: var(--font-size-150);
+    color: var(--color-content-default-secondary);
   }
   .cbf-invoice-detail__state--alert {
-    color: var(--color-danger, #c0392b);
-    font-weight: var(--font-weight-medium);
+    color: var(--color-background-utility-danger, #c0392b);
+    font-weight: var(--typography-font-weight-medium);
   }
 
   /* Vendor-action unit (Draft / Needs revision): lives in the tracking column,
@@ -550,7 +550,7 @@ const { invoices = defaultInvoices } = Astro.props;
     flex-direction: column;
     gap: var(--spacing-400);
     padding-top: var(--spacing-400);
-    border-top: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-border-default);
   }
   .cbf-invoice-detail__vendor[hidden] { display: none; }
   .cbf-invoice-detail__actions {
@@ -570,24 +570,24 @@ const { invoices = defaultInvoices } = Astro.props;
   .cbf-invoice-detail__revision-by {
     display: block;
     margin-top: var(--spacing-100);
-    font-size: var(--type-size-100, 0.75rem);
-    color: var(--color-text-muted);
+    font-size: var(--font-size-100, 0.75rem);
+    color: var(--color-content-default-tertiary);
   }
 
   /* Section header (Attachments): readable, primary, modest weight — not the
      uppercase micro-label pattern. */
   .cbf-invoice-detail__section-title {
     margin: 0;
-    font-size: var(--type-size-200);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-200);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
   }
   .cbf-invoice-detail__attach-head { align-items: center; gap: var(--spacing-300); }
   .cbf-invoice-attach-list {
     list-style: none;
     margin: var(--spacing-300) 0 0;
     padding: 0;
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200);
     overflow: hidden;
   }
@@ -601,19 +601,19 @@ const { invoices = defaultInvoices } = Astro.props;
     gap: var(--spacing-400);
     align-items: baseline;
     padding-block: var(--spacing-300);
-    border-top: 1px solid var(--color-border-light, var(--color-border));
+    border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default));
   }
   .cbf-invoice-detail__row:first-child { border-top: 0; padding-top: 0; }
   .cbf-invoice-detail__value {
     margin: 0;
-    font-size: var(--type-size-200);
-    color: var(--color-text-secondary);
+    font-size: var(--font-size-200);
+    color: var(--color-content-default-secondary);
   }
   /* Lead value (contract) is the primary identifier — heavier and darker. */
   .cbf-invoice-detail__value--lead {
-    font-size: var(--type-size-300);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-300);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default);
   }
 
   /* Add backup documents (In review only). The zone is a full-width drop target
@@ -627,30 +627,30 @@ const { invoices = defaultInvoices } = Astro.props;
     gap: var(--spacing-200);
     width: 100%;
     padding: var(--spacing-400);
-    border: 1px dashed var(--color-border);
+    border: 1px dashed var(--color-border-default);
     border-radius: var(--radius-200);
-    background: var(--color-surface);
-    font-size: var(--type-size-150);
-    color: var(--color-text-secondary);
+    background: var(--color-background-elevation-raised);
+    font-size: var(--font-size-150);
+    color: var(--color-content-default-secondary);
     cursor: pointer;
     transition: border-color 0.12s ease, background 0.12s ease;
   }
-  .cbf-invoice-detail__add-zone svg { flex: none; color: var(--color-secondary); }
+  .cbf-invoice-detail__add-zone svg { flex: none; color: var(--color-background-brand-muted); }
   .cbf-invoice-detail__add-text strong {
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-secondary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-background-brand-muted);
   }
-  .cbf-invoice-detail__add-zone:hover { background: var(--color-primary-subtle); }
+  .cbf-invoice-detail__add-zone:hover { background: var(--color-background-brand-subtle); }
   .cbf-invoice-detail__add-zone.is-over {
-    border-color: var(--color-primary);
+    border-color: var(--color-background-brand);
     border-style: solid;
-    background: var(--color-primary-subtle);
+    background: var(--color-background-brand-subtle);
   }
   .cbf-invoice-detail__add-zone.is-over * { pointer-events: none; }
   .cbf-invoice-detail__add-hint {
     margin: var(--spacing-200) 0 0;
-    font-size: var(--type-size-100, 0.75rem);
-    color: var(--color-text-muted);
+    font-size: var(--font-size-100, 0.75rem);
+    color: var(--color-content-default-tertiary);
     line-height: 1.5;
   }
   .cbf-invoice-detail__docs-input {
@@ -662,8 +662,8 @@ const { invoices = defaultInvoices } = Astro.props;
   }
 
   .cbf-invoice-detail__position {
-    font-size: var(--type-size-150);
-    color: var(--color-text-muted);
+    font-size: var(--font-size-150);
+    color: var(--color-content-default-tertiary);
     font-variant-numeric: tabular-nums;
   }
 
@@ -685,19 +685,19 @@ const { invoices = defaultInvoices } = Astro.props;
     justify-content: space-between;
     gap: var(--spacing-100) var(--spacing-400);
     padding-bottom: var(--spacing-200);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border-default);
   }
   .cbf-vendor-dashboard-invoices__cards .cbf-invoice-group-header:not(:first-child) {
     margin-top: var(--spacing-400);
   }
   .cbf-invoice-group-header__label {
     font-size: 16px;
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
   }
   .cbf-invoice-group-header__meta {
     font-size: 13px;
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
     font-variant-numeric: tabular-nums;
   }
 
@@ -718,7 +718,7 @@ const { invoices = defaultInvoices } = Astro.props;
   /* Invoice IDs read as data — tabular figures, recede in color. */
   .cbf-vendor-dashboard-invoices__grid .cbf-grid-id {
     font-variant-numeric: tabular-nums;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
 
   /* Detail-drawer document sheet. Its body is injected by JS (no Astro scope
@@ -727,12 +727,12 @@ const { invoices = defaultInvoices } = Astro.props;
      gutter, structured head → parties → line items → total. */
   .cbf-doc-sheet {
     display: block;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border-light, var(--color-border));
+    background: var(--color-background-elevation-raised);
+    border: 1px solid var(--color-border-default-subtle, var(--color-border-default));
     border-radius: var(--radius-100);
-    box-shadow: var(--shadow-200, 0 2px 8px -2px rgba(19, 39, 62, 0.12));
+    box-shadow: var(--elevation-3, 0 2px 8px -2px rgba(19, 39, 62, 0.12));
     padding: var(--spacing-600);
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
 
   /* Head: supplier identity left, the document mark (Invoice + number) right. */
@@ -742,33 +742,33 @@ const { invoices = defaultInvoices } = Astro.props;
     justify-content: space-between;
     gap: var(--spacing-400);
     padding-bottom: var(--spacing-400);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border-default);
   }
   .cbf-doc__supplier {
     margin: 0;
-    font-size: var(--type-size-300);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-300);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
   }
   .cbf-doc__supplier-meta {
     margin: var(--spacing-050) 0 0;
-    font-size: var(--type-size-150);
-    color: var(--color-text-muted);
+    font-size: var(--font-size-150);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-doc__mark { text-align: right; flex: none; }
   .cbf-doc__mark-word {
     margin: 0;
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-150);
+    font-weight: var(--typography-font-weight-semibold);
     letter-spacing: 0.04em;
     text-transform: uppercase;
-    color: var(--color-text-muted);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-doc__mark-number {
     margin: var(--spacing-050) 0 0;
-    font-size: var(--type-size-200);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-200);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
   }
 
@@ -788,23 +788,23 @@ const { invoices = defaultInvoices } = Astro.props;
   }
   .cbf-doc__label {
     display: block;
-    font-size: var(--type-size-100, 0.75rem);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-muted);
+    font-size: var(--font-size-100, 0.75rem);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default-tertiary);
   }
   .cbf-doc__parties p {
     margin: var(--spacing-050) 0 0;
-    font-size: var(--type-size-150);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-150);
+    color: var(--color-content-default);
   }
-  .cbf-doc__party-name { font-weight: var(--font-weight-medium); }
+  .cbf-doc__party-name { font-weight: var(--typography-font-weight-medium); }
 
   /* Line items table — the breakdown behind the total. */
   .cbf-doc__items {
     width: 100%;
     border-collapse: collapse;
-    font-size: var(--type-size-150);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-150);
+    color: var(--color-content-default);
   }
   .cbf-doc__items th,
   .cbf-doc__items td {
@@ -818,11 +818,11 @@ const { invoices = defaultInvoices } = Astro.props;
   .cbf-doc__items th:last-child,
   .cbf-doc__items td:last-child { padding-right: 0; }
   .cbf-doc__items thead th {
-    font-weight: var(--font-weight-medium);
-    color: var(--color-text-muted);
-    border-bottom: 1px solid var(--color-border);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default-tertiary);
+    border-bottom: 1px solid var(--color-border-default);
   }
-  .cbf-doc__items tbody tr + tr td { border-top: 1px solid var(--color-border-light, var(--color-border)); }
+  .cbf-doc__items tbody tr + tr td { border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default)); }
   .cbf-doc__items .cbf-num {
     text-align: right;
     font-variant-numeric: tabular-nums;
@@ -837,17 +837,17 @@ const { invoices = defaultInvoices } = Astro.props;
     gap: var(--spacing-400);
     margin-top: var(--spacing-300);
     padding-top: var(--spacing-300);
-    border-top: 2px solid var(--color-border);
+    border-top: 2px solid var(--color-border-default);
   }
   .cbf-doc__total-label {
-    font-size: var(--type-size-150);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-150);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
   }
   .cbf-doc__total-value {
-    font-size: var(--type-size-300);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-300);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
     font-variant-numeric: tabular-nums;
   }
 
@@ -855,13 +855,13 @@ const { invoices = defaultInvoices } = Astro.props;
   .cbf-doc__notes {
     margin-top: var(--spacing-400);
     padding-top: var(--spacing-300);
-    border-top: 1px solid var(--color-border-light, var(--color-border));
+    border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default));
   }
   .cbf-doc__notes p {
     margin: var(--spacing-100) 0 0;
-    font-size: var(--type-size-150);
+    font-size: var(--font-size-150);
     line-height: var(--line-height-relaxed);
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
 
   /* Status pipeline (injected by JS). A horizontal stepper: dot + label per
@@ -890,39 +890,39 @@ const { invoices = defaultInvoices } = Astro.props;
     left: calc(-50% + 7px);
     right: calc(50% + 7px);
     height: 2px;
-    background: var(--color-border);
+    background: var(--color-border-default);
   }
   .cbf-invoice-pipeline__step[data-state='done']::before,
-  .cbf-invoice-pipeline__step[data-state='active']::before { background: var(--color-primary); }
+  .cbf-invoice-pipeline__step[data-state='active']::before { background: var(--color-background-brand); }
   .cbf-invoice-pipeline__dot {
     width: 14px;
     height: 14px;
     border-radius: 50%;
-    background: var(--color-surface);
-    border: 2px solid var(--color-border);
+    background: var(--color-background-elevation-raised);
+    border: 2px solid var(--color-border-default);
     box-sizing: border-box;
     z-index: 1;
   }
-  .cbf-invoice-pipeline__step[data-state='done'] .cbf-invoice-pipeline__dot { background: var(--color-primary); border-color: var(--color-primary); }
+  .cbf-invoice-pipeline__step[data-state='done'] .cbf-invoice-pipeline__dot { background: var(--color-background-brand); border-color: var(--color-background-brand); }
   .cbf-invoice-pipeline__step[data-state='active'] .cbf-invoice-pipeline__dot {
-    background: var(--color-primary);
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 4px var(--color-primary-subtle);
+    background: var(--color-background-brand);
+    border-color: var(--color-background-brand);
+    box-shadow: 0 0 0 4px var(--color-background-brand-subtle);
   }
   .cbf-invoice-pipeline__step[data-state='returned'] .cbf-invoice-pipeline__dot {
-    background: var(--color-danger, #c0392b);
-    border-color: var(--color-danger, #c0392b);
-    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-danger, #c0392b) 16%, transparent);
+    background: var(--color-background-utility-danger, #c0392b);
+    border-color: var(--color-background-utility-danger, #c0392b);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-background-utility-danger, #c0392b) 16%, transparent);
   }
   .cbf-invoice-pipeline__label {
-    font-size: var(--type-size-050, 0.6875rem);
-    color: var(--color-text-muted);
+    font-size: var(--font-size-050, 0.6875rem);
+    color: var(--color-content-default-tertiary);
     line-height: 1.2;
   }
   .cbf-invoice-pipeline__step[data-state='done'] .cbf-invoice-pipeline__label,
-  .cbf-invoice-pipeline__step[data-state='active'] .cbf-invoice-pipeline__label { color: var(--color-text-primary); }
-  .cbf-invoice-pipeline__step[data-state='active'] .cbf-invoice-pipeline__label { font-weight: var(--font-weight-medium); }
-  .cbf-invoice-pipeline__step[data-state='returned'] .cbf-invoice-pipeline__label { color: var(--color-danger, #c0392b); font-weight: var(--font-weight-medium); }
+  .cbf-invoice-pipeline__step[data-state='active'] .cbf-invoice-pipeline__label { color: var(--color-content-default); }
+  .cbf-invoice-pipeline__step[data-state='active'] .cbf-invoice-pipeline__label { font-weight: var(--typography-font-weight-medium); }
+  .cbf-invoice-pipeline__step[data-state='returned'] .cbf-invoice-pipeline__label { color: var(--color-background-utility-danger, #c0392b); font-weight: var(--typography-font-weight-medium); }
 
   /* Attachment rows (injected by JS). No per-item icon (design principle:
      icons mark structure, not items) — filename + download action only. */
@@ -932,22 +932,22 @@ const { invoices = defaultInvoices } = Astro.props;
     gap: var(--spacing-300);
     padding: var(--spacing-150) var(--spacing-200) var(--spacing-150) var(--spacing-400);
   }
-  .cbf-invoice-attach + .cbf-invoice-attach { border-top: 1px solid var(--color-border-light, var(--color-border)); }
+  .cbf-invoice-attach + .cbf-invoice-attach { border-top: 1px solid var(--color-border-default-subtle, var(--color-border-default)); }
   .cbf-invoice-attach__name {
     flex: 1;
     min-width: 0;
-    font-size: var(--type-size-150);
-    color: var(--color-text-primary);
+    font-size: var(--font-size-150);
+    color: var(--color-content-default);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .cbf-invoice-attach[data-primary='true'] .cbf-invoice-attach__name { font-weight: var(--font-weight-medium); }
-  .cbf-invoice-attach__role { flex: none; font-size: var(--type-size-100, 0.75rem); color: var(--color-text-muted); }
-  .cbf-invoice-attach__dl { flex: none; line-height: 0; color: var(--color-text-muted); }
+  .cbf-invoice-attach[data-primary='true'] .cbf-invoice-attach__name { font-weight: var(--typography-font-weight-medium); }
+  .cbf-invoice-attach__role { flex: none; font-size: var(--font-size-100, 0.75rem); color: var(--color-content-default-tertiary); }
+  .cbf-invoice-attach__dl { flex: none; line-height: 0; color: var(--color-content-default-tertiary); }
   .cbf-invoice-attach__dl .esa-icon-button:hover {
-    background: color-mix(in srgb, var(--color-text-muted) 14%, transparent);
-    color: var(--color-text-primary);
+    background: color-mix(in srgb, var(--color-content-default-tertiary) 14%, transparent);
+    color: var(--color-content-default);
   }
 </style>
 
@@ -1009,14 +1009,14 @@ const { invoices = defaultInvoices } = Astro.props;
   const cbfTheme = themeQuartz.withParams({
     fontFamily: 'inherit',
     fontSize: '14px',
-    foregroundColor: 'var(--color-text-primary)',
-    backgroundColor: 'var(--color-surface)',
-    headerBackgroundColor: 'var(--color-surface-sunken, transparent)',
-    headerTextColor: 'var(--color-text-secondary)',
+    foregroundColor: 'var(--color-content-default)',
+    backgroundColor: 'var(--color-background-elevation-raised)',
+    headerBackgroundColor: 'var(--color-background-elevation-sunken, transparent)',
+    headerTextColor: 'var(--color-content-default-secondary)',
     headerFontWeight: 600,
-    borderColor: 'var(--color-border)',
-    rowHoverColor: 'var(--color-surface-subtle, var(--color-primary-subtle))',
-    accentColor: 'var(--color-primary)',
+    borderColor: 'var(--color-border-default)',
+    rowHoverColor: 'var(--color-background-brand-subtle)',
+    accentColor: 'var(--color-background-brand)',
     wrapperBorderRadius: 0,
     borderRadius: 'var(--radius-100, 4px)',
   });

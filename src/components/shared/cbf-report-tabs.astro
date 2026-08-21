@@ -102,31 +102,31 @@ const chevron =
     align-items: center;
     gap: var(--spacing-100);
     padding: var(--spacing-150);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-200, 8px);
-    background: var(--color-gray-50, #f4f5f7);
+    background: var(--color-gray-3);
   }
   .cbf-report-tabs__tab {
     padding: var(--spacing-200) var(--spacing-300);
     border-radius: var(--radius-100);
-    color: var(--color-primary);
+    color: var(--color-background-brand);
     font-size: 16px;
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--typography-font-weight-medium);
     white-space: nowrap;
   }
   .cbf-report-tabs__tab:hover {
-    background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+    background: color-mix(in srgb, var(--color-background-brand) 8%, transparent);
   }
   /* Active page: a raised white segment + bold navy text — a quiet selection
      cue, NOT a solid color fill. */
   .cbf-report-tabs__tab.is-active {
-    background: var(--color-surface, #fff);
-    color: var(--color-surface-inverse);
-    font-weight: var(--font-weight-semibold);
-    box-shadow: 0 1px 2px color-mix(in srgb, var(--color-surface-inverse) 12%, transparent);
+    background: var(--color-background-elevation-raised, #fff);
+    color: var(--color-background-default-knockout);
+    font-weight: var(--typography-font-weight-semibold);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--color-background-default-knockout) 12%, transparent);
   }
   .cbf-report-tabs__tab.is-active:hover {
-    background: var(--color-surface, #fff);
+    background: var(--color-background-elevation-raised, #fff);
   }
 
   /* A per-tab dropdown (e.g. "2020 CRS commitments ▾") — same tab look as a
@@ -174,10 +174,10 @@ const chevron =
     display: flex;
     flex-direction: column;
     padding: var(--spacing-150);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
+    background: var(--color-background-elevation-raised);
+    border: 1px solid var(--color-border-default);
     border-radius: var(--radius-100);
-    box-shadow: 0 4px 14px color-mix(in srgb, var(--color-surface-inverse) 14%, transparent);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--color-background-default-knockout) 14%, transparent);
   }
   .cbf-report-tabs__related .cbf-report-tabs__menu {
     left: auto;
@@ -186,19 +186,19 @@ const chevron =
   .cbf-report-tabs__menu-item {
     padding: var(--spacing-200) var(--spacing-300);
     border-radius: var(--radius-100);
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
     font-size: 15px;
     white-space: nowrap;
   }
   .cbf-report-tabs__menu-item:hover {
-    background: var(--color-primary-subtle);
-    color: var(--color-primary);
+    background: var(--color-background-brand-subtle);
+    color: var(--color-background-brand);
   }
   /* The sub-page currently open — same quiet selection cue as an active tab. */
   .cbf-report-tabs__menu-item.is-active {
-    background: var(--color-primary-subtle);
-    color: var(--color-primary);
-    font-weight: var(--font-weight-semibold);
+    background: var(--color-background-brand-subtle);
+    color: var(--color-background-brand);
+    font-weight: var(--typography-font-weight-semibold);
   }
 
   /* On a wrapped (narrow) strip the auto margin would orphan the disclosure on

@@ -47,8 +47,8 @@ const facts = [
 <section class="cbf-lib-context stack" data-gap="lg" aria-labelledby="cbf-lib-context-title">
   <!-- 1 — contract identity -->
   <header class="cbf-lib-context__head stack" data-gap="2xs">
-    <h1 id="cbf-lib-context-title" class="type-section-title">{heading}</h1>
-    <p class="cbf-lib-context__subline type-body">{subline}</p>
+    <h1 id="cbf-lib-context-title" class="typography-heading-md">{heading}</h1>
+    <p class="cbf-lib-context__subline typography-body-md">{subline}</p>
   </header>
 
   <!-- 2 — the ceiling, stated before anything is typed -->
@@ -72,14 +72,14 @@ const facts = [
   <!-- 3 — auto-filled contract facts (facts, not fields) -->
   <EsaCard variant="filled">
     <div class="stack" data-gap="sm">
-      <p class="cbf-lib-context__source type-body-small">
+      <p class="cbf-lib-context__source typography-body-sm">
         Pulled from the contract — not editable here.
       </p>
       <dl class="cbf-lib-context__facts grid" data-gap="md">
         {facts.map((f) => (
           <div class="cbf-lib-context__fact">
-            <dt class="type-body-small">{f.label}</dt>
-            <dd class="type-body">{f.value}</dd>
+            <dt class="typography-body-sm">{f.label}</dt>
+            <dd class="typography-body-md">{f.value}</dd>
           </div>
         ))}
       </dl>
@@ -90,21 +90,21 @@ const facts = [
 <style>
   .cbf-lib-context__head h1 {
     margin: 0;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
   .cbf-lib-context__subline {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
 
   /* The Contract Value outranks everything on the screen; the rate is its
      companion, a step down. Both go through esa-stat's public size token. */
-  .cbf-lib-context__ceiling-value { --stat-value-size: var(--type-size-800); }
-  .cbf-lib-context__ceiling-rate { --stat-value-size: var(--type-size-600); }
+  .cbf-lib-context__ceiling-value { --stat-value-size: var(--font-size-800); }
+  .cbf-lib-context__ceiling-rate { --stat-value-size: var(--font-size-600); }
 
   .cbf-lib-context__source {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
 
   /* Facts wrap into as many columns as fit — .grid does the work, --grid-min
@@ -114,11 +114,11 @@ const facts = [
     margin: 0;
   }
   .cbf-lib-context__fact dt {
-    color: var(--color-text-secondary);
-    font-weight: var(--font-weight-medium);
+    color: var(--color-content-default-secondary);
+    font-weight: var(--typography-font-weight-medium);
   }
   .cbf-lib-context__fact dd {
     margin: 0;
-    color: var(--color-text-primary);
+    color: var(--color-content-default);
   }
 </style>

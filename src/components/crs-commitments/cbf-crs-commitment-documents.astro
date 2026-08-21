@@ -98,7 +98,7 @@
 import EsaCard from '@esa/ecology/esa-card.astro';
 import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
-import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
 import CbfCrsDocumentDialog from './cbf-crs-document-dialog.astro';
 import CbfCrsRecurringDueDateDialog from './cbf-crs-recurring-due-date-dialog.astro';
 
@@ -121,15 +121,15 @@ const hasDocuments = documents.length > 0;
       description="Add a discrete due date, a recurring due date, or upload a document with no due date."
     >
       <div class="cluster" data-gap="sm">
-        <span data-crs-doc-add-discrete><EsaButton color="primary" icon="calendar">Add discrete due date</EsaButton></span>
-        <span data-crs-doc-add-recurring><EsaButton color="secondary" appearance="outline" icon="calendar">Add recurring due date</EsaButton></span>
-        <span data-crs-doc-add-upload><EsaButton color="secondary" appearance="outline" icon="upload">Upload document</EsaButton></span>
+        <span data-crs-doc-add-discrete><EsaButton variant="primary" icon="calendar">Add discrete due date</EsaButton></span>
+        <span data-crs-doc-add-recurring><EsaButton variant="secondary" appearance="outline" icon="calendar">Add recurring due date</EsaButton></span>
+        <span data-crs-doc-add-upload><EsaButton variant="secondary" appearance="outline" icon="upload">Upload document</EsaButton></span>
       </div>
     </EsaEmptyState>
   </div>
 
   <div class="cbf-crs-commitment-documents__populated stack" data-gap="md" data-crs-doc-populated hidden={!hasDocuments}>
-    <p class="cbf-crs-commitment-documents__intro type-caption">
+    <p class="cbf-crs-commitment-documents__intro typography-meta">
       A commitment can have discrete due dates or one recurring due date, not both. An individual
       recurring occurrence can only be edited or deleted as part of the whole series.
     </p>
@@ -137,7 +137,7 @@ const hasDocuments = documents.length > 0;
     <!-- Recurring due date's schedule, shown only while a rule is active — the Add/Modify/Delete
          actions themselves live in the button row below instead, so this is status text only.
          Toggled by the client script's renderRecurringBanner() whenever recurringRule changes. -->
-    <p class="type-caption" data-crs-recurring-status hidden>
+    <p class="typography-meta" data-crs-recurring-status hidden>
       Recurring due date: starts <strong data-crs-recurring-banner-date></strong>, every
       <strong data-crs-recurring-banner-step></strong>.
     </p>
@@ -147,11 +147,11 @@ const hasDocuments = documents.length > 0;
          renderRecurringBanner() — a commitment has at most one active rule, see
          header note), everything else is always available. -->
     <div class="cbf-crs-commitment-documents__toolbar cluster" data-gap="sm">
-      <span data-crs-doc-add-discrete><EsaButton color="secondary" appearance="outline" icon="calendar" size="sm">Add discrete due date</EsaButton></span>
-      <span data-crs-doc-add-recurring><EsaButton color="secondary" appearance="outline" icon="calendar" size="sm">Add recurring due date</EsaButton></span>
-      <span data-crs-doc-modify-recurring hidden><EsaButton color="secondary" appearance="outline" size="sm">Modify recurring due date</EsaButton></span>
-      <span data-crs-doc-delete-recurring hidden><EsaButton color="danger" appearance="outline" size="sm">Delete recurring due date</EsaButton></span>
-      <span data-crs-doc-add-upload><EsaButton color="secondary" appearance="outline" icon="upload" size="sm">Upload document</EsaButton></span>
+      <span data-crs-doc-add-discrete><EsaButton variant="secondary" appearance="outline" icon="calendar" size="sm">Add discrete due date</EsaButton></span>
+      <span data-crs-doc-add-recurring><EsaButton variant="secondary" appearance="outline" icon="calendar" size="sm">Add recurring due date</EsaButton></span>
+      <span data-crs-doc-modify-recurring hidden><EsaButton variant="secondary" appearance="outline" size="sm">Modify recurring due date</EsaButton></span>
+      <span data-crs-doc-delete-recurring hidden><EsaButton variant="danger" appearance="outline" size="sm">Delete recurring due date</EsaButton></span>
+      <span data-crs-doc-add-upload><EsaButton variant="secondary" appearance="outline" icon="upload" size="sm">Upload document</EsaButton></span>
     </div>
 
     <!-- AG Grid mounts here. autoHeight grows with rows so the page (not an inner
@@ -159,19 +159,19 @@ const hasDocuments = documents.length > 0;
     <div class="cbf-crs-doc-grid" data-crs-doc-grid></div>
 
     <footer class="cbf-crs-commitment-documents__footer repel">
-      <span class="type-caption" data-crs-doc-count>
+      <span class="typography-meta" data-crs-doc-count>
         Showing {documents.length} of {documents.length} due dates/documents
       </span>
-      <span data-crs-doc-csv><EsaIconButton icon="download" label="Download CSV" size="sm" /></span>
+      <span data-crs-doc-csv><EsaIconButton variant="chrome" iconOnly icon="download" label="Download CSV" size="sm" /></span>
     </footer>
   </div>
 
   <!-- Real esa-icon-button legos, server-rendered once, cloned into each row's
        Actions cell — see header note on why this isn't a popover menu. -->
   <template data-crs-doc-action-templates hidden aria-hidden="true">
-    <span data-action-template="edit"><EsaIconButton icon="pencil" label="Edit" size="sm" /></span>
-    <span data-action-template="upload"><EsaIconButton icon="upload" label="Upload document" size="sm" /></span>
-    <span data-action-template="delete"><EsaIconButton icon="trash-2" label="Delete" size="sm" /></span>
+    <span data-action-template="edit"><EsaIconButton variant="chrome" iconOnly icon="pencil" label="Edit" size="sm" /></span>
+    <span data-action-template="upload"><EsaIconButton variant="chrome" iconOnly icon="upload" label="Upload document" size="sm" /></span>
+    <span data-action-template="delete"><EsaIconButton variant="chrome" iconOnly icon="trash-2" label="Delete" size="sm" /></span>
   </template>
 
   <CbfCrsDocumentDialog />
@@ -222,7 +222,7 @@ const hasDocuments = documents.length > 0;
   .cbf-crs-commitment-documents__intro,
   [data-crs-recurring-status] {
     margin: 0;
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
     max-width: 90ch;
   }
 
@@ -231,7 +231,7 @@ const hasDocuments = documents.length > 0;
   }
 
   .cbf-crs-commitment-documents__footer {
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
 
   /* Actions cell: a few icon buttons side by side, no popover — see header note. */

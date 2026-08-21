@@ -22,7 +22,7 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
   <div class="cbf-demo-controls__row">
     <div class="cbf-demo-controls__flag">
       <EsaBadge value="Prototype settings" variant="warning" size="lg" />
-      <p class="type-caption">
+      <p class="typography-meta">
         This bar is not part of the application. Use it to set who is viewing the
         pages and what state the CR/CCR is in — the contract below updates to match.
       </p>
@@ -60,9 +60,9 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     flex-direction: column;
     gap: var(--spacing-400);
     padding: var(--spacing-400) var(--spacing-500);
-    border: 1px dashed var(--color-warning-strong, #b45309);
+    border: 1px dashed var(--color-content-utility-warning, #b45309);
     border-radius: var(--radius-200);
-    background: color-mix(in srgb, var(--color-warning-strong, #b45309) 6%, var(--color-surface));
+    background: color-mix(in srgb, var(--color-content-utility-warning, #b45309) 6%, var(--color-background-elevation-raised));
   }
   .cbf-demo-controls__row {
     display: flex;
@@ -77,7 +77,7 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     gap: var(--spacing-200);
     max-width: 42ch;
   }
-  .cbf-demo-controls__flag p { margin: 0; color: var(--color-text-secondary); }
+  .cbf-demo-controls__flag p { margin: 0; color: var(--color-content-default-secondary); }
   .cbf-demo-controls__toggles {
     display: flex;
     flex-wrap: wrap;

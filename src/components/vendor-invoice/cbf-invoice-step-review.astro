@@ -27,13 +27,13 @@ import CbfInvoiceReviewSummary from './cbf-invoice-review-summary.astro';
 
   <div class="cbf-step-actions">
     <span data-wizard-cancel>
-      <EsaButton color="danger" appearance="outline" size="md">Cancel</EsaButton>
+      <EsaButton variant="danger" appearance="outline" size="md">Cancel</EsaButton>
     </span>
     <span data-wizard-back>
-      <EsaButton color="secondary" appearance="outline" size="md">Edit</EsaButton>
+      <EsaButton variant="secondary" appearance="outline" size="md">Edit</EsaButton>
     </span>
     <span data-wizard-submit>
-      <EsaButton color="primary" size="md">Submit invoice</EsaButton>
+      <EsaButton variant="primary" size="md">Submit invoice</EsaButton>
     </span>
   </div>
 </div>
@@ -41,22 +41,22 @@ import CbfInvoiceReviewSummary from './cbf-invoice-review-summary.astro';
 <style>
   .cbf-page-title {
     margin: 0 0 var(--spacing-500);
-    font-family: var(--font-display);
-    font-weight: var(--font-weight-medium);
+    font-family: var(--typography-font-family-display);
+    font-weight: var(--typography-font-weight-medium);
     font-size: 40px;
     line-height: 1;
     letter-spacing: -1px;
-    color: var(--color-surface-inverse);
+    color: var(--color-background-default-knockout);
   }
 
   .cbf-review-notice {
     margin-bottom: var(--spacing-500);
   }
   .cbf-review-notice :global(.esa-alert-box) {
-    --color-info-subtle: var(--color-primary-subtle);
-    --color-info-border: var(--color-primary-border);
-    --color-info: var(--color-secondary);
-    --color-text-secondary: var(--color-text-primary);
+    --color-background-utility-info-subtle: var(--color-background-brand-subtle);
+    --color-border-utility-info: var(--color-border-brand);
+    --color-background-utility-info: var(--color-background-brand-muted);
+    --color-content-default-secondary: var(--color-content-default);
     font-size: 15px;
   }
 
@@ -66,7 +66,7 @@ import CbfInvoiceReviewSummary from './cbf-invoice-review-summary.astro';
     gap: var(--spacing-300);
     margin-top: var(--spacing-700);
     padding-top: var(--spacing-500);
-    border-top: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-border-default);
   }
   /* Cancel stays left; Edit + Submit are grouped at the right edge. */
   .cbf-step-actions [data-wizard-back] { margin-left: auto; }

@@ -55,8 +55,8 @@ const { image, eyebrow, tagline, credit } = Astro.props;
     z-index: -1;
     background: linear-gradient(
       to top,
-      color-mix(in srgb, var(--color-surface-inverse) 82%, transparent) 0%,
-      color-mix(in srgb, var(--color-surface-inverse) 38%, transparent) 38%,
+      color-mix(in srgb, var(--color-background-default-knockout) 82%, transparent) 0%,
+      color-mix(in srgb, var(--color-background-default-knockout) 38%, transparent) 38%,
       transparent 72%
     );
   }
@@ -65,23 +65,23 @@ const { image, eyebrow, tagline, credit } = Astro.props;
     width: 100%;
     margin: 0 auto;
     padding: var(--spacing-800) var(--spacing-600);
-    color: var(--color-text-inverse, #fff);
+    color: var(--color-content-default-knockout, #fff);
   }
   .cbf-welcome-hero__eyebrow {
     margin: 0 0 var(--spacing-200);
-    font-family: var(--font-sans-condensed, var(--font-sans));
+    font-family: var(--font-sans-condensed, var(--typography-font-family-sans));
     font-size: 15px;
-    font-weight: var(--font-weight-semibold);
+    font-weight: var(--typography-font-weight-semibold);
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--color-gold-200, #f3d99b);
+    color: var(--cbf-gold-200, #f3d99b);
   }
   .cbf-welcome-hero__tagline {
     margin: 0;
     max-width: 22ch;
-    font-family: var(--font-display, var(--font-sans));
+    font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
     font-size: clamp(28px, 4vw, 48px);
-    font-weight: var(--font-weight-bold, 700);
+    font-weight: var(--typography-font-weight-bold, 700);
     line-height: 1.1;
     letter-spacing: -0.01em;
   }
@@ -91,7 +91,7 @@ const { image, eyebrow, tagline, credit } = Astro.props;
     bottom: var(--spacing-200);
     margin: 0;
     font-size: 12px;
-    color: color-mix(in srgb, var(--color-text-inverse, #fff) 75%, transparent);
+    color: color-mix(in srgb, var(--color-content-default-knockout, #fff) 75%, transparent);
   }
   @media (max-width: 680px) {
     .cbf-welcome-hero__inner { padding: var(--spacing-700) var(--spacing-500); }

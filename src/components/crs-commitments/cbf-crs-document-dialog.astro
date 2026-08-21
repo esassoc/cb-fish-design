@@ -93,7 +93,7 @@ const documentCategories = [
       data-field="description"
     ></esa-textarea>
 
-    <p class="type-caption cbf-crs-doc-form__uploaded" data-crs-doc-uploaded hidden>
+    <p class="typography-meta cbf-crs-doc-form__uploaded" data-crs-doc-uploaded hidden>
       Uploaded file: <span data-crs-doc-uploaded-name></span>
     </p>
     <div data-crs-doc-file-slot>
@@ -105,17 +105,17 @@ const documentCategories = [
       ></esa-file-upload>
     </div>
 
-    <p class="type-caption cbf-crs-doc-form__error" data-crs-doc-error hidden>
+    <p class="typography-meta cbf-crs-doc-form__error" data-crs-doc-error hidden>
       Enter a document title to continue.
     </p>
   </form>
 
   <div slot="footer">
     <span data-crs-doc-cancel>
-      <EsaButton color="ghost" appearance="outline">Cancel</EsaButton>
+      <EsaButton variant="ghost" appearance="outline">Cancel</EsaButton>
     </span>
     <span data-crs-doc-save>
-      <EsaButton color="primary">Save</EsaButton>
+      <EsaButton variant="primary">Save</EsaButton>
     </span>
   </div>
 </esa-dialog>
@@ -127,10 +127,10 @@ const documentCategories = [
     gap: var(--spacing-400);
   }
   .cbf-crs-doc-form__error {
-    color: var(--color-danger-strong);
+    color: var(--color-content-utility-danger);
   }
   .cbf-crs-doc-form__uploaded {
-    color: var(--color-text-secondary);
+    color: var(--color-content-default-secondary);
   }
 </style>
 
