@@ -184,13 +184,13 @@ const hasAlert = Astro.slots.has('alert');
     <div class="cbf-invoice-field__note stack" data-gap="sm" data-field-note hidden>
       <esa-textarea
         data-field-note-input
-        label={`What's wrong with ${label}?`}
+        label="Comment"
         placeholder="e.g. the rate exceeds the contract's approved $78.00/hr"
         rows="3"
       ></esa-textarea>
       <div class="cluster" data-gap="sm">
         <span data-field-note-save>
-          <EsaButton color="primary" size="sm">Save issue</EsaButton>
+          <EsaButton color="primary" size="sm">Save</EsaButton>
         </span>
         <span data-field-note-cancel>
           <EsaButton appearance="outline" color="secondary" size="sm">Cancel</EsaButton>

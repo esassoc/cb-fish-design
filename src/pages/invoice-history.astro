@@ -1,16 +1,16 @@
 ---
-// /invoice-history — the paid-invoice archive behind the "View invoice history"
-// link on My Work → My Invoices. Shows every invoice Asset Suite has marked Paid,
-// kept OUT of the active workspace grid so that surface stays scoped to what still
-// needs attention. Same reviewQueue split feeds both, so the two never diverge.
+// /invoice-history — the "other invoices" archive behind the "View other invoices"
+// link on the Dashboard → Invoices tab. Shows every invoice in a status the main
+// grid doesn't carry — Returned and Approved (whatever their Asset Suite payment
+// state) — so nothing the COR has already acted on falls out of view. The main grid
+// shows the open pile; this shows the complement, from the same reviewQueue split,
+// so the two never overlap or leave a gap.
 //
 // Thin assembler: esa-container + cbf-app-panel chrome; the archive itself is the
 // existing cbf-invoice-review-queue (workspace variant), reused verbatim with the
-// paid subset — the Asset Suite column reads "Paid <date>" for every row, and the
-// navigation works the same as in the workspace: a row (or its invoice-number link)
-// goes to that invoice's page, and the quick-view control opens the peek drawer.
-// A paid invoice is terminal, so the page's decision actions have nothing left to
-// act on — it is read as a record, not worked.
+// non-open subset. Navigation matches the main grid: a row (or its invoice-number
+// link) opens that invoice's review page. These invoices are terminal for the COR,
+// so the page is read as a record, not worked.
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
 import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
@@ -18,7 +18,7 @@ import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import CbfInvoiceReviewQueue from '../components/invoice-review/cbf-invoice-review-queue.astro';
 import { withBase } from '../lib/base';
-import { paidInvoices, assetSuiteFeedAsOf } from '../data/invoice-review.mjs';
+import { otherInvoices, assetSuiteFeedAsOf } from '../data/invoice-review.mjs';
 
 const homeIcon =
   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
@@ -26,19 +26,19 @@ const homeIcon =
 const crumbs = [
   { label: 'Home', href: withBase('/home'), icon: homeIcon },
   { label: 'Dashboard', href: withBase('/my-work#invoices') },
-  { label: 'Processed invoices' },
+  { label: 'Other invoices' },
 ];
 
-const paid = paidInvoices();
+const other = otherInvoices();
 ---
 <!-- manifest:
   layout: esa-container > cbf-app-panel
   sections:
-    - nav                     -> cbf-public-nav
-    - page header             -> esa-page-header
-    - paid invoice archive    -> cbf-invoice-review-queue (workspace variant, paid subset)
+    - nav                  -> cbf-public-nav
+    - page header          -> esa-page-header
+    - other-invoice archive -> cbf-invoice-review-queue (workspace variant, non-open subset)
 -->
-<BaseLayout title="Processed invoices — Columbia Basin Fish &amp; Wildlife Program">
+<BaseLayout title="Other invoices — Columbia Basin Fish &amp; Wildlife Program">
   <CbfPublicNav />
 
   <main class="cbf-page">
@@ -46,10 +46,10 @@ const paid = paidInvoices();
       <CbfAppPanel crumbs={crumbs}>
         <EsaPageHeader
           eyebrow="Dashboard · Invoices"
-          title="Processed invoices"
-          lede={`Invoices Asset Suite has confirmed paid. Figures as of ${assetSuiteFeedAsOf} — nightly Asset Suite feed.`}
+          title="Other invoices"
+          lede={`Invoices on your contracts that you've already returned or approved — everything outside the open review pile. Figures as of ${assetSuiteFeedAsOf} — nightly Asset Suite feed.`}
         />
-        <CbfInvoiceReviewQueue invoices={paid} variant="workspace" title="Paid invoices" />
+        <CbfInvoiceReviewQueue invoices={other} variant="workspace" title="Other invoices" />
       </CbfAppPanel>
     </EsaContainer>
   </main>
