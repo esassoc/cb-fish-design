@@ -74,7 +74,7 @@ export const prototypes: Prototype[] = [
     slug: 'my-work',
     title: 'Dashboard (COR landing)',
     description:
-      'The COR landing console — a tabbed case-management surface: the action queue and at-risk band, the invoice workspace with Asset Suite status, and a portfolio health view. Tab badges carry urgent counts everywhere.',
+      'The COR’s landing dashboard, focused on the invoice workspace: a status summary of every invoice on the COR’s contracts above a queue of the ones awaiting review, each opening its full review page.',
     route: '/my-work',
     createdAt: '2026-07-13',
     status: 'in-progress',
