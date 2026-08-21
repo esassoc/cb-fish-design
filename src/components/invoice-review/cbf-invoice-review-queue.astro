@@ -41,11 +41,16 @@ type Stage = 'Submitted' | 'In review' | 'Returned' | 'Approved';
 interface Props {
   invoices?: typeof defaultQueue;
   // 'review' = the COR review queue (default, unchanged). 'workspace' = My
-  // Invoices: adds the Asset Suite processing + aging columns, same overlay.
+  // Invoices: adds the aging column, same overlay.
   variant?: 'review' | 'workspace';
   // Section heading text — defaults to the review-queue title so existing usage
-  // is byte-for-byte unchanged; My Invoices passes "My invoices".
+  // is byte-for-byte unchanged; the Dashboard passes its own heading.
   title?: string;
+  // Workspace-variant column toggles. The Dashboard's Invoices grid drops the
+  // review-by countdown and the Asset Suite processing column to keep the grid
+  // focused on the open pile; Invoice history keeps both (its defaults).
+  showDaysLeft?: boolean;
+  showAssetSuite?: boolean;
 }
 
 // Asset Suite processing state → esa-pill variant. Mirrors the external Asset
@@ -75,9 +80,21 @@ const stageFilters = [
   { value: 'Approved', label: 'Approved' },
 ];
 
-const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = Astro.props;
+const {
+  invoices = defaultQueue,
+  variant = 'review',
+  title = 'Review queue',
+  showDaysLeft = true,
+  showAssetSuite = true,
+} = Astro.props;
 ---
-<section class="cbf-invoice-review-queue stack" data-gap="md" data-variant={variant}>
+<section
+  class="cbf-invoice-review-queue stack"
+  data-gap="md"
+  data-variant={variant}
+  data-show-days-left={String(showDaysLeft)}
+  data-show-asset-suite={String(showAssetSuite)}
+>
   <header class="cbf-invoice-review-queue__header repel">
     <h2 class="typography-heading-md">{title}</h2>
     <div class="cbf-invoice-review-queue__search">
@@ -91,15 +108,20 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
   </header>
 
   <div class="cbf-invoice-review-queue__controls">
-    <esa-chip-group
-      data-queue-stage-filter
-      size="sm"
-      label="Filter by status"
-      value=""
-      options={JSON.stringify(stageFilters)}
-    ></esa-chip-group>
-    {/* Optional trailing controls (e.g. a "View invoice history" link) — sit at
-        the right edge of the filter row. Empty in the review variant. */}
+    {/* Status filter chips — the review queue's triage control. The workspace
+        (Dashboard / Invoice history) drops them: the Dashboard grid is already
+        scoped to the open pile, and the paid archive is single-status. */}
+    {variant !== 'workspace' && (
+      <esa-chip-group
+        data-queue-stage-filter
+        size="sm"
+        label="Filter by status"
+        value=""
+        options={JSON.stringify(stageFilters)}
+      ></esa-chip-group>
+    )}
+    {/* Optional trailing controls (e.g. a "View other invoices" link) — sit at
+        the right edge of the controls row. Empty in the review variant. */}
     <div class="cbf-invoice-review-queue__controls-end">
       <slot name="controls-end" />
     </div>
@@ -134,12 +156,9 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
       <span data-urgency={u}><EsaPill label={u} variant={urgencyVariant[u]} size="md" removable={false} /></span>
     ))}
     <span data-flag="final"><EsaPill label="Final" variant="default" size="md" removable={false} /></span>
-    {variant === 'workspace' && assetKeys.map((a) => (
+    {variant === 'workspace' && showAssetSuite && assetKeys.map((a) => (
       <span data-asset={a}><EsaPill label={a} variant={assetVariant[a]} size="md" removable={false} /></span>
     ))}
-    {/* The quick-view control, server-rendered once as a real esa-icon-button and
-        cloned into every row's peek cell — so the grid never hand-rolls a button. */}
-    <span data-peek-button><EsaIconButton variant="chrome" iconOnly icon="eye" label="Quick view" size="sm" /></span>
   </div>
 
   <!-- Row data for the client grid module (avoids a second fetch). -->
@@ -622,6 +641,11 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
   .cbf-invoice-review-queue__grid .cbf-grid-idcell { display: inline-flex; align-items: center; gap: var(--spacing-200); height: 100%; }
   /* Terminal-stage Days-left cell: a quiet placeholder, not an urgency pill. */
   .cbf-invoice-review-queue__grid .cbf-grid-muted { color: var(--color-content-default-tertiary); }
+  /* Days-in-status cell for an overdue open invoice: red, to flag it for review. */
+  .cbf-invoice-review-queue__grid .cbf-grid-overdue {
+    color: var(--color-background-utility-danger, #b42318);
+    font-weight: var(--typography-font-weight-medium);
+  }
   .cbf-invoice-review-queue__grid .ag-row { cursor: pointer; }
 
   /* Invoice-number anchor → the invoice's processing page. Injected by the cell
@@ -827,7 +851,6 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
       urgencyHTML.set(el.dataset.urgency ?? '', el.innerHTML);
     });
     const finalHTML = root.querySelector<HTMLElement>('[data-badge-templates] [data-flag="final"]')?.innerHTML ?? 'Final';
-    const peekBtnHTML = root.querySelector<HTMLElement>('[data-badge-templates] [data-peek-button]')?.innerHTML ?? '';
 
     // Asset Suite pill templates (workspace variant only). Empty in the review
     // variant since those templates aren't server-rendered there.
@@ -866,6 +889,11 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
     let openDetail: (inv: Invoice) => void = () => {};
 
     const isWorkspace = root.dataset.variant === 'workspace';
+    // Workspace column toggles (default on): the Dashboard's Invoices grid turns
+    // both off to keep to Invoice # · Vendor · Contract · Amount · Status · Days
+    // in status; Invoice history leaves them on.
+    const showDaysLeft = root.dataset.showDaysLeft !== 'false';
+    const showAssetSuite = root.dataset.showAssetSuite !== 'false';
 
     // Days-left cell renders as pill (open) or muted em dash (terminal); the
     // custom comparator keeps open-stage rows above terminal rows under the
@@ -899,16 +927,6 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
       },
     };
 
-    // Quick view — the ONLY way into the peek drawer now that the row itself goes to
-    // the full detail page. An explicit, labelled affordance beats a hidden gesture:
-    // the COR chooses between "glance" (drawer) and "work it" (page).
-    const quickViewCol = {
-      headerName: '', colId: 'quickView',
-      minWidth: 56, maxWidth: 56, sortable: false, resizable: false,
-      cellClass: 'cbf-grid-peek',
-      cellRenderer: () => `<span class="cbf-grid-peek__btn" data-quick-view>${peekBtnHTML}</span>`,
-    };
-
     const amountCol = {
       headerName: 'Amount', field: 'amount', colId: 'amount',
       type: 'numericColumn', headerClass: 'cbf-grid-num', cellClass: 'cbf-grid-num',
@@ -938,40 +956,48 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
       ? []
       : [{ headerName: 'Review by', field: 'reviewBy', colId: 'reviewBy', minWidth: 130 }];
 
-    // Workspace-variant-only columns: Asset Suite processing pill + aging column.
-    const workspaceCols = isWorkspace
-      ? [
-          {
-            headerName: 'Asset Suite', field: 'assetSuite', colId: 'assetSuite',
-            flex: 2, minWidth: 180,
-            cellRenderer: (p: { data: Invoice }) => assetBadge(p.data),
-          },
-          {
-            headerName: 'In status', field: 'inStatusDays', colId: 'inStatusDays',
-            minWidth: 110,
-            valueFormatter: (p: { value: number }) => `${p.value ?? 0} days`,
-          },
-        ]
-      : [];
+    // Workspace-variant column: Asset Suite processing pill (Invoice history only).
+    const assetSuiteCol = {
+      headerName: 'Asset Suite', field: 'assetSuite', colId: 'assetSuite',
+      flex: 2, minWidth: 180,
+      cellRenderer: (p: { data: Invoice }) => assetBadge(p.data),
+    };
 
-    // Column order (each variant then gains a trailing 56px quick-view cell):
-    //  review    → Days left · Review by · Invoice # · Vendor · Contract · Amount · Final? · Status  (8)
-    //  workspace → Days left · Invoice # · Vendor · Contract · Amount · Status · Asset Suite · In status  (8)
+    // Days in status — how long the invoice has sat in its current stage. An open
+    // invoice past its review-by clock is overdue: its cell goes red to flag it for
+    // immediate review. Terminal rows never trip the red treatment.
+    const dayUnit = (n: number) => `${n} day${n === 1 ? '' : 's'}`;
+    const daysInStatusCol = {
+      headerName: 'Days in status', field: 'inStatusDays', colId: 'inStatusDays',
+      minWidth: 130,
+      // Default sort when the review-by column is absent (Dashboard): most days in
+      // status first, so the overdue row leads.
+      ...(showDaysLeft ? {} : { sort: 'desc' as const }),
+      cellClass: (p: { data: Invoice }) =>
+        isOpenStage(p.data.stage) && p.data.daysRemaining < 0 ? 'cbf-grid-overdue' : '',
+      valueFormatter: (p: { value: number }) => dayUnit(p.value ?? 0),
+    };
+
+    // Column order:
+    //  review    → Days left · Review by · Invoice # · Vendor · Contract · Amount · Final? · Status
+    //  workspace → [Days left?] · Invoice # · Vendor · Contract · Amount · Status · [Asset Suite?] · Days in status
+    //              (Days left / Asset Suite are toggled off on the Dashboard, on for Invoice history)
     //
-    // Workspace: add flex:1 to the five non-flex columns so all 8 columns fill the
-    // viewport exactly, with minWidths still guarding narrow cases. The review
-    // variant's column objects are left byte-identical — flex is applied via a
-    // spread-override at the point where the workspace array is assembled.
+    // A row click always opens the invoice's review page — there is no in-grid peek.
+    //
+    // Workspace: flex:1 on the non-flex columns so the set fills the viewport, with
+    // minWidths still guarding narrow cases. The review variant's column objects are
+    // left byte-identical — flex is applied via a spread-override at assembly.
     const columnDefs = isWorkspace
       ? [
-          { ...daysLeftCol, flex: 1 },
+          ...(showDaysLeft ? [{ ...daysLeftCol, flex: 1 }] : []),
           { ...invoiceNumCol, flex: 1 },
           vendorCol,
           contractCol,
           { ...amountCol, flex: 1 },
           { ...statusCol, flex: 1 },
-          ...workspaceCols.map((col, i) => (i === 1 ? { ...col, flex: 1 } : col)), // In status gets flex:1; Asset Suite already has flex:2
-          quickViewCol,
+          ...(showAssetSuite ? [assetSuiteCol] : []), // Asset Suite already has flex:2
+          { ...daysInStatusCol, flex: 1 },
         ]
       : [
           daysLeftCol,
@@ -982,7 +1008,6 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
           amountCol,
           ...reviewOnlyCols,
           statusCol,
-          quickViewCol,
         ];
 
     const gridApi = createGrid(gridHost, {
@@ -1009,17 +1034,14 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
         if (empty) empty.hidden = shown !== 0;
         gridHost.hidden = shown === 0;
       },
-      // A row click GOES TO THE INVOICE — the full processing page, where the COR
-      // edits, flags issues, and decides. The peek drawer is no longer the default
-      // destination; it opens only from the explicit quick-view control, which is
-      // handled here and short-circuits the navigation.
+      // A row click ALWAYS opens the invoice's review page — the full processing
+      // surface where the COR reads, flags, and decides. There is no in-grid peek.
       // The invoice-number anchor is left alone: the browser follows it natively
       // (preserving cmd/middle-click), so intercepting it would break new-tab.
       onRowClicked: (e) => {
         const inv = e.data as Invoice | undefined;
         if (!inv) return;
         const target = (e.event?.target as HTMLElement | null) ?? null;
-        if (target?.closest('[data-quick-view]')) { openDetail(inv); return; }
         if (target?.closest('a')) return;
         window.location.href = detailHref(inv.number);
       },
@@ -1290,8 +1312,8 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
   // only slots the ACTIVE panel — an inactive panel is unslotted (zero width),
   // and AG Grid must never init at zero width (flex columns + autoHeight break).
   // So: attach the open API immediately (works before the grid exists via a
-  // pending-open), init synchronously when already visible (byte-for-byte the
-  // old eager behavior), and otherwise defer init until the panel first sizes.
+  // pending-open), init synchronously when already visible, and otherwise defer
+  // init until the panel first sizes.
   type QueueApi = ReturnType<typeof initQueue>;
   function setup(root: HTMLElement) {
     let api: QueueApi | undefined;
@@ -1307,21 +1329,43 @@ const { invoices = defaultQueue, variant = 'review', title = 'Review queue' } = 
       else pendingOpen = number;
     });
 
-    if (root.clientWidth > 0) {
-      // Visible at load — preserve today's behavior exactly (synchronous init).
+    // Init once the root has a nonzero width, draining any pending peek-open.
+    const tryInit = (): boolean => {
+      if (api) return true;
+      if (root.clientWidth <= 0) return false;
       api = initQueue(root);
       if (pendingOpen && api) { api.openByNumber(pendingOpen); pendingOpen = null; }
-      return;
-    }
+      return true;
+    };
 
-    // Hidden tab panel: wait for the first nonzero width, then init once.
-    const ro = new ResizeObserver(() => {
-      if (root.clientWidth <= 0) return;
-      ro.disconnect();
-      api = initQueue(root);
-      if (pendingOpen && api) { api.openByNumber(pendingOpen); pendingOpen = null; }
-    });
+    // Visible at load — init synchronously.
+    if (tryInit()) return;
+
+    // Hidden panel: init when it first sizes. A tab-switch that slots the panel
+    // fires the ResizeObserver; the DEFAULT-active panel, though, goes visible
+    // when its ancestor esa-tab-layout upgrades out of the FOUC-guard display:none
+    // — a transition the ResizeObserver does not reliably report. So also re-check
+    // once the lego is defined (next frame) and on any tabchange.
+    const ro = new ResizeObserver(() => { if (tryInit()) ro.disconnect(); });
     ro.observe(root);
+
+    const tabLayout = root.closest('esa-tab-layout');
+    if (tabLayout) {
+      // Once the lego is defined, its default-active panel lays out and gains
+      // width. The ResizeObserver above does not reliably report that FOUC-guard
+      // display:none → visible transition, so poll until the panel has width, then
+      // init. setTimeout (not rAF) so this still fires when the tab is loaded in
+      // the background, where rAF is suspended. A tabchange also re-checks.
+      customElements.whenDefined('esa-tab-layout').then(() => {
+        let tries = 0;
+        const poll = () => {
+          if (tryInit()) { ro.disconnect(); return; }
+          if (tries++ < 40) setTimeout(poll, 50);
+        };
+        poll();
+      });
+      tabLayout.addEventListener('tabchange', () => { if (tryInit()) ro.disconnect(); });
+    }
   }
 
   document.querySelectorAll<HTMLElement>('.cbf-invoice-review-queue').forEach(setup);

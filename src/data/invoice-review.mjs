@@ -110,7 +110,7 @@ const reviewQueueBase = [
       { description: 'Data analysis', qty: 16, unitPrice: 120 },
     ],
     contractValue: 680_000, expended: 612_300, remaining: 67_700, asOf: 'Jun 21, 2026',
-    assetSuite: 'Not sent', inStatusDays: 6,
+    assetSuite: 'Not sent', inStatusDays: 3,
   },
   {
     number: 'INV-2026-0047', vendor: 'Methow Restoration Partners',
@@ -126,7 +126,7 @@ const reviewQueueBase = [
       { description: 'Data processing & reporting', qty: 6, unitPrice: 110 },
     ],
     contractValue: 240_000, expended: 196_800, remaining: 43_200, asOf: 'Jun 21, 2026',
-    assetSuite: 'Not sent', inStatusDays: 24,
+    assetSuite: 'Not sent', inStatusDays: 5,
   },
   {
     number: 'INV-2026-0046', vendor: 'Pacific Environmental Services, LLC',
@@ -160,7 +160,7 @@ const reviewQueueBase = [
       { description: 'Final report & data deliverable', qty: 1, unitPrice: 1650 },
     ],
     contractValue: 96_000, expended: 77_250, remaining: 18_750, asOf: 'Jun 21, 2026',
-    assetSuite: 'Not sent', inStatusDays: 5,
+    assetSuite: 'Not sent', inStatusDays: 2,
   },
   {
     number: 'INV-2026-0041', vendor: 'Cascade Fisheries Consulting',
@@ -178,6 +178,57 @@ const reviewQueueBase = [
     ],
     contractValue: 680_000, expended: 612_300, remaining: 67_700, asOf: 'Jun 21, 2026',
     assetSuite: 'Not sent', inStatusDays: 13,
+  },
+  {
+    number: 'INV-2026-0045', vendor: 'Okanogan Water Sciences',
+    contract: 'Water Quality Sampling — Okanogan', project: 'Okanogan Subbasin',
+    besVendor: 'BES-40529',
+    submitted: 'Jun 2, 2026', reviewBy: 'Jun 25, 2026', daysRemaining: 3,
+    amount: 5400, stage: 'Returned', final: false,
+    invoiceDate: 'May 28, 2026', perfStart: 'Apr 1, 2026', perfEnd: 'Apr 30, 2026',
+    billTo: 'BPA — Columbia Basin Fish & Wildlife Program',
+    pdfName: 'INV-2026-0045-Okanogan.pdf', supportingDocs: [],
+    notes: 'Returned Jun 6 — lab-analysis line is missing its chain-of-custody documentation; resubmit with the supporting records attached.',
+    lineItems: [
+      { description: 'Water sample collection', qty: 40, unitPrice: 85 },
+      { description: 'Lab analysis', qty: 18, unitPrice: 115 },
+    ],
+    contractValue: 96_000, expended: 77_250, remaining: 18_750, asOf: 'Jun 21, 2026',
+    assetSuite: 'Not sent', inStatusDays: 15,
+  },
+  {
+    number: 'INV-2026-0043', vendor: 'Methow Restoration Partners',
+    contract: 'Riparian Vegetation Monitoring — Methow', project: 'Methow Subbasin',
+    besVendor: 'BES-31164',
+    submitted: 'May 25, 2026', reviewBy: 'Jun 18, 2026', daysRemaining: 4,
+    amount: 2750, stage: 'Returned', final: false,
+    invoiceDate: 'May 20, 2026', perfStart: 'Apr 1, 2026', perfEnd: 'Apr 30, 2026',
+    billTo: 'BPA — Columbia Basin Fish & Wildlife Program',
+    pdfName: 'INV-2026-0043-Methow.pdf', supportingDocs: [],
+    notes: 'Returned Jun 2 — labor hours exceed the approved monthly cap; resubmit with a corrected timesheet.',
+    lineItems: [
+      { description: 'Vegetation transect monitoring', qty: 20, unitPrice: 110 },
+      { description: 'Data processing & reporting', qty: 5, unitPrice: 110 },
+    ],
+    contractValue: 240_000, expended: 196_800, remaining: 43_200, asOf: 'Jun 21, 2026',
+    assetSuite: 'Not sent', inStatusDays: 19,
+  },
+  {
+    number: 'INV-2026-0042', vendor: 'Pacific Environmental Services, LLC',
+    contract: 'Hatchery Supplementation — Entiat', project: 'Entiat Subbasin',
+    besVendor: 'BES-10487',
+    submitted: 'Jun 3, 2026', reviewBy: 'Jun 26, 2026', daysRemaining: 4,
+    amount: 3150, stage: 'Approved', final: false,
+    invoiceDate: 'May 30, 2026', perfStart: 'May 1, 2026', perfEnd: 'May 31, 2026',
+    billTo: 'BPA — Columbia Basin Fish & Wildlife Program',
+    pdfName: 'INV-2026-0042-PacificEnv.pdf', supportingDocs: ['broodstock-field-log-may.pdf'],
+    lineItems: [
+      { description: 'Broodstock collection labor', qty: 30, unitPrice: 95 },
+      { description: 'Field supplies', qty: 1, unitPrice: 300 },
+    ],
+    contractValue: 180_000, expended: 88_500, remaining: 91_500, asOf: 'Jun 21, 2026',
+    // Approved Jun 17; payment request not yet created, so nothing has gone to Asset Suite.
+    assetSuite: 'Not sent', inStatusDays: 4,
   },
   {
     number: 'INV-2026-0038', vendor: 'Pacific Environmental Services, LLC',
@@ -531,13 +582,14 @@ export function findInvoice(number, list = reviewQueue) {
 }
 
 /**
- * Headline triage metrics for the COR's active invoice workspace — the review
- * pile and its facets. All scoped to OPEN invoices (Submitted / In review), the
- * ones actually awaiting the COR's decision:
- *   - awaitingReview: size of the pile (the "how big is my pile" number)
- *   - overdue:        open invoices past their review-by clock (the SIG-B trigger)
- *   - oldestWaiting:  most days any open invoice has sat in its current stage
- *   - finalInQueue:   open FINAL invoices (each one triggers contract closeout)
+ * The four status buckets summarized above the My Invoices grid — a breakdown of
+ * every invoice on the COR's contracts by where it sits in the review lifecycle:
+ *   - overdue:          open invoices past their review-by clock — the ones needing
+ *                       immediate review (subset of awaitingReview; the red one).
+ *   - awaitingReview:   the open pile (Submitted / In review) submitted by the
+ *                       vendor and awaiting the COR's decision.
+ *   - returned:         invoices the COR returned, awaiting vendor resubmission.
+ *   - recentlyApproved: invoices the COR approved, pending payment-request creation.
  * `overdue` uses the SAME rule the queue's urgency pill does (open stage AND
  * daysRemaining < 0), so the metric can never diverge from what the grid shows.
  * @param {ReviewInvoice[]} list
@@ -545,11 +597,34 @@ export function findInvoice(number, list = reviewQueue) {
 export function deriveWorkspaceMetrics(list = reviewQueue) {
   const open = list.filter((i) => openStages.includes(i.stage));
   return {
-    awaitingReview: open.length,
     overdue: open.filter((i) => i.daysRemaining < 0).length,
-    oldestWaiting: open.reduce((max, i) => Math.max(max, i.inStatusDays ?? 0), 0),
-    finalInQueue: open.filter((i) => i.final).length,
+    awaitingReview: open.length,
+    returned: list.filter((i) => i.stage === 'Returned').length,
+    recentlyApproved: list.filter((i) => i.stage === 'Approved').length,
   };
+}
+
+/**
+ * The invoices shown in the My Invoices grid: the OPEN pile only (Submitted /
+ * In review) — the ones on the COR's contracts still awaiting their decision.
+ * Returned and approved invoices are counted in the summary but kept out of the
+ * grid, which stays scoped to what the COR must act on now.
+ * @param {ReviewInvoice[]} list
+ */
+export function openInvoices(list = reviewQueue) {
+  return list.filter((i) => openStages.includes(i.stage));
+}
+
+/**
+ * The "other invoices" archive behind the Dashboard's "View other invoices" link:
+ * every invoice NOT in the open pile — i.e. everything in a status the main grid
+ * doesn't show (Returned + Approved, whatever their Asset Suite payment state).
+ * The complement of openInvoices over the same queue, so the two never overlap or
+ * leave a gap.
+ * @param {ReviewInvoice[]} list
+ */
+export function otherInvoices(list = reviewQueue) {
+  return list.filter((i) => !openStages.includes(i.stage));
 }
 
 /**

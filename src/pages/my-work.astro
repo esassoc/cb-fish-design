@@ -1,28 +1,18 @@
 ---
-// /my-work — the COR's (Contracting Officer's Representative) personal landing console.
-// Three-tab orientation surface answering: what do I need to do, what's the state of
-// the money, and what do I own. Thin assembler: esa-container + cbf-app-panel chrome;
-// all content is components. Never says "Dashboard".
+// /my-work — the COR's (Contracting Officer's Representative) Dashboard landing.
+// A tabbed case-management surface mirroring the QA environment's dashboard tabs;
+// this prototype is focused on the Invoices tab (the others are disabled). Thin
+// assembler: esa-container + cbf-app-panel chrome; all content is components.
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
 import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
 import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import CbfMyworkTabs from '../components/my-work/cbf-mywork-tabs.astro';
-import CbfTaskQueue from '../components/my-work/cbf-task-queue.astro';
-import CbfTaskRiskBand from '../components/my-work/cbf-task-risk-band.astro';
 import CbfMyInvoices from '../components/my-work/cbf-my-invoices.astro';
-import CbfMyPortfolio from '../components/my-work/cbf-my-portfolio.astro';
 import { withBase } from '../lib/base';
-import {
-  reviewer,
-  deriveMyTasks,
-  deriveRisks,
-  deriveWorkBadges,
-  portfolio,
-} from '../data/my-work.mjs';
+import { reviewer } from '../data/my-work.mjs';
 import { reviewQueue, assetSuiteFeedAsOf } from '../data/invoice-review.mjs';
-import { explorerProjects } from '../data/portfolio-explorer.mjs';
 
 const homeIcon =
   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
@@ -31,21 +21,14 @@ const crumbs = [
   { label: 'Home', href: withBase('/home'), icon: homeIcon },
   { label: 'Dashboard' },
 ];
-
-const tasks = deriveMyTasks();
-const risks = deriveRisks(tasks);
-const badges = deriveWorkBadges();
 ---
 <!-- manifest:
   layout: esa-container > cbf-app-panel
   sections:
-    - nav                          -> cbf-public-nav
-    - page header                  -> esa-page-header
-    - work console (tabs + badges) -> cbf-mywork-tabs
-    - action queue (tasks panel)   -> cbf-task-queue
-    - at-risk band (tasks panel)   -> cbf-task-risk-band
-    - invoice workspace (panel 1)  -> cbf-my-invoices
-    - portfolio (panel 2)          -> cbf-my-portfolio (cbf-portfolio-health + cbf-portfolio-explorer)
+    - nav                    -> cbf-public-nav
+    - page header            -> esa-page-header
+    - dashboard tabs         -> cbf-mywork-tabs (Invoices enabled; others disabled)
+    - invoice workspace      -> cbf-my-invoices (summary strip + invoice grid)
 -->
 <BaseLayout title="Dashboard — Columbia Basin Fish &amp; Wildlife Program">
   <CbfPublicNav />
@@ -55,21 +38,11 @@ const badges = deriveWorkBadges();
       <CbfAppPanel crumbs={crumbs}>
         <EsaPageHeader
           eyebrow={`${reviewer.name} · Contracting Officer's Representative`}
-          title="Dashboard: My Tasks"
-          lede={`Everything you owe, every invoice on your contracts, and the health of what you own. Figures as of ${assetSuiteFeedAsOf} — nightly Asset Suite feed.`}
+          title="Dashboard"
+          lede={`Every invoice on the contracts where you are the COR. Figures as of ${assetSuiteFeedAsOf} — nightly Asset Suite feed.`}
         />
-        <CbfMyworkTabs
-          taskCount={badges.tasks}
-          invoiceBadge={badges.invoiceBadge}
-          portfolioBadge={badges.portfolioAttention}
-          titlePrefix="Dashboard"
-        >
-          <Fragment slot="tasks">
-            <CbfTaskQueue tasks={tasks} />
-            <CbfTaskRiskBand risks={risks} />
-          </Fragment>
-          <CbfMyInvoices slot="invoices" invoices={reviewQueue} feedAsOf={assetSuiteFeedAsOf} />
-          <CbfMyPortfolio slot="portfolio" contracts={portfolio} projects={explorerProjects} />
+        <CbfMyworkTabs>
+          <CbfMyInvoices slot="invoices" invoices={reviewQueue} />
         </CbfMyworkTabs>
       </CbfAppPanel>
     </EsaContainer>

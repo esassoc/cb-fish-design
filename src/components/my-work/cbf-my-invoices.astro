@@ -1,47 +1,44 @@
 ---
-// cbf-my-invoices — thin section wrapper for the "My Invoices" tab panel on the
-// My Work COR landing page. Owns provenance framing (data-as-of caption), the
-// link out to Invoice history, and delegates all invoice rendering to
-// cbf-invoice-review-queue.
+// cbf-my-invoices — thin section wrapper for the Invoices tab on the Dashboard
+// (COR landing) page. Owns the status summary strip, the link out to the other
+// invoices, and delegates all invoice rendering to cbf-invoice-review-queue.
 //
-// The workspace grid is scoped to invoices that still need attention: everything
-// Asset Suite has NOT yet paid (actionableInvoices). Paid invoices are terminal,
-// so they move to the /invoice-history page reached via the header link — keeping
-// this grid clean. Both views read the SAME reviewQueue split, so nothing diverges.
+// The grid is scoped to the OPEN pile — invoices on the COR's contracts still
+// awaiting their decision (Submitted / In review). Returned and approved invoices
+// are counted in the summary strip but kept out of the grid; they live behind the
+// "View other invoices" link, so this workspace stays scoped to what needs action.
 //
-// bcn-lego-checked: no esa-* lego covers a data-provenance caption paired with a
-// delegated queue section, so the wrapper stays minimal. The caption is plain text
-// styled via the .typography-meta role; the "View processed invoices" affordance is the
-// esa-button lego rendered as a link (href). The metrics strip + queue are existing
-// spoke components. The only script is the cbf:queue-filter bridge (mirrors the
-// cbf:open-invoice bridge in cbf-mywork-tabs). No bespoke primitives introduced here.
+// bcn-lego-checked: no esa-* lego covers a summary-strip-plus-delegated-queue
+// section, so the wrapper stays minimal. The "View other invoices" affordance is the
+// esa-button lego rendered as a link (href). The summary strip + queue are existing
+// spoke components. No bespoke primitives introduced here.
 import CbfInvoiceReviewQueue from '../invoice-review/cbf-invoice-review-queue.astro';
 import CbfInvoiceQueueMetrics from '../invoice-review/cbf-invoice-queue-metrics.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
-import { actionableInvoices, paidInvoices, deriveWorkspaceMetrics } from '../../data/invoice-review.mjs';
+import { openInvoices, deriveWorkspaceMetrics } from '../../data/invoice-review.mjs';
 import { withBase } from '../../lib/base';
 
 interface Props {
   invoices: any[];
-  feedAsOf: string;
 }
 
-const { invoices, feedAsOf } = Astro.props;
+const { invoices } = Astro.props;
 
-// Scope the active grid to invoices still needing attention; file the paid ones
-// under the processed-invoices page (linked in the header, with its count).
-const active = actionableInvoices(invoices);
-const paidCount = paidInvoices(invoices).length;
-// Triage metrics are scoped to the open review pile (deriver handles the filter).
+// The grid shows the open pile only; the summary strip breaks the full set down
+// by status (both derived from the same reviewQueue split, so nothing diverges).
+const open = openInvoices(invoices);
 const metrics = deriveWorkspaceMetrics(invoices);
 ---
 
 <div class="stack cbf-my-invoices" data-gap="sm">
-  <p class="typography-meta cbf-my-invoices__provenance">
-    Asset Suite processing status refreshes nightly &middot; last feed {feedAsOf}
-  </p>
   <CbfInvoiceQueueMetrics metrics={metrics} />
-  <CbfInvoiceReviewQueue invoices={active} variant="workspace" title="My invoices">
+  <CbfInvoiceReviewQueue
+    invoices={open}
+    variant="workspace"
+    title="Invoices for contracts where I am the COR"
+    showDaysLeft={false}
+    showAssetSuite={false}
+  >
     <EsaButton
       slot="controls-end"
       href={withBase('/invoice-history')}
@@ -50,30 +47,7 @@ const metrics = deriveWorkspaceMetrics(invoices);
       size="sm"
       icon="history"
     >
-      View processed invoices{paidCount ? ` (${paidCount})` : ''}
+      View other invoices
     </EsaButton>
   </CbfInvoiceReviewQueue>
 </div>
-
-<style>
-  .cbf-my-invoices__provenance {
-    color: var(--color-content-default-secondary);
-  }
-</style>
-
-<script>
-  // Bridge the metrics strip → queue. The Overdue toggle dispatches a bubbling
-  // cbf:queue-filter; catch it here and forward it (non-bubbling) onto the sibling
-  // queue root, which owns the actual grid filter. Same shape as the cbf:open-invoice
-  // bridge in cbf-mywork-tabs — the queue never has to know the strip's DOM position.
-  document.querySelectorAll<HTMLElement>('.cbf-my-invoices').forEach((root) => {
-    const queue = root.querySelector<HTMLElement>('.cbf-invoice-review-queue');
-    if (!queue) return;
-    root.addEventListener('cbf:queue-filter', (e) => {
-      const evt = e as CustomEvent;
-      // Ignore the forwarded event we ourselves dispatch onto the queue.
-      if ((evt.target as Element | null)?.closest?.('.cbf-invoice-review-queue')) return;
-      queue.dispatchEvent(new CustomEvent('cbf:queue-filter', { detail: evt.detail }));
-    });
-  });
-</script>

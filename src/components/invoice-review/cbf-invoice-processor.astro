@@ -83,11 +83,10 @@ import EsaPill from '@esa/ecology/esa-pill.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaIconButton from '@esa/ecology/esa-button.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
-import EsaBadge from '@esa/ecology/esa-badge.astro';
 import CbfInvoiceField from './cbf-invoice-field.astro';
 import CbfInvoiceIssues from './cbf-invoice-issues.astro';
 import { withBase } from '../../lib/base';
-import { contractOptions, contractFacts, budgetRevisions, indirectRate } from '../../data/invoice-review.mjs';
+import { contractFacts, budgetRevisions, indirectRate } from '../../data/invoice-review.mjs';
 
 type Stage = 'Submitted' | 'In review' | 'Returned' | 'Approved';
 
@@ -135,18 +134,17 @@ const hasDocHeader = Astro.slots.has('doc-header');
   >
     <!-- Panel (first child → ordered right by data-side=end). -->
     <aside class="cbf-review-panel stack" data-gap="lg" aria-label="Review">
-      <!-- Invoice information leads. The REVIEW-BY deadline is the one figure called
-           out (large + red) since it's the thing that must happen by a date, with the
-           overdue/countdown alert directly beneath it; submitted + net terms are quiet
-           supporting context. The identifying spec fields follow, all of equal weight.
-           The amount + contract draw-down come AFTER, as a separate money block. -->
+      <!-- Invoice information leads. The SUBMITTED date is the figure called out
+           (large), since when the vendor submitted is the clock a COR reads this
+           against; the payment terms and how long it has sat in its current status
+           are quiet supporting context beneath it. The identifying spec fields
+           follow, all of equal weight; the amount + draw-down come after. -->
       <header class="cbf-review-hero">
         <div class="cbf-review-deadline">
-          <span class="cbf-review__label" data-f-review-label>Review by</span>
-          <span class="cbf-review-deadline__date" data-f-reviewby></span>
-          <span class="cbf-review-deadline__urgency" data-f-urgency></span>
+          <span class="cbf-review__label">Submitted</span>
+          <span class="cbf-review-deadline__date" data-f-submitted></span>
           <p class="cbf-review-deadline__support">
-            Submitted <span data-f-submitted></span> · <span data-f-net-terms></span>
+            <span data-f-net-terms></span> · <span data-f-days-in-status></span>
           </p>
         </div>
       </header>
@@ -168,25 +166,15 @@ const hasDocHeader = Astro.slots.has('doc-header');
         <CbfInvoiceField field="number" label="Invoice" copy editable flaggable control="text" />
         <!-- Vendor identity is an account fact, shown to the vendor as a read-only
              strip on the submission form — they never type it, so there is nothing
-             here for them to correct. Same for Bill to, which is not on the form at
-             all: every invoice bills BPA. -->
+             here for them to correct. -->
         <CbfInvoiceField field="vendor" label="Vendor" copy />
-        <CbfInvoiceField field="invoiceDate" label="Invoice date" copy editable flaggable control="date" />
-        <CbfInvoiceField field="billTo" label="Bill to" copy />
-        <!-- A contract is CHOSEN from a known set, never typed. The submission form
-             asks for it with an autocomplete combobox over the contracts that exist;
-             a COR correcting it is answering the same question, so they get the same
-             control over the same set. A text box here could mint a contract number
-             the vendor's own form could never have produced. -->
-        <CbfInvoiceField
-          field="contractNumber"
-          label="Contract"
-          copy
-          editable
-          flaggable
-          control="select"
-          options={contractOptions}
-        />
+        <!-- Invoice date and Amount are the vendor's own claims: read-only here (the
+             COR does not silently rewrite the bill), but flaggable, so a wrong figure
+             is returned to the vendor to fix rather than edited in place. -->
+        <CbfInvoiceField field="invoiceDate" label="Invoice date" copy flaggable />
+        <!-- Contract is reference, not invoice input: a read-only link out to the
+             contract record (opens in a new tab). Not editable, not flaggable. -->
+        <CbfInvoiceField field="contractNumber" label="Contract" copy />
         <!-- Project is DERIVED from the contract on the submission form (disabled,
              "Read-only — determined by the selected contract"). Objecting to it would
              ask the vendor to change a field their own form won't let them touch; if
@@ -211,10 +199,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
           field="amount"
           label="Amount"
           copy
-          editable
           flaggable
-          control="number"
-          prefix="$"
           emphasis="amount"
         />
       </dl>
@@ -246,12 +231,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
           <span class="cbf-review-collapse__chevron" aria-hidden="true">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </span>
-          <span class="cbf-review-collapse__title">Contract</span>
-          <!-- A warning inside a collapsed section is a warning nobody reads, so it
-               also surfaces on the summary and stays there if the COR closes it. -->
-          <span class="cbf-review-collapse__warn" data-f-contract-warn hidden>
-            <EsaBadge value="Rate expired" variant="warning" size="sm" />
-          </span>
+          <span class="cbf-review-collapse__title">Contract details</span>
           <!-- The collapsed state still has to answer "is there room for this bill?" -->
           <span class="cbf-review-collapse__digest" data-f-contract-digest></span>
         </summary>
@@ -277,10 +257,9 @@ const hasDocHeader = Astro.slots.has('doc-header');
                node_modules/@esa/ecology/src/components catalog for a stacked or
                segmented meter; there is none. Beacon is not on this machine. Two
                spans in a track, token-driven, is the whole of it. -->
-          <section class="cbf-review-drawdown" aria-label="Contract draw-down">
+          <section class="cbf-review-drawdown" aria-label="Contract balance">
             <div class="cbf-review-drawdown__head">
-              <span class="cbf-review__label">Contract drawn</span>
-              <span class="cbf-review-drawdown__pct" data-f-dd-pct></span>
+              <span class="cbf-review__label">Contract balance</span>
             </div>
             <!-- Decorative: every figure it encodes is stated in the list below, so
                  there is nothing here for a screen reader to gain by parsing a bar. -->
@@ -290,12 +269,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
             </div>
             <dl class="cbf-review-drawdown__figures">
               <div><dt>Contract value</dt><dd class="cbf-num" data-f-dd-value></dd></div>
-              <!-- A balance is a SNAPSHOT, so it carries its own date: a remaining
-                   figure with no as-of is a number a COR cannot safely rely on. -->
-              <div>
-                <dt>Remaining <span class="cbf-review-drawdown__asof" data-f-dd-asof></span></dt>
-                <dd class="cbf-num" data-f-dd-remaining></dd>
-              </div>
+              <div><dt>Invoiced to-date</dt><dd class="cbf-num" data-f-dd-invoiced></dd></div>
               <div><dt>This invoice</dt><dd class="cbf-num" data-f-dd-amount></dd></div>
               <!-- The conclusion of the block, and the only line in it that moves when
                    the COR corrects the amount. -->
@@ -310,29 +284,6 @@ const hasDocHeader = Astro.slots.has('doc-header');
                than left to be inferred from the performance period, so the COR can
                place this bill on the contract's timeline: early work, mid-term, or a
                closeout draw running up against the end. -->
-          <dl class="cbf-review-fields cbf-review-contract" aria-label="Contract term">
-            <!-- The contract's own start and end are NOT repeated here: they now sit
-                 under the performance-period rows above, where the comparison that
-                 makes them matter actually happens. -->
-            <!-- The indirect rate that governed the WORK — matched to the performance
-                 period, not to today. An invoice billed in June for April work is judged
-                 on April's rate; showing the current one would misstate what the vendor is
-                 owed. Which rate gets fetched depends on the BPA Vendor the invoice came
-                 in under (BPA negotiates a rate per billing location and treats each as
-                 its own Vendor), but that lookup is not something the COR reads here — the
-                 rate and the dates it holds for are. -->
-            <!-- The lapse warning rides IN the row, not in a banner further down the
-                 panel: it is a fact about this rate, and a reader should not have to
-                 carry the number down the page to meet the warning about it. Shown
-                 ONLY when this rate is also the vendor's most recent AND it has
-                 lapsed — meaning nothing is in force now. A superseded rate matched
-                 to an old performance period is not this: it is simply the rate that
-                 applied at the time, and alerting on it would cry wolf on every
-                 historical invoice. -->
-            <CbfInvoiceField field="indirectRate" label="Indirect rate" copy>
-              <span slot="alert" data-f-rate-alert-text></span>
-            </CbfInvoiceField>
-          </dl>
         </div>
       </details>
 
@@ -369,15 +320,11 @@ const hasDocHeader = Astro.slots.has('doc-header');
            there when a back-dated performance period needs it, and costs nothing the
            rest of the time.
 
-           Every revision offers the same two actions — open in a new tab, or download
-           — and no in-pane view. A budget is read ALONGSIDE the invoice, not instead
-           of it: taking over the document pane would hide the bill the COR is
-           checking it against, and a separate tab lets them sit side by side. It also
-           keeps the revisions honest with each other, since the pane could only ever
-           reconstruct the current one from the invoice's live figures. -->
-      <section class="cbf-review-attachments" aria-label="Contract documents">
+           Each revision downloads as its own workbook — a budget is read in a
+           spreadsheet alongside the invoice, not in this page's document pane. -->
+      <section class="cbf-review-attachments" aria-label="Contract line item budgets">
         <div class="cbf-review-attachments__head repel">
-          <h3 class="cbf-review__section-title" data-f-budget-title>Contract documents</h3>
+          <h3 class="cbf-review__section-title" data-f-budget-title>Contract line item budgets</h3>
         </div>
         <ul class="cbf-review-attachments__list" data-f-budget-docs></ul>
         <!-- Superseded revisions. Hidden entirely when there are none, so the page
@@ -394,14 +341,23 @@ const hasDocHeader = Astro.slots.has('doc-header');
           </div>
         </details>
       </section>
+
+      <!-- Indirect rate — moved out of the collapsed contract box so it sits directly
+           under the budgets it is read against. The rate that governed the WORK,
+           matched to the performance period (not today's rate); the percent links out
+           to the rate agreement (opens in a new tab). Read-only reference, not invoice
+           input, so it is neither editable nor flaggable. -->
+      <dl class="cbf-review-fields cbf-review-indirect" aria-label="Indirect rate">
+        <CbfInvoiceField field="indirectRate" label="Indirect rate" copy>
+          <span slot="alert" data-f-rate-alert-text></span>
+        </CbfInvoiceField>
+      </dl>
+
       <div data-open-template hidden aria-hidden="true">
         <EsaIconButton variant="chrome" iconOnly icon="external-link" label="Open in a new tab" size="sm" />
       </div>
       <div data-dl-template hidden aria-hidden="true">
         <EsaIconButton variant="chrome" iconOnly icon="download" label="Download file" size="sm" />
-      </div>
-      <div data-view-template hidden aria-hidden="true">
-        <EsaIconButton variant="chrome" iconOnly icon="eye" label="View file" size="sm" />
       </div>
 
       <!-- Everything the COR has flagged, and the source of the return memo. LAST
@@ -410,7 +366,8 @@ const hasDocHeader = Astro.slots.has('doc-header');
            while anything sits here. -->
       <CbfInvoiceIssues />
 
-      <!-- Decisions. Inline confirm/comment (no nested modal). -->
+      <!-- Decisions. Approve opens a guard modal (esa-dialog); Return opens its
+           comment capture inline. -->
       <div class="cbf-review-actions" data-actions>
         <!-- Return left, Approve right — the primary action sits at the right edge. -->
         <div class="repel cbf-review-actions__default" data-actions-default>
@@ -420,16 +377,6 @@ const hasDocHeader = Astro.slots.has('doc-header');
         <!-- Why Approve is shut, said where the COR is looking when they find it
              shut. Empty (and hidden) whenever nothing is flagged. -->
         <p class="cbf-review-actions__note" data-decide-note hidden></p>
-
-        <div class="stack" data-gap="sm" data-actions-approve hidden>
-          <p class="cbf-review-fields__value">
-            Approve <strong class="cbf-num" data-f-num-approve></strong> for <span data-f-amount-approve></span> and route it to the Contracting Officer for payment? Your QA/QC sign-off goes on the record.
-          </p>
-          <div class="repel">
-            <span data-act-approve-cancel><EsaButton appearance="outline" variant="secondary" size="md">Cancel</EsaButton></span>
-            <span data-act-approve-confirm><EsaButton variant="primary" size="md">Confirm approval</EsaButton></span>
-          </div>
-        </div>
 
         <div class="stack" data-gap="sm" data-actions-return hidden>
           <esa-textarea
@@ -444,6 +391,26 @@ const hasDocHeader = Astro.slots.has('doc-header');
           </div>
         </div>
       </div>
+
+      <!-- Approve guard modal — a deliberate confirmation before routing to payment,
+           with an optional Payment Request (PR) number the COR can record on approval.
+           The esa-dialog lego owns the overlay, focus trap, and Esc-to-close. -->
+      <esa-dialog data-approve-dialog heading="Approve invoice" size="sm">
+        <div class="stack" data-gap="md">
+          <p class="cbf-review-fields__value">
+            Approve <strong class="cbf-num" data-f-num-approve></strong> for <span data-f-amount-approve></span> for payment?
+          </p>
+          <esa-text-field
+            data-approve-pr
+            label="Payment request (PR) number"
+            placeholder="Optional"
+          ></esa-text-field>
+        </div>
+        <div slot="footer" class="repel">
+          <span data-act-approve-cancel><EsaButton appearance="outline" variant="secondary" size="md">Cancel</EsaButton></span>
+          <span data-act-approve-confirm><EsaButton variant="primary" size="md">Confirm approval</EsaButton></span>
+        </div>
+      </esa-dialog>
 
       <!-- Decision result — replaces the action bar in place once a decision is
            made, so the outcome appears where the COR clicked. The invoice is now
@@ -468,16 +435,10 @@ const hasDocHeader = Astro.slots.has('doc-header');
         <div class="cbf-invoice-processor__doctitle"><slot name="doc-header" /></div>
       )}
 
-    <!-- The pane the COR reads — it hosts the invoice by default, and swaps to the
-         Line Item Budget or a backup file when one is "viewed" from the panel. A
-         quiet bar names the current document and offers a way back to the invoice. -->
+    <!-- The pane the COR reads — the submitted invoice, always. Backups and the
+         Line Item Budget open in a new tab or download, so this pane stays focused
+         on the one document under review and never has to swap what it shows. -->
     <div class="cbf-invoice-processor__docpane cbf-review-docpane">
-      <div class="cbf-review-docpane__bar" data-doc-bar hidden>
-        <span class="cbf-review-docpane__name" data-doc-name></span>
-        <span data-doc-back>
-          <EsaButton appearance="outline" variant="secondary" size="sm" icon="chevron-left">Back to invoice</EsaButton>
-        </span>
-      </div>
       <div class="cbf-review-docpane__scroll">
         <article class="cbf-invoice-doc" data-doc-view="invoice" aria-label="Submitted invoice document">
           <div class="cbf-invoice-doc__stamp" data-f-stamp hidden>Final invoice</div>
@@ -504,37 +465,21 @@ const hasDocHeader = Astro.slots.has('doc-header');
                 <th scope="col" class="cbf-num">Qty</th>
                 <th scope="col" class="cbf-num">Unit</th>
                 <th scope="col" class="cbf-num">Total</th>
-                <th scope="col" aria-label="Line actions"></th>
               </tr>
             </thead>
-            <!-- Line rows are injected by the script. Each carries its own edit and
-                 flag controls, so the COR can correct ONE line, or object to ONE
-                 line, rather than putting the whole bill into a mode or rejecting an
-                 invoice over a single bad rate. Editing or flagging a line opens its
-                 capture in the row directly beneath it. -->
+            <!-- Line rows are injected by the script — a read-only reproduction of the
+                 vendor's PDF. There are no per-line controls: the COR reads the bill
+                 here and raises any objection on the panel fields, not on the document. -->
             <tbody data-f-items></tbody>
             <tfoot>
-              <tr><th scope="row" colspan="3">Subtotal</th><td class="cbf-num" data-f-subtotal></td><td></td></tr>
-              <tr><th scope="row" colspan="3">Tax</th><td class="cbf-num" data-f-tax></td><td></td></tr>
-              <tr class="cbf-invoice-doc__total"><th scope="row" colspan="3">Total</th><td class="cbf-num" data-f-total></td><td></td></tr>
+              <tr><th scope="row" colspan="3">Subtotal</th><td class="cbf-num" data-f-subtotal></td></tr>
+              <tr><th scope="row" colspan="3">Tax</th><td class="cbf-num" data-f-tax></td></tr>
+              <tr class="cbf-invoice-doc__total"><th scope="row" colspan="3">Total</th><td class="cbf-num" data-f-total></td></tr>
             </tfoot>
           </table>
 
           <p class="cbf-invoice-doc__memo" data-f-memo-wrap hidden><span>Memo:</span> <span data-f-memo></span></p>
           <p class="cbf-invoice-doc__generated" data-f-pdf></p>
-        </article>
-
-        <!-- Backup file preview — mock files have no real blob, so the pane shows a
-             named placeholder with a download control. -->
-        <article class="cbf-invoice-doc cbf-doc-placeholder" data-doc-view="backup" aria-label="Document preview" hidden>
-          <div class="cbf-doc-placeholder__icon" aria-hidden="true">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </div>
-          <p class="cbf-doc-placeholder__name" data-f-backup-name></p>
-          <p class="cbf-invoice-doc__sub">No preview available. Download the file to read it.</p>
-          <span data-doc-placeholder-dl>
-            <EsaButton appearance="outline" variant="secondary" size="sm" icon="download">Download file</EsaButton>
-          </span>
         </article>
       </div>
     </div>
@@ -552,12 +497,6 @@ const hasDocHeader = Astro.slots.has('doc-header');
       <span data-urgency={u}><EsaPill label={u} variant={urgencyVariant[u]} size="md" removable={false} /></span>
     ))}
     <span data-flag="final"><EsaPill label="Final" variant="default" size="md" removable={false} /></span>
-    {/* Per-line controls for the injected ledger rows — real legos, cloned so the
-        document table never hand-rolls a button or an input. */}
-    <span data-tmpl="line-flag"><EsaIconButton variant="chrome" iconOnly icon="triangle-alert" label="Flag this line as an issue" size="xs" /></span>
-    <span data-tmpl="line-issue-clear"><EsaIconButton variant="chrome" iconOnly icon="x" label="Clear the issue on this line" size="xs" /></span>
-    <span data-tmpl="line-note-save"><EsaButton variant="primary" size="sm">Save issue</EsaButton></span>
-    <span data-tmpl="line-note-cancel"><EsaButton appearance="outline" variant="secondary" size="sm">Cancel</EsaButton></span>
   </div>
 
   <!-- Single-invoice record for the client script (no second fetch). -->
@@ -628,6 +567,9 @@ const hasDocHeader = Astro.slots.has('doc-header');
      already the group boundary. Only the top hairline stays, to separate them from
      the draw-down block above. */
   .cbf-review-contract { padding-block-start: var(--spacing-300); border-block-start: 1px solid var(--color-border-default); }
+  /* Indirect rate — relocated out of the collapsed contract box to sit under the
+     budgets. A little top space sets it off from the section above. */
+  .cbf-review-indirect { margin: 0; margin-block-start: var(--spacing-500); }
 
   /* Contract collapse ----------------------------------------------------- */
   /* Native <details>. The whole summary row is the hit target, so the chevron is
@@ -1004,6 +946,24 @@ const hasDocHeader = Astro.slots.has('doc-header');
 </style>
 
 <style is:global>
+  /* Read-only external links injected into field values (contract number, indirect
+     rate percent). Injected via innerHTML (no Astro scope hash), so styled globally.
+     Reads as a link with a trailing "opens in a new tab" glyph. */
+  .cbf-invoice-field__value .cbf-review-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-100);
+    color: var(--color-background-brand);
+    text-decoration: none;
+  }
+  .cbf-invoice-field__value .cbf-review-link:hover { text-decoration: underline; }
+  .cbf-invoice-field__value .cbf-review-link:focus-visible {
+    outline: 2px solid var(--color-background-brand);
+    outline-offset: 2px;
+    border-radius: var(--radius-100, 4px);
+  }
+  .cbf-review-link__ext { flex: none; opacity: 0.85; }
+
   /* Document line items are injected by JS (no Astro scope hash) — styled globally. */
   .cbf-invoice-doc__items tbody td { font-size: var(--font-size-150); }
 
@@ -1258,6 +1218,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
   // was submitted with. Each has to be registered here or the element never upgrades.
   import '@esa/ecology/esa-text-field';
   import '@esa/ecology/esa-combobox';
+  import '@esa/ecology/esa-dialog';
   import '../bcn-date-picker';
 
   type Stage = 'Submitted' | 'In review' | 'Returned' | 'Approved';
@@ -1272,6 +1233,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
     billTo: string; lineItems: LineItem[]; notes?: string; pdfName: string;
     supportingDocs: string[];
     contractValue: number; expended: number; remaining: number; asOf: string;
+    inStatusDays?: number;
   };
   type Decision = { variant: 'success' | 'danger'; title: string; text: string; badge: string };
 
@@ -1531,65 +1493,45 @@ const hasDocHeader = Astro.slots.has('doc-header');
     const resultText = $('[data-result-text]');
     const actions = $('[data-actions]');
     const def = $('[data-actions-default]');
-    const approveBox = $('[data-actions-approve]');
     const returnBox = $('[data-actions-return]');
     const reason = $<HTMLElement & { value: string }>('[data-return-reason]');
     const statusSlot = $('[data-f-status]');
+    // Approve guard modal (esa-dialog) + its optional PR-number field.
+    const approveDialog = $<HTMLElement & { show(): void; close(): void }>('[data-approve-dialog]');
+    const approvePr = $<HTMLElement & { value: string }>('[data-approve-pr]');
 
-    // Contract section. It is collapsed by default, so anything inside it that the
-    // COR must not miss has to be able to open it — but only until they have made
-    // their own choice about the section, which their first toggle records.
-    const contractCollapse = $<HTMLDetailsElement>('[data-contract-collapse]');
-    const collapseWarn = $('[data-f-contract-warn]');
-    let contractCollapseTouched = false;
-    contractCollapse?.addEventListener('toggle', () => { contractCollapseTouched = true; });
-
-    // Attachments: list element + the cloneable download/view-button markup.
+    // Submitted-documents + contract-documents lists: the cloneable open/download
+    // button markup (real esa-icon-button legos, server-rendered once).
     const attachList = $('[data-f-attachments]');
     const attachTitle = $('[data-f-attach-title]');
     const dlBtnHTML = $('[data-dl-template]')?.querySelector('button')?.outerHTML ?? '';
-    const viewBtnHTML = $('[data-view-template]')?.querySelector('button')?.outerHTML ?? '';
+    const openBtnHTML = $('[data-open-template]')?.querySelector('button')?.outerHTML ?? '';
     const escAttr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     let currentFiles: string[] = [];
     let currentNumber = '';
 
-    // Document pane: the invoice, the Line Item Budget, and a backup-file preview
-    // share one pane; a bar names the active document and steps back to the invoice.
-    const docBar = $('[data-doc-bar]');
-    const docName = $('[data-doc-name]');
-    const docViews = new Map<string, HTMLElement>();
-    root.querySelectorAll<HTMLElement>('[data-doc-view]').forEach((el) => {
-      docViews.set(el.dataset.docView ?? '', el);
-    });
-    const backupName = $('[data-f-backup-name]');
-    let backupViewFile = '';
-
-    const scrollEl = root.querySelector<HTMLElement>('.cbf-review-docpane__scroll');
-
-    // Show the pane's document(s). 'invoice' / 'budget' show a single document;
-    // 'backup' opens side by side WITH the invoice (compare mode) so the COR can
-    // check the bill against its backup file at independent per-column scroll.
-    const showDoc = (kind: string, opts?: { name?: string; matchFile?: string }) => {
-      const compare = kind === 'backup';
-      scrollEl?.classList.toggle('cbf-review-docpane__scroll--compare', compare);
-      docViews.forEach((el, key) => {
-        el.hidden = compare ? !(key === 'invoice' || key === 'backup') : key !== kind;
-      });
-      const isInvoice = kind === 'invoice';
-      if (docBar) docBar.hidden = isInvoice;
-      if (docName && opts?.name) docName.textContent = opts.name;
-      root.querySelectorAll<HTMLElement>('[data-doc-view-btn]').forEach((btn) => {
-        const on = !isInvoice
-          && btn.dataset.docKind === kind
-          && (kind !== 'backup' || btn.dataset.file === opts?.matchFile);
-        btn.classList.toggle('is-active', on);
-      });
-      scrollEl?.scrollTo?.(0, 0);
+    // ---- Read-only external links (contract record, rate agreement) ------------
+    // The contract number and the indirect-rate percent link out to their source
+    // record, opening in a new tab. Stub routes for the prototype — the affordance
+    // (and its new-tab indicator) is the point.
+    const base = import.meta.env.BASE_URL;
+    const contractHref = (num: string) => `${base}contracts/${encodeURIComponent(num)}`;
+    const rateHref = () => `${base}vendors/indirect-rate`;
+    const EXT_ICON = '<svg class="cbf-review-link__ext" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>';
+    const linkHtml = (label: string, href: string) =>
+      `<a class="cbf-review-link" href="${href}" target="_blank" rel="noopener" aria-label="${escAttr(label)} (opens in a new tab)">${escAttr(label)}${EXT_ICON}</a>`;
+    // Write a field row's display as an external link, with an optional quiet sub.
+    const setFieldLink = (key: string, label: string, href: string, sub?: string) => {
+      const row = root.querySelector<HTMLElement>(`.cbf-invoice-field[data-field="${key}"]`);
+      if (!row) return;
+      const display = row.querySelector<HTMLElement>('[data-field-display]');
+      if (display) display.innerHTML = linkHtml(label, href);
+      const subEl = row.querySelector<HTMLElement>('[data-field-sub]');
+      if (subEl) { subEl.textContent = sub ?? ''; subEl.hidden = !sub; }
     };
 
-    const showActionMode = (mode: 'default' | 'approve' | 'return' | 'done', dec?: Decision) => {
+    const showActionMode = (mode: 'default' | 'return' | 'done', dec?: Decision) => {
       if (def) def.hidden = mode !== 'default';
-      if (approveBox) approveBox.hidden = mode !== 'approve';
       if (returnBox) returnBox.hidden = mode !== 'return';
       if (actions) actions.hidden = mode === 'done';
       if (result) result.hidden = mode !== 'done';
@@ -1833,177 +1775,52 @@ const hasDocHeader = Astro.slots.has('doc-header');
       renderAttachments();
     };
 
-    // ---- The line-item ledger, and per-line flag + edit ------------------------
+    // ---- The line-item ledger (read-only) --------------------------------------
+    // A plain reproduction of the vendor's PDF: description, qty, unit, total. There
+    // are no per-line controls — the COR reads the bill here and raises any objection
+    // on the panel fields. The ledger totals ITSELF, independently of the vendor's
+    // typed Amount, so the two can still be seen to disagree.
     const itemsBody = $('[data-f-items]');
-    const lineTmpl = (name: string) =>
-      root.querySelector<HTMLElement>(`[data-badge-templates] [data-tmpl="${name}"]`)?.innerHTML ?? '';
-    const lineFlagHTML = lineTmpl('line-flag');
-    const lineClearHTML = lineTmpl('line-issue-clear');
-    const lineSaveHTML = lineTmpl('line-note-save');
-    const lineCancelHTML = lineTmpl('line-note-cancel');
-
-    // Which line, if any, has its comment capture open. A line flags the same way a
-    // field row does: one capture in place, opened from the line's own control, so
-    // both halves of the surface behave identically. One at a time — a line is a
-    // small enough unit that "finish this one" costs nothing.
-    //
-    // A line is FLAGGED, never edited. The ledger reproduces the PDF the vendor
-    // attached, and a COR cannot rewrite someone else's document — correcting a
-    // quantity here would leave the screen disagreeing with the file it is showing,
-    // with nothing to reconcile the two. So the objection is the affordance: it names
-    // the line, and the vendor fixes it in the bill they resubmit.
-    let lineNoteOpenFor: string | null = null;
-    // Focus belongs to the COR once a capture is open. Consumed by the next render so
-    // focus moves when the capture OPENS and never again — a repaint triggered by
-    // unrelated work must not yank the caret out of what they're typing.
-    let focusLineNote = false;
 
     const renderLineItems = () => {
       if (!itemsBody) return;
-
-      // Anything already typed into an open capture survives the repaint: saving a
-      // panel field repaints the whole surface, and that must not silently discard an
-      // objection the COR is halfway through writing. Keyed, so text typed against
-      // line 3 can never be re-seeded into line 5's capture.
-      const priorNote = itemsBody.querySelector<HTMLElement & { value: string }>('[data-line-note-input]');
-      const inFlightNote = priorNote?.dataset.lineKey === lineNoteOpenFor ? priorNote?.value : undefined;
-
       itemsBody.innerHTML = inv.lineItems
-        .map((li, i) => {
-          const key = `line:${i}`;
-          const comment = issues.get(key);
-          const capturing = lineNoteOpenFor === key;
-          const state = comment || capturing ? ' data-flagged' : '';
-          const acts = `<span class="cbf-invoice-line__act" data-line-flag data-line-key="${key}">${lineFlagHTML}</span>`;
-          const row = `<tr class="cbf-invoice-line" data-line="${i}"${state}>
+        .map((li) => `<tr class="cbf-invoice-line">
             <td>${escAttr(li.description)}</td>
             <td class="cbf-num">${qtyFmt.format(li.qty)}</td>
             <td class="cbf-num">${usd.format(li.unitPrice)}</td>
             <td class="cbf-num">${usd.format(li.qty * li.unitPrice)}</td>
-            <td class="cbf-invoice-line__actions">${acts}</td>
-          </tr>`;
-
-          // Capture open: the textarea and its two controls, spanning the ledger.
-          if (capturing) {
-            return `${row}<tr class="cbf-invoice-line__note" data-line-capture="${i}">
-              <td colspan="5">
-                <esa-textarea
-                  data-line-note-input
-                  data-line-key="${key}"
-                  label="What's wrong with this line?"
-                  placeholder="e.g. the rate exceeds the contract's approved $78.00/hr"
-                  rows="3"
-                ></esa-textarea>
-                <span class="cbf-invoice-line__note-actions">
-                  <span class="cbf-invoice-line__note-btn" data-line-note-save data-line-key="${key}">${lineSaveHTML}</span>
-                  <span class="cbf-invoice-line__note-btn" data-line-note-cancel>${lineCancelHTML}</span>
-                </span>
-              </td>
-            </tr>`;
-          }
-
-          if (!comment) return row;
-          // The reason rides directly under the line it belongs to — the COR reads
-          // the bad line and the objection to it in one place.
-          return `${row}<tr class="cbf-invoice-line__note" data-line-note="${i}">
-            <td colspan="5">
-              <span class="cbf-invoice-line__note-text">${escAttr(comment)}</span>
-              <span class="cbf-invoice-line__note-clear" data-line-issue-clear data-line-key="${key}">${lineClearHTML}</span>
-            </td>
-          </tr>`;
-        })
+          </tr>`)
         .join('');
-
-      // Seed the capture if one is open — from what was in flight if this is a
-      // repaint, otherwise from the recorded reason. A Lit element parsed from an
-      // HTML string has no value until its property is assigned.
-      if (lineNoteOpenFor) {
-        const input = itemsBody.querySelector<HTMLElement & { value: string }>('[data-line-note-input]');
-        if (input) {
-          input.value = inFlightNote ?? issues.get(lineNoteOpenFor) ?? '';
-          if (focusLineNote) input.focus?.();
-        }
-      }
-      focusLineNote = false;
     };
 
     // ---- Submitted documents: the invoice, then its backup ---------------------
-    // The invoice PDF leads the list. It is the document under review, so it belongs
-    // with what was submitted rather than being reachable only through the doc pane,
-    // and "Download all" has to include it — a COR forwarding the package downstream
-    // needs the bill, not just its evidence.
-    //
-    // The VIEW control is offered only for PDFs. The document pane renders paper
-    // documents beside the invoice; a spreadsheet is opened in a spreadsheet, not
-    // faked into a page. So a .xlsx deliverable — like the Line Item Budget, for the
-    // same reason — is download-only rather than carrying an eye that can't deliver.
-    //
-    // A document can itself be the objection: missing, unreadable, the wrong period,
-    // a receipt that doesn't match the line it supports. So rows flag exactly like
-    // field rows and line items do, under the same `issues` map, keyed `doc:<file>`.
-    let docNoteOpenFor: string | null = null;
-    let focusDocNote = false;
-
+    // The invoice PDF leads the list — it is the document under review, so it belongs
+    // with what was submitted, and "Download all" has to include it. Every row offers
+    // the same two actions: open in a new tab, or download. Nothing is viewed in this
+    // page's document pane (that stays fixed on the invoice), and there is no flagging
+    // here — the COR raises any objection on the panel fields.
     const renderAttachments = () => {
       if (!attachList) return;
 
-      // Preserve an objection being typed across a repaint (populate() rebuilds this
-      // list on every saved edit), keyed so it can't land on a different document.
-      const priorNote = attachList.querySelector<HTMLElement & { value: string }>('[data-doc-note-input]');
-      const inFlightNote = priorNote?.dataset.docKey === docNoteOpenFor ? priorNote?.value : undefined;
-
       attachList.innerHTML = currentFiles
         .map((name, i) => {
-          const key = `doc:${name}`;
           const isInvoice = i === 0;
-          const comment = issues.get(key);
-          const capturing = docNoteOpenFor === key;
-          const state = comment || capturing ? ' data-flagged' : '';
-          const tag = isInvoice
-            ? '<span class="cbf-review-attach__tag">Invoice</span>'
-            : '';
-          // Controls read flag · view · download, left to right. Only PDFs get the
-          // eye — the pane renders those; a spreadsheet it cannot show must not offer
-          // to. A row that lacks a control omits it and the rest hold their order.
-          const rows = [`<div class="cbf-review-attach__row">
-            <span class="cbf-review-attach__name" title="${escAttr(name)}">${escAttr(name)}</span>
-            ${tag}
-            <span class="cbf-review-attach__actions">
-              <span class="cbf-review-attach__flag" data-doc-flag data-doc-key="${escAttr(key)}">${lineFlagHTML}</span>
-              ${/\.pdf$/i.test(name)
-                ? `<span class="cbf-review-attach__view" data-doc-view-btn data-doc-kind="${isInvoice ? 'invoice' : 'backup'}" data-file="${escAttr(name)}">${viewBtnHTML}</span>`
-                : ''}
-              <span class="cbf-review-attach__dl" data-attach-dl data-file="${escAttr(name)}">${dlBtnHTML}</span>
-            </span>
-          </div>`];
-
-          if (capturing) {
-            rows.push(`<div class="cbf-review-attach__note">
-              <esa-textarea
-                data-doc-note-input
-                data-doc-key="${escAttr(key)}"
-                label="What's wrong with ${escAttr(name)}?"
-                placeholder="e.g. the timesheet doesn't cover the full performance period"
-                rows="3"
-              ></esa-textarea>
-              <span class="cbf-review-attach__note-actions">
-                <span class="cbf-review-attach__note-btn" data-doc-note-save data-doc-key="${escAttr(key)}">${lineSaveHTML}</span>
-                <span class="cbf-review-attach__note-btn" data-doc-note-cancel>${lineCancelHTML}</span>
+          const tag = isInvoice ? '<span class="cbf-review-attach__tag">Invoice</span>' : '';
+          return `<li class="cbf-review-attach">
+            <div class="cbf-review-attach__row">
+              <span class="cbf-review-attach__name" title="${escAttr(name)}">${escAttr(name)}</span>
+              ${tag}
+              <span class="cbf-review-attach__actions">
+                <span class="cbf-review-attach__open" data-attach-open data-file="${escAttr(name)}">${openBtnHTML}</span>
+                <span class="cbf-review-attach__dl" data-attach-dl data-file="${escAttr(name)}">${dlBtnHTML}</span>
               </span>
-            </div>`);
-          } else if (comment) {
-            rows.push(`<div class="cbf-review-attach__issue">
-              <span class="cbf-review-attach__note-text">${escAttr(comment)}</span>
-              <span class="cbf-review-attach__note-clear" data-doc-issue-clear data-doc-key="${escAttr(key)}">${lineClearHTML}</span>
-            </div>`);
-          }
-
-          return `<li class="cbf-review-attach" data-doc-key="${escAttr(key)}"${state}>${rows.join('')}</li>`;
+            </div>
+          </li>`;
         })
         .join('')
-        // An invoice with NO backup is a fact worth stating. The list is never empty
-        // now that the invoice leads it, so the absence would otherwise be invisible —
-        // and "no evidence was attached" is exactly the kind of thing a COR flags.
+        // An invoice with NO backup is a fact worth stating, now that the invoice
+        // leads the list and the absence would otherwise be invisible.
         + (inv.supportingDocs.length === 0
           ? `<li class="cbf-review-attach cbf-review-attach--empty"><div class="cbf-review-attach__row">
               <span class="cbf-review-attach__name">No backup documentation attached.</span>
@@ -2011,33 +1828,15 @@ const hasDocHeader = Astro.slots.has('doc-header');
           : '');
 
       // The cloned lego buttons are generic — name them per file.
-      const nameBtn = (sel: string, verb: string) => {
+      const nameBtn = (sel: string, verb: string, suffix = '') => {
         attachList.querySelectorAll<HTMLElement>(sel).forEach((slot) => {
           const file = slot.dataset.file ?? '';
           const btn = slot.querySelector('button');
-          if (btn) { btn.setAttribute('aria-label', `${verb} ${file}`); btn.setAttribute('title', `${verb} ${file}`); }
+          if (btn) { btn.setAttribute('aria-label', `${verb} ${file}${suffix}`); btn.setAttribute('title', `${verb} ${file}${suffix}`); }
         });
       };
+      nameBtn('[data-attach-open]', 'Open', ' in a new tab');
       nameBtn('[data-attach-dl]', 'Download');
-      nameBtn('[data-doc-view-btn]', 'View');
-      attachList.querySelectorAll<HTMLElement>('[data-doc-flag]').forEach((slot) => {
-        const file = (slot.dataset.docKey ?? '').replace(/^doc:/, '');
-        const btn = slot.querySelector('button');
-        if (btn) {
-          const verb = issues.has(slot.dataset.docKey ?? '') ? 'Edit the issue raised on' : 'Flag';
-          btn.setAttribute('aria-label', `${verb} ${file}`);
-          btn.setAttribute('title', `${verb} ${file}`);
-        }
-      });
-
-      if (docNoteOpenFor) {
-        const input = attachList.querySelector<HTMLElement & { value: string }>('[data-doc-note-input]');
-        if (input) {
-          input.value = inFlightNote ?? issues.get(docNoteOpenFor) ?? '';
-          if (focusDocNote) input.focus?.();
-        }
-      }
-      focusDocNote = false;
     };
 
     // ---- Contract documents: the Line Item Budget, revision by revision ---------
@@ -2055,18 +1854,16 @@ const hasDocHeader = Astro.slots.has('doc-header');
     const budgetPastWrap = $('[data-f-budget-past-wrap]');
     const budgetPastTitle = $('[data-f-budget-past-title]');
     const budgetPast = $('[data-f-budget-past]');
-    const openBtnHTML = $('[data-open-template]')?.querySelector('button')?.outerHTML ?? '';
 
     // One revision row. The ISSUED DATE is the only thing said about it: it is what
-    // identifies the document and decides which invoices it governs. Why the budget
-    // moved is contract history, not something a COR reads while checking a bill.
+    // identifies the document and decides which invoices it governs. Download only —
+    // a budget is opened in a spreadsheet, not this page's document pane.
     const budgetRow = (rev: { label: string; file: string; issued: string; current?: boolean }) =>
       `<li class="cbf-review-attach">
         <div class="cbf-review-attach__row">
           <span class="cbf-review-attach__name" title="${escAttr(rev.label)}">${escAttr(rev.label)}</span>
           ${rev.current ? '<span class="cbf-review-attach__tag">Current</span>' : ''}
           <span class="cbf-review-attach__actions">
-            <span class="cbf-review-attach__open" data-budget-open data-file="${escAttr(rev.file)}" data-rev-label="${escAttr(rev.label)}">${openBtnHTML}</span>
             <span class="cbf-review-attach__dl" data-budget-dl data-file="${escAttr(rev.file)}">${dlBtnHTML}</span>
           </span>
         </div>
@@ -2081,7 +1878,7 @@ const hasDocHeader = Astro.slots.has('doc-header');
       const current = budgetRevs.filter((r) => r.current);
       const past = budgetRevs.filter((r) => !r.current);
       if (budgetTitle) {
-        budgetTitle.textContent = `Contract documents (${budgetRevs.length})`;
+        budgetTitle.textContent = `Contract line item budgets (${budgetRevs.length})`;
       }
       budgetList.innerHTML = budgetRevs.length
         ? (current.length ? current : budgetRevs.slice(0, 1)).map(budgetRow).join('')
@@ -2101,14 +1898,12 @@ const hasDocHeader = Astro.slots.has('doc-header');
 
       // Name the cloned lego buttons per revision — "Download" alone is useless in a
       // list where every row downloads something different.
-      root.querySelectorAll<HTMLElement>('[data-budget-open], [data-budget-dl]').forEach((slot) => {
+      root.querySelectorAll<HTMLElement>('[data-budget-dl]').forEach((slot) => {
         const row = slot.closest('li')?.querySelector('.cbf-review-attach__name')?.textContent ?? '';
-        const verb = slot.hasAttribute('data-budget-open') ? 'Open' : 'Download';
-        const suffix = slot.hasAttribute('data-budget-open') ? ' in a new tab' : '';
         const btn = slot.querySelector('button');
         if (btn) {
-          btn.setAttribute('aria-label', `${verb} ${row}${suffix}`);
-          btn.setAttribute('title', `${verb} ${row}${suffix}`);
+          btn.setAttribute('aria-label', `Download ${row}`);
+          btn.setAttribute('title', `Download ${row}`);
         }
       });
     };
@@ -2191,25 +1986,16 @@ const hasDocHeader = Astro.slots.has('doc-header');
       const shownStage = decision ? decision.badge : inv.stage;
       if (statusSlot) statusSlot.innerHTML = `<span class="cbf-grid-status">${stageHTML.get(shownStage) ?? shownStage}</span>`;
 
-      // Submission & review timeline. Submitted + net terms always show; the
-      // review-by deadline shows its urgency pill only while the invoice is open —
-      // terminal / decided records have a finished clock (no stale "overdue").
+      // Submission timeline. The SUBMITTED date leads (emphasized), with the payment
+      // terms and how long the invoice has sat in its current status beneath it.
       setText('[data-f-submitted]', inv.submitted);
       setText('[data-f-net-terms]', inv.netTerms);
-      setText('[data-f-reviewby]', inv.reviewBy);
-      // The date uses the standard text color, going red ONLY when overdue. Terminal/
-      // decided records never tint (their clock is finished).
-      const open = isOpenStage(shownStage as Stage);
-      const bucket = urgencyOf(inv.daysRemaining);
-      const reviewByEl = $('[data-f-reviewby]');
-      if (reviewByEl) {
-        reviewByEl.className = 'cbf-review-deadline__date'
-          + (open && bucket === 'overdue' ? ' cbf-review-deadline__date--overdue' : '');
-      }
-      const urg = $('[data-f-urgency]');
-      if (urg) urg.innerHTML = open
-        ? `<span class="cbf-grid-status">${badgeWith(urgencyHTML.get(bucket) ?? '', daysLabel(inv.daysRemaining))}</span>`
-        : '';
+      const inStatus = inv.inStatusDays ?? 0;
+      const stageWord = inv.stage === 'In review' ? 'review' : inv.stage.toLowerCase();
+      setText(
+        '[data-f-days-in-status]',
+        `${inStatus} day${inStatus === 1 ? '' : 's'} in ${stageWord} status`,
+      );
 
       // Final-invoice notice + document stamp.
       const finalAlert = $('[data-f-final-alert]');
@@ -2225,10 +2011,10 @@ const hasDocHeader = Astro.slots.has('doc-header');
       setField('number', inv.number);
       setField('vendor', inv.vendor);
       setField('invoiceDate', inv.invoiceDate);
-      setField('billTo', inv.billTo);
-      // Contract & project lead with the reference NUMBER — the ID the COR
-      // transcribes into Asset Suite — and sub the human name.
-      setField('contractNumber', inv.contractNumber, inv.contract);
+      // Contract is a read-only link out to the contract record (opens in a new tab),
+      // subbed with the human name. Project leads with the reference NUMBER — the ID
+      // the COR transcribes into Asset Suite.
+      setFieldLink('contractNumber', inv.contractNumber, contractHref(inv.contractNumber), inv.contract);
       setField('projectNumber', inv.projectNumber, inv.project);
       // Each performance date subs the CONTRACT date it has to sit inside, so the
       // comparison needs no second lookup. The end date adds the gap only when the
@@ -2242,24 +2028,19 @@ const hasDocHeader = Astro.slots.has('doc-header');
         `Contract end ${inv.contractEnd}${endGap.includes('past') ? ` · ${endGap}` : ''}`,
       );
 
-      // The billed figure, and the share of the whole award it represents — the
-      // number that separates a routine draw from a material slice of the contract.
-      setField(
-        'amount',
-        usd.format(inv.amount),
-        `${pctLabel(inv.amount, inv.contractValue)} of the ${usdCompact.format(inv.contractValue)} contract value`,
-      );
+      // The billed figure. No derived share-of-contract sub — the draw-down block
+      // below carries the contract context.
+      setField('amount', usd.format(inv.amount));
 
-      // Draw-down. Full precision, not compact — these get transcribed into Asset
-      // Suite, where $573.6K is not a number you can type.
+      // Contract balance. Full precision, not compact — these get transcribed into
+      // Asset Suite, where $573.6K is not a number you can type.
       setText('[data-f-dd-value]', usd.format(inv.contractValue));
-      setText('[data-f-dd-asof]', `as of ${inv.asOf}`);
-      setText('[data-f-dd-remaining]', usd.format(inv.remaining));
+      setText('[data-f-dd-invoiced]', usd.format(inv.expended));
       setText('[data-f-dd-amount]', usd.format(inv.amount));
 
-      // The bottom line, and the only figure here that MOVES: editing the amount
-      // changes what the award would have left. Overdrawing it is a finding, not a
-      // footnote, so the row states the overage rather than a negative balance.
+      // The bottom line, and the only figure here that MOVES with the amount.
+      // Overdrawing the award is a finding, so the row states the overage rather
+      // than a negative balance.
       const after = inv.remaining - inv.amount;
       const over = after < 0;
       setText('[data-f-dd-after-label]', over ? 'Over the remaining balance by' : 'Remaining after this invoice');
@@ -2267,9 +2048,8 @@ const hasDocHeader = Astro.slots.has('doc-header');
       $('[data-f-dd-after-row]')?.classList.toggle('is-over', over);
 
       // The meter: what the contract has already paid out, and what THIS invoice
-      // would add on top if approved. Both are shares of the award, and neither is
-      // allowed to run past the end of the track — an overage is told in words above,
-      // where it can name a figure, not by a bar that silently clips.
+      // would add on top if approved. Neither segment runs past the end of the track
+      // — an overage is told in words above, not by a bar that silently clips.
       const cv = Number(inv.contractValue) || 0;
       const drawnPct = cv > 0 ? (inv.expended / cv) * 100 : 0;
       const pendingPct = cv > 0 ? (inv.amount / cv) * 100 : 0;
@@ -2282,21 +2062,10 @@ const hasDocHeader = Astro.slots.has('doc-header');
         pendingSeg.style.width = `${pendingW}%`;
         pendingSeg.classList.toggle('is-over', over);
       }
-      // Where the contract stands, and where approving this would take it. The second
-      // number is the one the COR is deciding on, so it is the one that gets said.
-      setText(
-        '[data-f-dd-pct]',
-        pendingPct > 0
-          ? `${pctLabel(inv.expended, cv)} → ${pctLabel(inv.expended + inv.amount, cv)} if approved`
-          : pctLabel(inv.expended, cv),
-      );
 
-      // Collapsed, the section still has to answer "how much is gone, how much is
-      // left" — the two figures that decide whether this bill has room.
-      setText(
-        '[data-f-contract-digest]',
-        `${pctLabel(inv.expended, inv.contractValue)} drawn · ${usdCompact.format(inv.remaining)} left`,
-      );
+      // Collapsed, the section still has to answer "is there room for this bill?" —
+      // the remaining balance.
+      setText('[data-f-contract-digest]', `${usdCompact.format(inv.remaining)} remaining`);
       const amtCopy = root.querySelector<HTMLElement>('[data-field="amount"] [data-copy]');
       if (amtCopy) amtCopy.dataset.copyValue = inv.amount.toFixed(2);
 
@@ -2309,24 +2078,12 @@ const hasDocHeader = Astro.slots.has('doc-header');
       if (!indirect) {
         setField('indirectRate', 'None on file');
       } else {
-        // No "Effective" — a date range under a rate can only be the span it holds
-        // for, and the word was spending the line's first word on nothing.
-        setField('indirectRate', `${indirect.rate}%`, `${indirect.effective} – ${indirect.expires}`);
-        // The row already shows WHICH rate and WHEN it ran, so the warning says only
-        // what that means for this bill — and names the actor rather than leaving a
-        // new rate to be negotiated by nobody in particular.
-        setText(
-          '[data-f-rate-alert-text]',
-          `No rate is in force: this one expired ${indirect.expires}. `
-            + `Indirect billed here is unsupported until the vendor negotiates a new one.`,
-        );
+        // The percent links out to the rate agreement (opens in a new tab); the date
+        // range it holds for is the quiet sub beneath.
+        setFieldLink('indirectRate', `${indirect.rate}%`, rateHref(), `${indirect.effective} – ${indirect.expires}`);
+        setText('[data-f-rate-alert-text]', `Most recent rate, expired ${indirect.expires}`);
       }
       if (rateAlert) rateAlert.hidden = !rateExpired;
-      // A warning inside a section the COR has collapsed is a warning they never see.
-      // An expired rate opens the section on load and says so in the summary, so it
-      // survives being collapsed again.
-      if (rateExpired && contractCollapse && !contractCollapseTouched) contractCollapse.open = true;
-      if (collapseWarn) collapseWarn.hidden = !rateExpired;
 
       // Invoice document.
       setText('[data-f-vendor-doc]', inv.vendor);
@@ -2354,13 +2111,10 @@ const hasDocHeader = Astro.slots.has('doc-header');
       if (attachTitle) attachTitle.textContent = `Submitted documents (${currentFiles.length})`;
       renderAttachments();
 
-      // Contract documents — the budget's revision history.
+      // Contract line item budgets — the budget's revision history.
       renderBudgetDocs();
 
-      // Reset the document pane to the invoice — on a fresh record only.
-      if (!opts?.keepDoc) showDoc('invoice');
-
-      // Approve-confirm copy. A saved edit must not wipe a return memo the COR has
+      // Approve-modal copy. A saved edit must not wipe a return memo the COR has
       // already begun writing, so the reason only clears on a fresh record.
       setText('[data-f-num-approve]', inv.number);
       setText('[data-f-amount-approve]', usd.format(inv.amount));
@@ -2426,73 +2180,12 @@ const hasDocHeader = Astro.slots.has('doc-header');
         return;
       }
 
-      // Raise / clear a note on a LINE ITEM — the capture opens as a row under the
-      // line, mirroring how a field row opens its own capture in place.
-      const lineFlag = t.closest<HTMLElement>('[data-line-flag]');
-      if (lineFlag) {
-        const key = lineFlag.dataset.lineKey ?? '';
-        lineNoteOpenFor = lineNoteOpenFor === key ? null : key;
-        focusLineNote = !!lineNoteOpenFor;
-        renderLineItems();
-        return;
-      }
-      const lineSave = t.closest<HTMLElement>('[data-line-note-save]');
-      if (lineSave) {
-        const key = lineSave.dataset.lineKey ?? '';
-        const input = itemsBody?.querySelector<HTMLElement & { value: string }>('[data-line-note-input]');
-        lineNoteOpenFor = null;
-        raiseIssue(key, String(input?.value ?? ''));
-        return;
-      }
-      if (t.closest('[data-line-note-cancel]')) {
-        lineNoteOpenFor = null;
-        renderLineItems();
-        return;
-      }
-      const lineClear = t.closest<HTMLElement>('[data-line-issue-clear]');
-      if (lineClear) {
-        clearIssue(lineClear.dataset.lineKey ?? '');
-        return;
-      }
-
-      // Raise / clear an objection against a SUBMITTED DOCUMENT — same inline capture
-      // as a field row and a line item, opened under the file it belongs to.
-      const docFlag = t.closest<HTMLElement>('[data-doc-flag]');
-      if (docFlag) {
-        const key = docFlag.dataset.docKey ?? '';
-        docNoteOpenFor = docNoteOpenFor === key ? null : key;
-        focusDocNote = !!docNoteOpenFor;
-        renderAttachments();
-        return;
-      }
-      const docSave = t.closest<HTMLElement>('[data-doc-note-save]');
-      if (docSave) {
-        const key = docSave.dataset.docKey ?? '';
-        const input = attachList?.querySelector<HTMLElement & { value: string }>('[data-doc-note-input]');
-        docNoteOpenFor = null;
-        raiseIssue(key, String(input?.value ?? ''));
-        return;
-      }
-      if (t.closest('[data-doc-note-cancel]')) {
-        docNoteOpenFor = null;
-        renderAttachments();
-        return;
-      }
-      const docClear = t.closest<HTMLElement>('[data-doc-issue-clear]');
-      if (docClear) {
-        clearIssue(docClear.dataset.docKey ?? '');
-        return;
-      }
-
-      // The issues list: jump to the flagged field, or drop the flag.
+      // The issues list: jump to the flagged field, or drop the flag. Issues are
+      // raised only on panel fields now (the ledger and documents carry no flags).
       const goto = t.closest<HTMLElement>('[data-issue-goto]');
       if (goto) {
         const key = goto.dataset.issueField ?? '';
-        const target = key.startsWith('line:')
-          ? root.querySelector<HTMLElement>(`[data-line="${key.split(':')[1]}"]`)
-          : key.startsWith('doc:')
-            ? root.querySelector<HTMLElement>(`.cbf-review-attach[data-doc-key="${CSS.escape(key)}"]`)
-            : root.querySelector<HTMLElement>(`.cbf-invoice-field[data-field="${key}"]`);
+        const target = root.querySelector<HTMLElement>(`.cbf-invoice-field[data-field="${key}"]`);
         target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         target?.classList.add('is-flash');
         setTimeout(() => target?.classList.remove('is-flash'), 1200);
@@ -2507,8 +2200,6 @@ const hasDocHeader = Astro.slots.has('doc-header');
         issues.clear();
         renderIssues();
         paintFieldIssues();
-        renderLineItems();
-        renderAttachments();
       }
     });
 
@@ -2535,7 +2226,12 @@ const hasDocHeader = Astro.slots.has('doc-header');
     });
 
     // Wire actions (delegated to wrapper spans like the rest of the spoke).
-    $('[data-act-approve]')?.addEventListener('click', () => showActionMode('approve'));
+    // Approve opens the guard modal; the gate (open edits / flagged issues) is
+    // enforced on the button, so a disabled Approve never reaches the dialog.
+    $('[data-act-approve]')?.addEventListener('click', () => {
+      if (approvePr) approvePr.value = '';
+      approveDialog?.show();
+    });
     // Returning opens with the flagged issues already written up. The COR marked
     // them one at a time across the invoice; the memo is that work, collected — so
     // nothing has to be retyped and nothing silently fails to reach the vendor. The
@@ -2550,42 +2246,27 @@ const hasDocHeader = Astro.slots.has('doc-header');
       }
       showActionMode('return');
     });
-    $('[data-act-approve-cancel]')?.addEventListener('click', () => showActionMode('default'));
+    $('[data-act-approve-cancel]')?.addEventListener('click', () => approveDialog?.close());
     $('[data-act-return-cancel]')?.addEventListener('click', () => showActionMode('default'));
 
-    // Once a decision is made the review step is COMPLETE — the deadline block flips
-    // from "Review by <due date>" to "Reviewed <today>" and the due/urgency alert
-    // clears (no stale countdown or red once the work is done).
-    const reviewedToday = () =>
-      new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const markReviewed = () => {
-      setText('[data-f-review-label]', 'Reviewed');
-      const reviewByEl = $('[data-f-reviewby]');
-      if (reviewByEl) {
-        reviewByEl.className = 'cbf-review-deadline__date';
-        reviewByEl.textContent = reviewedToday();
-      }
-      const urgEl = $('[data-f-urgency]');
-      if (urgEl) urgEl.innerHTML = '';
-    };
-
     $('[data-act-approve-confirm]')?.addEventListener('click', () => {
+      // The optional Payment Request (PR) number the COR recorded on approval.
+      const pr = (approvePr?.value ?? '').trim();
       const dec: Decision = {
         variant: 'success', title: 'Approved', badge: 'Approved',
-        text: 'Routed to the Contracting Officer for payment.',
+        text: pr
+          ? `Routed to the Contracting Officer for payment · PR ${pr}.`
+          : 'Routed to the Contracting Officer for payment.',
       };
       decision = dec;
       if (statusSlot) statusSlot.innerHTML = `<span class="cbf-grid-status">${stageHTML.get('Approved') ?? 'Approved'}</span>`;
-      markReviewed();
+      approveDialog?.close();
       showActionMode('done', dec);
     });
 
     $('[data-act-return-confirm]')?.addEventListener('click', () => {
       const note = (reason?.value ?? '').trim();
       const n = issues.size;
-      // One sentence naming what the vendor now has. The old wording led with
-      // "Returned…", which the alert title already says, and closed on "were sent
-      // with it" — passive, and vague about what "it" was.
       const flags = n > 0 ? `${n} flagged item${n === 1 ? '' : 's'}` : '';
       const carried = [flags, note ? 'your comments' : ''].filter(Boolean).join(' and ');
       const dec: Decision = {
@@ -2596,71 +2277,48 @@ const hasDocHeader = Astro.slots.has('doc-header');
       };
       decision = dec;
       if (statusSlot) statusSlot.innerHTML = `<span class="cbf-grid-status">${stageHTML.get('Returned') ?? 'Returned'}</span>`;
-      markReviewed();
       showActionMode('done', dec);
     });
 
-    // Per-file download (delegated over the injected rows).
+    // Submitted documents: open in a new tab, or download. (Download-all downloads
+    // every file in turn, lightly staggered so the browser accepts the burst.)
     attachList?.addEventListener('click', (e) => {
-      const slot = (e.target as HTMLElement)?.closest<HTMLElement>('[data-attach-dl]');
-      const file = slot?.dataset.file;
-      if (file) downloadFile(file, currentNumber);
+      const target = e.target as HTMLElement;
+      const openSlot = target.closest<HTMLElement>('[data-attach-open]');
+      if (openSlot?.dataset.file) {
+        openBlobInTab(placeholderFor(openSlot.dataset.file, `Attachment for invoice ${currentNumber}`));
+        return;
+      }
+      const dlSlot = target.closest<HTMLElement>('[data-attach-dl]');
+      if (dlSlot?.dataset.file) downloadFile(dlSlot.dataset.file, currentNumber);
     });
-    // Download all: each file in turn, lightly staggered.
     $('[data-attach-all]')?.addEventListener('click', () => {
       currentFiles.forEach((file, i) => setTimeout(() => downloadFile(file, currentNumber), i * 250));
     });
 
-    // Document viewing: delegated on the root so it covers both the server-rendered
-    // budget row and the injected file rows.
+    // Per-revision Line Item Budget: download only. The filename is the revision's
+    // own, and it downloads a real (minimal) workbook whose header rows identify the
+    // revision once the file is off this page.
     root.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('[data-doc-back]')) { showDoc('invoice'); return; }
-      // Per-revision Line Item Budget: open in a new tab, or download. Both carry the
-      // revision's OWN filename, so what lands on disk says which budget it is, and
-      // both get a real workbook rather than a stub — a COR who opens it in a demo
-      // should see a budget, and the header rows are what identify the revision once
-      // the file is off this page.
-      const budgetBtn = target.closest<HTMLElement>('[data-budget-open], [data-budget-dl]');
-      if (budgetBtn) {
-        const file = budgetBtn.dataset.file ?? '';
-        const rev = budgetRevs.find((r) => r.file === file);
-        const rows: string[][] = [
-          [rev?.label ?? 'Line Item Budget'],
-          ['Contract', inv.contractNumber, inv.contract],
-          ['Issued', rev?.issued ?? '', rev?.reason ?? ''],
-          [],
-          ['Description', 'Qty', 'Unit price', 'Total'],
-          ...inv.lineItems.map((li) => [
-            li.description, String(li.qty), li.unitPrice.toFixed(2), (li.qty * li.unitPrice).toFixed(2),
-          ]),
-          [],
-          ['Contract value', inv.contractValue.toFixed(2)],
-          ['Expended', inv.expended.toFixed(2)],
-          ['Remaining', inv.remaining.toFixed(2)],
-        ];
-        const blob = makePlaceholderXlsx(rev?.label ?? 'Line Item Budget', rows);
-        if (budgetBtn.hasAttribute('data-budget-open')) openBlobInTab(blob);
-        else saveBlob(blob, file);
-        return;
-      }
-      const viewBtn = target.closest<HTMLElement>('[data-doc-view-btn]');
-      if (viewBtn) {
-        if (viewBtn.dataset.docKind === 'invoice') {
-          // The invoice is the pane's default document — viewing it is stepping back
-          // to it from whatever else is open, not opening a comparison.
-          showDoc('invoice');
-        } else if (viewBtn.dataset.docKind === 'backup') {
-          const file = viewBtn.dataset.file ?? '';
-          backupViewFile = file;
-          if (backupName) backupName.textContent = file;
-          showDoc('backup', { name: `Comparing: ${file}`, matchFile: file });
-        }
-        return;
-      }
-      if (target.closest('[data-doc-placeholder-dl]') && backupViewFile) {
-        downloadFile(backupViewFile, currentNumber);
-      }
+      const budgetBtn = (e.target as HTMLElement).closest<HTMLElement>('[data-budget-dl]');
+      if (!budgetBtn) return;
+      const file = budgetBtn.dataset.file ?? '';
+      const rev = budgetRevs.find((r) => r.file === file);
+      const rows: string[][] = [
+        [rev?.label ?? 'Line Item Budget'],
+        ['Contract', inv.contractNumber, inv.contract],
+        ['Issued', rev?.issued ?? '', rev?.reason ?? ''],
+        [],
+        ['Description', 'Qty', 'Unit price', 'Total'],
+        ...inv.lineItems.map((li) => [
+          li.description, String(li.qty), li.unitPrice.toFixed(2), (li.qty * li.unitPrice).toFixed(2),
+        ]),
+        [],
+        ['Contract value', inv.contractValue.toFixed(2)],
+        ['Expended', inv.expended.toFixed(2)],
+        ['Remaining', inv.remaining.toFixed(2)],
+      ];
+      saveBlob(makePlaceholderXlsx(rev?.label ?? 'Line Item Budget', rows), file);
     });
 
     // Copy controls: each [data-copy] copies one atomic value to the clipboard.
