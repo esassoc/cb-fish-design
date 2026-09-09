@@ -5927,6 +5927,158 @@ function loadNHDPreview() {
   });
 }
 
+// Derive a local reach polyline from a waterbody polygon near a click point. Shared by
+// the initial auto-detect click (reachAutoClickFeature) AND "Add more stream" while
+// extending a reach that came from a polygon in the first place (preTrimExtendClick) —
+// wide rivers often have no flowlines in FeatureServer/50 at all (see below), so
+// extending such a reach has to grow the SAME polygon-derived centerline rather than
+// searching for real flowline segments that may not exist nearby.
+function deriveWbCenterlinePts(wbGeometry, clickLL) {
+  var ring = wbGeometry.rings[0];
+  var RADIUS_M = 3000;
+  var n = ring.length;
+  var ringLL = ring.map(function(c) { return L.latLng(c[1], c[0]); });
+
+  // Always-safe fallback: the nearest bank's boundary vertices verbatim (this is the
+  // pre-centerline behavior — it hugs an edge, but it's guaranteed to stay on the
+  // river). Used whenever the centerline math below can't be trusted for this polygon.
+  function edgeFallback() {
+    var inRadius = ringLL.map(function(p) { return clickLL.distanceTo(p) < RADIUS_M; });
+    var bestStart = 0, bestLen = 0, curStart = -1, curLen = 0;
+    var doubled = inRadius.concat(inRadius);
+    for (var i = 0; i < doubled.length; i++) {
+      if (doubled[i]) {
+        if (curStart < 0) { curStart = i % n; curLen = 1; } else { curLen++; }
+        if (curLen > bestLen && curLen <= n) { bestLen = curLen; bestStart = curStart; }
+      } else { curStart = -1; curLen = 0; }
+    }
+    var pts;
+    if (bestLen >= 2) {
+      pts = [];
+      for (var j = 0; j < bestLen; j++) pts.push(ringLL[(bestStart + j) % n]);
+    } else {
+      var withDist = ringLL.map(function(p, idx) { return {idx: idx, d: clickLL.distanceTo(p)}; });
+      withDist.sort(function(a,b){return a.d-b.d;});
+      pts = withDist.slice(0, 20).sort(function(a,b){return a.idx-b.idx;}).map(function(x){ return ringLL[x.idx]; });
+    }
+    if (pts.length > 4) {
+      var startPt = pts[0];
+      var minReturnDist = Infinity, turnIdx = pts.length;
+      var quarter = Math.floor(pts.length / 4);
+      for (var ti = quarter * 2; ti < pts.length; ti++) {
+        var dReturn = startPt.distanceTo(pts[ti]);
+        if (dReturn < minReturnDist) { minReturnDist = dReturn; turnIdx = ti; }
+      }
+      if (minReturnDist < 500 && turnIdx < pts.length - 2) pts = pts.slice(0, turnIdx + 1);
+    }
+    return pts;
+  }
+
+  // Derive a true centerline via polygonCenterline() rather than following the
+  // boundary ring itself. NHD waterbody "Area" features range enormously in size —
+  // a single wide-river bend is a few hundred vertices across a km or two, but the
+  // SAME layer can also represent an entire river system as one ring (the Yakima
+  // River here is a single ~12,000-vertex ring spanning ~65km). Sorting a ring that
+  // large onto one global axis to find "the two banks" (polygonCenterline's approach)
+  // produces nonsense far from the click — the "centerline" can shoot off toward
+  // wherever that ring's overall bounding-box extremes happen to be, nowhere near
+  // where the user actually clicked. So: only feed polygonCenterline() the whole ring
+  // when the ring is small enough that its axis-sort assumption is plausible; for a
+  // large ring, crop to the click's neighborhood first (see buildLocalCenterline).
+  var LARGE_RING_DIAGONAL_M = 8000; // a real single-bend/segment ring is a couple km
+                                     // across at most; a regional/watershed-scale
+                                     // ring (rivers, confluences strung together) is
+                                     // one ring representing tens of km — the two are
+                                     // easy to tell apart at this scale.
+  var ringLats = ring.map(function(c){ return c[1]; }), ringLngs = ring.map(function(c){ return c[0]; });
+  var ringCorner1 = L.latLng(Math.min.apply(null, ringLats), Math.min.apply(null, ringLngs));
+  var ringCorner2 = L.latLng(Math.max.apply(null, ringLats), Math.max.apply(null, ringLngs));
+  var ringDiagonalM = ringCorner1.distanceTo(ringCorner2);
+
+  // Splice the two ring-index runs nearest the click into a small local ring (the far
+  // bank reversed, so it reads like an ordinary "there and back" polygon) and hand
+  // THAT to polygonCenterline() — used for large/regional rings, where the click's
+  // neighborhood is a small fraction of the whole ring and shows up as two distinct
+  // contiguous runs of nearby vertices (one per bank).
+  function buildLocalCenterline() {
+    var near = ringLL.map(function(p) { return clickLL.distanceTo(p) < RADIUS_M; });
+    var runs = [];
+    var doubled2 = near.concat(near);
+    var curStart2 = -1;
+    for (var i2 = 0; i2 <= doubled2.length; i2++) {
+      var v = i2 < doubled2.length ? doubled2[i2] : false;
+      if (v) {
+        if (curStart2 < 0) curStart2 = i2;
+      } else if (curStart2 >= 0) {
+        var runLen = i2 - curStart2;
+        if (runLen < n) runs.push({start: curStart2 % n, len: runLen});
+        curStart2 = -1;
+      }
+    }
+    var seenRun = {};
+    runs = runs.filter(function(r) {
+      var key = r.start + ':' + r.len;
+      if (seenRun[key]) return false;
+      seenRun[key] = true;
+      return true;
+    });
+    runs.sort(function(a, b) { return b.len - a.len; });
+    if (runs.length < 2 || runs[0].len < 2 || runs[1].len < 2) return null;
+
+    var bankA = [], bankB = [];
+    for (var a = 0; a < runs[0].len; a++) bankA.push(ring[(runs[0].start + a) % n]);
+    for (var b = 0; b < runs[1].len; b++) bankB.push(ring[(runs[1].start + b) % n]);
+    // Orient bankB opposite to bankA (a normal ring visits one bank forward and the
+    // other backward) — try both and keep whichever lines the endpoints up.
+    var aStart = L.latLng(bankA[0][1], bankA[0][0]), aEnd = L.latLng(bankA[bankA.length-1][1], bankA[bankA.length-1][0]);
+    var bStart = L.latLng(bankB[0][1], bankB[0][0]), bEnd = L.latLng(bankB[bankB.length-1][1], bankB[bankB.length-1][0]);
+    if (aStart.distanceTo(bStart) + aEnd.distanceTo(bEnd) < aStart.distanceTo(bEnd) + aEnd.distanceTo(bStart)) {
+      bankB = bankB.slice().reverse();
+    }
+    var localRing = bankA.concat(bankB);
+    localRing.push(localRing[0]);
+    var centerline = polygonCenterline({rings: [localRing]});
+    return centerline && centerline.length >= 2 && centerlineTrustworthy(centerline, localRing) ? centerline : null;
+  }
+
+  // A real centerline must stay inside the river footprint it was built from — if
+  // bank-pairing went wrong (a tight oxbow, or a ring too complex for the axis-sort
+  // heuristic), points fall outside it, and the result should be discarded.
+  function centerlineTrustworthy(centerline, boundsRing) {
+    var insideCount = centerline.filter(function(p) {
+      return pointInRing(p.lat, p.lng, boundsRing);
+    }).length;
+    return insideCount / centerline.length >= 0.8;
+  }
+
+  var localPts = null;
+  if (ringDiagonalM <= LARGE_RING_DIAGONAL_M) {
+    // Small ring — a single bend/segment. Safe to centerline the whole thing directly,
+    // then window the result down to the stretch nearest the click.
+    var centerline = polygonCenterline(wbGeometry);
+    if (centerline && centerline.length >= 2 && centerlineTrustworthy(centerline, ring)) {
+      var dists = centerline.map(function(p) { return clickLL.distanceTo(p); });
+      var closestIdx = 0, minD = dists[0];
+      for (var ci = 1; ci < dists.length; ci++) {
+        if (dists[ci] < minD) { minD = dists[ci]; closestIdx = ci; }
+      }
+      var lo = closestIdx, hi = closestIdx;
+      while (lo > 0 && dists[lo - 1] < RADIUS_M) lo--;
+      while (hi < centerline.length - 1 && dists[hi + 1] < RADIUS_M) hi++;
+      if (hi - lo < 1) {
+        lo = Math.max(0, closestIdx - 5);
+        hi = Math.min(centerline.length - 1, closestIdx + 5);
+      }
+      localPts = centerline.slice(lo, hi + 1);
+    }
+  } else {
+    localPts = buildLocalCenterline();
+  }
+
+  if (!localPts) localPts = edgeFallback();
+  return localPts;
+}
+
 // Called when user clicks directly on a previewed NHD feature
 function reachAutoClickFeature(feat, latlng) {
   clearNHDPreview();
@@ -5936,152 +6088,14 @@ function reachAutoClickFeature(feat, latlng) {
   // without querying flowlines (wide rivers have none in FeatureServer/50)
   if (feat._wbGeometry) {
     clearReachAutoLayers();
-    var ring = feat._wbGeometry.rings[0];
-    var clickLL = L.latLng(latlng.lat, latlng.lng);
-    var RADIUS_M = 3000;
-    var n = ring.length;
-    var ringLL = ring.map(function(c) { return L.latLng(c[1], c[0]); });
-
-    // Always-safe fallback: the nearest bank's boundary vertices verbatim (this is the
-    // pre-centerline behavior — it hugs an edge, but it's guaranteed to stay on the
-    // river). Used whenever the centerline math below can't be trusted for this polygon.
-    function edgeFallback() {
-      var inRadius = ringLL.map(function(p) { return clickLL.distanceTo(p) < RADIUS_M; });
-      var bestStart = 0, bestLen = 0, curStart = -1, curLen = 0;
-      var doubled = inRadius.concat(inRadius);
-      for (var i = 0; i < doubled.length; i++) {
-        if (doubled[i]) {
-          if (curStart < 0) { curStart = i % n; curLen = 1; } else { curLen++; }
-          if (curLen > bestLen && curLen <= n) { bestLen = curLen; bestStart = curStart; }
-        } else { curStart = -1; curLen = 0; }
-      }
-      var pts;
-      if (bestLen >= 2) {
-        pts = [];
-        for (var j = 0; j < bestLen; j++) pts.push(ringLL[(bestStart + j) % n]);
-      } else {
-        var withDist = ringLL.map(function(p, idx) { return {idx: idx, d: clickLL.distanceTo(p)}; });
-        withDist.sort(function(a,b){return a.d-b.d;});
-        pts = withDist.slice(0, 20).sort(function(a,b){return a.idx-b.idx;}).map(function(x){ return ringLL[x.idx]; });
-      }
-      if (pts.length > 4) {
-        var startPt = pts[0];
-        var minReturnDist = Infinity, turnIdx = pts.length;
-        var quarter = Math.floor(pts.length / 4);
-        for (var ti = quarter * 2; ti < pts.length; ti++) {
-          var dReturn = startPt.distanceTo(pts[ti]);
-          if (dReturn < minReturnDist) { minReturnDist = dReturn; turnIdx = ti; }
-        }
-        if (minReturnDist < 500 && turnIdx < pts.length - 2) pts = pts.slice(0, turnIdx + 1);
-      }
-      return pts;
-    }
-
-    // Derive a true centerline via polygonCenterline() rather than following the
-    // boundary ring itself. NHD waterbody "Area" features range enormously in size —
-    // a single wide-river bend is a few hundred vertices across a km or two, but the
-    // SAME layer can also represent an entire river system as one ring (the Yakima
-    // River here is a single ~12,000-vertex ring spanning ~65km). Sorting a ring that
-    // large onto one global axis to find "the two banks" (polygonCenterline's approach)
-    // produces nonsense far from the click — the "centerline" can shoot off toward
-    // wherever that ring's overall bounding-box extremes happen to be, nowhere near
-    // where the user actually clicked. So: only feed polygonCenterline() the whole ring
-    // when the ring is small enough that its axis-sort assumption is plausible; for a
-    // large ring, crop to the click's neighborhood first (see buildLocalCenterline).
-    var LARGE_RING_DIAGONAL_M = 8000; // a real single-bend/segment ring is a couple km
-                                       // across at most; a regional/watershed-scale
-                                       // ring (rivers, confluences strung together) is
-                                       // one ring representing tens of km — the two are
-                                       // easy to tell apart at this scale.
-    var ringLats = ring.map(function(c){ return c[1]; }), ringLngs = ring.map(function(c){ return c[0]; });
-    var ringCorner1 = L.latLng(Math.min.apply(null, ringLats), Math.min.apply(null, ringLngs));
-    var ringCorner2 = L.latLng(Math.max.apply(null, ringLats), Math.max.apply(null, ringLngs));
-    var ringDiagonalM = ringCorner1.distanceTo(ringCorner2);
-
-    // Splice the two ring-index runs nearest the click into a small local ring (the far
-    // bank reversed, so it reads like an ordinary "there and back" polygon) and hand
-    // THAT to polygonCenterline() — used for large/regional rings, where the click's
-    // neighborhood is a small fraction of the whole ring and shows up as two distinct
-    // contiguous runs of nearby vertices (one per bank).
-    function buildLocalCenterline() {
-      var near = ringLL.map(function(p) { return clickLL.distanceTo(p) < RADIUS_M; });
-      var runs = [];
-      var doubled2 = near.concat(near);
-      var curStart2 = -1;
-      for (var i2 = 0; i2 <= doubled2.length; i2++) {
-        var v = i2 < doubled2.length ? doubled2[i2] : false;
-        if (v) {
-          if (curStart2 < 0) curStart2 = i2;
-        } else if (curStart2 >= 0) {
-          var runLen = i2 - curStart2;
-          if (runLen < n) runs.push({start: curStart2 % n, len: runLen});
-          curStart2 = -1;
-        }
-      }
-      var seenRun = {};
-      runs = runs.filter(function(r) {
-        var key = r.start + ':' + r.len;
-        if (seenRun[key]) return false;
-        seenRun[key] = true;
-        return true;
-      });
-      runs.sort(function(a, b) { return b.len - a.len; });
-      if (runs.length < 2 || runs[0].len < 2 || runs[1].len < 2) return null;
-
-      var bankA = [], bankB = [];
-      for (var a = 0; a < runs[0].len; a++) bankA.push(ring[(runs[0].start + a) % n]);
-      for (var b = 0; b < runs[1].len; b++) bankB.push(ring[(runs[1].start + b) % n]);
-      // Orient bankB opposite to bankA (a normal ring visits one bank forward and the
-      // other backward) — try both and keep whichever lines the endpoints up.
-      var aStart = L.latLng(bankA[0][1], bankA[0][0]), aEnd = L.latLng(bankA[bankA.length-1][1], bankA[bankA.length-1][0]);
-      var bStart = L.latLng(bankB[0][1], bankB[0][0]), bEnd = L.latLng(bankB[bankB.length-1][1], bankB[bankB.length-1][0]);
-      if (aStart.distanceTo(bStart) + aEnd.distanceTo(bEnd) < aStart.distanceTo(bEnd) + aEnd.distanceTo(bStart)) {
-        bankB = bankB.slice().reverse();
-      }
-      var localRing = bankA.concat(bankB);
-      localRing.push(localRing[0]);
-      var centerline = polygonCenterline({rings: [localRing]});
-      return centerline && centerline.length >= 2 && centerlineTrustworthy(centerline, localRing) ? centerline : null;
-    }
-
-    // A real centerline must stay inside the river footprint it was built from — if
-    // bank-pairing went wrong (a tight oxbow, or a ring too complex for the axis-sort
-    // heuristic), points fall outside it, and the result should be discarded.
-    function centerlineTrustworthy(centerline, boundsRing) {
-      var insideCount = centerline.filter(function(p) {
-        return pointInRing(p.lat, p.lng, boundsRing);
-      }).length;
-      return insideCount / centerline.length >= 0.8;
-    }
-
-    var localPts = null;
-    if (ringDiagonalM <= LARGE_RING_DIAGONAL_M) {
-      // Small ring — a single bend/segment. Safe to centerline the whole thing directly,
-      // then window the result down to the stretch nearest the click.
-      var centerline = polygonCenterline(feat._wbGeometry);
-      if (centerline && centerline.length >= 2 && centerlineTrustworthy(centerline, ring)) {
-        var dists = centerline.map(function(p) { return clickLL.distanceTo(p); });
-        var closestIdx = 0, minD = dists[0];
-        for (var ci = 1; ci < dists.length; ci++) {
-          if (dists[ci] < minD) { minD = dists[ci]; closestIdx = ci; }
-        }
-        var lo = closestIdx, hi = closestIdx;
-        while (lo > 0 && dists[lo - 1] < RADIUS_M) lo--;
-        while (hi < centerline.length - 1 && dists[hi + 1] < RADIUS_M) hi++;
-        if (hi - lo < 1) {
-          lo = Math.max(0, closestIdx - 5);
-          hi = Math.min(centerline.length - 1, closestIdx + 5);
-        }
-        localPts = centerline.slice(lo, hi + 1);
-      }
-    } else {
-      localPts = buildLocalCenterline();
-    }
-
-    if (!localPts) localPts = edgeFallback();
+    var localPts = deriveWbCenterlinePts(feat._wbGeometry, L.latLng(latlng.lat, latlng.lng));
 
     reachAutoDetecting = false;
-    if (we.ppData['reach_len']) we.ppData['reach_len']._autoDetecting = false;
+    if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
+    we.ppData['reach_len']._autoDetecting = false;
+    // Stash the source polygon so "Add more stream" can grow the SAME centerline later
+    // instead of searching for real flowlines that may not exist near a wide river.
+    we.ppData['reach_len']._wbGeometry = feat._wbGeometry;
     document.getElementById('mapwrap').classList.remove('drawing');
     setMapHint('');
     setTimeout(function(){ enterPreTrimStep(localPts, false); }, 50);
@@ -7443,6 +7457,58 @@ function enterPreTrimStep(pts, skipFit) {
 function preTrimExtendClick(latlng) {
   // Same as reachExtendClick but appends to preReachPts instead of committed reach
   var we = getActiveWE(); if (!we) return;
+
+  // If the reach we're extending came from a waterbody polygon (a wide river with no
+  // flowlines — see reachAutoClickFeature), extending it by searching for real flowline
+  // segments to connect to (below) essentially never works: the existing reach is a
+  // synthesized centerline, not a point on any real NHD flowline, so it rarely sits
+  // within the flowline-connect tolerance of anything, and a genuinely wide river often
+  // has no nearby flowlines to find at all. So instead, grow the SAME polygon-derived
+  // centerline out to the new click.
+  var wbGeometry = we.ppData['reach_len'] && we.ppData['reach_len']._wbGeometry;
+  if (wbGeometry) {
+    var clickLL = L.latLng(latlng.lat, latlng.lng);
+    var newPts = deriveWbCenterlinePts(wbGeometry, clickLL);
+    var existPts = preReachPts || (we.ppData['reach_len'] && we.ppData['reach_len']._preTrimPts);
+    if (!existPts || !newPts || newPts.length < 2) {
+      setMapHint('No stream found nearby — click elsewhere or proceed to Pick endpoints');
+      return;
+    }
+    var reachStart = existPts[0], reachEnd = existPts[existPts.length - 1];
+    var newStart = newPts[0], newEnd = newPts[newPts.length - 1];
+    var dES = reachEnd.distanceTo(newStart), dEE = reachEnd.distanceTo(newEnd);
+    var dSS = reachStart.distanceTo(newStart), dSE = reachStart.distanceTo(newEnd);
+    var minD = Math.min(dES, dEE, dSS, dSE);
+    // Unlike the flowline path's 50m connect tolerance (real segments should share an
+    // exact vertex), these are two independently-sampled centerline windows on the same
+    // polygon — they're never going to touch exactly, so the tolerance here just guards
+    // against a click far enough away that it's clearly not "a bit further along this
+    // reach" (e.g. a different part of a huge multi-tributary polygon).
+    var MAX_WB_CONNECT_M = 8000;
+    if (minD > MAX_WB_CONNECT_M) {
+      setMapHint('That\'s too far from your reach to connect — click closer to one end, or Pick endpoints');
+      return;
+    }
+    var combinedPts;
+    if (minD === dES)      combinedPts = existPts.concat(newPts);
+    else if (minD === dEE) combinedPts = existPts.concat(newPts.slice().reverse());
+    else if (minD === dSE) combinedPts = newPts.concat(existPts);
+    else                   combinedPts = newPts.slice().reverse().concat(existPts);
+
+    preReachPts = combinedPts;
+    if (reachTrimLayer) map.removeLayer(reachTrimLayer);
+    reachTrimLayer = L.polyline(combinedPts, {color:'#1a9abf', weight:3, dashArray:'6,4', interactive:false}).addTo(map);
+    we.ppData['reach_len']._preTrimPts = combinedPts;
+    // Stay in extend mode so the user can keep adding without re-clicking the button
+    preReachExtend = true;
+    we.ppData['reach_len']._preTrimExtending = true;
+    setMapHint('Segment added — click further along the stream to keep extending, or click <b>Pick endpoints</b> in the sidebar');
+    var mWb = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
+    renderPMRow(mWb);
+    if (wizardMode) renderWizardStep();
+    return;
+  }
+
   setMapHint('Querying NHD for nearby segments...');
 
   var toRad = function(d){ return d*Math.PI/180; };
