@@ -19,8 +19,8 @@
 // chrome rather than esa-icon-link: it needs the `history` glyph (absent from the
 // hub icon set) and the user menu's markup is rewritten live during impersonation.
 import EsaAppBar from '@esa/ecology/esa-app-bar.astro';
-import EsaIconLink from '@esa/ecology/esa-button.astro';
-import EsaIconButton from '@esa/ecology/esa-button.astro';
+import EsaIconLink from '@esa/ecology/esa-icon-link.astro';
+import EsaIconButton from '@esa/ecology/esa-icon-button.astro';
 import EsaNavDropdown from '@esa/ecology/esa-nav-dropdown.astro';
 import EsaLinkColumn from '@esa/ecology/esa-link-column.astro';
 import CbfLogo from './cbf-logo.astro';
@@ -38,9 +38,9 @@ const based = (links: NavLink[]): NavLink[] =>
 ---
 <EsaAppBar tone="brand-strong" as="nav" class="cbf-app-bar--admin">
   <div class="cbf-nav-collapsible" slot="start">
-    <EsaIconLink variant="chrome" size="sm" icon="database" iconRight="chevron-down">Data management</EsaIconLink>
-    <EsaIconLink variant="chrome" size="sm" icon="activity" iconRight="chevron-down">System status</EsaIconLink>
-    <EsaIconLink variant="chrome" size="sm" icon="settings" iconRight="chevron-down">System configuration</EsaIconLink>
+    <EsaIconLink size="sm" icon="database" trailing="chevron-down">Data management</EsaIconLink>
+    <EsaIconLink size="sm" icon="activity" trailing="chevron-down">System status</EsaIconLink>
+    <EsaIconLink size="sm" icon="settings" trailing="chevron-down">System configuration</EsaIconLink>
   </div>
   <CbfOmniTrigger />
   <div class="cbf-nav-collapsible" slot="end">
@@ -53,7 +53,7 @@ const based = (links: NavLink[]): NavLink[] =>
 <EsaAppBar tone="brand" as="header" class="cbf-app-bar--header">
   <Fragment slot="start">
     <span class="cbf-nav-burger" data-nav-toggle>
-      <EsaIconButton variant="chrome" iconOnly icon="menu" label="Open menu" />
+      <EsaIconButton icon="menu" label="Open menu" />
     </span>
     <CbfLogo />
   </Fragment>
