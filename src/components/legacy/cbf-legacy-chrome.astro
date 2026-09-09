@@ -25,7 +25,17 @@
 // panel — see .legacy-panel, defined here and reused by
 // cbf-legacy-we-grid.astro / cbf-legacy-we-selector.astro /
 // cbf-legacy-habitat-design-panel.astro so all the panels match.
+//
+// modernTopBar (opt-in, default off): swaps ONLY the two hand-rolled top
+// bars (utility bar + navy app bar) for the real cbf-public-nav — everything
+// below (message bar, breadcrumb row, tabs panel) stays the pixel-matched
+// legacy recreation described above. Client request: all three legacy pages
+// (sow.astro, we.astro, we-milestones.astro) should carry the same top nav
+// as the rest of the spoke, so all three pass modernTopBar. The prop stays
+// optional/defaulted-off rather than baked in, in case a future legacy page
+// needs the fully authentic top bar.
 import { withBase } from '../../lib/base';
+import CbfPublicNav from '../shared/cbf-public-nav.astro';
 
 export interface LegacyCrumb {
   label: string;
@@ -47,8 +57,11 @@ interface Props {
    * only shows this on pages nested under a SOW ("Back to SOW"/"Back to
    * Work Element"); the top-level SOW page itself has none. */
   tabBarAction?: { label: string; href: string };
+  /** Opt-in: render cbf-public-nav instead of the hand-rolled legacy utility
+   * bar + app bar. See the frontmatter note above. */
+  modernTopBar?: boolean;
 }
-const { crumbs, tabs, tabBarAction } = Astro.props;
+const { crumbs, tabs, tabBarAction, modernTopBar = false } = Astro.props;
 
 const navItems = [
   { label: 'Mitigation work', icon: 'Nav-Mitigationwork.svg', dropdown: true },
@@ -59,31 +72,37 @@ const navItems = [
 ];
 ---
 <div class="legacy-chrome">
-  <div class="legacy-chrome__utilitybar">
-    <div class="legacy-chrome__utilitybar-inner">
-      <span>Data management</span>
-      <span>System status</span>
-      <span>System configuration</span>
-    </div>
-  </div>
+  {modernTopBar ? (
+    <CbfPublicNav />
+  ) : (
+    <>
+      <div class="legacy-chrome__utilitybar">
+        <div class="legacy-chrome__utilitybar-inner">
+          <span>Data management</span>
+          <span>System status</span>
+          <span>System configuration</span>
+        </div>
+      </div>
 
-  <div class="legacy-chrome__appbar">
-    <div class="legacy-chrome__appbar-inner">
-      <a class="legacy-chrome__brand" href="#">
-        <img class="legacy-chrome__logo" src={withBase('/images/legacy/Modern-Nav-Logo.svg')} width="48" height="48" alt="" />
-        <img class="legacy-chrome__logotype" src={withBase('/images/legacy/Modern-Nav-Logo-Type.svg')} width="190" height="47" alt="Columbia Basin Fish & Wildlife Program" />
-      </a>
-      <nav class="legacy-chrome__nav">
-        {navItems.map((n) => (
-          <span class="legacy-chrome__navitem">
-            {n.icon && <img src={withBase(`/images/legacy/${n.icon}`)} alt="" width="16" height="16" />}
-            {n.label}
-            {n.dropdown && <img class="legacy-chrome__navcaret" src={withBase('/images/legacy/Nav-Down-arrow.svg')} alt="" width="9" height="9" />}
-          </span>
-        ))}
-      </nav>
-    </div>
-  </div>
+      <div class="legacy-chrome__appbar">
+        <div class="legacy-chrome__appbar-inner">
+          <a class="legacy-chrome__brand" href="#">
+            <img class="legacy-chrome__logo" src={withBase('/images/legacy/Modern-Nav-Logo.svg')} width="48" height="48" alt="" />
+            <img class="legacy-chrome__logotype" src={withBase('/images/legacy/Modern-Nav-Logo-Type.svg')} width="190" height="47" alt="Columbia Basin Fish & Wildlife Program" />
+          </a>
+          <nav class="legacy-chrome__nav">
+            {navItems.map((n) => (
+              <span class="legacy-chrome__navitem">
+                {n.icon && <img src={withBase(`/images/legacy/${n.icon}`)} alt="" width="16" height="16" />}
+                {n.label}
+                {n.dropdown && <img class="legacy-chrome__navcaret" src={withBase('/images/legacy/Nav-Down-arrow.svg')} alt="" width="9" height="9" />}
+              </span>
+            ))}
+          </nav>
+        </div>
+      </div>
+    </>
+  )}
 
   <div class="legacy-chrome__messagebar"></div>
 
