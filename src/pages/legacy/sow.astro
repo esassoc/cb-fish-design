@@ -50,12 +50,12 @@ const rows = [
 <!-- manifest:
   layout: legacy chrome (tabs panel w/ intro text) > WE grid > modal   # recreates real page structure, top to bottom
   sections:
-    - legacy chrome + intro text -> cbf-legacy-chrome (nav/breadcrumb/tab strip) wrapping cbf-legacy-contract-header (intro paragraph, same white panel as the tabs on the real site)
+    - legacy chrome + intro text -> cbf-legacy-chrome (modernTopBar: cbf-public-nav; legacy breadcrumb/tab strip below) wrapping cbf-legacy-contract-header (intro paragraph, same white panel as the tabs on the real site)
     - WE grid                    -> cbf-legacy-we-grid (title + work statement elements table + new HD column, its own separate white panel)
     - intro modal                -> cbf-legacy-sow-intro-modal (explains the new HD column/workflow to a reviewer — not part of the recreated screen)
 -->
 <BaseLayout title="84051 REL 50: SOW — CBFish.org">
-  <CbfLegacyChrome crumbs={crumbs} tabs={tabs}>
+  <CbfLegacyChrome crumbs={crumbs} tabs={tabs} modernTopBar>
     <CbfLegacyContractHeader
       helpText="Select a Contract Action to view its work statement elements. If a Contract Action has not been issued, only authorized users are allowed to view or work with the work statement elements."
     />

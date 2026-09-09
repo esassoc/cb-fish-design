@@ -60,7 +60,7 @@ const milestones: LegacyMilestone[] = [
 <!-- manifest:
   layout: legacy chrome (tabs panel, empty body) > WE selector panel > milestones panel   # recreates real Milestones page structure
   sections:
-    - legacy chrome         -> cbf-legacy-chrome (nav/breadcrumb/tab strip, Milestones tab active)
+    - legacy chrome         -> cbf-legacy-chrome (modernTopBar: cbf-public-nav; legacy breadcrumb/tab strip below, Milestones tab active)
     - WE selector panel     -> cbf-legacy-we-selector ("Select a work element" bar), its own separate panel
     - milestones panel      -> cbf-legacy-milestones-panel (deliverable notice, toolbar, milestone grid, description box)
 -->
@@ -69,6 +69,7 @@ const milestones: LegacyMilestone[] = [
     crumbs={crumbs}
     tabs={tabs}
     tabBarAction={{ label: 'Back to SOW', href: withBase('/legacy/sow') }}
+    modernTopBar
   />
 
   <main class="legacy-we-page">

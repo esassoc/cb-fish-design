@@ -40,7 +40,7 @@ const tabs = [
 <!-- manifest:
   layout: legacy chrome (tabs panel, empty body) > WE selector panel > habitat design panel   # recreates real WE-level page structure
   sections:
-    - legacy chrome         -> cbf-legacy-chrome (nav/breadcrumb/tab strip, incl. new Habitat Design tab) — tabs-only white panel, no slotted content (verified the real page's tabs panel has no body content on this page type)
+    - legacy chrome         -> cbf-legacy-chrome (modernTopBar: cbf-public-nav; legacy breadcrumb/tab strip below, incl. new Habitat Design tab) — tabs-only white panel, no slotted content (verified the real page's tabs panel has no body content on this page type)
     - WE selector panel     -> cbf-legacy-we-selector ("Select a work element" bar) — its OWN separate panel with a gray heading strip, confirmed via DOM ancestry on the live site
     - habitat design panel  -> cbf-legacy-habitat-design-panel (exported metrics snapshot + CTA into the tool, its own separate white panel)
 -->
@@ -49,6 +49,7 @@ const tabs = [
     crumbs={crumbs}
     tabs={tabs}
     tabBarAction={{ label: 'Back to SOW', href: withBase('/legacy/sow') }}
+    modernTopBar
   />
 
   <main class="legacy-we-page">
