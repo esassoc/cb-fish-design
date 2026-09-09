@@ -5928,31 +5928,33 @@ function reachAutoClickFeature(feat, latlng) {
     var ring = feat._wbGeometry.rings[0];
     var clickLL = L.latLng(latlng.lat, latlng.lng);
     var RADIUS_M = 3000;
-    var n = ring.length;
 
-    // Find all vertices within RADIUS_M of the click, keep the longest contiguous run
-    var inRadius = ring.map(function(c) {
-      return clickLL.distanceTo(L.latLng(c[1], c[0])) < RADIUS_M;
-    });
-    var bestStart = 0, bestLen = 0, curStart = -1, curLen = 0;
-    var doubled = inRadius.concat(inRadius);
-    for (var i = 0; i < doubled.length; i++) {
-      if (doubled[i]) {
-        if (curStart < 0) { curStart = i % n; curLen = 1; }
-        else { curLen++; }
-        if (curLen > bestLen && curLen <= n) { bestLen = curLen; bestStart = curStart; }
-      } else {
-        curStart = -1; curLen = 0;
-      }
-    }
-
+    // Build the true centerline down the middle of the river polygon (bank-pairing —
+    // see polygonCenterline()) rather than following the boundary ring itself. Clicking
+    // a filled waterbody previously grabbed the nearest bank's vertices verbatim, which
+    // put the detected "reach" on a stream edge instead of its centerline.
+    var centerline = polygonCenterline(feat._wbGeometry);
     var localPts = [];
-    if (bestLen >= 2) {
-      for (var j = 0; j < bestLen; j++) {
-        var c = ring[(bestStart + j) % n];
-        localPts.push(L.latLng(c[1], c[0]));
+    if (centerline && centerline.length >= 2) {
+      var dists = centerline.map(function(p) { return clickLL.distanceTo(p); });
+      var closestIdx = 0, minD = dists[0];
+      for (var ci = 1; ci < dists.length; ci++) {
+        if (dists[ci] < minD) { minD = dists[ci]; closestIdx = ci; }
       }
+      // Window the centerline down to the stretch near the click, growing outward
+      // while points stay within RADIUS_M (the centerline runs straight through, so
+      // no turnaround/bank-doubling handling is needed here).
+      var lo = closestIdx, hi = closestIdx;
+      while (lo > 0 && dists[lo - 1] < RADIUS_M) lo--;
+      while (hi < centerline.length - 1 && dists[hi + 1] < RADIUS_M) hi++;
+      if (hi - lo < 1) {
+        lo = Math.max(0, closestIdx - 5);
+        hi = Math.min(centerline.length - 1, closestIdx + 5);
+      }
+      localPts = centerline.slice(lo, hi + 1);
     } else {
+      // Degenerate ring (too few vertices for polygonCenterline) — fall back to the
+      // nearest boundary vertices rather than failing outright.
       var withDist = ring.map(function(c, idx) {
         return {idx: idx, d: clickLL.distanceTo(L.latLng(c[1], c[0])), c: c};
       });
@@ -5960,24 +5962,6 @@ function reachAutoClickFeature(feat, latlng) {
       var closest = withDist.slice(0, 20);
       closest.sort(function(a,b){return a.idx-b.idx;});
       localPts = closest.map(function(x){ return L.latLng(x.c[1], x.c[0]); });
-    }
-
-    // The polygon ring visits both banks: it goes along one bank then doubles back
-    // along the other. Find the turnaround point (where the path gets closest to
-    // its own start) and truncate there, keeping only the first-pass bank.
-    if (localPts.length > 4) {
-      var startPt = localPts[0];
-      var minReturnDist = Infinity, turnIdx = localPts.length;
-      // Look for the point (after the first quarter) that is closest to the start
-      var quarter = Math.floor(localPts.length / 4);
-      for (var ti = quarter * 2; ti < localPts.length; ti++) {
-        var dReturn = startPt.distanceTo(localPts[ti]);
-        if (dReturn < minReturnDist) { minReturnDist = dReturn; turnIdx = ti; }
-      }
-      // Only truncate if the ring actually returns close to start (< 500m)
-      if (minReturnDist < 500 && turnIdx < localPts.length - 2) {
-        localPts = localPts.slice(0, turnIdx + 1);
-      }
     }
 
     reachAutoDetecting = false;
