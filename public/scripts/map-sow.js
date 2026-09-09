@@ -188,7 +188,7 @@ window.onload = function() {
   }, 500);
   // ── Basemaps ──────────────────────────────────────────────────────────────
   var basemaps = {
-    'Street Map': L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {maxZoom:19, attribution:'© OpenStreetMap © CARTO'}),
+    'Street Map': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'© OpenStreetMap contributors'}),
     'Satellite':  L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {maxZoom:20, attribution:'© Google'}),
     'USGS NAIP':  L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}', {maxZoom:19, maxNativeZoom:16, attribution:'USDA/USGS NAIP'}),
     'Topo':       L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {maxZoom:17, attribution:'© OpenTopoMap'})
@@ -9932,7 +9932,7 @@ function buildSOWMiniMap(containerId, we, mode) {
     scrollWheelZoom: false, doubleClickZoom: false, boxZoom: false, keyboard: false, tap: false
   });
   sowMiniMaps.push(mm);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {maxZoom: 19}).addTo(mm);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19}).addTo(mm);
 
   var bounds = null;
   function extend(latlngs) {
