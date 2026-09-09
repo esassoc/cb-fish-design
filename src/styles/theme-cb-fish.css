@@ -48,31 +48,6 @@
   --color-background-default-knockout:       var(--cbf-blue-950);
   --color-background-default-knockout-hover: #0d1b2c;
 
-  /* Fix — the "hub token codemod" commit (1bd8bce) renamed these overrides away from
-     the hub's ACTUAL semantic names (--color-primary and friends, --color-surface-inverse
-     and friends) to a --color-background-brand / --color-background-default-knockout
-     naming that doesn't exist anywhere in the hub's token source
-     (packages/tokens/tokens/semantic/color.json) or in esa-app-bar.astro / esa-button.astro,
-     which still read --color-primary and --color-surface-inverse directly. Result: those
-     vars were silently unset, and every hub component (app-bar tone="brand"/"brand-strong",
-     esa-button's default color="primary") fell through to the hub's real default: grass
-     green (--color-grass-9, #46a758) — the green that showed up in the nav. Re-pointing
-     the real names here (chained to the same navy values above) fixes every hub component
-     at once; the --color-background-brand family stays defined too since several bcn-*
-     spoke components (e.g. bcn-date-picker.ts) already read it directly. This pair should
-     probably collapse to one name eventually, but auditing every file the 1bd8bce codemod
-     touched is a bigger job than this fix. */
-  --color-primary:         var(--color-background-brand);
-  --color-primary-hover:   var(--color-background-brand-hover);
-  --color-primary-active:  var(--color-background-brand-active);
-  --color-primary-subtle:  var(--color-background-brand-subtle);
-  --color-primary-bg:      var(--color-background-brand-subtle);
-  --color-primary-bg-hover: var(--color-background-brand-muted);
-  --color-primary-border:  var(--color-border-brand);
-  --color-primary-strong:  var(--color-content-brand);
-  --color-surface-inverse:       var(--color-background-default-knockout);
-  --color-surface-inverse-hover: var(--color-background-default-knockout-hover);
-
   /* Re-point the full neutral chain to CBFish's grays (--cbf-gray-* ramp below;
      primitives never move). Symmetric with the blue ramp: ramp = raw material,
      semantics = var chains. This warms all body text vs the hub's cool grays —
