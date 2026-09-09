@@ -5768,6 +5768,17 @@ function polygonCenterline(geometry) {
   return centerline;
 }
 
+// Standard ray-casting point-in-polygon test. `ring` is an array of [lng,lat] pairs
+// (the raw Esri geometry format, same shape as feature.geometry.rings[0]).
+function pointInRing(lat, lng, ring) {
+  var inside = false;
+  for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    var xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    if (((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
+}
+
 function clearNHDPreview() {
   nhdPreviewLayer = null;
   nhdPreviewData = null;
@@ -5928,41 +5939,146 @@ function reachAutoClickFeature(feat, latlng) {
     var ring = feat._wbGeometry.rings[0];
     var clickLL = L.latLng(latlng.lat, latlng.lng);
     var RADIUS_M = 3000;
+    var n = ring.length;
+    var ringLL = ring.map(function(c) { return L.latLng(c[1], c[0]); });
 
-    // Build the true centerline down the middle of the river polygon (bank-pairing —
-    // see polygonCenterline()) rather than following the boundary ring itself. Clicking
-    // a filled waterbody previously grabbed the nearest bank's vertices verbatim, which
-    // put the detected "reach" on a stream edge instead of its centerline.
-    var centerline = polygonCenterline(feat._wbGeometry);
-    var localPts = [];
-    if (centerline && centerline.length >= 2) {
-      var dists = centerline.map(function(p) { return clickLL.distanceTo(p); });
-      var closestIdx = 0, minD = dists[0];
-      for (var ci = 1; ci < dists.length; ci++) {
-        if (dists[ci] < minD) { minD = dists[ci]; closestIdx = ci; }
+    // Always-safe fallback: the nearest bank's boundary vertices verbatim (this is the
+    // pre-centerline behavior — it hugs an edge, but it's guaranteed to stay on the
+    // river). Used whenever the centerline math below can't be trusted for this polygon.
+    function edgeFallback() {
+      var inRadius = ringLL.map(function(p) { return clickLL.distanceTo(p) < RADIUS_M; });
+      var bestStart = 0, bestLen = 0, curStart = -1, curLen = 0;
+      var doubled = inRadius.concat(inRadius);
+      for (var i = 0; i < doubled.length; i++) {
+        if (doubled[i]) {
+          if (curStart < 0) { curStart = i % n; curLen = 1; } else { curLen++; }
+          if (curLen > bestLen && curLen <= n) { bestLen = curLen; bestStart = curStart; }
+        } else { curStart = -1; curLen = 0; }
       }
-      // Window the centerline down to the stretch near the click, growing outward
-      // while points stay within RADIUS_M (the centerline runs straight through, so
-      // no turnaround/bank-doubling handling is needed here).
-      var lo = closestIdx, hi = closestIdx;
-      while (lo > 0 && dists[lo - 1] < RADIUS_M) lo--;
-      while (hi < centerline.length - 1 && dists[hi + 1] < RADIUS_M) hi++;
-      if (hi - lo < 1) {
-        lo = Math.max(0, closestIdx - 5);
-        hi = Math.min(centerline.length - 1, closestIdx + 5);
+      var pts;
+      if (bestLen >= 2) {
+        pts = [];
+        for (var j = 0; j < bestLen; j++) pts.push(ringLL[(bestStart + j) % n]);
+      } else {
+        var withDist = ringLL.map(function(p, idx) { return {idx: idx, d: clickLL.distanceTo(p)}; });
+        withDist.sort(function(a,b){return a.d-b.d;});
+        pts = withDist.slice(0, 20).sort(function(a,b){return a.idx-b.idx;}).map(function(x){ return ringLL[x.idx]; });
       }
-      localPts = centerline.slice(lo, hi + 1);
-    } else {
-      // Degenerate ring (too few vertices for polygonCenterline) — fall back to the
-      // nearest boundary vertices rather than failing outright.
-      var withDist = ring.map(function(c, idx) {
-        return {idx: idx, d: clickLL.distanceTo(L.latLng(c[1], c[0])), c: c};
-      });
-      withDist.sort(function(a,b){return a.d-b.d;});
-      var closest = withDist.slice(0, 20);
-      closest.sort(function(a,b){return a.idx-b.idx;});
-      localPts = closest.map(function(x){ return L.latLng(x.c[1], x.c[0]); });
+      if (pts.length > 4) {
+        var startPt = pts[0];
+        var minReturnDist = Infinity, turnIdx = pts.length;
+        var quarter = Math.floor(pts.length / 4);
+        for (var ti = quarter * 2; ti < pts.length; ti++) {
+          var dReturn = startPt.distanceTo(pts[ti]);
+          if (dReturn < minReturnDist) { minReturnDist = dReturn; turnIdx = ti; }
+        }
+        if (minReturnDist < 500 && turnIdx < pts.length - 2) pts = pts.slice(0, turnIdx + 1);
+      }
+      return pts;
     }
+
+    // Derive a true centerline via polygonCenterline() rather than following the
+    // boundary ring itself. NHD waterbody "Area" features range enormously in size —
+    // a single wide-river bend is a few hundred vertices across a km or two, but the
+    // SAME layer can also represent an entire river system as one ring (the Yakima
+    // River here is a single ~12,000-vertex ring spanning ~65km). Sorting a ring that
+    // large onto one global axis to find "the two banks" (polygonCenterline's approach)
+    // produces nonsense far from the click — the "centerline" can shoot off toward
+    // wherever that ring's overall bounding-box extremes happen to be, nowhere near
+    // where the user actually clicked. So: only feed polygonCenterline() the whole ring
+    // when the ring is small enough that its axis-sort assumption is plausible; for a
+    // large ring, crop to the click's neighborhood first (see buildLocalCenterline).
+    var LARGE_RING_DIAGONAL_M = 8000; // a real single-bend/segment ring is a couple km
+                                       // across at most; a regional/watershed-scale
+                                       // ring (rivers, confluences strung together) is
+                                       // one ring representing tens of km — the two are
+                                       // easy to tell apart at this scale.
+    var ringLats = ring.map(function(c){ return c[1]; }), ringLngs = ring.map(function(c){ return c[0]; });
+    var ringCorner1 = L.latLng(Math.min.apply(null, ringLats), Math.min.apply(null, ringLngs));
+    var ringCorner2 = L.latLng(Math.max.apply(null, ringLats), Math.max.apply(null, ringLngs));
+    var ringDiagonalM = ringCorner1.distanceTo(ringCorner2);
+
+    // Splice the two ring-index runs nearest the click into a small local ring (the far
+    // bank reversed, so it reads like an ordinary "there and back" polygon) and hand
+    // THAT to polygonCenterline() — used for large/regional rings, where the click's
+    // neighborhood is a small fraction of the whole ring and shows up as two distinct
+    // contiguous runs of nearby vertices (one per bank).
+    function buildLocalCenterline() {
+      var near = ringLL.map(function(p) { return clickLL.distanceTo(p) < RADIUS_M; });
+      var runs = [];
+      var doubled2 = near.concat(near);
+      var curStart2 = -1;
+      for (var i2 = 0; i2 <= doubled2.length; i2++) {
+        var v = i2 < doubled2.length ? doubled2[i2] : false;
+        if (v) {
+          if (curStart2 < 0) curStart2 = i2;
+        } else if (curStart2 >= 0) {
+          var runLen = i2 - curStart2;
+          if (runLen < n) runs.push({start: curStart2 % n, len: runLen});
+          curStart2 = -1;
+        }
+      }
+      var seenRun = {};
+      runs = runs.filter(function(r) {
+        var key = r.start + ':' + r.len;
+        if (seenRun[key]) return false;
+        seenRun[key] = true;
+        return true;
+      });
+      runs.sort(function(a, b) { return b.len - a.len; });
+      if (runs.length < 2 || runs[0].len < 2 || runs[1].len < 2) return null;
+
+      var bankA = [], bankB = [];
+      for (var a = 0; a < runs[0].len; a++) bankA.push(ring[(runs[0].start + a) % n]);
+      for (var b = 0; b < runs[1].len; b++) bankB.push(ring[(runs[1].start + b) % n]);
+      // Orient bankB opposite to bankA (a normal ring visits one bank forward and the
+      // other backward) — try both and keep whichever lines the endpoints up.
+      var aStart = L.latLng(bankA[0][1], bankA[0][0]), aEnd = L.latLng(bankA[bankA.length-1][1], bankA[bankA.length-1][0]);
+      var bStart = L.latLng(bankB[0][1], bankB[0][0]), bEnd = L.latLng(bankB[bankB.length-1][1], bankB[bankB.length-1][0]);
+      if (aStart.distanceTo(bStart) + aEnd.distanceTo(bEnd) < aStart.distanceTo(bEnd) + aEnd.distanceTo(bStart)) {
+        bankB = bankB.slice().reverse();
+      }
+      var localRing = bankA.concat(bankB);
+      localRing.push(localRing[0]);
+      var centerline = polygonCenterline({rings: [localRing]});
+      return centerline && centerline.length >= 2 && centerlineTrustworthy(centerline, localRing) ? centerline : null;
+    }
+
+    // A real centerline must stay inside the river footprint it was built from — if
+    // bank-pairing went wrong (a tight oxbow, or a ring too complex for the axis-sort
+    // heuristic), points fall outside it, and the result should be discarded.
+    function centerlineTrustworthy(centerline, boundsRing) {
+      var insideCount = centerline.filter(function(p) {
+        return pointInRing(p.lat, p.lng, boundsRing);
+      }).length;
+      return insideCount / centerline.length >= 0.8;
+    }
+
+    var localPts = null;
+    if (ringDiagonalM <= LARGE_RING_DIAGONAL_M) {
+      // Small ring — a single bend/segment. Safe to centerline the whole thing directly,
+      // then window the result down to the stretch nearest the click.
+      var centerline = polygonCenterline(feat._wbGeometry);
+      if (centerline && centerline.length >= 2 && centerlineTrustworthy(centerline, ring)) {
+        var dists = centerline.map(function(p) { return clickLL.distanceTo(p); });
+        var closestIdx = 0, minD = dists[0];
+        for (var ci = 1; ci < dists.length; ci++) {
+          if (dists[ci] < minD) { minD = dists[ci]; closestIdx = ci; }
+        }
+        var lo = closestIdx, hi = closestIdx;
+        while (lo > 0 && dists[lo - 1] < RADIUS_M) lo--;
+        while (hi < centerline.length - 1 && dists[hi + 1] < RADIUS_M) hi++;
+        if (hi - lo < 1) {
+          lo = Math.max(0, closestIdx - 5);
+          hi = Math.min(centerline.length - 1, closestIdx + 5);
+        }
+        localPts = centerline.slice(lo, hi + 1);
+      }
+    } else {
+      localPts = buildLocalCenterline();
+    }
+
+    if (!localPts) localPts = edgeFallback();
 
     reachAutoDetecting = false;
     if (we.ppData['reach_len']) we.ppData['reach_len']._autoDetecting = false;
