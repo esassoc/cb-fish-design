@@ -5736,8 +5736,14 @@ function polygonCenterline(geometry) {
   }
 
   // Resample bank1 to N points by arc length (bank2 is left at full resolution — see
-  // closestInWindow below, which needs bank2's raw segments, not just 30 samples of it).
-  var N = 30;
+  // closestInWindow below, which needs bank2's raw segments, not just N samples of it).
+  // 30 was too coarse: real creeks have oxbows/tight meanders on the order of tens of
+  // meters, well under 30 points' worth of resolution across a several-km reach, so
+  // small bends got smoothed straight through even after the bank-pairing fix above.
+  // 150 (confirmed <15ms even against the ~15k-vertex multi-tributary ring) resolves
+  // meanders down to that scale without the pairing fix's own correctness depending on
+  // point count.
+  var N = 150;
   function resample(bank, cumLen, n) {
     if (bank.length === 1) {
       var out = []; for (var k=0;k<n;k++) out.push(bank[0]); return out;
