@@ -5873,7 +5873,7 @@ function loadNHDPreview() {
     'geometry='+encodeURIComponent(env)+
     '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects' +
     '&where=featuretype=1' +
-    '&outFields=gnisidlabel,featuretype&returnGeometry=true&outSR=4326&f=json';
+    '&outFields=gnisidlabel,featuretype,areasqkm&returnGeometry=true&outSR=4326&f=json';
 
   // Each fetch swallows its own failure into an empty-features fallback (so one bad
   // service doesn't kill the other), but tags _failed so the combined handler below can
@@ -5923,7 +5923,20 @@ function loadNHDPreview() {
     // Skip polygons whose bounding box exceeds 1.0° in BOTH dimensions (truly watershed-scale).
     var MAX_WB_DEGREES = 1.0;
     if (wbData.features && wbData.features.length) {
-      wbData.features.forEach(function(wb) {
+      // A small feature (an island's narrow side channel, or similar NHD micro-detail)
+      // can sit entirely inside a much larger river polygon's footprint at the same
+      // spot — confirmed on the Klickitat River: a 0.05 km² feature nested inside a
+      // 3.6 km² one. Left alone, both become independently clickable, and whichever
+      // happens to paint on top wins the click — producing a centerline that's
+      // correct FOR THAT TINY FEATURE (a real narrow channel) but wrong for what the
+      // user meant to pick, and visually reads as "hugging one edge of the river."
+      // Processing largest-first and skipping anything nested inside an
+      // already-accepted candidate means the small one never becomes its own pick.
+      var acceptedWbRings = [];
+      var sortedWb = wbData.features.slice().sort(function(a, b) {
+        return (b.attributes.areasqkm || 0) - (a.attributes.areasqkm || 0);
+      });
+      sortedWb.forEach(function(wb) {
         if (!wb.geometry || !wb.geometry.rings) return;
         // Belt-and-suspenders: the query's own where=featuretype=1 already excludes
         // lakes/canals/oceans, but don't trust a synthesized "wide river" reach to a
@@ -5932,6 +5945,23 @@ function loadNHDPreview() {
         if (wb.attributes.featuretype !== 1) return;
         var ring = wb.geometry.rings[0];
         if (!ring || ring.length < 3) return;
+
+        // Sample a handful of this ring's own vertices (not just one) against each
+        // already-accepted larger ring — a candidate that only touches or crosses a
+        // bigger ring's edge isn't "nested," but one whose sampled points are all
+        // inside it almost certainly is.
+        var isNestedInLarger = acceptedWbRings.some(function(bigRing) {
+          var sampleCount = Math.min(5, ring.length);
+          var insideCount = 0;
+          for (var si = 0; si < sampleCount; si++) {
+            var idx = Math.floor(si * ring.length / sampleCount);
+            if (pointInRing(ring[idx][1], ring[idx][0], bigRing)) insideCount++;
+          }
+          return insideCount === sampleCount;
+        });
+        if (isNestedInLarger) return;
+        acceptedWbRings.push(ring);
+
         var wbLabel = wb.attributes.gnisidlabel || 'River';
         // Skip truly oversized polygons (watershed-scale)
         var wlngs = ring.map(function(c){return c[0];}), wlats = ring.map(function(c){return c[1];});
@@ -6048,27 +6078,6 @@ function deriveWbCenterlinePts(wbGeometry, clickLL, opts) {
     return pts;
   }
 
-  // Derive a true centerline via polygonCenterline() rather than following the
-  // boundary ring itself. NHD waterbody "Area" features range enormously in size —
-  // a single wide-river bend is a few hundred vertices across a km or two, but the
-  // SAME layer can also represent an entire river system as one ring (the Yakima
-  // River here is a single ~12,000-vertex ring spanning ~65km). Sorting a ring that
-  // large onto one global axis to find "the two banks" (polygonCenterline's approach)
-  // produces nonsense far from the click — the "centerline" can shoot off toward
-  // wherever that ring's overall bounding-box extremes happen to be, nowhere near
-  // where the user actually clicked. So: only feed polygonCenterline() the whole ring
-  // when the ring is small enough that its axis-sort assumption is plausible; for a
-  // large ring, crop to the click's neighborhood first (see buildLocalCenterline).
-  var LARGE_RING_DIAGONAL_M = 8000; // a real single-bend/segment ring is a couple km
-                                     // across at most; a regional/watershed-scale
-                                     // ring (rivers, confluences strung together) is
-                                     // one ring representing tens of km — the two are
-                                     // easy to tell apart at this scale.
-  var ringLats = ring.map(function(c){ return c[1]; }), ringLngs = ring.map(function(c){ return c[0]; });
-  var ringCorner1 = L.latLng(Math.min.apply(null, ringLats), Math.min.apply(null, ringLngs));
-  var ringCorner2 = L.latLng(Math.max.apply(null, ringLats), Math.max.apply(null, ringLngs));
-  var ringDiagonalM = ringCorner1.distanceTo(ringCorner2);
-
   // Identify the two local banks near the click and splice them into a small local
   // ring (the far bank reversed, so it reads like an ordinary "there and back"
   // polygon), then hand THAT to polygonCenterline() — used for large/regional rings,
@@ -6096,13 +6105,28 @@ function deriveWbCenterlinePts(wbGeometry, clickLL, opts) {
   // it). Verified against real Shitike Creek and Yakima River geometry: this reaches
   // a trustworthy centerline far more often than the run-based approach on both
   // (100% vs 23% on Shitike Creek; 74% vs 55% on Yakima), and never worse.
+  //
+  // One more bound is needed on top of RADIUS_M: for a genuinely small feature (a
+  // short side-channel around an island, say a few hundred meters long), RADIUS_M
+  // alone lets a single walk consume the WHOLE ring in both directions before it
+  // ever hits the 3km cap — bank1's walk eats every vertex, so there's nothing left
+  // to seed an opposite bank from, and the result silently falls back to
+  // edgeFallback() (hugging one raw edge — confirmed live on a ~3.6km-perimeter
+  // Klickitat River side-channel polygon). Capping the walk to a fraction of the
+  // ring's OWN total perimeter guarantees room remains for the far side regardless
+  // of how small the feature is; for a real multi-km river ring this cap is far
+  // larger than RADIUS_M and never binds.
   function buildLocalCenterline() {
+    var ringPerimeterM = 0;
+    for (var pi = 0; pi < n; pi++) { ringPerimeterM += ringLL[pi].distanceTo(ringLL[(pi+1) % n]); }
+    var walkRadius = Math.min(RADIUS_M, ringPerimeterM * 0.4);
+
     var dists = ringLL.map(function(p) { return seedLL.distanceTo(p); });
     var seedIdx = 0, minSeedD = dists[0];
     for (var si = 1; si < n; si++) if (dists[si] < minSeedD) { minSeedD = dists[si]; seedIdx = si; }
 
     // Walk outward from `start` in direction `dir` (+1/-1), stopping once cumulative
-    // ring-following distance exceeds RADIUS_M or the next step would land on an
+    // ring-following distance exceeds walkRadius or the next step would land on an
     // already-claimed index (so bank2's walk can't wrap back into bank1).
     function walkByArcLength(start, dir, exclude) {
       var out = [start];
@@ -6112,7 +6136,7 @@ function deriveWbCenterlinePts(wbGeometry, clickLL, opts) {
         if (next === start) break;
         if (exclude && exclude.has(next)) break;
         total += ringLL[idx].distanceTo(ringLL[next]);
-        if (total > RADIUS_M) break;
+        if (total > walkRadius) break;
         out.push(next);
         idx = next;
         steps++;
@@ -6164,30 +6188,19 @@ function deriveWbCenterlinePts(wbGeometry, clickLL, opts) {
     return insideCount / centerline.length >= 0.8;
   }
 
-  var localPts = null;
-  if (ringDiagonalM <= LARGE_RING_DIAGONAL_M) {
-    // Small ring — a single bend/segment. Safe to centerline the whole thing directly,
-    // then window the result down to the stretch nearest the click.
-    var centerline = polygonCenterline(wbGeometry);
-    if (centerline && centerline.length >= 2 && centerlineTrustworthy(centerline, ring)) {
-      var dists = centerline.map(function(p) { return clickLL.distanceTo(p); });
-      var closestIdx = 0, minD = dists[0];
-      for (var ci = 1; ci < dists.length; ci++) {
-        if (dists[ci] < minD) { minD = dists[ci]; closestIdx = ci; }
-      }
-      var lo = closestIdx, hi = closestIdx;
-      while (lo > 0 && dists[lo - 1] < RADIUS_M) lo--;
-      while (hi < centerline.length - 1 && dists[hi + 1] < RADIUS_M) hi++;
-      if (hi - lo < 1) {
-        lo = Math.max(0, closestIdx - 5);
-        hi = Math.min(centerline.length - 1, closestIdx + 5);
-      }
-      localPts = centerline.slice(lo, hi + 1);
-    }
-  } else {
-    localPts = buildLocalCenterline();
-  }
-
+  // Used to branch small-vs-large rings by diagonal size, calling polygonCenterline()
+  // on the whole ring directly for a "small" one. That's what was actually hugging
+  // one edge on the Klickitat River case above -- a real single-segment feature
+  // (ring diagonal well under the old 8km threshold) fed whole into
+  // polygonCenterline(), whose own internal axis-sort bank-split has no ring-size
+  // safeguard and produced an unbalanced split for this feature's shape. The
+  // seed-anchored walk above (with its own perimeter-fraction cap) handles small
+  // rings correctly on its own -- it just walks close to the whole ring when the
+  // ring is short -- so there's no reason to keep a separate, less-robust path for
+  // them; one approach for every ring size, verified above on both ends of the
+  // scale (a few-hundred-vertex local feature up to a ~15,000-vertex multi-tributary
+  // system).
+  var localPts = buildLocalCenterline();
   if (!localPts) localPts = edgeFallback();
   return localPts;
 }
@@ -6483,7 +6496,7 @@ function reachAutoClick(latlng) {
     'geometry='+encodeURIComponent(x+','+y)+
     '&geometryType=esriGeometryPoint&inSR=102100&spatialRel=esriSpatialRelWithin' +
     '&where=featuretype=1' +
-    '&outFields=gnisidlabel,featuretype&returnGeometry=true&outSR=4326&f=json';
+    '&outFields=gnisidlabel,featuretype,areasqkm&returnGeometry=true&outSR=4326&f=json';
 
   Promise.all([
     fetch(url).then(function(r){
@@ -6494,6 +6507,14 @@ function reachAutoClick(latlng) {
   ]).then(function(results2) {
     var data = results2[0], wbData = results2[1];
     clearReachAutoLayers();
+
+    // A click point can land inside more than one overlapping river polygon at once
+    // (e.g. a small island/side-channel feature nested inside the main channel's much
+    // larger polygon) — put the largest first so every wbData.features[0] read below
+    // means "the river," not whichever one the service happened to list first.
+    if (wbData.features && wbData.features.length > 1) {
+      wbData.features.sort(function(a, b) { return (b.attributes.areasqkm || 0) - (a.attributes.areasqkm || 0); });
+    }
 
     // wbName from point-in-polygon query — non-empty means the user clicked inside a river
     // polygon. Belt-and-suspenders: the query's own where=featuretype=1 already excludes
