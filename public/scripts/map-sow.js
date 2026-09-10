@@ -5998,9 +5998,18 @@ function loadNHDPreview() {
 // wide rivers often have no flowlines in FeatureServer/50 at all (see below), so
 // extending such a reach has to grow the SAME polygon-derived centerline rather than
 // searching for real flowline segments that may not exist nearby.
-function deriveWbCenterlinePts(wbGeometry, clickLL) {
+// `opts.seedLL`, if given, is where the bank-walk anchors instead of `clickLL` — used
+// by preTrimExtendClick to anchor the new segment at the EXISTING reach's endpoint
+// rather than at the new click, so the extension is contiguous with the reach by
+// construction instead of two independently-sampled windows that may not overlap.
+// `clickLL` still drives edgeFallback() and small-ring windowing either way, since
+// those exist to center on wherever the user is actually pointing.
+// `opts.radius`, if given, overrides the default 3km search radius — used the same
+// way, sized to comfortably span the gap being extended across.
+function deriveWbCenterlinePts(wbGeometry, clickLL, opts) {
   var ring = wbGeometry.rings[0];
-  var RADIUS_M = 3000;
+  var RADIUS_M = (opts && opts.radius) || 3000;
+  var seedLL = (opts && opts.seedLL) || clickLL;
   var n = ring.length;
   var ringLL = ring.map(function(c) { return L.latLng(c[1], c[0]); });
 
@@ -6088,7 +6097,7 @@ function deriveWbCenterlinePts(wbGeometry, clickLL) {
   // a trustworthy centerline far more often than the run-based approach on both
   // (100% vs 23% on Shitike Creek; 74% vs 55% on Yakima), and never worse.
   function buildLocalCenterline() {
-    var dists = ringLL.map(function(p) { return clickLL.distanceTo(p); });
+    var dists = ringLL.map(function(p) { return seedLL.distanceTo(p); });
     var seedIdx = 0, minSeedD = dists[0];
     for (var si = 1; si < n; si++) if (dists[si] < minSeedD) { minSeedD = dists[si]; seedIdx = si; }
 
@@ -7619,32 +7628,62 @@ function preTrimExtendClick(latlng) {
   var wbGeometry = we.ppData['reach_len'] && we.ppData['reach_len']._wbGeometry;
   if (wbGeometry) {
     var clickLL = L.latLng(latlng.lat, latlng.lng);
-    var newPts = deriveWbCenterlinePts(wbGeometry, clickLL);
     var existPts = preReachPts || (we.ppData['reach_len'] && we.ppData['reach_len']._preTrimPts);
-    if (!existPts || !newPts || newPts.length < 2) {
+    if (!existPts) {
       setMapHint('No stream found nearby — click elsewhere or proceed to Pick endpoints');
       return;
     }
+
+    // Anchor the new segment's bank-walk AT THE REACH'S OWN ENDPOINT nearest the
+    // click (not at the click itself), sized to comfortably span the gap to the
+    // click. Deriving two independently-seeded windows and just connecting whichever
+    // endpoints came out closest — the previous approach — drew a straight line
+    // across the real gap between them whenever the click was far enough that the
+    // windows didn't naturally overlap (a wide, gently-curving river makes that easy
+    // to trigger with an ordinary "extend further" click). Anchoring here means the
+    // new segment starts at the existing endpoint by construction, so there's no gap
+    // to accidentally straight-line across.
     var reachStart = existPts[0], reachEnd = existPts[existPts.length - 1];
-    var newStart = newPts[0], newEnd = newPts[newPts.length - 1];
-    var dES = reachEnd.distanceTo(newStart), dEE = reachEnd.distanceTo(newEnd);
-    var dSS = reachStart.distanceTo(newStart), dSE = reachStart.distanceTo(newEnd);
-    var minD = Math.min(dES, dEE, dSS, dSE);
-    // Unlike the flowline path's 50m connect tolerance (real segments should share an
-    // exact vertex), these are two independently-sampled centerline windows on the same
-    // polygon — they're never going to touch exactly, so the tolerance here just guards
-    // against a click far enough away that it's clearly not "a bit further along this
-    // reach" (e.g. a different part of a huge multi-tributary polygon).
-    var MAX_WB_CONNECT_M = 8000;
-    if (minD > MAX_WB_CONNECT_M) {
-      setMapHint('That\'s too far from your reach to connect — click closer to one end, or Pick endpoints');
+    var dStart = reachStart.distanceTo(clickLL), dEnd = reachEnd.distanceTo(clickLL);
+    var extendFromStart = dStart < dEnd;
+    var anchorLL = extendFromStart ? reachStart : reachEnd;
+    var straightDist = anchorLL.distanceTo(clickLL);
+    // 2.5x the straight-line distance covers real river sinuosity between the two
+    // points; clamp to a sane range so a click right next to the reach doesn't
+    // shrink the walk below the base radius, and a wild click can't request an
+    // enormous walk across most of a watershed-scale ring.
+    var radius = Math.min(20000, Math.max(3000, straightDist * 2.5));
+    var newPts = deriveWbCenterlinePts(wbGeometry, clickLL, {seedLL: anchorLL, radius: radius});
+    if (!newPts || newPts.length < 2) {
+      setMapHint('No stream found nearby — click elsewhere or proceed to Pick endpoints');
       return;
     }
-    var combinedPts;
-    if (minD === dES)      combinedPts = existPts.concat(newPts);
-    else if (minD === dEE) combinedPts = existPts.concat(newPts.slice().reverse());
-    else if (minD === dSE) combinedPts = newPts.concat(existPts);
-    else                   combinedPts = newPts.slice().reverse().concat(existPts);
+
+    // Trim the new window to just the stretch between the anchor and the click —
+    // the walk covers RADIUS_M in both directions from the anchor, so roughly half
+    // of it (whatever's on the far side of the anchor from the click) is redundant
+    // with the existing reach and must be dropped, not appended.
+    var distsToAnchor = newPts.map(function(p) { return p.distanceTo(anchorLL); });
+    var distsToClick = newPts.map(function(p) { return p.distanceTo(clickLL); });
+    var anchorIdx = 0, minA = distsToAnchor[0];
+    for (var ai = 1; ai < distsToAnchor.length; ai++) if (distsToAnchor[ai] < minA) { minA = distsToAnchor[ai]; anchorIdx = ai; }
+    var clickIdx = 0, minC = distsToClick[0];
+    for (var ci = 1; ci < distsToClick.length; ci++) if (distsToClick[ci] < minC) { minC = distsToClick[ci]; clickIdx = ci; }
+    var segment = anchorIdx <= clickIdx ? newPts.slice(anchorIdx, clickIdx + 1) : newPts.slice(clickIdx, anchorIdx + 1).slice().reverse();
+
+    // Sanity check: the trimmed segment's own end should actually be near the
+    // anchor — if the bank-walk didn't reach back to it (e.g. a sharp bend or a
+    // ring quirk broke continuity), don't silently draw whatever gap resulted.
+    var MAX_CONNECT_GAP_M = 500;
+    if (segment.length < 2 || segment[0].distanceTo(anchorLL) > MAX_CONNECT_GAP_M) {
+      setMapHint('That\'s too far from your reach to connect cleanly — click closer to one end, or Pick endpoints');
+      return;
+    }
+
+    var newSegmentOnly = segment.slice(1); // drop the duplicate anchor point itself
+    var combinedPts = extendFromStart
+      ? newSegmentOnly.slice().reverse().concat(existPts)
+      : existPts.concat(newSegmentOnly);
 
     preReachPts = combinedPts;
     if (reachTrimLayer) map.removeLayer(reachTrimLayer);
