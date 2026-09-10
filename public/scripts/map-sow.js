@@ -5726,23 +5726,26 @@ function polygonCenterline(geometry) {
 
   if (bank1.length < 2 || bank2.length < 2) return null;
 
-  // Resample both banks to N points, then pair and midpoint
-  var N = 30;
-  function resample(bank, n) {
-    if (bank.length === 1) {
-      var out = []; for (var k=0;k<n;k++) out.push(bank[0]); return out;
-    }
-    // Compute cumulative length
+  function cumLenOf(bank) {
     var cumLen = [0];
     for (var j = 1; j < bank.length; j++) {
       var dx = bank[j].lng - bank[j-1].lng, dy = bank[j].lat - bank[j-1].lat;
       cumLen.push(cumLen[j-1] + Math.sqrt(dx*dx + dy*dy));
     }
+    return cumLen;
+  }
+
+  // Resample bank1 to N points by arc length (bank2 is left at full resolution — see
+  // closestInWindow below, which needs bank2's raw segments, not just 30 samples of it).
+  var N = 30;
+  function resample(bank, cumLen, n) {
+    if (bank.length === 1) {
+      var out = []; for (var k=0;k<n;k++) out.push(bank[0]); return out;
+    }
     var total = cumLen[cumLen.length-1];
     var result = [];
     for (var k = 0; k < n; k++) {
       var target = total * k / (n-1);
-      // Find segment
       var seg = 0;
       while (seg < cumLen.length-2 && cumLen[seg+1] < target) seg++;
       var segLen = cumLen[seg+1] - cumLen[seg];
@@ -5755,15 +5758,60 @@ function polygonCenterline(geometry) {
     return result;
   }
 
-  var b1 = resample(bank1, N);
-  var b2 = resample(bank2, N);
+  // Closest point on the raw `bank` polyline to `pt`, restricted to arc-length param
+  // within [expectedParam - slack, expectedParam + slack]. Pairing bank1[k] with
+  // bank2[k] at the SAME proportional-arc-length position (the old approach) cuts the
+  // corner at a meander: the outer bank runs measurably longer than the inner bank
+  // over the same stretch of river, so "k-th point along each bank's own length"
+  // desyncs exactly where the river bends. Searching bank2's real geometry in a window
+  // around each point's own proportional expectation corrects that local desync — and
+  // because every point is re-anchored to its OWN expected position rather than to
+  // wherever the previous point's match ended up, one hard bend can't drag the pairing
+  // off-center for the rest of the reach the way an unbounded nearest-point walk can.
+  function closestInWindow(pt, bank, cumLen, expectedParam, slack) {
+    var loP = expectedParam - slack, hiP = expectedParam + slack;
+    var bestD = Infinity, bestPt = null;
+    for (var s = 0; s < bank.length - 1; s++) {
+      if (cumLen[s+1] < loP || cumLen[s] > hiP) continue;
+      var a = bank[s], b = bank[s+1];
+      var dx = b.lng - a.lng, dy = b.lat - a.lat;
+      var len2 = dx*dx + dy*dy;
+      var t = len2 > 0 ? ((pt.lng-a.lng)*dx + (pt.lat-a.lat)*dy) / len2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      var param = cumLen[s] + t*(cumLen[s+1]-cumLen[s]);
+      if (param < loP || param > hiP) continue;
+      var plng = a.lng + t*dx, plat = a.lat + t*dy;
+      var ddx = pt.lng-plng, ddy = pt.lat-plat, d = ddx*ddx+ddy*ddy;
+      if (d < bestD) { bestD = d; bestPt = {lng: plng, lat: plat}; }
+    }
+    return bestPt;
+  }
+
+  var cum1 = cumLenOf(bank1), cum2 = cumLenOf(bank2);
+  var b1 = resample(bank1, cum1, N);
+  var total2 = cum2[cum2.length-1];
+  var SLACK_FRAC = 0.1; // stable from 0.05-0.2 in testing against real meanders — the
+                         // window just needs to be wide enough to reach the true bank
+                         // position, and correction size doesn't grow past that.
+  var slack = total2 * SLACK_FRAC;
 
   var centerline = [];
   for (var k = 0; k < N; k++) {
-    centerline.push(L.latLng(
-      (b1[k].lat + b2[k].lat) / 2,
-      (b1[k].lng + b2[k].lng) / 2
-    ));
+    var expectedParam = total2 * k / (N-1);
+    var match = closestInWindow(b1[k], bank2, cum2, expectedParam, slack);
+    if (!match) {
+      // Window found nothing on bank2 (shouldn't normally happen) — fall back to the
+      // plain proportional-position point the old code always used.
+      var seg = 0;
+      while (seg < cum2.length-2 && cum2[seg+1] < expectedParam) seg++;
+      var segLen = cum2[seg+1] - cum2[seg];
+      var t = segLen > 0 ? (expectedParam - cum2[seg]) / segLen : 0;
+      match = {
+        lng: bank2[seg].lng + t*(bank2[seg+1].lng - bank2[seg].lng),
+        lat: bank2[seg].lat + t*(bank2[seg+1].lat - bank2[seg].lat)
+      };
+    }
+    centerline.push(L.latLng((b1[k].lat + match.lat) / 2, (b1[k].lng + match.lng) / 2));
   }
   return centerline;
 }
