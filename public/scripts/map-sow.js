@@ -6034,6 +6034,74 @@ function loadNHDPreview() {
 // construction instead of two independently-sampled windows that may not overlap.
 // `clickLL` still drives edgeFallback() and small-ring windowing either way, since
 // those exist to center on wherever the user is actually pointing.
+// USGS 3DHP's Flowline layer carries a featuretype=5 "Waterbody Connector" — a real,
+// pre-computed flowline segment that exists specifically to trace a path THROUGH a
+// wide-river/lake polygon (for hydrologic network connectivity across the area
+// feature). It's the authoritative version of exactly what deriveWbCenterlinePts()
+// below tries to synthesize from the raw polygon boundary. Every prior fix to that
+// synthesis (bank-pairing, arc-length bounding, small-ring handling) addressed a real
+// failure mode, but each was a heuristic patched against one more real-world polygon
+// shape; this sidesteps the whole class of problem by using USGS's own answer when
+// one exists. Confirmed against real Klickitat River data: connector points sit
+// almost exactly equidistant between the two nearest boundary points (e.g. 23m/23m,
+// 18m/28m) — genuinely centered, not synthesized.
+//
+// Individual connector segments are short and need chaining into one continuous path
+// before they're usable as a reach.
+function chainWbConnectorSegments(segs) {
+  if (!segs || !segs.length) return null;
+  var TOL_M = 100; // real adjoining segments share an endpoint near-exactly
+  var chain = segs[0].slice();
+  var used = {0: true};
+  var changed = true;
+  while (changed) {
+    changed = false;
+    for (var i = 0; i < segs.length; i++) {
+      if (used[i]) continue;
+      var seg = segs[i];
+      var segStart = L.latLng(seg[0][1], seg[0][0]), segEnd = L.latLng(seg[seg.length-1][1], seg[seg.length-1][0]);
+      var chainStart = L.latLng(chain[0][1], chain[0][0]), chainEnd = L.latLng(chain[chain.length-1][1], chain[chain.length-1][0]);
+      if (chainEnd.distanceTo(segStart) < TOL_M) { chain = chain.concat(seg.slice(1)); used[i] = true; changed = true; }
+      else if (chainEnd.distanceTo(segEnd) < TOL_M) { chain = chain.concat(seg.slice().reverse().slice(1)); used[i] = true; changed = true; }
+      else if (chainStart.distanceTo(segEnd) < TOL_M) { chain = seg.slice(0, -1).concat(chain); used[i] = true; changed = true; }
+      else if (chainStart.distanceTo(segStart) < TOL_M) { chain = seg.slice().reverse().slice(0, -1).concat(chain); used[i] = true; changed = true; }
+    }
+  }
+  return chain;
+}
+
+// Fetch nearby Waterbody Connector flowlines, chain them, and window the chain down
+// to the neighborhood of `clickLL`. Resolves to an array of L.latLng, or null if none
+// exist nearby (the caller should fall back to deriveWbCenterlinePts's own synthesis).
+function fetchWbConnectorCenterline(clickLL, bufM) {
+  var buf = bufM || 3000;
+  var toRad = function(d){ return d*Math.PI/180; };
+  var R = 6378137;
+  var x = R * toRad(clickLL.lng), y = R * Math.log(Math.tan(Math.PI/4 + toRad(clickLL.lat)/2));
+  var envelope = (x-buf)+','+(y-buf)+','+(x+buf)+','+(y+buf);
+  var url = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/50/query?' +
+    'geometry='+encodeURIComponent(envelope)+
+    '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects' +
+    '&where=featuretype=5' +
+    '&outFields=gnisidlabel,featuretype,mainstemid&returnGeometry=true&outSR=4326&f=json';
+  return fetch(url).then(function(r){ return r.json(); }).then(function(data) {
+    if (!data.features || !data.features.length) return null;
+    var chain = chainWbConnectorSegments(data.features.map(function(f){ return f.geometry.paths[0]; }));
+    if (!chain || chain.length < 2) return null;
+    var chainLL = chain.map(function(c){ return L.latLng(c[1], c[0]); });
+    var dists = chainLL.map(function(p){ return clickLL.distanceTo(p); });
+    var closestIdx = 0, minD = dists[0];
+    for (var i = 1; i < dists.length; i++) if (dists[i] < minD) { minD = dists[i]; closestIdx = i; }
+    // The click has to actually be near this chain — otherwise it's connector data
+    // for a different, unrelated part of the river system, not this stretch.
+    if (minD > buf) return null;
+    var lo = closestIdx, hi = closestIdx;
+    while (lo > 0 && dists[lo - 1] < buf) lo--;
+    while (hi < chainLL.length - 1 && dists[hi + 1] < buf) hi++;
+    return chainLL.slice(lo, hi + 1);
+  }).catch(function() { return null; });
+}
+
 // `opts.radius`, if given, overrides the default 3km search radius — used the same
 // way, sized to comfortably span the gap being extended across.
 function deriveWbCenterlinePts(wbGeometry, clickLL, opts) {
@@ -6210,21 +6278,30 @@ function reachAutoClickFeature(feat, latlng) {
   clearNHDPreview();
   var we = getActiveWE(); if (!we) return;
 
-  // If this is a waterbody polygon synthetic feature, derive centerline directly
-  // without querying flowlines (wide rivers have none in FeatureServer/50)
+  // If this is a waterbody polygon synthetic feature: most wide rivers have no
+  // ordinary flowline running through them (that's the whole reason this polygon
+  // path exists), but USGS still often provides a real "Waterbody Connector"
+  // flowline for exactly this case — an authoritative, pre-computed path through the
+  // polygon, not something synthesized from its boundary. Try that first; only fall
+  // back to deriving our own centerline from the raw polygon if none exists nearby.
   if (feat._wbGeometry) {
     clearReachAutoLayers();
-    var localPts = deriveWbCenterlinePts(feat._wbGeometry, L.latLng(latlng.lat, latlng.lng));
+    var clickLL = L.latLng(latlng.lat, latlng.lng);
+    setMapHint('Looking for a mapped stream centerline...');
+    fetchWbConnectorCenterline(clickLL).then(function(connectorPts) {
+      var localPts = connectorPts || deriveWbCenterlinePts(feat._wbGeometry, clickLL);
 
-    reachAutoDetecting = false;
-    if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
-    we.ppData['reach_len']._autoDetecting = false;
-    // Stash the source polygon so "Add more stream" can grow the SAME centerline later
-    // instead of searching for real flowlines that may not exist near a wide river.
-    we.ppData['reach_len']._wbGeometry = feat._wbGeometry;
-    document.getElementById('mapwrap').classList.remove('drawing');
-    setMapHint('');
-    setTimeout(function(){ enterPreTrimStep(localPts, false); }, 50);
+      reachAutoDetecting = false;
+      if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
+      we.ppData['reach_len']._autoDetecting = false;
+      // Stash the source polygon so "Add more stream" can grow the SAME centerline
+      // later (falling back to it the same way) if it also finds no connector data
+      // near the extension point.
+      we.ppData['reach_len']._wbGeometry = feat._wbGeometry;
+      document.getElementById('mapwrap').classList.remove('drawing');
+      setMapHint('');
+      setTimeout(function(){ enterPreTrimStep(localPts, false); }, 50);
+    });
     return;
   }
 
@@ -7674,49 +7751,56 @@ function preTrimExtendClick(latlng) {
     // shrink the walk below the base radius, and a wild click can't request an
     // enormous walk across most of a watershed-scale ring.
     var radius = Math.min(20000, Math.max(3000, straightDist * 2.5));
-    var newPts = deriveWbCenterlinePts(wbGeometry, clickLL, {seedLL: anchorLL, radius: radius});
-    if (!newPts || newPts.length < 2) {
-      setMapHint('No stream found nearby — click elsewhere or proceed to Pick endpoints');
-      return;
-    }
 
-    // Trim the new window to just the stretch between the anchor and the click —
-    // the walk covers RADIUS_M in both directions from the anchor, so roughly half
-    // of it (whatever's on the far side of the anchor from the click) is redundant
-    // with the existing reach and must be dropped, not appended.
-    var distsToAnchor = newPts.map(function(p) { return p.distanceTo(anchorLL); });
-    var distsToClick = newPts.map(function(p) { return p.distanceTo(clickLL); });
-    var anchorIdx = 0, minA = distsToAnchor[0];
-    for (var ai = 1; ai < distsToAnchor.length; ai++) if (distsToAnchor[ai] < minA) { minA = distsToAnchor[ai]; anchorIdx = ai; }
-    var clickIdx = 0, minC = distsToClick[0];
-    for (var ci = 1; ci < distsToClick.length; ci++) if (distsToClick[ci] < minC) { minC = distsToClick[ci]; clickIdx = ci; }
-    var segment = anchorIdx <= clickIdx ? newPts.slice(anchorIdx, clickIdx + 1) : newPts.slice(clickIdx, anchorIdx + 1).slice().reverse();
+    // Prefer a real, authoritative Waterbody Connector flowline over our own
+    // synthesized centerline here too (see reachAutoClickFeature) — try it first,
+    // fall back to deriveWbCenterlinePts if none covers this stretch.
+    setMapHint('Looking for a mapped stream centerline...');
+    fetchWbConnectorCenterline(clickLL, radius).then(function(connectorPts) {
+      var newPts = connectorPts || deriveWbCenterlinePts(wbGeometry, clickLL, {seedLL: anchorLL, radius: radius});
+      if (!newPts || newPts.length < 2) {
+        setMapHint('No stream found nearby — click elsewhere or proceed to Pick endpoints');
+        return;
+      }
 
-    // Sanity check: the trimmed segment's own end should actually be near the
-    // anchor — if the bank-walk didn't reach back to it (e.g. a sharp bend or a
-    // ring quirk broke continuity), don't silently draw whatever gap resulted.
-    var MAX_CONNECT_GAP_M = 500;
-    if (segment.length < 2 || segment[0].distanceTo(anchorLL) > MAX_CONNECT_GAP_M) {
-      setMapHint('That\'s too far from your reach to connect cleanly — click closer to one end, or Pick endpoints');
-      return;
-    }
+      // Trim the new window to just the stretch between the anchor and the click —
+      // the walk covers `radius` in both directions from the anchor (or a connector
+      // chain can extend well past both ends), so whatever's beyond the click, or
+      // behind the anchor, is redundant with the existing reach and must be dropped.
+      var distsToAnchor = newPts.map(function(p) { return p.distanceTo(anchorLL); });
+      var distsToClick = newPts.map(function(p) { return p.distanceTo(clickLL); });
+      var anchorIdx = 0, minA = distsToAnchor[0];
+      for (var ai = 1; ai < distsToAnchor.length; ai++) if (distsToAnchor[ai] < minA) { minA = distsToAnchor[ai]; anchorIdx = ai; }
+      var clickIdx = 0, minC = distsToClick[0];
+      for (var ci = 1; ci < distsToClick.length; ci++) if (distsToClick[ci] < minC) { minC = distsToClick[ci]; clickIdx = ci; }
+      var segment = anchorIdx <= clickIdx ? newPts.slice(anchorIdx, clickIdx + 1) : newPts.slice(clickIdx, anchorIdx + 1).slice().reverse();
 
-    var newSegmentOnly = segment.slice(1); // drop the duplicate anchor point itself
-    var combinedPts = extendFromStart
-      ? newSegmentOnly.slice().reverse().concat(existPts)
-      : existPts.concat(newSegmentOnly);
+      // Sanity check: the trimmed segment's own end should actually be near the
+      // anchor — if the walk (or connector chain) didn't reach back to it, don't
+      // silently draw whatever gap resulted.
+      var MAX_CONNECT_GAP_M = 500;
+      if (segment.length < 2 || segment[0].distanceTo(anchorLL) > MAX_CONNECT_GAP_M) {
+        setMapHint('That\'s too far from your reach to connect cleanly — click closer to one end, or Pick endpoints');
+        return;
+      }
 
-    preReachPts = combinedPts;
-    if (reachTrimLayer) map.removeLayer(reachTrimLayer);
-    reachTrimLayer = L.polyline(combinedPts, {color:'#1a9abf', weight:3, dashArray:'6,4', interactive:false}).addTo(map);
-    we.ppData['reach_len']._preTrimPts = combinedPts;
-    // Stay in extend mode so the user can keep adding without re-clicking the button
-    preReachExtend = true;
-    we.ppData['reach_len']._preTrimExtending = true;
-    setMapHint('Segment added — click further along the stream to keep extending, or click <b>Pick endpoints</b> in the sidebar');
-    var mWb = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
-    renderPMRow(mWb);
-    if (wizardMode) renderWizardStep();
+      var newSegmentOnly = segment.slice(1); // drop the duplicate anchor point itself
+      var combinedPts = extendFromStart
+        ? newSegmentOnly.slice().reverse().concat(existPts)
+        : existPts.concat(newSegmentOnly);
+
+      preReachPts = combinedPts;
+      if (reachTrimLayer) map.removeLayer(reachTrimLayer);
+      reachTrimLayer = L.polyline(combinedPts, {color:'#1a9abf', weight:3, dashArray:'6,4', interactive:false}).addTo(map);
+      we.ppData['reach_len']._preTrimPts = combinedPts;
+      // Stay in extend mode so the user can keep adding without re-clicking the button
+      preReachExtend = true;
+      we.ppData['reach_len']._preTrimExtending = true;
+      setMapHint('Segment added — click further along the stream to keep extending, or click <b>Pick endpoints</b> in the sidebar');
+      var mWb = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
+      renderPMRow(mWb);
+      if (wizardMode) renderWizardStep();
+    });
     return;
   }
 
