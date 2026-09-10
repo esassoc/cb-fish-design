@@ -5809,11 +5809,17 @@ function loadNHDPreview() {
     '&where=featuretype+IN+(1,2,3)' +
     '&outFields=gnisidlabel,featuretype,mainstemid&returnGeometry=true&outSR=4326&f=json';
 
-  // Also query waterbody polygons — wide rivers have no flowlines, only a polygon
+  // Also query waterbody polygons — wide rivers have no flowlines, only a polygon.
+  // Layer 60 (Waterbody) mixes rivers in with lakes/ponds/canals/oceans under the
+  // same geometry type; featuretype is how the service tells them apart (1=River,
+  // 2=Canal, 3=Lake, 4=Ocean or Great Lake — confirmed via a distinct-values query
+  // against the live service). Filter server-side so a lake never becomes a
+  // clickable "wide river" candidate in the first place.
   var wbUrl = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/60/query?' +
     'geometry='+encodeURIComponent(env)+
     '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects' +
-    '&outFields=gnisidlabel&returnGeometry=true&outSR=4326&f=json';
+    '&where=featuretype=1' +
+    '&outFields=gnisidlabel,featuretype&returnGeometry=true&outSR=4326&f=json';
 
   // Each fetch swallows its own failure into an empty-features fallback (so one bad
   // service doesn't kill the other), but tags _failed so the combined handler below can
@@ -5865,9 +5871,14 @@ function loadNHDPreview() {
     if (wbData.features && wbData.features.length) {
       wbData.features.forEach(function(wb) {
         if (!wb.geometry || !wb.geometry.rings) return;
+        // Belt-and-suspenders: the query's own where=featuretype=1 already excludes
+        // lakes/canals/oceans, but don't trust a synthesized "wide river" reach to a
+        // feature the service didn't actually tag as a river if that filter is ever
+        // dropped or ignored upstream.
+        if (wb.attributes.featuretype !== 1) return;
         var ring = wb.geometry.rings[0];
         if (!ring || ring.length < 3) return;
-        var wbLabel = wb.attributes.gnisidlabel || 'River/Lake';
+        var wbLabel = wb.attributes.gnisidlabel || 'River';
         // Skip truly oversized polygons (watershed-scale)
         var wlngs = ring.map(function(c){return c[0];}), wlats = ring.map(function(c){return c[1];});
         var wlngR = Math.max.apply(null,wlngs)-Math.min.apply(null,wlngs);
@@ -6362,11 +6373,15 @@ function reachAutoClick(latlng) {
     '&f=json';
 
   // Query waterbody layer at the exact click point — if the user clicked inside a
-  // wide river polygon, use that polygon's geometry to build a centerline.
+  // wide river polygon, use that polygon's geometry to build a centerline. Layer 60
+  // mixes rivers in with lakes/ponds/canals/oceans (featuretype 1/2/3/4 respectively —
+  // confirmed via a distinct-values query against the live service); filter to rivers
+  // only so a click inside a pond doesn't get treated as a wide-river reach.
   var wbPointUrl = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/60/query?' +
     'geometry='+encodeURIComponent(x+','+y)+
     '&geometryType=esriGeometryPoint&inSR=102100&spatialRel=esriSpatialRelWithin' +
-    '&outFields=gnisidlabel&returnGeometry=true&outSR=4326&f=json';
+    '&where=featuretype=1' +
+    '&outFields=gnisidlabel,featuretype&returnGeometry=true&outSR=4326&f=json';
 
   Promise.all([
     fetch(url).then(function(r){
@@ -6378,15 +6393,20 @@ function reachAutoClick(latlng) {
     var data = results2[0], wbData = results2[1];
     clearReachAutoLayers();
 
-    // wbName from point-in-polygon query — non-empty means the user clicked inside a river polygon
+    // wbName from point-in-polygon query — non-empty means the user clicked inside a river
+    // polygon. Belt-and-suspenders: the query's own where=featuretype=1 already excludes
+    // lakes/canals/oceans, but don't trust a lake/pond hit here if that filter is ever
+    // dropped or ignored upstream.
     var wbName = '';
-    if (wbData.features && wbData.features.length) {
+    if (wbData.features && wbData.features.length && wbData.features[0].attributes.featuretype === 1) {
       wbName = wbData.features[0].attributes.gnisidlabel || '';
     }
 
     if (!data.features || !data.features.length) {
-      // No flowlines found — if we have a waterbody polygon, derive a centerline from it
-      if (wbData.features && wbData.features.length && wbData.features[0].geometry) {
+      // No flowlines found — if we have a river waterbody polygon (not a lake/pond), derive
+      // a centerline from it. See wbName above re: the featuretype=1 belt-and-suspenders check.
+      if (wbData.features && wbData.features.length && wbData.features[0].geometry &&
+          wbData.features[0].attributes.featuretype === 1) {
         var wbPoly = wbData.features[0];
         var centerPts = polygonCenterline(wbPoly.geometry);
         if (centerPts && centerPts.length >= 2) {
