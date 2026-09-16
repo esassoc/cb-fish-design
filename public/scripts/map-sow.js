@@ -4571,6 +4571,13 @@ function commitLineEdit(skipReachConfirm) {
     }
     // fp_left / fp_right are polygons — store area not line length
     we.ppData[id].valueM = (id === 'fp_left' || id === 'fp_right') ? geoAreaM2(pts) : newLen;
+    // Same staleness bug as the fpMulti sow-poly branch above: applyFpSide() drops
+    // "Left/Right Floodplain" at the polygon's centroid when the split is (re)computed,
+    // but that marker doesn't track the shape — an Edit Vertices pass reshapes the
+    // polygon without moving its label unless we do it here.
+    if (we.ppData[id].labelMarker && layer.getCenter) {
+      we.ppData[id].labelMarker.setLatLng(layer.getCenter());
+    }
     // For no-display metrics (valley_len), store updated pts and remove temp layer
     if (we.ppData[id]._tempLayer) {
       we.ppData[id]._pts = layer.getLatLngs();
