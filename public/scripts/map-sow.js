@@ -100,8 +100,18 @@ var MAP_COLOR_ROLES = {
   wetlandExisting:  'background-dataviz-categorical-6', // pp_wetland
   chuRiffle:        'background-dataviz-categorical-7',
   chuPool:          'background-dataviz-categorical-8',
-  chuGlide:         'background-dataviz-diverging-1',
-  chuRun:           'background-dataviz-diverging-6',
+  // 'Glide'/'Run' CHU types (and the generic 'unassigned' fallback) are dead:
+  // the live chu_split wizard step only ever creates 'pool' (drawn) and
+  // 'riffle' (everything else) for BOTH pre-project and design-phase units —
+  // its own description says so ("Everything outside a pool boundary is
+  // treated as riffle"). The 4-button riffle/pool/glide/run UI still in
+  // renderCHUUnits() renders into #chu-units-list, a container that doesn't
+  // exist in the current wizard-only UI (same dead-legacy-mode shape as the
+  // primary-channel case above) — so no role/editor row for them.
+  // Width Segments (the channel-width measurement cross-section lines) used
+  // to just reuse the dead 'chuRun' token with no honest name of its own —
+  // it's real and live, so it gets a real role.
+  widthSegments:    'background-dataviz-diverging-6',
   secondaryChannel: 'background-dataviz-sequential-6',
   structCms:        'background-dataviz-categorical-3', // channel margin -> reach hue
   structMcs:        'background-dataviz-categorical-2', // mid-channel -> channel hue
@@ -218,12 +228,16 @@ function rebuildMapPalettes() {
   PP_COLOR.bufferFp = mapColor('floodplain');
   SOW_COLOR.line = mapColor('channel');
   SOW_COLOR.polygon = mapColor('floodplain');
-  SOW_COLOR.segment = mapColor('chuRun');
+  SOW_COLOR.segment = mapColor('widthSegments');
   CHU_COLOR.riffle = mapColor('chuRiffle');
   CHU_COLOR.pool = mapColor('chuPool');
-  CHU_COLOR.glide = mapColor('chuGlide');
-  CHU_COLOR.run = mapColor('chuRun');
-  CHU_COLOR.unassigned = mapColor('chuRun');
+  // glide/run/unassigned are dead CHU types (see MAP_COLOR_ROLES) — no real
+  // unit is ever created with one, so these are just a safe fallback for the
+  // `CHU_COLOR[u.type || 'unassigned']` defensive lookups scattered around,
+  // not something the color editor exposes.
+  CHU_COLOR.glide = CHU_COLOR.riffle;
+  CHU_COLOR.run = CHU_COLOR.riffle;
+  CHU_COLOR.unassigned = CHU_COLOR.riffle;
   WETLAND_COLOR.existing = mapColor('wetlandExisting');
   WETLAND_COLOR.enhance = mapColor('wetlandEnhance');
   STRUCT_COLOR.cms = mapColor('structCms');
@@ -8882,12 +8896,10 @@ function renderLegend() {
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('reach')+'"></span>Reach / Primary Channel</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('channel')+'"></span>Channel Area</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('floodplain')+'"></span>Floodplain</div>';
-  h+='<div class="leg-row"><span class="leg-line" style="background:'+mapColor('chuRun')+'"></span>Width segments</div></div>';
+  h+='<div class="leg-row"><span class="leg-line" style="background:'+mapColor('widthSegments')+'"></span>Width segments</div></div>';
   h+='<div class="leg-section"><div class="leg-sec-title">Channel Habitat Units</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+CHU_COLOR.riffle+'"></span>Riffle</div>';
-  h+='<div class="leg-row"><span class="leg-poly" style="background:'+CHU_COLOR.pool+'"></span>Pool</div>';
-  h+='<div class="leg-row"><span class="leg-poly" style="background:'+CHU_COLOR.glide+'"></span>Glide</div>';
-  h+='<div class="leg-row"><span class="leg-poly" style="background:'+CHU_COLOR.run+'"></span>Run</div></div>';
+  h+='<div class="leg-row"><span class="leg-poly" style="background:'+CHU_COLOR.pool+'"></span>Pool</div></div>';
   h+='<div class="leg-section"><div class="leg-sec-title">Secondary Channels</div>';
   h+='<div class="leg-row"><span class="leg-line" style="background:'+mapColor('secondaryChannel')+'"></span>Secondary channel</div></div>';
   h+='<div class="leg-section"><div class="leg-sec-title">Wetlands</div>';
@@ -8929,13 +8941,16 @@ function renderLegend() {
 var MAP_COLOR_ROLE_LABELS = {
   floodplain: 'Floodplain', floodplainRight: 'Floodplain (right bank)', channel: 'Channel Area',
   reach: 'Reach / Primary Channel', boundary: 'Project Boundary', wetlandEnhance: 'Wetland Enhancement',
-  wetlandExisting: 'Existing Wetland', chuRiffle: 'CHU: Riffle', chuPool: 'CHU: Pool', chuGlide: 'CHU: Glide',
-  chuRun: 'CHU: Run / Unassigned', secondaryChannel: 'Secondary Channel', structCms: 'Structure: Channel Margin',
+  wetlandExisting: 'Existing Wetland', chuRiffle: 'CHU: Riffle', chuPool: 'CHU: Pool',
+  widthSegments: 'Width Segments', secondaryChannel: 'Secondary Channel', structCms: 'Structure: Channel Margin',
   structMcs: 'Structure: Mid-Channel', structFps: 'Structure: Floodplain', structScs: 'Structure: Side-Channel',
   structCss: 'Structure: Channel-Spanning', pcChannel: 'Primary Channel'
   // Only one role/row for this — see the comment on MAP_COLOR_ROLES.pcChannel:
   // a work element only ever has ONE primary channel today, so "#2..#5" rows
   // would be unpickable clutter, not real options.
+  // Glide/Run CHU types have no row either — see the comment on
+  // MAP_COLOR_ROLES (~line 103): they're dead, never assigned by either the
+  // pre-project or design CHU workflows.
 };
 function openMapColorEditor() {
   renderMapColorEditor();
