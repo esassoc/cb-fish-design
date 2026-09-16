@@ -3818,6 +3818,10 @@ var editHandles = [];   // L.circleMarker handles currently shown
 function startPolyEdit(id) {
   var we = getActiveWE(); if (!we) return;
   var d = ppOwner(we,id).ppData[id]; if (!d) return;
+  // Unlike startLineEdit, this used to leave whatever hint was already showing (a
+  // leftover error/status message from an unrelated prior action) up for the entire
+  // edit session, since none of the branches below ever touch it.
+  setMapHint('');
   var col = id === 'area_fp' ? PP_COLOR.bufferFp : PP_COLOR.polygon;
   var m = PP_DEFS.filter(function(x){return x.id===id;})[0];
   var tipLabel = m ? m.label : id;
@@ -3899,6 +3903,7 @@ function startFPMultiPolyEdit(key, id) {
   if (lineEditing) cancelLineEdit();
   ppDrawing = null; sowDrawing = null; pendingStructPoint = null; drawPts = []; clearPreview();
   document.getElementById('mapwrap').classList.remove('drawing');
+  setMapHint('');
   lineEditing = {type: 'sow-poly', id: id, weId: activeWEId, layer: d.layer, fpMultiKey: key};
   var ring = d.layer.getLatLngs();
   if (ring.length && Array.isArray(ring[0])) ring = ring[0];
