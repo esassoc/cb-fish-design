@@ -8023,9 +8023,30 @@ function preTrimExtendClick(latlng) {
 function startPreTrimExtend() {
   preReachExtend = true;
   document.getElementById('mapwrap').classList.add('drawing');
-  setMapHint('Click on a stream segment to append it to the highlighted reach');
-  var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
   var we = getActiveWE(); if (!we) return;
+
+  // A reach built from a waterbody polygon (a wide river with no ordinary flowlines —
+  // see reachAutoClickFeature) has no candidate segments to light up: preTrimExtendClick
+  // just grows the SAME polygon-derived centerline toward wherever you click next, no
+  // pre-highlighted flowlines involved. Left with only the generic hint below, that
+  // read as "click a highlighted segment" with nothing highlighted anywhere on the
+  // map — reported as "append isn't working, no more streams show up." Outline the
+  // river polygon itself so there's something to click on, and say so.
+  var wbGeometry = we.ppData['reach_len']._wbGeometry;
+  if (wbGeometry && wbGeometry.rings && wbGeometry.rings[0]) {
+    var outlinePts = wbGeometry.rings[0].map(function(c){ return L.latLng(c[1], c[0]); });
+    var outlineLyr = L.polygon(outlinePts, {
+      color: '#00d4ff', weight: 2, opacity: 0.6,
+      fillColor: '#00d4ff', fillOpacity: 0.05,
+      interactive: false
+    }).addTo(map);
+    reachAutoLayers.push(outlineLyr);
+    setMapHint('Click anywhere on the highlighted river to extend your reach toward that point');
+  } else {
+    setMapHint('Click on a stream segment to append it to the highlighted reach');
+  }
+
+  var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
   we.ppData['reach_len']._preTrimExtending = true;
   renderPMRow(m);
 }
