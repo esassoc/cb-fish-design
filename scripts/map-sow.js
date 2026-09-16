@@ -1187,6 +1187,15 @@ function calcCrossWidthCore(reachLayer, fpPts, t) {
   var dLat = segB.lat-segA.lat, dLng = (segB.lng-segA.lng)*cosLat;
   var sLen = Math.sqrt(dLat*dLat+dLng*dLng); if (sLen < 1e-10) return null;
   var pLat = -dLng/sLen, pLng = dLat/sLen/cosLat;
+  // Same unbounded-raycast issue as flowArrowCrossSection (see its comment): the
+  // perpendicular line through `pt` is infinite, so if fpPts no longer actually
+  // corresponds to the reach here (floodplain drawn before the reach was later
+  // edited/extended), a crossing from a spatially unrelated part of the polygon can
+  // get accepted as "the floodplain edge" and silently produce a wildly wrong width.
+  // MAX_HALF_WIDTH_M is sized for floodplains rather than channels (can legitimately
+  // span a wide valley) but still bounded, so a genuine mismatch reliably fails it.
+  var MAX_HALF_WIDTH_M = 1000;
+  var maxHalfWidthDeg = MAX_HALF_WIDTH_M / 111320;
   var hits = [];
   var n = fpPts.length;
   for (var k = 0; k < n; k++) {
@@ -1196,7 +1205,7 @@ function calcCrossWidthCore(reachLayer, fpPts, t) {
     if (Math.abs(cross) < 1e-14) continue;
     var s = ((A.lat-pt.lat)*edgeLng - (A.lng-pt.lng)*edgeLat) / cross;
     var u = ((A.lat-pt.lat)*pLng    - (A.lng-pt.lng)*pLat)    / cross;
-    if (u >= 0 && u <= 1) hits.push(s);
+    if (u >= 0 && u <= 1 && Math.abs(s) <= maxHalfWidthDeg) hits.push(s);
   }
   if (hits.length < 2) return null;
   hits.sort(function(a,b){return a-b;});
@@ -2645,6 +2654,22 @@ function flowArrowCrossSection(reachPts, widthPts, t) {
   // Perpendicular unit vector (degree-equivalent space) + width via raycast
   // against widthPts, mirroring calcCrossWidthCore's approach — kept separate
   // from that function since it also needs the direction vector, not just width.
+  //
+  // The raycast tests the PERPENDICULAR LINE through `pos`, unbounded in both
+  // directions — it has no idea "the channel edge" should be near `pos`, only that
+  // some edge of widthPts crosses that infinite line somewhere. If widthPts no
+  // longer actually corresponds to the reach at this point (channel width was
+  // measured/drawn before the reach was later edited, extended, or reshaped —
+  // ordinary and easy to hit in practice, no self-intersection required), a hit can
+  // land hundreds of meters away and still get accepted as "the near bank." Confirmed
+  // directly: a stale width polygon ~300–400m off produced an 800m "channel width,"
+  // fanning flow arrows out into open ground far from the actual reach.
+  // MAX_HALF_WIDTH_M bounds how far a hit may be from `pos` before it's discarded —
+  // generous enough for any real channel this tool measures, but small enough that a
+  // mismatched/stale width polygon reliably fails the check. A rejected hit just
+  // means widthM stays null, which buildFlowArrowMarkers already treats as "draw one
+  // arrow centered on the reach" — the safe fallback, never a wrongly-fanned one.
+  var MAX_HALF_WIDTH_M = 300;
   var widthM = null, pLat = 0, pLng = 0;
   var midLat = (p1.lat+p2.lat)/2, cosLat = Math.cos(midLat*Math.PI/180);
   var dLat = p2.lat-p1.lat, dLngC = (p2.lng-p1.lng)*cosLat;
@@ -2652,6 +2677,7 @@ function flowArrowCrossSection(reachPts, widthPts, t) {
   if (sLen > 1e-10 && widthPts && widthPts.length >= 3) {
     pLat = -dLngC/sLen; pLng = dLat/sLen/cosLat;
     var hits = [], n = widthPts.length;
+    var maxHalfWidthDeg = MAX_HALF_WIDTH_M / 111320;
     for (var wi = 0; wi < n; wi++) {
       var A = widthPts[wi], B = widthPts[(wi+1)%n];
       var edgeLat = B.lat-A.lat, edgeLng = B.lng-A.lng;
@@ -2659,7 +2685,7 @@ function flowArrowCrossSection(reachPts, widthPts, t) {
       if (Math.abs(cross) < 1e-14) continue;
       var s = ((A.lat-pos.lat)*edgeLng - (A.lng-pos.lng)*edgeLat) / cross;
       var u = ((A.lat-pos.lat)*pLng - (A.lng-pos.lng)*pLat) / cross;
-      if (u >= 0 && u <= 1) hits.push(s);
+      if (u >= 0 && u <= 1 && Math.abs(s) <= maxHalfWidthDeg) hits.push(s);
     }
     if (hits.length >= 2) {
       hits.sort(function(a,b){return a-b;});
@@ -3818,6 +3844,10 @@ var editHandles = [];   // L.circleMarker handles currently shown
 function startPolyEdit(id) {
   var we = getActiveWE(); if (!we) return;
   var d = ppOwner(we,id).ppData[id]; if (!d) return;
+  // Unlike startLineEdit, this used to leave whatever hint was already showing (a
+  // leftover error/status message from an unrelated prior action) up for the entire
+  // edit session, since none of the branches below ever touch it.
+  setMapHint('');
   var col = id === 'area_fp' ? PP_COLOR.bufferFp : PP_COLOR.polygon;
   var m = PP_DEFS.filter(function(x){return x.id===id;})[0];
   var tipLabel = m ? m.label : id;
@@ -3899,6 +3929,7 @@ function startFPMultiPolyEdit(key, id) {
   if (lineEditing) cancelLineEdit();
   ppDrawing = null; sowDrawing = null; pendingStructPoint = null; drawPts = []; clearPreview();
   document.getElementById('mapwrap').classList.remove('drawing');
+  setMapHint('');
   lineEditing = {type: 'sow-poly', id: id, weId: activeWEId, layer: d.layer, fpMultiKey: key};
   var ring = d.layer.getLatLngs();
   if (ring.length && Array.isArray(ring[0])) ring = ring[0];
@@ -4543,6 +4574,12 @@ function commitLineEdit(skipReachConfirm) {
     if (btn) { btn.style.background = '#1a3a5c'; btn.textContent = '\u21d5 Pan shape'; }
     document.getElementById('map').removeEventListener('mousedown', _panShapeMapMousedown);
     document.getElementById('mapwrap').classList.remove('drawing');
+    // togglePanShape()'s own "turn it back off" branch clears the hint it set
+    // ("Drag anywhere on the map to shift the shape"), but clicking "Done editing"
+    // directly while pan mode is still on skips that branch entirely and lands
+    // here instead \u2014 leaving that instruction on screen after editing has fully
+    // ended and the sidebar's back to normal.
+    setMapHint('');
   }
   var we = getWE(lineEditing.weId); if (!we) return;
   var layer = lineEditing.layer;
@@ -4571,6 +4608,13 @@ function commitLineEdit(skipReachConfirm) {
     }
     // fp_left / fp_right are polygons — store area not line length
     we.ppData[id].valueM = (id === 'fp_left' || id === 'fp_right') ? geoAreaM2(pts) : newLen;
+    // Same staleness bug as the fpMulti sow-poly branch above: applyFpSide() drops
+    // "Left/Right Floodplain" at the polygon's centroid when the split is (re)computed,
+    // but that marker doesn't track the shape — an Edit Vertices pass reshapes the
+    // polygon without moving its label unless we do it here.
+    if (we.ppData[id].labelMarker && layer.getCenter) {
+      we.ppData[id].labelMarker.setLatLng(layer.getCenter());
+    }
     // For no-display metrics (valley_len), store updated pts and remove temp layer
     if (we.ppData[id]._tempLayer) {
       we.ppData[id]._pts = layer.getLatLngs();
@@ -4609,6 +4653,15 @@ function commitLineEdit(skipReachConfirm) {
     if (sd) {
       sd.valueM = geoAreaM2(pts);
       sd.acres = geoArea(pts);
+      // The numbered map badge (addFPMultiLabelMarker) is a plain marker dropped at
+      // the shape's centroid when drawn — it doesn't track the polygon, so an edit
+      // that moves/reshapes the ring leaves it pointing at the old centroid. Left
+      // alone, that reads as "wrong label" once you pan away and back: the badge
+      // sits over empty space near where the shape used to be, sometimes nowhere
+      // near the edited shape at all.
+      if (sd._labelMarker && layer.getCenter) {
+        sd._labelMarker.setLatLng(layer.getCenter());
+      }
     }
     updateSOWCalcs(); renderLegend();
     wizardRefreshIfActive();
