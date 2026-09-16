@@ -8093,6 +8093,18 @@ function crGravelPerpendicularLine(latlng, r) {
   ];
 }
 
+// Bearing in degrees (0=north, 90=east) from point a to point b.
+function ptBearing(a, b) {
+  var y = Math.sin((b.lng-a.lng)*Math.PI/180) * Math.cos(b.lat*Math.PI/180);
+  var x = Math.cos(a.lat*Math.PI/180)*Math.sin(b.lat*Math.PI/180) -
+          Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.cos((b.lng-a.lng)*Math.PI/180);
+  return Math.atan2(y, x) * 180/Math.PI;
+}
+function bearingDiff(a, b) {
+  var d = Math.abs(a-b) % 360;
+  return d > 180 ? 360-d : d;
+}
+
 function buildConnectedChains(features) {
   // Stitch NHD segments into continuous chains by matching endpoints
   var segs = features.map(function(feat) {
@@ -8112,33 +8124,76 @@ function buildConnectedChains(features) {
     return Math.abs(a.lat-b.lat) < SNAP && Math.abs(a.lng-b.lng) < SNAP;
   }
 
+  // Where a river splits around an island, the braid's two ends are each a
+  // junction shared by 3+ segments (trunk + both braids) — walking down one
+  // braid arrives back at a point that ALSO matches the sibling braid's far
+  // end. Taking whichever candidate segment happened to match first (the old
+  // behavior) could walk down one braid then double back up the other, since
+  // both its ends coincide with the junction — producing a chain that
+  // reverses on itself instead of continuing to the trunk below the island
+  // (confirmed via a synthetic braided-segment test: the naive version
+  // produced trunkAbove->braidLeft->braidRight, skipping trunkBelow entirely).
+  // When more than one candidate matches, prefer whichever continues most
+  // closely in the direction the chain was already heading — a real reach
+  // doesn't reverse itself, so this keeps the walk going through the island
+  // instead of back out the way it came, leaving the other braid as its own
+  // separate (shorter) chain rather than merged into a zigzag.
+  function pickBestMatch(matches, incomingBearing) {
+    if (matches.length === 1) return matches[0];
+    var best = matches[0], bestDiff = Infinity;
+    matches.forEach(function(m) {
+      var diff = bearingDiff(m.bearing, incomingBearing);
+      if (diff < bestDiff) { bestDiff = diff; best = m; }
+    });
+    return best;
+  }
+
   segs.forEach(function(seed) {
     if (seed.used) return;
     seed.used = true;
     var chain = {pts: seed.pts.slice(), features: [seed.feat]};
 
-    // Walk forward (match chain end to segment start/end)
     var changed = true;
     while (changed) {
       changed = false;
+      var chainEnd = chain.pts[chain.pts.length-1];
+      var chainStart = chain.pts[0];
+      var n = chain.pts.length;
+      var endBearing = ptBearing(chain.pts[Math.max(0,n-2)], chainEnd);
+      var startBearing = ptBearing(chain.pts[1], chainStart);
+
+      var endMatches = [], startMatches = [];
       segs.forEach(function(s) {
         if (s.used) return;
-        var chainEnd = chain.pts[chain.pts.length-1];
-        var chainStart = chain.pts[0];
+        var sn = s.pts.length;
         if (ptClose(chainEnd, s.pts[0])) {
-          chain.pts = chain.pts.concat(s.pts.slice(1));
-          chain.features.push(s.feat); s.used = true; changed = true;
-        } else if (ptClose(chainEnd, s.pts[s.pts.length-1])) {
-          chain.pts = chain.pts.concat(s.pts.slice(0,-1).reverse());
-          chain.features.push(s.feat); s.used = true; changed = true;
-        } else if (ptClose(chainStart, s.pts[s.pts.length-1])) {
-          chain.pts = s.pts.concat(chain.pts.slice(1));
-          chain.features.push(s.feat); s.used = true; changed = true;
+          endMatches.push({seg:s, reversed:false, bearing: ptBearing(s.pts[0], s.pts[1])});
+        } else if (ptClose(chainEnd, s.pts[sn-1])) {
+          endMatches.push({seg:s, reversed:true, bearing: ptBearing(s.pts[sn-1], s.pts[sn-2])});
+        }
+        if (ptClose(chainStart, s.pts[sn-1])) {
+          startMatches.push({seg:s, reversed:false, bearing: ptBearing(s.pts[sn-1], s.pts[sn-2])});
         } else if (ptClose(chainStart, s.pts[0])) {
-          chain.pts = s.pts.slice().reverse().concat(chain.pts.slice(1));
-          chain.features.push(s.feat); s.used = true; changed = true;
+          startMatches.push({seg:s, reversed:true, bearing: ptBearing(s.pts[0], s.pts[1])});
         }
       });
+
+      // Grow one end per pass (favoring forward growth) — the outer while
+      // loop still reaches a fixed point, this just makes each step's choice
+      // direction-aware instead of taking whichever end matched first.
+      if (endMatches.length) {
+        var m = pickBestMatch(endMatches, endBearing);
+        chain.pts = m.reversed
+          ? chain.pts.concat(m.seg.pts.slice(0,-1).reverse())
+          : chain.pts.concat(m.seg.pts.slice(1));
+        chain.features.push(m.seg.feat); m.seg.used = true; changed = true;
+      } else if (startMatches.length) {
+        var m2 = pickBestMatch(startMatches, startBearing);
+        chain.pts = m2.reversed
+          ? m2.seg.pts.slice().reverse().concat(chain.pts.slice(1))
+          : m2.seg.pts.concat(chain.pts.slice(1));
+        chain.features.push(m2.seg.feat); m2.seg.used = true; changed = true;
+      }
     }
     chains.push(chain);
   });
