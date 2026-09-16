@@ -108,12 +108,19 @@ var MAP_COLOR_ROLES = {
   structFps:        'background-dataviz-categorical-1', // floodplain structure -> floodplain hue
   structScs:        'background-dataviz-sequential-6',  // side-channel structure -> secondary-channel hue
   structCss:        'background-utility-danger',        // channel-spanning -> status accent
-  pcChannel1:       'background-dataviz-categorical-3',
-  pcChannel2:       'background-dataviz-categorical-7',
-  pcChannel3:       'background-dataviz-categorical-8',
-  pcChannel4:       'background-dataviz-categorical-5',
-  pcChannel5:       'background-dataviz-categorical-6'
+  // A work element only ever has ONE primary channel today — newWEData() creates
+  // exactly one (newPrimaryChannel(1)) and nothing anywhere pushes a second onto
+  // we.primaryChannels. pcChannelColor()'s per-index cycling (PC_CHANNEL_COLORS,
+  // just below) still exists in case that ever changes, but only slot 1 is
+  // reachable, so only slot 1 gets a user-facing role here — the other four
+  // would just be confusing, unpickable rows in the editor.
+  pcChannel:        'background-dataviz-categorical-3'
 };
+// PC_CHANNEL_COLORS needs one entry per pcChannelColor() cycle slot regardless
+// of whether >1 primary channel is reachable today; slots 2-5 aren't user-facing
+// roles (see pcChannel above) so they're assigned directly here rather than via
+// MAP_COLOR_ROLES/the editor.
+var PC_CHANNEL_EXTRA_TOKENS = ['background-dataviz-categorical-7', 'background-dataviz-categorical-8', 'background-dataviz-categorical-5', 'background-dataviz-categorical-6'];
 
 // Snapshot of the shipped mapping, for the editor's "Reset to default" — taken
 // once, before anything (including the editor itself) has a chance to mutate
@@ -224,7 +231,7 @@ function rebuildMapPalettes() {
   STRUCT_COLOR.css = mapColor('structCss');
   STRUCT_COLOR.fps = mapColor('structFps');
   STRUCT_COLOR.scs = mapColor('structScs');
-  PC_CHANNEL_COLORS = [mapColor('pcChannel1'), mapColor('pcChannel2'), mapColor('pcChannel3'), mapColor('pcChannel4'), mapColor('pcChannel5')];
+  PC_CHANNEL_COLORS = [mapColor('pcChannel')].concat(PC_CHANNEL_EXTRA_TOKENS.map(resolveColorToken));
   SC_COLOR = mapColor('secondaryChannel');
 }
 function clearColorTokenCache() { _colorTokenCache = {}; }
@@ -8901,42 +8908,48 @@ function renderLegend() {
     });
     h+='</div>';
   }
-  h+='<div class="leg-section"><div class="leg-row" style="cursor:pointer;color:#1e5386;text-decoration:underline;font-size:11px" onclick="toggleMapColorEditor()">&#127912; '+(mapColorEditorOpen?'Hide':'Edit')+' Map Colors</div></div>';
-  if (mapColorEditorOpen) h += renderMapColorEditor();
+  h+='<div class="leg-section"><div class="leg-row" style="cursor:pointer;color:#1e5386;text-decoration:underline;font-size:11px" onclick="openMapColorEditor()">&#127912; Edit Map Colors</div></div>';
   el.innerHTML=h;
   el.classList.toggle('collapsed', legCollapsed);
   var toggleEl = document.getElementById('leg-toggle');
   if (toggleEl) { toggleEl.textContent = legCollapsed ? '[+]' : '[–]'; toggleEl.setAttribute('aria-expanded', legCollapsed ? 'false' : 'true'); }
 }
 
-// ── Map color editor (prototyping tool, legend-accessible) ────────────────
+// ── Map color editor (prototyping tool, opened from the legend) ───────────
 // Lets you try different token assignments live against the real map instead
 // of guessing in code — every swatch is one of Ecology's already brand-derived,
 // colorblind-validated tokens (see MAP_COLOR_ROLES), never an arbitrary hex,
 // so nothing you pick here can land outside the accessible palette. "Copy
 // mapping" prints the resulting MAP_COLOR_ROLES object to paste back into
-// map-sow.js once a combination is settled — this panel edits the running
-// page's in-memory assignment, not the source file.
-var mapColorEditorOpen = false;
+// map-sow.js once a combination is settled — this edits the running page's
+// in-memory assignment, not the source file. Lives in its own esa-dialog
+// (see cbf-msow-modals.astro #map-color-modal) rather than inline in the
+// legend — with 17 roles x 22 swatches each it ran to hundreds of pixels
+// tall and cramped the map far more than a legend entry should.
 var MAP_COLOR_ROLE_LABELS = {
   floodplain: 'Floodplain', floodplainRight: 'Floodplain (right bank)', channel: 'Channel Area',
   reach: 'Reach / Primary Channel', boundary: 'Project Boundary', wetlandEnhance: 'Wetland Enhancement',
   wetlandExisting: 'Existing Wetland', chuRiffle: 'CHU: Riffle', chuPool: 'CHU: Pool', chuGlide: 'CHU: Glide',
   chuRun: 'CHU: Run / Unassigned', secondaryChannel: 'Secondary Channel', structCms: 'Structure: Channel Margin',
   structMcs: 'Structure: Mid-Channel', structFps: 'Structure: Floodplain', structScs: 'Structure: Side-Channel',
-  structCss: 'Structure: Channel-Spanning', pcChannel1: 'Primary Channel #1', pcChannel2: 'Primary Channel #2',
-  pcChannel3: 'Primary Channel #3', pcChannel4: 'Primary Channel #4', pcChannel5: 'Primary Channel #5'
+  structCss: 'Structure: Channel-Spanning', pcChannel: 'Primary Channel'
+  // Only one role/row for this — see the comment on MAP_COLOR_ROLES.pcChannel:
+  // a work element only ever has ONE primary channel today, so "#2..#5" rows
+  // would be unpickable clutter, not real options.
 };
-function toggleMapColorEditor() { mapColorEditorOpen = !mapColorEditorOpen; renderLegend(); }
+function openMapColorEditor() {
+  renderMapColorEditor();
+  document.getElementById('map-color-modal').show();
+}
 function setMapColorRole(role, token) {
   MAP_COLOR_ROLES[role] = token;
   repaintAllMapColors();
-  renderLegend();
+  renderMapColorEditor();
 }
 function resetMapColorRoles() {
   MAP_COLOR_ROLES = Object.assign({}, MAP_COLOR_ROLES_DEFAULT);
   repaintAllMapColors();
-  renderLegend();
+  renderMapColorEditor();
 }
 function exportMapColorRoles() {
   var lines = Object.keys(MAP_COLOR_ROLES).map(function(k){ return '  ' + k + ": '" + MAP_COLOR_ROLES[k] + "'"; });
@@ -8945,29 +8958,25 @@ function exportMapColorRoles() {
   if (ta) { ta.style.display = 'block'; ta.value = text; ta.focus(); ta.select(); }
 }
 function renderMapColorEditor() {
-  var h = '<div class="leg-section" style="border-top:1px solid #dcdcdc;padding-top:8px;margin-top:4px">';
-  h += '<div style="font-size:10px;color:var(--color-text-muted,#888);margin-bottom:6px">Click a swatch to try it — updates the map immediately.</div>';
+  var body = document.getElementById('map-color-modal-body');
+  if (!body) return;
+  var h = '<div style="font-size:11px;color:var(--color-text-muted,#888);margin-bottom:10px">Click a swatch to try it — updates the map immediately. Every swatch is one of Ecology\'s brand-derived, colorblind-validated design tokens, so nothing here can land outside the accessible palette.</div>';
   Object.keys(MAP_COLOR_ROLE_LABELS).forEach(function(role) {
     var current = MAP_COLOR_ROLES[role];
-    h += '<div style="margin-bottom:7px">';
-    h += '<div style="font-size:10.5px;font-weight:600;margin-bottom:3px">' + MAP_COLOR_ROLE_LABELS[role] + '</div>';
-    h += '<div style="display:flex;flex-wrap:wrap;gap:3px">';
+    h += '<div style="margin-bottom:10px">';
+    h += '<div style="font-size:12px;font-weight:600;margin-bottom:4px">' + MAP_COLOR_ROLE_LABELS[role] + '</div>';
+    h += '<div style="display:flex;flex-wrap:wrap;gap:4px">';
     MAP_COLOR_TOKENS.forEach(function(token) {
       var isActive = token === current;
       var swatchCol = resolveColorToken(token);
       h += '<span title="' + token + '" onclick="setMapColorRole(\'' + role + '\',\'' + token + '\')" ' +
-        'style="width:15px;height:15px;border-radius:3px;cursor:pointer;display:inline-block;background:' + swatchCol + ';' +
+        'style="width:20px;height:20px;border-radius:4px;cursor:pointer;display:inline-block;background:' + swatchCol + ';' +
         'border:' + (isActive ? '2px solid #1a3a5c' : '1px solid rgba(0,0,0,0.15)') + '"></span>';
     });
     h += '</div></div>';
   });
-  h += '<div style="display:flex;gap:8px;margin-top:6px">';
-  h += '<span style="cursor:pointer;color:#1e5386;text-decoration:underline;font-size:11px" onclick="exportMapColorRoles()">Copy mapping</span>';
-  h += '<span style="cursor:pointer;color:#1e5386;text-decoration:underline;font-size:11px" onclick="resetMapColorRoles()">Reset to default</span>';
-  h += '</div>';
   h += '<textarea id="map-color-export-ta" readonly style="display:none;width:100%;height:120px;margin-top:6px;font-family:monospace;font-size:10px" onclick="this.select()"></textarea>';
-  h += '</div>';
-  return h;
+  body.innerHTML = h;
 }
 
 // ── Geometry ──────────────────────────────────────────────────────────────

@@ -77,6 +77,28 @@ import EsaButton from '@esa/ecology/esa-button.astro';
   </div>
 </esa-dialog>
 
+<!-- Map color editor — a prototyping tool for exploring which design token
+     paints which map feature (see MAP_COLOR_ROLES in map-sow.js), opened from
+     the legend's "Edit Map Colors" link. Started as inline legend content but
+     its per-role swatch grid runs to 17+ rows, which cramped the map far more
+     than a legend entry should — a dialog gives it room without competing for
+     map space. -->
+<esa-dialog id="map-color-modal" heading="Map Colors" size="lg" show-close-button>
+  <div id="map-color-modal-body"></div>
+
+  <div slot="footer">
+    <span onclick="exportMapColorRoles()">
+      <EsaButton variant="ghost" appearance="outline">Copy mapping</EsaButton>
+    </span>
+    <span onclick="resetMapColorRoles()">
+      <EsaButton variant="ghost" appearance="outline">Reset to default</EsaButton>
+    </span>
+    <span onclick="document.getElementById('map-color-modal').close()">
+      <EsaButton variant="primary">Done</EsaButton>
+    </span>
+  </div>
+</esa-dialog>
+
 <!-- Welcome / onboarding modal — disabled for now (no `open` attribute; its
      content doesn't earn its interruption anymore) but kept in place since
      we expect to bring it back with different content later. The default
