@@ -31,20 +31,230 @@ var PP_DEFS = [
   {id:'substrate', label:'Reach-Averaged Substrate',    geo:null,      method:'entered',  multi:0, segment:false, desc:'Prioritization substrate data layer.', inputLabel:'Dominant substrate', inputType:'select', opts:['','Silt','Sand','Gravel','Cobble','Boulders','Bedrock']}
 ];
 
+// ── Map colors, driven by Ecology's design tokens ──────────────────────────
+// Every map feature's color used to come from one of six independent hardcoded
+// hex palettes (PP_COLOR/SOW_COLOR/CHU_COLOR/WETLAND_COLOR/STRUCT_COLOR/
+// PC_CHANNEL_COLORS), each picked in isolation with no shared system — so the
+// same hex ('#1a7abf') ended up meaning "channel-width buffer," "CHU pool,"
+// "mid-channel structure," AND "primary channel #1" all at once, with nothing
+// to tell them apart when several were on screen together (confirmed: a
+// pre-project reach copied into the design phase was unreadable against
+// itself, because the reach line and the CHU riffle fill it ran through were
+// the literal same orange). @esa/tokens generates 8 categorical + 7-step
+// sequential/diverging colors per spoke brand, already validated for
+// colour-vision-deficiency separation (see tokens/semantic/color.json in the
+// hub) — MAP_COLOR_ROLES below assigns each map feature type to one of those
+// tokens instead of a hand-picked hex, so distinguishability is inherited
+// from work already done upstream rather than re-guessed here.
+//
+// Pre-project vs. design-phase copies of the SAME feature type deliberately
+// share a hue (see applyPhaseStyle) — phase is told apart by line style
+// (dashed/lower-opacity = pre-project, solid/full = design), not a second
+// color, so consolidating onto 8 slots doesn't cost the "which phase is this"
+// information the old scheme never actually gave you either.
+//
+// resolveColorToken() reads a CSS custom property's fully-resolved color via a
+// hidden probe element — getComputedStyle().getPropertyValue() on a custom
+// property returns its literal `var(...)` text, not the resolved value, so a
+// nested reference like categorical-1 -> var(--color-grass-10) needs this
+// indirection to come back as an actual usable color string.
+var _colorTokenProbe = null, _colorTokenCache = {};
+function resolveColorToken(varName) {
+  if (_colorTokenCache[varName]) return _colorTokenCache[varName];
+  if (!_colorTokenProbe) {
+    _colorTokenProbe = document.createElement('div');
+    _colorTokenProbe.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
+    document.body.appendChild(_colorTokenProbe);
+  }
+  _colorTokenProbe.style.color = 'var(--color-' + varName + ')';
+  var resolved = getComputedStyle(_colorTokenProbe).color || '#888888';
+  _colorTokenCache[varName] = resolved;
+  return resolved;
+}
+
+// Every token this app currently offers a role a choice among — the color
+// editor's picker list. Keep in sync with what @esa/tokens actually generates
+// (8 categorical, 7 sequential, 7 diverging) plus the one status accent used
+// for the channel-spanning structure pin.
+var MAP_COLOR_TOKENS = [
+  'background-dataviz-categorical-1','background-dataviz-categorical-2','background-dataviz-categorical-3','background-dataviz-categorical-4',
+  'background-dataviz-categorical-5','background-dataviz-categorical-6','background-dataviz-categorical-7','background-dataviz-categorical-8',
+  'background-dataviz-sequential-1','background-dataviz-sequential-2','background-dataviz-sequential-3','background-dataviz-sequential-4',
+  'background-dataviz-sequential-5','background-dataviz-sequential-6','background-dataviz-sequential-7',
+  'background-dataviz-diverging-1','background-dataviz-diverging-2','background-dataviz-diverging-3','background-dataviz-diverging-4',
+  'background-dataviz-diverging-5','background-dataviz-diverging-6','background-dataviz-diverging-7',
+  'background-utility-danger'
+];
+
+// Role -> token. This is the part meant to be tweaked (by hand here, or live via
+// the Layers panel's "Map Colors" editor, which edits this object directly and
+// calls rebuildMapPalettes()+repaintAllMapColors()) — everything else in this
+// section just mechanically turns whatever's assigned here into real colors.
+var MAP_COLOR_ROLES = {
+  // floodplainRight (fp_right's own hue, distinct from fp_left) was removed:
+  // WIZARD_STEPS has only 'fp_poly', a single net-floodplain step — no step
+  // ever produces a separate fp_left/fp_right (the L/R split machinery,
+  // splitFpByReach()/doFpSplit()/doFpFlip()/the fp_left/fp_right/fp_split
+  // wizard-step render cases, is unreachable, same dead shape as CHU
+  // Glide/Run above). fp_left/fp_right/pc_fp/area_fp all resolve through
+  // the one 'floodplain' role now.
+  floodplain:       'background-dataviz-categorical-1', // fp_poly, pc_fp, fp_left, fp_right, area_fp
+  channel:          'background-dataviz-categorical-2', // area_ch, pc-area
+  reach:            'background-dataviz-categorical-3', // reach_len, pc-reach
+  boundary:         'background-dataviz-categorical-4', // perimeter
+  wetlandEnhance:   'background-dataviz-categorical-5', // fp_wetland_enhance
+  wetlandExisting:  'background-dataviz-categorical-6', // pp_wetland
+  chuRiffle:        'background-dataviz-categorical-7',
+  chuPool:          'background-dataviz-categorical-8',
+  // 'Glide'/'Run' CHU types (and the generic 'unassigned' fallback) are dead:
+  // the live chu_split wizard step only ever creates 'pool' (drawn) and
+  // 'riffle' (everything else) for BOTH pre-project and design-phase units —
+  // its own description says so ("Everything outside a pool boundary is
+  // treated as riffle"). The 4-button riffle/pool/glide/run UI still in
+  // renderCHUUnits() renders into #chu-units-list, a container that doesn't
+  // exist in the current wizard-only UI (same dead-legacy-mode shape as the
+  // primary-channel case above) — so no role/editor row for them.
+  // Width Segments (the channel-width measurement cross-section lines) used
+  // to just reuse the dead 'chuRun' token with no honest name of its own —
+  // it's real and live, so it gets a real role.
+  widthSegments:    'background-dataviz-diverging-6',
+  secondaryChannel: 'background-dataviz-sequential-6',
+  structCms:        'background-dataviz-categorical-3', // channel margin -> reach hue
+  structMcs:        'background-dataviz-categorical-2', // mid-channel -> channel hue
+  structFps:        'background-dataviz-categorical-1', // floodplain structure -> floodplain hue
+  structScs:        'background-dataviz-sequential-6',  // side-channel structure -> secondary-channel hue
+  structCss:        'background-utility-danger',        // channel-spanning -> status accent
+  // A work element only ever has ONE primary channel today — newWEData() creates
+  // exactly one (newPrimaryChannel(1)) and nothing anywhere pushes a second onto
+  // we.primaryChannels. pcChannelColor()'s per-index cycling (PC_CHANNEL_COLORS,
+  // just below) still exists in case that ever changes, but only slot 1 is
+  // reachable, so only slot 1 gets a user-facing role here — the other four
+  // would just be confusing, unpickable rows in the editor.
+  pcChannel:        'background-dataviz-categorical-3'
+};
+// PC_CHANNEL_COLORS needs one entry per pcChannelColor() cycle slot regardless
+// of whether >1 primary channel is reachable today; slots 2-5 aren't user-facing
+// roles (see pcChannel above) so they're assigned directly here rather than via
+// MAP_COLOR_ROLES/the editor.
+var PC_CHANNEL_EXTRA_TOKENS = ['background-dataviz-categorical-7', 'background-dataviz-categorical-8', 'background-dataviz-categorical-5', 'background-dataviz-categorical-6'];
+
+// Snapshot of the shipped mapping, for the editor's "Reset to default" — taken
+// once, before anything (including the editor itself) has a chance to mutate
+// MAP_COLOR_ROLES.
+var MAP_COLOR_ROLES_DEFAULT = Object.assign({}, MAP_COLOR_ROLES);
+
+function mapColor(role) {
+  var tokenName = MAP_COLOR_ROLES[role];
+  return tokenName ? resolveColorToken(tokenName) : '#888888';
+}
+
+// Re-styles every already-drawn map layer after MAP_COLOR_ROLES changes (the
+// color editor's "Apply" action) — rebuildMapPalettes() alone only changes what
+// NEW shapes will use; this walks every work element's existing layers so a
+// role reassignment is visible immediately instead of only on the next redraw.
+// Structure pins are the one thing this does NOT repaint live: their icon's
+// color is baked into a divIcon HTML string at placement time (see
+// placeStructPoint), and there's no existing "rebuild every placed pin" entry
+// point to reuse the way there is for CHU units/flow arrows — a role change
+// affecting structCms/structMcs/structFps/structScs/structCss takes effect the
+// next time each pin is placed or redone, not instantly.
+function repaintAllMapColors() {
+  rebuildMapPalettes();
+  workElements.forEach(function(we) {
+    var PP_ROLE_BY_ID = {perimeter:'boundary', area_ch:'channel', reach_len:'reach', fp_left:'floodplain', fp_right:'floodplain', fp_poly:'floodplain', area_fp:'floodplain'};
+    Object.keys(PP_ROLE_BY_ID).forEach(function(id) {
+      var d = we.ppData[id]; if (!d) return;
+      var col = mapColor(PP_ROLE_BY_ID[id]);
+      if (d.layer) d.layer.setStyle({color: col, fillColor: col});
+      if (d.bufferLayer) d.bufferLayer.setStyle({color: col, fillColor: col});
+    });
+    ['pp_wetland', 'fp_wetland_enhance'].forEach(function(key) {
+      var role = key === 'pp_wetland' ? 'wetlandExisting' : 'wetlandEnhance';
+      var col = mapColor(role);
+      ((we.fpMulti && we.fpMulti[key]) || []).forEach(function(item) {
+        var d = we.sowLayers[item.id];
+        if (d && d.layer) d.layer.setStyle({color: col, fillColor: col});
+      });
+    });
+    (we.scReaches || []).forEach(function(r) {
+      if (r.layer) r.layer.setStyle({color: mapColor('secondaryChannel')});
+    });
+    if (we.ppChuUnits && we.ppChuUnits.length) renderPPChuUnits(we);
+    var savedActivePCId = we.activePCId;
+    (we.primaryChannels || []).forEach(function(pc) {
+      we.activePCId = pc.id;
+      // pc-reach and pc-area share ONE per-channel color (see pcChannelColor) —
+      // an established, intentional pattern distinct from the pre-project
+      // reach-vs-channel-area role split: a primary channel's own geometry
+      // reads as one unit, told apart from OTHER primary channels, not from
+      // its own area/gravel placements.
+      var pcCol = pcChannelColor(we, pc.id);
+      var pcReach = pc.sowLayers['pc-reach'];
+      if (pcReach && pcReach.layer) { pcReach.layer.setStyle({color: pcCol}); addPCReachArrow(we); }
+      var pcArea = pc.sowLayers['pc-area'];
+      if (pcArea && pcArea.layer) pcArea.layer.setStyle({color: pcCol, fillColor: pcCol});
+      var pcFp = pc.ppData && pc.ppData['pc_fp'];
+      if (pcFp && pcFp.layer) pcFp.layer.setStyle({color: mapColor('floodplain'), fillColor: mapColor('floodplain')});
+      if (pc.chuUnits && pc.chuUnits.length) renderCHUUnits(we);
+    });
+    we.activePCId = savedActivePCId;
+    if (we.ppData['reach_len'] && we.ppData['reach_len'].layer) addReachArrow(we);
+  });
+  renderLegend();
+  if (wizardMode) wizardRefreshIfActive();
+}
+
+// Pre-project vs. design-phase copies of the same feature type share a hue (see
+// the section header above) — this dash pattern is what actually tells them
+// apart on screen, applied to the pre-project side only. Standard "as-existing
+// vs. as-proposed" cartographic convention: dashed = existing/reference, solid
+// = proposed/current work.
+var PRE_PROJECT_DASH = '6,4';
+
 var TYPE_COLORS = {pc:'#1a7abf', fp:'#7b4fbf', rr:'#2a7a5c'};
 var TYPE_LABELS = {pc:'Primary Channel', fp:'Floodplain', rr:'Riparian Restoration'};
-var PP_COLOR = {polygon:'#7b4fbf', line:'#c07820', buffer:'#1a7abf', bufferFp:'#2a7a5c'};
-var SOW_COLOR = {line:'#1a7abf', polygon:'#2a7a5c', segment:'#e07b28'};
-var CHU_COLOR = {riffle:'#c07820', pool:'#1a7abf', glide:'#2a8a6a', run:'#7b4fbf', unassigned:'#e07b28'};
+var PP_COLOR = {};
+var SOW_COLOR = {};
+var CHU_COLOR = {};
 var CHU_CYCLE = ['riffle','pool','glide','run'];
-// Wetlands get their own dedicated colors rather than the generic pre-project
-// purple / habitat-work green — Existing Wetland Areas commonly sits under the
-// Floodplain polygon (also purple) and Wetland Enhancement sits ON TOP of an
-// Existing Wetland Area, so both need to read as distinct from what they overlap.
-var WETLAND_COLOR = {existing:'#0c8599', enhance:'#c2185b'};
+var WETLAND_COLOR = {};
 var activeBasemap = 'Street Map'; // read by updateNaipYearDisplay() outside the map-init closure
-var STRUCT_COLOR = {cms:'#e07b28', mcs:'#1a7abf', css:'#c44a4a', fps:'#7b4fbf', scs:'#2a7a5c'};
+var STRUCT_COLOR = {};
 var STRUCT_LABEL = {cms:'Channel Margin', mcs:'Mid Channel', css:'Channel Spanning', fps:'Floodplain', scs:'Side Channel'};
+
+// Recomputes every palette object above from MAP_COLOR_ROLES — called once at
+// startup and again whenever the color editor reassigns a role. Object
+// identities (PP_COLOR etc.) stay the same, so nothing holding a reference to
+// them needs to re-fetch it; only the properties change.
+function rebuildMapPalettes() {
+  clearColorTokenCache();
+  PP_COLOR.polygon = mapColor('floodplain');
+  PP_COLOR.line = mapColor('reach');
+  PP_COLOR.buffer = mapColor('channel');
+  PP_COLOR.bufferFp = mapColor('floodplain');
+  SOW_COLOR.line = mapColor('channel');
+  SOW_COLOR.polygon = mapColor('floodplain');
+  SOW_COLOR.segment = mapColor('widthSegments');
+  CHU_COLOR.riffle = mapColor('chuRiffle');
+  CHU_COLOR.pool = mapColor('chuPool');
+  // glide/run/unassigned are dead CHU types (see MAP_COLOR_ROLES) — no real
+  // unit is ever created with one, so these are just a safe fallback for the
+  // `CHU_COLOR[u.type || 'unassigned']` defensive lookups scattered around,
+  // not something the color editor exposes.
+  CHU_COLOR.glide = CHU_COLOR.riffle;
+  CHU_COLOR.run = CHU_COLOR.riffle;
+  CHU_COLOR.unassigned = CHU_COLOR.riffle;
+  WETLAND_COLOR.existing = mapColor('wetlandExisting');
+  WETLAND_COLOR.enhance = mapColor('wetlandEnhance');
+  STRUCT_COLOR.cms = mapColor('structCms');
+  STRUCT_COLOR.mcs = mapColor('structMcs');
+  STRUCT_COLOR.css = mapColor('structCss');
+  STRUCT_COLOR.fps = mapColor('structFps');
+  STRUCT_COLOR.scs = mapColor('structScs');
+  PC_CHANNEL_COLORS = [mapColor('pcChannel')].concat(PC_CHANNEL_EXTRA_TOKENS.map(resolveColorToken));
+  SC_COLOR = mapColor('secondaryChannel');
+}
+function clearColorTokenCache() { _colorTokenCache = {}; }
 
 // ── State ─────────────────────────────────────────────────────────────────
 var map;
@@ -87,6 +297,12 @@ L.Draggable.mergeOptions({ clickTolerance: 10 });
 
 // ── Init ──────────────────────────────────────────────────────────────────
 window.onload = function() {
+  // Resolve every map color from its design token before anything draws —
+  // rebuildMapPalettes() needs document.body (for the resolver's probe element)
+  // and the page's stylesheets (for the tokens themselves), both guaranteed by
+  // window.onload.
+  rebuildMapPalettes();
+
   // Welcome modal is disabled for now (see cbf-msow-modals.astro) — land on
   // a default work element directly instead of waiting for its `close`
   // event. If the modal comes back, move this back behind a `close` listener.
@@ -343,7 +559,7 @@ function ppOwner(we, id) {
 
 // Distinct colors per primary channel so multiple channels stay visually
 // distinguishable on the map when a work element has more than one.
-var PC_CHANNEL_COLORS = ['#1a7abf', '#c0392b', '#8e44ad', '#16a085', '#d68910'];
+var PC_CHANNEL_COLORS = []; // filled by rebuildMapPalettes() (see MAP_COLOR_ROLES pcChannel1..5) before window.onload finishes
 function pcChannelColor(we, pcId) {
   var idx = 0;
   (we.primaryChannels||[]).forEach(function(pc, i){ if (pc.id === pcId) idx = i; });
@@ -1777,7 +1993,7 @@ function updateAreaChBuffer(we) {
   // past the boundary at endpoints but will never be truncated mid-reach.
   d.bufferLayer = L.polygon(ring, {
     color: PP_COLOR.buffer, fillColor: PP_COLOR.buffer,
-    fillOpacity: 0.15, weight: 2, dashArray: '6,4', interactive: true
+    fillOpacity: 0.15, weight: 2, dashArray: PRE_PROJECT_DASH, interactive: true
   }).bindTooltip('Area of Channel (estimated)').addTo(map);
   // Respect the pre-project visibility toggle
   if (!ppLayersVisible && map.hasLayer(d.bufferLayer)) map.removeLayer(d.bufferLayer);
@@ -1798,10 +2014,11 @@ function swapFpLeftRight() {
   // Update tooltip labels
   if (we.ppData['fp_left'].layer) we.ppData['fp_left'].layer.unbindTooltip().bindTooltip('Left Floodplain Area');
   if (we.ppData['fp_right'].layer) we.ppData['fp_right'].layer.unbindTooltip().bindTooltip('Right Floodplain Area');
-  // Swap colors
-  var colLeft = '#2a7a5c', colRight = '#5c2a7a';
-  if (we.ppData['fp_left'].layer) we.ppData['fp_left'].layer.setStyle({color:colLeft,fillColor:colLeft});
-  if (we.ppData['fp_right'].layer) we.ppData['fp_right'].layer.setStyle({color:colRight,fillColor:colRight});
+  // fp_left/fp_right now share the single 'floodplain' role (see MAP_COLOR_ROLES) —
+  // nothing to actually swap, but keep restyling both in case a stale style lingers.
+  var fpCol = mapColor('floodplain');
+  if (we.ppData['fp_left'].layer) we.ppData['fp_left'].layer.setStyle({color:fpCol,fillColor:fpCol});
+  if (we.ppData['fp_right'].layer) we.ppData['fp_right'].layer.setStyle({color:fpCol,fillColor:fpCol});
   var mL = PP_DEFS.filter(function(x){return x.id==='fp_left';})[0];
   var mR = PP_DEFS.filter(function(x){return x.id==='fp_right';})[0];
   var mT = PP_DEFS.filter(function(x){return x.id==='area_fp';})[0];
@@ -1927,7 +2144,7 @@ function commitFpPoly(we, pts) {
       chRing = (lls.length && Array.isArray(lls[0])) ? lls[0] : lls;
     }
   }
-  var col = '#2a7a5c';
+  var col = mapColor('floodplain');
   if (chRing && chRing.length >= 3) {
     d.layer = L.polygon([pts, chRing.slice().reverse()], {
       color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
@@ -1976,7 +2193,10 @@ function commitPCFP(we, pts) {
     var lls = pcAD.layer.getLatLngs();
     chRing = (lls.length && Array.isArray(lls[0])) ? lls[0] : lls;
   }
-  var col = '#1a7a6c';
+  // pc_fp ("New Floodplain") is the design-phase counterpart of fp_poly — same
+  // floodplain hue, not its own separate teal, so pre-project vs. design reads
+  // as "the same kind of thing, different phase" rather than two unrelated ones.
+  var col = mapColor('floodplain');
   if (chRing && chRing.length >= 3) {
     d.layer = L.polygon([pts, chRing.slice().reverse()], {
       color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
@@ -1993,11 +2213,10 @@ function commitPCFP(we, pts) {
 }
 
 function commitFpSide(we, id, poly, side) {
-  var colLeft = '#2a7a5c', colRight = '#5c2a7a';
+  var col = mapColor('floodplain'); // fp_left/fp_right share one role — see MAP_COLOR_ROLES
   // Respect the user's explicit choice (left or right button).
   // Use the Swap button if sides need correcting after drawing.
   var finalId = id;
-  var col = finalId === 'fp_left' ? colLeft : colRight;
   var label = finalId === 'fp_left' ? 'Left Floodplain Area' : 'Right Floodplain Area';
   if (!we.ppData[finalId]) we.ppData[finalId] = {};
   var d = we.ppData[finalId];
@@ -2078,7 +2297,9 @@ function splitFpByReach(we, flip) {
   if (window._debugLayers) { window._debugLayers.forEach(function(l){try{map.removeLayer(l);}catch(e){}}); }
   window._debugLayers = [];
 
-  var colLeft = '#1a6a4a', colRight = '#4a1a6a';
+  // fp_left/fp_right share one role — see MAP_COLOR_ROLES.floodplain — same
+  // token commitFpSide()/swapFpLeftRight() use for a hand-drawn side.
+  var colLeft = mapColor('floodplain'), colRight = mapColor('floodplain');
   function applyFpSide(id, pts, col, label) {
     var d = we.ppData[id]; if (!d) { we.ppData[id] = {}; d = we.ppData[id]; }
     if (d.layer) map.removeLayer(d.layer);
@@ -2231,7 +2452,7 @@ function fetchElevationProfile(we) {
         if (rPts.length && Array.isArray(rPts[0])) rPts = rPts[0];
         rPts = rPts.slice().reverse();
         map.removeLayer(reachD2.layer);
-        reachD2.layer = L.polyline(rPts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
+        reachD2.layer = L.polyline(rPts, {color:mapColor('reach'), weight:2.5, dashArray:PRE_PROJECT_DASH, interactive:true}).bindTooltip('Reach Length').addTo(map);
         elevs = elevs.slice().reverse();
         var tmp = upstreamElev; upstreamElev = downstreamElev; downstreamElev = tmp;
         setMapHint('Reach direction reversed to flow downstream ↓');
@@ -2277,7 +2498,7 @@ function flipReachDirection(weArg) {
   if (pts.length && Array.isArray(pts[0])) pts = pts[0];
   pts = pts.slice().reverse();
   map.removeLayer(rd.layer);
-  rd.layer = L.polyline(pts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
+  rd.layer = L.polyline(pts, {color:mapColor('reach'), weight:2.5, dashArray:PRE_PROJECT_DASH, interactive:true}).bindTooltip('Reach Length').addTo(map);
 
   // Keep an already-computed elevation profile in sync with the new direction
   // rather than leaving stale upstream/downstream stats from the old orientation.
@@ -2548,8 +2769,15 @@ function finishPPDraw() {
     return;
   }
   var col=PP_COLOR[m.geo]||'#c07820';
-  if(m.id==='fp_left') col='#2a7a5c';
-  if(m.id==='fp_right') col='#5c2a7a';
+  // perimeter/area_ch otherwise fall through to the generic PP_COLOR[m.geo]
+  // polygon fallback and would collide (both 'polygon'-geo, same hex) — give
+  // each its own role. fp_left/fp_right share the plain floodplain role (see
+  // MAP_COLOR_ROLES) — this branch itself is dead today (fp_left/fp_right
+  // are never reached from WIZARD_STEPS), kept only as a defensive fallback.
+  if(m.id==='perimeter') col=mapColor('boundary');
+  if(m.id==='area_ch') col=mapColor('channel');
+  if(m.id==='fp_left') col=mapColor('floodplain');
+  if(m.id==='fp_right') col=mapColor('floodplain');
   if(!ppOwner(we,m.id).ppData[m.id])ppOwner(we,m.id).ppData[m.id]={};
   // fp_poly/pc_fp are geo:'polygon' but need their own channel-subtraction commit path
   // rather than the generic polygon handling below — check them before the geo branch.
@@ -2785,7 +3013,7 @@ function addReachArrow(we) {
   var rd = we && we.ppData['reach_len'];
   clearFlowArrows(rd);
   if(!rd || !rd.layer) return;
-  var markers = buildFlowArrowMarkers(rd.layer, we.ppData['area_ch'], '#c07820');
+  var markers = buildFlowArrowMarkers(rd.layer, we.ppData['area_ch'], mapColor('reach'));
   if (!markers.length) return;
   // Respect the pre-project visibility toggle — buildFlowArrowMarkers() always adds
   // fresh markers to the map, which otherwise leaks the pre-project reach's arrows
@@ -2800,7 +3028,7 @@ function addPCReachArrow(we) {
   var sl = we && getActivePC(we).sowLayers['pc-reach'];
   clearFlowArrows(sl);
   if (!sl || !sl.layer) return;
-  sl._arrowMarkers = buildFlowArrowMarkers(sl.layer, getActivePC(we).sowLayers['pc-area'], '#2a7a5c');
+  sl._arrowMarkers = buildFlowArrowMarkers(sl.layer, getActivePC(we).sowLayers['pc-area'], pcChannelColor(we, we.activePCId));
 }
 
 // Pixel width depends on zoom even when the geometry hasn't changed — re-fan
@@ -3877,7 +4105,7 @@ function startPolyEdit(id) {
   if (id === 'fp_poly' && d._pts) {
     if (d.layer) { map.removeLayer(d.layer); d.layer = null; }
     d.layer = L.polygon(d._pts.slice(), {
-      color:'#2a7a5c', fillColor:'#2a7a5c', fillOpacity:0.18, weight:2, interactive:false
+      color:mapColor('floodplain'), fillColor:mapColor('floodplain'), fillOpacity:0.18, weight:2, interactive:false
     }).bindTooltip('Floodplain (editing)').addTo(map);
     d._editingBoundary = true;
     lineEditing = {type:'pp-poly', id:id, weId:activeWEId, layer:d.layer};
@@ -3893,7 +4121,7 @@ function startPolyEdit(id) {
   if (id === 'pc_fp' && d._pts) {
     if (d.layer) { map.removeLayer(d.layer); d.layer = null; }
     d.layer = L.polygon(d._pts.slice(), {
-      color:'#1a7a6c', fillColor:'#1a7a6c', fillOpacity:0.18, weight:2, interactive:false
+      color:mapColor('floodplain'), fillColor:mapColor('floodplain'), fillOpacity:0.18, weight:2, interactive:false
     }).bindTooltip('New Floodplain (editing)').addTo(map);
     d._editingBoundary = true;
     lineEditing = {type:'pp-poly', id:id, weId:activeWEId, layer:d.layer};
@@ -5058,7 +5286,7 @@ function renderPPChuUnits(we) {
     if (u.type === 'pool') { poolNum++; typeLabel = 'Pool ' + poolNum; }
     else { riffleNum++; typeLabel = 'Riffle ' + riffleNum; }
     u._displayLabel = typeLabel;
-    u.layer = L.polygon(u.pts, {color:col, fillColor:col, fillOpacity:0.25, weight:2, interactive:true})
+    u.layer = L.polygon(u.pts, {color:col, fillColor:col, fillOpacity:0.18, weight:2, dashArray:PRE_PROJECT_DASH, interactive:true})
       .bindTooltip(typeLabel + ' (pre-project) — ' + (u.areaM2*0.000247105).toFixed(3)+' ac');
     if (ppLayersVisible) u.layer.addTo(map);
     var icon = L.divIcon({
@@ -5079,7 +5307,7 @@ function renderPPChuUnits(we) {
 }
 
 // ── Secondary Channels ────────────────────────────────────────────────────
-var SC_COLOR = '#2a6a9c';
+var SC_COLOR = '#2a6a9c'; // overwritten by rebuildMapPalettes() (see MAP_COLOR_ROLES.secondaryChannel)
 
 function startSCReachDraw() {
   var we = getActiveWE(); if (!we) return;
@@ -8387,7 +8615,7 @@ function commitAutoReach(pts) {
   pts = clipped;
   if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
   if (we.ppData['reach_len'].layer) map.removeLayer(we.ppData['reach_len'].layer);
-  var layer = L.polyline(pts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
+  var layer = L.polyline(pts, {color:mapColor('reach'), weight:2.5, dashArray:PRE_PROJECT_DASH, interactive:true}).bindTooltip('Reach Length').addTo(map);
   we.ppData['reach_len'].layer = layer;
   we.ppData['reach_len'].valueM = geoLen(pts);
   we.ppData['reach_len']._autoDetecting = false;
@@ -8657,19 +8885,27 @@ setWizardPanelCollapsed(wizardNarrowMQ.matches);
 function toggleLegend(){legCollapsed=!legCollapsed;document.getElementById('leg-body').classList.toggle('collapsed',legCollapsed);document.getElementById('leg-toggle').textContent=legCollapsed?'[+]':'[–]';}
 function renderLegend() {
   var el=document.getElementById('leg-body');if(!el)return;
-  var h='<div class="leg-section"><div class="leg-sec-title">Pre-Project</div>';
-  h+='<div class="leg-row"><span class="leg-poly" style="background:#7b4fbf"></span>Polygons</div>';
-  h+='<div class="leg-row"><span class="leg-line" style="background:#c07820"></span>Lines</div>';
-  h+='<div class="leg-row"><span style="width:14px;height:10px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center"><svg width="11" height="13" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="#c07820" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></span>Flow direction</div></div>';
-  h+='<div class="leg-section"><div class="leg-sec-title">Habitat Work</div>';
-  h+='<div class="leg-row"><span class="leg-poly" style="background:#2a7a5c"></span>Polygons</div>';
-  h+='<div class="leg-row"><span class="leg-line" style="background:#1a7abf"></span>Lines</div>';
-  h+='<div class="leg-row"><span class="leg-line" style="background:#e07b28"></span>Width segments</div></div>';
+  // Swatches below read the real per-role color instead of a hand-copied hex —
+  // this legend was itself one more place the old palettes' hex values were
+  // duplicated (see MAP_COLOR_ROLES), so it drifts if and only if the actual
+  // map does too.
+  var dashSwatch = 'background:repeating-linear-gradient(90deg,{c} 0 5px,transparent 5px 8px)';
+  var h='<div class="leg-section"><div class="leg-sec-title">Pre-Project <span style="font-weight:400;color:var(--color-text-muted,#888)">(dashed)</span></div>';
+  h+='<div class="leg-row"><span class="leg-poly" style="'+dashSwatch.replace('{c}',mapColor('reach'))+'"></span>Reach</div>';
+  h+='<div class="leg-row"><span class="leg-poly" style="'+dashSwatch.replace('{c}',mapColor('channel'))+'"></span>Channel Area</div>';
+  h+='<div class="leg-row"><span class="leg-poly" style="'+dashSwatch.replace('{c}',mapColor('floodplain'))+'"></span>Floodplain</div>';
+  h+='<div class="leg-row"><span class="leg-poly" style="'+dashSwatch.replace('{c}',mapColor('boundary'))+'"></span>Project Boundary</div>';
+  h+='<div class="leg-row"><span style="width:14px;height:10px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center"><svg width="11" height="13" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="'+mapColor('reach')+'" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></span>Flow direction</div></div>';
+  h+='<div class="leg-section"><div class="leg-sec-title">Design</div>';
+  h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('reach')+'"></span>Reach / Primary Channel</div>';
+  h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('channel')+'"></span>Channel Area</div>';
+  h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('floodplain')+'"></span>Floodplain</div>';
+  h+='<div class="leg-row"><span class="leg-line" style="background:'+mapColor('widthSegments')+'"></span>Width segments</div></div>';
   h+='<div class="leg-section"><div class="leg-sec-title">Channel Habitat Units</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+CHU_COLOR.riffle+'"></span>Riffle</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+CHU_COLOR.pool+'"></span>Pool</div></div>';
   h+='<div class="leg-section"><div class="leg-sec-title">Secondary Channels</div>';
-  h+='<div class="leg-row"><span class="leg-line" style="background:'+SC_COLOR+'"></span>Secondary channel</div></div>';
+  h+='<div class="leg-row"><span class="leg-line" style="background:'+mapColor('secondaryChannel')+'"></span>Secondary channel</div></div>';
   h+='<div class="leg-section"><div class="leg-sec-title">Wetlands</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+WETLAND_COLOR.existing+'"></span>Existing Wetland Area</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+WETLAND_COLOR.enhance+'"></span>Wetland Enhancement</div></div>';
@@ -8688,10 +8924,82 @@ function renderLegend() {
     });
     h+='</div>';
   }
+  h+='<div class="leg-section"><div class="leg-row" style="cursor:pointer;color:#1e5386;text-decoration:underline;font-size:11px" onclick="openMapColorEditor()">&#127912; Edit Map Colors</div></div>';
   el.innerHTML=h;
   el.classList.toggle('collapsed', legCollapsed);
   var toggleEl = document.getElementById('leg-toggle');
   if (toggleEl) { toggleEl.textContent = legCollapsed ? '[+]' : '[–]'; toggleEl.setAttribute('aria-expanded', legCollapsed ? 'false' : 'true'); }
+}
+
+// ── Map color editor (prototyping tool, opened from the legend) ───────────
+// Lets you try different token assignments live against the real map instead
+// of guessing in code — every swatch is one of Ecology's already brand-derived,
+// colorblind-validated tokens (see MAP_COLOR_ROLES), never an arbitrary hex,
+// so nothing you pick here can land outside the accessible palette. "Copy
+// mapping" prints the resulting MAP_COLOR_ROLES object to paste back into
+// map-sow.js once a combination is settled — this edits the running page's
+// in-memory assignment, not the source file. Lives in its own esa-dialog
+// (see cbf-msow-modals.astro #map-color-modal) rather than inline in the
+// legend — with 17 roles x 22 swatches each it ran to hundreds of pixels
+// tall and cramped the map far more than a legend entry should.
+var MAP_COLOR_ROLE_LABELS = {
+  floodplain: 'Floodplain', channel: 'Channel Area',
+  reach: 'Reach / Primary Channel', boundary: 'Project Boundary', wetlandEnhance: 'Wetland Enhancement',
+  wetlandExisting: 'Existing Wetland', chuRiffle: 'CHU: Riffle', chuPool: 'CHU: Pool',
+  widthSegments: 'Width Segments', secondaryChannel: 'Secondary Channel', structCms: 'Structure: Channel Margin',
+  structMcs: 'Structure: Mid-Channel', structFps: 'Structure: Floodplain', structScs: 'Structure: Side-Channel',
+  structCss: 'Structure: Channel-Spanning', pcChannel: 'Primary Channel'
+  // Only one role/row for this — see the comment on MAP_COLOR_ROLES.pcChannel:
+  // a work element only ever has ONE primary channel today, so "#2..#5" rows
+  // would be unpickable clutter, not real options.
+  // No separate "Floodplain (right bank)" role either — see the comment on
+  // MAP_COLOR_ROLES.floodplain: fp_left/fp_right are never both reached (the
+  // L/R split wizard step doesn't exist in WIZARD_STEPS), so fp_right just
+  // shares the plain floodplain role.
+  // Glide/Run CHU types have no row either — see the comment on
+  // MAP_COLOR_ROLES (~line 103): they're dead, never assigned by either the
+  // pre-project or design CHU workflows.
+};
+function openMapColorEditor() {
+  renderMapColorEditor();
+  document.getElementById('map-color-modal').show();
+}
+function setMapColorRole(role, token) {
+  MAP_COLOR_ROLES[role] = token;
+  repaintAllMapColors();
+  renderMapColorEditor();
+}
+function resetMapColorRoles() {
+  MAP_COLOR_ROLES = Object.assign({}, MAP_COLOR_ROLES_DEFAULT);
+  repaintAllMapColors();
+  renderMapColorEditor();
+}
+function exportMapColorRoles() {
+  var lines = Object.keys(MAP_COLOR_ROLES).map(function(k){ return '  ' + k + ": '" + MAP_COLOR_ROLES[k] + "'"; });
+  var text = 'var MAP_COLOR_ROLES = {\n' + lines.join(',\n') + '\n};';
+  var ta = document.getElementById('map-color-export-ta');
+  if (ta) { ta.style.display = 'block'; ta.value = text; ta.focus(); ta.select(); }
+}
+function renderMapColorEditor() {
+  var body = document.getElementById('map-color-modal-body');
+  if (!body) return;
+  var h = '<div style="font-size:11px;color:var(--color-text-muted,#888);margin-bottom:10px">Click a swatch to try it — updates the map immediately. Every swatch is one of Ecology\'s brand-derived, colorblind-validated design tokens, so nothing here can land outside the accessible palette.</div>';
+  Object.keys(MAP_COLOR_ROLE_LABELS).forEach(function(role) {
+    var current = MAP_COLOR_ROLES[role];
+    h += '<div style="margin-bottom:10px">';
+    h += '<div style="font-size:12px;font-weight:600;margin-bottom:4px">' + MAP_COLOR_ROLE_LABELS[role] + '</div>';
+    h += '<div style="display:flex;flex-wrap:wrap;gap:4px">';
+    MAP_COLOR_TOKENS.forEach(function(token) {
+      var isActive = token === current;
+      var swatchCol = resolveColorToken(token);
+      h += '<span title="' + token + '" onclick="setMapColorRole(\'' + role + '\',\'' + token + '\')" ' +
+        'style="width:20px;height:20px;border-radius:4px;cursor:pointer;display:inline-block;background:' + swatchCol + ';' +
+        'border:' + (isActive ? '2px solid #1a3a5c' : '1px solid rgba(0,0,0,0.15)') + '"></span>';
+    });
+    h += '</div></div>';
+  });
+  h += '<textarea id="map-color-export-ta" readonly style="display:none;width:100%;height:120px;margin-top:6px;font-family:monospace;font-size:10px" onclick="this.select()"></textarea>';
+  body.innerHTML = h;
 }
 
 // ── Geometry ──────────────────────────────────────────────────────────────
@@ -9493,7 +9801,11 @@ function wizardStepBody(we, step, idx) {
       } else if (!fpPolyDoneB && !fpLDoneB && !fpRDoneB) {
         h += '<div class="wz-status warning">&#9888; Go back and draw the floodplain boundary.</div>';
       } else {
-        h += '<div class="wz-tip">The shaded areas show the channel (blue) and floodplain (green). Edit if they don\'t match the real boundaries.</div>';
+        // Named colors here ("blue"/"green") would drift the moment someone repicks
+        // a role in the map color editor — read the live swatches instead, same as
+        // the legend does, so this always matches whatever's actually on the map.
+        var swatch = 'display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin:0 2px';
+        h += '<div class="wz-tip">The shaded areas show the channel <span style="'+swatch+';background:'+mapColor('channel')+'"></span> and floodplain <span style="'+swatch+';background:'+mapColor('floodplain')+'"></span>. Edit if they don\'t match the real boundaries.</div>';
       }
       break;
     }
