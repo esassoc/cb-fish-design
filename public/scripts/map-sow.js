@@ -4543,6 +4543,12 @@ function commitLineEdit(skipReachConfirm) {
     if (btn) { btn.style.background = '#1a3a5c'; btn.textContent = '\u21d5 Pan shape'; }
     document.getElementById('map').removeEventListener('mousedown', _panShapeMapMousedown);
     document.getElementById('mapwrap').classList.remove('drawing');
+    // togglePanShape()'s own "turn it back off" branch clears the hint it set
+    // ("Drag anywhere on the map to shift the shape"), but clicking "Done editing"
+    // directly while pan mode is still on skips that branch entirely and lands
+    // here instead \u2014 leaving that instruction on screen after editing has fully
+    // ended and the sidebar's back to normal.
+    setMapHint('');
   }
   var we = getWE(lineEditing.weId); if (!we) return;
   var layer = lineEditing.layer;
