@@ -3886,6 +3886,27 @@ function startPolyEdit(id) {
   renderPMRow(m);
 }
 
+// Vertex editing for a multi-entry fpMulti polygon (existing wetlands, wetland
+// enhancement, grading, road removal, etc.) — these live in we.sowLayers, not
+// we.ppData, so they need their own entry point rather than startPolyEdit's
+// (which is hardcoded to ppOwner(we,id).ppData[id]). Reuses the same
+// buildPolyEditHandles()/commitLineEdit() machinery via lineEditing.type
+// 'sow-poly'; see the commitLineEdit branch for the sowLayers write-back.
+function startFPMultiPolyEdit(key, id) {
+  var we = getActiveWE(); if (!we) return;
+  var owner = sowOwner(we, id);
+  var d = owner.sowLayers[id]; if (!d || !d.layer) return;
+  if (lineEditing) cancelLineEdit();
+  ppDrawing = null; sowDrawing = null; pendingStructPoint = null; drawPts = []; clearPreview();
+  document.getElementById('mapwrap').classList.remove('drawing');
+  lineEditing = {type: 'sow-poly', id: id, weId: activeWEId, layer: d.layer, fpMultiKey: key};
+  var ring = d.layer.getLatLngs();
+  if (ring.length && Array.isArray(ring[0])) ring = ring[0];
+  buildPolyEditHandles(d.layer, ring);
+  document.getElementById('edit-done-bar').style.display = 'flex'; document.getElementById('mapwrap').classList.add('editing'); repositionMapOverlays();
+  if (wizardMode) renderWizardStep();
+}
+
 function buildPolyEditHandles(layer, ring) {
   clearEditHandles();
   // for a polygon ring, build handles on all vertices (the ring closes back to [0])
@@ -4575,6 +4596,22 @@ function commitLineEdit(skipReachConfirm) {
         renderChannelReaches();
       }
     }
+  } else if (type === 'sow-poly') {
+    // Multi-entry fpMulti polygon (existing wetland, wetland enhancement, grading,
+    // road removal, etc.) — recompute area/acres from the edited ring, same as
+    // finishSOWDraw() does for a freshly drawn one. Note: editing an Existing
+    // Wetland Area shape does NOT retroactively re-clip any already-drawn Wetland
+    // Enhancement polygons against the new boundary (see
+    // clipDrawnPolygonToExistingWetlands) — those keep whatever extent they had
+    // when they were drawn/last redone.
+    var sowPolyOwner = sowOwner(we, id);
+    var sd = sowPolyOwner.sowLayers[id];
+    if (sd) {
+      sd.valueM = geoAreaM2(pts);
+      sd.acres = geoArea(pts);
+    }
+    updateSOWCalcs(); renderLegend();
+    wizardRefreshIfActive();
   } else if (type === 'pp-poly') {
     // recalculate area from polygon ring
     var ring2 = layer.getLatLngs();
@@ -10419,6 +10456,9 @@ function wzFPMultiSection(we, key, geo, label, hasVolume) {
     h += '<span class="wz-metric-val' + (displayVal ? '' : ' missing') + '">' + (displayVal || 'not drawn') + '</span>';
     h += '<button style="background:' + (displayVal ? '#f3f7fc' : '#1e5386') + ';color:' + (displayVal ? '#3d3d3d' : '#fff') + ';border:1px solid ' + (displayVal ? '#dcdcdc' : 'transparent') + ';padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:8px" ';
     h += 'onclick="event.stopPropagation();startSOWDraw(&apos;' + item.id + '&apos;,&apos;' + geo + '&apos;,&apos;' + itemLabel + '&apos;)">' + (displayVal ? 'redo' : 'draw') + '</button>';
+    if (displayVal && geo === 'polygon') {
+      h += '<span style="cursor:pointer;color:#1e5386;font-size:11px;margin-left:6px;text-decoration:underline" onclick="event.stopPropagation();startFPMultiPolyEdit(&apos;' + key + '&apos;,&apos;' + item.id + '&apos;)" title="Edit this shape\'s vertices">edit</span>';
+    }
     if (displayVal) {
       h += '<span style="cursor:pointer;color:#1e5386;font-size:11px;margin-left:6px;text-decoration:underline" onclick="event.stopPropagation();zoomToSOW(&apos;' + item.id + '&apos;)" title="Zoom to this feature">&#128269;</span>';
     }
