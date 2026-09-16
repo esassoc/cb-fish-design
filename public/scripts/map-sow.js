@@ -4609,6 +4609,15 @@ function commitLineEdit(skipReachConfirm) {
     if (sd) {
       sd.valueM = geoAreaM2(pts);
       sd.acres = geoArea(pts);
+      // The numbered map badge (addFPMultiLabelMarker) is a plain marker dropped at
+      // the shape's centroid when drawn — it doesn't track the polygon, so an edit
+      // that moves/reshapes the ring leaves it pointing at the old centroid. Left
+      // alone, that reads as "wrong label" once you pan away and back: the badge
+      // sits over empty space near where the shape used to be, sometimes nowhere
+      // near the edited shape at all.
+      if (sd._labelMarker && layer.getCenter) {
+        sd._labelMarker.setLatLng(layer.getCenter());
+      }
     }
     updateSOWCalcs(); renderLegend();
     wizardRefreshIfActive();
