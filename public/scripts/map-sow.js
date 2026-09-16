@@ -6171,7 +6171,24 @@ function fetchWbConnectorCenterline(clickLL, bufM) {
     var lo = closestIdx, hi = closestIdx;
     while (lo > 0 && dists[lo - 1] < buf) lo--;
     while (hi < chainLL.length - 1 && dists[hi + 1] < buf) hi++;
-    return chainLL.slice(lo, hi + 1);
+    var windowed = chainLL.slice(lo, hi + 1);
+
+    // A chained result can be real but a tiny, disconnected fragment of the network —
+    // a dead-end stub with nothing else close enough (chainWbConnectorSegments' 100m
+    // tolerance) to continue it either way. That's genuine data, but useless as a
+    // reach: confirmed on a Yakima River backwater near Granger, WA, where the only
+    // connector data near the click was an isolated 6-point, ~166m stub sitting in a
+    // side pond — nowhere near the actual river the click was meant to select, even
+    // though the click landed inside the SAME (correct, huge) river polygon. Treat a
+    // suspiciously short result the same as "no connector data" so the caller falls
+    // back to deriveWbCenterlinePts' ring-based synthesis, which works from the
+    // polygon itself and isn't at the mercy of a gap in the connector network.
+    var MIN_CONNECTOR_SPAN_M = 300;
+    var spanM = 0;
+    for (var wi = 0; wi < windowed.length - 1; wi++) spanM += windowed[wi].distanceTo(windowed[wi + 1]);
+    if (spanM < MIN_CONNECTOR_SPAN_M) return null;
+
+    return windowed;
   }).catch(function() { return null; });
 }
 
