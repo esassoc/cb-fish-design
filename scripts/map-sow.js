@@ -561,9 +561,26 @@ function setPPLayersVisible(show) {
       if (show && !map.hasLayer(layer)) map.addLayer(layer);
       else if (!show && map.hasLayer(layer)) map.removeLayer(layer);
     }
-    tog(d.layer); tog(d.bufferLayer);
+    tog(d.layer); tog(d.bufferLayer); tog(d.labelMarker);
     if (d._arrowMarkers) d._arrowMarkers.forEach(tog);
     if (d.lines) d.lines.forEach(function(l){ if(l) tog(l.layer); });
+  });
+  updatePPChuVisibility(we);
+}
+
+// we.ppChuUnits (pre-project pool/riffle) are a separate data structure from
+// PP_DEFS, so the loop above never touched them — "Hide Pre-Project" removed the
+// reach/channel/floodplain shapes but left every pre-project Pool/Riffle badge and
+// polygon on the map regardless, which is exactly what made a copied-and-tweaked
+// design reach unreadable against its own pre-project original. Shapes follow
+// ppLayersVisible; labels additionally require labelsVisible, matching how
+// setLabelsVisible already gates primary-channel (design-phase) CHU labels.
+function updatePPChuVisibility(we) {
+  we = we || getActiveWE(); if (!we) return;
+  var showShapes = ppLayersVisible, showLabels = ppLayersVisible && labelsVisible;
+  (we.ppChuUnits || []).forEach(function(u) {
+    if (u.layer) { if (showShapes && !map.hasLayer(u.layer)) map.addLayer(u.layer); else if (!showShapes && map.hasLayer(u.layer)) map.removeLayer(u.layer); }
+    if (u.labelMarker) { if (showLabels && !map.hasLayer(u.labelMarker)) map.addLayer(u.labelMarker); else if (!showLabels && map.hasLayer(u.labelMarker)) map.removeLayer(u.labelMarker); }
   });
 }
 
@@ -633,6 +650,10 @@ function setLabelsVisible(show) {
         (pc.structures[t]||[]).forEach(function(s){ tog(s.marker); });
       });
     });
+    // Pre-project Pool/Riffle labels (we.ppChuUnits) — separate from the
+    // primary-channel CHU labels above; also gated by ppLayersVisible, so
+    // re-derive both together rather than toggling just this one flag's effect.
+    updatePPChuVisibility(we);
   });
 }
 
@@ -5038,8 +5059,8 @@ function renderPPChuUnits(we) {
     else { riffleNum++; typeLabel = 'Riffle ' + riffleNum; }
     u._displayLabel = typeLabel;
     u.layer = L.polygon(u.pts, {color:col, fillColor:col, fillOpacity:0.25, weight:2, interactive:true})
-      .bindTooltip(typeLabel + ' (pre-project) — ' + (u.areaM2*0.000247105).toFixed(3)+' ac')
-      .addTo(map);
+      .bindTooltip(typeLabel + ' (pre-project) — ' + (u.areaM2*0.000247105).toFixed(3)+' ac');
+    if (ppLayersVisible) u.layer.addTo(map);
     var icon = L.divIcon({
       className: '',
       iconSize: null,
@@ -5052,7 +5073,7 @@ function renderPPChuUnits(we) {
     })();
     if (!identifyingPools || u.type === 'pool') {
       u.labelMarker = L.marker(chuCentroid(u.pts), {icon:icon, interactive:false, zIndexOffset:100});
-      if (labelsVisible) u.labelMarker.addTo(map);
+      if (labelsVisible && ppLayersVisible) u.labelMarker.addTo(map);
     }
   });
 }
