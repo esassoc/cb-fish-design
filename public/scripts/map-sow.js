@@ -91,8 +91,14 @@ var MAP_COLOR_TOKENS = [
 // calls rebuildMapPalettes()+repaintAllMapColors()) — everything else in this
 // section just mechanically turns whatever's assigned here into real colors.
 var MAP_COLOR_ROLES = {
-  floodplain:       'background-dataviz-categorical-1', // fp_poly, pc_fp, fp_left, area_fp
-  floodplainRight:  'background-dataviz-sequential-4',  // fp_right — needs to read apart from fp_left, not just from other feature types
+  // floodplainRight (fp_right's own hue, distinct from fp_left) was removed:
+  // WIZARD_STEPS has only 'fp_poly', a single net-floodplain step — no step
+  // ever produces a separate fp_left/fp_right (the L/R split machinery,
+  // splitFpByReach()/doFpSplit()/doFpFlip()/the fp_left/fp_right/fp_split
+  // wizard-step render cases, is unreachable, same dead shape as CHU
+  // Glide/Run above). fp_left/fp_right/pc_fp/area_fp all resolve through
+  // the one 'floodplain' role now.
+  floodplain:       'background-dataviz-categorical-1', // fp_poly, pc_fp, fp_left, fp_right, area_fp
   channel:          'background-dataviz-categorical-2', // area_ch, pc-area
   reach:            'background-dataviz-categorical-3', // reach_len, pc-reach
   boundary:         'background-dataviz-categorical-4', // perimeter
@@ -155,7 +161,7 @@ function mapColor(role) {
 function repaintAllMapColors() {
   rebuildMapPalettes();
   workElements.forEach(function(we) {
-    var PP_ROLE_BY_ID = {perimeter:'boundary', area_ch:'channel', reach_len:'reach', fp_left:'floodplain', fp_right:'floodplainRight', fp_poly:'floodplain', area_fp:'floodplain'};
+    var PP_ROLE_BY_ID = {perimeter:'boundary', area_ch:'channel', reach_len:'reach', fp_left:'floodplain', fp_right:'floodplain', fp_poly:'floodplain', area_fp:'floodplain'};
     Object.keys(PP_ROLE_BY_ID).forEach(function(id) {
       var d = we.ppData[id]; if (!d) return;
       var col = mapColor(PP_ROLE_BY_ID[id]);
@@ -2008,10 +2014,11 @@ function swapFpLeftRight() {
   // Update tooltip labels
   if (we.ppData['fp_left'].layer) we.ppData['fp_left'].layer.unbindTooltip().bindTooltip('Left Floodplain Area');
   if (we.ppData['fp_right'].layer) we.ppData['fp_right'].layer.unbindTooltip().bindTooltip('Right Floodplain Area');
-  // Swap colors
-  var colLeft = mapColor('floodplain'), colRight = mapColor('floodplainRight');
-  if (we.ppData['fp_left'].layer) we.ppData['fp_left'].layer.setStyle({color:colLeft,fillColor:colLeft});
-  if (we.ppData['fp_right'].layer) we.ppData['fp_right'].layer.setStyle({color:colRight,fillColor:colRight});
+  // fp_left/fp_right now share the single 'floodplain' role (see MAP_COLOR_ROLES) —
+  // nothing to actually swap, but keep restyling both in case a stale style lingers.
+  var fpCol = mapColor('floodplain');
+  if (we.ppData['fp_left'].layer) we.ppData['fp_left'].layer.setStyle({color:fpCol,fillColor:fpCol});
+  if (we.ppData['fp_right'].layer) we.ppData['fp_right'].layer.setStyle({color:fpCol,fillColor:fpCol});
   var mL = PP_DEFS.filter(function(x){return x.id==='fp_left';})[0];
   var mR = PP_DEFS.filter(function(x){return x.id==='fp_right';})[0];
   var mT = PP_DEFS.filter(function(x){return x.id==='area_fp';})[0];
@@ -2206,11 +2213,10 @@ function commitPCFP(we, pts) {
 }
 
 function commitFpSide(we, id, poly, side) {
-  var colLeft = mapColor('floodplain'), colRight = mapColor('floodplainRight');
+  var col = mapColor('floodplain'); // fp_left/fp_right share one role — see MAP_COLOR_ROLES
   // Respect the user's explicit choice (left or right button).
   // Use the Swap button if sides need correcting after drawing.
   var finalId = id;
-  var col = finalId === 'fp_left' ? colLeft : colRight;
   var label = finalId === 'fp_left' ? 'Left Floodplain Area' : 'Right Floodplain Area';
   if (!we.ppData[finalId]) we.ppData[finalId] = {};
   var d = we.ppData[finalId];
@@ -2291,10 +2297,9 @@ function splitFpByReach(we, flip) {
   if (window._debugLayers) { window._debugLayers.forEach(function(l){try{map.removeLayer(l);}catch(e){}}); }
   window._debugLayers = [];
 
-  // Same two tokens commitFpSide()/swapFpLeftRight() use for a hand-drawn
-  // fp_left/fp_right — this auto-split path used its own slightly-darker pair
-  // before, an unintentional third variant of "the same two shapes' colors."
-  var colLeft = mapColor('floodplain'), colRight = mapColor('floodplainRight');
+  // fp_left/fp_right share one role — see MAP_COLOR_ROLES.floodplain — same
+  // token commitFpSide()/swapFpLeftRight() use for a hand-drawn side.
+  var colLeft = mapColor('floodplain'), colRight = mapColor('floodplain');
   function applyFpSide(id, pts, col, label) {
     var d = we.ppData[id]; if (!d) { we.ppData[id] = {}; d = we.ppData[id]; }
     if (d.layer) map.removeLayer(d.layer);
@@ -2766,14 +2771,13 @@ function finishPPDraw() {
   var col=PP_COLOR[m.geo]||'#c07820';
   // perimeter/area_ch otherwise fall through to the generic PP_COLOR[m.geo]
   // polygon fallback and would collide (both 'polygon'-geo, same hex) — give
-  // each its own role. fp_left/fp_right need to stay distinguishable from
-  // EACH OTHER (both commonly drawn together, one per bank), not just from
-  // other feature types, so fp_right takes a second, distinguishable step
-  // rather than reusing fp_left's floodplain hue outright.
+  // each its own role. fp_left/fp_right share the plain floodplain role (see
+  // MAP_COLOR_ROLES) — this branch itself is dead today (fp_left/fp_right
+  // are never reached from WIZARD_STEPS), kept only as a defensive fallback.
   if(m.id==='perimeter') col=mapColor('boundary');
   if(m.id==='area_ch') col=mapColor('channel');
   if(m.id==='fp_left') col=mapColor('floodplain');
-  if(m.id==='fp_right') col=mapColor('floodplainRight');
+  if(m.id==='fp_right') col=mapColor('floodplain');
   if(!ppOwner(we,m.id).ppData[m.id])ppOwner(we,m.id).ppData[m.id]={};
   // fp_poly/pc_fp are geo:'polygon' but need their own channel-subtraction commit path
   // rather than the generic polygon handling below — check them before the geo branch.
@@ -8939,7 +8943,7 @@ function renderLegend() {
 // legend — with 17 roles x 22 swatches each it ran to hundreds of pixels
 // tall and cramped the map far more than a legend entry should.
 var MAP_COLOR_ROLE_LABELS = {
-  floodplain: 'Floodplain', floodplainRight: 'Floodplain (right bank)', channel: 'Channel Area',
+  floodplain: 'Floodplain', channel: 'Channel Area',
   reach: 'Reach / Primary Channel', boundary: 'Project Boundary', wetlandEnhance: 'Wetland Enhancement',
   wetlandExisting: 'Existing Wetland', chuRiffle: 'CHU: Riffle', chuPool: 'CHU: Pool',
   widthSegments: 'Width Segments', secondaryChannel: 'Secondary Channel', structCms: 'Structure: Channel Margin',
@@ -8948,6 +8952,10 @@ var MAP_COLOR_ROLE_LABELS = {
   // Only one role/row for this — see the comment on MAP_COLOR_ROLES.pcChannel:
   // a work element only ever has ONE primary channel today, so "#2..#5" rows
   // would be unpickable clutter, not real options.
+  // No separate "Floodplain (right bank)" role either — see the comment on
+  // MAP_COLOR_ROLES.floodplain: fp_left/fp_right are never both reached (the
+  // L/R split wizard step doesn't exist in WIZARD_STEPS), so fp_right just
+  // shares the plain floodplain role.
   // Glide/Run CHU types have no row either — see the comment on
   // MAP_COLOR_ROLES (~line 103): they're dead, never assigned by either the
   // pre-project or design CHU workflows.
@@ -9793,7 +9801,11 @@ function wizardStepBody(we, step, idx) {
       } else if (!fpPolyDoneB && !fpLDoneB && !fpRDoneB) {
         h += '<div class="wz-status warning">&#9888; Go back and draw the floodplain boundary.</div>';
       } else {
-        h += '<div class="wz-tip">The shaded areas show the channel (blue) and floodplain (green). Edit if they don\'t match the real boundaries.</div>';
+        // Named colors here ("blue"/"green") would drift the moment someone repicks
+        // a role in the map color editor — read the live swatches instead, same as
+        // the legend does, so this always matches whatever's actually on the map.
+        var swatch = 'display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin:0 2px';
+        h += '<div class="wz-tip">The shaded areas show the channel <span style="'+swatch+';background:'+mapColor('channel')+'"></span> and floodplain <span style="'+swatch+';background:'+mapColor('floodplain')+'"></span>. Edit if they don\'t match the real boundaries.</div>';
       }
       break;
     }
