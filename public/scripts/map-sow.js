@@ -5986,9 +5986,16 @@ function loadNHDPreview() {
         });
         wbLayers.push(outlineLyr);
 
-        // Transparent filled polygon as hit zone — clickable anywhere inside
+        // Transparent filled polygon as hit zone — clickable anywhere inside.
+        // The stroke also carries a wide, near-invisible companion (mirrors the
+        // flowline hitLyr trick above) so a click that lands just outside the
+        // mapped bank — the visible basemap water and the Esri ring rarely align
+        // to the pixel — still resolves to this river instead of falling through
+        // to whatever thin, unrelated flowline (an irrigation ditch, a dry wash)
+        // happens to pass nearby. Waterbody layers paint on top of flowlines
+        // (see the concat() below), so this reliably wins that pixel.
         var hitLyr = L.polygon(polyPts, {
-          color: '#00d4ff', weight: 0, opacity: 0,
+          color: '#00d4ff', weight: 24, opacity: 0.001,
           fillColor: '#00d4ff', fillOpacity: 0.001,
           interactive: true
         });
@@ -6048,23 +6055,89 @@ function loadNHDPreview() {
 //
 // Individual connector segments are short and need chaining into one continuous path
 // before they're usable as a reach.
+//
+// At a confluence, more than one unused segment can have an endpoint within TOL_M of
+// the chain's current end — the real continuation AND a short spur (a side channel,
+// or a stub representing where a tributary's own connector ties in). Picking
+// whichever one is simply found first (the old behavior, driven by array order) can
+// walk out the spur, dead-end, then walk right back near where it started on a later
+// pass — producing an out-and-back spike that self-intersects the reach. Confirmed on
+// a real Cispus River/Lake Scanewa confluence.
+//
+// Fix: when extending an end, score every candidate segment by how sharply it turns
+// relative to the chain's current heading there, and take the straightest one. A real
+// through-channel continuation runs close to straight across a junction; a spur turns
+// off at a real angle. Ambiguous cases (no chain direction yet, i.e. still on the
+// first segment) fall back to whichever is closest, same as before.
 function chainWbConnectorSegments(segs) {
   if (!segs || !segs.length) return null;
   var TOL_M = 100; // real adjoining segments share an endpoint near-exactly
+
+  function bearingRad(a, b) {
+    var toRad = function(d){ return d*Math.PI/180; };
+    var lat1 = toRad(a.lat), lat2 = toRad(b.lat), dLng = toRad(b.lng - a.lng);
+    var y = Math.sin(dLng) * Math.cos(lat2);
+    var x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+    return Math.atan2(y, x);
+  }
+  function turnAngle(a, b) {
+    var d = Math.abs(a - b) % (2 * Math.PI);
+    return d > Math.PI ? 2 * Math.PI - d : d;
+  }
+  // A point a short way in from one end of `seg`, used to measure that end's local
+  // direction (the far end of a long segment isn't representative of it).
+  function localDirPoint(seg, atStart) {
+    var idx = atStart ? Math.min(1, seg.length - 1) : Math.max(0, seg.length - 2);
+    return L.latLng(seg[idx][1], seg[idx][0]);
+  }
+
   var chain = segs[0].slice();
   var used = {0: true};
   var changed = true;
   while (changed) {
     changed = false;
+    var chainStart = L.latLng(chain[0][1], chain[0][0]);
+    var chainEnd = L.latLng(chain[chain.length - 1][1], chain[chain.length - 1][0]);
+    // Direction of arrival at each end — continuing straight means leaving that end
+    // in this same compass direction.
+    var endDirIn = chain.length >= 2 ? bearingRad(L.latLng(chain[chain.length - 2][1], chain[chain.length - 2][0]), chainEnd) : null;
+    var startDirIn = chain.length >= 2 ? bearingRad(L.latLng(chain[1][1], chain[1][0]), chainStart) : null;
+
+    var candidates = [];
     for (var i = 0; i < segs.length; i++) {
       if (used[i]) continue;
       var seg = segs[i];
-      var segStart = L.latLng(seg[0][1], seg[0][0]), segEnd = L.latLng(seg[seg.length-1][1], seg[seg.length-1][0]);
-      var chainStart = L.latLng(chain[0][1], chain[0][0]), chainEnd = L.latLng(chain[chain.length-1][1], chain[chain.length-1][0]);
-      if (chainEnd.distanceTo(segStart) < TOL_M) { chain = chain.concat(seg.slice(1)); used[i] = true; changed = true; }
-      else if (chainEnd.distanceTo(segEnd) < TOL_M) { chain = chain.concat(seg.slice().reverse().slice(1)); used[i] = true; changed = true; }
-      else if (chainStart.distanceTo(segEnd) < TOL_M) { chain = seg.slice(0, -1).concat(chain); used[i] = true; changed = true; }
-      else if (chainStart.distanceTo(segStart) < TOL_M) { chain = seg.slice().reverse().slice(0, -1).concat(chain); used[i] = true; changed = true; }
+      var segStart = L.latLng(seg[0][1], seg[0][0]);
+      var segEnd = L.latLng(seg[seg.length - 1][1], seg[seg.length - 1][0]);
+
+      if (chainEnd.distanceTo(segStart) < TOL_M) {
+        var t1 = endDirIn === null ? 0 : turnAngle(endDirIn, bearingRad(chainEnd, localDirPoint(seg, true)));
+        candidates.push({turn: t1, i: i, end: 'end', reversed: false});
+      }
+      if (chainEnd.distanceTo(segEnd) < TOL_M) {
+        var t2 = endDirIn === null ? 0 : turnAngle(endDirIn, bearingRad(chainEnd, localDirPoint(seg, false)));
+        candidates.push({turn: t2, i: i, end: 'end', reversed: true});
+      }
+      if (chainStart.distanceTo(segEnd) < TOL_M) {
+        var t3 = startDirIn === null ? 0 : turnAngle(startDirIn, bearingRad(chainStart, localDirPoint(seg, false)));
+        candidates.push({turn: t3, i: i, end: 'start', reversed: false});
+      }
+      if (chainStart.distanceTo(segStart) < TOL_M) {
+        var t4 = startDirIn === null ? 0 : turnAngle(startDirIn, bearingRad(chainStart, localDirPoint(seg, true)));
+        candidates.push({turn: t4, i: i, end: 'start', reversed: true});
+      }
+    }
+
+    if (candidates.length) {
+      candidates.sort(function(a, b) { return a.turn - b.turn; });
+      var best = candidates[0];
+      var bestSeg = segs[best.i];
+      if (best.end === 'end' && !best.reversed) chain = chain.concat(bestSeg.slice(1));
+      else if (best.end === 'end' && best.reversed) chain = chain.concat(bestSeg.slice().reverse().slice(1));
+      else if (best.end === 'start' && !best.reversed) chain = bestSeg.slice(0, -1).concat(chain);
+      else chain = bestSeg.slice().reverse().slice(0, -1).concat(chain);
+      used[best.i] = true;
+      changed = true;
     }
   }
   return chain;
@@ -6564,14 +6637,27 @@ function reachAutoClick(latlng) {
     '&outSR=4326'+
     '&f=json';
 
-  // Query waterbody layer at the exact click point — if the user clicked inside a
-  // wide river polygon, use that polygon's geometry to build a centerline. Layer 60
+  // Query waterbody layer near the click point — if the user clicked inside (or near)
+  // a wide river polygon, use that polygon's geometry to build a centerline. Layer 60
   // mixes rivers in with lakes/ponds/canals/oceans (featuretype 1/2/3/4 respectively —
   // confirmed via a distinct-values query against the live service); filter to rivers
   // only so a click inside a pond doesn't get treated as a wide-river reach.
+  // Buffered (Intersects+distance), not exact containment (Within) — a click can miss
+  // the true river ring by a couple hundred meters and still clearly mean the river:
+  // the basemap tile's water rendering (and marsh/wetland fringe symbology right at a
+  // bank) doesn't line up pixel-for-pixel with the authoritative Esri polygon.
+  // Confirmed on a Klickitat click that landed ~240m from the ring, over the Fisher
+  // Hill Wildlife Area wetland bordering the river: with exact containment wbName came
+  // back empty, so the generic "nearest flowline vertex within 3km, any type" fallback
+  // below picked an unrelated dry-land ditch instead — producing a reach that cut
+  // straight across a road. 300m is generous enough to cover that miss while staying
+  // far short of the 3km/8km flowline search radii, so it won't reach past the
+  // river's own bank to a genuinely different, unrelated waterbody.
+  var WB_POINT_BUFFER_M = 300;
   var wbPointUrl = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/60/query?' +
     'geometry='+encodeURIComponent(x+','+y)+
-    '&geometryType=esriGeometryPoint&inSR=102100&spatialRel=esriSpatialRelWithin' +
+    '&geometryType=esriGeometryPoint&inSR=102100&spatialRel=esriSpatialRelIntersects' +
+    '&distance='+WB_POINT_BUFFER_M+'&units=esriSRUnit_Meter' +
     '&where=featuretype=1' +
     '&outFields=gnisidlabel,featuretype,areasqkm&returnGeometry=true&outSR=4326&f=json';
 
@@ -6591,6 +6677,28 @@ function reachAutoClick(latlng) {
     // means "the river," not whichever one the service happened to list first.
     if (wbData.features && wbData.features.length > 1) {
       wbData.features.sort(function(a, b) { return (b.attributes.areasqkm || 0) - (a.attributes.areasqkm || 0); });
+    }
+
+    // Found a wide-river polygon at (or near) the click — hand off to
+    // reachAutoClickFeature's wbGeometry branch, which tries the real USGS Waterbody
+    // Connector flowline first and only falls back to its own bank-pairing synthesis
+    // (see fetchWbConnectorCenterline / deriveWbCenterlinePts). That's the same
+    // connector-preferring logic "Try different stream" already gets; routing the
+    // very first click through it too (instead of the generic nearest-flowline-vertex
+    // search below) matters most exactly when it's needed most — many real river
+    // polygons (including the one this fix was verified against) have no GNIS name,
+    // so the old wbName-driven filtering silently no-op'd for them even when the
+    // point-in/near-polygon lookup above succeeded.
+    if (wbData.features && wbData.features.length && wbData.features[0].attributes.featuretype === 1 && wbData.features[0].geometry) {
+      var wbHit = wbData.features[0];
+      var synthFeat = {
+        attributes: {gnisidlabel: wbHit.attributes.gnisidlabel || 'River', featuretype: 1, mainstemid: ''},
+        geometry: wbHit.geometry,
+        _clickOverride: true,
+        _wbGeometry: wbHit.geometry
+      };
+      reachAutoClickFeature(synthFeat, latlng);
+      return;
     }
 
     // wbName from point-in-polygon query — non-empty means the user clicked inside a river
