@@ -5726,23 +5726,32 @@ function polygonCenterline(geometry) {
 
   if (bank1.length < 2 || bank2.length < 2) return null;
 
-  // Resample both banks to N points, then pair and midpoint
-  var N = 30;
-  function resample(bank, n) {
-    if (bank.length === 1) {
-      var out = []; for (var k=0;k<n;k++) out.push(bank[0]); return out;
-    }
-    // Compute cumulative length
+  function cumLenOf(bank) {
     var cumLen = [0];
     for (var j = 1; j < bank.length; j++) {
       var dx = bank[j].lng - bank[j-1].lng, dy = bank[j].lat - bank[j-1].lat;
       cumLen.push(cumLen[j-1] + Math.sqrt(dx*dx + dy*dy));
     }
+    return cumLen;
+  }
+
+  // Resample bank1 to N points by arc length (bank2 is left at full resolution — see
+  // closestInWindow below, which needs bank2's raw segments, not just N samples of it).
+  // 30 was too coarse: real creeks have oxbows/tight meanders on the order of tens of
+  // meters, well under 30 points' worth of resolution across a several-km reach, so
+  // small bends got smoothed straight through even after the bank-pairing fix above.
+  // 150 (confirmed <15ms even against the ~15k-vertex multi-tributary ring) resolves
+  // meanders down to that scale without the pairing fix's own correctness depending on
+  // point count.
+  var N = 150;
+  function resample(bank, cumLen, n) {
+    if (bank.length === 1) {
+      var out = []; for (var k=0;k<n;k++) out.push(bank[0]); return out;
+    }
     var total = cumLen[cumLen.length-1];
     var result = [];
     for (var k = 0; k < n; k++) {
       var target = total * k / (n-1);
-      // Find segment
       var seg = 0;
       while (seg < cumLen.length-2 && cumLen[seg+1] < target) seg++;
       var segLen = cumLen[seg+1] - cumLen[seg];
@@ -5755,17 +5764,73 @@ function polygonCenterline(geometry) {
     return result;
   }
 
-  var b1 = resample(bank1, N);
-  var b2 = resample(bank2, N);
+  // Closest point on the raw `bank` polyline to `pt`, restricted to arc-length param
+  // within [expectedParam - slack, expectedParam + slack]. Pairing bank1[k] with
+  // bank2[k] at the SAME proportional-arc-length position (the old approach) cuts the
+  // corner at a meander: the outer bank runs measurably longer than the inner bank
+  // over the same stretch of river, so "k-th point along each bank's own length"
+  // desyncs exactly where the river bends. Searching bank2's real geometry in a window
+  // around each point's own proportional expectation corrects that local desync — and
+  // because every point is re-anchored to its OWN expected position rather than to
+  // wherever the previous point's match ended up, one hard bend can't drag the pairing
+  // off-center for the rest of the reach the way an unbounded nearest-point walk can.
+  function closestInWindow(pt, bank, cumLen, expectedParam, slack) {
+    var loP = expectedParam - slack, hiP = expectedParam + slack;
+    var bestD = Infinity, bestPt = null;
+    for (var s = 0; s < bank.length - 1; s++) {
+      if (cumLen[s+1] < loP || cumLen[s] > hiP) continue;
+      var a = bank[s], b = bank[s+1];
+      var dx = b.lng - a.lng, dy = b.lat - a.lat;
+      var len2 = dx*dx + dy*dy;
+      var t = len2 > 0 ? ((pt.lng-a.lng)*dx + (pt.lat-a.lat)*dy) / len2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      var param = cumLen[s] + t*(cumLen[s+1]-cumLen[s]);
+      if (param < loP || param > hiP) continue;
+      var plng = a.lng + t*dx, plat = a.lat + t*dy;
+      var ddx = pt.lng-plng, ddy = pt.lat-plat, d = ddx*ddx+ddy*ddy;
+      if (d < bestD) { bestD = d; bestPt = {lng: plng, lat: plat}; }
+    }
+    return bestPt;
+  }
+
+  var cum1 = cumLenOf(bank1), cum2 = cumLenOf(bank2);
+  var b1 = resample(bank1, cum1, N);
+  var total2 = cum2[cum2.length-1];
+  var SLACK_FRAC = 0.1; // stable from 0.05-0.2 in testing against real meanders — the
+                         // window just needs to be wide enough to reach the true bank
+                         // position, and correction size doesn't grow past that.
+  var slack = total2 * SLACK_FRAC;
 
   var centerline = [];
   for (var k = 0; k < N; k++) {
-    centerline.push(L.latLng(
-      (b1[k].lat + b2[k].lat) / 2,
-      (b1[k].lng + b2[k].lng) / 2
-    ));
+    var expectedParam = total2 * k / (N-1);
+    var match = closestInWindow(b1[k], bank2, cum2, expectedParam, slack);
+    if (!match) {
+      // Window found nothing on bank2 (shouldn't normally happen) — fall back to the
+      // plain proportional-position point the old code always used.
+      var seg = 0;
+      while (seg < cum2.length-2 && cum2[seg+1] < expectedParam) seg++;
+      var segLen = cum2[seg+1] - cum2[seg];
+      var t = segLen > 0 ? (expectedParam - cum2[seg]) / segLen : 0;
+      match = {
+        lng: bank2[seg].lng + t*(bank2[seg+1].lng - bank2[seg].lng),
+        lat: bank2[seg].lat + t*(bank2[seg+1].lat - bank2[seg].lat)
+      };
+    }
+    centerline.push(L.latLng((b1[k].lat + match.lat) / 2, (b1[k].lng + match.lng) / 2));
   }
   return centerline;
+}
+
+// Standard ray-casting point-in-polygon test. `ring` is an array of [lng,lat] pairs
+// (the raw Esri geometry format, same shape as feature.geometry.rings[0]).
+function pointInRing(lat, lng, ring) {
+  var inside = false;
+  for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    var xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    if (((yi > lat) !== (yj > lat)) && (lng < (xj - xi) * (lat - yi) / (yj - yi) + xi)) inside = !inside;
+  }
+  return inside;
 }
 
 function clearNHDPreview() {
@@ -5798,11 +5863,17 @@ function loadNHDPreview() {
     '&where=featuretype+IN+(1,2,3)' +
     '&outFields=gnisidlabel,featuretype,mainstemid&returnGeometry=true&outSR=4326&f=json';
 
-  // Also query waterbody polygons — wide rivers have no flowlines, only a polygon
+  // Also query waterbody polygons — wide rivers have no flowlines, only a polygon.
+  // Layer 60 (Waterbody) mixes rivers in with lakes/ponds/canals/oceans under the
+  // same geometry type; featuretype is how the service tells them apart (1=River,
+  // 2=Canal, 3=Lake, 4=Ocean or Great Lake — confirmed via a distinct-values query
+  // against the live service). Filter server-side so a lake never becomes a
+  // clickable "wide river" candidate in the first place.
   var wbUrl = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/60/query?' +
     'geometry='+encodeURIComponent(env)+
     '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects' +
-    '&outFields=gnisidlabel&returnGeometry=true&outSR=4326&f=json';
+    '&where=featuretype=1' +
+    '&outFields=gnisidlabel,featuretype,areasqkm&returnGeometry=true&outSR=4326&f=json';
 
   // Each fetch swallows its own failure into an empty-features fallback (so one bad
   // service doesn't kill the other), but tags _failed so the combined handler below can
@@ -5852,11 +5923,46 @@ function loadNHDPreview() {
     // Skip polygons whose bounding box exceeds 1.0° in BOTH dimensions (truly watershed-scale).
     var MAX_WB_DEGREES = 1.0;
     if (wbData.features && wbData.features.length) {
-      wbData.features.forEach(function(wb) {
+      // A small feature (an island's narrow side channel, or similar NHD micro-detail)
+      // can sit entirely inside a much larger river polygon's footprint at the same
+      // spot — confirmed on the Klickitat River: a 0.05 km² feature nested inside a
+      // 3.6 km² one. Left alone, both become independently clickable, and whichever
+      // happens to paint on top wins the click — producing a centerline that's
+      // correct FOR THAT TINY FEATURE (a real narrow channel) but wrong for what the
+      // user meant to pick, and visually reads as "hugging one edge of the river."
+      // Processing largest-first and skipping anything nested inside an
+      // already-accepted candidate means the small one never becomes its own pick.
+      var acceptedWbRings = [];
+      var sortedWb = wbData.features.slice().sort(function(a, b) {
+        return (b.attributes.areasqkm || 0) - (a.attributes.areasqkm || 0);
+      });
+      sortedWb.forEach(function(wb) {
         if (!wb.geometry || !wb.geometry.rings) return;
+        // Belt-and-suspenders: the query's own where=featuretype=1 already excludes
+        // lakes/canals/oceans, but don't trust a synthesized "wide river" reach to a
+        // feature the service didn't actually tag as a river if that filter is ever
+        // dropped or ignored upstream.
+        if (wb.attributes.featuretype !== 1) return;
         var ring = wb.geometry.rings[0];
         if (!ring || ring.length < 3) return;
-        var wbLabel = wb.attributes.gnisidlabel || 'River/Lake';
+
+        // Sample a handful of this ring's own vertices (not just one) against each
+        // already-accepted larger ring — a candidate that only touches or crosses a
+        // bigger ring's edge isn't "nested," but one whose sampled points are all
+        // inside it almost certainly is.
+        var isNestedInLarger = acceptedWbRings.some(function(bigRing) {
+          var sampleCount = Math.min(5, ring.length);
+          var insideCount = 0;
+          for (var si = 0; si < sampleCount; si++) {
+            var idx = Math.floor(si * ring.length / sampleCount);
+            if (pointInRing(ring[idx][1], ring[idx][0], bigRing)) insideCount++;
+          }
+          return insideCount === sampleCount;
+        });
+        if (isNestedInLarger) return;
+        acceptedWbRings.push(ring);
+
+        var wbLabel = wb.attributes.gnisidlabel || 'River';
         // Skip truly oversized polygons (watershed-scale)
         var wlngs = ring.map(function(c){return c[0];}), wlats = ring.map(function(c){return c[1];});
         var wlngR = Math.max.apply(null,wlngs)-Math.min.apply(null,wlngs);
@@ -5880,9 +5986,16 @@ function loadNHDPreview() {
         });
         wbLayers.push(outlineLyr);
 
-        // Transparent filled polygon as hit zone — clickable anywhere inside
+        // Transparent filled polygon as hit zone — clickable anywhere inside.
+        // The stroke also carries a wide, near-invisible companion (mirrors the
+        // flowline hitLyr trick above) so a click that lands just outside the
+        // mapped bank — the visible basemap water and the Esri ring rarely align
+        // to the pixel — still resolves to this river instead of falling through
+        // to whatever thin, unrelated flowline (an irrigation ditch, a dry wash)
+        // happens to pass nearby. Waterbody layers paint on top of flowlines
+        // (see the concat() below), so this reliably wins that pixel.
         var hitLyr = L.polygon(polyPts, {
-          color: '#00d4ff', weight: 0, opacity: 0,
+          color: '#00d4ff', weight: 24, opacity: 0.001,
           fillColor: '#00d4ff', fillOpacity: 0.001,
           interactive: true
         });
@@ -5916,75 +6029,369 @@ function loadNHDPreview() {
   });
 }
 
+// Derive a local reach polyline from a waterbody polygon near a click point. Shared by
+// the initial auto-detect click (reachAutoClickFeature) AND "Add more stream" while
+// extending a reach that came from a polygon in the first place (preTrimExtendClick) —
+// wide rivers often have no flowlines in FeatureServer/50 at all (see below), so
+// extending such a reach has to grow the SAME polygon-derived centerline rather than
+// searching for real flowline segments that may not exist nearby.
+// `opts.seedLL`, if given, is where the bank-walk anchors instead of `clickLL` — used
+// by preTrimExtendClick to anchor the new segment at the EXISTING reach's endpoint
+// rather than at the new click, so the extension is contiguous with the reach by
+// construction instead of two independently-sampled windows that may not overlap.
+// `clickLL` still drives edgeFallback() and small-ring windowing either way, since
+// those exist to center on wherever the user is actually pointing.
+// USGS 3DHP's Flowline layer carries a featuretype=5 "Waterbody Connector" — a real,
+// pre-computed flowline segment that exists specifically to trace a path THROUGH a
+// wide-river/lake polygon (for hydrologic network connectivity across the area
+// feature). It's the authoritative version of exactly what deriveWbCenterlinePts()
+// below tries to synthesize from the raw polygon boundary. Every prior fix to that
+// synthesis (bank-pairing, arc-length bounding, small-ring handling) addressed a real
+// failure mode, but each was a heuristic patched against one more real-world polygon
+// shape; this sidesteps the whole class of problem by using USGS's own answer when
+// one exists. Confirmed against real Klickitat River data: connector points sit
+// almost exactly equidistant between the two nearest boundary points (e.g. 23m/23m,
+// 18m/28m) — genuinely centered, not synthesized.
+//
+// Individual connector segments are short and need chaining into one continuous path
+// before they're usable as a reach.
+//
+// At a confluence, more than one unused segment can have an endpoint within TOL_M of
+// the chain's current end — the real continuation AND a short spur (a side channel,
+// or a stub representing where a tributary's own connector ties in). Picking
+// whichever one is simply found first (the old behavior, driven by array order) can
+// walk out the spur, dead-end, then walk right back near where it started on a later
+// pass — producing an out-and-back spike that self-intersects the reach. Confirmed on
+// a real Cispus River/Lake Scanewa confluence.
+//
+// Fix: when extending an end, score every candidate segment by how sharply it turns
+// relative to the chain's current heading there, and take the straightest one. A real
+// through-channel continuation runs close to straight across a junction; a spur turns
+// off at a real angle. Ambiguous cases (no chain direction yet, i.e. still on the
+// first segment) fall back to whichever is closest, same as before.
+function chainWbConnectorSegments(segs) {
+  if (!segs || !segs.length) return null;
+  var TOL_M = 100; // real adjoining segments share an endpoint near-exactly
+
+  function bearingRad(a, b) {
+    var toRad = function(d){ return d*Math.PI/180; };
+    var lat1 = toRad(a.lat), lat2 = toRad(b.lat), dLng = toRad(b.lng - a.lng);
+    var y = Math.sin(dLng) * Math.cos(lat2);
+    var x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+    return Math.atan2(y, x);
+  }
+  function turnAngle(a, b) {
+    var d = Math.abs(a - b) % (2 * Math.PI);
+    return d > Math.PI ? 2 * Math.PI - d : d;
+  }
+  // A point a short way in from one end of `seg`, used to measure that end's local
+  // direction (the far end of a long segment isn't representative of it).
+  function localDirPoint(seg, atStart) {
+    var idx = atStart ? Math.min(1, seg.length - 1) : Math.max(0, seg.length - 2);
+    return L.latLng(seg[idx][1], seg[idx][0]);
+  }
+
+  var chain = segs[0].slice();
+  var used = {0: true};
+  var changed = true;
+  while (changed) {
+    changed = false;
+    var chainStart = L.latLng(chain[0][1], chain[0][0]);
+    var chainEnd = L.latLng(chain[chain.length - 1][1], chain[chain.length - 1][0]);
+    // Direction of arrival at each end — continuing straight means leaving that end
+    // in this same compass direction.
+    var endDirIn = chain.length >= 2 ? bearingRad(L.latLng(chain[chain.length - 2][1], chain[chain.length - 2][0]), chainEnd) : null;
+    var startDirIn = chain.length >= 2 ? bearingRad(L.latLng(chain[1][1], chain[1][0]), chainStart) : null;
+
+    var candidates = [];
+    for (var i = 0; i < segs.length; i++) {
+      if (used[i]) continue;
+      var seg = segs[i];
+      var segStart = L.latLng(seg[0][1], seg[0][0]);
+      var segEnd = L.latLng(seg[seg.length - 1][1], seg[seg.length - 1][0]);
+
+      if (chainEnd.distanceTo(segStart) < TOL_M) {
+        var t1 = endDirIn === null ? 0 : turnAngle(endDirIn, bearingRad(chainEnd, localDirPoint(seg, true)));
+        candidates.push({turn: t1, i: i, end: 'end', reversed: false});
+      }
+      if (chainEnd.distanceTo(segEnd) < TOL_M) {
+        var t2 = endDirIn === null ? 0 : turnAngle(endDirIn, bearingRad(chainEnd, localDirPoint(seg, false)));
+        candidates.push({turn: t2, i: i, end: 'end', reversed: true});
+      }
+      if (chainStart.distanceTo(segEnd) < TOL_M) {
+        var t3 = startDirIn === null ? 0 : turnAngle(startDirIn, bearingRad(chainStart, localDirPoint(seg, false)));
+        candidates.push({turn: t3, i: i, end: 'start', reversed: false});
+      }
+      if (chainStart.distanceTo(segStart) < TOL_M) {
+        var t4 = startDirIn === null ? 0 : turnAngle(startDirIn, bearingRad(chainStart, localDirPoint(seg, true)));
+        candidates.push({turn: t4, i: i, end: 'start', reversed: true});
+      }
+    }
+
+    if (candidates.length) {
+      candidates.sort(function(a, b) { return a.turn - b.turn; });
+      var best = candidates[0];
+      var bestSeg = segs[best.i];
+      if (best.end === 'end' && !best.reversed) chain = chain.concat(bestSeg.slice(1));
+      else if (best.end === 'end' && best.reversed) chain = chain.concat(bestSeg.slice().reverse().slice(1));
+      else if (best.end === 'start' && !best.reversed) chain = bestSeg.slice(0, -1).concat(chain);
+      else chain = bestSeg.slice().reverse().slice(0, -1).concat(chain);
+      used[best.i] = true;
+      changed = true;
+    }
+  }
+  return chain;
+}
+
+// Fetch nearby Waterbody Connector flowlines, chain them, and window the chain down
+// to the neighborhood of `clickLL`. Resolves to an array of L.latLng, or null if none
+// exist nearby (the caller should fall back to deriveWbCenterlinePts's own synthesis).
+function fetchWbConnectorCenterline(clickLL, bufM) {
+  var buf = bufM || 3000;
+  var toRad = function(d){ return d*Math.PI/180; };
+  var R = 6378137;
+  var x = R * toRad(clickLL.lng), y = R * Math.log(Math.tan(Math.PI/4 + toRad(clickLL.lat)/2));
+  var envelope = (x-buf)+','+(y-buf)+','+(x+buf)+','+(y+buf);
+  var url = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/50/query?' +
+    'geometry='+encodeURIComponent(envelope)+
+    '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects' +
+    '&where=featuretype=5' +
+    '&outFields=gnisidlabel,featuretype,mainstemid&returnGeometry=true&outSR=4326&f=json';
+  return fetch(url).then(function(r){ return r.json(); }).then(function(data) {
+    if (!data.features || !data.features.length) return null;
+    var chain = chainWbConnectorSegments(data.features.map(function(f){ return f.geometry.paths[0]; }));
+    if (!chain || chain.length < 2) return null;
+    var chainLL = chain.map(function(c){ return L.latLng(c[1], c[0]); });
+    var dists = chainLL.map(function(p){ return clickLL.distanceTo(p); });
+    var closestIdx = 0, minD = dists[0];
+    for (var i = 1; i < dists.length; i++) if (dists[i] < minD) { minD = dists[i]; closestIdx = i; }
+    // The click has to actually be near this chain — otherwise it's connector data
+    // for a different, unrelated part of the river system, not this stretch.
+    if (minD > buf) return null;
+    var lo = closestIdx, hi = closestIdx;
+    while (lo > 0 && dists[lo - 1] < buf) lo--;
+    while (hi < chainLL.length - 1 && dists[hi + 1] < buf) hi++;
+    var windowed = chainLL.slice(lo, hi + 1);
+
+    // A chained result can be real but a tiny, disconnected fragment of the network —
+    // a dead-end stub with nothing else close enough (chainWbConnectorSegments' 100m
+    // tolerance) to continue it either way. That's genuine data, but useless as a
+    // reach: confirmed on a Yakima River backwater near Granger, WA, where the only
+    // connector data near the click was an isolated 6-point, ~166m stub sitting in a
+    // side pond — nowhere near the actual river the click was meant to select, even
+    // though the click landed inside the SAME (correct, huge) river polygon. Treat a
+    // suspiciously short result the same as "no connector data" so the caller falls
+    // back to deriveWbCenterlinePts' ring-based synthesis, which works from the
+    // polygon itself and isn't at the mercy of a gap in the connector network.
+    var MIN_CONNECTOR_SPAN_M = 300;
+    var spanM = 0;
+    for (var wi = 0; wi < windowed.length - 1; wi++) spanM += windowed[wi].distanceTo(windowed[wi + 1]);
+    if (spanM < MIN_CONNECTOR_SPAN_M) return null;
+
+    return windowed;
+  }).catch(function() { return null; });
+}
+
+// `opts.radius`, if given, overrides the default 3km search radius — used the same
+// way, sized to comfortably span the gap being extended across.
+function deriveWbCenterlinePts(wbGeometry, clickLL, opts) {
+  var ring = wbGeometry.rings[0];
+  var RADIUS_M = (opts && opts.radius) || 3000;
+  var seedLL = (opts && opts.seedLL) || clickLL;
+  var n = ring.length;
+  var ringLL = ring.map(function(c) { return L.latLng(c[1], c[0]); });
+
+  // Always-safe fallback: the nearest bank's boundary vertices verbatim (this is the
+  // pre-centerline behavior — it hugs an edge, but it's guaranteed to stay on the
+  // river). Used whenever the centerline math below can't be trusted for this polygon.
+  function edgeFallback() {
+    var inRadius = ringLL.map(function(p) { return clickLL.distanceTo(p) < RADIUS_M; });
+    var bestStart = 0, bestLen = 0, curStart = -1, curLen = 0;
+    var doubled = inRadius.concat(inRadius);
+    for (var i = 0; i < doubled.length; i++) {
+      if (doubled[i]) {
+        if (curStart < 0) { curStart = i % n; curLen = 1; } else { curLen++; }
+        if (curLen > bestLen && curLen <= n) { bestLen = curLen; bestStart = curStart; }
+      } else { curStart = -1; curLen = 0; }
+    }
+    var pts;
+    if (bestLen >= 2) {
+      pts = [];
+      for (var j = 0; j < bestLen; j++) pts.push(ringLL[(bestStart + j) % n]);
+    } else {
+      var withDist = ringLL.map(function(p, idx) { return {idx: idx, d: clickLL.distanceTo(p)}; });
+      withDist.sort(function(a,b){return a.d-b.d;});
+      pts = withDist.slice(0, 20).sort(function(a,b){return a.idx-b.idx;}).map(function(x){ return ringLL[x.idx]; });
+    }
+    if (pts.length > 4) {
+      var startPt = pts[0];
+      var minReturnDist = Infinity, turnIdx = pts.length;
+      var quarter = Math.floor(pts.length / 4);
+      for (var ti = quarter * 2; ti < pts.length; ti++) {
+        var dReturn = startPt.distanceTo(pts[ti]);
+        if (dReturn < minReturnDist) { minReturnDist = dReturn; turnIdx = ti; }
+      }
+      if (minReturnDist < 500 && turnIdx < pts.length - 2) pts = pts.slice(0, turnIdx + 1);
+    }
+    return pts;
+  }
+
+  // Identify the two local banks near the click and splice them into a small local
+  // ring (the far bank reversed, so it reads like an ordinary "there and back"
+  // polygon), then hand THAT to polygonCenterline() — used for large/regional rings,
+  // where the click's neighborhood is a small fraction of the whole ring.
+  //
+  // Previous approach: mark every ring vertex within RADIUS_M of the click, find
+  // contiguous runs of marked vertices, take the two longest as bank1/bank2. That
+  // breaks constantly on a real meandering creek: a nearby loop elsewhere on the
+  // river can contribute its own "near" run (so "top 2 by length" grabs an unrelated
+  // bend instead of the true opposite bank), and a narrow local channel can merge
+  // both true banks into a single run with no gap at all. Measured against real
+  // Shitike Creek geometry, that produced a good centerline only ~23% of the time —
+  // the rest silently fell back to edgeFallback() (hugging one raw edge, which is
+  // literally the pre-centerline bug this whole file exists to fix).
+  //
+  // This version anchors on the single ring vertex closest to the click (unambiguous
+  // — it's on whichever bank the click is nearest to) and walks outward along the
+  // RING ITSELF, bounding each bank by how far you've walked (arc length along the
+  // ring), not by raw distance back to the click. Raw-distance bounding is what let a
+  // walk "leak" across to an unrelated nearby loop — arc length along the ring only
+  // ever increases, so a walk can't jump to a spatially-close-but-topologically-far
+  // stretch no matter how tightly the river doubles back nearby. The opposite bank's
+  // seed is then the nearest ring vertex to the first seed that ISN'T part of bank1,
+  // walked the same way (excluding bank1's own indices so it can't wrap back into
+  // it). Verified against real Shitike Creek and Yakima River geometry: this reaches
+  // a trustworthy centerline far more often than the run-based approach on both
+  // (100% vs 23% on Shitike Creek; 74% vs 55% on Yakima), and never worse.
+  //
+  // One more bound is needed on top of RADIUS_M: for a genuinely small feature (a
+  // short side-channel around an island, say a few hundred meters long), RADIUS_M
+  // alone lets a single walk consume the WHOLE ring in both directions before it
+  // ever hits the 3km cap — bank1's walk eats every vertex, so there's nothing left
+  // to seed an opposite bank from, and the result silently falls back to
+  // edgeFallback() (hugging one raw edge — confirmed live on a ~3.6km-perimeter
+  // Klickitat River side-channel polygon). Capping the walk to a fraction of the
+  // ring's OWN total perimeter guarantees room remains for the far side regardless
+  // of how small the feature is; for a real multi-km river ring this cap is far
+  // larger than RADIUS_M and never binds.
+  function buildLocalCenterline() {
+    var ringPerimeterM = 0;
+    for (var pi = 0; pi < n; pi++) { ringPerimeterM += ringLL[pi].distanceTo(ringLL[(pi+1) % n]); }
+    var walkRadius = Math.min(RADIUS_M, ringPerimeterM * 0.4);
+
+    var dists = ringLL.map(function(p) { return seedLL.distanceTo(p); });
+    var seedIdx = 0, minSeedD = dists[0];
+    for (var si = 1; si < n; si++) if (dists[si] < minSeedD) { minSeedD = dists[si]; seedIdx = si; }
+
+    // Walk outward from `start` in direction `dir` (+1/-1), stopping once cumulative
+    // ring-following distance exceeds walkRadius or the next step would land on an
+    // already-claimed index (so bank2's walk can't wrap back into bank1).
+    function walkByArcLength(start, dir, exclude) {
+      var out = [start];
+      var idx = start, total = 0, steps = 0;
+      while (steps < n) {
+        var next = (idx + dir + n) % n;
+        if (next === start) break;
+        if (exclude && exclude.has(next)) break;
+        total += ringLL[idx].distanceTo(ringLL[next]);
+        if (total > walkRadius) break;
+        out.push(next);
+        idx = next;
+        steps++;
+      }
+      return out;
+    }
+
+    var fwd1 = walkByArcLength(seedIdx, 1, null);
+    var bwd1 = walkByArcLength(seedIdx, -1, null);
+    var bank1Idx = bwd1.slice(1).reverse().concat(fwd1);
+    if (bank1Idx.length < 2) return null;
+    var bank1Set = new Set(bank1Idx);
+
+    var seed2Idx = -1, minSeed2D = Infinity;
+    for (var oi = 0; oi < n; oi++) {
+      if (bank1Set.has(oi)) continue;
+      var d2 = ringLL[seedIdx].distanceTo(ringLL[oi]);
+      if (d2 < minSeed2D) { minSeed2D = d2; seed2Idx = oi; }
+    }
+    if (seed2Idx < 0) return null;
+
+    var fwd2 = walkByArcLength(seed2Idx, 1, bank1Set);
+    var bwd2 = walkByArcLength(seed2Idx, -1, bank1Set);
+    var bank2Idx = bwd2.slice(1).reverse().concat(fwd2);
+    if (bank2Idx.length < 2) return null;
+
+    var bankA = bank1Idx.map(function(idx) { return ring[idx]; });
+    var bankB = bank2Idx.map(function(idx) { return ring[idx]; });
+    // Orient bankB opposite to bankA (a normal ring visits one bank forward and the
+    // other backward) — try both and keep whichever lines the endpoints up.
+    var aStart = L.latLng(bankA[0][1], bankA[0][0]), aEnd = L.latLng(bankA[bankA.length-1][1], bankA[bankA.length-1][0]);
+    var bStart = L.latLng(bankB[0][1], bankB[0][0]), bEnd = L.latLng(bankB[bankB.length-1][1], bankB[bankB.length-1][0]);
+    if (aStart.distanceTo(bStart) + aEnd.distanceTo(bEnd) < aStart.distanceTo(bEnd) + aEnd.distanceTo(bStart)) {
+      bankB = bankB.slice().reverse();
+    }
+    var localRing = bankA.concat(bankB);
+    localRing.push(localRing[0]);
+    var centerline = polygonCenterline({rings: [localRing]});
+    return centerline && centerline.length >= 2 && centerlineTrustworthy(centerline, localRing) ? centerline : null;
+  }
+
+  // A real centerline must stay inside the river footprint it was built from — if
+  // bank-pairing went wrong (a tight oxbow, or a ring too complex for the axis-sort
+  // heuristic), points fall outside it, and the result should be discarded.
+  function centerlineTrustworthy(centerline, boundsRing) {
+    var insideCount = centerline.filter(function(p) {
+      return pointInRing(p.lat, p.lng, boundsRing);
+    }).length;
+    return insideCount / centerline.length >= 0.8;
+  }
+
+  // Used to branch small-vs-large rings by diagonal size, calling polygonCenterline()
+  // on the whole ring directly for a "small" one. That's what was actually hugging
+  // one edge on the Klickitat River case above -- a real single-segment feature
+  // (ring diagonal well under the old 8km threshold) fed whole into
+  // polygonCenterline(), whose own internal axis-sort bank-split has no ring-size
+  // safeguard and produced an unbalanced split for this feature's shape. The
+  // seed-anchored walk above (with its own perimeter-fraction cap) handles small
+  // rings correctly on its own -- it just walks close to the whole ring when the
+  // ring is short -- so there's no reason to keep a separate, less-robust path for
+  // them; one approach for every ring size, verified above on both ends of the
+  // scale (a few-hundred-vertex local feature up to a ~15,000-vertex multi-tributary
+  // system).
+  var localPts = buildLocalCenterline();
+  if (!localPts) localPts = edgeFallback();
+  return localPts;
+}
+
 // Called when user clicks directly on a previewed NHD feature
 function reachAutoClickFeature(feat, latlng) {
   clearNHDPreview();
   var we = getActiveWE(); if (!we) return;
 
-  // If this is a waterbody polygon synthetic feature, derive centerline directly
-  // without querying flowlines (wide rivers have none in FeatureServer/50)
+  // If this is a waterbody polygon synthetic feature: most wide rivers have no
+  // ordinary flowline running through them (that's the whole reason this polygon
+  // path exists), but USGS still often provides a real "Waterbody Connector"
+  // flowline for exactly this case — an authoritative, pre-computed path through the
+  // polygon, not something synthesized from its boundary. Try that first; only fall
+  // back to deriving our own centerline from the raw polygon if none exists nearby.
   if (feat._wbGeometry) {
     clearReachAutoLayers();
-    var ring = feat._wbGeometry.rings[0];
     var clickLL = L.latLng(latlng.lat, latlng.lng);
-    var RADIUS_M = 3000;
-    var n = ring.length;
+    setMapHint('Looking for a mapped stream centerline...');
+    fetchWbConnectorCenterline(clickLL).then(function(connectorPts) {
+      var localPts = connectorPts || deriveWbCenterlinePts(feat._wbGeometry, clickLL);
 
-    // Find all vertices within RADIUS_M of the click, keep the longest contiguous run
-    var inRadius = ring.map(function(c) {
-      return clickLL.distanceTo(L.latLng(c[1], c[0])) < RADIUS_M;
+      reachAutoDetecting = false;
+      if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
+      we.ppData['reach_len']._autoDetecting = false;
+      // Stash the source polygon so "Add more stream" can grow the SAME centerline
+      // later (falling back to it the same way) if it also finds no connector data
+      // near the extension point.
+      we.ppData['reach_len']._wbGeometry = feat._wbGeometry;
+      document.getElementById('mapwrap').classList.remove('drawing');
+      setMapHint('');
+      setTimeout(function(){ enterPreTrimStep(localPts, false); }, 50);
     });
-    var bestStart = 0, bestLen = 0, curStart = -1, curLen = 0;
-    var doubled = inRadius.concat(inRadius);
-    for (var i = 0; i < doubled.length; i++) {
-      if (doubled[i]) {
-        if (curStart < 0) { curStart = i % n; curLen = 1; }
-        else { curLen++; }
-        if (curLen > bestLen && curLen <= n) { bestLen = curLen; bestStart = curStart; }
-      } else {
-        curStart = -1; curLen = 0;
-      }
-    }
-
-    var localPts = [];
-    if (bestLen >= 2) {
-      for (var j = 0; j < bestLen; j++) {
-        var c = ring[(bestStart + j) % n];
-        localPts.push(L.latLng(c[1], c[0]));
-      }
-    } else {
-      var withDist = ring.map(function(c, idx) {
-        return {idx: idx, d: clickLL.distanceTo(L.latLng(c[1], c[0])), c: c};
-      });
-      withDist.sort(function(a,b){return a.d-b.d;});
-      var closest = withDist.slice(0, 20);
-      closest.sort(function(a,b){return a.idx-b.idx;});
-      localPts = closest.map(function(x){ return L.latLng(x.c[1], x.c[0]); });
-    }
-
-    // The polygon ring visits both banks: it goes along one bank then doubles back
-    // along the other. Find the turnaround point (where the path gets closest to
-    // its own start) and truncate there, keeping only the first-pass bank.
-    if (localPts.length > 4) {
-      var startPt = localPts[0];
-      var minReturnDist = Infinity, turnIdx = localPts.length;
-      // Look for the point (after the first quarter) that is closest to the start
-      var quarter = Math.floor(localPts.length / 4);
-      for (var ti = quarter * 2; ti < localPts.length; ti++) {
-        var dReturn = startPt.distanceTo(localPts[ti]);
-        if (dReturn < minReturnDist) { minReturnDist = dReturn; turnIdx = ti; }
-      }
-      // Only truncate if the ring actually returns close to start (< 500m)
-      if (minReturnDist < 500 && turnIdx < localPts.length - 2) {
-        localPts = localPts.slice(0, turnIdx + 1);
-      }
-    }
-
-    reachAutoDetecting = false;
-    if (we.ppData['reach_len']) we.ppData['reach_len']._autoDetecting = false;
-    document.getElementById('mapwrap').classList.remove('drawing');
-    setMapHint('');
-    setTimeout(function(){ enterPreTrimStep(localPts, false); }, 50);
     return;
   }
 
@@ -6247,12 +6654,29 @@ function reachAutoClick(latlng) {
     '&outSR=4326'+
     '&f=json';
 
-  // Query waterbody layer at the exact click point — if the user clicked inside a
-  // wide river polygon, use that polygon's geometry to build a centerline.
+  // Query waterbody layer near the click point — if the user clicked inside (or near)
+  // a wide river polygon, use that polygon's geometry to build a centerline. Layer 60
+  // mixes rivers in with lakes/ponds/canals/oceans (featuretype 1/2/3/4 respectively —
+  // confirmed via a distinct-values query against the live service); filter to rivers
+  // only so a click inside a pond doesn't get treated as a wide-river reach.
+  // Buffered (Intersects+distance), not exact containment (Within) — a click can miss
+  // the true river ring by a couple hundred meters and still clearly mean the river:
+  // the basemap tile's water rendering (and marsh/wetland fringe symbology right at a
+  // bank) doesn't line up pixel-for-pixel with the authoritative Esri polygon.
+  // Confirmed on a Klickitat click that landed ~240m from the ring, over the Fisher
+  // Hill Wildlife Area wetland bordering the river: with exact containment wbName came
+  // back empty, so the generic "nearest flowline vertex within 3km, any type" fallback
+  // below picked an unrelated dry-land ditch instead — producing a reach that cut
+  // straight across a road. 300m is generous enough to cover that miss while staying
+  // far short of the 3km/8km flowline search radii, so it won't reach past the
+  // river's own bank to a genuinely different, unrelated waterbody.
+  var WB_POINT_BUFFER_M = 300;
   var wbPointUrl = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/60/query?' +
     'geometry='+encodeURIComponent(x+','+y)+
-    '&geometryType=esriGeometryPoint&inSR=102100&spatialRel=esriSpatialRelWithin' +
-    '&outFields=gnisidlabel&returnGeometry=true&outSR=4326&f=json';
+    '&geometryType=esriGeometryPoint&inSR=102100&spatialRel=esriSpatialRelIntersects' +
+    '&distance='+WB_POINT_BUFFER_M+'&units=esriSRUnit_Meter' +
+    '&where=featuretype=1' +
+    '&outFields=gnisidlabel,featuretype,areasqkm&returnGeometry=true&outSR=4326&f=json';
 
   Promise.all([
     fetch(url).then(function(r){
@@ -6264,15 +6688,56 @@ function reachAutoClick(latlng) {
     var data = results2[0], wbData = results2[1];
     clearReachAutoLayers();
 
-    // wbName from point-in-polygon query — non-empty means the user clicked inside a river polygon
+    // A click point can land inside more than one overlapping river polygon at once
+    // (e.g. a small island/side-channel feature nested inside the main channel's much
+    // larger polygon) — put the largest first so every wbData.features[0] read below
+    // means "the river," not whichever one the service happened to list first.
+    if (wbData.features && wbData.features.length > 1) {
+      wbData.features.sort(function(a, b) { return (b.attributes.areasqkm || 0) - (a.attributes.areasqkm || 0); });
+    }
+
+    // Found a wide-river polygon at (or near) the click — hand off to
+    // reachAutoClickFeature's wbGeometry branch, which tries the real USGS Waterbody
+    // Connector flowline first and only falls back to its own bank-pairing synthesis
+    // (see fetchWbConnectorCenterline / deriveWbCenterlinePts). That's the same
+    // connector-preferring logic "Try different stream" already gets; routing the
+    // very first click through it too (instead of the generic nearest-flowline-vertex
+    // search below) matters most exactly when it's needed most — many real river
+    // polygons (including the one this fix was verified against) have no GNIS name,
+    // so the old wbName-driven filtering silently no-op'd for them even when the
+    // point-in/near-polygon lookup above succeeded.
+    if (wbData.features && wbData.features.length && wbData.features[0].attributes.featuretype === 1 && wbData.features[0].geometry) {
+      var wbHit = wbData.features[0];
+      var synthFeat = {
+        attributes: {gnisidlabel: wbHit.attributes.gnisidlabel || 'River', featuretype: 1, mainstemid: ''},
+        geometry: wbHit.geometry,
+        _clickOverride: true,
+        _wbGeometry: wbHit.geometry
+      };
+      reachAutoClickFeature(synthFeat, latlng);
+      return;
+    }
+
+    // wbName from point-in-polygon query — non-empty means the user clicked inside a river
+    // polygon. Belt-and-suspenders: the query's own where=featuretype=1 already excludes
+    // lakes/canals/oceans, but don't trust a lake/pond hit here if that filter is ever
+    // dropped or ignored upstream.
     var wbName = '';
-    if (wbData.features && wbData.features.length) {
+    if (wbData.features && wbData.features.length && wbData.features[0].attributes.featuretype === 1) {
       wbName = wbData.features[0].attributes.gnisidlabel || '';
     }
 
-    if (!data.features || !data.features.length) {
-      // No flowlines found — if we have a waterbody polygon, derive a centerline from it
-      if (wbData.features && wbData.features.length && wbData.features[0].geometry) {
+    // A real, authoritative flowline is always preferable to a polygon-derived
+    // centerline when one actually exists nearby — the polygon path is a synthesized
+    // approximation for when NHD has no flowline at all, not a first choice. So before
+    // giving up on flowlines at the initial buf (3km), retry once at a wider radius —
+    // real coverage is often just sparse/patchy near a click, not absent.
+    function useWbPolygonOrGiveUp() {
+      // No flowlines found even at the wider radius — if we have a river waterbody
+      // polygon (not a lake/pond), derive a centerline from it. See wbName above re:
+      // the featuretype=1 belt-and-suspenders check.
+      if (wbData.features && wbData.features.length && wbData.features[0].geometry &&
+          wbData.features[0].attributes.featuretype === 1) {
         var wbPoly = wbData.features[0];
         var centerPts = polygonCenterline(wbPoly.geometry);
         if (centerPts && centerPts.length >= 2) {
@@ -6288,6 +6753,38 @@ function reachAutoClick(latlng) {
       }
       setMapHint('No streams found nearby — try clicking closer to a stream, or draw manually.');
       setTimeout(function(){ setMapHint('Click on or near a stream to auto-detect it from USGS NHD'); }, 3000);
+    }
+
+    if (!data.features || !data.features.length) {
+      var WIDER_BUF_M = 8000; // matches the type-3 widening query below
+      var envWider = (x-WIDER_BUF_M)+','+(y-WIDER_BUF_M)+','+(x+WIDER_BUF_M)+','+(y+WIDER_BUF_M);
+      var urlWider = baseUrl +
+        'geometry='+encodeURIComponent(envWider)+
+        '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects' +
+        '&where=featuretype+IN+(1,2,3)' +
+        '&outFields=gnisidlabel,featuretype,mainstemid&returnGeometry=true&outSR=4326&f=json';
+      fetch(urlWider).then(function(r){ return r.json(); }).then(function(dataWider) {
+        if (dataWider.features && dataWider.features.length) {
+          data.features = dataWider.features;
+          // Re-run the same wbName-based filtering/labeling the narrow-radius path
+          // would have applied, then continue as if these were the original results.
+          if (wbName) {
+            var namedFeatsWider = data.features.filter(function(f) { return f.attributes.gnisidlabel === wbName; });
+            if (namedFeatsWider.length > 0) {
+              processAutoDetectResults(we, {features: namedFeatsWider}, latlng, envelope, wbName);
+              return;
+            }
+            data.features.forEach(function(f) {
+              if (!f.attributes.gnisidlabel && f.attributes.featuretype === 3) f.attributes.gnisidlabel = wbName;
+            });
+          }
+          processAutoDetectResults(we, data, latlng, envelope, wbName);
+        } else {
+          useWbPolygonOrGiveUp();
+        }
+      }).catch(function() {
+        useWbPolygonOrGiveUp();
+      });
       return;
     }
 
@@ -7343,6 +7840,95 @@ function enterPreTrimStep(pts, skipFit) {
 function preTrimExtendClick(latlng) {
   // Same as reachExtendClick but appends to preReachPts instead of committed reach
   var we = getActiveWE(); if (!we) return;
+
+  // If the reach we're extending came from a waterbody polygon (a wide river with no
+  // flowlines — see reachAutoClickFeature), extending it by searching for real flowline
+  // segments to connect to (below) essentially never works: the existing reach is a
+  // synthesized centerline, not a point on any real NHD flowline, so it rarely sits
+  // within the flowline-connect tolerance of anything, and a genuinely wide river often
+  // has no nearby flowlines to find at all. So instead, grow the SAME polygon-derived
+  // centerline out to the new click.
+  var wbGeometry = we.ppData['reach_len'] && we.ppData['reach_len']._wbGeometry;
+  if (wbGeometry) {
+    var clickLL = L.latLng(latlng.lat, latlng.lng);
+    var existPts = preReachPts || (we.ppData['reach_len'] && we.ppData['reach_len']._preTrimPts);
+    if (!existPts) {
+      setMapHint('No stream found nearby — click elsewhere or proceed to Pick endpoints');
+      return;
+    }
+
+    // Anchor the new segment's bank-walk AT THE REACH'S OWN ENDPOINT nearest the
+    // click (not at the click itself), sized to comfortably span the gap to the
+    // click. Deriving two independently-seeded windows and just connecting whichever
+    // endpoints came out closest — the previous approach — drew a straight line
+    // across the real gap between them whenever the click was far enough that the
+    // windows didn't naturally overlap (a wide, gently-curving river makes that easy
+    // to trigger with an ordinary "extend further" click). Anchoring here means the
+    // new segment starts at the existing endpoint by construction, so there's no gap
+    // to accidentally straight-line across.
+    var reachStart = existPts[0], reachEnd = existPts[existPts.length - 1];
+    var dStart = reachStart.distanceTo(clickLL), dEnd = reachEnd.distanceTo(clickLL);
+    var extendFromStart = dStart < dEnd;
+    var anchorLL = extendFromStart ? reachStart : reachEnd;
+    var straightDist = anchorLL.distanceTo(clickLL);
+    // 2.5x the straight-line distance covers real river sinuosity between the two
+    // points; clamp to a sane range so a click right next to the reach doesn't
+    // shrink the walk below the base radius, and a wild click can't request an
+    // enormous walk across most of a watershed-scale ring.
+    var radius = Math.min(20000, Math.max(3000, straightDist * 2.5));
+
+    // Prefer a real, authoritative Waterbody Connector flowline over our own
+    // synthesized centerline here too (see reachAutoClickFeature) — try it first,
+    // fall back to deriveWbCenterlinePts if none covers this stretch.
+    setMapHint('Looking for a mapped stream centerline...');
+    fetchWbConnectorCenterline(clickLL, radius).then(function(connectorPts) {
+      var newPts = connectorPts || deriveWbCenterlinePts(wbGeometry, clickLL, {seedLL: anchorLL, radius: radius});
+      if (!newPts || newPts.length < 2) {
+        setMapHint('No stream found nearby — click elsewhere or proceed to Pick endpoints');
+        return;
+      }
+
+      // Trim the new window to just the stretch between the anchor and the click —
+      // the walk covers `radius` in both directions from the anchor (or a connector
+      // chain can extend well past both ends), so whatever's beyond the click, or
+      // behind the anchor, is redundant with the existing reach and must be dropped.
+      var distsToAnchor = newPts.map(function(p) { return p.distanceTo(anchorLL); });
+      var distsToClick = newPts.map(function(p) { return p.distanceTo(clickLL); });
+      var anchorIdx = 0, minA = distsToAnchor[0];
+      for (var ai = 1; ai < distsToAnchor.length; ai++) if (distsToAnchor[ai] < minA) { minA = distsToAnchor[ai]; anchorIdx = ai; }
+      var clickIdx = 0, minC = distsToClick[0];
+      for (var ci = 1; ci < distsToClick.length; ci++) if (distsToClick[ci] < minC) { minC = distsToClick[ci]; clickIdx = ci; }
+      var segment = anchorIdx <= clickIdx ? newPts.slice(anchorIdx, clickIdx + 1) : newPts.slice(clickIdx, anchorIdx + 1).slice().reverse();
+
+      // Sanity check: the trimmed segment's own end should actually be near the
+      // anchor — if the walk (or connector chain) didn't reach back to it, don't
+      // silently draw whatever gap resulted.
+      var MAX_CONNECT_GAP_M = 500;
+      if (segment.length < 2 || segment[0].distanceTo(anchorLL) > MAX_CONNECT_GAP_M) {
+        setMapHint('That\'s too far from your reach to connect cleanly — click closer to one end, or Pick endpoints');
+        return;
+      }
+
+      var newSegmentOnly = segment.slice(1); // drop the duplicate anchor point itself
+      var combinedPts = extendFromStart
+        ? newSegmentOnly.slice().reverse().concat(existPts)
+        : existPts.concat(newSegmentOnly);
+
+      preReachPts = combinedPts;
+      if (reachTrimLayer) map.removeLayer(reachTrimLayer);
+      reachTrimLayer = L.polyline(combinedPts, {color:'#1a9abf', weight:3, dashArray:'6,4', interactive:false}).addTo(map);
+      we.ppData['reach_len']._preTrimPts = combinedPts;
+      // Stay in extend mode so the user can keep adding without re-clicking the button
+      preReachExtend = true;
+      we.ppData['reach_len']._preTrimExtending = true;
+      setMapHint('Segment added — click further along the stream to keep extending, or click <b>Pick endpoints</b> in the sidebar');
+      var mWb = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
+      renderPMRow(mWb);
+      if (wizardMode) renderWizardStep();
+    });
+    return;
+  }
+
   setMapHint('Querying NHD for nearby segments...');
 
   var toRad = function(d){ return d*Math.PI/180; };
@@ -7437,9 +8023,30 @@ function preTrimExtendClick(latlng) {
 function startPreTrimExtend() {
   preReachExtend = true;
   document.getElementById('mapwrap').classList.add('drawing');
-  setMapHint('Click on a stream segment to append it to the highlighted reach');
-  var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
   var we = getActiveWE(); if (!we) return;
+
+  // A reach built from a waterbody polygon (a wide river with no ordinary flowlines —
+  // see reachAutoClickFeature) has no candidate segments to light up: preTrimExtendClick
+  // just grows the SAME polygon-derived centerline toward wherever you click next, no
+  // pre-highlighted flowlines involved. Left with only the generic hint below, that
+  // read as "click a highlighted segment" with nothing highlighted anywhere on the
+  // map — reported as "append isn't working, no more streams show up." Outline the
+  // river polygon itself so there's something to click on, and say so.
+  var wbGeometry = we.ppData['reach_len']._wbGeometry;
+  if (wbGeometry && wbGeometry.rings && wbGeometry.rings[0]) {
+    var outlinePts = wbGeometry.rings[0].map(function(c){ return L.latLng(c[1], c[0]); });
+    var outlineLyr = L.polygon(outlinePts, {
+      color: '#00d4ff', weight: 2, opacity: 0.6,
+      fillColor: '#00d4ff', fillOpacity: 0.05,
+      interactive: false
+    }).addTo(map);
+    reachAutoLayers.push(outlineLyr);
+    setMapHint('Click anywhere on the highlighted river to extend your reach toward that point');
+  } else {
+    setMapHint('Click on a stream segment to append it to the highlighted reach');
+  }
+
+  var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
   we.ppData['reach_len']._preTrimExtending = true;
   renderPMRow(m);
 }
