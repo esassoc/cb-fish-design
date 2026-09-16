@@ -6527,6 +6527,23 @@ function fetchWbConnectorCenterline(clickLL, bufM) {
     for (var wi = 0; wi < windowed.length - 1; wi++) spanM += windowed[wi].distanceTo(windowed[wi + 1]);
     if (spanM < MIN_CONNECTOR_SPAN_M) return null;
 
+    // Verified on the Lower Deschutes River near Dry Canyon: USGS's own Waterbody
+    // Connector data can contain sharp out-and-back spikes — a real channel
+    // centerline doesn't fold back on itself within a few tens of meters, so a
+    // near-180° turn between two short consecutive segments is a skeletonization
+    // artifact, not real river shape. Comparing this exact case's connector output
+    // against deriveWbCenterlinePts' own ring-based synthesis (bearing-checked below
+    // against a genuinely clean result) confirmed the synthesized centerline stays
+    // smooth where the connector data zigzags. Treat a reversal the same as "no
+    // connector data" so the caller falls back to that synthesis rather than
+    // trusting a jagged "authoritative" line — same principle as the span check
+    // above, just for a different way connector data can be untrustworthy.
+    var SHARP_REVERSAL_DEG = 150;
+    for (var ri = 1; ri < windowed.length - 1; ri++) {
+      var turn = bearingDiff(ptBearing(windowed[ri-1], windowed[ri]), ptBearing(windowed[ri], windowed[ri+1]));
+      if (turn > SHARP_REVERSAL_DEG) return null;
+    }
+
     return windowed;
   }).catch(function() { return null; });
 }
