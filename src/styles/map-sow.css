@@ -485,6 +485,11 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
   display: none;
   white-space: normal;
 }
+/* bcn-lego-checked: no esa- lego fits — this is a scroll-bound tweak to the
+   existing #map-legend floating panel (not a new component), needed because
+   its content can now include the map-color-editor's per-role swatch grid
+   (public/scripts/map-sow.js renderMapColorEditor()), which is tall enough to
+   push the bottom-anchored panel off the top of the viewport without a cap. */
 #map-legend {
   position: absolute;
   bottom: 10px;
@@ -497,6 +502,8 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
   z-index: 999;
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   min-width: 160px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
 }
 .leg-title { font-size: 10px; font-weight: var(--typography-font-weight-bold); color: var(--color-background-default-knockout); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; display: flex; justify-content: space-between; }
 .leg-toggle { cursor: pointer; color: var(--color-content-default-tertiary); font-weight: var(--typography-font-weight-regular); text-transform: none; letter-spacing: 0; font-size: 11px; }
