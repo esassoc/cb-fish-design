@@ -6005,6 +6005,13 @@ function startReachAutoDetect() {
 // When the user clicks one, we know exactly which feature they want.
 var nhdPreviewLayer = null;
 var nhdPreviewData = null; // full feature set from the preview query
+// Bumped on every loadNHDPreview() call; a stale fetch (started before a newer
+// one, e.g. the user re-triggered auto-detect or panned/zoomed while a slow
+// request was still in flight) checks this before touching the map, so an
+// old response can't add its own clickable layers on top of — or a moment
+// before — a newer set, which is what let a click land on a hit-layer built
+// from a stale/different query envelope.
+var nhdPreviewGeneration = 0;
 
 // Approximate centerline of a river polygon.
 // Strategy: sort the ring vertices by their position along the principal axis,
@@ -6158,6 +6165,68 @@ function polygonCenterline(geometry) {
     }
     centerline.push(L.latLng((b1[k].lat + match.lat) / 2, (b1[k].lng + match.lng) / 2));
   }
+
+  // The windowed search (or its "no match found" fallback, see above) can also
+  // desync briefly at a real local complexity partway through the walk — not
+  // just at the ends — producing a short interior run of points outside the
+  // ring. Confirmed near Hardtack Island on the Willamette: 3 consecutive
+  // points (of 150) landed outside the polygon, visibly detouring the reach
+  // line off the channel and back. A run with a good point on both sides gets
+  // bridged with a straight interpolation between them instead of left as a
+  // detour; a run reaching all the way to either end has no "good" neighbor to
+  // interpolate from and is left for the edge-trim below to remove instead.
+  for (var bi = 0; bi < centerline.length; bi++) {
+    if (pointInRing(centerline[bi].lat, centerline[bi].lng, ring)) continue;
+    var runStart = bi;
+    while (bi < centerline.length && !pointInRing(centerline[bi].lat, centerline[bi].lng, ring)) bi++;
+    var runEnd = bi; // first good index after the run (exclusive)
+    if (runStart === 0 || runEnd === centerline.length) continue;
+    var before = centerline[runStart - 1], after = centerline[runEnd];
+    var span = runEnd - (runStart - 1);
+    for (var bj = runStart; bj < runEnd; bj++) {
+      var bt = (bj - (runStart - 1)) / span;
+      centerline[bj] = L.latLng(before.lat + (after.lat - before.lat) * bt, before.lng + (after.lng - before.lng) * bt);
+    }
+  }
+
+  // The arc-length window has the least bank2 data to search right at the very
+  // ends of the walk, so a sample there is the most likely to hit the "no match
+  // found" fallback above — which loses the windowing protection entirely and
+  // can place a point outside the ring. Confirmed on the Willamette River near
+  // Riverwood: the very last sampled point landed on land, not in the channel,
+  // producing a reach line that visibly crossed onto the bank. Trimming from
+  // each end while the endpoint is outside the ring keeps the well-anchored
+  // middle of the walk and only discards the unreliable extremities.
+  while (centerline.length > 1 && !pointInRing(centerline[0].lat, centerline[0].lng, ring)) centerline.shift();
+  while (centerline.length > 1 && !pointInRing(centerline[centerline.length-1].lat, centerline[centerline.length-1].lng, ring)) centerline.pop();
+
+  // Even after the above, a single pairing step can desync badly at a real
+  // local complexity — an island narrow enough that bank2's arc-length
+  // position stops tracking physical distance smoothly — without either point
+  // ever landing outside the ring, so neither fix above catches it. Confirmed
+  // near Hardtack Island on the Willamette: consecutive samples were 376m
+  // apart while every neighboring gap was under 75m, visibly "teleporting"
+  // the reach line sideways and back. Re-deriving a correct path through a
+  // spot the pairing has already proven unreliable at isn't safe to attempt
+  // here, so instead: cut at the single largest such jump and keep the longer
+  // remaining piece — the same "trust what's well-anchored, leave the rest
+  // for the user to extend via Add more stream" principle as the trims above.
+  if (centerline.length > 4) {
+    var segLens = [];
+    for (var si = 1; si < centerline.length; si++) segLens.push(centerline[si-1].distanceTo(centerline[si]));
+    var sortedLens = segLens.slice().sort(function(a,b){ return a-b; });
+    var medianLen = sortedLens[Math.floor(sortedLens.length/2)];
+    var jumpThreshold = Math.max(200, medianLen*6);
+    var worstIdx = -1, worstLen = 0;
+    for (var sj = 0; sj < segLens.length; sj++) {
+      if (segLens[sj] > jumpThreshold && segLens[sj] > worstLen) { worstLen = segLens[sj]; worstIdx = sj; }
+    }
+    if (worstIdx >= 0) {
+      var before = centerline.slice(0, worstIdx+1), after = centerline.slice(worstIdx+1);
+      centerline = before.length >= after.length ? before : after;
+    }
+  }
+
   return centerline;
 }
 
@@ -6179,6 +6248,11 @@ function clearNHDPreview() {
 
 function loadNHDPreview() {
   clearNHDPreview();
+  // Starting a new load supersedes any earlier one — clear its layers immediately
+  // (don't wait for its fetch to resolve, which may never happen or arrive late)
+  // and bump the generation so a late-arriving old response can tell it's stale.
+  clearReachAutoLayers();
+  var myGen = ++nhdPreviewGeneration;
   var zoom = map.getZoom();
   // Only pre-load vectors at zoom 12+; at lower zoom the envelope is too large
   // and the 3DHP service returns too many (or no) features
@@ -6222,6 +6296,7 @@ function loadNHDPreview() {
     fetch(wbUrl).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).catch(function(){ return {features:[], _failed:true}; })
   ]).then(function(results) {
     if (!reachAutoDetecting) return;
+    if (myGen !== nhdPreviewGeneration) return; // superseded by a newer load — don't add stale layers
     var data = results[0], wbData = results[1];
     var anyFailed = data._failed || wbData._failed || data.error || wbData.error;
     if (data.error) { data = {features:[]}; }
@@ -6526,6 +6601,23 @@ function fetchWbConnectorCenterline(clickLL, bufM) {
     var spanM = 0;
     for (var wi = 0; wi < windowed.length - 1; wi++) spanM += windowed[wi].distanceTo(windowed[wi + 1]);
     if (spanM < MIN_CONNECTOR_SPAN_M) return null;
+
+    // Verified on the Lower Deschutes River near Dry Canyon: USGS's own Waterbody
+    // Connector data can contain sharp out-and-back spikes — a real channel
+    // centerline doesn't fold back on itself within a few tens of meters, so a
+    // near-180° turn between two short consecutive segments is a skeletonization
+    // artifact, not real river shape. Comparing this exact case's connector output
+    // against deriveWbCenterlinePts' own ring-based synthesis (bearing-checked below
+    // against a genuinely clean result) confirmed the synthesized centerline stays
+    // smooth where the connector data zigzags. Treat a reversal the same as "no
+    // connector data" so the caller falls back to that synthesis rather than
+    // trusting a jagged "authoritative" line — same principle as the span check
+    // above, just for a different way connector data can be untrustworthy.
+    var SHARP_REVERSAL_DEG = 150;
+    for (var ri = 1; ri < windowed.length - 1; ri++) {
+      var turn = bearingDiff(ptBearing(windowed[ri-1], windowed[ri]), ptBearing(windowed[ri], windowed[ri+1]));
+      if (turn > SHARP_REVERSAL_DEG) return null;
+    }
 
     return windowed;
   }).catch(function() { return null; });
@@ -8093,6 +8185,18 @@ function crGravelPerpendicularLine(latlng, r) {
   ];
 }
 
+// Bearing in degrees (0=north, 90=east) from point a to point b.
+function ptBearing(a, b) {
+  var y = Math.sin((b.lng-a.lng)*Math.PI/180) * Math.cos(b.lat*Math.PI/180);
+  var x = Math.cos(a.lat*Math.PI/180)*Math.sin(b.lat*Math.PI/180) -
+          Math.sin(a.lat*Math.PI/180)*Math.cos(b.lat*Math.PI/180)*Math.cos((b.lng-a.lng)*Math.PI/180);
+  return Math.atan2(y, x) * 180/Math.PI;
+}
+function bearingDiff(a, b) {
+  var d = Math.abs(a-b) % 360;
+  return d > 180 ? 360-d : d;
+}
+
 function buildConnectedChains(features) {
   // Stitch NHD segments into continuous chains by matching endpoints
   var segs = features.map(function(feat) {
@@ -8112,33 +8216,76 @@ function buildConnectedChains(features) {
     return Math.abs(a.lat-b.lat) < SNAP && Math.abs(a.lng-b.lng) < SNAP;
   }
 
+  // Where a river splits around an island, the braid's two ends are each a
+  // junction shared by 3+ segments (trunk + both braids) — walking down one
+  // braid arrives back at a point that ALSO matches the sibling braid's far
+  // end. Taking whichever candidate segment happened to match first (the old
+  // behavior) could walk down one braid then double back up the other, since
+  // both its ends coincide with the junction — producing a chain that
+  // reverses on itself instead of continuing to the trunk below the island
+  // (confirmed via a synthetic braided-segment test: the naive version
+  // produced trunkAbove->braidLeft->braidRight, skipping trunkBelow entirely).
+  // When more than one candidate matches, prefer whichever continues most
+  // closely in the direction the chain was already heading — a real reach
+  // doesn't reverse itself, so this keeps the walk going through the island
+  // instead of back out the way it came, leaving the other braid as its own
+  // separate (shorter) chain rather than merged into a zigzag.
+  function pickBestMatch(matches, incomingBearing) {
+    if (matches.length === 1) return matches[0];
+    var best = matches[0], bestDiff = Infinity;
+    matches.forEach(function(m) {
+      var diff = bearingDiff(m.bearing, incomingBearing);
+      if (diff < bestDiff) { bestDiff = diff; best = m; }
+    });
+    return best;
+  }
+
   segs.forEach(function(seed) {
     if (seed.used) return;
     seed.used = true;
     var chain = {pts: seed.pts.slice(), features: [seed.feat]};
 
-    // Walk forward (match chain end to segment start/end)
     var changed = true;
     while (changed) {
       changed = false;
+      var chainEnd = chain.pts[chain.pts.length-1];
+      var chainStart = chain.pts[0];
+      var n = chain.pts.length;
+      var endBearing = ptBearing(chain.pts[Math.max(0,n-2)], chainEnd);
+      var startBearing = ptBearing(chain.pts[1], chainStart);
+
+      var endMatches = [], startMatches = [];
       segs.forEach(function(s) {
         if (s.used) return;
-        var chainEnd = chain.pts[chain.pts.length-1];
-        var chainStart = chain.pts[0];
+        var sn = s.pts.length;
         if (ptClose(chainEnd, s.pts[0])) {
-          chain.pts = chain.pts.concat(s.pts.slice(1));
-          chain.features.push(s.feat); s.used = true; changed = true;
-        } else if (ptClose(chainEnd, s.pts[s.pts.length-1])) {
-          chain.pts = chain.pts.concat(s.pts.slice(0,-1).reverse());
-          chain.features.push(s.feat); s.used = true; changed = true;
-        } else if (ptClose(chainStart, s.pts[s.pts.length-1])) {
-          chain.pts = s.pts.concat(chain.pts.slice(1));
-          chain.features.push(s.feat); s.used = true; changed = true;
+          endMatches.push({seg:s, reversed:false, bearing: ptBearing(s.pts[0], s.pts[1])});
+        } else if (ptClose(chainEnd, s.pts[sn-1])) {
+          endMatches.push({seg:s, reversed:true, bearing: ptBearing(s.pts[sn-1], s.pts[sn-2])});
+        }
+        if (ptClose(chainStart, s.pts[sn-1])) {
+          startMatches.push({seg:s, reversed:false, bearing: ptBearing(s.pts[sn-1], s.pts[sn-2])});
         } else if (ptClose(chainStart, s.pts[0])) {
-          chain.pts = s.pts.slice().reverse().concat(chain.pts.slice(1));
-          chain.features.push(s.feat); s.used = true; changed = true;
+          startMatches.push({seg:s, reversed:true, bearing: ptBearing(s.pts[0], s.pts[1])});
         }
       });
+
+      // Grow one end per pass (favoring forward growth) — the outer while
+      // loop still reaches a fixed point, this just makes each step's choice
+      // direction-aware instead of taking whichever end matched first.
+      if (endMatches.length) {
+        var m = pickBestMatch(endMatches, endBearing);
+        chain.pts = m.reversed
+          ? chain.pts.concat(m.seg.pts.slice(0,-1).reverse())
+          : chain.pts.concat(m.seg.pts.slice(1));
+        chain.features.push(m.seg.feat); m.seg.used = true; changed = true;
+      } else if (startMatches.length) {
+        var m2 = pickBestMatch(startMatches, startBearing);
+        chain.pts = m2.reversed
+          ? m2.seg.pts.slice().reverse().concat(chain.pts.slice(1))
+          : m2.seg.pts.concat(chain.pts.slice(1));
+        chain.features.push(m2.seg.feat); m2.seg.used = true; changed = true;
+      }
     }
     chains.push(chain);
   });
