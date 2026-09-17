@@ -3043,11 +3043,17 @@ function addReachArrow(we) {
   if(!rd || !rd.layer) return;
   var markers = buildFlowArrowMarkers(rd.layer, we.ppData['area_ch'], mapColor('reach'), true);
   if (!markers.length) return;
-  // Respect the pre-project visibility toggle — buildFlowArrowMarkers() always adds
-  // fresh markers to the map, which otherwise leaks the pre-project reach's arrows
-  // back in on every zoom (refreshAllFlowArrows runs regardless of wizard step)
-  // even while pre-project layers are supposed to be hidden during habitat work.
-  if (!ppLayersVisible) markers.forEach(function(mk){ map.removeLayer(mk); });
+  // Match the reach LINE's own actual displayed state, not the global ppLayersVisible
+  // flag directly — the pc_reach wizard step re-adds the line to the map as a design
+  // reference even while ppLayersVisible is false (see wizardAutoActivate's 'pc_reach'
+  // case), and refreshAllFlowArrows() rebuilds every reach's arrows on every zoom/pan
+  // regardless of wizard step. Checking the flag directly meant that re-added
+  // reference line's arrows got silently hidden again by the very next zoom or pan —
+  // confirmed live: fixing wizardAutoActivate's one-time re-add wasn't enough, the
+  // arrows vanished again the moment the map moved. Checking the line's own map
+  // membership instead makes the arrows self-correct against whatever actually
+  // governs the line's visibility, one-time re-add or otherwise.
+  if (!map.hasLayer(rd.layer)) markers.forEach(function(mk){ map.removeLayer(mk); });
   rd._arrowMarkers = markers;
   rd._arrowMarker = markers[Math.floor(markers.length/2)]; // keep reference for legacy code
 }
@@ -10790,8 +10796,22 @@ function wizardAutoActivate() {
       // re-add it here the same way sc_draw/sc_width/sc_wood re-add the primary channel.
       if (we && we.ppData['reach_len'] && we.ppData['reach_len'].layer) {
         var ppReachL = we.ppData['reach_len'].layer;
-        if (!map.hasLayer(ppReachL)) map.addLayer(ppReachL);
+        // fitBounds FIRST: confirmed via stack trace that it can trigger Leaflet's
+        // moveend -> refreshAllFlowArrows(), which rebuilds this reach's arrows and
+        // (ppLayersVisible is still false here) immediately hides the rebuilt ones —
+        // silently undoing a re-add done before fitBounds. Doing the re-adds after
+        // fitBounds instead means they're the last word regardless of whether that
+        // side effect fires (only reproduced going straight to this step, e.g. via
+        // the sidebar's step-jump — stepping through via Next never triggered it,
+        // since fitBounds was usually already a no-op by then).
         map.fitBounds(ppReachL.getBounds(), {padding:[40,40]});
+        if (!map.hasLayer(ppReachL)) map.addLayer(ppReachL);
+        // setPPLayersVisible(false) also hard-removed the reach's flow-direction arrow
+        // markers (its d._arrowMarkers), same as the line — re-add those too, or the
+        // reference reach shows with no direction indicator even though the markers
+        // already exist, just not on the map.
+        var ppReachArrows = we.ppData['reach_len']._arrowMarkers;
+        if (ppReachArrows) ppReachArrows.forEach(function(mk){ if (mk && !map.hasLayer(mk)) map.addLayer(mk); });
       }
       break;
     case 'buffers':
