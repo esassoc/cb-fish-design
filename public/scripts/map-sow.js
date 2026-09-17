@@ -6841,6 +6841,23 @@ function trimChainToAnchor(existPts, chainLL, clickLL) {
   if (segment.length < 2 || segment[0].distanceTo(anchorLL) > MAX_CONNECT_GAP_M) return null;
 
   var newSegmentOnly = segment.slice(1);
+
+  // Reject a "new" segment that folds back onto ground the reach already covers.
+  // showStreamExtendCandidates() highlights the whole nearby network, including
+  // whatever chain the reach itself was originally built from — a click that
+  // lands on the already-included stretch (rather than beyond the reach's real
+  // end) resolves anchorIdx/clickIdx to two points on that SAME already-selected
+  // run, producing a near-zero "extension" that's actually just re-tracing part
+  // of the existing reach backward. Confirmed live: clicking mid-way along a
+  // highlighted candidate that was the reach's own source chain produced a
+  // 2-point "new" segment whose points were already in existPts — invisible on
+  // screen and not a real addition.
+  var OVERLAP_TOLERANCE_M = 20;
+  var overlapsExisting = newSegmentOnly.some(function(p) {
+    return existPts.some(function(ep) { return ep !== anchorLL && ep.distanceTo(p) < OVERLAP_TOLERANCE_M; });
+  });
+  if (overlapsExisting) return null;
+
   var combinedPts = extendFromStart
     ? newSegmentOnly.slice().reverse().concat(existPts)
     : existPts.concat(newSegmentOnly);
@@ -7704,17 +7721,33 @@ function reachExtendClick(latlng) {
     clearReachAutoLayers();
     if (!chainLL) {
       setMapHint('No streams found — click closer to a stream segment');
+      showStreamExtendCandidates(reachExtendClick);
       return;
     }
     var trimmed = trimChainToAnchor(existPts, chainLL, clickLL);
     if (!trimmed) {
-      setMapHint('That segment doesn\'t connect to your reach — click a segment nearer the end you want to extend');
+      setMapHint('That\'s already part of your reach, or doesn\'t connect — click further along a highlighted segment, past the existing reach\'s end');
+      showStreamExtendCandidates(reachExtendClick);
       return;
     }
 
+    // A reach originally selected as a short auto-detect result leaves the map
+    // fit-zoomed tightly around just those few points — a genuinely new segment
+    // found some distance away can render entirely outside the current view,
+    // invisible regardless of styling. Grow (never shrink) the view to include it.
+    var newBounds = L.latLngBounds(trimmed.newSegmentOnly);
+    if (!map.getBounds().contains(newBounds)) {
+      map.fitBounds(newBounds.extend(map.getBounds()), {padding:[60,60]});
+    }
+
     // Show preview
-    var preview = L.polyline(trimmed.newSegmentOnly, {color:'#c07820', weight:3, dashArray:'6,3', interactive:false}).addTo(map);
+    // Weight 6 (vs. the weight-3 candidate highlight) and a marker at the far end —
+    // a short find (a few tens of meters) could otherwise be nearly invisible
+    // against a large river view, exactly the "I see nothing orange" report.
+    var preview = L.polyline(trimmed.newSegmentOnly, {color:'#c07820', weight:6, opacity:0.95, interactive:false}).addTo(map);
     reachAutoLayers.push(preview);
+    var previewEndMarker = L.circleMarker(trimmed.newSegmentOnly[trimmed.newSegmentOnly.length - 1], {radius:6, color:'#fff', weight:2, fillColor:'#c07820', fillOpacity:1, interactive:false}).addTo(map);
+    reachAutoLayers.push(previewEndMarker);
     // Invisible, wider companion carries the click/hover — see note above.
     var previewHit = L.polyline(trimmed.newSegmentOnly, {weight:20, opacity:0.001, interactive:true})
       .bindTooltip('Append stream segment — click to confirm').addTo(map);
@@ -8661,6 +8694,7 @@ function preTrimExtendClick(latlng) {
     clearReachAutoLayers(); // clear any previous preview before showing new one
     if (!chainLL) {
       setMapHint('No streams found nearby — click elsewhere or proceed to Pick endpoints');
+      showStreamExtendCandidates(preTrimExtendClick);
       return;
     }
 
@@ -8669,12 +8703,26 @@ function preTrimExtendClick(latlng) {
     if (!existPts) return;
     var trimmed = trimChainToAnchor(existPts, chainLL, clickLL);
     if (!trimmed) {
-      setMapHint('That segment doesn\'t connect to your reach — click a segment nearer the end you want to extend');
+      setMapHint('That\'s already part of your reach, or doesn\'t connect — click further along a highlighted segment, past the existing reach\'s end');
+      showStreamExtendCandidates(preTrimExtendClick);
       return;
     }
 
-    var preview = L.polyline(trimmed.newSegmentOnly, {color:'#c07820', weight:3, dashArray:'6,3', interactive:false}).addTo(map);
+    // See reachExtendClick() — a tightly fit-zoomed view (from a short original
+    // reach) can put a genuinely new, valid segment entirely outside the current
+    // view. Grow (never shrink) the view to include it.
+    var newBounds = L.latLngBounds(trimmed.newSegmentOnly);
+    if (!map.getBounds().contains(newBounds)) {
+      map.fitBounds(newBounds.extend(map.getBounds()), {padding:[60,60]});
+    }
+
+    // Weight 6 (vs. the weight-3 candidate highlight) and a marker at the far end —
+    // a short find (a few tens of meters) could otherwise be nearly invisible
+    // against a large river view, exactly the "I see nothing orange" report.
+    var preview = L.polyline(trimmed.newSegmentOnly, {color:'#c07820', weight:6, opacity:0.95, interactive:false}).addTo(map);
     reachAutoLayers.push(preview);
+    var previewEndMarker = L.circleMarker(trimmed.newSegmentOnly[trimmed.newSegmentOnly.length - 1], {radius:6, color:'#fff', weight:2, fillColor:'#c07820', fillOpacity:1, interactive:false}).addTo(map);
+    reachAutoLayers.push(previewEndMarker);
     // Invisible, wider companion carries the click/hover — see note above.
     var previewHit = L.polyline(trimmed.newSegmentOnly, {weight:20, opacity:0.001, interactive:true})
       .bindTooltip('Append stream segment — click to confirm').addTo(map);
