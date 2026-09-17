@@ -6394,6 +6394,8 @@ function loadNHDPreview() {
         reachAutoDetecting = false;
         if (!weCw.ppData['reach_len']) weCw.ppData['reach_len'] = {};
         weCw.ppData['reach_len']._autoDetecting = false;
+        // See acceptAutoReach() — remember the mainstem so extend can prefer it.
+        weCw.ppData['reach_len']._mainstemId = (ch.features && ch.features[0] && ch.features[0].attributes.mainstemid) || null;
         document.getElementById('mapwrap').classList.remove('drawing');
         setMapHint('');
         setTimeout(function(){ enterPreTrimStep(windowed, false); }, 50);
@@ -6785,7 +6787,19 @@ function fetchWbConnectorCenterline(clickLL, bufM) {
 // considered, always reporting "doesn't connect" regardless of the click. A
 // chain has to reach the anchor to be a candidate at all; only among those does
 // proximity to the click pick which one the user meant.
-function fetchStreamChainNear(clickLL, anchorLL, radius) {
+//
+// A second problem surfaces even among anchor-connected candidates: at a
+// confluence, a short tributary/side-channel chain can pass closer to the
+// click than the actual river the reach is on — confirmed live near Old River
+// Road/George Rogers Park, where a small creek joining the Willamette kept
+// getting offered instead of the river itself. preferredMainstemId (the
+// reach's own NHD mainstemid, captured when it was first selected — see
+// acceptAutoReach()) is used to filter to matching-mainstem candidates first;
+// proximity to the click only breaks ties within that preferred set. A
+// tributary is still reachable — just by clicking directly on it — since
+// showStreamExtendCandidates() still highlights (dimly) and allows clicking
+// non-matching chains when nothing on the preferred mainstem connects.
+function fetchStreamChainNear(clickLL, anchorLL, radius, preferredMainstemId) {
   var toRad = function(d){ return d*Math.PI/180; };
   var R = 6378137;
   var x = R*toRad(clickLL.lng), y = R*Math.log(Math.tan(Math.PI/4+toRad(clickLL.lat)/2));
@@ -6802,7 +6816,7 @@ function fetchStreamChainNear(clickLL, anchorLL, radius) {
     // Same tolerance trimChainToAnchor() uses for its own connect check — a chain
     // that doesn't get at least this close to the anchor isn't a real candidate.
     var MAX_CONNECT_GAP_M = 500;
-    var best = null, bestD = Infinity;
+    var candidates = [];
     chains.forEach(function(ch) {
       var minToAnchor = Infinity, minToClick = Infinity;
       ch.pts.forEach(function(p) {
@@ -6810,8 +6824,19 @@ function fetchStreamChainNear(clickLL, anchorLL, radius) {
         var dC = clickLL.distanceTo(p); if (dC < minToClick) minToClick = dC;
       });
       if (minToAnchor > MAX_CONNECT_GAP_M) return;
-      if (minToClick < bestD) { bestD = minToClick; best = ch; }
+      var mainstemId = (ch.features && ch.features[0] && ch.features[0].attributes.mainstemid) || null;
+      candidates.push({ch: ch, minToClick: minToClick, mainstemId: mainstemId});
     });
+    if (!candidates.length) return null;
+
+    var pool = candidates;
+    if (preferredMainstemId) {
+      var onMainstem = candidates.filter(function(c) { return c.mainstemId === preferredMainstemId; });
+      if (onMainstem.length) pool = onMainstem;
+    }
+
+    var best = null, bestD = Infinity;
+    pool.forEach(function(c) { if (c.minToClick < bestD) { bestD = c.minToClick; best = c.ch; } });
     if (!best || bestD > radius) return null;
     return best.pts;
   }).catch(function() { return null; });
@@ -6892,8 +6917,10 @@ function showStreamExtendCandidates(clickHandler) {
   var url = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/50/query?' +
     'geometry='+encodeURIComponent(env)+
     '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects'+
-    '&where=featuretype+IN+(1,2,3,5)&outFields=gnisidlabel'+
+    '&where=featuretype+IN+(1,2,3,5)&outFields=gnisidlabel,mainstemid'+
     '&returnGeometry=true&outSR=4326&f=json';
+  var we = getActiveWE();
+  var preferredMainstemId = (we && we.ppData['reach_len'] && we.ppData['reach_len']._mainstemId) || null;
   fetch(url).then(function(r){ return r.json(); }).then(function(data) {
     // Extend may have been cancelled (or the append already confirmed) while
     // this was in flight — don't draw a highlight the user can no longer act on.
@@ -6901,9 +6928,15 @@ function showStreamExtendCandidates(clickHandler) {
     if (!data.features || !data.features.length) return;
     data.features.forEach(function(feat) {
       if (!feat.geometry || !feat.geometry.paths) return;
+      // A confluence can put a small tributary/side-channel right next to the
+      // reach's own river — dim (but still show and still allow clicking) any
+      // segment that isn't on the reach's own mainstem, so the intended river
+      // reads as the obvious thing to click and an offshoot only gets picked
+      // when the user deliberately clicks it.
+      var onMainstem = !preferredMainstemId || feat.attributes.mainstemid === preferredMainstemId;
       feat.geometry.paths.forEach(function(path) {
         var pts = path.map(function(c){ return L.latLng(c[1], c[0]); });
-        var lyr = L.polyline(pts, {color:'#4a8abf', weight:3, opacity:0.6, interactive:false});
+        var lyr = L.polyline(pts, {color:'#4a8abf', weight: onMainstem?3:2, opacity: onMainstem?0.6:0.25, interactive:false});
         lyr.addTo(map);
         reachAutoLayers.push(lyr);
         // Invisible, much wider companion carries the actual hover/click — the
@@ -7668,7 +7701,7 @@ function processAutoDetectResults(we, data, latlng, envelope, wbName) {
         .bindTooltip(name + ' (' + primaryChain.features.length + ' segments)').addTo(map);
       hitLine.on('click', function(e){ L.DomEvent.stop(e); acceptAutoReach(0); });
       reachAutoLayers.push(hitLine);
-      results.push({name: name, pts: primaryChain.pts, layer: layer});
+      results.push({name: name, pts: primaryChain.pts, layer: layer, mainstemId: bestFeat.attributes.mainstemid || null});
     }
 
     we.ppData['reach_len']._autoResults = results;
@@ -7716,8 +7749,9 @@ function reachExtendClick(latlng) {
   // Sized off the anchor-to-click gap, same idiom as preTrimExtendClick's
   // wbGeometry branch — comfortably covers real sinuosity between them.
   var radius = Math.min(20000, Math.max(1000, anchorLL.distanceTo(clickLL) * 2.5));
+  var preferredMainstemId = reachD._mainstemId || null;
 
-  fetchStreamChainNear(clickLL, anchorLL, radius).then(function(chainLL) {
+  fetchStreamChainNear(clickLL, anchorLL, radius, preferredMainstemId).then(function(chainLL) {
     clearReachAutoLayers();
     if (!chainLL) {
       setMapHint('No streams found — click closer to a stream segment');
@@ -8695,8 +8729,9 @@ function preTrimExtendClick(latlng) {
   var reachStart0 = existPts0[0], reachEnd0 = existPts0[existPts0.length - 1];
   var anchorLL = reachStart0.distanceTo(clickLL) < reachEnd0.distanceTo(clickLL) ? reachStart0 : reachEnd0;
   var radius = Math.min(20000, Math.max(1000, anchorLL.distanceTo(clickLL) * 2.5));
+  var preferredMainstemId = (getActiveWE() && getActiveWE().ppData['reach_len'] && getActiveWE().ppData['reach_len']._mainstemId) || null;
 
-  fetchStreamChainNear(clickLL, anchorLL, radius).then(function(chainLL) {
+  fetchStreamChainNear(clickLL, anchorLL, radius, preferredMainstemId).then(function(chainLL) {
     clearReachAutoLayers(); // clear any previous preview before showing new one
     if (!chainLL) {
       setMapHint('No streams found nearby — click elsewhere or proceed to Pick endpoints');
@@ -9040,6 +9075,11 @@ function acceptAutoReach(idx) {
   clearReachAutoLayers();
   reachAutoDetecting = false;
   we.ppData['reach_len']._autoDetecting = false;
+  // Remember which real-world river/mainstem this reach is on, so a later
+  // "Add more stream"/"Extend reach" can prefer it over a nearby tributary or
+  // side channel that happens to pass closer to the click — see
+  // showStreamExtendCandidates()/fetchStreamChainNear().
+  we.ppData['reach_len']._mainstemId = results[idx].mainstemId || null;
   we.ppData['reach_len']._autoResults = null;
   document.getElementById('mapwrap').classList.remove('drawing');
   setMapHint('');
