@@ -8696,6 +8696,11 @@ function enterPreTrimStep(pts, skipFit) {
   if (!we.ppData['reach_len']) we.ppData['reach_len'] = {};
   we.ppData['reach_len']._preTrim = true;
   we.ppData['reach_len']._preTrimPts = pts;
+  // A fresh selection shouldn't inherit "Cancel extend" as its button label
+  // from whatever a prior selection on this SAME reach_len object left set —
+  // see redetectReach() for the same fix, needed for any path (not just
+  // "Try different stream") that lands here after extend mode was used once.
+  we.ppData['reach_len']._preTrimExtending = false;
   renderPMRow(m);
   if (wizardMode) renderWizardStep();
 }
@@ -8939,6 +8944,11 @@ function redetectReach() {
     we.ppData['reach_len']._preTrim = false;
     we.ppData['reach_len']._preTrimPts = null;
     we.ppData['reach_len']._autoResults = null;
+    // Otherwise a reach picked here inherits "Cancel extend" as its button
+    // label from whatever a PRIOR selection left behind — the wizard panel
+    // reads this flag directly (see renderWizardStep's reach_len case), not
+    // the preReachExtend global reset above.
+    we.ppData['reach_len']._preTrimExtending = false;
   }
   if (reachTrimLayer) { map.removeLayer(reachTrimLayer); reachTrimLayer = null; }
   clearReachAutoLayers();
