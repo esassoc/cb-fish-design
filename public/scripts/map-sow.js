@@ -6847,6 +6847,60 @@ function trimChainToAnchor(existPts, chainLL, clickLL) {
   return { combinedPts: combinedPts, newSegmentOnly: newSegmentOnly, extendFromStart: extendFromStart };
 }
 
+// Highlight nearby NHD flowlines (ordinary streams + centerlines) across the
+// current map view so there's something visible to click when extending a
+// reach — mirrors loadNHDPreview()'s network highlighting, just scoped to the
+// current view instead of running a fresh auto-detect. Without this, "Add more
+// stream"/"Extend reach" only set a hint and drew nothing — reported live as
+// "no segments of stream displayed to add, it just shows the originally
+// selected reach": the user hadn't clicked yet at all, they expected the
+// network to light up first, the same way auto-detect's own selection step
+// does, before ever clicking. Whatever the user clicks still goes through
+// clickHandler (reachExtendClick/preTrimExtendClick), which independently
+// re-derives the connecting chain from the click point — these lines are
+// purely a visual aid, not the actual candidate data.
+function showStreamExtendCandidates(clickHandler) {
+  var zoom = map.getZoom();
+  if (zoom < 11) {
+    setMapHint('Zoom in to level 11+ (currently '+zoom+') to see nearby streams to extend onto');
+    return;
+  }
+  var bounds = map.getBounds();
+  var toRad = function(d){ return d*Math.PI/180; };
+  var R = 6378137;
+  var toMerc = function(lat, lng) { return [R*toRad(lng), R*Math.log(Math.tan(Math.PI/4+toRad(lat)/2))]; };
+  var sw = toMerc(bounds.getSouth(), bounds.getWest());
+  var ne = toMerc(bounds.getNorth(), bounds.getEast());
+  var env = sw[0]+','+sw[1]+','+ne[0]+','+ne[1];
+  var url = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/50/query?' +
+    'geometry='+encodeURIComponent(env)+
+    '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects'+
+    '&where=featuretype+IN+(1,2,3,5)&outFields=gnisidlabel'+
+    '&returnGeometry=true&outSR=4326&f=json';
+  fetch(url).then(function(r){ return r.json(); }).then(function(data) {
+    // Extend may have been cancelled (or the append already confirmed) while
+    // this was in flight — don't draw a highlight the user can no longer act on.
+    if (!preReachExtend && !reachExtending) return;
+    if (!data.features || !data.features.length) return;
+    data.features.forEach(function(feat) {
+      if (!feat.geometry || !feat.geometry.paths) return;
+      feat.geometry.paths.forEach(function(path) {
+        var pts = path.map(function(c){ return L.latLng(c[1], c[0]); });
+        var lyr = L.polyline(pts, {color:'#4a8abf', weight:3, opacity:0.6, interactive:false});
+        lyr.addTo(map);
+        reachAutoLayers.push(lyr);
+        // Invisible, much wider companion carries the actual hover/click — the
+        // thin visible line above is too precise a target to click reliably.
+        var hitLyr = L.polyline(pts, {weight:20, opacity:0.001, interactive:true});
+        hitLyr.bindTooltip(feat.attributes.gnisidlabel || 'Click to append', {sticky:true});
+        hitLyr.on('click', function(e) { L.DomEvent.stop(e); clickHandler(e.latlng); });
+        hitLyr.addTo(map);
+        reachAutoLayers.push(hitLyr);
+      });
+    });
+  }).catch(function() {});
+}
+
 // `opts.radius`, if given, overrides the default 3km search radius — used the same
 // way, sized to comfortably span the gap being extended across.
 function deriveWbCenterlinePts(wbGeometry, clickLL, opts) {
@@ -7615,7 +7669,8 @@ function startReachExtend() {
   reachExtending = true;
   we.ppData['reach_len']._extendMode = true;
   document.getElementById('mapwrap').classList.add('drawing');
-  setMapHint('Click on a stream segment to append it to your reach');
+  setMapHint('Click a highlighted stream segment to append it to your reach');
+  showStreamExtendCandidates(reachExtendClick);
   var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
   renderPMRow(m);
 }
@@ -8636,7 +8691,8 @@ function preTrimExtendClick(latlng) {
       // Stay in extend mode so user can keep adding without re-clicking the button
       preReachExtend = true;
       we2.ppData['reach_len']._preTrimExtending = true;
-      setMapHint('Segment added — click another stream to keep extending, or click <b>Pick endpoints</b> in the sidebar');
+      setMapHint('Segment added — click another highlighted stream to keep extending, or click <b>Pick endpoints</b> in the sidebar');
+      showStreamExtendCandidates(preTrimExtendClick);
       var m2 = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
       renderPMRow(m2);
     });
@@ -8670,7 +8726,8 @@ function startPreTrimExtend() {
     reachAutoLayers.push(outlineLyr);
     setMapHint('Click anywhere on the highlighted river to extend your reach toward that point');
   } else {
-    setMapHint('Click on a stream segment to append it to the highlighted reach');
+    setMapHint('Click a highlighted stream segment to append it to the highlighted reach');
+    showStreamExtendCandidates(preTrimExtendClick);
   }
 
   var m = PP_DEFS.filter(function(x){return x.id==='reach_len';})[0];
