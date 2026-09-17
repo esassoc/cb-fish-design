@@ -128,9 +128,18 @@ var MAP_COLOR_ROLES = {
   // exactly one (newPrimaryChannel(1)) and nothing anywhere pushes a second onto
   // we.primaryChannels. pcChannelColor()'s per-index cycling (PC_CHANNEL_COLORS,
   // just below) still exists in case that ever changes, but only slot 1 is
-  // reachable, so only slot 1 gets a user-facing role here — the other four
-  // would just be confusing, unpickable rows in the editor.
-  pcChannel:        'background-dataviz-categorical-3'
+  // reachable today.
+  //
+  // Slot 1 used to be its own role here ('pcChannel') pointed at the exact same
+  // token as 'reach' — meaning the color editor showed "Reach / Primary Channel"
+  // and "Primary Channel" as two separately-editable rows that happened to start
+  // out identical, but silently diverged the moment either one was changed alone
+  // (confirmed: the Design-section legend row reads mapColor('reach'), so editing
+  // "Primary Channel" alone changed the actual pc-reach/pc-area geometry on the
+  // map without updating what the legend showed for it). Removed the duplicate —
+  // slot 1 now reads 'reach' directly (see rebuildMapPalettes()), so pre-project
+  // reach and the design channel's unified reach+area color are one and the same
+  // role, editable in one place, exactly like floodplain already works.
 };
 // PC_CHANNEL_COLORS needs one entry per pcChannelColor() cycle slot regardless
 // of whether >1 primary channel is reachable today; slots 2-5 aren't user-facing
@@ -251,7 +260,10 @@ function rebuildMapPalettes() {
   STRUCT_COLOR.css = mapColor('structCss');
   STRUCT_COLOR.fps = mapColor('structFps');
   STRUCT_COLOR.scs = mapColor('structScs');
-  PC_CHANNEL_COLORS = [mapColor('pcChannel')].concat(PC_CHANNEL_EXTRA_TOKENS.map(resolveColorToken));
+  // Slot 1 reads the shared 'reach' role directly (no separate 'pcChannel' role —
+  // see the comment on MAP_COLOR_ROLES above) so pre-project reach and the design
+  // channel's unified reach+area color track together as one editable role.
+  PC_CHANNEL_COLORS = [mapColor('reach')].concat(PC_CHANNEL_EXTRA_TOKENS.map(resolveColorToken));
   SC_COLOR = mapColor('secondaryChannel');
 }
 function clearColorTokenCache() { _colorTokenCache = {}; }
@@ -559,7 +571,7 @@ function ppOwner(we, id) {
 
 // Distinct colors per primary channel so multiple channels stay visually
 // distinguishable on the map when a work element has more than one.
-var PC_CHANNEL_COLORS = []; // filled by rebuildMapPalettes() (see MAP_COLOR_ROLES pcChannel1..5) before window.onload finishes
+var PC_CHANNEL_COLORS = []; // filled by rebuildMapPalettes() (slot 1 = the shared 'reach' role, see MAP_COLOR_ROLES) before window.onload finishes
 function pcChannelColor(we, pcId) {
   var idx = 0;
   (we.primaryChannels||[]).forEach(function(pc, i){ if (pc.id === pcId) idx = i; });
@@ -2144,16 +2156,21 @@ function commitFpPoly(we, pts) {
       chRing = (lls.length && Array.isArray(lls[0])) ? lls[0] : lls;
     }
   }
+  // fp_poly is pre-project — every other pre-project shape (reach, channel
+  // buffer, pre-project CHU units) renders dashed via PRE_PROJECT_DASH so the
+  // design-phase counterpart (pc_fp, same floodplain hue, solid) reads apart
+  // from it. This layer was missing that dash entirely, so the two looked
+  // visually identical on the map — same color, same solid line.
   var col = mapColor('floodplain');
   if (chRing && chRing.length >= 3) {
     d.layer = L.polygon([pts, chRing.slice().reverse()], {
-      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, dashArray:PRE_PROJECT_DASH, interactive:true
     }).bindTooltip('Floodplain Area').addTo(map);
     var chAreaM2 = geoAreaM2(chRing);
     d.valueM = Math.max(0, grossAreaM2 - chAreaM2);
   } else {
     d.layer = L.polygon(pts, {
-      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, dashArray:PRE_PROJECT_DASH, interactive:true
     }).bindTooltip('Floodplain Area').addTo(map);
     d.valueM = grossAreaM2;
   }
@@ -2949,9 +2966,20 @@ function flowArrowCrossSection(reachPts, widthPts, t) {
   return {pos:pos, brgDeg:brgDeg, pLat:pLat, pLng:pLng, widthM:widthM};
 }
 
-function makeFlowArrowIcon(brgDeg, colorHex) {
+// `hollow` draws the arrow as an outline only (no fill) instead of solid —
+// needed once 'reach' became the single color role shared by the pre-project
+// reach line and the design channel (see MAP_COLOR_ROLES): with color no
+// longer telling the two phases' arrows apart, this does. A dashed outline
+// was tried first (matching PRE_PROJECT_DASH's polygon/line convention) but
+// at the arrow's actual ~18px on-map size the dashes were too fine to read —
+// confirmed by rendering both at real size side by side. An open vs. filled
+// triangle reads clearly even that small.
+function makeFlowArrowIcon(brgDeg, colorHex, hollow) {
+  var fill = hollow ? 'none' : colorHex;
+  var stroke = hollow ? colorHex : '#fff';
+  var strokeWidth = hollow ? 2 : 1.5;
   var html = '<div style="transform:rotate('+brgDeg+'deg);width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin-left:-11px;margin-top:-11px">' +
-    '<svg width="18" height="18" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="'+colorHex+'" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></div>';
+    '<svg width="18" height="18" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+strokeWidth+'" stroke-linejoin="round"/></svg></div>';
   return L.divIcon({ className: '', html: html, iconSize: [0, 0], iconAnchor: [0, 0] });
 }
 
@@ -2959,7 +2987,7 @@ var FLOW_ARROW_SPACING_PX = 28;
 var FLOW_ARROW_MAX_COUNT = 5;
 var FLOW_ARROW_MIN_FAN_PX = 50; // below this on-screen width, just one centered arrow
 
-function buildFlowArrowMarkers(reachLayer, widthD, colorHex) {
+function buildFlowArrowMarkers(reachLayer, widthD, colorHex, hollow) {
   if (!reachLayer) return [];
   var reachPts = reachLayer.getLatLngs();
   if (reachPts.length && Array.isArray(reachPts[0])) reachPts = reachPts[0];
@@ -2973,7 +3001,7 @@ function buildFlowArrowMarkers(reachLayer, widthD, colorHex) {
     var pixelWidth = cs.widthM ? cs.widthM / metersPerPixel : 0;
     var count = pixelWidth < FLOW_ARROW_MIN_FAN_PX ? 1 : Math.min(FLOW_ARROW_MAX_COUNT, Math.max(2, Math.floor(pixelWidth / FLOW_ARROW_SPACING_PX)));
     if (count <= 1) {
-      markers.push(L.marker([cs.pos.lat, cs.pos.lng], {icon: makeFlowArrowIcon(cs.brgDeg, colorHex), interactive:false}).addTo(map));
+      markers.push(L.marker([cs.pos.lat, cs.pos.lng], {icon: makeFlowArrowIcon(cs.brgDeg, colorHex, hollow), interactive:false}).addTo(map));
       return;
     }
     // Evenly space `count` arrows across [-widthM/2, +widthM/2] around the centerline point.
@@ -2983,7 +3011,7 @@ function buildFlowArrowMarkers(reachLayer, widthD, colorHex) {
       var offsetUnits = offsetM / 111320;
       var lat = cs.pos.lat + cs.pLat * offsetUnits;
       var lng = cs.pos.lng + cs.pLng * offsetUnits;
-      markers.push(L.marker([lat, lng], {icon: makeFlowArrowIcon(cs.brgDeg, colorHex), interactive:false}).addTo(map));
+      markers.push(L.marker([lat, lng], {icon: makeFlowArrowIcon(cs.brgDeg, colorHex, hollow), interactive:false}).addTo(map));
     }
   });
   return markers;
@@ -3013,13 +3041,19 @@ function addReachArrow(we) {
   var rd = we && we.ppData['reach_len'];
   clearFlowArrows(rd);
   if(!rd || !rd.layer) return;
-  var markers = buildFlowArrowMarkers(rd.layer, we.ppData['area_ch'], mapColor('reach'));
+  var markers = buildFlowArrowMarkers(rd.layer, we.ppData['area_ch'], mapColor('reach'), true);
   if (!markers.length) return;
-  // Respect the pre-project visibility toggle — buildFlowArrowMarkers() always adds
-  // fresh markers to the map, which otherwise leaks the pre-project reach's arrows
-  // back in on every zoom (refreshAllFlowArrows runs regardless of wizard step)
-  // even while pre-project layers are supposed to be hidden during habitat work.
-  if (!ppLayersVisible) markers.forEach(function(mk){ map.removeLayer(mk); });
+  // Match the reach LINE's own actual displayed state, not the global ppLayersVisible
+  // flag directly — the pc_reach wizard step re-adds the line to the map as a design
+  // reference even while ppLayersVisible is false (see wizardAutoActivate's 'pc_reach'
+  // case), and refreshAllFlowArrows() rebuilds every reach's arrows on every zoom/pan
+  // regardless of wizard step. Checking the flag directly meant that re-added
+  // reference line's arrows got silently hidden again by the very next zoom or pan —
+  // confirmed live: fixing wizardAutoActivate's one-time re-add wasn't enough, the
+  // arrows vanished again the moment the map moved. Checking the line's own map
+  // membership instead makes the arrows self-correct against whatever actually
+  // governs the line's visibility, one-time re-add or otherwise.
+  if (!map.hasLayer(rd.layer)) markers.forEach(function(mk){ map.removeLayer(mk); });
   rd._arrowMarkers = markers;
   rd._arrowMarker = markers[Math.floor(markers.length/2)]; // keep reference for legacy code
 }
@@ -3406,7 +3440,15 @@ function finishSOWDraw() {
     }
     valueM=geoLen(pts);
   }
-  else{layer=L.polygon(pts,{color:col,fillColor:col,fillOpacity:.2,weight:2,interactive:true}).bindTooltip(tipLabel).addTo(map);acres=geoArea(pts);valueM=geoAreaM2(pts);}
+  else{
+    // This shared draw-finisher is used for both design-phase multi-entry items
+    // (grading/road/berm/revetment/tailings/enhancement — correctly solid) and
+    // the one pre-project item that reuses it, Existing Wetland Area (pp_wetland)
+    // — which was rendering solid too, indistinguishable from a design shape.
+    var polyStyle = {color:col,fillColor:col,fillOpacity:.2,weight:2,interactive:true};
+    if (enhRef && enhRef.key === 'pp_wetland') polyStyle.dashArray = PRE_PROJECT_DASH;
+    layer=L.polygon(pts,polyStyle).bindTooltip(tipLabel).addTo(map);acres=geoArea(pts);valueM=geoAreaM2(pts);
+  }
   var owner=sowOwner(we,d.id);
   owner.sowLayers[d.id]={layer:layer,valueM:valueM,acres:acres,geo:d.geo,label:d.label,_pts:NO_DISPLAY_IDS[d.id]?pts:null};
   // Multi-entry FP items (grading/road/berm/revetment/tailings/wetland) get a numbered
@@ -4105,7 +4147,7 @@ function startPolyEdit(id) {
   if (id === 'fp_poly' && d._pts) {
     if (d.layer) { map.removeLayer(d.layer); d.layer = null; }
     d.layer = L.polygon(d._pts.slice(), {
-      color:mapColor('floodplain'), fillColor:mapColor('floodplain'), fillOpacity:0.18, weight:2, interactive:false
+      color:mapColor('floodplain'), fillColor:mapColor('floodplain'), fillOpacity:0.18, weight:2, dashArray:PRE_PROJECT_DASH, interactive:false
     }).bindTooltip('Floodplain (editing)').addTo(map);
     d._editingBoundary = true;
     lineEditing = {type:'pp-poly', id:id, weId:activeWEId, layer:d.layer};
@@ -7038,8 +7080,11 @@ function wetlandAutoClickFeature(ring, previewLyr) {
   var id = 'fp-pp_wetland-' + Date.now();
   we.fpMulti['pp_wetland'].push({id: id, vol: ''});
 
+  // pp_wetland is pre-project — matches the dash finishSOWDraw() now applies
+  // to a hand-drawn one of these, so auto-detected and hand-drawn wetlands
+  // look the same regardless of which path created them.
   var col = WETLAND_COLOR.existing;
-  var layer = L.polygon(pts, {color:col, fillColor:col, fillOpacity:.2, weight:2, interactive:true})
+  var layer = L.polygon(pts, {color:col, fillColor:col, fillOpacity:.2, weight:2, dashArray:PRE_PROJECT_DASH, interactive:true})
     .bindTooltip('Wetland area ' + n).addTo(map);
   var acres = geoArea(pts), valueM = geoAreaM2(pts);
   we.sowLayers[id] = {layer:layer, valueM:valueM, acres:acres, geo:'polygon', label:'Wetland area', _pts:null};
@@ -9042,12 +9087,12 @@ function renderLegend() {
   h+='<div class="leg-row"><span class="leg-poly" style="'+dashSwatch.replace('{c}',mapColor('channel'))+'"></span>Channel Area</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="'+dashSwatch.replace('{c}',mapColor('floodplain'))+'"></span>Floodplain</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="'+dashSwatch.replace('{c}',mapColor('boundary'))+'"></span>Project Boundary</div>';
-  h+='<div class="leg-row"><span style="width:14px;height:10px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center"><svg width="11" height="13" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="'+mapColor('reach')+'" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></span>Flow direction</div></div>';
+  h+='<div class="leg-row"><span style="width:14px;height:10px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center"><svg width="11" height="13" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="none" stroke="'+mapColor('reach')+'" stroke-width="2" stroke-linejoin="round"/></svg></span>Flow direction</div></div>';
   h+='<div class="leg-section"><div class="leg-sec-title">Design</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('reach')+'"></span>Reach / Primary Channel</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('channel')+'"></span>Channel Area</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('floodplain')+'"></span>Floodplain</div>';
-  h+='<div class="leg-row"><span class="leg-line" style="background:'+mapColor('widthSegments')+'"></span>Width segments</div></div>';
+  h+='<div class="leg-row"><span style="width:14px;height:10px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center"><svg width="11" height="13" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="'+mapColor('reach')+'" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></span>Flow direction</div></div>';
   h+='<div class="leg-section"><div class="leg-sec-title">Channel Habitat Units</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+CHU_COLOR.riffle+'"></span>Riffle</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+CHU_COLOR.pool+'"></span>Pool</div></div>';
@@ -9095,10 +9140,13 @@ var MAP_COLOR_ROLE_LABELS = {
   wetlandExisting: 'Existing Wetland', chuRiffle: 'CHU: Riffle', chuPool: 'CHU: Pool',
   widthSegments: 'Width Segments', secondaryChannel: 'Secondary Channel', structCms: 'Structure: Channel Margin',
   structMcs: 'Structure: Mid-Channel', structFps: 'Structure: Floodplain', structScs: 'Structure: Side-Channel',
-  structCss: 'Structure: Channel-Spanning', pcChannel: 'Primary Channel'
-  // Only one role/row for this — see the comment on MAP_COLOR_ROLES.pcChannel:
-  // a work element only ever has ONE primary channel today, so "#2..#5" rows
-  // would be unpickable clutter, not real options.
+  structCss: 'Structure: Channel-Spanning'
+  // No separate "Primary Channel" role — see the comment on MAP_COLOR_ROLES
+  // (the block above 'reach' was removed): it used to be its own role pointed
+  // at the exact same token as 'reach', so the two could silently diverge if
+  // edited separately even though the legend only ever showed one of them.
+  // "Reach / Primary Channel" above now covers both pre-project reach and the
+  // design channel's unified reach+area color.
   // No separate "Floodplain (right bank)" role either — see the comment on
   // MAP_COLOR_ROLES.floodplain: fp_left/fp_right are never both reached (the
   // L/R split wizard step doesn't exist in WIZARD_STEPS), so fp_right just
@@ -10748,8 +10796,22 @@ function wizardAutoActivate() {
       // re-add it here the same way sc_draw/sc_width/sc_wood re-add the primary channel.
       if (we && we.ppData['reach_len'] && we.ppData['reach_len'].layer) {
         var ppReachL = we.ppData['reach_len'].layer;
-        if (!map.hasLayer(ppReachL)) map.addLayer(ppReachL);
+        // fitBounds FIRST: confirmed via stack trace that it can trigger Leaflet's
+        // moveend -> refreshAllFlowArrows(), which rebuilds this reach's arrows and
+        // (ppLayersVisible is still false here) immediately hides the rebuilt ones —
+        // silently undoing a re-add done before fitBounds. Doing the re-adds after
+        // fitBounds instead means they're the last word regardless of whether that
+        // side effect fires (only reproduced going straight to this step, e.g. via
+        // the sidebar's step-jump — stepping through via Next never triggered it,
+        // since fitBounds was usually already a no-op by then).
         map.fitBounds(ppReachL.getBounds(), {padding:[40,40]});
+        if (!map.hasLayer(ppReachL)) map.addLayer(ppReachL);
+        // setPPLayersVisible(false) also hard-removed the reach's flow-direction arrow
+        // markers (its d._arrowMarkers), same as the line — re-add those too, or the
+        // reference reach shows with no direction indicator even though the markers
+        // already exist, just not on the map.
+        var ppReachArrows = we.ppData['reach_len']._arrowMarkers;
+        if (ppReachArrows) ppReachArrows.forEach(function(mk){ if (mk && !map.hasLayer(mk)) map.addLayer(mk); });
       }
       break;
     case 'buffers':
