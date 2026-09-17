@@ -2144,16 +2144,21 @@ function commitFpPoly(we, pts) {
       chRing = (lls.length && Array.isArray(lls[0])) ? lls[0] : lls;
     }
   }
+  // fp_poly is pre-project — every other pre-project shape (reach, channel
+  // buffer, pre-project CHU units) renders dashed via PRE_PROJECT_DASH so the
+  // design-phase counterpart (pc_fp, same floodplain hue, solid) reads apart
+  // from it. This layer was missing that dash entirely, so the two looked
+  // visually identical on the map — same color, same solid line.
   var col = mapColor('floodplain');
   if (chRing && chRing.length >= 3) {
     d.layer = L.polygon([pts, chRing.slice().reverse()], {
-      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, dashArray:PRE_PROJECT_DASH, interactive:true
     }).bindTooltip('Floodplain Area').addTo(map);
     var chAreaM2 = geoAreaM2(chRing);
     d.valueM = Math.max(0, grossAreaM2 - chAreaM2);
   } else {
     d.layer = L.polygon(pts, {
-      color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
+      color:col, fillColor:col, fillOpacity:0.18, weight:2, dashArray:PRE_PROJECT_DASH, interactive:true
     }).bindTooltip('Floodplain Area').addTo(map);
     d.valueM = grossAreaM2;
   }
@@ -3406,7 +3411,15 @@ function finishSOWDraw() {
     }
     valueM=geoLen(pts);
   }
-  else{layer=L.polygon(pts,{color:col,fillColor:col,fillOpacity:.2,weight:2,interactive:true}).bindTooltip(tipLabel).addTo(map);acres=geoArea(pts);valueM=geoAreaM2(pts);}
+  else{
+    // This shared draw-finisher is used for both design-phase multi-entry items
+    // (grading/road/berm/revetment/tailings/enhancement — correctly solid) and
+    // the one pre-project item that reuses it, Existing Wetland Area (pp_wetland)
+    // — which was rendering solid too, indistinguishable from a design shape.
+    var polyStyle = {color:col,fillColor:col,fillOpacity:.2,weight:2,interactive:true};
+    if (enhRef && enhRef.key === 'pp_wetland') polyStyle.dashArray = PRE_PROJECT_DASH;
+    layer=L.polygon(pts,polyStyle).bindTooltip(tipLabel).addTo(map);acres=geoArea(pts);valueM=geoAreaM2(pts);
+  }
   var owner=sowOwner(we,d.id);
   owner.sowLayers[d.id]={layer:layer,valueM:valueM,acres:acres,geo:d.geo,label:d.label,_pts:NO_DISPLAY_IDS[d.id]?pts:null};
   // Multi-entry FP items (grading/road/berm/revetment/tailings/wetland) get a numbered
@@ -4105,7 +4118,7 @@ function startPolyEdit(id) {
   if (id === 'fp_poly' && d._pts) {
     if (d.layer) { map.removeLayer(d.layer); d.layer = null; }
     d.layer = L.polygon(d._pts.slice(), {
-      color:mapColor('floodplain'), fillColor:mapColor('floodplain'), fillOpacity:0.18, weight:2, interactive:false
+      color:mapColor('floodplain'), fillColor:mapColor('floodplain'), fillOpacity:0.18, weight:2, dashArray:PRE_PROJECT_DASH, interactive:false
     }).bindTooltip('Floodplain (editing)').addTo(map);
     d._editingBoundary = true;
     lineEditing = {type:'pp-poly', id:id, weId:activeWEId, layer:d.layer};
@@ -7038,8 +7051,11 @@ function wetlandAutoClickFeature(ring, previewLyr) {
   var id = 'fp-pp_wetland-' + Date.now();
   we.fpMulti['pp_wetland'].push({id: id, vol: ''});
 
+  // pp_wetland is pre-project — matches the dash finishSOWDraw() now applies
+  // to a hand-drawn one of these, so auto-detected and hand-drawn wetlands
+  // look the same regardless of which path created them.
   var col = WETLAND_COLOR.existing;
-  var layer = L.polygon(pts, {color:col, fillColor:col, fillOpacity:.2, weight:2, interactive:true})
+  var layer = L.polygon(pts, {color:col, fillColor:col, fillOpacity:.2, weight:2, dashArray:PRE_PROJECT_DASH, interactive:true})
     .bindTooltip('Wetland area ' + n).addTo(map);
   var acres = geoArea(pts), valueM = geoAreaM2(pts);
   we.sowLayers[id] = {layer:layer, valueM:valueM, acres:acres, geo:'polygon', label:'Wetland area', _pts:null};
