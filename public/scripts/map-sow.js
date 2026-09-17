@@ -7559,10 +7559,14 @@ function reachExtendClick(latlng) {
   var buf = 800;
   var envelope = (x-buf)+','+(y-buf)+','+(x+buf)+','+(y+buf);
 
+  // featuretype 3/5 are the real centerlines through/between wide rivers that
+  // loadNHDPreview() now prefers for auto-detect (see centerlineLayers) — include
+  // them here too so extending a reach near a wide river finds the actual channel
+  // path instead of only ever-present ordinary stream segments (1,2).
   var url = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/50/query?' +
     'geometry='+encodeURIComponent(envelope)+
     '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects'+
-    '&where=featuretype+IN+(1,2)&outFields=gnisidlabel,mainstemid'+
+    '&where=featuretype+IN+(1,2,3,5)&outFields=gnisidlabel,mainstemid'+
     '&returnGeometry=true&outSR=4326&f=json';
 
   fetch(url).then(function(r){ return r.json(); }).then(function(data) {
@@ -8568,10 +8572,12 @@ function preTrimExtendClick(latlng) {
   var buf = 800;
   var envelope = (x-buf)+','+(y-buf)+','+(x+buf)+','+(y+buf);
 
+  // See reachExtendClick() — include the wide-river centerline types (3,5) so
+  // this (non-wbGeometry) extend path can find them too.
   var url = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/50/query?' +
     'geometry='+encodeURIComponent(envelope)+
     '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects'+
-    '&where=featuretype+IN+(1,2)&outFields=gnisidlabel,mainstemid'+
+    '&where=featuretype+IN+(1,2,3,5)&outFields=gnisidlabel,mainstemid'+
     '&returnGeometry=true&outSR=4326&f=json';
 
   fetch(url).then(function(r){ return r.json(); }).then(function(data) {
