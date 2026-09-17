@@ -6166,6 +6166,29 @@ function polygonCenterline(geometry) {
     centerline.push(L.latLng((b1[k].lat + match.lat) / 2, (b1[k].lng + match.lng) / 2));
   }
 
+  // The windowed search (or its "no match found" fallback, see above) can also
+  // desync briefly at a real local complexity partway through the walk — not
+  // just at the ends — producing a short interior run of points outside the
+  // ring. Confirmed near Hardtack Island on the Willamette: 3 consecutive
+  // points (of 150) landed outside the polygon, visibly detouring the reach
+  // line off the channel and back. A run with a good point on both sides gets
+  // bridged with a straight interpolation between them instead of left as a
+  // detour; a run reaching all the way to either end has no "good" neighbor to
+  // interpolate from and is left for the edge-trim below to remove instead.
+  for (var bi = 0; bi < centerline.length; bi++) {
+    if (pointInRing(centerline[bi].lat, centerline[bi].lng, ring)) continue;
+    var runStart = bi;
+    while (bi < centerline.length && !pointInRing(centerline[bi].lat, centerline[bi].lng, ring)) bi++;
+    var runEnd = bi; // first good index after the run (exclusive)
+    if (runStart === 0 || runEnd === centerline.length) continue;
+    var before = centerline[runStart - 1], after = centerline[runEnd];
+    var span = runEnd - (runStart - 1);
+    for (var bj = runStart; bj < runEnd; bj++) {
+      var bt = (bj - (runStart - 1)) / span;
+      centerline[bj] = L.latLng(before.lat + (after.lat - before.lat) * bt, before.lng + (after.lng - before.lng) * bt);
+    }
+  }
+
   // The arc-length window has the least bank2 data to search right at the very
   // ends of the walk, so a sample there is the most likely to hit the "no match
   // found" fallback above — which loses the windowing protection entirely and
@@ -6176,6 +6199,33 @@ function polygonCenterline(geometry) {
   // middle of the walk and only discards the unreliable extremities.
   while (centerline.length > 1 && !pointInRing(centerline[0].lat, centerline[0].lng, ring)) centerline.shift();
   while (centerline.length > 1 && !pointInRing(centerline[centerline.length-1].lat, centerline[centerline.length-1].lng, ring)) centerline.pop();
+
+  // Even after the above, a single pairing step can desync badly at a real
+  // local complexity — an island narrow enough that bank2's arc-length
+  // position stops tracking physical distance smoothly — without either point
+  // ever landing outside the ring, so neither fix above catches it. Confirmed
+  // near Hardtack Island on the Willamette: consecutive samples were 376m
+  // apart while every neighboring gap was under 75m, visibly "teleporting"
+  // the reach line sideways and back. Re-deriving a correct path through a
+  // spot the pairing has already proven unreliable at isn't safe to attempt
+  // here, so instead: cut at the single largest such jump and keep the longer
+  // remaining piece — the same "trust what's well-anchored, leave the rest
+  // for the user to extend via Add more stream" principle as the trims above.
+  if (centerline.length > 4) {
+    var segLens = [];
+    for (var si = 1; si < centerline.length; si++) segLens.push(centerline[si-1].distanceTo(centerline[si]));
+    var sortedLens = segLens.slice().sort(function(a,b){ return a-b; });
+    var medianLen = sortedLens[Math.floor(sortedLens.length/2)];
+    var jumpThreshold = Math.max(200, medianLen*6);
+    var worstIdx = -1, worstLen = 0;
+    for (var sj = 0; sj < segLens.length; sj++) {
+      if (segLens[sj] > jumpThreshold && segLens[sj] > worstLen) { worstLen = segLens[sj]; worstIdx = sj; }
+    }
+    if (worstIdx >= 0) {
+      var before = centerline.slice(0, worstIdx+1), after = centerline.slice(worstIdx+1);
+      centerline = before.length >= after.length ? before : after;
+    }
+  }
 
   return centerline;
 }
