@@ -6804,19 +6804,38 @@ function trimChainToAnchor(existPts, chainLL, clickLL) {
 
   var newSegmentOnly = segment.slice(1);
 
-  // Reject a "new" segment that folds back onto ground the reach already covers.
-  // showStreamExtendCandidates() highlights the whole nearby network, including
-  // whatever chain the reach itself was originally built from — a click that
-  // lands on the already-included stretch (rather than beyond the reach's real
-  // end) resolves anchorIdx/clickIdx to two points on that SAME already-selected
-  // run, producing a near-zero "extension" that's actually just re-tracing part
-  // of the existing reach backward. Confirmed live: clicking mid-way along a
-  // highlighted candidate that was the reach's own source chain produced a
-  // 2-point "new" segment whose points were already in existPts — invisible on
-  // screen and not a real addition.
-  var OVERLAP_TOLERANCE_M = 20;
+  // Reject a "new" segment that folds back onto ground the reach already covers
+  // NEAR THE ANCHOR — showStreamExtendCandidates() highlights the whole nearby
+  // network, including whatever chain the reach itself was originally built
+  // from, and a click that lands on the already-included stretch right next to
+  // the anchor (rather than beyond the reach's real end) resolves
+  // anchorIdx/clickIdx to two points on that SAME already-selected run,
+  // producing a near-zero "extension" that's actually just re-tracing part of
+  // the reach backward. Confirmed live: clicking mid-way along a highlighted
+  // candidate that was the reach's own source chain produced a 2-point "new"
+  // segment whose points were already in existPts.
+  //
+  // Only check existPts near the anchor end (not the whole reach): a real,
+  // winding creek can legitimately pass close to its own earlier/later points
+  // elsewhere along its length without actually retracing anything — confirmed
+  // live on a long, meandering stitched chain, where comparing against the
+  // FULL existing reach produced false-positive rejections tens of points away
+  // from the anchor, geometrically close only because the creek curves back
+  // near itself, not because anything was really being re-added.
+  // Tolerance is deliberately tight (not the ~20m used elsewhere for "is this
+  // the same real-world point") — the original bug case was an exact/near-0m
+  // duplicate (the click resolved to the reach's own already-included chain),
+  // whereas a real creek can have a tight bend where the reach's approach to
+  // the anchor and the new segment's initial departure from it pass within a
+  // a few meters of each other without actually being the same ground.
+  // Confirmed live: a genuine, correct 90-point extension around such a bend
+  // had 3 points 6.7-19m from the reach's own last few points and was
+  // incorrectly rejected at the old 20m tolerance.
+  var ANCHOR_NEIGHBORHOOD = 10;
+  var nearbyExisting = extendFromStart ? existPts.slice(0, ANCHOR_NEIGHBORHOOD) : existPts.slice(-ANCHOR_NEIGHBORHOOD);
+  var OVERLAP_TOLERANCE_M = 5;
   var overlapsExisting = newSegmentOnly.some(function(p) {
-    return existPts.some(function(ep) { return ep !== anchorLL && ep.distanceTo(p) < OVERLAP_TOLERANCE_M; });
+    return nearbyExisting.some(function(ep) { return ep !== anchorLL && ep.distanceTo(p) < OVERLAP_TOLERANCE_M; });
   });
   if (overlapsExisting) return null;
 
@@ -6824,6 +6843,31 @@ function trimChainToAnchor(existPts, chainLL, clickLL) {
     ? newSegmentOnly.slice().reverse().concat(existPts)
     : existPts.concat(newSegmentOnly);
   return { combinedPts: combinedPts, newSegmentOnly: newSegmentOnly, extendFromStart: extendFromStart };
+}
+
+// Find what a click should append to an existing reach, preferring the
+// reach's own mainstem when that's known but never letting it block an
+// otherwise-valid extension. Shared by reachExtendClick() and
+// preTrimExtendClick()'s generic branch.
+//
+// A plain river confluence (see fetchStreamChainNear()) genuinely needs the
+// mainstem preference — without it, a short tributary chain can win purely on
+// proximity to the click. But an ORDINARY creek's own NHD segments aren't
+// necessarily all tagged with the exact same mainstemid along their whole
+// length either (confirmed live on Fanno Creek: the reach's own captured
+// mainstemid matched only a 15-point fragment of a 246-point chain that
+// otherwise connected cleanly) — so requiring the preferred mainstem
+// unconditionally rejected a perfectly good, connected extension. Try the
+// preferred search first; only fall back to the unfiltered one if that
+// didn't actually yield a valid, connecting trim.
+function findExtendMatch(clickLL, anchorLL, radius, existPts, preferredMainstemId) {
+  return fetchStreamChainNear(clickLL, anchorLL, radius, preferredMainstemId).then(function(chainLL) {
+    var trimmed = chainLL ? trimChainToAnchor(existPts, chainLL, clickLL) : null;
+    if (trimmed || !preferredMainstemId) return trimmed;
+    return fetchStreamChainNear(clickLL, anchorLL, radius, null).then(function(fallbackChainLL) {
+      return fallbackChainLL ? trimChainToAnchor(existPts, fallbackChainLL, clickLL) : null;
+    });
+  });
 }
 
 // Highlight nearby NHD flowlines (ordinary streams + centerlines) across the
@@ -7717,14 +7761,8 @@ function reachExtendClick(latlng) {
   var radius = Math.min(20000, Math.max(1000, anchorLL.distanceTo(clickLL) * 2.5));
   var preferredMainstemId = reachD._mainstemId || null;
 
-  fetchStreamChainNear(clickLL, anchorLL, radius, preferredMainstemId).then(function(chainLL) {
+  findExtendMatch(clickLL, anchorLL, radius, existPts, preferredMainstemId).then(function(trimmed) {
     clearReachAutoLayers();
-    if (!chainLL) {
-      setMapHint('No streams found — click closer to a stream segment');
-      showStreamExtendCandidates(reachExtendClick);
-      return;
-    }
-    var trimmed = trimChainToAnchor(existPts, chainLL, clickLL);
     if (!trimmed) {
       setMapHint('That\'s already part of your reach, or doesn\'t connect — click further along a highlighted segment, past the existing reach\'s end');
       showStreamExtendCandidates(reachExtendClick);
@@ -8488,6 +8526,57 @@ function buildConnectedChains(features) {
     return Math.abs(a.lat-b.lat) < SNAP && Math.abs(a.lng-b.lng) < SNAP;
   }
 
+  function findMatches(pts, usedFlags) {
+    var chainEnd = pts[pts.length-1], chainStart = pts[0];
+    var n = pts.length;
+    var endBearing = ptBearing(pts[Math.max(0,n-2)], chainEnd);
+    var startBearing = ptBearing(pts[1], chainStart);
+    var endMatches = [], startMatches = [];
+    segs.forEach(function(s, idx) {
+      if (usedFlags[idx]) return;
+      var sn = s.pts.length;
+      if (ptClose(chainEnd, s.pts[0])) endMatches.push({seg:s, idx:idx, reversed:false, bearing: ptBearing(s.pts[0], s.pts[1])});
+      else if (ptClose(chainEnd, s.pts[sn-1])) endMatches.push({seg:s, idx:idx, reversed:true, bearing: ptBearing(s.pts[sn-1], s.pts[sn-2])});
+      if (ptClose(chainStart, s.pts[sn-1])) startMatches.push({seg:s, idx:idx, reversed:false, bearing: ptBearing(s.pts[sn-1], s.pts[sn-2])});
+      else if (ptClose(chainStart, s.pts[0])) startMatches.push({seg:s, idx:idx, reversed:true, bearing: ptBearing(s.pts[0], s.pts[1])});
+    });
+    return {endMatches: endMatches, startMatches: startMatches, endBearing: endBearing, startBearing: startBearing};
+  }
+
+  function straightestPick(matches, incomingBearing) {
+    var best = matches[0], bestDiff = Infinity;
+    matches.forEach(function(m) {
+      var diff = bearingDiff(m.bearing, incomingBearing);
+      if (diff < bestDiff) { bestDiff = diff; best = m; }
+    });
+    return best;
+  }
+
+  // Cheap, turn-angle-only walk used purely to ESTIMATE how far a candidate
+  // continuation could reach (never touches the real used[] flags) — lets
+  // pickBestMatch compare "how much river is actually this way" between
+  // candidates at a real fork, not just each candidate's own turn angle.
+  // Bounded (200 segments) as a sanity guard; real fetches are a few dozen.
+  function lookaheadLength(startPts, usedFlags) {
+    var localUsed = usedFlags.slice();
+    var pts = startPts;
+    var changed = true, guard = 0;
+    while (changed && guard++ < 200) {
+      changed = false;
+      var found = findMatches(pts, localUsed);
+      if (found.endMatches.length) {
+        var m = straightestPick(found.endMatches, found.endBearing);
+        pts = m.reversed ? pts.concat(m.seg.pts.slice(0,-1).reverse()) : pts.concat(m.seg.pts.slice(1));
+        localUsed[m.idx] = true; changed = true;
+      } else if (found.startMatches.length) {
+        var m2 = straightestPick(found.startMatches, found.startBearing);
+        pts = m2.reversed ? m2.seg.pts.slice().reverse().concat(pts.slice(1)) : m2.seg.pts.concat(pts.slice(1));
+        localUsed[m2.idx] = true; changed = true;
+      }
+    }
+    return pts.length;
+  }
+
   // Where a river splits around an island, the braid's two ends are each a
   // junction shared by 3+ segments (trunk + both braids) — walking down one
   // braid arrives back at a point that ALSO matches the sibling braid's far
@@ -8497,22 +8586,57 @@ function buildConnectedChains(features) {
   // reverses on itself instead of continuing to the trunk below the island
   // (confirmed via a synthetic braided-segment test: the naive version
   // produced trunkAbove->braidLeft->braidRight, skipping trunkBelow entirely).
-  // When more than one candidate matches, prefer whichever continues most
-  // closely in the direction the chain was already heading — a real reach
-  // doesn't reverse itself, so this keeps the walk going through the island
-  // instead of back out the way it came, leaving the other braid as its own
-  // separate (shorter) chain rather than merged into a zigzag.
-  function pickBestMatch(matches, incomingBearing) {
+  // Prefer whichever continues most closely in the direction the chain was
+  // already heading — a real reach doesn't reverse itself.
+  //
+  // Turn angle alone isn't reliable at every junction, though: confirmed live
+  // on the Willamette near a confluence, where a short cross-channel connector
+  // happened to continue straighter (smaller turn) than the true, much-longer
+  // north-south mainstem — so a click clearly south of the junction, on the
+  // unambiguous single channel, still resolved to the wrong short spur once
+  // the walk reached that node. Mainstemid can't reliably arbitrate this
+  // either: the segment right at a confluence can itself be natively tagged
+  // with either river's id, so "prefer the seed's own mainstem" can just as
+  // easily reinforce the wrong choice. What's actually diagnostic is length —
+  // a real mainstem continues much further than a short creek-mouth connector
+  // or cross-channel stub. Only let a decisive (2x) length advantage override
+  // turn angle, so this doesn't fight the (comparable-length) island/braid
+  // case above, which turn angle already handles correctly.
+  function pickBestMatch(matches, incomingBearing, usedFlags) {
     if (matches.length === 1) return matches[0];
-    var best = matches[0], bestDiff = Infinity;
-    matches.forEach(function(m) {
-      var diff = bearingDiff(m.bearing, incomingBearing);
-      if (diff < bestDiff) { bestDiff = diff; best = m; }
+    var straight = straightestPick(matches, incomingBearing);
+    var scored = matches.map(function(m) {
+      var orientedPts = m.reversed ? m.seg.pts.slice().reverse() : m.seg.pts.slice();
+      var localUsed = usedFlags.slice(); localUsed[m.idx] = true;
+      return {m: m, len: lookaheadLength(orientedPts, localUsed)};
     });
-    return best;
+    var straightLen = scored.filter(function(s){ return s.m === straight; })[0].len;
+    var longest = scored.reduce(function(a,b){ return b.len > a.len ? b : a; });
+    if (longest.len >= straightLen * 2) return longest.m;
+    return straight;
   }
 
-  segs.forEach(function(seed) {
+  // Process seeds longest-potential-first, not in whatever order the API
+  // happened to return them. A shared junction segment can only ever be
+  // claimed by whichever chain reaches it first — pickBestMatch only
+  // arbitrates when two live candidates are both still unused at the SAME
+  // step, but a short spur processed as an early seed can walk up to and
+  // consume the junction segment before the real (longer) mainstem's own
+  // seed is ever tried, with no "choice" ever presented to pickBestMatch at
+  // all. Confirmed live: pickBestMatch's length-aware tie-break made no
+  // difference here because the split had already happened via seed order,
+  // not a live comparison. Estimating each segment's reachable length up
+  // front (against the untouched network) and building in that order lets
+  // the real mainstem claim shared junctions first.
+  var seedOrder = segs.map(function(s, i){ return i; });
+  seedOrder.sort(function(a, b) {
+    var la = lookaheadLength(segs[a].pts.slice(), segs.map(function(s, i){ return i === a; }));
+    var lb = lookaheadLength(segs[b].pts.slice(), segs.map(function(s, i){ return i === b; }));
+    return lb - la;
+  });
+
+  seedOrder.forEach(function(seedIdx) {
+    var seed = segs[seedIdx];
     if (seed.used) return;
     seed.used = true;
     var chain = {pts: seed.pts.slice(), features: [seed.feat]};
@@ -8520,39 +8644,20 @@ function buildConnectedChains(features) {
     var changed = true;
     while (changed) {
       changed = false;
-      var chainEnd = chain.pts[chain.pts.length-1];
-      var chainStart = chain.pts[0];
-      var n = chain.pts.length;
-      var endBearing = ptBearing(chain.pts[Math.max(0,n-2)], chainEnd);
-      var startBearing = ptBearing(chain.pts[1], chainStart);
-
-      var endMatches = [], startMatches = [];
-      segs.forEach(function(s) {
-        if (s.used) return;
-        var sn = s.pts.length;
-        if (ptClose(chainEnd, s.pts[0])) {
-          endMatches.push({seg:s, reversed:false, bearing: ptBearing(s.pts[0], s.pts[1])});
-        } else if (ptClose(chainEnd, s.pts[sn-1])) {
-          endMatches.push({seg:s, reversed:true, bearing: ptBearing(s.pts[sn-1], s.pts[sn-2])});
-        }
-        if (ptClose(chainStart, s.pts[sn-1])) {
-          startMatches.push({seg:s, reversed:false, bearing: ptBearing(s.pts[sn-1], s.pts[sn-2])});
-        } else if (ptClose(chainStart, s.pts[0])) {
-          startMatches.push({seg:s, reversed:true, bearing: ptBearing(s.pts[0], s.pts[1])});
-        }
-      });
+      var usedFlags = segs.map(function(s){ return s.used; });
+      var found = findMatches(chain.pts, usedFlags);
 
       // Grow one end per pass (favoring forward growth) — the outer while
       // loop still reaches a fixed point, this just makes each step's choice
       // direction-aware instead of taking whichever end matched first.
-      if (endMatches.length) {
-        var m = pickBestMatch(endMatches, endBearing);
+      if (found.endMatches.length) {
+        var m = pickBestMatch(found.endMatches, found.endBearing, usedFlags);
         chain.pts = m.reversed
           ? chain.pts.concat(m.seg.pts.slice(0,-1).reverse())
           : chain.pts.concat(m.seg.pts.slice(1));
         chain.features.push(m.seg.feat); m.seg.used = true; changed = true;
-      } else if (startMatches.length) {
-        var m2 = pickBestMatch(startMatches, startBearing);
+      } else if (found.startMatches.length) {
+        var m2 = pickBestMatch(found.startMatches, found.startBearing, usedFlags);
         chain.pts = m2.reversed
           ? m2.seg.pts.slice().reverse().concat(chain.pts.slice(1))
           : m2.seg.pts.concat(chain.pts.slice(1));
@@ -8697,18 +8802,8 @@ function preTrimExtendClick(latlng) {
   var radius = Math.min(20000, Math.max(1000, anchorLL.distanceTo(clickLL) * 2.5));
   var preferredMainstemId = (getActiveWE() && getActiveWE().ppData['reach_len'] && getActiveWE().ppData['reach_len']._mainstemId) || null;
 
-  fetchStreamChainNear(clickLL, anchorLL, radius, preferredMainstemId).then(function(chainLL) {
+  findExtendMatch(clickLL, anchorLL, radius, existPts0, preferredMainstemId).then(function(trimmed) {
     clearReachAutoLayers(); // clear any previous preview before showing new one
-    if (!chainLL) {
-      setMapHint('No streams found nearby — click elsewhere or proceed to Pick endpoints');
-      showStreamExtendCandidates(preTrimExtendClick);
-      return;
-    }
-
-    // Read preReachPts fresh — may have been updated by a previous append
-    var existPts = preReachPts || (getActiveWE() && getActiveWE().ppData['reach_len'] && getActiveWE().ppData['reach_len']._preTrimPts);
-    if (!existPts) return;
-    var trimmed = trimChainToAnchor(existPts, chainLL, clickLL);
     if (!trimmed) {
       setMapHint('That\'s already part of your reach, or doesn\'t connect — click further along a highlighted segment, past the existing reach\'s end');
       showStreamExtendCandidates(preTrimExtendClick);
