@@ -6768,13 +6768,24 @@ function fetchWbConnectorCenterline(clickLL, bufM) {
 // the wide-river "Artificial Path"/"Waterbody Connector" centerlines) around a
 // click, stitch them into connected chains (buildConnectedChains already handles
 // the branching network, not just a single line like chainWbConnectorSegments
-// above), and return whichever chain actually passes near the click. Used by
-// reachExtendClick()/preTrimExtendClick() to find what to append — replaces
-// treating each fetched feature as an atomic, already-connected segment, which
-// broke down once individual NHD edges got much shorter and more numerous (any
-// featuretype-5 "Waterbody Connector" edge is often just a 2-point link between
-// confluence nodes) — see trimChainToAnchor() for why that mattered.
-function fetchStreamChainNear(clickLL, radius) {
+// above), and return whichever chain actually reaches back to anchorLL (the
+// reach's own nearest endpoint). Used by reachExtendClick()/preTrimExtendClick()
+// to find what to append — replaces treating each fetched feature as an atomic,
+// already-connected segment, which broke down once individual NHD edges got much
+// shorter and more numerous (any featuretype-5 "Waterbody Connector" edge is
+// often just a 2-point link between confluence nodes) — see trimChainToAnchor()
+// for why that mattered.
+//
+// Selecting "whichever chain passes nearest the click" (with no regard for the
+// anchor) picked the wrong chain on a real river with nearby tributaries/side
+// channels: confirmed on the Klickitat River near the fish hatchery, where a
+// short, disconnected side-channel chain passed 100m from the click while the
+// actual mainstem chain (the one genuinely continuing from the reach's anchor,
+// at 0m) sat 555m away — so the wrong one won and the real one was never even
+// considered, always reporting "doesn't connect" regardless of the click. A
+// chain has to reach the anchor to be a candidate at all; only among those does
+// proximity to the click pick which one the user meant.
+function fetchStreamChainNear(clickLL, anchorLL, radius) {
   var toRad = function(d){ return d*Math.PI/180; };
   var R = 6378137;
   var x = R*toRad(clickLL.lng), y = R*Math.log(Math.tan(Math.PI/4+toRad(clickLL.lat)/2));
@@ -6788,13 +6799,20 @@ function fetchStreamChainNear(clickLL, radius) {
     if (!data.features || !data.features.length) return null;
     var chains = buildConnectedChains(data.features);
     if (!chains.length) return null;
+    // Same tolerance trimChainToAnchor() uses for its own connect check — a chain
+    // that doesn't get at least this close to the anchor isn't a real candidate.
+    var MAX_CONNECT_GAP_M = 500;
     var best = null, bestD = Infinity;
     chains.forEach(function(ch) {
-      var minD = Infinity;
-      ch.pts.forEach(function(p) { var d = clickLL.distanceTo(p); if (d < minD) minD = d; });
-      if (minD < bestD) { bestD = minD; best = ch; }
+      var minToAnchor = Infinity, minToClick = Infinity;
+      ch.pts.forEach(function(p) {
+        var dA = anchorLL.distanceTo(p); if (dA < minToAnchor) minToAnchor = dA;
+        var dC = clickLL.distanceTo(p); if (dC < minToClick) minToClick = dC;
+      });
+      if (minToAnchor > MAX_CONNECT_GAP_M) return;
+      if (minToClick < bestD) { bestD = minToClick; best = ch; }
     });
-    if (bestD > radius) return null;
+    if (!best || bestD > radius) return null;
     return best.pts;
   }).catch(function() { return null; });
 }
@@ -7627,7 +7645,7 @@ function reachExtendClick(latlng) {
   // wbGeometry branch — comfortably covers real sinuosity between them.
   var radius = Math.min(20000, Math.max(1000, anchorLL.distanceTo(clickLL) * 2.5));
 
-  fetchStreamChainNear(clickLL, radius).then(function(chainLL) {
+  fetchStreamChainNear(clickLL, anchorLL, radius).then(function(chainLL) {
     clearReachAutoLayers();
     if (!chainLL) {
       setMapHint('No streams found — click closer to a stream segment');
@@ -8584,7 +8602,7 @@ function preTrimExtendClick(latlng) {
   var anchorLL = reachStart0.distanceTo(clickLL) < reachEnd0.distanceTo(clickLL) ? reachStart0 : reachEnd0;
   var radius = Math.min(20000, Math.max(1000, anchorLL.distanceTo(clickLL) * 2.5));
 
-  fetchStreamChainNear(clickLL, radius).then(function(chainLL) {
+  fetchStreamChainNear(clickLL, anchorLL, radius).then(function(chainLL) {
     clearReachAutoLayers(); // clear any previous preview before showing new one
     if (!chainLL) {
       setMapHint('No streams found nearby — click elsewhere or proceed to Pick endpoints');
