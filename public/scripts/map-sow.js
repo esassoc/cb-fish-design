@@ -7162,10 +7162,18 @@ function reachAutoClickFeature(feat, latlng) {
   var buf = 3000;
   var envelope = (x-buf)+','+(y-buf)+','+(x+buf)+','+(y+buf);
 
+  // featuretype 5 ("Waterbody Connector") included alongside ordinary streams and
+  // the type-3 "Artificial Path" — some wide rivers (e.g. the Willamette near a
+  // creek confluence) have no continuous type-1/3 representation of their own
+  // through this exact stretch, only fragmented type-5 pieces, so leaving it out
+  // meant the river could never even be a candidate here, guaranteeing the
+  // click resolved to whatever named tributary happened to have a longer, more
+  // complete ordinary flowline nearby instead. See the "prefer major type" bias
+  // below for how this is weighted against ordinary streams.
   var url = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/50/query?' +
     'geometry='+encodeURIComponent(envelope)+
     '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects' +
-    '&where=featuretype+IN+(1,2,3)' +
+    '&where=featuretype+IN+(1,2,3,5)' +
     '&outFields=gnisidlabel,featuretype,mainstemid&returnGeometry=true&outSR=4326&f=json';
 
   fetch(url).then(function(r){ return r.json(); }).then(function(data) {
@@ -7629,28 +7637,51 @@ function processAutoDetectResults(we, data, latlng, envelope, wbName) {
         var b = bestByType[ft];
         if (b.dist < bestDist) { bestDist = b.dist; bestFeat = b.feat; }
       });
-      if (bestByType[3] && bestByType[1]) {
-        if (bestByType[3].dist <= bestByType[1].dist * 2) {
-          bestFeat = bestByType[3].feat;
-        }
-      }
+      // Prefer a wide-river centerline (type 3 "Artificial Path" or type 5
+      // "Waterbody Connector") over an ordinary stream/tributary even when the
+      // tributary's own vertex is a bit closer — a small named creek can have a
+      // long, complete flowline right at a confluence while the actual river it
+      // joins is only sparsely represented there, so pure nearest-vertex too
+      // easily favors the tributary. Only overridden when the ordinary stream is
+      // decisively closer (more than 2x), so a real, deliberate tributary click
+      // still wins.
+      ['1', '2'].forEach(function(ordinaryFt) {
+        if (!bestByType[ordinaryFt]) return;
+        ['3', '5'].forEach(function(majorFt) {
+          if (bestByType[majorFt] && bestByType[majorFt].dist <= bestByType[ordinaryFt].dist * 2) {
+            bestFeat = bestByType[majorFt].feat;
+          }
+        });
+      });
     }
     if (!bestFeat) { setMapHint('Could not find nearest stream segment.'); return; }
 
-    // If bestFeat is a featuretype=3 artificial path, collect ALL type-3 features —
-    // they form the main channel centerline through wide river polygons.
-    // Otherwise group by GNIS name or mainstemid numeric prefix.
+    // If bestFeat is a featuretype=3 artificial path, collect other type-3/5
+    // features ON THE SAME MAINSTEM — they form the main channel centerline
+    // through wide river polygons. Otherwise group by GNIS name or mainstemid.
     var targetName = bestFeat.attributes.gnisidlabel || wbName || '';
+    var targetMainstemId = bestFeat.attributes.mainstemid || '';
     var matchingFeats;
     if (bestFeat.attributes.featuretype === 3) {
+      // Previously grouped ALL type-3 features in the fetch envelope with no
+      // mainstem check at all — at a confluence, an unrelated type-3 "Artificial
+      // Path" belonging to a different named water body can sit within the same
+      // 3km envelope and get stitched in by buildConnectedChains() if its
+      // endpoint happens to land within snap tolerance of this one's, producing
+      // a reach that jumps to a completely different feature. Restrict to the
+      // same mainstem when we know it; only fall back to "every type-3 nearby"
+      // when mainstemid is missing (matches the original behavior for that case).
       matchingFeats = data.features.filter(function(feat) {
-        return feat.attributes.featuretype === 3;
+        if (feat.attributes.featuretype !== 3 && feat.attributes.featuretype !== 5) return false;
+        if (!targetMainstemId) return feat.attributes.featuretype === 3;
+        return (feat.attributes.mainstemid || '') === targetMainstemId;
       });
+      if (matchingFeats.length === 0) matchingFeats = [bestFeat];
     } else {
-      // mainstemid can be a URI (https://...) — only use if numeric
-      var rawMsid = bestFeat.attributes.mainstemid || '';
-      var targetPrefix = /^\d/.test(rawMsid) ? rawMsid.substring(0, 8) : '';
-
+      // mainstemid is a full geoconnex.us URI — compare it exactly (a leading-digit
+      // check + 8-char prefix here used to be dead code: every real value starts
+      // with "https://", not a digit, so this grouping never actually fired and
+      // reaches silently fell back to name-only matching).
       // Label bestFeat if unnamed but waterbody name is known
       if (!bestFeat.attributes.gnisidlabel && wbName) {
         bestFeat.attributes.gnisidlabel = wbName;
@@ -7659,13 +7690,11 @@ function processAutoDetectResults(we, data, latlng, envelope, wbName) {
       matchingFeats = data.features.filter(function(feat) {
         if (feat === bestFeat) return true;
         var name = feat.attributes.gnisidlabel;
-        var rawP = feat.attributes.mainstemid || '';
-        var prefix = /^\d/.test(rawP) ? rawP.substring(0, 8) : '';
         if (targetName && name && name === targetName) return true;
-        if (targetPrefix && prefix && prefix === targetPrefix) return true;
+        if (targetMainstemId && feat.attributes.mainstemid === targetMainstemId) return true;
         return false;
       });
-      // If nothing matched by name/prefix, just use bestFeat alone.
+      // If nothing matched by name/mainstem, just use bestFeat alone.
       // The pre-trim extend step lets the user grow the reach from there.
       if (matchingFeats.length === 0) matchingFeats = [bestFeat];
     }
