@@ -11467,7 +11467,11 @@ function openSOW() {
       // via we.fpMulti[key]; fall back to the single legacy sowLayers id from expert mode.
       function fpMultiDisplay(key,geo,legacyId){var sum=fpMultiSum(we,key);if(sum.count>0)return geo==='polygon'?sum.acres.toFixed(2)+' acres':(sum.valueM*0.000621371).toFixed(3)+' mi';return geo==='polygon'?wAc2(legacyId):wMi2(legacyId);}
       function fpMultiVolDisplay(key,legacyVolId){var sum=fpMultiSum(we,key);if(sum.count>0)return sum.hasVol?sum.vol+' CY':'—';var v=wVal2(legacyVolId);return v!=='—'?v+' CY':'—';}
-      h+='<h3>Floodplain</h3><table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
+      // "New Floodplain" — this section is all post-project/design floodplain work
+      // (log placement, grading, road/berm/revetment removal, connectivity, wetland
+      // enhancement), the counterpart to the "Pre-Project Conditions" header above,
+      // not a general/neutral "Floodplain" label.
+      h+='<h3>New Floodplain</h3><table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
       h+='<tr><td>FP large log placement area</td><td>measured</td><td>'+wAc2('fp-logs-area')+'</td></tr>';
       h+='<tr><td># Large logs placed</td><td>entered</td><td>'+wVal2('fp-large-logs')+'</td></tr>';
       ['fps','scs'].forEach(function(t){
