@@ -6764,6 +6764,71 @@ function fetchWbConnectorCenterline(clickLL, bufM) {
   }).catch(function() { return null; });
 }
 
+// Fetch ordinary + centerline NHD flowlines (featuretype 1,2,3,5 — streams, plus
+// the wide-river "Artificial Path"/"Waterbody Connector" centerlines) around a
+// click, stitch them into connected chains (buildConnectedChains already handles
+// the branching network, not just a single line like chainWbConnectorSegments
+// above), and return whichever chain actually passes near the click. Used by
+// reachExtendClick()/preTrimExtendClick() to find what to append — replaces
+// treating each fetched feature as an atomic, already-connected segment, which
+// broke down once individual NHD edges got much shorter and more numerous (any
+// featuretype-5 "Waterbody Connector" edge is often just a 2-point link between
+// confluence nodes) — see trimChainToAnchor() for why that mattered.
+function fetchStreamChainNear(clickLL, radius) {
+  var toRad = function(d){ return d*Math.PI/180; };
+  var R = 6378137;
+  var x = R*toRad(clickLL.lng), y = R*Math.log(Math.tan(Math.PI/4+toRad(clickLL.lat)/2));
+  var envelope = (x-radius)+','+(y-radius)+','+(x+radius)+','+(y+radius);
+  var url = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/50/query?' +
+    'geometry='+encodeURIComponent(envelope)+
+    '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects'+
+    '&where=featuretype+IN+(1,2,3,5)&outFields=gnisidlabel,mainstemid'+
+    '&returnGeometry=true&outSR=4326&f=json';
+  return fetch(url).then(function(r){ return r.json(); }).then(function(data) {
+    if (!data.features || !data.features.length) return null;
+    var chains = buildConnectedChains(data.features);
+    if (!chains.length) return null;
+    var best = null, bestD = Infinity;
+    chains.forEach(function(ch) {
+      var minD = Infinity;
+      ch.pts.forEach(function(p) { var d = clickLL.distanceTo(p); if (d < minD) minD = d; });
+      if (minD < bestD) { bestD = minD; best = ch; }
+    });
+    if (bestD > radius) return null;
+    return best.pts;
+  }).catch(function() { return null; });
+}
+
+// Trim a stitched stream chain down to the run between an existing reach's
+// nearest endpoint (the "anchor" — whichever end of the reach is closer to the
+// click) and the click itself, so extending only ever appends what's actually
+// between them instead of the whole fetched chain. Returns null if the chain
+// doesn't genuinely reach back to the anchor within MAX_CONNECT_GAP_M — a real
+// stitched chain should touch the anchor at ~0m (it's the same node the reach
+// already ends on); a large gap means the click resolved to an unrelated,
+// disconnected part of the network.
+function trimChainToAnchor(existPts, chainLL, clickLL) {
+  var reachStart = existPts[0], reachEnd = existPts[existPts.length - 1];
+  var extendFromStart = reachStart.distanceTo(clickLL) < reachEnd.distanceTo(clickLL);
+  var anchorLL = extendFromStart ? reachStart : reachEnd;
+
+  var anchorIdx = 0, minA = Infinity, clickIdx = 0, minC = Infinity;
+  for (var i = 0; i < chainLL.length; i++) {
+    var dA = chainLL[i].distanceTo(anchorLL); if (dA < minA) { minA = dA; anchorIdx = i; }
+    var dC = chainLL[i].distanceTo(clickLL); if (dC < minC) { minC = dC; clickIdx = i; }
+  }
+  var segment = anchorIdx <= clickIdx ? chainLL.slice(anchorIdx, clickIdx + 1) : chainLL.slice(clickIdx, anchorIdx + 1).slice().reverse();
+
+  var MAX_CONNECT_GAP_M = 500;
+  if (segment.length < 2 || segment[0].distanceTo(anchorLL) > MAX_CONNECT_GAP_M) return null;
+
+  var newSegmentOnly = segment.slice(1);
+  var combinedPts = extendFromStart
+    ? newSegmentOnly.slice().reverse().concat(existPts)
+    : existPts.concat(newSegmentOnly);
+  return { combinedPts: combinedPts, newSegmentOnly: newSegmentOnly, extendFromStart: extendFromStart };
+}
+
 // `opts.radius`, if given, overrides the default 3km search radius — used the same
 // way, sized to comfortably span the gap being extended across.
 function deriveWbCenterlinePts(wbGeometry, clickLL, opts) {
@@ -7552,87 +7617,34 @@ function reachExtendClick(latlng) {
   var we = getActiveWE(); if (!we) return;
   setMapHint('Querying NHD for nearby segments...');
 
-  var toRad = function(d){ return d*Math.PI/180; };
-  var R = 6378137;
-  var x = R*toRad(latlng.lng);
-  var y = R*Math.log(Math.tan(Math.PI/4+toRad(latlng.lat)/2));
-  var buf = 800;
-  var envelope = (x-buf)+','+(y-buf)+','+(x+buf)+','+(y+buf);
+  var reachD = we.ppData['reach_len'];
+  var existPts = reachD.layer.getLatLngs();
+  if (existPts.length && Array.isArray(existPts[0])) existPts = existPts[0];
+  var clickLL = L.latLng(latlng.lat, latlng.lng);
+  var reachStart = existPts[0], reachEnd = existPts[existPts.length - 1];
+  var anchorLL = reachStart.distanceTo(clickLL) < reachEnd.distanceTo(clickLL) ? reachStart : reachEnd;
+  // Sized off the anchor-to-click gap, same idiom as preTrimExtendClick's
+  // wbGeometry branch — comfortably covers real sinuosity between them.
+  var radius = Math.min(20000, Math.max(1000, anchorLL.distanceTo(clickLL) * 2.5));
 
-  // featuretype 3/5 are the real centerlines through/between wide rivers that
-  // loadNHDPreview() now prefers for auto-detect (see centerlineLayers) — include
-  // them here too so extending a reach near a wide river finds the actual channel
-  // path instead of only ever-present ordinary stream segments (1,2).
-  var url = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/50/query?' +
-    'geometry='+encodeURIComponent(envelope)+
-    '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects'+
-    '&where=featuretype+IN+(1,2,3,5)&outFields=gnisidlabel,mainstemid'+
-    '&returnGeometry=true&outSR=4326&f=json';
-
-  fetch(url).then(function(r){ return r.json(); }).then(function(data) {
+  fetchStreamChainNear(clickLL, radius).then(function(chainLL) {
     clearReachAutoLayers();
-    if (!data.features || !data.features.length) {
+    if (!chainLL) {
       setMapHint('No streams found — click closer to a stream segment');
       return;
     }
-
-    // Find closest segment to click
-    var clickPt = L.latLng(latlng.lat, latlng.lng);
-    var bestFeat = null, bestDist = Infinity;
-    data.features.forEach(function(feat) {
-      if (!feat.geometry || !feat.geometry.paths) return;
-      feat.geometry.paths.forEach(function(path){
-        path.forEach(function(coord){
-          var d = clickPt.distanceTo(L.latLng(coord[1], coord[0]));
-          if (d < bestDist) { bestDist = d; bestFeat = feat; }
-        });
-      });
-    });
-    if (!bestFeat) return;
-
-    // Build pts for selected segment
-    var newPts = [];
-    bestFeat.geometry.paths.forEach(function(path){
-      path.forEach(function(c){ newPts.push(L.latLng(c[1], c[0])); });
-    });
-
-    // Get existing reach pts
-    var reachD = we.ppData['reach_len'];
-    var existPts = reachD.layer.getLatLngs();
-    if (existPts.length && Array.isArray(existPts[0])) existPts = existPts[0];
-
-    // Determine if new segment connects better to start or end of reach
-    var reachStart = existPts[0], reachEnd = existPts[existPts.length-1];
-    var newStart = newPts[0], newEnd = newPts[newPts.length-1];
-    var dEndToStart  = reachEnd.distanceTo(newStart);
-    var dEndToEnd    = reachEnd.distanceTo(newEnd);
-    var dStartToStart= reachStart.distanceTo(newStart);
-    var dStartToEnd  = reachStart.distanceTo(newEnd);
-    var minD = Math.min(dEndToStart, dEndToEnd, dStartToStart, dStartToEnd);
-    // The clicked segment is just whatever NHD feature has a vertex nearest the click —
-    // it may not actually touch the reach at all. Unlike buildConnectedChains() (which
-    // only stitches segments within its SNAP tolerance), this used to concatenate
-    // regardless of distance, drawing a straight "phantom" line to whichever endpoint
-    // was least-far when nothing genuinely connects.
-    var MAX_CONNECT_M = 50;
-    if (minD > MAX_CONNECT_M) {
-      clearReachAutoLayers();
+    var trimmed = trimChainToAnchor(existPts, chainLL, clickLL);
+    if (!trimmed) {
       setMapHint('That segment doesn\'t connect to your reach — click a segment nearer the end you want to extend');
       return;
     }
-    var combinedPts;
-    if (minD === dEndToStart)   combinedPts = existPts.concat(newPts);
-    else if (minD === dEndToEnd)   combinedPts = existPts.concat(newPts.slice().reverse());
-    else if (minD === dStartToEnd) combinedPts = newPts.concat(existPts);
-    else                           combinedPts = newPts.slice().reverse().concat(existPts);
 
     // Show preview
-    var name = (bestFeat.attributes.gnisidlabel||'segment');
-    var preview = L.polyline(newPts, {color:'#c07820', weight:3, dashArray:'6,3', interactive:false}).addTo(map);
+    var preview = L.polyline(trimmed.newSegmentOnly, {color:'#c07820', weight:3, dashArray:'6,3', interactive:false}).addTo(map);
     reachAutoLayers.push(preview);
     // Invisible, wider companion carries the click/hover — see note above.
-    var previewHit = L.polyline(newPts, {weight:20, opacity:0.001, interactive:true})
-      .bindTooltip('Append "'+name+'" — click to confirm').addTo(map);
+    var previewHit = L.polyline(trimmed.newSegmentOnly, {weight:20, opacity:0.001, interactive:true})
+      .bindTooltip('Append stream segment — click to confirm').addTo(map);
     reachAutoLayers.push(previewHit);
 
     // Confirm on click of preview
@@ -7641,8 +7653,8 @@ function reachExtendClick(latlng) {
       clearReachAutoLayers();
       // Rebuild reach with combined pts
       map.removeLayer(reachD.layer);
-      reachD.layer = L.polyline(combinedPts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
-      reachD.valueM = geoLen(combinedPts);
+      reachD.layer = L.polyline(trimmed.combinedPts, {color:'#c07820', weight:2.5, interactive:true}).bindTooltip('Reach Length').addTo(map);
+      reachD.valueM = geoLen(trimmed.combinedPts);
       // Every other reach-replacing path (commitLineEdit, finishPPDraw, acceptAutoReach)
       // re-fans flow arrows after changing the geometry — this one didn't, so the
       // arrows stayed at their pre-extension positions until the next zoom silently
@@ -8565,83 +8577,44 @@ function preTrimExtendClick(latlng) {
 
   setMapHint('Querying NHD for nearby segments...');
 
-  var toRad = function(d){ return d*Math.PI/180; };
-  var R = 6378137;
-  var x = R*toRad(latlng.lng);
-  var y = R*Math.log(Math.tan(Math.PI/4+toRad(latlng.lat)/2));
-  var buf = 800;
-  var envelope = (x-buf)+','+(y-buf)+','+(x+buf)+','+(y+buf);
+  var existPts0 = preReachPts || (getActiveWE() && getActiveWE().ppData['reach_len'] && getActiveWE().ppData['reach_len']._preTrimPts);
+  if (!existPts0) return;
+  var clickLL = L.latLng(latlng.lat, latlng.lng);
+  var reachStart0 = existPts0[0], reachEnd0 = existPts0[existPts0.length - 1];
+  var anchorLL = reachStart0.distanceTo(clickLL) < reachEnd0.distanceTo(clickLL) ? reachStart0 : reachEnd0;
+  var radius = Math.min(20000, Math.max(1000, anchorLL.distanceTo(clickLL) * 2.5));
 
-  // See reachExtendClick() — include the wide-river centerline types (3,5) so
-  // this (non-wbGeometry) extend path can find them too.
-  var url = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/50/query?' +
-    'geometry='+encodeURIComponent(envelope)+
-    '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects'+
-    '&where=featuretype+IN+(1,2,3,5)&outFields=gnisidlabel,mainstemid'+
-    '&returnGeometry=true&outSR=4326&f=json';
-
-  fetch(url).then(function(r){ return r.json(); }).then(function(data) {
+  fetchStreamChainNear(clickLL, radius).then(function(chainLL) {
     clearReachAutoLayers(); // clear any previous preview before showing new one
-    if (!data.features || !data.features.length) {
+    if (!chainLL) {
       setMapHint('No streams found nearby — click elsewhere or proceed to Pick endpoints');
       return;
     }
-    var clickPt = L.latLng(latlng.lat, latlng.lng);
-    var bestFeat = null, bestDist = Infinity;
-    data.features.forEach(function(feat) {
-      if (!feat.geometry || !feat.geometry.paths) return;
-      feat.geometry.paths.forEach(function(path){
-        path.forEach(function(coord){
-          var d = clickPt.distanceTo(L.latLng(coord[1], coord[0]));
-          if (d < bestDist) { bestDist = d; bestFeat = feat; }
-        });
-      });
-    });
-    if (!bestFeat) return;
-
-    var newPts = [];
-    bestFeat.geometry.paths.forEach(function(path){
-      path.forEach(function(c){ newPts.push(L.latLng(c[1], c[0])); });
-    });
 
     // Read preReachPts fresh — may have been updated by a previous append
     var existPts = preReachPts || (getActiveWE() && getActiveWE().ppData['reach_len'] && getActiveWE().ppData['reach_len']._preTrimPts);
     if (!existPts) return;
-    var reachStart = existPts[0], reachEnd = existPts[existPts.length-1];
-    var newStart = newPts[0], newEnd = newPts[newPts.length-1];
-    var dES = reachEnd.distanceTo(newStart), dEE = reachEnd.distanceTo(newEnd);
-    var dSS = reachStart.distanceTo(newStart), dSE = reachStart.distanceTo(newEnd);
-    var minD = Math.min(dES, dEE, dSS, dSE);
-    // See note in reachExtendClick() — reject segments that don't actually touch the
-    // reach instead of drawing a straight phantom line to the nearest endpoint.
-    var MAX_CONNECT_M = 50;
-    if (minD > MAX_CONNECT_M) {
-      clearReachAutoLayers();
+    var trimmed = trimChainToAnchor(existPts, chainLL, clickLL);
+    if (!trimmed) {
       setMapHint('That segment doesn\'t connect to your reach — click a segment nearer the end you want to extend');
       return;
     }
-    var combinedPts;
-    if (minD === dES)      combinedPts = existPts.concat(newPts);
-    else if (minD === dEE) combinedPts = existPts.concat(newPts.slice().reverse());
-    else if (minD === dSE) combinedPts = newPts.concat(existPts);
-    else                   combinedPts = newPts.slice().reverse().concat(existPts);
 
-    var name = bestFeat.attributes.gnisidlabel || 'segment';
-    var preview = L.polyline(newPts, {color:'#c07820', weight:3, dashArray:'6,3', interactive:false}).addTo(map);
+    var preview = L.polyline(trimmed.newSegmentOnly, {color:'#c07820', weight:3, dashArray:'6,3', interactive:false}).addTo(map);
     reachAutoLayers.push(preview);
     // Invisible, wider companion carries the click/hover — see note above.
-    var previewHit = L.polyline(newPts, {weight:20, opacity:0.001, interactive:true})
-      .bindTooltip('Append "'+name+'" — click to confirm').addTo(map);
+    var previewHit = L.polyline(trimmed.newSegmentOnly, {weight:20, opacity:0.001, interactive:true})
+      .bindTooltip('Append stream segment — click to confirm').addTo(map);
     reachAutoLayers.push(previewHit);
 
     previewHit.on('click', function(e) {
       L.DomEvent.stop(e);
       clearReachAutoLayers();
-      preReachPts = combinedPts;
+      preReachPts = trimmed.combinedPts;
       if (reachTrimLayer) map.removeLayer(reachTrimLayer);
-      reachTrimLayer = L.polyline(combinedPts, {color:'#1a9abf', weight:3, dashArray:'6,4', interactive:false}).addTo(map);
+      reachTrimLayer = L.polyline(trimmed.combinedPts, {color:'#1a9abf', weight:3, dashArray:'6,4', interactive:false}).addTo(map);
       var we2 = getActiveWE(); if (!we2) return;
-      we2.ppData['reach_len']._preTrimPts = combinedPts;
+      we2.ppData['reach_len']._preTrimPts = trimmed.combinedPts;
       // Stay in extend mode so user can keep adding without re-clicking the button
       preReachExtend = true;
       we2.ppData['reach_len']._preTrimExtending = true;
