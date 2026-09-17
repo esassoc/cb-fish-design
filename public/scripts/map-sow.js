@@ -3857,7 +3857,12 @@ function changeFPStructType(id, newType) {
   we.structures[newType].push(s);
   // fpStructs keeps the same object reference — just update structType on s (already done)
   if (s.marker) {
-    s.marker.setStyle({color: STRUCT_COLOR[newType]||'#2a7a5c', fillColor: STRUCT_COLOR[newType]||'#2a7a5c'});
+    // Was calling setStyle() on an icon-based L.Marker (a vector-layer method
+    // it doesn't have) — never actually updated the color, and would throw.
+    // setIcon() with a freshly-built icon is what changeStructType() already
+    // does for the non-floodplain structure types.
+    var num = we.fpStructs ? we.fpStructs.indexOf(s) + 1 : we.structures[newType].indexOf(s) + 1;
+    s.marker.setIcon(buildStructIcon(num, STRUCT_COLOR[newType]||'#2a7a5c', s.large));
   }
   renderFPStructures();
   if (wizardMode) wizardRefreshIfActive();
@@ -3869,9 +3874,14 @@ function updateFPStructure(id, field, val) {
     var s = we.structures[t].filter(function(x){return x.id===id;})[0];
     if (s) {
       s[field] = val;
-      if (field === 'desc' && s.marker && we.fpStructs) {
+      if (s.marker && we.fpStructs) {
         var num = we.fpStructs.indexOf(s) + 1;
-        s.marker.setTooltipContent(STRUCT_LABEL[s.structType]+' '+num+(val?' – '+val:''));
+        if (field === 'desc') {
+          s.marker.setTooltipContent(STRUCT_LABEL[s.structType]+' '+num+(val?' – '+val:''));
+        }
+        if (field === 'large') {
+          s.marker.setIcon(buildStructIcon(num, STRUCT_COLOR[s.structType], val));
+        }
       }
     }
   });
@@ -3954,9 +3964,14 @@ function updateStructFlat(id, field, val) {
   var pc = getActivePC(we); if (!pc.structs) return;
   var s = pc.structs.filter(function(x){return x.id===id;})[0]; if (!s) return;
   s[field] = val;
-  if (field === 'desc' && s.marker) {
+  if (s.marker) {
     var num = pc.structs.indexOf(s) + 1;
-    s.marker.setTooltipContent(STRUCT_LABEL[s.structType||'cms']+' '+num+(val?' – '+val:''));
+    if (field === 'desc') {
+      s.marker.setTooltipContent(STRUCT_LABEL[s.structType||'cms']+' '+num+(val?' – '+val:''));
+    }
+    if (field === 'large') {
+      s.marker.setIcon(buildStructIcon(num, STRUCT_COLOR[s.structType||'cms'], val));
+    }
   }
   updateLogTotals();
 }
@@ -3991,9 +4006,7 @@ function changeStructType(oldType, id, newType) {
   if (s.marker) {
     var col = STRUCT_COLOR[newType];
     var num = pc.structs ? pc.structs.indexOf(s) + 1 : 1;
-    var icon = L.divIcon({className:'',iconSize:[20,20],iconAnchor:[10,10],
-      html:'<div style="width:20px;height:20px;border-radius:50%;background:'+col+';border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">'+num+'</div>'});
-    s.marker.setIcon(icon);
+    s.marker.setIcon(buildStructIcon(num, col, s.large));
     s.marker.setTooltipContent(STRUCT_LABEL[newType]+' '+num+(s.desc?' – '+s.desc:''));
   }
   s.structType = newType;
@@ -4045,10 +4058,15 @@ function updateStructure(type,id,field,val) {
   var pc=getActivePC(we);
   var s=(pc.structs&&pc.structs.filter(function(x){return x.id===id;})[0])||pc.structures[type].filter(function(x){return x.id===id;})[0];if(!s)return;
   s[field]=val;
-  if(field==='desc'&&s.marker){
+  if(s.marker){
     var t2=s.structType||type;
     var num2=(pc.structs&&pc.structs.indexOf(s)>=0)?pc.structs.indexOf(s)+1:globalStructNum(we,t2,id);
-    s.marker.setTooltipContent(STRUCT_LABEL[t2]+' '+num2+(val?' – '+val:''));
+    if(field==='desc'){
+      s.marker.setTooltipContent(STRUCT_LABEL[t2]+' '+num2+(val?' – '+val:''));
+    }
+    if(field==='large'){
+      s.marker.setIcon(buildStructIcon(num2, STRUCT_COLOR[t2], val));
+    }
   }
   updateLogTotals();
 }
@@ -4088,6 +4106,30 @@ function updateLogTotals() {
   var ws=document.getElementById('wz-struct-total-s');if(ws)ws.textContent=tS;
 }
 
+// Client-requested: scale each wood-structure dot by its own # large pieces
+// (>12" dia) instead of always drawing the same 20px circle — a structure
+// with more large wood should read as visually bigger on the map, not just
+// carry a bigger number in its tooltip/table. Diameter grows with
+// sqrt(large), so it's AREA (what the eye actually compares) that scales
+// roughly linearly with piece count — the standard convention for
+// proportional-symbol maps, not diameter itself. Clamped so a 0-piece
+// structure is still a clearly visible target and a very large one doesn't
+// swallow the map.
+// Widened from an earlier 18-44px/×6 curve, which saturated at the max size
+// by ~19 large pieces — real structures range well beyond that, so most of
+// them looked identical. This range doesn't saturate until ~64.
+var STRUCT_DOT_MIN = 16, STRUCT_DOT_MAX = 60;
+function structDotSize(large) {
+  var n = Math.max(0, +large || 0);
+  return Math.round(Math.min(STRUCT_DOT_MAX, STRUCT_DOT_MIN + Math.sqrt(n) * 5.5));
+}
+function buildStructIcon(num, col, large) {
+  var size = structDotSize(large);
+  var fontSize = Math.max(9, Math.round(size * 0.5));
+  var html = '<div style="width:'+size+'px;height:'+size+'px;border-radius:50%;background:'+col+';border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:'+fontSize+'px;font-weight:700;color:#fff;">'+num+'</div>';
+  return L.divIcon({className:'', iconSize:[size,size], iconAnchor:[size/2,size/2], html: html});
+}
+
 function startStructPoint(type,id) {
   pendingStructPoint={type:type,id:id,weId:activeWEId};sowDrawing=null;ppDrawing=null;drawPts=[];clearPreview();
   document.getElementById('mapwrap').classList.add('drawing');setMapHint('Click map to place structure location');
@@ -4119,7 +4161,7 @@ function placeStructPoint(latlng) {
   } else {
     num = (owner.structs && owner.structs.indexOf(s) >= 0) ? owner.structs.indexOf(s) + 1 : globalStructNum(we,type,id);
   }
-  var icon=L.divIcon({className:'',iconSize:[20,20],iconAnchor:[10,10],html:'<div style="width:20px;height:20px;border-radius:50%;background:'+col+';border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;">'+num+'</div>'});
+  var icon=buildStructIcon(num, col, s.large);
   s.marker=L.marker(latlng,{icon:icon}).bindTooltip(STRUCT_LABEL[type]+' '+num+(s.desc?' – '+s.desc:'')).addTo(map);
   s.latlng=latlng;pendingStructPoint=null;
   document.getElementById('mapwrap').classList.remove('drawing');setMapHint('');
