@@ -7741,15 +7741,22 @@ function reachExtendClick(latlng) {
     }
 
     // Show preview
+    // Prepend the anchor: newSegmentOnly can be a single point (the click
+    // resolved to the very next vertex in the chain, adjacent to the anchor —
+    // the underlying NHD vertex spacing is often sparse, not necessarily close
+    // by), and a 1-point Leaflet polyline renders nothing and has no hit area at
+    // all — confirmed live as an orange dot with no line, "does nothing" on
+    // click. Always drawing from the anchor guarantees 2+ points.
     // Weight 6 (vs. the weight-3 candidate highlight) and a marker at the far end —
     // a short find (a few tens of meters) could otherwise be nearly invisible
     // against a large river view, exactly the "I see nothing orange" report.
-    var preview = L.polyline(trimmed.newSegmentOnly, {color:'#c07820', weight:6, opacity:0.95, interactive:false}).addTo(map);
+    var previewPts = [anchorLL].concat(trimmed.newSegmentOnly);
+    var preview = L.polyline(previewPts, {color:'#c07820', weight:6, opacity:0.95, interactive:false}).addTo(map);
     reachAutoLayers.push(preview);
     var previewEndMarker = L.circleMarker(trimmed.newSegmentOnly[trimmed.newSegmentOnly.length - 1], {radius:6, color:'#fff', weight:2, fillColor:'#c07820', fillOpacity:1, interactive:false}).addTo(map);
     reachAutoLayers.push(previewEndMarker);
     // Invisible, wider companion carries the click/hover — see note above.
-    var previewHit = L.polyline(trimmed.newSegmentOnly, {weight:20, opacity:0.001, interactive:true})
+    var previewHit = L.polyline(previewPts, {weight:20, opacity:0.001, interactive:true})
       .bindTooltip('Append stream segment — click to confirm').addTo(map);
     reachAutoLayers.push(previewHit);
 
@@ -8716,15 +8723,20 @@ function preTrimExtendClick(latlng) {
       map.fitBounds(newBounds.extend(map.getBounds()), {padding:[60,60]});
     }
 
+    // Prepend the anchor — see reachExtendClick() for why: newSegmentOnly can be
+    // a single point, and a 1-point Leaflet polyline renders nothing and has no
+    // hit area at all (confirmed live as an orange dot with no line, click does
+    // nothing). Always drawing from the anchor guarantees 2+ points.
     // Weight 6 (vs. the weight-3 candidate highlight) and a marker at the far end —
     // a short find (a few tens of meters) could otherwise be nearly invisible
     // against a large river view, exactly the "I see nothing orange" report.
-    var preview = L.polyline(trimmed.newSegmentOnly, {color:'#c07820', weight:6, opacity:0.95, interactive:false}).addTo(map);
+    var previewPts = [anchorLL].concat(trimmed.newSegmentOnly);
+    var preview = L.polyline(previewPts, {color:'#c07820', weight:6, opacity:0.95, interactive:false}).addTo(map);
     reachAutoLayers.push(preview);
     var previewEndMarker = L.circleMarker(trimmed.newSegmentOnly[trimmed.newSegmentOnly.length - 1], {radius:6, color:'#fff', weight:2, fillColor:'#c07820', fillOpacity:1, interactive:false}).addTo(map);
     reachAutoLayers.push(previewEndMarker);
     // Invisible, wider companion carries the click/hover — see note above.
-    var previewHit = L.polyline(trimmed.newSegmentOnly, {weight:20, opacity:0.001, interactive:true})
+    var previewHit = L.polyline(previewPts, {weight:20, opacity:0.001, interactive:true})
       .bindTooltip('Append stream segment — click to confirm').addTo(map);
     reachAutoLayers.push(previewHit);
 
