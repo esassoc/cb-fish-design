@@ -2966,9 +2966,20 @@ function flowArrowCrossSection(reachPts, widthPts, t) {
   return {pos:pos, brgDeg:brgDeg, pLat:pLat, pLng:pLng, widthM:widthM};
 }
 
-function makeFlowArrowIcon(brgDeg, colorHex) {
+// `hollow` draws the arrow as an outline only (no fill) instead of solid —
+// needed once 'reach' became the single color role shared by the pre-project
+// reach line and the design channel (see MAP_COLOR_ROLES): with color no
+// longer telling the two phases' arrows apart, this does. A dashed outline
+// was tried first (matching PRE_PROJECT_DASH's polygon/line convention) but
+// at the arrow's actual ~18px on-map size the dashes were too fine to read —
+// confirmed by rendering both at real size side by side. An open vs. filled
+// triangle reads clearly even that small.
+function makeFlowArrowIcon(brgDeg, colorHex, hollow) {
+  var fill = hollow ? 'none' : colorHex;
+  var stroke = hollow ? colorHex : '#fff';
+  var strokeWidth = hollow ? 2 : 1.5;
   var html = '<div style="transform:rotate('+brgDeg+'deg);width:22px;height:22px;display:flex;align-items:center;justify-content:center;margin-left:-11px;margin-top:-11px">' +
-    '<svg width="18" height="18" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="'+colorHex+'" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></div>';
+    '<svg width="18" height="18" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+strokeWidth+'" stroke-linejoin="round"/></svg></div>';
   return L.divIcon({ className: '', html: html, iconSize: [0, 0], iconAnchor: [0, 0] });
 }
 
@@ -2976,7 +2987,7 @@ var FLOW_ARROW_SPACING_PX = 28;
 var FLOW_ARROW_MAX_COUNT = 5;
 var FLOW_ARROW_MIN_FAN_PX = 50; // below this on-screen width, just one centered arrow
 
-function buildFlowArrowMarkers(reachLayer, widthD, colorHex) {
+function buildFlowArrowMarkers(reachLayer, widthD, colorHex, hollow) {
   if (!reachLayer) return [];
   var reachPts = reachLayer.getLatLngs();
   if (reachPts.length && Array.isArray(reachPts[0])) reachPts = reachPts[0];
@@ -2990,7 +3001,7 @@ function buildFlowArrowMarkers(reachLayer, widthD, colorHex) {
     var pixelWidth = cs.widthM ? cs.widthM / metersPerPixel : 0;
     var count = pixelWidth < FLOW_ARROW_MIN_FAN_PX ? 1 : Math.min(FLOW_ARROW_MAX_COUNT, Math.max(2, Math.floor(pixelWidth / FLOW_ARROW_SPACING_PX)));
     if (count <= 1) {
-      markers.push(L.marker([cs.pos.lat, cs.pos.lng], {icon: makeFlowArrowIcon(cs.brgDeg, colorHex), interactive:false}).addTo(map));
+      markers.push(L.marker([cs.pos.lat, cs.pos.lng], {icon: makeFlowArrowIcon(cs.brgDeg, colorHex, hollow), interactive:false}).addTo(map));
       return;
     }
     // Evenly space `count` arrows across [-widthM/2, +widthM/2] around the centerline point.
@@ -3000,7 +3011,7 @@ function buildFlowArrowMarkers(reachLayer, widthD, colorHex) {
       var offsetUnits = offsetM / 111320;
       var lat = cs.pos.lat + cs.pLat * offsetUnits;
       var lng = cs.pos.lng + cs.pLng * offsetUnits;
-      markers.push(L.marker([lat, lng], {icon: makeFlowArrowIcon(cs.brgDeg, colorHex), interactive:false}).addTo(map));
+      markers.push(L.marker([lat, lng], {icon: makeFlowArrowIcon(cs.brgDeg, colorHex, hollow), interactive:false}).addTo(map));
     }
   });
   return markers;
@@ -3030,7 +3041,7 @@ function addReachArrow(we) {
   var rd = we && we.ppData['reach_len'];
   clearFlowArrows(rd);
   if(!rd || !rd.layer) return;
-  var markers = buildFlowArrowMarkers(rd.layer, we.ppData['area_ch'], mapColor('reach'));
+  var markers = buildFlowArrowMarkers(rd.layer, we.ppData['area_ch'], mapColor('reach'), true);
   if (!markers.length) return;
   // Respect the pre-project visibility toggle — buildFlowArrowMarkers() always adds
   // fresh markers to the map, which otherwise leaks the pre-project reach's arrows
@@ -9070,12 +9081,12 @@ function renderLegend() {
   h+='<div class="leg-row"><span class="leg-poly" style="'+dashSwatch.replace('{c}',mapColor('channel'))+'"></span>Channel Area</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="'+dashSwatch.replace('{c}',mapColor('floodplain'))+'"></span>Floodplain</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="'+dashSwatch.replace('{c}',mapColor('boundary'))+'"></span>Project Boundary</div>';
-  h+='<div class="leg-row"><span style="width:14px;height:10px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center"><svg width="11" height="13" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="'+mapColor('reach')+'" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></span>Flow direction</div></div>';
+  h+='<div class="leg-row"><span style="width:14px;height:10px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center"><svg width="11" height="13" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="none" stroke="'+mapColor('reach')+'" stroke-width="2" stroke-linejoin="round"/></svg></span>Flow direction</div></div>';
   h+='<div class="leg-section"><div class="leg-sec-title">Design</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('reach')+'"></span>Reach / Primary Channel</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('channel')+'"></span>Channel Area</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('floodplain')+'"></span>Floodplain</div>';
-  h+='<div class="leg-row"><span class="leg-line" style="background:'+mapColor('widthSegments')+'"></span>Width segments</div></div>';
+  h+='<div class="leg-row"><span style="width:14px;height:10px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center"><svg width="11" height="13" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="'+mapColor('reach')+'" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></span>Flow direction</div></div>';
   h+='<div class="leg-section"><div class="leg-sec-title">Channel Habitat Units</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+CHU_COLOR.riffle+'"></span>Riffle</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+CHU_COLOR.pool+'"></span>Pool</div></div>';
