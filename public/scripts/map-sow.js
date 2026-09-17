@@ -6005,6 +6005,13 @@ function startReachAutoDetect() {
 // When the user clicks one, we know exactly which feature they want.
 var nhdPreviewLayer = null;
 var nhdPreviewData = null; // full feature set from the preview query
+// Bumped on every loadNHDPreview() call; a stale fetch (started before a newer
+// one, e.g. the user re-triggered auto-detect or panned/zoomed while a slow
+// request was still in flight) checks this before touching the map, so an
+// old response can't add its own clickable layers on top of — or a moment
+// before — a newer set, which is what let a click land on a hit-layer built
+// from a stale/different query envelope.
+var nhdPreviewGeneration = 0;
 
 // Approximate centerline of a river polygon.
 // Strategy: sort the ring vertices by their position along the principal axis,
@@ -6179,6 +6186,11 @@ function clearNHDPreview() {
 
 function loadNHDPreview() {
   clearNHDPreview();
+  // Starting a new load supersedes any earlier one — clear its layers immediately
+  // (don't wait for its fetch to resolve, which may never happen or arrive late)
+  // and bump the generation so a late-arriving old response can tell it's stale.
+  clearReachAutoLayers();
+  var myGen = ++nhdPreviewGeneration;
   var zoom = map.getZoom();
   // Only pre-load vectors at zoom 12+; at lower zoom the envelope is too large
   // and the 3DHP service returns too many (or no) features
@@ -6222,6 +6234,7 @@ function loadNHDPreview() {
     fetch(wbUrl).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).catch(function(){ return {features:[], _failed:true}; })
   ]).then(function(results) {
     if (!reachAutoDetecting) return;
+    if (myGen !== nhdPreviewGeneration) return; // superseded by a newer load — don't add stale layers
     var data = results[0], wbData = results[1];
     var anyFailed = data._failed || wbData._failed || data.error || wbData.error;
     if (data.error) { data = {features:[]}; }
