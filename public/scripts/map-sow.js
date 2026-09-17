@@ -6581,94 +6581,16 @@ function loadNHDPreview() {
 // 18m/28m) — genuinely centered, not synthesized.
 //
 // Individual connector segments are short and need chaining into one continuous path
-// before they're usable as a reach.
-//
-// At a confluence, more than one unused segment can have an endpoint within TOL_M of
-// the chain's current end — the real continuation AND a short spur (a side channel,
-// or a stub representing where a tributary's own connector ties in). Picking
-// whichever one is simply found first (the old behavior, driven by array order) can
-// walk out the spur, dead-end, then walk right back near where it started on a later
-// pass — producing an out-and-back spike that self-intersects the reach. Confirmed on
-// a real Cispus River/Lake Scanewa confluence.
-//
-// Fix: when extending an end, score every candidate segment by how sharply it turns
-// relative to the chain's current heading there, and take the straightest one. A real
-// through-channel continuation runs close to straight across a junction; a spur turns
-// off at a real angle. Ambiguous cases (no chain direction yet, i.e. still on the
-// first segment) fall back to whichever is closest, same as before.
-function chainWbConnectorSegments(segs) {
-  if (!segs || !segs.length) return null;
-  var TOL_M = 100; // real adjoining segments share an endpoint near-exactly
-
-  function bearingRad(a, b) {
-    var toRad = function(d){ return d*Math.PI/180; };
-    var lat1 = toRad(a.lat), lat2 = toRad(b.lat), dLng = toRad(b.lng - a.lng);
-    var y = Math.sin(dLng) * Math.cos(lat2);
-    var x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
-    return Math.atan2(y, x);
-  }
-  function turnAngle(a, b) {
-    var d = Math.abs(a - b) % (2 * Math.PI);
-    return d > Math.PI ? 2 * Math.PI - d : d;
-  }
-  // A point a short way in from one end of `seg`, used to measure that end's local
-  // direction (the far end of a long segment isn't representative of it).
-  function localDirPoint(seg, atStart) {
-    var idx = atStart ? Math.min(1, seg.length - 1) : Math.max(0, seg.length - 2);
-    return L.latLng(seg[idx][1], seg[idx][0]);
-  }
-
-  var chain = segs[0].slice();
-  var used = {0: true};
-  var changed = true;
-  while (changed) {
-    changed = false;
-    var chainStart = L.latLng(chain[0][1], chain[0][0]);
-    var chainEnd = L.latLng(chain[chain.length - 1][1], chain[chain.length - 1][0]);
-    // Direction of arrival at each end — continuing straight means leaving that end
-    // in this same compass direction.
-    var endDirIn = chain.length >= 2 ? bearingRad(L.latLng(chain[chain.length - 2][1], chain[chain.length - 2][0]), chainEnd) : null;
-    var startDirIn = chain.length >= 2 ? bearingRad(L.latLng(chain[1][1], chain[1][0]), chainStart) : null;
-
-    var candidates = [];
-    for (var i = 0; i < segs.length; i++) {
-      if (used[i]) continue;
-      var seg = segs[i];
-      var segStart = L.latLng(seg[0][1], seg[0][0]);
-      var segEnd = L.latLng(seg[seg.length - 1][1], seg[seg.length - 1][0]);
-
-      if (chainEnd.distanceTo(segStart) < TOL_M) {
-        var t1 = endDirIn === null ? 0 : turnAngle(endDirIn, bearingRad(chainEnd, localDirPoint(seg, true)));
-        candidates.push({turn: t1, i: i, end: 'end', reversed: false});
-      }
-      if (chainEnd.distanceTo(segEnd) < TOL_M) {
-        var t2 = endDirIn === null ? 0 : turnAngle(endDirIn, bearingRad(chainEnd, localDirPoint(seg, false)));
-        candidates.push({turn: t2, i: i, end: 'end', reversed: true});
-      }
-      if (chainStart.distanceTo(segEnd) < TOL_M) {
-        var t3 = startDirIn === null ? 0 : turnAngle(startDirIn, bearingRad(chainStart, localDirPoint(seg, false)));
-        candidates.push({turn: t3, i: i, end: 'start', reversed: false});
-      }
-      if (chainStart.distanceTo(segStart) < TOL_M) {
-        var t4 = startDirIn === null ? 0 : turnAngle(startDirIn, bearingRad(chainStart, localDirPoint(seg, true)));
-        candidates.push({turn: t4, i: i, end: 'start', reversed: true});
-      }
-    }
-
-    if (candidates.length) {
-      candidates.sort(function(a, b) { return a.turn - b.turn; });
-      var best = candidates[0];
-      var bestSeg = segs[best.i];
-      if (best.end === 'end' && !best.reversed) chain = chain.concat(bestSeg.slice(1));
-      else if (best.end === 'end' && best.reversed) chain = chain.concat(bestSeg.slice().reverse().slice(1));
-      else if (best.end === 'start' && !best.reversed) chain = bestSeg.slice(0, -1).concat(chain);
-      else chain = bestSeg.slice().reverse().slice(0, -1).concat(chain);
-      used[best.i] = true;
-      changed = true;
-    }
-  }
-  return chain;
-}
+// before they're usable as a reach — done via buildConnectedChains() (shared with
+// the ordinary flowline network elsewhere), which already handles a confluence
+// correctly: where more than one unused segment could continue a chain (the real
+// continuation AND a short spur, or a second braid around an island), it scores
+// candidates by how sharply they turn and takes the straightest one, and keeps a
+// genuinely separate braid as its own chain rather than bridging across the gap
+// between them. A separate, simpler single-purpose chainer used to live here with
+// a much looser 100m snap tolerance — confirmed live that it could bridge across an
+// island a real braid split, producing a reach that visibly cut across land the
+// buildConnectedChains()-based path (correctly) would not.
 
 // Fetch nearby Waterbody Connector flowlines, chain them, and window the chain down
 // to the neighborhood of `clickLL`. Resolves to an array of L.latLng, or null if none
@@ -6693,7 +6615,7 @@ function windowAndValidateWbChain(chainLL, clickLL, buf) {
   var windowed = chainLL.slice(lo, hi + 1);
 
   // A chained result can be real but a tiny, disconnected fragment of the network —
-  // a dead-end stub with nothing else close enough (chainWbConnectorSegments' 100m
+  // a dead-end stub with nothing else close enough (buildConnectedChains' snap
   // tolerance) to continue it either way. That's genuine data, but useless as a
   // reach: confirmed on a Yakima River backwater near Granger, WA, where the only
   // connector data near the click was an isolated 6-point, ~166m stub sitting in a
@@ -6759,10 +6681,25 @@ function fetchWbConnectorCenterline(clickLL, bufM) {
     '&outFields=gnisidlabel,featuretype,mainstemid&returnGeometry=true&outSR=4326&f=json';
   return fetch(url).then(function(r){ return r.json(); }).then(function(data) {
     if (!data.features || !data.features.length) return null;
-    var chain = chainWbConnectorSegments(data.features.map(function(f){ return f.geometry.paths[0]; }));
-    if (!chain || chain.length < 2) return null;
-    var chainLL = chain.map(function(c){ return L.latLng(c[1], c[0]); });
-    return windowAndValidateWbChain(chainLL, clickLL, buf);
+    // buildConnectedChains() (not chainWbConnectorSegments() — see its own
+    // comment) is island/braid-aware: where a wide river splits, it keeps each
+    // braid as its own chain rather than bridging across the gap between them.
+    // chainWbConnectorSegments' looser 100m snap tolerance did exactly that
+    // bridging — confirmed live: a polygon click produced a long reach that
+    // visibly cut across islands, while clicking the (buildConnectedChains-based)
+    // centerline preview at the same spot correctly stopped at the braid. Picking
+    // whichever resulting chain passes closest to the click keeps this consistent
+    // with fetchStreamChainNear()'s own selection.
+    var chains = buildConnectedChains(data.features);
+    if (!chains.length) return null;
+    var best = null, bestD = Infinity;
+    chains.forEach(function(ch) {
+      var minD = Infinity;
+      ch.pts.forEach(function(p) { var d = clickLL.distanceTo(p); if (d < minD) minD = d; });
+      if (minD < bestD) { bestD = minD; best = ch; }
+    });
+    if (!best || bestD > buf) return null;
+    return windowAndValidateWbChain(best.pts, clickLL, buf);
   }).catch(function() { return null; });
 }
 
