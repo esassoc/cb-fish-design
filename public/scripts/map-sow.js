@@ -128,9 +128,18 @@ var MAP_COLOR_ROLES = {
   // exactly one (newPrimaryChannel(1)) and nothing anywhere pushes a second onto
   // we.primaryChannels. pcChannelColor()'s per-index cycling (PC_CHANNEL_COLORS,
   // just below) still exists in case that ever changes, but only slot 1 is
-  // reachable, so only slot 1 gets a user-facing role here — the other four
-  // would just be confusing, unpickable rows in the editor.
-  pcChannel:        'background-dataviz-categorical-3'
+  // reachable today.
+  //
+  // Slot 1 used to be its own role here ('pcChannel') pointed at the exact same
+  // token as 'reach' — meaning the color editor showed "Reach / Primary Channel"
+  // and "Primary Channel" as two separately-editable rows that happened to start
+  // out identical, but silently diverged the moment either one was changed alone
+  // (confirmed: the Design-section legend row reads mapColor('reach'), so editing
+  // "Primary Channel" alone changed the actual pc-reach/pc-area geometry on the
+  // map without updating what the legend showed for it). Removed the duplicate —
+  // slot 1 now reads 'reach' directly (see rebuildMapPalettes()), so pre-project
+  // reach and the design channel's unified reach+area color are one and the same
+  // role, editable in one place, exactly like floodplain already works.
 };
 // PC_CHANNEL_COLORS needs one entry per pcChannelColor() cycle slot regardless
 // of whether >1 primary channel is reachable today; slots 2-5 aren't user-facing
@@ -251,7 +260,10 @@ function rebuildMapPalettes() {
   STRUCT_COLOR.css = mapColor('structCss');
   STRUCT_COLOR.fps = mapColor('structFps');
   STRUCT_COLOR.scs = mapColor('structScs');
-  PC_CHANNEL_COLORS = [mapColor('pcChannel')].concat(PC_CHANNEL_EXTRA_TOKENS.map(resolveColorToken));
+  // Slot 1 reads the shared 'reach' role directly (no separate 'pcChannel' role —
+  // see the comment on MAP_COLOR_ROLES above) so pre-project reach and the design
+  // channel's unified reach+area color track together as one editable role.
+  PC_CHANNEL_COLORS = [mapColor('reach')].concat(PC_CHANNEL_EXTRA_TOKENS.map(resolveColorToken));
   SC_COLOR = mapColor('secondaryChannel');
 }
 function clearColorTokenCache() { _colorTokenCache = {}; }
@@ -559,7 +571,7 @@ function ppOwner(we, id) {
 
 // Distinct colors per primary channel so multiple channels stay visually
 // distinguishable on the map when a work element has more than one.
-var PC_CHANNEL_COLORS = []; // filled by rebuildMapPalettes() (see MAP_COLOR_ROLES pcChannel1..5) before window.onload finishes
+var PC_CHANNEL_COLORS = []; // filled by rebuildMapPalettes() (slot 1 = the shared 'reach' role, see MAP_COLOR_ROLES) before window.onload finishes
 function pcChannelColor(we, pcId) {
   var idx = 0;
   (we.primaryChannels||[]).forEach(function(pc, i){ if (pc.id === pcId) idx = i; });
@@ -9111,10 +9123,13 @@ var MAP_COLOR_ROLE_LABELS = {
   wetlandExisting: 'Existing Wetland', chuRiffle: 'CHU: Riffle', chuPool: 'CHU: Pool',
   widthSegments: 'Width Segments', secondaryChannel: 'Secondary Channel', structCms: 'Structure: Channel Margin',
   structMcs: 'Structure: Mid-Channel', structFps: 'Structure: Floodplain', structScs: 'Structure: Side-Channel',
-  structCss: 'Structure: Channel-Spanning', pcChannel: 'Primary Channel'
-  // Only one role/row for this — see the comment on MAP_COLOR_ROLES.pcChannel:
-  // a work element only ever has ONE primary channel today, so "#2..#5" rows
-  // would be unpickable clutter, not real options.
+  structCss: 'Structure: Channel-Spanning'
+  // No separate "Primary Channel" role — see the comment on MAP_COLOR_ROLES
+  // (the block above 'reach' was removed): it used to be its own role pointed
+  // at the exact same token as 'reach', so the two could silently diverge if
+  // edited separately even though the legend only ever showed one of them.
+  // "Reach / Primary Channel" above now covers both pre-project reach and the
+  // design channel's unified reach+area color.
   // No separate "Floodplain (right bank)" role either — see the comment on
   // MAP_COLOR_ROLES.floodplain: fp_left/fp_right are never both reached (the
   // L/R split wizard step doesn't exist in WIZARD_STEPS), so fp_right just
