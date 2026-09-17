@@ -6165,6 +6165,18 @@ function polygonCenterline(geometry) {
     }
     centerline.push(L.latLng((b1[k].lat + match.lat) / 2, (b1[k].lng + match.lng) / 2));
   }
+
+  // The arc-length window has the least bank2 data to search right at the very
+  // ends of the walk, so a sample there is the most likely to hit the "no match
+  // found" fallback above — which loses the windowing protection entirely and
+  // can place a point outside the ring. Confirmed on the Willamette River near
+  // Riverwood: the very last sampled point landed on land, not in the channel,
+  // producing a reach line that visibly crossed onto the bank. Trimming from
+  // each end while the endpoint is outside the ring keeps the well-anchored
+  // middle of the walk and only discards the unreliable extremities.
+  while (centerline.length > 1 && !pointInRing(centerline[0].lat, centerline[0].lng, ring)) centerline.shift();
+  while (centerline.length > 1 && !pointInRing(centerline[centerline.length-1].lat, centerline[centerline.length-1].lng, ring)) centerline.pop();
+
   return centerline;
 }
 
