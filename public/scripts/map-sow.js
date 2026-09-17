@@ -6330,37 +6330,95 @@ function loadNHDPreview() {
     '&where=featuretype=1' +
     '&outFields=gnisidlabel,featuretype,areasqkm&returnGeometry=true&outSR=4326&f=json';
 
+  // Waterbody Connector (featuretype=5, layer 50) — an authoritative centerline
+  // through a wide river, same as the type-3 "Artificial Path" lines above are
+  // for rivers that have one, just tagged separately. Previously only fetched
+  // reactively, after the user clicked inside a waterbody polygon (see
+  // fetchWbConnectorCenterline). Fetching it here too, up front, means a real
+  // centerline can be offered as the clickable candidate in the FIRST place,
+  // instead of only after the polygon-click round trip already committed to it.
+  var wbConnUrl = 'https://3dhp.nationalmap.gov/arcgis/rest/services/usgs_3dhp_all/FeatureServer/50/query?' +
+    'geometry='+encodeURIComponent(env)+
+    '&geometryType=esriGeometryEnvelope&inSR=102100&spatialRel=esriSpatialRelIntersects' +
+    '&where=featuretype=5' +
+    '&outFields=gnisidlabel,featuretype,mainstemid&returnGeometry=true&outSR=4326&f=json';
+
   // Each fetch swallows its own failure into an empty-features fallback (so one bad
   // service doesn't kill the other), but tags _failed so the combined handler below can
   // still tell "genuinely no candidates nearby" apart from "couldn't reach the service".
   Promise.all([
     fetch(url).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).catch(function(){ return {features:[], _failed:true}; }),
-    fetch(wbUrl).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).catch(function(){ return {features:[], _failed:true}; })
+    fetch(wbUrl).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).catch(function(){ return {features:[], _failed:true}; }),
+    fetch(wbConnUrl).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).catch(function(){ return {features:[], _failed:true}; })
   ]).then(function(results) {
     if (!reachAutoDetecting) return;
     if (myGen !== nhdPreviewGeneration) return; // superseded by a newer load — don't add stale layers
-    var data = results[0], wbData = results[1];
+    var data = results[0], wbData = results[1], wbConnData = results[2];
     var anyFailed = data._failed || wbData._failed || data.error || wbData.error;
     if (data.error) { data = {features:[]}; }
     if (wbData.error) { wbData = {features:[]}; }
+    if (wbConnData.error) { wbConnData = {features:[]}; }
 
-    var layers = [];
-    var wbLayers = []; // waterbody layers added last so they're on top
+    var layers = [];      // ordinary (non-major) flowlines — bottom
+    var wbLayers = [];    // waterbody polygons — middle (unchanged fallback, always fully interactive)
+    var centerlineLayers = []; // authoritative wide-river centerlines (type-3 + type-5) — top, so
+    // they win a pixel-exact click over the polygon beneath wherever they exist, while the
+    // polygon stays interactive as the fallback everywhere the centerline doesn't reach —
+    // z-order alone, no need to detect/suppress "coverage" per polygon.
     nhdPreviewData = data;
 
-    // Draw flowlines
+    // Stitch featuretype=5 segments into whole-river chains with the same
+    // direction-aware stitcher already used for ordinary flowlines (see
+    // buildConnectedChains — fixed earlier for exactly this kind of braided/
+    // multi-segment data). Only chains that pass a full-length quality check
+    // (isWbChainTrustworthy) are trusted enough to show as a clickable centerline.
+    var wbConnChains = [];
+    try {
+      wbConnChains = buildConnectedChains(wbConnData.features || []).filter(function(ch) {
+        return isWbChainTrustworthy(ch.pts);
+      });
+    } catch (e) { wbConnChains = []; }
+    wbConnChains.forEach(function(ch) {
+      var chainPts = ch.pts;
+      var lyr = L.polyline(chainPts, {color: '#1a9abf', weight: 5, opacity: 0.7, interactive: false});
+      centerlineLayers.push(lyr);
+      var hitLyr = L.polyline(chainPts, {weight: 20, opacity: 0.001, interactive: true});
+      hitLyr.bindTooltip('Wide river centerline (click to select)', {sticky: true});
+      hitLyr.on('click', function(e) {
+        L.DomEvent.stop(e);
+        if (!reachAutoDetecting) return;
+        var windowed = windowAndValidateWbChain(chainPts, e.latlng, 3000);
+        if (!windowed) { setMapHint('Could not resolve a centerline right here — try clicking elsewhere on the line, or draw manually.'); return; }
+        var weCw = getActiveWE(); if (!weCw) return;
+        clearReachAutoLayers();
+        reachAutoDetecting = false;
+        if (!weCw.ppData['reach_len']) weCw.ppData['reach_len'] = {};
+        weCw.ppData['reach_len']._autoDetecting = false;
+        document.getElementById('mapwrap').classList.remove('drawing');
+        setMapHint('');
+        setTimeout(function(){ enterPreTrimStep(windowed, false); }, 50);
+      });
+      centerlineLayers.push(hitLyr);
+    });
+
+    // Draw flowlines. Type-3 ("Artificial Path") is a real centerline through a
+    // wide river polygon, same idea as the type-5 chains above — goes in
+    // centerlineLayers (top tier) so it wins over a waterbody polygon covering
+    // the same water, instead of the polygon shadowing it. Ordinary type-1/2
+    // flowlines stay in the bottom tier, unchanged.
     if (data.features && data.features.length) {
       data.features.forEach(function(feat) {
         if (!feat.geometry || !feat.geometry.paths) return;
+        var isMajor = feat.attributes.featuretype === 3;
+        var bucket = isMajor ? centerlineLayers : layers;
         feat.geometry.paths.forEach(function(path) {
           var pts = path.map(function(c){ return L.latLng(c[1],c[0]); });
-          var isMajor = feat.attributes.featuretype === 3;
           var lyr = L.polyline(pts, {
             color: isMajor ? '#1a9abf' : '#4a8abf',
             weight: isMajor ? 5 : 3,
             opacity: 0.7, interactive: false
           });
-          layers.push(lyr);
+          bucket.push(lyr);
           // Invisible, much wider companion carries the actual hover/click — the
           // thin visible line above is too precise a target to click reliably.
           var hitLyr = L.polyline(pts, {weight: 20, opacity: 0.001, interactive: true});
@@ -6370,7 +6428,7 @@ function loadNHDPreview() {
             if (!reachAutoDetecting) return;
             reachAutoClickFeature(feat, e.latlng);
           });
-          layers.push(hitLyr);
+          bucket.push(hitLyr);
         });
       });
     }
@@ -6425,13 +6483,6 @@ function loadNHDPreview() {
         var wlatR = Math.max.apply(null,wlats)-Math.min.apply(null,wlats);
         if (wlngR > MAX_WB_DEGREES && wlatR > MAX_WB_DEGREES) return; // skip only if BOTH exceed
 
-        var synthFeat = {
-          attributes: {gnisidlabel: wbLabel, featuretype: 1, mainstemid: ''},
-          geometry: {paths: [ring]},
-          _clickOverride: true,
-          _wbGeometry: wb.geometry
-        };
-
         var polyPts = ring.map(function(c){ return L.latLng(c[1],c[0]); });
 
         // Visible outline
@@ -6442,14 +6493,29 @@ function loadNHDPreview() {
         });
         wbLayers.push(outlineLyr);
 
+        var synthFeat = {
+          attributes: {gnisidlabel: wbLabel, featuretype: 1, mainstemid: ''},
+          geometry: {paths: [ring]},
+          _clickOverride: true,
+          _wbGeometry: wb.geometry
+        };
+
         // Transparent filled polygon as hit zone — clickable anywhere inside.
         // The stroke also carries a wide, near-invisible companion (mirrors the
         // flowline hitLyr trick above) so a click that lands just outside the
         // mapped bank — the visible basemap water and the Esri ring rarely align
         // to the pixel — still resolves to this river instead of falling through
         // to whatever thin, unrelated flowline (an irrigation ditch, a dry wash)
-        // happens to pass nearby. Waterbody layers paint on top of flowlines
-        // (see the concat() below), so this reliably wins that pixel.
+        // happens to pass nearby. This polygon is always fully interactive — it's
+        // the fallback candidate for wherever no real centerline exists. Where one
+        // does (a type-3 Artificial Path or a trustworthy type-5 Waterbody
+        // Connector chain, see centerlineLayers above), THAT wins a click on the
+        // same pixel purely by z-order: centerlineLayers are added to the map
+        // last/on top (see the concat() below), so a precise click on the visible
+        // centerline hits its own wide hit-stroke first, while a click anywhere
+        // else in this polygon still falls through to this hit zone underneath.
+        // No "does a centerline cover this polygon" detection needed — a polygon
+        // with no nearby centerline never has anything painted over it to lose to.
         var hitLyr = L.polygon(polyPts, {
           color: '#00d4ff', weight: 24, opacity: 0.001,
           fillColor: '#00d4ff', fillOpacity: 0.001,
@@ -6465,15 +6531,18 @@ function loadNHDPreview() {
       });
     }
 
-    if (!layers.length && !wbLayers.length) {
+    if (!layers.length && !wbLayers.length && !centerlineLayers.length) {
       setMapHint(anyFailed
         ? 'Couldn\'t reach the NHD stream service — it may be temporarily down. Try again shortly, or draw manually.'
         : 'Click on or near a stream to auto-detect it');
       return;
     }
-    // Add each layer directly to map (not via layerGroup) so click events work reliably
-    // Flowlines first, then waterbody layers on top
-    layers.concat(wbLayers).forEach(function(lyr) {
+    // Add each layer directly to map (not via layerGroup) so click events work reliably.
+    // Ordinary flowlines first (bottom), waterbody polygons next (the interactive
+    // fallback), authoritative centerlines last (top) — see centerlineLayers above
+    // for why that order is what makes a real centerline win over the polygon
+    // without needing to detect/suppress anything on the polygon itself.
+    layers.concat(wbLayers).concat(centerlineLayers).forEach(function(lyr) {
       lyr.addTo(map);
       reachAutoLayers.push(lyr);
     });
@@ -6602,6 +6671,79 @@ function chainWbConnectorSegments(segs) {
 // Fetch nearby Waterbody Connector flowlines, chain them, and window the chain down
 // to the neighborhood of `clickLL`. Resolves to an array of L.latLng, or null if none
 // exist nearby (the caller should fall back to deriveWbCenterlinePts's own synthesis).
+// Window a wide-river connector/centerline chain down to the neighborhood of a
+// click point, and sanity-check it. Shared by fetchWbConnectorCenterline() below
+// (fetches connector data fresh, reactively, after a polygon click) and clicking
+// a Waterbody Connector preview line directly in loadNHDPreview() (the chain is
+// already in hand there — built once for the whole viewport via
+// buildConnectedChains() — so no fetch is needed, just this same windowing).
+function windowAndValidateWbChain(chainLL, clickLL, buf) {
+  if (!chainLL || chainLL.length < 2) return null;
+  var dists = chainLL.map(function(p){ return clickLL.distanceTo(p); });
+  var closestIdx = 0, minD = dists[0];
+  for (var i = 1; i < dists.length; i++) if (dists[i] < minD) { minD = dists[i]; closestIdx = i; }
+  // The click has to actually be near this chain — otherwise it's connector data
+  // for a different, unrelated part of the river system, not this stretch.
+  if (minD > buf) return null;
+  var lo = closestIdx, hi = closestIdx;
+  while (lo > 0 && dists[lo - 1] < buf) lo--;
+  while (hi < chainLL.length - 1 && dists[hi + 1] < buf) hi++;
+  var windowed = chainLL.slice(lo, hi + 1);
+
+  // A chained result can be real but a tiny, disconnected fragment of the network —
+  // a dead-end stub with nothing else close enough (chainWbConnectorSegments' 100m
+  // tolerance) to continue it either way. That's genuine data, but useless as a
+  // reach: confirmed on a Yakima River backwater near Granger, WA, where the only
+  // connector data near the click was an isolated 6-point, ~166m stub sitting in a
+  // side pond — nowhere near the actual river the click was meant to select, even
+  // though the click landed inside the SAME (correct, huge) river polygon. Treat a
+  // suspiciously short result the same as "no connector data" so the caller falls
+  // back to deriveWbCenterlinePts' ring-based synthesis, which works from the
+  // polygon itself and isn't at the mercy of a gap in the connector network.
+  var MIN_CONNECTOR_SPAN_M = 300;
+  var spanM = 0;
+  for (var wi = 0; wi < windowed.length - 1; wi++) spanM += windowed[wi].distanceTo(windowed[wi + 1]);
+  if (spanM < MIN_CONNECTOR_SPAN_M) return null;
+
+  // Verified on the Lower Deschutes River near Dry Canyon: USGS's own Waterbody
+  // Connector data can contain sharp out-and-back spikes — a real channel
+  // centerline doesn't fold back on itself within a few tens of meters, so a
+  // near-180° turn between two short consecutive segments is a skeletonization
+  // artifact, not real river shape. Comparing this exact case's connector output
+  // against deriveWbCenterlinePts' own ring-based synthesis (bearing-checked below
+  // against a genuinely clean result) confirmed the synthesized centerline stays
+  // smooth where the connector data zigzags. Treat a reversal the same as "no
+  // connector data" so the caller falls back to that synthesis rather than
+  // trusting a jagged "authoritative" line — same principle as the span check
+  // above, just for a different way connector data can be untrustworthy.
+  var SHARP_REVERSAL_DEG = 150;
+  for (var ri = 1; ri < windowed.length - 1; ri++) {
+    var turn = bearingDiff(ptBearing(windowed[ri-1], windowed[ri]), ptBearing(windowed[ri], windowed[ri+1]));
+    if (turn > SHARP_REVERSAL_DEG) return null;
+  }
+
+  return windowed;
+}
+
+// A quick, whole-chain version of windowAndValidateWbChain's quality checks (span
+// + no sharp reversal), used before a Waterbody Connector chain is even drawn as
+// a preview line or allowed to suppress a waterbody polygon's own clickability
+// (see loadNHDPreview) — deliberately stricter than the windowed check, since
+// there's no click yet to window around: reject the whole chain if ANY part of
+// it looks untrustworthy, rather than risk drawing/relying on a line that would
+// fail validation the moment someone actually clicks it.
+function isWbChainTrustworthy(pts) {
+  if (!pts || pts.length < 2) return false;
+  var span = 0;
+  for (var i = 1; i < pts.length; i++) span += pts[i-1].distanceTo(pts[i]);
+  if (span < 300) return false;
+  for (var i = 1; i < pts.length - 1; i++) {
+    var turn = bearingDiff(ptBearing(pts[i-1], pts[i]), ptBearing(pts[i], pts[i+1]));
+    if (turn > 150) return false;
+  }
+  return true;
+}
+
 function fetchWbConnectorCenterline(clickLL, bufM) {
   var buf = bufM || 3000;
   var toRad = function(d){ return d*Math.PI/180; };
@@ -6618,50 +6760,7 @@ function fetchWbConnectorCenterline(clickLL, bufM) {
     var chain = chainWbConnectorSegments(data.features.map(function(f){ return f.geometry.paths[0]; }));
     if (!chain || chain.length < 2) return null;
     var chainLL = chain.map(function(c){ return L.latLng(c[1], c[0]); });
-    var dists = chainLL.map(function(p){ return clickLL.distanceTo(p); });
-    var closestIdx = 0, minD = dists[0];
-    for (var i = 1; i < dists.length; i++) if (dists[i] < minD) { minD = dists[i]; closestIdx = i; }
-    // The click has to actually be near this chain — otherwise it's connector data
-    // for a different, unrelated part of the river system, not this stretch.
-    if (minD > buf) return null;
-    var lo = closestIdx, hi = closestIdx;
-    while (lo > 0 && dists[lo - 1] < buf) lo--;
-    while (hi < chainLL.length - 1 && dists[hi + 1] < buf) hi++;
-    var windowed = chainLL.slice(lo, hi + 1);
-
-    // A chained result can be real but a tiny, disconnected fragment of the network —
-    // a dead-end stub with nothing else close enough (chainWbConnectorSegments' 100m
-    // tolerance) to continue it either way. That's genuine data, but useless as a
-    // reach: confirmed on a Yakima River backwater near Granger, WA, where the only
-    // connector data near the click was an isolated 6-point, ~166m stub sitting in a
-    // side pond — nowhere near the actual river the click was meant to select, even
-    // though the click landed inside the SAME (correct, huge) river polygon. Treat a
-    // suspiciously short result the same as "no connector data" so the caller falls
-    // back to deriveWbCenterlinePts' ring-based synthesis, which works from the
-    // polygon itself and isn't at the mercy of a gap in the connector network.
-    var MIN_CONNECTOR_SPAN_M = 300;
-    var spanM = 0;
-    for (var wi = 0; wi < windowed.length - 1; wi++) spanM += windowed[wi].distanceTo(windowed[wi + 1]);
-    if (spanM < MIN_CONNECTOR_SPAN_M) return null;
-
-    // Verified on the Lower Deschutes River near Dry Canyon: USGS's own Waterbody
-    // Connector data can contain sharp out-and-back spikes — a real channel
-    // centerline doesn't fold back on itself within a few tens of meters, so a
-    // near-180° turn between two short consecutive segments is a skeletonization
-    // artifact, not real river shape. Comparing this exact case's connector output
-    // against deriveWbCenterlinePts' own ring-based synthesis (bearing-checked below
-    // against a genuinely clean result) confirmed the synthesized centerline stays
-    // smooth where the connector data zigzags. Treat a reversal the same as "no
-    // connector data" so the caller falls back to that synthesis rather than
-    // trusting a jagged "authoritative" line — same principle as the span check
-    // above, just for a different way connector data can be untrustworthy.
-    var SHARP_REVERSAL_DEG = 150;
-    for (var ri = 1; ri < windowed.length - 1; ri++) {
-      var turn = bearingDiff(ptBearing(windowed[ri-1], windowed[ri]), ptBearing(windowed[ri], windowed[ri+1]));
-      if (turn > SHARP_REVERSAL_DEG) return null;
-    }
-
-    return windowed;
+    return windowAndValidateWbChain(chainLL, clickLL, buf);
   }).catch(function() { return null; });
 }
 
