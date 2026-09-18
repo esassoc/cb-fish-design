@@ -331,9 +331,13 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
   --color-content-default-secondary: rgba(255,255,255,0.6);
   --color-content-default: rgba(255,255,255,0.9);
   --color-background-elevation-sunken: rgba(255,255,255,0.08);
-  /* the "browse" link color defaults to --color-background-brand, which on this dark panel is the
-     same token as the panel's own background — swap in the dark-bg accent so it's readable */
   --color-background-brand: var(--cbf-blue-500);
+  /* the "browse" link actually reads --color-content-brand (not --color-background-brand above) —
+     theme-cb-fish.css aliases it to --color-background-brand, but that alias is substituted once at
+     the theme root, so overriding --color-background-brand here doesn't reach it. On this dark panel
+     --color-content-brand still resolves to the site's navy, same as the panel's own background,
+     making "browse" invisible — override it directly with the dark-bg accent. */
+  --color-content-brand: var(--cbf-blue-500);
 }
 .ref-img-row { padding-bottom: 6px; }
 .ref-img-filename {
