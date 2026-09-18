@@ -3614,14 +3614,11 @@ function updateSOWCalcs() {
   var avgFW=avgWidths(we,['fpw1','fpw2','fpw3']);
   var cf=document.getElementById('calc-fp-width');if(cf)cf.textContent=avgFW?Math.round(avgFW)+' ft':'—';
 
-  // ── Channel excavation volume — pcExcavationCY() is the pure calculation;
-  // this just caches the result on inputVals for openSOW()'s per-PC export loop
-  // (which iterates every primary channel, not just the active one — see the
-  // comment on pcExcavationCY) and refreshes the retired Expert view's DOM node.
+  // Channel excavation volume is a client-entered value now (setPCExcavationVol) —
+  // this just refreshes the retired Expert view's DOM node from it.
   var excavCY = pcExcavationCY(we);
-  getActivePC(we).inputVals['pc-excavation-vol'] = excavCY;
   var ce = document.getElementById('calc-pc-excav');
-  if (ce) ce.textContent = excavCY !== null ? excavCY.toLocaleString() + ' CY' : (getActivePC(we).sowLayers['pc-reach'] && pcChannelWidthFt(we) ? 'Enter bank height to calculate' : '—');
+  if (ce) ce.textContent = excavCY !== null ? excavCY.toLocaleString() + ' CY' : '—';
   var cl=document.getElementById('calc-large-logs');var cs2=document.getElementById('calc-small-logs');
   if(cl||cs2)updateLogTotals();
 }
@@ -5414,7 +5411,15 @@ function setPCBankHeight(val) {
   if (!we.inputVals) we.inputVals = {};
   var n = parseFloat(val);
   getActivePC(we).inputVals['pc-bank-height'] = (n > 0) ? n : null;
-  updateSOWCalcs(); // keeps the auto-calculated excavation volume in sync
+  updateSOWCalcs();
+  if (wizardMode) wizardRefreshIfActive();
+}
+
+function setPCExcavationVol(val) {
+  var we = getActiveWE(); if (!we) return;
+  if (!we.inputVals) we.inputVals = {};
+  var n = parseFloat(val);
+  getActivePC(we).inputVals['pc-excavation-vol'] = (n > 0) ? n : null;
   if (wizardMode) wizardRefreshIfActive();
 }
 // ── Gravel placement (pc_gravel wizard step) ──────────────────────────────
@@ -5427,20 +5432,17 @@ function pcChannelWidthFt(we) {
   return null;
 }
 
-// Excavation volume for the active primary channel — reach length x channel width
-// x bank height, treating the channel as a simple rectangular prism (ft3 -> CY).
-// A pure calculation (like pcChannelWidthFt above): reads live inputs, no DOM
-// writes, no caching — callers that need the number ask for it fresh every time.
-// Like pcChannelWidthFt, this reads getActivePC(we), so it's only correct for
-// we's CURRENTLY ACTIVE primary channel — callers iterating every primary channel
-// of a WE (e.g. openSOW()'s export loop) can't use this for a non-active `pc` and
-// still read the inputVals['pc-excavation-vol'] snapshot updateSOWCalcs() caches.
+// Excavation volume for the active primary channel — a client-entered value
+// (see setPCExcavationVol()), not derived from reach x width x bank height.
+// Was a rectangular-prism estimate off those three inputs; the client wants
+// to enter their own number instead (they typically have a more accurate
+// figure from grading plans/cut-fill analysis than a simple prism estimate
+// would give). Kept as its own function since every caller — the wizard
+// step's completion check, the pc_metrics render, and openSOW()'s export
+// loop — already reads through it rather than inputVals directly.
 function pcExcavationCY(we) {
-  var reachSL = we && getActivePC(we).sowLayers['pc-reach'];
-  var reachFt = reachSL && reachSL.valueM ? reachSL.valueM * 3.28084 : 0;
-  var widthFt = pcChannelWidthFt(we) || 0;
-  var bankHtFt = (we && getActivePC(we).inputVals['pc-bank-height']) || 0;
-  return (reachFt && widthFt && bankHtFt) ? Math.round(reachFt * widthFt * bankHtFt / 27) : null;
+  var v = we && getActivePC(we).inputVals['pc-excavation-vol'];
+  return (v > 0) ? v : null;
 }
 
 function wizardAddGravelPlacement() {
@@ -10416,15 +10418,21 @@ function wizardStepBody(we, step, idx) {
       break;
 
     case 'pc_metrics': {
-      var pcmEV = pcExcavationCY(we); // derived fresh — no cached/stale value, no render-time side effect
+      var pcmEV = pcExcavationCY(we); // client-entered value — see setPCExcavationVol()
       h += '<div class="wz-step-desc">Additional complexity metrics for the primary channel.</div>';
       var pcmReachSL = getActivePC(we).sowLayers['pc-reach'];
       var pcmStreamMi = pcmReachSL && pcmReachSL.valueM ? (pcmReachSL.valueM * 0.000621371).toFixed(3)+' mi' : null;
       h += '<div class="wz-metric-row"><span class="wz-metric-label">Stream miles with improved floodplain connectivity</span><span class="wz-metric-val '+(pcmStreamMi?'':'missing')+'">'+(pcmStreamMi||'draw the primary channel to calculate')+'</span></div>';
-      var pcmMissing = !pcmReachSL ? 'draw the primary channel first (step 8)' :
-                        !pcChannelWidthFt(we) ? 'enter channel width first (previous step)' :
-                        !getActivePC(we).inputVals['pc-bank-height'] ? 'enter bank height first (previous step)' : '—';
-      h += '<div class="wz-metric-row"><span class="wz-metric-label">Excavation volume</span><span class="wz-metric-val '+(pcmEV?'':'missing')+'">'+(pcmEV ? pcmEV.toLocaleString()+' CY' : pcmMissing)+'</span></div>';
+      h += '<div style="display:flex;align-items:center;gap:8px;margin:8px 0">';
+      h += '<label style="font-size:12px;color:var(--color-text-secondary);white-space:nowrap">Excavation volume (CY):</label>';
+      h += '<input id="wz-pc-excav-input" type="number" min="0" step="1" placeholder="e.g. 500" value="'+(pcmEV||'')+'"';
+      h += ' style="width:100px;border:1px solid var(--color-border);border-radius:4px;padding:4px 8px;font-size:13px;font-family:var(--font-sans)"';
+      h += ' onchange="setPCExcavationVol(this.value)">';
+      h += '<span style="font-size:12px;color:var(--color-text-muted)">CY</span>';
+      h += '</div>';
+      if (pcmEV > 0) {
+        h += '<div class="wz-status done" style="margin-top:4px">&#10003; Excavation volume: <b>'+pcmEV.toLocaleString()+' CY</b></div>';
+      }
       break;
     }
 
@@ -11810,7 +11818,7 @@ function openSOW() {
         h += '<tr><td>Average bank height (at riffle)</td><td>entered</td><td>'+pcBHFt2+'</td></tr>';
         h += '<tr><td>Area of restored channel</td><td>measured</td><td>'+pcAreaAc2+'</td></tr>';
         h += '<tr><td>New floodplain area</td><td>measured</td><td>'+pcNewFpAc+'</td></tr>';
-        h += '<tr><td>Primary channel excavation volume</td><td>calculated</td><td>'+pcExcav2+'</td></tr>';
+        h += '<tr><td>Primary channel excavation volume</td><td>entered</td><td>'+pcExcav2+'</td></tr>';
         h += '<tr><td># Gravel placements</td><td>measured</td><td>'+(pcGravelPlaced2.length||'—')+'</td></tr>';
         h += '<tr><td>Length of gravel placement or channel fill</td><td>entered</td><td>'+(pcGravelTotalLenFt>0?Math.round(pcGravelTotalLenFt).toLocaleString()+' ft':'—')+'</td></tr>';
         h += '<tr><td>Average depth of gravel placement</td><td>entered</td><td>'+(pcGravelAvgDepth!==null?pcGravelAvgDepth.toFixed(1)+' ft':'—')+'</td></tr>';
