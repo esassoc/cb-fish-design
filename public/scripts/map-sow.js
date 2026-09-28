@@ -240,6 +240,15 @@ var HIP_CATEGORIES = {
   '9b': 'Fencing construction for grazing control'
 };
 // One tag per category: a quiet code badge followed by the category name.
+// Picker groups, in handbook order (section 1.2 category names, sentence-cased).
+var HIP_FAMILIES = [
+  {name: 'River, stream, floodplain, and wetland restoration', codes: ['2a','2b','2d','2e','2f','2g']},
+  {name: 'Invasive plant control', codes: ['3']},
+  {name: 'Road and trail maintenance and decommissioning', codes: ['5b']},
+  {name: 'Special actions (for terrestrial species)', codes: ['9b']}
+];
+// Handbook order. Not Object.keys(HIP_CATEGORIES): integer-like keys ('3') sort first.
+var HIP_ORDER = HIP_FAMILIES.reduce(function(a, f){ return a.concat(f.codes); }, []);
 function hipTagHtml(code) {
   return '<div class="hip-tag"><span class="hip-tag__code">HIP ' + code + '</span><span class="hip-tag__name">' + HIP_CATEGORIES[code] + '</span></div>';
 }
@@ -605,6 +614,7 @@ function newWEData() {
     id: 'we-'+Date.now(),
     name: '',
     types: [],
+    hipCats: [], // HIP categories picked on the 'Types of work' step; they decide which design steps show
     ppData: {},
     sowLayers: {},
     structures: {fps:[],scs:[]},
@@ -9652,17 +9662,18 @@ var WIZARD_STEPS = [
   { id:'pp_pools',        label:'Existing pools', title:'Identify pre-project pools',       phase:'pp' },
   { id:'pp_pool_details', label:'Pool & riffle details', title:'Pre-project pool & riffle details', phase:'pp' },
   { id:'pp_done',    label:'Pre-project done',  title:'Pre-project complete!',          phase:'pp' },
+  { id:'hip_select', label:'Types of work',     title:'What work does this project include?', phase:'work', section:'hip' },
   { id:'pc_reach',   label:'Primary channel',  title:'Draw primary channel',           phase:'work', types:['pc'], repeat:'pc', hip:['2f'] },
   { id:'pc_width',   label:'Channel width',    title:'Enter primary channel width',    phase:'work', types:['pc'], repeat:'pc', hip:['2f'] },
   { id:'pc_metrics', label:'Metrics', title:'Primary channel metrics',    phase:'work', types:['pc'], repeat:'pc', hip:['2f'] },
-  { id:'pc_gravel',  label:'Gravel placement', title:'Gravel placement',               phase:'work', types:['pc'], repeat:'pc', hip:['2g'] },
-  { id:'pc_fp',      label:'Designed floodplain', title:'Draw designed floodplain',            phase:'work', types:['pc'], repeat:'pc', hip:['2a'] },
-  { id:'chu_split',  label:'Identify pools',   title:'Identify pool locations',        phase:'work', types:['pc'], repeat:'pc' },
-  { id:'chu_details', label:'Pool & riffle details', title:'Pool and riffle details', phase:'work', types:['pc'], repeat:'pc' },
+  { id:'pc_gravel',  label:'Gravel placement', title:'Gravel placement',               phase:'work', types:['pc'], repeat:'pc', hip:['2g'], needs:['pc_reach','pc_width'] },
+  { id:'pc_fp',      label:'Designed floodplain', title:'Draw designed floodplain',            phase:'work', types:['pc'], repeat:'pc', hip:['2a'], needs:['pc_reach','pc_width'] },
+  { id:'chu_split',  label:'Identify pools',   title:'Identify pool locations',        phase:'work', types:['pc'], repeat:'pc', showFor:['2f'] },
+  { id:'chu_details', label:'Pool & riffle details', title:'Pool and riffle details', phase:'work', types:['pc'], repeat:'pc', showFor:['2f'] },
   { id:'structures', label:'Structures',      title:'Wood structures',                phase:'work', types:['pc'], repeat:'pc', hip:['2d'] },
-  { id:'pc_channel_done', label:'Channel complete', title:'Primary channel complete!', phase:'work', types:['pc'], repeat:'pc' },
+  { id:'pc_channel_done', label:'Channel complete', title:'Primary channel complete!', phase:'work', types:['pc'], repeat:'pc', summary:true },
   { id:'sc_draw',  label:'Secondary channels', title:'Draw secondary channels',   phase:'work', types:['fp'], section:'sc', hip:['2a'] },
-  { id:'sc_wood',  label:'Wood counts',         title:'Secondary channel wood',    phase:'work', types:['fp'], section:'sc', hip:['2d'] },
+  { id:'sc_wood',  label:'Wood counts',         title:'Secondary channel wood',    phase:'work', types:['fp'], section:'sc', hip:['2d'], onlyWith:['sc_draw'] },
   { id:'fp_structures',  label:'Structures',      title:'Floodplain structures',        phase:'work', types:['fp'], hip:['2d'] },
   { id:'fp_reach_width', label:'Floodplain width',   title:'Floodplain width at secondary channels', phase:'work', types:['fp'], hip:['2a'] },
   { id:'fp_grading',     label:'Grading',         title:'Floodplain grading',           phase:'work', types:['fp'], hip:['2a'] },
@@ -9673,7 +9684,7 @@ var WIZARD_STEPS = [
   { id:'fp_wetland_enhance', label:'Wetland enhancement', title:'Existing wetland habitat enhanced', phase:'work', types:['fp'], hip:['2a'] },
   { id:'rr_fencing',  label:'Fencing',           title:'Riparian protection — fencing',      phase:'work', types:['rr'], hip:['9b'] },
   { id:'rr_planting', label:'Planting & invasive', title:'Riparian planting & regeneration', phase:'work', types:['rr'], hip:['2e','3'] },
-  { id:'rr_totals',   label:'Bank & totals',     title:'Riparian totals',                    phase:'work', types:['rr'] },
+  { id:'rr_totals',   label:'Bank & totals',     title:'Riparian totals',                    phase:'work', types:['rr'], summary:true },
   { id:'done',       label:'Complete',        title:'Design complete!',         phase:'work' }
 ];
 
@@ -9711,6 +9722,7 @@ function wizardStepStatus(we, stepId) {
   if (!we) return 'pending';
   switch(stepId) {
     case 'setup':     return activeWEId ? 'done' : 'pending';
+    case 'hip_select': return (we.hipCats && we.hipCats.length) ? 'done' : 'pending';
     case 'perimeter': return (we.ppData['perimeter'] && we.ppData['perimeter'].layer) ? 'done' : 'pending';
     case 'reach':     return (we.ppData['reach_len'] && we.ppData['reach_len'].layer) ? 'done' : 'pending';
     case 'ch_width': {
@@ -9831,12 +9843,53 @@ function wizardStepStatus(we, stepId) {
 // Steps flagged repeat:'pc' appear once per we.primaryChannels entry — each virtual
 // step instance is tagged with pcId/pcIndex so status/body/autoActivate can resolve
 // the right channel (via we.activePCId, synced by the nav functions below).
+// Which WIZARD_STEPS a work element's picked HIP categories switch on. Pre-project steps,
+// the picker and the final step always show. Otherwise a step shows when:
+//   - one of its hip (or showFor) categories is picked;
+//   - a shown step lists it in `needs` (e.g. gravel volume needs the channel width),
+//     recorded in neededBy so the step can say why it's there;
+//   - it's a `summary` step and another step of its work type shows.
+// `onlyWith` hides a step unless those steps also show (secondary channel wood needs channels).
+function hipStepPlan(we) {
+  var picked = (we && we.hipCats) || [];
+  var hits = function(codes) { return (codes || []).some(function(c){ return picked.indexOf(c) >= 0; }); };
+  var byId = {};
+  WIZARD_STEPS.forEach(function(s){ byId[s.id] = s; });
+  var on = {}, neededBy = {};
+  WIZARD_STEPS.forEach(function(s) {
+    if (s.phase === 'pp' || s.id === 'hip_select' || s.id === 'done') on[s.id] = true;
+    else if (hits(s.hip) || hits(s.showFor)) on[s.id] = true;
+  });
+  WIZARD_STEPS.forEach(function(s) {
+    if (!on[s.id] || !s.needs) return;
+    s.needs.forEach(function(id) {
+      if (!hits(byId[id].hip)) (neededBy[id] = neededBy[id] || []).push(s.label);
+      on[id] = true;
+    });
+  });
+  WIZARD_STEPS.forEach(function(s) {
+    if (on[s.id] && s.onlyWith && !s.onlyWith.every(function(id){ return on[id]; })) on[s.id] = false;
+  });
+  WIZARD_STEPS.forEach(function(s) {
+    if (!s.summary) return;
+    on[s.id] = WIZARD_STEPS.some(function(x){ return !x.summary && on[x.id] && x.types && x.types[0] === s.types[0]; });
+  });
+  return {on: on, neededBy: neededBy};
+}
+
+// Whether any shown design step belongs to a work type; gates that type's export sections.
+function weUsesWorkType(we, type) {
+  var plan = hipStepPlan(we);
+  return WIZARD_STEPS.some(function(s){ return plan.on[s.id] && !s.summary && s.types && s.types.indexOf(type) >= 0; });
+}
+
 function getVisibleSteps() {
   var we = getActiveWE();
-  var types = we ? we.types : [];
-  var filtered = WIZARD_STEPS.filter(function(s) {
-    if (!s.types) return true; // no type restriction
-    return s.types.some(function(t){ return types.indexOf(t) >= 0; });
+  var plan = hipStepPlan(we);
+  var filtered = WIZARD_STEPS.filter(function(s){ return plan.on[s.id]; }).map(function(s) {
+    var copy = {}; for (var k in s) copy[k] = s[k];
+    if (plan.neededBy[s.id]) copy.neededBy = plan.neededBy[s.id];
+    return copy;
   });
   if (!we) return filtered;
   // Repeat steps are a contiguous run in WIZARD_STEPS — expand the WHOLE run per
@@ -9941,6 +9994,8 @@ function renderWizardStep() {
     var sectionKey = null, sectionLabel = null, sectionPhase = (s.phase === 'pp') ? 'pp' : 'work';
     if (s.phase === 'pp') {
       sectionKey = 'pp'; sectionLabel = 'Pre-project';
+    } else if (s.section === 'hip') {
+      sectionKey = 'hip'; sectionLabel = 'Types of work';
     } else if (s.types && s.types.length) {
       sectionKey = s.repeat === 'pc' ? ('pc-' + s.pcIndex) : (s.section || s.types[0]);
       sectionLabel = s.repeat === 'pc' ? 'Primary channel' : (workSectionLabels[sectionKey] || sectionKey); // no number — only ever one channel
@@ -10004,7 +10059,7 @@ function renderWizardStep() {
   var bodyHtml = we ? wizardStepBody(we, step, wizardStep) : '<div class="wz-step-desc">Add a work element to get started.</div>';
   // Milestone/summary screens ("X Complete!") aren't term-heavy — no help box there:
   // pp_done (Pre-Project Done), pc_channel_done (Channel Complete), done (Design Complete).
-  var wzNoHelpSteps = {pp_done:1, pc_channel_done:1, done:1};
+  var wzNoHelpSteps = {pp_done:1, hip_select:1, pc_channel_done:1, done:1};
   if (!wzNoHelpSteps[step.id]) bodyHtml = wzInsertHelpBox(bodyHtml, step.label);
   var footerHtml = wizardStepFooter(we, step, wizardStep);
 
@@ -10021,10 +10076,29 @@ function renderWizardStep() {
   // Sidebar area: step body + footer (covers the expert panel)
   var bodyPanel = document.getElementById('wizard-body-panel');
   if (bodyPanel) {
-    bodyPanel.innerHTML = '<div class="wz-body">' + bodyHtml + '</div><div class="wz-footer">' + footerHtml + '</div>';
+    // A picker checkbox change only needs the status line and footer refreshed —
+    // rebuilding the body would reset its scroll position and drop checkbox focus.
+    var keepPicker = wzPickerOnlyRefresh && step.id === 'hip_select' && bodyPanel.querySelector('.wz-hip-status');
+    wzPickerOnlyRefresh = false;
+    if (keepPicker) {
+      bodyPanel.querySelector('.wz-hip-status').outerHTML = hipPickerStatusHtml(we);
+      var pickerFooter = bodyPanel.querySelector('.wz-footer');
+      if (pickerFooter) pickerFooter.innerHTML = footerHtml;
+    } else {
+      bodyPanel.innerHTML = '<div class="wz-body">' + bodyHtml + '</div><div class="wz-footer">' + footerHtml + '</div>';
+    }
     // esa-select instances above are inserted with no options/value (Lit properties,
     // not attributes) — wire them up now that they're in the DOM.
-    if (step.id === 'substrate' && we) {
+    if (keepPicker) {
+      // picker groups already wired and showing the user's selection
+    } else if (step.id === 'hip_select' && we) {
+      bodyPanel.querySelectorAll('esa-checkbox-group.wz-hip-group').forEach(function(grp) {
+        var codes = grp.dataset.codes.split(',');
+        grp.options = codes.map(function(c){ return {label: c + ' · ' + HIP_CATEGORIES[c], value: c}; });
+        grp.value = (we.hipCats || []).filter(function(c){ return codes.indexOf(c) >= 0; });
+        grp.addEventListener('change', setHipCatsFromPicker);
+      });
+    } else if (step.id === 'substrate' && we) {
       var subSel = bodyPanel.querySelector('esa-select.wz-substrate-sel');
       if (subSel) {
         subSel.options = ['', 'Silt', 'Sand', 'Gravel', 'Cobble', 'Boulders', 'Bedrock']
@@ -10068,9 +10142,19 @@ function renderWizardStep() {
 function wizardStepBody(we, step, idx) {
   var h = '<div class="wz-step-num">Step '+(idx+1)+' of '+getVisibleSteps().length+'</div>';
   h += '<div class="wz-step-title">'+step.title+'</div>';
-  if (step.hip) h += '<div class="hip-tags wz-step-hip">' + step.hip.map(hipTagHtml).join('') + '</div>';
+  var stepHip = (step.hip || []).filter(function(c){ return (we.hipCats || []).indexOf(c) >= 0; });
+  if (stepHip.length) h += '<div class="hip-tags wz-step-hip">' + stepHip.map(hipTagHtml).join('') + '</div>';
+  else if (step.neededBy) h += '<div class="wz-step-hip wz-step-needed">Included because ' + step.neededBy.join(' and ').toLowerCase() + ' ' + (step.neededBy.length > 1 ? 'need' : 'needs') + ' it.</div>';
 
   switch(step.id) {
+    case 'hip_select': {
+      h += '<div class="wz-step-desc">Select the HIP categories of action this project\'s work falls under. The design steps each category needs are added to the workflow on the left.</div>';
+      HIP_FAMILIES.forEach(function(f) {
+        h += '<esa-checkbox-group class="wz-hip-group" size="sm" data-codes="' + f.codes.join(',') + '" label="' + f.name + '"></esa-checkbox-group>';
+      });
+      h += hipPickerStatusHtml(we);
+      break;
+    }
     case 'setup':
       if (!we) {
         h += '<div class="wz-step-desc">Start by giving this work element a name and selecting the type of habitat work you\'ll be doing.</div>';
@@ -10490,7 +10574,7 @@ function wizardStepBody(we, step, idx) {
         if (vol !== null) {
           h += '<div style="font-size:10px;color:#7c7c7c;margin-top:4px">~ '+vol.toFixed(1)+' CY</div>';
         } else if (!pcWidthFt) {
-          h += '<div style="font-size:10px;color:#7c7c7c;margin-top:4px;font-style:italic">Enter channel width (step 9) to estimate volume</div>';
+          h += '<div style="font-size:10px;color:#7c7c7c;margin-top:4px;font-style:italic">Enter the channel width to estimate volume</div>';
         }
         h += '</div>';
       });
@@ -10601,7 +10685,7 @@ function wizardStepBody(we, step, idx) {
       h += '<div class="wz-step-desc">Draw two boundaries for each pool — in either order, wherever the pool starts and ends. Everything outside a pool boundary is treated as riffle.</div>';
       var chuSplitReady = we && getCHUChannelPts(we);
       if (!chuSplitReady) {
-        h += '<div class="wz-status warning">&#9888; Draw the primary channel and enter a width first (steps 8 &amp; 9) to generate the channel area.</div>';
+        h += '<div class="wz-status warning">&#9888; Draw the primary channel and enter a width first (Primary channel and Channel width steps) to generate the channel area.</div>';
       } else {
         var units = getActivePC(we).chuUnits || [];
         var pools = units.filter(function(u){return u.type==='pool';});
@@ -10861,7 +10945,7 @@ function wizardStepBody(we, step, idx) {
       var scAvgW = scAvgWidthFt(we);
       h += '<div class="wz-step-desc">Floodplain width is measured across the pre-project floodplain boundary at each secondary channel — no separate drawing needed here.</div>';
       if (scAvgW === null) {
-        h += '<div class="wz-status warning">&#9888; Floodplain width unavailable — make sure the pre-project floodplain boundary (step 5) is drawn and at least one secondary channel is entered and crosses it.</div>';
+        h += '<div class="wz-status warning">&#9888; Floodplain width unavailable — make sure the existing floodplain boundary (Existing floodplain step) is drawn and at least one secondary channel is entered and crosses it.</div>';
       } else {
         h += '<div class="wz-metric-row"><span class="wz-metric-label">Floodplain width at secondary channels (avg)</span><span class="wz-metric-val">'+Math.round(scAvgW)+' ft</span></div>';
         h += '<div class="wz-status done">&#10003; Calculated from secondary channel data.</div>';
@@ -10950,7 +11034,7 @@ function wizardStepFooter(we, step, idx) {
   var status = wizardStepStatus(we, step.id);
   var isLast = idx === vis.length - 1;
   // Steps that must be completed before advancing
-  var required  = ['perimeter', 'reach', 'ch_width', 'fp_left', 'fp_right'];
+  var required  = ['perimeter', 'reach', 'ch_width', 'fp_left', 'fp_right', 'hip_select'];
   // Steps where "Skip ›" shows when empty, "Next ›" when something is entered
   var skippable = ['bank_ht', 'substrate', 'pp_wetland', 'pp_pools', 'chu_split', 'structures', 'pc_gravel',
     'fp_structures', 'fp_reach_width', 'fp_grading', 'fp_road', 'fp_berm', 'fp_revetment', 'fp_tailings', 'fp_wetland_enhance',
@@ -11034,6 +11118,26 @@ function confirmLeaveDrawInProgress() {
     return confirm('Your edit on this step is still in progress. Leaving now will save it as currently shown — continue?');
   }
   return confirm('You have an unfinished drawing on this step. Leaving now will discard it — continue?');
+}
+
+// Rebuilds the active work element's picked categories from every picker group, in
+// handbook order, then re-renders so the stepper picks up the new step list.
+var wzPickerOnlyRefresh = false;
+function setHipCatsFromPicker() {
+  var we = getActiveWE(); if (!we) return;
+  var picked = [];
+  document.querySelectorAll('esa-checkbox-group.wz-hip-group').forEach(function(grp){ picked = picked.concat(grp.value || []); });
+  we.hipCats = HIP_ORDER.filter(function(c){ return picked.indexOf(c) >= 0; });
+  wzPickerOnlyRefresh = true;
+  renderWizardStep();
+}
+
+// "N categories selected · M design steps", or a prompt to pick one.
+function hipPickerStatusHtml(we) {
+  var nPicked = (we.hipCats || []).length;
+  var nDesign = getVisibleSteps().filter(function(s){ return s.phase === 'work' && s.id !== 'hip_select' && s.id !== 'done'; }).length;
+  if (nPicked) return '<div class="wz-status done wz-hip-status">&#10003; ' + nPicked + ' ' + (nPicked > 1 ? 'categories' : 'category') + ' selected · ' + nDesign + ' design steps</div>';
+  return '<div class="wz-status pending wz-hip-status">&#9654; Select at least one category to continue.</div>';
 }
 
 function wizardNext() {
@@ -11634,8 +11738,11 @@ function buildSOWMiniMap(containerId, we, mode) {
 }
 
 // One line per HIP category an export section's metrics fall under.
+// Only the categories picked on the 'Types of work' step are listed.
+var sowHipPicked = [];
 function sowHipLine(codes) {
-  return '<div class="hip-tags sow-hip">' + codes.map(hipTagHtml).join('') + '</div>';
+  var shown = HIP_ORDER.filter(function(c){ return codes.indexOf(c) >= 0 && sowHipPicked.indexOf(c) >= 0; });
+  return shown.length ? '<div class="hip-tags sow-hip">' + shown.map(hipTagHtml).join('') + '</div>' : '';
 }
 
 function openSOW() {
@@ -11646,6 +11753,8 @@ function openSOW() {
   var h='<h3>Contract information</h3><dl class="smeta"><dt>Contract #</dt><dd>84051 REL 50</dd><dt>COR</dt><dd>Virginia Preiss</dd><dt>FY</dt><dd>2026</dd><dt>Date</dt><dd>'+today+'</dd></dl>';
 
   workElements.forEach(function(we,idx) {
+    sowHipPicked = we.hipCats || [];
+    h += '<h3>HIP categories of action</h3>' + (sowHipPicked.length ? sowHipLine(sowHipPicked) : '<div class="sow-hip">None selected</div>');
     // WE header/work-types line hidden for now — kept for easy restore.
     // h+='<h2>WE '+(idx+1)+': '+we.name+'</h2>';
     // h+='<div style="font-size:11px;color:#5ddba5;margin-bottom:8px">Work types: '+we.types.map(function(t){return TYPE_LABELS[t];}).join(', ')+'</div>';
@@ -11738,17 +11847,20 @@ function openSOW() {
     // (Note: fmtIn reads from DOM, which reflects the currently rendered WE)
     // We'll use we.sowLayers directly for layer values
 
-    if(we.types.indexOf('pc')>=0) {
+    if(weUsesWorkType(we,'pc')) {
       var savedActivePCIdForExport = we.activePCId;
       we.primaryChannels.forEach(function(pc, pcIdx) {
         we.activePCId = pc.id; // so pcChannelWidthFt()/avgWidths() resolve this channel
         var pcLabel = we.primaryChannels.length > 1 ? pc.name : 'Primary channel';
+        // Wood structures table only when the Wood structures step is switched on (HIP 2d).
+        if (hipStepPlan(we).on['structures']) {
         h+='<h3>'+pcLabel+' — Wood structures</h3>'+sowHipLine(['2d'])+'<table><thead><tr><th>Type</th><th>Description</th><th># large</th><th># small</th></tr></thead><tbody>';
         var anyS=false, pcTotalLarge=0, pcTotalSmall=0;
         ['cms','mcs','css'].forEach(function(t){pc.structures[t].forEach(function(s){anyS=true;pcTotalLarge+=+s.large||0;pcTotalSmall+=+s.small||0;h+='<tr><td>'+STRUCT_LABEL[t]+'</td><td>'+s.desc+'</td><td>'+(s.large||0)+'</td><td>'+(s.small||0)+'</td></tr>';});});
         if(!anyS)h+='<tr><td colspan="4" style="color:#aab8c8;font-style:italic">None entered</td></tr>';
         else h+='<tr style="font-weight:700"><td colspan="2">Total individual large/small logs</td><td>'+pcTotalLarge+'</td><td>'+pcTotalSmall+'</td></tr>';
         h+='</tbody></table>';
+        }
         // ── Channel Habitat Units ──────────────────────────────────────────────
         var chuR=pc.chuUnits?pc.chuUnits.filter(function(u){return u.type==='riffle';}):[];
         var chuP=pc.chuUnits?pc.chuUnits.filter(function(u){return u.type==='pool';}):[];
@@ -11855,7 +11967,7 @@ function openSOW() {
       we.activePCId = savedActivePCIdForExport;
     }
 
-    if(we.types.indexOf('fp')>=0) {
+    if(weUsesWorkType(we,'fp')) {
       var sl=we.sowLayers;
       function wFt2(id){var l=sl[id];return l?Math.round(l.valueM*3.28084).toLocaleString()+' ft':'—';}
       function wMi2(id){var l=sl[id];return l?(l.valueM*0.000621371).toFixed(3)+' mi':'—';}
@@ -11932,7 +12044,7 @@ function openSOW() {
       }
     }
 
-    if(we.types.indexOf('rr')>=0) {
+    if(weUsesWorkType(we,'rr')) {
       var sl=we.sowLayers;
       function wFt3(id){var l=sl[id];return l?Math.round(l.valueM*3.28084).toLocaleString()+' ft':'—';}
       function wMi3(id){var l=sl[id];return l?(l.valueM*0.000621371).toFixed(3)+' mi':'—';}
