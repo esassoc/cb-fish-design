@@ -741,6 +741,15 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
 .wz-step-num { font-size: 11px; font-weight: var(--typography-font-weight-semibold); color: var(--color-content-default-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
 .wz-step-title { font-size: 17px; font-weight: var(--typography-font-weight-bold); color: var(--color-content-default); margin-bottom: 10px; line-height: 1.2; }
 .wz-step-desc { font-size: 12px; color: var(--color-content-default-secondary); line-height: 1.6; margin-bottom: 18px; }
+/* bcn-lego-checked: esa-badge is a compile-time .astro lego, so it can't be emitted from
+   map-sow.js's runtime innerHTML; Beacon has no HIP-category tag. .hip-tag__code copies
+   esa-badge's quiet treatment (4px --radius-sm, neutral border, gray fill) and sits
+   beside the category name in default text, so the tags read apart from the step's
+   secondary-gray description. Used by the wizard step header and the SOW export. */
+.hip-tags { display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: 6px 8px; font-size: 13px; line-height: 1.4; color: var(--color-content-default); }
+.hip-tag { display: contents; }
+.hip-tag__code { justify-self: start; padding: 1px 6px; border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); background: var(--color-background-default-hover); color: var(--color-content-default-secondary); font-weight: var(--typography-font-weight-semibold); white-space: nowrap; }
+.wz-step-hip { margin: 2px 0 14px; }
 
 /* Collapsible per-step help box — placeholder today; will hold term definitions
    and reference photos (e.g. what a riffle looks like, wood structure types). */
@@ -797,6 +806,7 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
 #sowbody h2 { font-size: 13px; font-weight: var(--typography-font-weight-bold); color: var(--color-content-default-knockout, #fff); background: var(--color-background-default-knockout); padding: 6px 10px; border-radius: 3px; margin: 14px 0 8px; }
 #sowbody h2:first-child { margin-top: 0; }
 #sowbody h3 { font-size: 11px; font-weight: var(--typography-font-weight-bold); color: var(--color-background-default-knockout); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--color-border-default); padding-bottom: 3px; margin: 10px 0 6px; }
+.sow-hip { gap: 4px 8px; margin: 2px 0 8px; font-size: 12px; }
 .smeta { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 14px; margin-bottom: 8px; }
 .smeta dt { color: var(--color-content-default-tertiary); font-weight: var(--typography-font-weight-semibold); }
 .smeta dd { color: var(--color-content-default); }
