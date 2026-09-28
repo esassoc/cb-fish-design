@@ -750,6 +750,10 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
 .hip-tag { display: contents; }
 .hip-tag__code { justify-self: start; padding: 1px 6px; border: 1px solid var(--color-border-default); border-radius: var(--radius-sm); background: var(--color-background-default-hover); color: var(--color-content-default-secondary); font-weight: var(--typography-font-weight-semibold); white-space: nowrap; }
 .wz-step-hip { margin: 2px 0 14px; }
+/* A step switched on only because a picked category's step depends on it. */
+.wz-step-needed { font-size: 13px; line-height: 1.4; color: var(--color-content-default-secondary); }
+/* 'Types of work' picker: one esa-checkbox-group per HIP category family. */
+.wz-hip-group { display: block; margin-bottom: 16px; }
 
 /* Collapsible per-step help box — placeholder today; will hold term definitions
    and reference photos (e.g. what a riffle looks like, wood structure types). */
