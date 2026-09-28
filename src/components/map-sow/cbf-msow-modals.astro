@@ -17,10 +17,10 @@ import EsaButton from '@esa/ecology/esa-button.astro';
 ---
 
 <!-- WE setup modal -->
-<esa-dialog id="we-modal" heading="New Work Element" show-close-button>
+<esa-dialog id="we-modal" heading="New work element" show-close-button>
   <div class="we-modal-field">
     <esa-text-field
-      label="Work Element Title"
+      label="Work element title"
       placeholder="e.g. Eagle Valley Reach 1"
       required
     ></esa-text-field>
@@ -31,21 +31,21 @@ import EsaButton from '@esa/ecology/esa-button.astro';
       <div class="we-type-opt" id="opt-pc" onclick="toggleWEType('pc')">
         <esa-checkbox id="chk-pc" onclick="event.stopPropagation()"></esa-checkbox>
         <div>
-          <div class="we-type-opt-label we-type-opt-label--pc">&#9632; Primary Channel</div>
+          <div class="we-type-opt-label we-type-opt-label--pc">&#9632; Primary channel</div>
           <div class="we-type-opt-desc">Channel restoration, wood structures, habitat units</div>
         </div>
       </div>
       <div class="we-type-opt" id="opt-fp" onclick="toggleWEType('fp')">
         <esa-checkbox id="chk-fp" onclick="event.stopPropagation()"></esa-checkbox>
         <div>
-          <div class="we-type-opt-label we-type-opt-label--fp">&#9632; Floodplain &amp; Side Channels</div>
-          <div class="we-type-opt-desc">Floodplain reconnection, side channels, wood placement</div>
+          <div class="we-type-opt-label we-type-opt-label--fp">&#9632; Floodplain and secondary channels</div>
+          <div class="we-type-opt-desc">Floodplain reconnection, secondary channels, wood placement</div>
         </div>
       </div>
       <div class="we-type-opt" id="opt-rr" onclick="toggleWEType('rr')">
         <esa-checkbox id="chk-rr" onclick="event.stopPropagation()"></esa-checkbox>
         <div>
-          <div class="we-type-opt-label we-type-opt-label--rr">&#9632; Riparian Restoration</div>
+          <div class="we-type-opt-label we-type-opt-label--rr">&#9632; Riparian restoration</div>
           <div class="we-type-opt-desc">Fencing, planting, invasive species removal</div>
         </div>
       </div>
@@ -64,12 +64,12 @@ import EsaButton from '@esa/ecology/esa-button.astro';
 </esa-dialog>
 
 <!-- SOW export modal -->
-<esa-dialog id="sowmodal" heading="Statement of Work — Habitat Program" size="lg" show-close-button>
+<esa-dialog id="sowmodal" heading="Statement of work — Habitat Program" size="lg" show-close-button>
   <div id="sowbody"></div>
 
   <div slot="footer">
     <span onclick="window.print()">
-      <EsaButton variant="primary">Print / Save PDF</EsaButton>
+      <EsaButton variant="primary">Print / save PDF</EsaButton>
     </span>
     <span onclick="closeSOW()">
       <EsaButton variant="ghost" appearance="outline">Close</EsaButton>
@@ -83,7 +83,7 @@ import EsaButton from '@esa/ecology/esa-button.astro';
      its per-role swatch grid runs to 17+ rows, which cramped the map far more
      than a legend entry should — a dialog gives it room without competing for
      map space. -->
-<esa-dialog id="map-color-modal" heading="Map Colors" size="lg" show-close-button>
+<esa-dialog id="map-color-modal" heading="Map colors" size="lg" show-close-button>
   <div id="map-color-modal-body"></div>
 
   <div slot="footer">
