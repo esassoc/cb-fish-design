@@ -24,10 +24,10 @@ var PP_DEFS = [
   {id:'area_ch',   label:'Area of channel',             geo:'polygon', method:'measured', multi:0, segment:false, desc:'Digitize over data layers.'},
   {id:'fp_left',   label:'Left floodplain area',        geo:'line',    method:'measured', multi:0, segment:false, desc:'Draw the outer edge of the left floodplain — inner edge auto-completes along channel buffer.'},
   {id:'fp_right',  label:'Right floodplain area',       geo:'line',    method:'measured', multi:0, segment:false, desc:'Draw the outer edge of the right floodplain — inner edge auto-completes along channel buffer.'},
-  {id:'fp_width',  label:'Average width of floodplain', geo:'line',    method:'calc',     multi:0, segment:false, desc:'Auto-calculated: total floodplain area ÷ reach length.'},
+  {id:'fp_width',  label:'Existing floodplain width (area ÷ reach length)', geo:'line',    method:'calc',     multi:0, segment:false, desc:'Auto-calculated: existing floodplain area ÷ reach length.'},
   {id:'area_fp',   label:'Total active floodplain area',geo:null,      method:'calc',     multi:0, segment:false, desc:'Auto-calculated: left + right floodplain areas.'},
-  {id:'fp_poly',   label:'Floodplain area',             geo:'polygon', method:'measured', multi:0, segment:false, desc:'Draw the floodplain extent — the stream channel is subtracted automatically to give net floodplain area.'},
-  {id:'pc_fp',     label:'New floodplain',              geo:'polygon', method:'measured', multi:0, segment:false, desc:'Draw the designed floodplain extent — the primary channel area is subtracted automatically.'},
+  {id:'fp_poly',   label:'Existing floodplain area',    geo:'polygon', method:'measured', multi:0, segment:false, desc:'Draw the existing floodplain extent — the stream channel is subtracted automatically to give net floodplain area.'},
+  {id:'pc_fp',     label:'Designed floodplain area',    geo:'polygon', method:'measured', multi:0, segment:false, desc:'Draw the designed floodplain extent — the primary channel area is subtracted automatically.'},
   {id:'substrate', label:'Reach-averaged substrate',    geo:null,      method:'entered',  multi:0, segment:false, desc:'Prioritization substrate data layer.', inputLabel:'Dominant substrate', inputType:'select', opts:['','Silt','Sand','Gravel','Cobble','Boulders','Bedrock']}
 ];
 
@@ -221,7 +221,7 @@ function repaintAllMapColors() {
 var PRE_PROJECT_DASH = '6,4';
 
 var TYPE_COLORS = {pc:'#1a7abf', fp:'#7b4fbf', rr:'#2a7a5c'};
-var TYPE_LABELS = {pc:'Primary channel', fp:'Floodplain', rr:'Riparian restoration'};
+var TYPE_LABELS = {pc:'Primary channel', fp:'Floodplain and secondary channels', rr:'Riparian restoration'};
 // HIP categories of action (BPA HIP Handbook FY2025, section 4 headings) that the
 // tool's steps and export sections are tagged with. Only the categories this tool
 // captures are listed. Invasive removal is tagged at the category level (3) since
@@ -250,7 +250,7 @@ var CHU_CYCLE = ['riffle','pool','glide','run'];
 var WETLAND_COLOR = {};
 var activeBasemap = 'Street map'; // read by updateNaipYearDisplay() outside the map-init closure
 var STRUCT_COLOR = {};
-var STRUCT_LABEL = {cms:'Channel margin', mcs:'Mid channel', css:'Channel spanning', fps:'Floodplain', scs:'Side channel'};
+var STRUCT_LABEL = {cms:'Channel margin', mcs:'Mid channel', css:'Channel spanning', fps:'Floodplain', scs:'Secondary channel'};
 
 // Recomputes every palette object above from MAP_COLOR_ROLES — called once at
 // startup and again whenever the color editor reassigns a role. Object
@@ -2186,13 +2186,13 @@ function commitFpPoly(we, pts) {
   if (chRing && chRing.length >= 3) {
     d.layer = L.polygon([pts, chRing.slice().reverse()], {
       color:col, fillColor:col, fillOpacity:0.18, weight:2, dashArray:PRE_PROJECT_DASH, interactive:true
-    }).bindTooltip('Floodplain area').addTo(map);
+    }).bindTooltip('Existing floodplain area').addTo(map);
     var chAreaM2 = geoAreaM2(chRing);
     d.valueM = Math.max(0, grossAreaM2 - chAreaM2);
   } else {
     d.layer = L.polygon(pts, {
       color:col, fillColor:col, fillOpacity:0.18, weight:2, dashArray:PRE_PROJECT_DASH, interactive:true
-    }).bindTooltip('Floodplain area').addTo(map);
+    }).bindTooltip('Existing floodplain area').addTo(map);
     d.valueM = grossAreaM2;
   }
   var m = PP_DEFS.filter(function(x){return x.id==='fp_poly';})[0];
@@ -2238,12 +2238,12 @@ function commitPCFP(we, pts) {
   if (chRing && chRing.length >= 3) {
     d.layer = L.polygon([pts, chRing.slice().reverse()], {
       color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
-    }).bindTooltip('New floodplain').addTo(map);
+    }).bindTooltip('Designed floodplain').addTo(map);
     d.valueM = Math.max(0, grossAreaM2 - geoAreaM2(chRing));
   } else {
     d.layer = L.polygon(pts, {
       color:col, fillColor:col, fillOpacity:0.18, weight:2, interactive:true
-    }).bindTooltip('New floodplain').addTo(map);
+    }).bindTooltip('Designed floodplain').addTo(map);
     d.valueM = grossAreaM2;
   }
   var m = PP_DEFS.filter(function(x){return x.id==='pc_fp';})[0];
@@ -3854,7 +3854,7 @@ function renderFPStructures() {
       + '<div class="f-row"><label># Small pieces (&lt;12&quot; dia)</label><input type="number" value="'+s.small+'" placeholder="0" oninput="updateFPStructure(\''+s.id+'\',\'small\',+this.value)"/></div>';
     el.appendChild(div);
     var fpTypeSel = div.querySelector('esa-select.struct-type-sel');
-    fpTypeSel.options = [{label:'Floodplain structure', value:'fps'}, {label:'Side channel structure', value:'scs'}];
+    fpTypeSel.options = [{label:'Floodplain structure', value:'fps'}, {label:'Secondary channel structure', value:'scs'}];
     fpTypeSel.value = type;
   });
   updateLogTotals();
@@ -4208,7 +4208,7 @@ function startPolyEdit(id) {
     if (d.layer) { map.removeLayer(d.layer); d.layer = null; }
     d.layer = L.polygon(d._pts.slice(), {
       color:mapColor('floodplain'), fillColor:mapColor('floodplain'), fillOpacity:0.18, weight:2, dashArray:PRE_PROJECT_DASH, interactive:false
-    }).bindTooltip('Floodplain (editing)').addTo(map);
+    }).bindTooltip('Existing floodplain (editing)').addTo(map);
     d._editingBoundary = true;
     lineEditing = {type:'pp-poly', id:id, weId:activeWEId, layer:d.layer};
     buildPolyEditHandles(d.layer, d._pts.slice());
@@ -4224,7 +4224,7 @@ function startPolyEdit(id) {
     if (d.layer) { map.removeLayer(d.layer); d.layer = null; }
     d.layer = L.polygon(d._pts.slice(), {
       color:mapColor('floodplain'), fillColor:mapColor('floodplain'), fillOpacity:0.18, weight:2, interactive:false
-    }).bindTooltip('New floodplain (editing)').addTo(map);
+    }).bindTooltip('Designed floodplain (editing)').addTo(map);
     d._editingBoundary = true;
     lineEditing = {type:'pp-poly', id:id, weId:activeWEId, layer:d.layer};
     buildPolyEditHandles(d.layer, d._pts.slice());
@@ -4241,7 +4241,7 @@ function startPolyEdit(id) {
     if (d._donutLayer) { map.removeLayer(d._donutLayer); d._donutLayer = null; }
     d.layer = L.polygon(d._fpBoundaryPts.slice(), {
       color: col, fillColor: col, fillOpacity: 0.18, weight: 2, interactive: false
-    }).bindTooltip('Floodplain boundary (editing)').addTo(map);
+    }).bindTooltip('Existing floodplain boundary (editing)').addTo(map);
     d.userDrawn = true; // temp — so the edit system works
     d._editingBoundary = true;
   } else if (!d.layer) {
@@ -9472,13 +9472,13 @@ function renderLegend() {
   var h='<div class="leg-section"><div class="leg-sec-title">Pre-project <span style="font-weight:400;color:var(--color-text-muted,#888)">(dashed)</span></div>';
   h+='<div class="leg-row"><span class="leg-poly" style="'+dashSwatch.replace('{c}',mapColor('reach'))+'"></span>Reach</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="'+dashSwatch.replace('{c}',mapColor('channel'))+'"></span>Channel area</div>';
-  h+='<div class="leg-row"><span class="leg-poly" style="'+dashSwatch.replace('{c}',mapColor('floodplain'))+'"></span>Floodplain</div>';
+  h+='<div class="leg-row"><span class="leg-poly" style="'+dashSwatch.replace('{c}',mapColor('floodplain'))+'"></span>Existing floodplain</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="'+dashSwatch.replace('{c}',mapColor('boundary'))+'"></span>Project boundary</div>';
   h+='<div class="leg-row"><span style="width:14px;height:10px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center"><svg width="11" height="13" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="none" stroke="'+mapColor('reach')+'" stroke-width="2" stroke-linejoin="round"/></svg></span>Flow direction</div></div>';
   h+='<div class="leg-section"><div class="leg-sec-title">Design</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('reach')+'"></span>Reach / primary channel</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('channel')+'"></span>Channel area</div>';
-  h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('floodplain')+'"></span>Floodplain</div>';
+  h+='<div class="leg-row"><span class="leg-poly" style="background:'+mapColor('floodplain')+'"></span>Designed floodplain</div>';
   h+='<div class="leg-row"><span style="width:14px;height:10px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center"><svg width="11" height="13" viewBox="0 0 18 18"><polygon points="9,0 17,18 9,12 1,18" fill="'+mapColor('reach')+'" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/></svg></span>Flow direction</div></div>';
   h+='<div class="leg-section"><div class="leg-sec-title">Channel habitat units</div>';
   h+='<div class="leg-row"><span class="leg-poly" style="background:'+CHU_COLOR.riffle+'"></span>Riffle</div>';
@@ -9526,7 +9526,7 @@ var MAP_COLOR_ROLE_LABELS = {
   reach: 'Reach / primary channel', boundary: 'Project boundary', wetlandEnhance: 'Wetland enhancement',
   wetlandExisting: 'Existing wetland', chuRiffle: 'CHU: Riffle', chuPool: 'CHU: Pool',
   widthSegments: 'Width segments', secondaryChannel: 'Secondary channel', structCms: 'Structure: channel margin',
-  structMcs: 'Structure: mid-channel', structFps: 'Structure: Floodplain', structScs: 'Structure: side-channel',
+  structMcs: 'Structure: mid-channel', structFps: 'Structure: floodplain', structScs: 'Structure: secondary channel',
   structCss: 'Structure: channel-spanning'
   // No separate "Primary Channel" role — see the comment on MAP_COLOR_ROLES
   // (the block above 'reach' was removed): it used to be its own role pointed
@@ -9646,7 +9646,7 @@ var WIZARD_STEPS = [
   { id:'reach',      label:'Stream reach',     title:'Identify your stream reach',     phase:'pp' },
   { id:'ch_width',   label:'Channel width',   title:'Measure channel width',          phase:'pp' },
   { id:'substrate',  label:'Substrate',       title:'Enter reach-averaged substrate', phase:'pp' },
-  { id:'fp_poly',    label:'Floodplain',      title:'Draw floodplain boundary',       phase:'pp' },
+  { id:'fp_poly',    label:'Existing floodplain', title:'Draw existing floodplain boundary',       phase:'pp' },
   { id:'buffers',    label:'Review areas',    title:'Review floodplain areas',        phase:'pp' },
   { id:'pp_wetland', label:'Existing wetlands', title:'Existing wetland areas',       phase:'pp' },
   { id:'pp_pools',        label:'Existing pools', title:'Identify pre-project pools',       phase:'pp' },
@@ -9656,7 +9656,7 @@ var WIZARD_STEPS = [
   { id:'pc_width',   label:'Channel width',    title:'Enter primary channel width',    phase:'work', types:['pc'], repeat:'pc', hip:['2f'] },
   { id:'pc_metrics', label:'Metrics', title:'Primary channel metrics',    phase:'work', types:['pc'], repeat:'pc', hip:['2f'] },
   { id:'pc_gravel',  label:'Gravel placement', title:'Gravel placement',               phase:'work', types:['pc'], repeat:'pc', hip:['2g'] },
-  { id:'pc_fp',      label:'New floodplain',   title:'Draw new floodplain',            phase:'work', types:['pc'], repeat:'pc', hip:['2a'] },
+  { id:'pc_fp',      label:'Designed floodplain', title:'Draw designed floodplain',            phase:'work', types:['pc'], repeat:'pc', hip:['2a'] },
   { id:'chu_split',  label:'Identify pools',   title:'Identify pool locations',        phase:'work', types:['pc'], repeat:'pc' },
   { id:'chu_details', label:'Pool & riffle details', title:'Pool and riffle details', phase:'work', types:['pc'], repeat:'pc' },
   { id:'structures', label:'Structures',      title:'Wood structures',                phase:'work', types:['pc'], repeat:'pc', hip:['2d'] },
@@ -9664,7 +9664,7 @@ var WIZARD_STEPS = [
   { id:'sc_draw',  label:'Secondary channels', title:'Draw secondary channels',   phase:'work', types:['fp'], section:'sc', hip:['2a'] },
   { id:'sc_wood',  label:'Wood counts',         title:'Secondary channel wood',    phase:'work', types:['fp'], section:'sc', hip:['2d'] },
   { id:'fp_structures',  label:'Structures',      title:'Floodplain structures',        phase:'work', types:['fp'], hip:['2d'] },
-  { id:'fp_reach_width', label:'Floodplain width',   title:'Floodplain connectivity width', phase:'work', types:['fp'], hip:['2a'] },
+  { id:'fp_reach_width', label:'Floodplain width',   title:'Floodplain width at secondary channels', phase:'work', types:['fp'], hip:['2a'] },
   { id:'fp_grading',     label:'Grading',         title:'Floodplain grading',           phase:'work', types:['fp'], hip:['2a'] },
   { id:'fp_road',        label:'Road removal',    title:'Road removed/setback',         phase:'work', types:['fp'], hip:['5b'] },
   { id:'fp_berm',        label:'Berm removal',    title:'Berm/levee removed',           phase:'work', types:['fp'], hip:['2b'] },
@@ -10229,7 +10229,7 @@ function wizardStepBody(we, step, idx) {
       h += '<div class="wz-step-desc">Draw a polygon covering the active floodplain on both sides of the channel. The channel area will be automatically subtracted to give net floodplain area.</div>';
       var isEditingFpPoly = lineEditing && lineEditing.type==='pp-poly' && lineEditing.id==='fp_poly';
       if (fpPolyDone) {
-        h += '<div class="wz-status done">&#10003; Floodplain: <b>'+((dFp.valueM||0)*0.000247105).toFixed(2)+' ac (net)</b></div>';
+        h += '<div class="wz-status done">&#10003; Existing floodplain: <b>'+((dFp.valueM||0)*0.000247105).toFixed(2)+' ac (net)</b></div>';
         if (dFp._outsidePerim) {
           h += '<div class="wz-status warning">&#9888; Some vertices are outside the project boundary — edit or redraw to correct.</div>';
         }
@@ -10246,7 +10246,7 @@ function wizardStepBody(we, step, idx) {
         h += '<button class="wz-action-btn secondary" onclick="startPolyEdit(\'fp_poly\');renderWizardStep()">'+(isEditingFpPoly?'&#9998; Editing…':'&#9998; Edit vertices')+'</button>';
         h += '<button class="wz-action-btn secondary" onclick="clearPPGeom(\'fp_poly\');startPPDraw(\'fp_poly\',0);renderWizardStep()">&#128207; Redraw</button>';
       } else {
-        h += '<button class="wz-action-btn" onclick="startPPDraw(\'fp_poly\',0);renderWizardStep()">&#128207; Draw floodplain boundary</button>';
+        h += '<button class="wz-action-btn" onclick="startPPDraw(\'fp_poly\',0);renderWizardStep()">&#128207; Draw existing floodplain boundary</button>';
         h += '<div class="wz-tip">Draw the outer boundary of the active floodplain — include both banks in one polygon. Clicks outside the project boundary snap to the nearest boundary point.</div>';
       }
       break;
@@ -10365,7 +10365,7 @@ function wizardStepBody(we, step, idx) {
       h += achDoneB ? '<button style="background:#f3f7fc;color:#3d3d3d;border:1px solid #dcdcdc;padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:8px" onclick="startPolyEdit(\'area_ch\')">edit</button>' : '';
       h += '</div>';
       if (fpPolyDoneB) {
-        h += '<div class="wz-metric-row"><span class="wz-metric-label">Floodplain (net)</span>';
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Existing floodplain (net)</span>';
         h += '<span class="wz-metric-val">'+((fpPolyB.valueM||0)*0.000247105).toFixed(2)+' ac</span>';
         h += '<button style="background:#f3f7fc;color:#3d3d3d;border:1px solid #dcdcdc;padding:3px 8px;border-radius:3px;font-size:10px;cursor:pointer;margin-left:8px" onclick="clearPPGeom(\'fp_poly\');startPPDraw(\'fp_poly\',0)">redraw</button>';
         h += '</div>';
@@ -10377,7 +10377,7 @@ function wizardStepBody(we, step, idx) {
         h += fpRDoneB ? '<span class="wz-metric-val">'+((fpRB.valueM||0)*0.000247105).toFixed(2)+' ac</span>' : '<span class="wz-metric-val missing">not drawn</span>';
         h += '</div>';
       } else {
-        h += '<div class="wz-metric-row"><span class="wz-metric-label">Floodplain</span><span class="wz-metric-val missing">not drawn</span></div>';
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Existing floodplain</span><span class="wz-metric-val missing">not drawn</span></div>';
       }
       if (!achDoneB) {
         h += '<div class="wz-status warning">&#9888; Go back and draw channel width measurements to auto-generate the channel area.</div>';
@@ -10424,10 +10424,10 @@ function wizardStepBody(we, step, idx) {
           ['Channel width (avg)',ppMultiAvgFt(we,'ch_width') ? Math.round(ppMultiAvgFt(we,'ch_width'))+' ft' : null],
           ['Substrate',          we.ppData['substrate'] && we.ppData['substrate'].value ? we.ppData['substrate'].value : null],
           ['Area of channel',    ppAcres(we,'area_ch') ? ppAcres(we,'area_ch').toFixed(2)+' ac' : null],
-          ['Floodplain area',    fpPolyAc || (fpLAc||fpRAc ? (fpLAc||'—')+' L / '+(fpRAc||'—')+' R' : null)],
-          ['FP width — start',  (function(){ var v=calcFpCrossWidthFt(we,0.05); return v?v.toLocaleString()+' ft':null; })()],
-          ['FP width — middle', (function(){ var v=calcFpCrossWidthFt(we,0.5);  return v?v.toLocaleString()+' ft':null; })()],
-          ['FP width — end',    (function(){ var v=calcFpCrossWidthFt(we,0.95); return v?v.toLocaleString()+' ft':null; })()]
+          ['Existing floodplain area', fpPolyAc || (fpLAc||fpRAc ? (fpLAc||'—')+' L / '+(fpRAc||'—')+' R' : null)],
+          ['Existing floodplain width — reach start',  (function(){ var v=calcFpCrossWidthFt(we,0.05); return v?v.toLocaleString()+' ft':null; })()],
+          ['Existing floodplain width — mid-reach', (function(){ var v=calcFpCrossWidthFt(we,0.5);  return v?v.toLocaleString()+' ft':null; })()],
+          ['Existing floodplain width — reach end',    (function(){ var v=calcFpCrossWidthFt(we,0.95); return v?v.toLocaleString()+' ft':null; })()]
         ];
         // Only include bank height row if a value has been entered
         if (bhVal) ppMetrics.splice(2, 0, ['Bank height (avg)', bhVal]);
@@ -10509,9 +10509,9 @@ function wizardStepBody(we, step, idx) {
       var dPCFP = we && getActivePC(we).ppData['pc_fp'];
       var pcFPDone = dPCFP && dPCFP.layer;
       var isEditingPCFP = lineEditing && lineEditing.type==='pp-poly' && lineEditing.id==='pc_fp';
-      h += '<div class="wz-step-desc">Draw a polygon covering the new designed floodplain on both sides of the primary channel. The channel area will be automatically subtracted to give the net new floodplain area. Your pre-project floodplain is shown on the map for reference.</div>';
+      h += '<div class="wz-step-desc">Draw a polygon covering the designed floodplain on both sides of the primary channel. The channel area will be automatically subtracted to give the net designed floodplain area. Your pre-project floodplain is shown on the map for reference.</div>';
       if (pcFPDone) {
-        h += '<div class="wz-status done">&#10003; New floodplain: <b>'+((dPCFP.valueM||0)*0.000247105).toFixed(2)+' ac (net)</b></div>';
+        h += '<div class="wz-status done">&#10003; Designed floodplain: <b>'+((dPCFP.valueM||0)*0.000247105).toFixed(2)+' ac (net)</b></div>';
         if (dPCFP._outsidePerim) {
           h += '<div class="wz-status warning">&#9888; Some vertices are outside the project boundary — edit or redraw to correct.</div>';
         }
@@ -10527,8 +10527,8 @@ function wizardStepBody(we, step, idx) {
         h += '<button class="wz-action-btn secondary" onclick="startPolyEdit(\'pc_fp\');renderWizardStep()">'+(isEditingPCFP?'&#9998; Editing…':'&#9998; Edit vertices')+'</button>';
         h += '<button class="wz-action-btn secondary" onclick="clearPPGeom(\'pc_fp\');startPPDraw(\'pc_fp\',0);renderWizardStep()">&#128207; Redraw</button>';
       } else {
-        h += '<button class="wz-action-btn" onclick="startPPDraw(\'pc_fp\',0);renderWizardStep()">&#128207; Draw new floodplain</button>';
-        h += '<div class="wz-tip">Draw the outer boundary of the new designed floodplain — include both banks. Clicks outside the project boundary snap to the nearest boundary point.</div>';
+        h += '<button class="wz-action-btn" onclick="startPPDraw(\'pc_fp\',0);renderWizardStep()">&#128207; Draw designed floodplain</button>';
+        h += '<div class="wz-tip">Draw the outer boundary of the designed floodplain — include both banks. Clicks outside the project boundary snap to the nearest boundary point.</div>';
       }
       break;
     }
@@ -10824,7 +10824,7 @@ function wizardStepBody(we, step, idx) {
     }
 
     case 'fp_structures': {
-      h += '<div class="wz-step-desc">Draw large-log placement and add any floodplain structures. Side-channel structures are counted separately under secondary channels — wood counts.</div>';
+      h += '<div class="wz-step-desc">Draw large-log placement and add any floodplain structures. Wood in secondary channels is counted separately in the Wood counts step.</div>';
       h += wzFPDrawRow(we, 'fp-logs-area', 'polygon', 'Large-log placement area');
       h += wzFPInputRow(we, 'fp-large-logs', '# Large logs placed');
 
@@ -10863,12 +10863,12 @@ function wizardStepBody(we, step, idx) {
       if (scAvgW === null) {
         h += '<div class="wz-status warning">&#9888; Floodplain width unavailable — make sure the pre-project floodplain boundary (step 5) is drawn and at least one secondary channel is entered and crosses it.</div>';
       } else {
-        h += '<div class="wz-metric-row"><span class="wz-metric-label">Avg floodplain width</span><span class="wz-metric-val">'+Math.round(scAvgW)+' ft</span></div>';
+        h += '<div class="wz-metric-row"><span class="wz-metric-label">Floodplain width at secondary channels (avg)</span><span class="wz-metric-val">'+Math.round(scAvgW)+' ft</span></div>';
         h += '<div class="wz-status done">&#10003; Calculated from secondary channel data.</div>';
       }
       h += '<div class="wz-group-head divided">Post-project connectivity</div>';
-      h += wzFPInputRow(we, 'fp-bankfull-ac', 'FP area connected below bankfull (ac)');
-      h += wzFPInputRow(we, 'fp-bankfull-2x-ac', 'FP area connected below 2x bankfull (ac)');
+      h += wzFPInputRow(we, 'fp-bankfull-ac', 'Floodplain area connected below bankfull (ac)');
+      h += wzFPInputRow(we, 'fp-bankfull-2x-ac', 'Floodplain area connected below 2x bankfull (ac)');
       break;
     }
 
@@ -10915,14 +10915,14 @@ function wizardStepBody(we, step, idx) {
     case 'rr_fencing':
       h += '<div class="wz-step-desc">Draw fencing installed for riparian protection and the floodplain area it protects.</div>';
       h += wzFPDrawRow(we, 'rr-fence', 'line', 'Miles of fence installed');
-      h += wzFPDrawRow(we, 'rr-fence-area', 'polygon', 'Area of FP protected by fence');
+      h += wzFPDrawRow(we, 'rr-fence-area', 'polygon', 'Floodplain area protected by fence');
       break;
 
     case 'rr_planting':
       h += '<div class="wz-step-desc">Enter plants installed and draw planting and invasive-species-removal areas.</div>';
       h += wzFPInputRow(we, 'rr-plants', '# Plants installed');
-      h += wzFPDrawRow(we, 'rr-plant-bf', 'polygon', 'Area FP below bankfull planted');
-      h += wzFPDrawRow(we, 'rr-plant-abf', 'polygon', 'Area FP above bankfull planted');
+      h += wzFPDrawRow(we, 'rr-plant-bf', 'polygon', 'Floodplain area planted below bankfull');
+      h += wzFPDrawRow(we, 'rr-plant-abf', 'polygon', 'Floodplain area planted above bankfull');
       h += wzFPDrawRow(we, 'rr-invasive', 'polygon', 'Area invasive species removed/treated');
       break;
 
@@ -11665,7 +11665,7 @@ function openSOW() {
       // fp_left/fp_right: superseded by the calc'd Average Width/Total Active Floodplain Area rows.
       // pc_fp ("New Floodplain") is per-primary-channel data — it's reported in each channel's
       // Complexity Metrics table below, not here.
-      if (m.id==='fp_left' || m.id==='fp_right' || m.id==='pc_fp') return;
+      if (m.id==='fp_left' || m.id==='fp_right' || m.id==='pc_fp' || m.id==='area_fp') return;
       var d=we.ppData[m.id]||{},val='—';
       if(m.method==='entered'&&d.value)val=d.value;
       else if(m.method==='measured'&&!m.multi&&d.valueM)val=m.geo==='line'?Math.round(d.valueM*3.28084).toLocaleString()+' ft':(d.valueM*0.000247105).toFixed(2)+' acres';
@@ -11844,7 +11844,7 @@ function openSOW() {
         h += '<tr><td>Average channel width (at riffle)</td><td>entered</td><td>'+pcWidFt2+'</td></tr>';
         h += '<tr><td>Average bank height (at riffle)</td><td>entered</td><td>'+pcBHFt2+'</td></tr>';
         h += '<tr><td>Area of restored channel</td><td>measured</td><td>'+pcAreaAc2+'</td></tr>';
-        h += '<tr><td>New floodplain area</td><td>measured</td><td>'+pcNewFpAc+'</td></tr>';
+        h += '<tr><td>Designed floodplain area</td><td>measured</td><td>'+pcNewFpAc+'</td></tr>';
         h += '<tr><td>Primary channel excavation volume</td><td>entered</td><td>'+pcExcav2+'</td></tr>';
         h += '<tr><td># Gravel placements</td><td>measured</td><td>'+(pcGravelPlaced2.length||'—')+'</td></tr>';
         h += '<tr><td>Length of gravel placement or channel fill</td><td>entered</td><td>'+(pcGravelTotalLenFt>0?Math.round(pcGravelTotalLenFt).toLocaleString()+' ft':'—')+'</td></tr>';
@@ -11870,20 +11870,20 @@ function openSOW() {
       // (log placement, grading, road/berm/revetment removal, connectivity, wetland
       // enhancement), the counterpart to the "Pre-Project Conditions" header above,
       // not a general/neutral "Floodplain" label.
-      h+='<h3>New floodplain</h3>'+sowHipLine(['2a','2b','2d','5b'])+'<table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
-      h+='<tr><td>FP large log placement area</td><td>measured</td><td>'+wAc2('fp-logs-area')+'</td></tr>';
+      h+='<h3>New floodplain and secondary channels</h3>'+sowHipLine(['2a','2b','2d','5b'])+'<table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
+      h+='<tr><td>Floodplain large-log placement area</td><td>measured</td><td>'+wAc2('fp-logs-area')+'</td></tr>';
       h+='<tr><td># Large logs placed</td><td>entered</td><td>'+wVal2('fp-large-logs')+'</td></tr>';
       ['fps','scs'].forEach(function(t){
         var tLarge=0, tSmall=0;
         we.structures[t].forEach(function(s,i){ tLarge+=+s.large||0; tSmall+=+s.small||0; h+='<tr><td>'+STRUCT_LABEL[t]+' '+(i+1)+': '+s.desc+'</td><td>entered</td><td>Large: '+(s.large||0)+', Small: '+(s.small||0)+'</td></tr>'; });
-        if (we.structures[t].length) h+='<tr style="font-weight:700"><td>Total '+STRUCT_LABEL[t]+' large/small pieces</td><td>calc</td><td>Large: '+tLarge+', Small: '+tSmall+'</td></tr>';
+        if (we.structures[t].length) h+='<tr style="font-weight:700"><td>Total '+STRUCT_LABEL[t].toLowerCase()+' large/small pieces</td><td>calc</td><td>Large: '+tLarge+', Small: '+tSmall+'</td></tr>';
       });
       var scWidthFt = scAvgWidthFt(we);
-      h+='<tr><td>Avg floodplain width</td><td>calc</td><td>'+(scWidthFt!==null ? Math.round(scWidthFt)+' ft' : wAvg2(['fpw1','fpw2','fpw3']))+'</td></tr>';
-      h+='<tr><td>Post-project FP area connected below bankfull</td><td>entered</td><td>'+(wVal2('fp-bankfull-ac')!=='—'?wVal2('fp-bankfull-ac')+' acres':'—')+'</td></tr>';
-      h+='<tr><td>Post-project FP area connected below 2x bankfull</td><td>entered</td><td>'+(wVal2('fp-bankfull-2x-ac')!=='—'?wVal2('fp-bankfull-2x-ac')+' acres':'—')+'</td></tr>';
-      h+='<tr><td>FP grading area</td><td>measured</td><td>'+fpMultiDisplay('grade','polygon','fp-grade')+'</td></tr>';
-      h+='<tr><td>Road removed in FP</td><td>measured</td><td>'+fpMultiDisplay('road','line','fp-road')+'</td></tr>';
+      h+='<tr><td>Floodplain width at secondary channels (avg)</td><td>calc</td><td>'+(scWidthFt!==null ? Math.round(scWidthFt)+' ft' : wAvg2(['fpw1','fpw2','fpw3']))+'</td></tr>';
+      h+='<tr><td>Post-project floodplain area connected below bankfull</td><td>entered</td><td>'+(wVal2('fp-bankfull-ac')!=='—'?wVal2('fp-bankfull-ac')+' acres':'—')+'</td></tr>';
+      h+='<tr><td>Post-project floodplain area connected below 2x bankfull</td><td>entered</td><td>'+(wVal2('fp-bankfull-2x-ac')!=='—'?wVal2('fp-bankfull-2x-ac')+' acres':'—')+'</td></tr>';
+      h+='<tr><td>Floodplain grading area</td><td>measured</td><td>'+fpMultiDisplay('grade','polygon','fp-grade')+'</td></tr>';
+      h+='<tr><td>Road removed in floodplain</td><td>measured</td><td>'+fpMultiDisplay('road','line','fp-road')+'</td></tr>';
       h+='<tr><td>Road removal volume</td><td>entered</td><td>'+fpMultiVolDisplay('road','fp-road-vol')+'</td></tr>';
       h+='<tr><td>Berm/levee removed</td><td>measured</td><td>'+fpMultiDisplay('berm','line','fp-berm')+'</td></tr>';
       h+='<tr><td>Berm/levee removal volume</td><td>entered</td><td>'+fpMultiVolDisplay('berm','fp-berm-vol')+'</td></tr>';
@@ -11896,8 +11896,8 @@ function openSOW() {
       var scS = (we.scReaches||[]).filter(function(r){return r.flowType==='Seasonal';});
       var scPMi = scP.length ? (scP.reduce(function(a,r){return a+r.valueM;},0)*0.000621371).toFixed(3)+' mi' : wMi2('fp-perensc');
       var scSMi = scS.length ? (scS.reduce(function(a,r){return a+r.valueM;},0)*0.000621371).toFixed(3)+' mi' : wMi2('fp-ephsc');
-      h+='<tr><td>Perennial side channel</td><td>measured</td><td>'+scPMi+'</td></tr>';
-      h+='<tr><td>Seasonal side channel</td><td>measured</td><td>'+scSMi+'</td></tr>';
+      h+='<tr><td>Perennial secondary channel</td><td>measured</td><td>'+scPMi+'</td></tr>';
+      h+='<tr><td>Seasonal secondary channel</td><td>measured</td><td>'+scSMi+'</td></tr>';
       h+='<tr><td>Acres of existing wetland habitat constructed/restored/enhanced</td><td>measured</td><td>'+fpMultiDisplay('fp_wetland_enhance','polygon','fp-wetland-enhance')+'</td></tr>';
       h+='</tbody></table>';
       // ── Secondary Channels ─────────────────────────────────────────────────
@@ -11940,7 +11940,7 @@ function openSOW() {
       function wVal3(id){var l=sl[id];return (l&&l.value!==undefined&&l.value!=='')?l.value:'—';}
       h+='<h3>Riparian restoration</h3>'+sowHipLine(['2e','3','9b'])+'<table><thead><tr><th>Metric</th><th>Method</th><th>Value</th></tr></thead><tbody>';
       h+='<tr><td>Miles fence installed</td><td>measured</td><td>'+wMi3('rr-fence')+'</td></tr>';
-      h+='<tr><td>FP protected by fence</td><td>measured</td><td>'+wAc3('rr-fence-area')+'</td></tr>';
+      h+='<tr><td>Floodplain protected by fence</td><td>measured</td><td>'+wAc3('rr-fence-area')+'</td></tr>';
       h+='<tr><td># Plants installed</td><td>entered</td><td>'+wVal3('rr-plants')+'</td></tr>';
       h+='<tr><td>Planted below bankfull</td><td>measured</td><td>'+wAc3('rr-plant-bf')+'</td></tr>';
       h+='<tr><td>Planted above bankfull</td><td>measured</td><td>'+wAc3('rr-plant-abf')+'</td></tr>';
