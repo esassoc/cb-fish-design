@@ -53,33 +53,6 @@ export const prototypes: Prototype[] = [
     status: 'in-progress',
   },
   {
-    slug: 'vendor-dashboard',
-    title: 'Vendor dashboard',
-    description:
-      "Vendor’s invoices & financial-outlook view — cross-contract money position, a needs-attention strip, and a sortable invoices grid with a click-through detail drawer.",
-    route: '/vendor-dashboard',
-    createdAt: '2026-06-15',
-    status: 'in-progress',
-  },
-  {
-    slug: 'vendor-invoice',
-    title: 'Vendor invoice submission',
-    description:
-      'Three-step wizard: upload a PDF invoice, enter metadata + contract reference + line items, then review and submit.',
-    route: '/vendor-invoice',
-    createdAt: '2026-06-15',
-    status: 'in-progress',
-  },
-  {
-    slug: 'my-work',
-    title: 'Dashboard (COR landing)',
-    description:
-      'The COR’s landing dashboard, focused on the invoice workspace: a status summary of every invoice on the COR’s contracts above a queue of the ones awaiting review, each opening its full review page.',
-    route: '/my-work',
-    createdAt: '2026-07-13',
-    status: 'in-progress',
-  },
-  {
     slug: 'crs-commitments',
     title: 'BiOp landing page',
     description:
@@ -106,7 +79,43 @@ export const prototypes: Prototype[] = [
     createdAt: '2026-06-22',
     status: 'in-progress',
   },
+  {
+    slug: 'home',
+    title: 'CBFish homepage',
+    description:
+      'A static, in-design-system snapshot of the live cbfish.org landing — the shared home every prototype returns to via the logo and the Home breadcrumb.',
+    route: '/home',
+    createdAt: '2026-06-24',
+    status: 'in-progress',
+  },
   // --- Past explorations (live) ---
+  {
+    slug: 'vendor-dashboard',
+    title: 'Vendor dashboard',
+    description:
+      "Vendor’s invoices & financial-outlook view — cross-contract money position, a needs-attention strip, and a sortable invoices grid with a click-through detail drawer.",
+    route: '/vendor-dashboard',
+    createdAt: '2026-06-15',
+    status: 'live',
+  },
+  {
+    slug: 'vendor-invoice',
+    title: 'Vendor invoice submission',
+    description:
+      'Three-step wizard: upload a PDF invoice, enter metadata + contract reference + line items, then review and submit.',
+    route: '/vendor-invoice',
+    createdAt: '2026-06-15',
+    status: 'live',
+  },
+  {
+    slug: 'my-work',
+    title: 'Dashboard (COR landing)',
+    description:
+      'The COR’s landing dashboard, focused on the invoice workspace: a status summary of every invoice on the COR’s contracts above a queue of the ones awaiting review, each opening its full review page.',
+    route: '/my-work',
+    createdAt: '2026-07-13',
+    status: 'live',
+  },
   {
     slug: 'lib-pi-editing',
     title: 'LIB & PI document editing',
@@ -115,15 +124,6 @@ export const prototypes: Prototype[] = [
     route: '/lib-pi-editing',
     createdAt: '2026-07-23',
     ticket: 'CBF-8204',
-    status: 'live',
-  },
-  {
-    slug: 'home',
-    title: 'CBFish homepage',
-    description:
-      'A static, in-design-system snapshot of the live cbfish.org landing — the shared home every prototype returns to via the logo and the Home breadcrumb.',
-    route: '/home',
-    createdAt: '2026-06-24',
     status: 'live',
   },
   {
