@@ -47,16 +47,14 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     <!-- ═══════════════ Documents (enabled) ═══════════════ -->
     <div data-panel="documents" slot="panel-9" class="cbf-lipd__panel stack" data-gap="md">
       <p class="cbf-lipd__intro">
-        Use this area to store and manage document attachments relevant to this contract. When a
-        replacement clears an approval the Contracting Officer's Representative (COR) has given, the
-        COR is notified by email automatically.
+        Store and manage this contract's attachments. Replacing a file the Contracting Officer's
+        Representative (COR) approved clears that approval and emails the COR automatically.
       </p>
 
       <div class="cbf-lipd__toolbar repel">
         <span class="typography-meta">
-          Viewing {documents.length} of {contract.totalDocs} attached documents — filtered to
-          Line Item Budget &amp; Property Inventory (the transmittal memo and design report are shown
-          for contrast).
+          Showing {documents.length} of {contract.totalDocs} documents: Line Item Budget and Property
+          Inventory, plus a design report and transmittal memo for contrast.
         </span>
         <span data-add-doc>
           <EsaButton variant="primary" size="sm" icon="plus">Add…</EsaButton>
@@ -122,7 +120,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
       <h3 class="typography-heading-md">Document approval</h3>
       <div data-appr-readonly hidden>
         <EsaAlertBox variant="info" title="Original requisition — read-only">
-          These approvals are the finalized record of the original contract requisition (SOW revision 1) and can't be changed. Switch to the CCR revision to work the current documents.
+          These approvals are the final record of the original requisition (SOW revision 1) and can't be changed. Select the CCR revision to work on current documents.
         </EsaAlertBox>
       </div>
       <div class="cbf-lipd__scroll">
@@ -152,11 +150,11 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
   </esa-tab-layout>
 
   <!-- ── Edit-properties dialog (the real modal, with the supportive fixes) ── -->
-  <esa-dialog data-edit-dialog size="lg" heading="View and edit the properties of this attachment">
+  <esa-dialog data-edit-dialog size="lg" heading="Edit attachment properties">
     <div class="cbf-edit stack" data-gap="md">
       <p class="cbf-edit__lede">
-        Replace the file or adjust its properties. Everything you don't change is kept exactly as
-        it is — including approvals, unless you upload a new file.
+        Replace the file or edit its properties. Anything you don't change stays as is, including
+        approvals, unless you upload a new file.
       </p>
 
       <section class="cbf-edit__section">
@@ -187,8 +185,8 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
             ></esa-file-upload>
           </div>
           <p class="typography-meta">
-            Uploading a new file replaces the current one when you save — the title, type, authors,
-            and sharing below all stay put.
+            A new file replaces the current one when you save. Its title, type, authors, and
+            sharing stay the same.
           </p>
           <p class="cbf-edit__newfile" data-ed-newfile hidden></p>
           <div data-ed-warning hidden>
@@ -230,7 +228,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
 
     <div slot="footer" class="cbf-edit__footer">
       <span class="typography-meta" data-save-hint>
-        Nothing to save yet — replace the file or edit a property to enable Save.
+        Nothing to save yet. Replace the file or edit a property to enable Save.
       </span>
       <span data-ed-cancel><EsaButton variant="secondary" appearance="outline">Cancel</EsaButton></span>
       <span data-ed-save><EsaButton variant="primary" disabled>Save</EsaButton></span>
@@ -238,11 +236,11 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
   </esa-dialog>
 
   <!-- ── COR notification dialog (shows the email that was just sent) ── -->
-  <esa-dialog data-email-dialog size="md" heading="The COR has been notified">
+  <esa-dialog data-email-dialog size="md" heading="COR notified by email">
     <div class="stack" data-gap="sm">
       <p>
-        Because <strong data-em-doc-title></strong> was already approved by the COR, replacing it
-        cleared that approval — this email went out automatically:
+        Replacing <strong data-em-doc-title></strong> cleared the COR's approval, so CBFish sent
+        this email automatically:
       </p>
       <div data-em-preview></div>
     </div>
@@ -388,7 +386,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     // Keep the trailing breadcrumb in step with the selected tab. (The current crumb
     // is the last .esa-breadcrumbs__item rendered by the breadcrumbs lego.)
     const CRUMB_LABEL: Record<string, string> = {
-      summary: 'Contract Summary',
+      summary: 'Contract summary',
       workflow: 'Workflow',
       documents: 'Documents',
     };
@@ -474,7 +472,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
       $('[data-ed-lastby]', root)!.textContent = doc.lastUploadedBy;
       $('[data-ed-newfile]', root)!.hidden = true;
       $('[data-ed-warning]', root)!.hidden = true;
-      setSaveEnabled(false, 'Nothing to save yet — replace the file or edit a property to enable Save.');
+      setSaveEnabled(false, 'Nothing to save yet. Replace the file or edit a property to enable Save.');
       editDialog.show();
     };
 
@@ -497,15 +495,15 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
       if (hadAny) {
         const parts: string[] = [];
         if (editingDoc.approvals.cotr)
-          parts.push(`${contract.cor} (COR) approved this document on ${editingDoc.approvals.cotr} — they will be notified by email and asked to re-approve.`);
+          parts.push(`${contract.cor} (COR) approved this document on ${editingDoc.approvals.cotr} and will get an email asking them to re-approve.`);
         const others = APPROVAL_COLS.filter((c: any) => c.key !== 'cotr' && editingDoc.approvals[c.key]);
         if (others.length)
           parts.push(`${others.map((c: any) => c.label).join(', ')} approval${others.length > 1 ? 's' : ''} will also be cleared.`);
         if (state.role === 'qc')
-          parts.push('Since you are QC, your own QC approval is re-applied to your edit automatically.');
+          parts.push('As QC, your own QC approval is reapplied automatically.');
         $('[data-ed-warning-text]', root)!.textContent = parts.join(' ');
       }
-      setSaveEnabled(true, 'Ready to save — the file is replaced and every specification is kept.');
+      setSaveEnabled(true, 'Ready to save. The file will be replaced and its other properties kept.');
     });
 
     // Title/description edits also arm Save (input events are composed).
@@ -513,7 +511,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
       if (!editingDoc) return;
       if ((e.target as HTMLElement).closest('[data-ed-title], [data-ed-desc]')) {
         propsDirty = true;
-        if (!pendingFile) setSaveEnabled(true, 'Ready to save your property changes.');
+        if (!pendingFile) setSaveEnabled(true, 'Ready to save your changes.');
       }
     });
 
@@ -563,14 +561,14 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
             to: `${contract.cor} (COR)`,
             sent: now,
             subject: `Action required: ${doc.type} replaced on Contract ${contract.number} (${contract.action})`,
-            p1: `${who} (${roleLabel()}) replaced the file on “${doc.title}” while the SOW was ${stateLabel()}. All document specifications were retained.`,
+            p1: `${who} (${roleLabel()}) replaced the file for “${doc.title}” while the SOW was in ${stateLabel()}. All other document properties are unchanged.`,
             p2: `Your approval of this document (given ${prevCotrDate}) no longer applies. Please review the new file and re-approve it on the contract's Workflow tab.`,
             meta: `Contract ${contract.number} · ${contract.action} · ${doc.file}`,
             docTitle: doc.title,
           };
           showEmailDialog(email);
         } else {
-          toast(`File replaced — all specifications for “${doc.title}” were retained.`);
+          toast(`File replaced for “${doc.title}”. All other properties were kept.`);
         }
       } else if (propsDirty) {
         toast(`Properties of “${doc.title}” saved.`);
@@ -611,7 +609,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
       if (!panel) return;
       const reason = menu.dataset.editReason;
       const editBtn = Array.from(panel.querySelectorAll('.esa-dropdown-menu__item')).find(
-        (b: any) => b.textContent.trim().startsWith('Edit Properties'),
+        (b: any) => b.textContent.trim().startsWith('Edit properties'),
       ) as HTMLElement | undefined;
       if (editBtn && reason) {
         editBtn.removeAttribute('disabled');
@@ -633,13 +631,13 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
       if (!doc) return;
       switch (e.detail) {
         case 'view':
-          toast('Viewing documents is unchanged by this story — out of scope for the prototype.');
+          toast('Viewing documents is out of scope for this prototype.');
           break;
         case 'copy':
           toast('Attachment link copied (prototype).');
           break;
         case 'delete':
-          toast('Deleting attachments is unchanged by this story — and no longer the only way to swap a file.');
+          toast('Deleting attachments works as it does today. To swap a file, use Edit properties instead.');
           break;
         case 'edit':
           if (editRule(state.award, state.role, doc.kind).allowed) openEdit(doc);
@@ -648,7 +646,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     });
 
     $('[data-add-doc]')?.querySelector('button')?.addEventListener('click', () =>
-      toast('Adding attachments is unchanged by this story — out of scope for the prototype.'),
+      toast('Adding attachments is out of scope for this prototype.'),
     );
 
     // ── Rendering ───────────────────────────────────────────────────────────
@@ -659,7 +657,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
       const which = rule.allowed ? 'allowed' : rule.tier === 3 ? 'locked' : 'restricted';
       $$('[data-banner]').forEach((b) => { b.hidden = b.dataset.banner !== which; });
       const active = $(`[data-banner="${which}"] [data-banner-text]`)!;
-      active.textContent = `Acting as ${actor()} (${roleLabel()}) · CR/CCR state ${stateLabel()}. ${rule.reason}`;
+      active.textContent = `Acting as ${actor()} (${roleLabel()}) · CR/CCR state: ${stateLabel()}. ${rule.reason}`;
     };
 
     const renderMenus = () => {
@@ -672,10 +670,10 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
         // (see enhanceDisabledEdit) — no separate "why?" menu item needed.
         menu.dataset.editReason = rule.allowed ? '' : rule.reason;
         menu.items = [
-          { label: 'View Document', action: 'view' },
-          { label: 'Edit Properties', action: 'edit', disabled: !rule.allowed },
-          { label: 'Delete Attachment', action: 'delete', variant: 'danger', disabled: !locked.allowed },
-          { label: 'Copy Attachment Link', action: 'copy' },
+          { label: 'View document', action: 'view' },
+          { label: 'Edit properties', action: 'edit', disabled: !rule.allowed },
+          { label: 'Delete attachment', action: 'delete', variant: 'danger', disabled: !locked.allowed },
+          { label: 'Copy attachment link', action: 'copy' },
         ];
         if (menu.hasAttribute('open')) setTimeout(() => enhanceDisabledEdit(menu), 0);
       });
@@ -687,7 +685,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
         : doc.approvals.cotr
           ? checkHtml(doc.approvals.cotr, 'the COR')
           : doc.resetInfo
-            ? '<span class="cbf-reappr" title="A replacement cleared the COR\'s approval — the COR has been notified and must re-approve">Needs re-approval</span>'
+            ? '<span class="cbf-reappr" title="Replacing the file cleared the COR\'s approval. The COR was emailed to re-approve.">Needs re-approval</span>'
             : noneHtml('the COR');
 
     const renderDocRows = () => {
@@ -737,7 +735,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
         }).join('');
 
         const flag = reset
-          ? ' <span class="cbf-reappr" title="A replacement cleared the COR\'s approval — the COR has been notified and must re-approve">Needs re-approval</span>'
+          ? ' <span class="cbf-reappr" title="Replacing the file cleared the COR\'s approval. The COR was emailed to re-approve.">Needs re-approval</span>'
           : '';
         return (
           `<tr class="${reset ? 'is-reset' : ''}">` +

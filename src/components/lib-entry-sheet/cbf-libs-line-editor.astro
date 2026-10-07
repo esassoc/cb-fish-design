@@ -103,7 +103,7 @@ import { workElements, weLabel,
           size="md"
           label="Position title"
           placeholder="Type a position title"
-          help-text="Titles, never names. Typing a new title is what defines the position."
+          help-text="Use a job title, not a person's name. A new title creates a new position."
         ></esa-combobox>
         <span data-position-err hidden>
           <EsaFieldError
@@ -119,7 +119,7 @@ import { workElements, weLabel,
         size="md"
         label="Travel kind"
         placeholder="Pick a travel kind"
-        help-text="The kind fixes the units and the slice of the GSA schedule this line may reference."
+        help-text="The kind sets the units and whether a published standard rate applies."
       ></esa-select>
 
       {/* ── Which journey this cost belongs to, if any ────────────────────────
@@ -135,7 +135,7 @@ import { workElements, weLabel,
           size="md"
           label="Trip"
           placeholder="Not part of a trip"
-          help-text="A trip carries the destination and how many times it happens for every line under it. A one-off cost has neither to say — leave it out of every trip."
+          help-text="A trip sets the destination and how many times it happens for every line in it. Leave a one-off cost out of any trip."
         ></esa-select>
 
         <span data-travel-dest hidden>
@@ -154,7 +154,7 @@ import { workElements, weLabel,
         size="md"
         label="Vehicle kind"
         placeholder="Pick a vehicle kind"
-        help-text="The kind decides whether the rate is referenced from the schedule or quoted."
+        help-text="The kind decides whether the rate comes from the GSA schedule or is your own quote."
       ></esa-select>
 
       {/* No second line under the identity control: the kind's rule is the kind
@@ -207,7 +207,7 @@ import { workElements, weLabel,
       </p>
 
       <p class="cbf-lse__note typography-body-sm" data-qty-void hidden>
-        This shape has no quantity — the amount is entered directly.
+        This line has no quantity — enter the amount directly.
       </p>
 
       <!-- The contract period is a ceiling on ONE individual's time, and it is
@@ -256,7 +256,7 @@ import { workElements, weLabel,
               size="md"
               label="Rate location"
               placeholder="City, ST"
-              help-text="Which locality's published rate this line is claiming. Seeded from the destination, then it is yours."
+              help-text="The locality whose published rate this line claims. It starts as the destination; change it if needed."
             ></esa-text-field>
           </span>
           <esa-select
@@ -264,7 +264,7 @@ import { workElements, weLabel,
             size="md"
             label="Rate year"
             placeholder="Pick a fiscal year"
-            help-text="Published rates change every 1 October. A claim says which year's schedule it is claiming, so it stays checkable after the schedule moves."
+            help-text="Published rates change each October 1. Naming the year keeps the claim checkable after the schedule changes."
           ></esa-select>
           <p class="cbf-lse__static">
             <span class="cbf-lse__static-label typography-body-sm">Standard rate</span>
@@ -293,15 +293,15 @@ import { workElements, weLabel,
           <span class="cbf-lse__note typography-body-sm" data-ref-src></span>
         </p>
         <span data-override-toggle>
-          <EsaButton size="xs" variant="secondary" appearance="soft">Override rate</EsaButton>
+          <EsaButton size="xs" variant="secondary" appearance="soft">Use my own rate</EsaButton>
         </span>
         <esa-text-field
           data-field="rateOverride"
           data-override-field
           size="md"
           prefix="$"
-          label="Overridden rate"
-          help-text="A rate above the schedule ceiling has to be justified in the narrative."
+          label="Your rate"
+          help-text="Explain any rate above the GSA ceiling in the narrative."
           hidden
         ></esa-text-field>
         <div data-gate="gsa" hidden>
@@ -754,7 +754,7 @@ import { workElements, weLabel,
       dialog.heading =
         mode === 'create' ? 'Add line'
         : reviewing ? (displayLabel(l) || 'Untitled line')
-        : `Edit — ${displayLabel(l) || 'Untitled line'}`;
+        : `Edit line — ${displayLabel(l) || 'Untitled line'}`;
       setText($('[data-scope]'), scopeOf(l));
 
       /* The COR reads facts and writes a mark; the vendor gets the form. */
@@ -847,7 +847,7 @@ import { workElements, weLabel,
         'months',
         monthsBad,
         'Past contract period',
-        `${countOf(effectiveQty(l, ledger), timeUnit(l).plural)} is ${qtyFmt(timeInMonths(l, ledger))} months of work in a ${contractMonths}-month contract period — one individual cannot be budgeted for more time than the contract runs.`,
+        `${countOf(effectiveQty(l, ledger), timeUnit(l).plural)} is ${qtyFmt(timeInMonths(l, ledger))} months of work in a ${contractMonths}-month contract period — one person can't be budgeted for more time than the contract runs.`,
       );
       show($('[data-months-note]'), isSalaryLine(l) && !monthsBad);
       if (isSalaryLine(l)) {
@@ -892,18 +892,18 @@ import { workElements, weLabel,
         setText(
           $('[data-ref-src]'),
           g
-            ? `Referenced from ${g.location} · ${g.kind} · ${g.season} — not typed. Ceiling ${money(g.ceiling)}.`
-            : 'Pick the GSA schedule row this line references — it sets the rate.',
+            ? `From the GSA schedule: ${g.location} · ${g.kind} · ${g.season}. Ceiling ${money(g.ceiling)}.`
+            : 'Pick a GSA schedule row — it sets the rate.',
         );
-        setBtnLabel($('[data-override-toggle]'), overridden(l) ? 'Use schedule rate' : 'Override rate');
+        setBtnLabel($('[data-override-toggle]'), overridden(l) ? 'Use the GSA rate' : 'Use my own rate');
         show($('[data-override-field]'), overridden(l));
         setGate(
           'gsa',
           gsaOver(l),
           'Over GSA ceiling',
           g
-            ? `${money(l.rateOverride)} is over the ${g.kind} ceiling of ${money(g.ceiling)} for ${g.location} (${g.season}) — ${money(l.rateOverride - g.ceiling)} over.`
-            : 'Select the GSA schedule row this line references.',
+            ? `${money(l.rateOverride)} is ${money(l.rateOverride - g.ceiling)} over the ${g.kind} ceiling of ${money(g.ceiling)} for ${g.location} (${g.season}).`
+            : 'Pick a GSA schedule row to check this rate against.',
         );
       } else {
         setGate('gsa', false, '', '');
@@ -924,10 +924,10 @@ import { workElements, weLabel,
       setGate(
         'capital',
         capBad,
-        isClassOverride(l) ? 'Overrides the threshold' : 'Too large to test per item',
+        isClassOverride(l) ? 'Overrides the threshold' : "Lump — can't test per item",
         isClassOverride(l)
-          ? `Filed as ${equipmentClassLabel(l.block)} against the sort: at ${money(perItemCost(l, a))} per item the ${usd(contract.capitalizationThreshold)} threshold makes this ${equipmentClassLabel(thresholdTargetFor(l))}. This override needs the COR's agreement.`
-          : `A ${money(a[l.id] ?? 0)} lump has no per-item cost, so the ${usd(contract.capitalizationThreshold)} threshold cannot reach inside it. Itemize this line — a quantity and a cost each — so each item files itself.`,
+          ? `Filed as ${equipmentClassLabel(l.block)} by hand. At ${money(perItemCost(l, a))} per item, the ${usd(contract.capitalizationThreshold)} threshold would make this ${equipmentClassLabel(thresholdTargetFor(l))}, so the COR has to agree.`
+          : `A ${money(a[l.id] ?? 0)} lump sum has no per-item cost, so the ${usd(contract.capitalizationThreshold)} threshold can't test it. Itemize this line — a quantity and a cost each — so each item files itself.`,
       );
       /* The move affordance is the OVERRIDE toggle now, and it runs one way: an
          item that met the threshold can be argued back down to a supply, and
@@ -935,7 +935,7 @@ import { workElements, weLabel,
       show($('[data-cap-move]'), canOverrideThreshold(l, a));
       setBtnLabel(
         $('[data-cap-move]'),
-        isClassOverride(l) ? 'Use the threshold' : 'File as a supply instead',
+        isClassOverride(l) ? 'File by threshold' : 'File as a supply instead',
       );
       show($('[data-cap-note]'), thresholdTested(l) && !capBad);
       if (thresholdTested(l)) {

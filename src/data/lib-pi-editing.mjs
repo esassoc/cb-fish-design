@@ -47,7 +47,7 @@ export const contractSummary = {
   endDate: '04/30/2026',
   currentValue: '$17,461,219',
   expenditures: '$16,835,615',
-  expendituresNote: 'Expenditures data includes accruals and are based on data through 30-Jun-2026.',
+  expendituresNote: 'Expenditures include accruals and are based on data through 30-Jun-2026.',
   bpaCo: 'Daniel Affonso',
   bpaCor: 'Elizabeth Santana',
   envComplianceLead: 'Edward Gresh',
@@ -64,20 +64,20 @@ export const contractContacts = [
   { role: 'BPA CO', name: 'Daniel Affonso' },
   { role: 'Contract manager', name: 'Brandon Diller' },
   { role: 'QC', name: 'Jonathan Flannery' },
-  { role: 'F&W Approver', name: 'David Kaplowe' },
+  { role: 'F&W approver', name: 'David Kaplowe' },
   { role: 'Env. compliance lead', name: 'Edward Gresh' },
 ];
 
 /** The collapsed Summary-tab sections beneath Basics — each a short prototype stand-in
  *  (collapsed by default; the live app fills these with their own detail). */
 export const summarySections = [
-  { key: 'photos', title: 'Photos', icon: 'image', note: 'No photos have been added to this contract.' },
-  { key: 'contacts', title: 'Contract Contacts', icon: 'users' },
-  { key: 'sow', title: 'Statement Of Work (SOW)', icon: 'file-text', note: 'The full statement of work is on the SOW tab.' },
-  { key: 'deliverables', title: 'Deliverable Status', icon: 'clipboard-check', note: 'Deliverable tracking is out of scope for this prototype.' },
+  { key: 'photos', title: 'Photos', icon: 'image', note: 'Photos added to this contract will appear here.' },
+  { key: 'contacts', title: 'Contract contacts', icon: 'users' },
+  { key: 'sow', title: 'Statement of work (SOW)', icon: 'file-text', note: 'The full statement of work is on the SOW tab.' },
+  { key: 'deliverables', title: 'Deliverable status', icon: 'clipboard-check', note: 'Deliverable tracking is out of scope for this prototype.' },
   { key: 'metrics', title: 'Metrics', icon: 'chart-column', note: 'Environmental and implementation metrics are out of scope for this prototype.' },
-  { key: 'focal-species', title: 'Focal Species', icon: 'fish', note: 'White Sturgeon (Kootenai River population); Burbot.' },
-  { key: 'env-compliance', title: 'Environmental Compliance', icon: 'shield-check', note: 'Environmental compliance detail is out of scope for this prototype.' },
+  { key: 'focal-species', title: 'Focal species', icon: 'fish', note: 'White Sturgeon (Kootenai River population); Burbot.' },
+  { key: 'env-compliance', title: 'Environmental compliance', icon: 'shield-check', note: 'Environmental compliance detail is out of scope for this prototype.' },
   { key: 'reports', title: 'Reports', icon: 'file-chart-column', note: 'Contract reports are out of scope for this prototype.' },
 ];
 
@@ -90,15 +90,15 @@ export const summarySections = [
 export const CONTRACT_TABS = [
   { key: 'summary', label: 'Summary', panel: true },
   { key: 'sow', label: 'SOW' },
-  { key: 'we-budgets', label: 'WE Budgets' },
-  { key: 'status-reports', label: 'Status Reports' },
-  { key: 'pre-award', label: 'Pre-Award' },
+  { key: 'we-budgets', label: 'WE budgets' },
+  { key: 'status-reports', label: 'Status reports' },
+  { key: 'pre-award', label: 'Pre-award' },
   { key: 'workflow', label: 'Workflow', panel: true },
   { key: 'review-sow', label: 'Review SOW' },
-  { key: 'email-archive', label: 'Email Archive', corOnly: true },
-  { key: 'internal-notes', label: 'Internal Notes', corOnly: true },
+  { key: 'email-archive', label: 'Email archive', corOnly: true },
+  { key: 'internal-notes', label: 'Internal notes', corOnly: true },
   { key: 'documents', label: 'Documents', panel: true },
-  { key: 'cor-file', label: 'COR File', corOnly: true },
+  { key: 'cor-file', label: 'COR file', corOnly: true },
 ];
 
 /** The tabs a given role sees. Contract managers don't get the COR-only tabs. */
@@ -118,7 +118,7 @@ export const ROLES = [
   { value: 'cm', label: 'Contract manager' },
   { value: 'cor', label: 'COR (COTR)' },
   { value: 'qc', label: 'QC' },
-  { value: 'bpa', label: 'F&W Approver' },
+  { value: 'bpa', label: 'F&W approver' },
 ];
 
 /** The person in each role, from the contract's contacts (84055 REL 11) —
@@ -146,7 +146,7 @@ export function editRule(award, role, kind) {
     return {
       allowed: false,
       tier: 3,
-      reason: `The award is in ${label} — documents are locked. This is the existing behavior, unchanged: no file may be edited or replaced until a new revision opens.`,
+      reason: `In the ${label} state, documents are locked: no file can be edited or replaced until a new revision opens. This is existing behavior.`,
     };
   }
   if (kind === 'other') {
@@ -157,7 +157,7 @@ export function editRule(award, role, kind) {
       allowed: true,
       tier: 1,
       reason:
-        'The SOW is Pending, so any user may replace this file from the context menu. All document specifications — type, title, authors, and sharing — are kept.',
+        'In the Pending state, any user can replace this file from its actions menu. Its type, title, authors, and sharing are kept.',
     };
   }
   // Tier 2: Review or Approved.
@@ -165,13 +165,13 @@ export function editRule(award, role, kind) {
     return {
       allowed: true,
       tier: 2,
-      reason: `The award is in ${label} — as ${ROLES.find((r) => r.value === role).label}, you may still edit LIB and Property Inventory documents.`,
+      reason: `In the ${label} state, you can still edit LIB and Property Inventory documents as ${ROLES.find((r) => r.value === role).label}.`,
     };
   }
   return {
     allowed: false,
     tier: 2,
-    reason: `The award is in ${label} — only the COR, QC, or the F&W Approver may edit LIB and Property Inventory documents now.`,
+    reason: `In the ${label} state, only the COR, QC, or F&W approver can edit LIB and Property Inventory documents.`,
   };
 }
 
@@ -186,7 +186,7 @@ export const APPROVAL_COLS = [
   { key: 'ec', label: 'EC' },
   { key: 'cotr', label: 'COR' },
   { key: 'qc', label: 'QC' },
-  { key: 'fw', label: 'F&W Approver' },
+  { key: 'fw', label: 'F&W approver' },
 ];
 
 /** Approval date stamps for the current CCR revision (rev 2) — the live working set. */

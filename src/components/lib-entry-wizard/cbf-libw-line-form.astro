@@ -158,7 +158,7 @@ const { id } = Astro.props;
           size="md"
           label="Travel kind"
           placeholder="Pick a travel kind"
-          help-text="The kind fixes what is counted, the duration unit, and the schedule rows this line may reference."
+          help-text="The kind sets what is counted, the duration unit, and whether a published rate applies."
         ></esa-select>
 
         <!-- ── Which journey this cost belongs to, if any ────────────────────
@@ -192,7 +192,7 @@ const { id } = Astro.props;
           size="md"
           label="Vehicle kind"
           placeholder="Pick a vehicle kind"
-          help-text="Lease and mileage reference the GSA Fleet schedule; insurance and fuel are quoted."
+          help-text="GSA kinds use the GSA Fleet rate. Other kinds use a rate you enter."
         ></esa-select>
 
         <p class="cbf-libwl__static" data-ident="derived">
@@ -209,7 +209,7 @@ const { id } = Astro.props;
       <div class="cbf-libwl__group stack" data-gap="sm" data-group="quantity">
         <div class="cbf-libwl__row" data-qty-typed>
           <esa-text-field data-field="qty" size="md" label="Quantity"></esa-text-field>
-          <esa-text-field data-field="qtyUnit" data-unit-open size="md" label="Unit" placeholder="unit"></esa-text-field>
+          <esa-text-field data-field="qtyUnit" data-unit-open size="md" label="Unit" placeholder="tags, kits, units"></esa-text-field>
           <!-- A personnel unit has to be TIME, so it comes off a list rather
                than a keyboard — and it is the unit that decides what the rate
                beside it means. -->
@@ -222,7 +222,7 @@ const { id } = Astro.props;
           <!-- The second quantity shares this row: it multiplies the first, and a
                row of its own put a line break where the × belongs. -->
           <esa-text-field data-field="qty2" data-qty2 size="md" label="Second quantity" hidden></esa-text-field>
-          <esa-text-field data-field="qty2Unit" data-unit2-open size="md" label="Unit" placeholder="unit" hidden></esa-text-field>
+          <esa-text-field data-field="qty2Unit" data-unit2-open size="md" label="Unit" placeholder="tags, kits, units" hidden></esa-text-field>
           <p class="cbf-libwl__static" data-unit2-static hidden>
             <span class="cbf-libwl__static-label typography-body-sm">Unit</span>
             <span class="cbf-libwl__static-value typography-body-md" data-unit2-static-value></span>
@@ -289,7 +289,7 @@ const { id } = Astro.props;
                 size="md"
                 label="Rate location"
                 placeholder="City, ST"
-                help-text="Which locality's published rate this line claims. Seeded from the destination, then it is yours."
+                help-text="The locality whose published rate this line claims. It starts as the destination; change it if needed."
               ></esa-text-field>
             </span>
             <esa-select
@@ -297,7 +297,7 @@ const { id } = Astro.props;
               size="md"
               label="Rate year"
               placeholder="Pick a fiscal year"
-              help-text="Published rates change every 1 October, so a claim says which year's schedule it is claiming."
+              help-text="Published rates change each October 1. Pick the fiscal year whose rate you're claiming."
             ></esa-select>
             <p class="cbf-libwl__static">
               <span class="cbf-libwl__static-label typography-body-sm">Standard rate</span>
@@ -326,15 +326,15 @@ const { id } = Astro.props;
             <span class="cbf-libwl__quiet typography-body-sm" data-ref-src></span>
           </p>
           <span data-override-toggle>
-            <EsaButton size="xs" variant="secondary" appearance="soft">Override rate</EsaButton>
+            <EsaButton size="xs" variant="secondary" appearance="soft">Use my own rate</EsaButton>
           </span>
           <esa-text-field
             data-field="rateOverride"
             data-override-field
             size="md"
             prefix="$"
-            label="Overridden rate"
-            help-text="A rate above the schedule ceiling has to be justified in the narrative."
+            label="Your rate"
+            help-text="Justify a rate above the GSA ceiling in the narrative."
             hidden
           ></esa-text-field>
           <div data-gate="gsa" hidden>
@@ -377,7 +377,7 @@ const { id } = Astro.props;
         </div>
         <p class="cbf-libwl__quiet typography-body-sm" data-cap-note hidden></p>
         <span data-cap-move hidden>
-          <EsaButton size="sm" variant="secondary" appearance="soft">Override the threshold</EsaButton>
+          <EsaButton size="sm" variant="secondary" appearance="soft">Move to supplies</EsaButton>
         </span>
       </div>
 

@@ -23,13 +23,13 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     <div class="cbf-demo-controls__flag">
       <EsaBadge value="Prototype settings" variant="warning" size="lg" />
       <p class="typography-meta">
-        This bar is not part of the application. Use it to set who is viewing the
-        pages and what state the CR/CCR is in — the contract below updates to match.
+        This bar isn't part of the application. Set who's viewing and the CR/CCR
+        state, and the contract below updates to match.
       </p>
     </div>
     <div class="cbf-demo-controls__toggles">
       <esa-button-toggle data-demo-role label="Who is viewing" size="sm"></esa-button-toggle>
-      <esa-button-toggle data-demo-award label="CR / CCR state" size="sm"></esa-button-toggle>
+      <esa-button-toggle data-demo-award label="CR/CCR state" size="sm"></esa-button-toggle>
     </div>
   </div>
 
@@ -37,12 +37,12 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
        depends on the toggles above. It lives here, not in the contract. -->
   <div class="cbf-demo-controls__explain">
     <div data-banner="allowed" hidden>
-      <EsaAlertBox variant="success" title="Editing is available for this combination">
+      <EsaAlertBox variant="success" title="You can edit LIB and PI documents">
         <span data-banner-text></span>
       </EsaAlertBox>
     </div>
     <div data-banner="restricted" hidden>
-      <EsaAlertBox variant="warning" title="Editing is restricted for this role right now">
+      <EsaAlertBox variant="warning" title="This role can't edit LIB and PI documents now">
         <span data-banner-text></span>
       </EsaAlertBox>
     </div>

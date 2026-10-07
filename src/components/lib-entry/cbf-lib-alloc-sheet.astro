@@ -170,8 +170,8 @@ import { workElements } from '../../data/lib-entry.mjs';
       setText(
         $('[data-alloc-err] .esa-field-error__text') ?? null,
         total === 0
-          ? 'No work element assigned — allocations must total 100%.'
-          : `Allocated ${total}% — work-element allocations must total 100%.`,
+          ? 'Nothing allocated yet. Allocations must total 100%.'
+          : `${total}% allocated. Allocations must total 100%.`,
       );
       /* Saving a split that does not total 100 would put the line straight back
          on the reconciliation gate, so the button says so rather than the sheet
@@ -218,7 +218,7 @@ import { workElements } from '../../data/lib-entry.mjs';
       show($('[data-alloc-where]'), !!where);
       setText(
         $('[data-alloc-line]'),
-        'Split it across the work elements it pays for. Every cost line has to total 100%.',
+        'Split this line’s cost across the work elements it pays for. The split must total 100%.',
       );
       fill();
       dialog.show();

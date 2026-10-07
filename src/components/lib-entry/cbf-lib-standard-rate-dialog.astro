@@ -36,7 +36,12 @@
  *   is what makes "open it and look at what it would cost" free. `label` comes
  *   from the grid because a travel line's name is resolved from its kind and
  *   chain, not typed.
- * DISPATCH 'cbf-lib:save-standard'  detail: { id, standard: { locality?, year } }
+ * DISPATCH 'cbf-lib:save-standard'  detail: { id, standard: { locality?, year, season? } }
+ *
+ * ── THE THIRD ANSWER: SEASON, FOR SEASONAL LODGING ─────────────────────────
+ * Some localities publish lodging by season, and CORs check it. So a lodging
+ * claim there asks which season the stay falls in — seeded from the trip's
+ * start month when it has one, never guessed when it does not.
  *   The grid owns the line; this dialog states the claim and hands back its two
  *   answers, exactly as the line stores them.
  *
@@ -72,16 +77,27 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
           label="Location"
           data-std-locality
           placeholder="Pick the schedule location"
-          help-text="The published schedule prices some places separately and covers everywhere else with one CONUS row."
+          help-text="Some places have their own rate. Everywhere else, including travel outside the U.S., uses the one CONUS rate."
         ></esa-combobox>
+      </span>
+      {/* Only where the locality's lodging rate changes through the year. */}
+      <span data-std-season hidden>
+        <esa-select
+          class="cbf-lsr__field"
+          size="md"
+          label="Season"
+          data-std-season-select
+          placeholder="Pick the season of the stay"
+          help-text="Lodging here is published by season. Pick the one the stay falls in."
+        ></esa-select>
       </span>
       <esa-select
         class="cbf-lsr__field"
         size="md"
         label="Rate year"
         data-std-year
-        placeholder="Rate year"
-        help-text="Rates change every 1 October, so the claim has to say which year's schedule it is claiming."
+        placeholder="Pick the rate year"
+        help-text="Rates change each October 1. Pick the fiscal year whose schedule this line uses."
       ></esa-select>
       {/* Said out loud, never silently: this destination is not on the list. */}
       <p class="cbf-lsr__note typography-body-sm" data-std-seed hidden></p>
@@ -120,6 +136,11 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
   import {
     travelKind,
     travelLocality,
+    tripOf,
+    needsSeason,
+    seasonsFor,
+    seasonForMonth,
+    seasonLabel,
     standardNeedsLocality,
     standardRateFor,
     isListedLocality,
@@ -148,9 +169,12 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
     let seed = '';
     /* The draft claim. Copied on open, committed on confirm, discarded on
        cancel — the line is not edited until the vendor says so. */
-    let draft: { locality: string; year: number } = { locality: '', year: defaultRateYear() };
+    let draft: { locality: string; year: number; season: string } = { locality: '', year: defaultRateYear(), season: '' };
+    /* The trip's start month, if it has one — the seed for the season. */
+    let startMonth: number | null = null;
 
-    const resolved = () => standardRateFor(kindKey, draft.locality, draft.year);
+    const seasonal = () => needsSeason(kindKey, draft.locality);
+    const resolved = () => standardRateFor(kindKey, draft.locality, draft.year, draft.season);
 
     const paint = () => {
       const rate = resolved();
@@ -158,15 +182,21 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
       /* A claim that resolves to nothing is a real state, not an error to hide:
          the year has no table for that place. Saying so is what stops the line
          being committed at zero. */
-      setText($('[data-std-amount]'), ok ? money(rate) : 'No published rate for that location and year');
+      setText(
+        $('[data-std-amount]'),
+        ok ? money(rate)
+          : seasonal() && !draft.season ? 'Pick the season to see the rate'
+          : 'No published rate for that location and year',
+      );
       show($('[data-std-badge]'), ok);
       const badge = $('[data-std-badge] .esa-badge__text');
-      setText(badge, `Standard rate · FY${draft.year}`);
+      const sl = seasonal() ? seasonLabel(draft.locality, draft.season) : '';
+      setText(badge, ['Standard rate', sl, `FY${draft.year}`].filter(Boolean).join(' · '));
       setText(
         $('[data-std-kept]'),
         typedRate == null
           ? ''
-          : `Your own rate of ${money(typedRate)} is kept underneath and comes back if you drop the claim.`,
+          : `Your own rate of ${money(typedRate)} is kept and comes back if you drop the claim.`,
       );
 
       /* The seed note fires on the case that used to cost money silently: a
@@ -178,7 +208,7 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
       setText(
         $('[data-std-seed]'),
         unlisted
-          ? `${seed} is not separately listed on the FY${draft.year} schedule — it claims the Standard CONUS rate.`
+          ? `${seed} isn’t listed separately on the FY${draft.year} schedule, so it gets the Standard CONUS rate.`
           : '',
       );
 
@@ -198,6 +228,19 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
         yr.value = String(draft.year);
       }
       show($('[data-std-where]'), needsWhere);
+      /* The season question appears only for a seasonal locality, and re-seeds
+         when the locality changes: a season key from Portland means nothing in
+         Boise's table. */
+      const sea: any = $('[data-std-season-select]');
+      const list = seasonal() ? seasonsFor(draft.locality) : [];
+      if (!list.some((x: any) => x.key === draft.season)) {
+        draft.season = startMonth ? seasonForMonth(draft.locality, startMonth) : '';
+      }
+      if (sea) {
+        sea.options = list.map((x: any) => ({ label: x.label, value: x.key }));
+        sea.value = draft.season;
+      }
+      show($('[data-std-season]'), list.length > 0);
       paint();
     };
 
@@ -209,6 +252,7 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
       needsWhere = standardNeedsLocality(kindKey);
       typedRate = line.rate ?? null;
       seed = travelLocality(line) ?? '';
+      startMonth = Number(tripOf(line.trip)?.startMonth) || null;
       const prior = line.standard;
       /* Re-opening a live claim shows THAT claim, not a fresh one — this is the
          only way to change a claim's year or location, so it has to arrive
@@ -216,6 +260,7 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
       draft = {
         year: Number(prior?.year) || defaultRateYear(),
         locality: needsWhere ? resolveLocality(prior?.locality ?? seed) : '',
+        season: prior?.season ?? '',
       };
       dialog.heading = prior ? 'Standard rate' : 'Use the standard rate';
       const k = travelKind(kindKey);
@@ -234,6 +279,11 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
       const value = Array.isArray(e.detail?.value) ? e.detail.value[0] : e.detail?.value;
       if ((el.dataset as any)?.stdLocality != null) {
         draft.locality = String(value ?? '');
+        fill();
+        return;
+      }
+      if ((el.dataset as any)?.stdSeasonSelect != null) {
+        draft.season = String(value ?? '');
         paint();
         return;
       }
@@ -254,7 +304,9 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
           new CustomEvent('cbf-lib:save-standard', {
             detail: {
               id: lineId,
-              standard: needsWhere ? { locality: draft.locality, year: draft.year } : { year: draft.year },
+              standard: needsWhere
+                ? { locality: draft.locality, year: draft.year, ...(seasonal() ? { season: draft.season } : {}) }
+                : { year: draft.year },
             },
           }),
         );

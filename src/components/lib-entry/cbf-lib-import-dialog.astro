@@ -1,0 +1,287 @@
+---
+/*
+ * cbf-lib-import-dialog — the workbook path into the LIB grid.
+ *
+ * ── WHY IT EXISTS ───────────────────────────────────────────────────────────
+ * Whether Excel import is the primary path with the form as fallback, or the
+ * reverse, is undecided — and for change management the system has to support
+ * both. Vendors who budget in a workbook should not have to retype it; vendors
+ * who never open one should not be pushed through it. So import is a door into
+ * the SAME grid: rows become ordinary lines, and every gate, derived fringe line
+ * and threshold runs on them as on a typed one.
+ *
+ * ── THE THREE STEPS, IN ONE DIALOG ──────────────────────────────────────────
+ *   1. Download the template — the grid's own columns, a hint row, sample rows.
+ *   2. Upload the filled-in file.
+ *   3. Read what will happen to EACH row before anything lands: ready, ready but
+ *      worth a look (the same things the grid's checks would say), or skipped
+ *      with the reason. Nothing is added until the vendor confirms.
+ * The parsing and checking live in src/data/lib-import.mjs (pure, testable);
+ * this file only renders them and hands the records to the grid.
+ *
+ * ── WHAT THIS PROTOTYPE READS ───────────────────────────────────────────────
+ * CSV — every spreadsheet saves as it, and the browser parses it with no
+ * library. An .xlsx needs a workbook parser this prototype does not ship, so
+ * the dialog says that plainly and offers the sample workbook, rather than
+ * pretending to have read a file it has not.
+ *
+ * ── EVENT CONTRACT (all on `document`) ──────────────────────────────────────
+ * LISTEN   'cbf-lib:open-import'   — the grid header's "Import from Excel"
+ * DISPATCH 'cbf-lib:import-lines'  detail: { lines: record[] } — the grid adds them
+ * LISTEN   'cbf-lib:imported'      detail: { count } — confirm with a snackbar
+ *
+ * bcn-lego-checked: the modal is esa-dialog, the drop zone and file list are
+ * esa-file-upload, every action is esa-button, the row verdicts are esa-badge,
+ * the empty preview is esa-empty-state. The preview is a semantic <table> — the
+ * same call cbf-lib-cost-table makes: the ecology catalog has no table lego, and
+ * AG Grid is for scannable data grids with search/filter chrome, not a
+ * nine-row confirmation list inside a dialog. Beacon is not cloned on this
+ * machine. The CSS here is the dialog body's own layout and the table.
+ */
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+---
+
+<esa-dialog data-imp-dialog size="lg" heading="Import from Excel">
+  <div class="cbf-imp stack" data-gap="lg">
+    <ol class="cbf-imp__steps stack" data-gap="md">
+      <li class="stack" data-gap="2xs">
+        <span class="typography-title">Download the template</span>
+        <span class="cbf-imp__note typography-body-sm">
+          One row per cost line. Row 2 explains each column, and the sample rows show each kind.
+          Save it as CSV when you’re done.
+        </span>
+        <span>
+          <EsaButton size="sm" variant="secondary" appearance="outline" icon="download" data-imp-template>
+            Download the template (.csv)
+          </EsaButton>
+        </span>
+      </li>
+      <li class="stack" data-gap="2xs">
+        <span class="typography-title">Upload your budget</span>
+        <esa-file-upload data-imp-file label="Drop a CSV here, or browse" accept=".csv,.xlsx,.xls" max-size-mb="5"></esa-file-upload>
+        <p class="cbf-imp__note typography-body-sm" data-imp-xlsx hidden>
+          Upload a CSV — this version can’t read .xlsx yet. In Excel, choose File → Save a copy → CSV.
+        </p>
+        <span>
+          <EsaButton size="sm" variant="ghost" data-imp-sample>Use a sample file</EsaButton>
+        </span>
+      </li>
+      <li class="stack" data-gap="sm">
+        <span class="repel" data-gap="sm">
+          <span class="typography-title">Check what will be added</span>
+          <span class="cbf-imp__note typography-body-sm" role="status" data-imp-count></span>
+        </span>
+        <p class="cbf-imp__note typography-body-sm" data-imp-empty>
+          Nothing to check yet. Upload a file, or use a sample file.
+        </p>
+        <div class="cbf-imp__scroll" data-imp-preview hidden>
+          <table class="cbf-imp__table">
+            <thead>
+              <tr>
+                <th scope="col">Category</th>
+                <th scope="col">Line</th>
+                <th scope="col">Quantity</th>
+                <th scope="col" class="cbf-imp__num">Rate or amount</th>
+                <th scope="col">Code</th>
+                <th scope="col">What happens</th>
+              </tr>
+            </thead>
+            <tbody data-imp-rows></tbody>
+          </table>
+        </div>
+      </li>
+    </ol>
+
+    {/* Verdict badges, rendered once and cloned per row — a lego, never a
+        hand-rolled chip. */}
+    <template data-imp-badge="ready"><EsaBadge value="Ready" variant="success" size="sm" /></template>
+    <template data-imp-badge="check"><EsaBadge value="Ready, see note" variant="warning" size="sm" /></template>
+    <template data-imp-badge="skip"><EsaBadge value="Skipped" variant="danger" size="sm" /></template>
+  </div>
+
+  <div slot="footer" class="repel" data-gap="sm">
+    <span data-imp-cancel>
+      <EsaButton size="sm" variant="secondary" appearance="outline">Cancel</EsaButton>
+    </span>
+    <span data-imp-confirm>
+      <EsaButton size="sm" variant="primary" icon="upload">Add lines</EsaButton>
+    </span>
+  </div>
+</esa-dialog>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-file-upload';
+  import { importRows, rowsFromCsv, templateCsv, SAMPLE_ROWS } from '../../data/lib-import.mjs';
+
+  const dialog = document.querySelector<HTMLElement>('[data-imp-dialog]') as any;
+  if (dialog) init(dialog);
+
+  function init(dialog: any) {
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string) => dialog.querySelector<T>(sel);
+    const setText = (el: Element | null, text: string) => { if (el) el.textContent = text; };
+    const show = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };
+    let pending: any[] = [];
+
+    const confirmBtn = () => $('[data-imp-confirm] button') as HTMLButtonElement | null;
+    const setConfirm = (n: number) => {
+      const b = confirmBtn();
+      if (b) b.disabled = n === 0;
+      setText($('[data-imp-confirm] .esa-button__label'), n ? `Add ${n} line${n === 1 ? '' : 's'}` : 'Add lines');
+    };
+
+    const td = (text: string, cls = '') => {
+      const c = document.createElement('td');
+      if (cls) c.className = cls;
+      c.textContent = text;
+      return c;
+    };
+
+    /** Render every row's verdict BEFORE anything is added. */
+    const render = (rows: any[]) => {
+      const { results, records, counts } = importRows(rows);
+      pending = records;
+      const body = $('[data-imp-rows]');
+      if (body) body.replaceChildren();
+      results.forEach((r: any) => {
+        const tr = document.createElement('tr');
+        tr.dataset.status = r.status;
+        tr.append(
+          td(r.preview.category),
+          td(r.preview.name, 'cbf-imp__name'),
+          td(r.preview.qty),
+          td(r.preview.rate, 'cbf-imp__num'),
+          td(r.preview.code || '—'),
+        );
+        const verdict = document.createElement('td');
+        const wrap = document.createElement('span');
+        wrap.className = 'stack';
+        wrap.dataset.gap = '3xs';
+        const tpl = dialog.querySelector(`template[data-imp-badge="${r.status}"]`) as HTMLTemplateElement | null;
+        /* Its own inline box, or the stack stretches the badge across the cell. */
+        if (tpl) { const b = document.createElement('span'); b.append(tpl.content.cloneNode(true)); wrap.append(b); }
+        const why = r.problem || r.note;
+        if (why) {
+          const note = document.createElement('span');
+          note.className = 'cbf-imp__note typography-body-sm';
+          note.textContent = why;
+          wrap.append(note);
+        }
+        verdict.append(wrap);
+        tr.append(verdict);
+        body?.append(tr);
+      });
+      show($('[data-imp-preview]'), results.length > 0);
+      show($('[data-imp-empty]'), results.length === 0);
+      setText(
+        $('[data-imp-count]'),
+        results.length
+          ? `${records.length} of ${results.length} rows ready${counts.skip ? ` · ${counts.skip} skipped` : ''}`
+          : '',
+      );
+      setConfirm(records.length);
+    };
+
+    const reset = () => {
+      pending = [];
+      $('[data-imp-rows]')?.replaceChildren();
+      show($('[data-imp-preview]'), false);
+      show($('[data-imp-empty]'), true);
+      show($('[data-imp-xlsx]'), false);
+      setText($('[data-imp-count]'), '');
+      setConfirm(0);
+    };
+
+    document.addEventListener('cbf-lib:open-import', () => {
+      reset();
+      dialog.show();
+    });
+
+    dialog.addEventListener('change', async (e: any) => {
+      if (!(e.target as HTMLElement)?.closest?.('[data-imp-file]')) return;
+      const file: File | undefined = e.detail?.files?.[0];
+      if (!file) { reset(); return; }
+      const isCsv = /\.csv$/i.test(file.name) || file.type === 'text/csv';
+      show($('[data-imp-xlsx]'), !isCsv);
+      if (!isCsv) { render([]); return; }
+      render(rowsFromCsv(await file.text()));
+    });
+
+    dialog.addEventListener('click', (e: any) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-imp-cancel]')) { dialog.close(); return; }
+      if (t.closest('[data-imp-sample]')) { show($('[data-imp-xlsx]'), false); render(SAMPLE_ROWS); return; }
+      if (t.closest('[data-imp-template]')) {
+        const blob = new Blob([templateCsv()], { type: 'text/csv;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'line-item-budget-template.csv';
+        document.body.append(a);
+        a.click();
+        a.remove();
+        window.setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        return;
+      }
+      if (t.closest('[data-imp-confirm]')) {
+        if (!pending.length) return;
+        document.dispatchEvent(new CustomEvent('cbf-lib:import-lines', { detail: { lines: pending } }));
+        dialog.close();
+      }
+    });
+
+    /* Confirm with the count the GRID actually added, not the count we sent. */
+    document.addEventListener('cbf-lib:imported', (e: any) => {
+      const n = e.detail?.count ?? 0;
+      const host: any = document.querySelector('[data-snackbar]');
+      host?.show?.({ message: `${n} line${n === 1 ? '' : 's'} added. The submit checks now include ${n === 1 ? 'it' : 'them'}.`, variant: 'success' });
+    });
+  }
+</script>
+
+<style>
+  .cbf-imp__steps { margin: 0; padding-inline-start: var(--spacing-500); }
+  .cbf-imp__steps > li::marker { font-weight: var(--typography-font-weight-semibold); }
+  .cbf-imp__note {
+    margin: 0;
+    color: var(--color-content-default-secondary);
+    max-width: 64ch;
+  }
+  /* The preview scrolls inside the dialog rather than growing it past the
+     viewport — a large workbook is a long list. */
+  .cbf-imp__scroll {
+    max-height: 22rem;
+    overflow: auto;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-200);
+  }
+  .cbf-imp__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    color: var(--color-content-default);
+  }
+  .cbf-imp__table th {
+    position: sticky;
+    top: 0;
+    text-align: left;
+    padding: var(--spacing-150) var(--spacing-250);
+    background: var(--color-background-elevation-sunken);
+    border-bottom: 1px solid var(--color-border-default);
+    font-size: 13px;
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default-secondary);
+    white-space: nowrap;
+  }
+  .cbf-imp__table :global(td) {
+    padding: var(--spacing-200) var(--spacing-250);
+    vertical-align: top;
+    border-top: 1px solid var(--color-border-default-subtle);
+  }
+  .cbf-imp__table :global(.cbf-imp__name) { font-weight: var(--typography-font-weight-medium); }
+  .cbf-imp__num,
+  .cbf-imp__table :global(.cbf-imp__num) { text-align: right; font-variant-numeric: tabular-nums; }
+  /* A skipped row reads as not-coming — quieter, never struck through. */
+  .cbf-imp__table :global(tr[data-status='skip'] td) { color: var(--color-content-default-secondary); }
+  [hidden] { display: none !important; }
+</style>

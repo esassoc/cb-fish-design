@@ -65,15 +65,15 @@ const t0 = priced.totals;
     <p class="cbf-libwr__ord typography-body-sm">Step {index} of {count}</p>
     <h2 class="cbf-libwr__title typography-heading-lg">Review &amp; submit</h2>
     <p class="cbf-libwr__lede typography-body-md">
-      The whole budget, in the order you built it. Every line jumps back to the step it came
-      from — the checks and the submit action are in the reconciliation rail beside this one.
+      Your whole budget, in step order. Select a category to go back to its step. Checks and
+      the submit button are under Reconciliation.
     </p>
   </header>
 
   <!-- Anything still outstanding is stated BEFORE the numbers. A vendor who
        scrolls straight to the total and submits should have already been told. -->
   <div data-outstanding hidden>
-    <EsaAlertBox variant="warning" title="This budget is not ready to resubmit">
+    <EsaAlertBox variant="warning" title="This budget isn't ready to submit">
       <span data-outstanding-msg></span>
     </EsaAlertBox>
   </div>

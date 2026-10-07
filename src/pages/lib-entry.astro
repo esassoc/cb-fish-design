@@ -32,6 +32,8 @@ import CbfLibReconcileRail from '../components/lib-entry/cbf-lib-reconcile-rail.
 import CbfLibSubcontractSheet from '../components/lib-entry/cbf-lib-subcontract-sheet.astro';
 import CbfLibAllocSheet from '../components/lib-entry/cbf-lib-alloc-sheet.astro';
 import CbfLibStandardRateDialog from '../components/lib-entry/cbf-lib-standard-rate-dialog.astro';
+import CbfLibCodeSummary from '../components/lib-entry/cbf-lib-code-summary.astro';
+import CbfLibImportDialog from '../components/lib-entry/cbf-lib-import-dialog.astro';
 import { withBase } from '../lib/base';
 import { contract, contractTabs } from '../data/lib-entry.mjs';
 
@@ -60,12 +62,14 @@ const crumbs = [
     - header strip       -> cbf-lib-context-header     (auto-filled context + the Contract Value ceiling)
     - review             -> cbf-lib-review-panel       (COR console / vendor change list + the decision)
     - indirect block     -> cbf-lib-indirect-config    (rate, reference doc, dates, applicability picker)
-    - cost grid          -> cbf-lib-cost-table         (4 line shapes, 9 categories, inline entry, dependencies,
-                                                        per-line COR marks, read-only COR lens)
-    - reconciliation     -> cbf-lib-reconcile-rail     (running total vs Contract Value + submit/resubmit gate)
+    - cost grid          -> cbf-lib-cost-table         (5 line shapes, 10 categories, inline entry, dependencies,
+                                                        per-line COR marks, read-only COR lens, accounting codes)
+    - code summary       -> cbf-lib-code-summary       (direct cost by the vendor's accounting code + filter)
+    - reconciliation     -> cbf-lib-reconcile-rail     (running total vs Contract Value, submit gate, COR notes)
     - subcontract sheet  -> cbf-lib-subcontract-sheet  (the jump-out — stubbed recursed sheet)
+    - import dialog      -> cbf-lib-import-dialog      (Excel/CSV path into the same grid)
 -->
-<BaseLayout title="Line Item Budget entry — Columbia Basin Fish &amp; Wildlife Program">
+<BaseLayout title="Line item budget entry — Columbia Basin Fish &amp; Wildlife Program">
   <CbfPublicNav />
 
   <main class="cbf-page">
@@ -74,7 +78,7 @@ const crumbs = [
            frame: which of the three entry models you are looking at, the reset /
            clear pair, and the lens — one budget, two people, both server-rendered
            with whichever role is selected revealed. -->
-      <CbfPrototypeStrip note="One Line Item Budget, seen by the vendor who enters it and the BPA COR who reviews it.">
+      <CbfPrototypeStrip note="One line item budget, seen by the vendor who enters it and the BPA COR who reviews it.">
         <CbfLibViewSwitch active="grid" />
         <CbfLibDemoControls />
         <CbfRoleSwitch />
@@ -99,6 +103,7 @@ const crumbs = [
             <CbfLibReviewPanel />
             <CbfLibIndirectConfig />
             <CbfLibCostTable />
+            <CbfLibCodeSummary />
           </div>
         </div>
       </CbfAppPanel>
@@ -110,6 +115,8 @@ const crumbs = [
   <CbfLibAllocSheet />
   <!-- Claiming a published travel rate — confirmed here, never typed on the row. -->
   <CbfLibStandardRateDialog />
+  <!-- The workbook path in — opened by the grid header, lands lines in the grid. -->
+  <CbfLibImportDialog />
 
   <esa-snackbar-container data-snackbar></esa-snackbar-container>
 

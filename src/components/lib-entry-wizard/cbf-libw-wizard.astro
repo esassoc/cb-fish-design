@@ -79,7 +79,7 @@ const SHORT: Record<string, string> = {
   travel: 'Travel',
   meetings: 'Meetings',
   vehicles: 'Vehicles',
-  supplies: 'Equipment',
+  supplies: 'Supplies',
   'rent-utilities': 'Rent',
   subcontracts: 'Subcontracts',
 };
@@ -118,9 +118,8 @@ const stepIndexOf: Record<string, number> = Object.fromEntries(steps.map((s, i) 
           <p class="cbf-libw__ord typography-body-sm">Step {count - 1} of {count}</p>
           <h2 class="cbf-libw__title typography-heading-lg">Indirect rate</h2>
           <p class="cbf-libw__lede typography-body-md">
-            The rate is not yours to set — it comes from your approved indirect cost rate
-            agreement. What this step asks is which of the nine categories it applies to, because
-            that decides the base, and the base decides the total.
+            The rate comes from your approved indirect cost rate agreement. Choose which categories
+            it applies to — that sets the base, and the base sets the total.
           </p>
         </header>
         <CbfLibIndirectConfig />
@@ -530,7 +529,7 @@ const stepIndexOf: Record<string, number> = Object.fromEntries(steps.map((s, i) 
       const monthsBad = monthsOver(l);
       setGate(
         card, 'months', monthsBad, 'Past contract period',
-        `${countOf(effectiveQty(l, lines), timeUnit(l).plural)} is ${qtyFmt(timeInMonths(l, lines))} months of work in a ${contractMonths}-month contract period — one individual cannot be budgeted for more time than the contract runs.`,
+        `${countOf(effectiveQty(l, lines), timeUnit(l).plural)} is ${qtyFmt(timeInMonths(l, lines))} months of work in a ${contractMonths}-month contract period. Budget no more time than the contract runs.`,
       );
       show($('[data-months-note]', card), isSalaryLine(l) && !monthsBad);
       if (isSalaryLine(l)) {
@@ -578,13 +577,13 @@ const stepIndexOf: Record<string, number> = Object.fromEntries(steps.map((s, i) 
             ? `Referenced from ${g.location} · ${g.kind} · ${g.season} — not typed. Ceiling ${money(g.ceiling)}.`
             : 'Pick the GSA schedule row this line references — it sets the rate.',
         );
-        setBtnLabel($('[data-override-toggle]', card), overridden(l) ? 'Use schedule rate' : 'Override rate');
+        setBtnLabel($('[data-override-toggle]', card), overridden(l) ? 'Use the GSA rate' : 'Use my own rate');
         show($('[data-override-field]', card), overridden(l));
         setGate(
           card, 'gsa', gsaOver(l), 'Over GSA ceiling',
           g
-            ? `${money(l.rateOverride)} is over the ${g.kind} ceiling of ${money(g.ceiling)} for ${g.location} (${g.season}) — ${money(l.rateOverride - g.ceiling)} over.`
-            : 'Select the GSA schedule row this line references.',
+            ? `${money(l.rateOverride)} is ${money(l.rateOverride - g.ceiling)} over the ${g.kind} ceiling of ${money(g.ceiling)} for ${g.location} (${g.season}).`
+            : 'Pick the GSA schedule row this line references.',
         );
       } else {
         setGate(card, 'gsa', false, '', '');
@@ -614,14 +613,14 @@ const stepIndexOf: Record<string, number> = Object.fromEntries(steps.map((s, i) 
       const capBad = onThreshold(l) && !capPass(l, a);
       setGate(
         card, 'capital', capBad,
-        isClassOverride(l) ? 'Overrides the threshold' : 'Too large to test per item',
+        isClassOverride(l) ? 'Filed against the threshold' : 'Too large to sort as one amount',
         isClassOverride(l)
-          ? `Filed as ${equipmentClassLabel(l.block)} against the sort: at ${money(perItemCost(l, a))} per item the ${usd(contract.capitalizationThreshold)} threshold makes this ${equipmentClassLabel(thresholdTargetFor(l))}. This override needs the COR's agreement.`
-          : `A ${money(a[l.id] ?? 0)} lump has no per-item cost, so the ${usd(contract.capitalizationThreshold)} threshold cannot reach inside it. Itemize this line so each item files itself.`,
+          ? `Moved to ${equipmentClassLabel(l.block)} by hand. At ${money(perItemCost(l, a))} per item, the ${usd(contract.capitalizationThreshold)} threshold makes this ${equipmentClassLabel(thresholdTargetFor(l))}, so the COR has to agree.`
+          : `A ${money(a[l.id] ?? 0)} lump has no per-item cost, so the ${usd(contract.capitalizationThreshold)} threshold can't sort it. Itemize this line so each item files itself.`,
       );
       setBtnLabel(
         $('[data-cap-move]', card),
-        isClassOverride(l) ? 'Use the threshold' : 'File as a supply instead',
+        isClassOverride(l) ? 'File by threshold' : 'Move to supplies',
       );
       /* The move affordance is the OVERRIDE toggle now, and it runs one way: an
          item that met the threshold can be argued back down to a supply, and
@@ -657,7 +656,7 @@ const stepIndexOf: Record<string, number> = Object.fromEntries(steps.map((s, i) 
         setErrText(
           aErr,
           derived
-            ? `Follows ${baseLabelFor(l, lines)} — allocate that position's salary lines on the Salary step and this follows.`
+            ? `Allocate the ${baseLabelFor(l, lines)} salary lines on the Salary step — this fringe line takes their split.`
             : sum === 0
               ? 'No work element assigned — allocations must total 100%.'
               : `Allocated ${sum}% — work-element allocations must total 100%.`,

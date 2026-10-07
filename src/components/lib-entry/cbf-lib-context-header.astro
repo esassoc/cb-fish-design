@@ -60,11 +60,11 @@ const facts = [
         sub="The ceiling — every line below reconciles to it"
       />
     </div>
-    <div class="cbf-lib-context__ceiling-rate">
+    <div class="cbf-lib-context__ceiling-rate" data-threshold-stat>
       <EsaStat
         value={usd(contract.capitalizationThreshold)}
         label="Capitalization threshold"
-        sub="At or above this, an item is capital — below it, a supply"
+        sub="Items at or above it are suggested as capital, below it as supplies. Set it under Supplies & equipment."
       />
     </div>
   </div>
@@ -86,6 +86,16 @@ const facts = [
     </div>
   </EsaCard>
 </section>
+
+<script>
+  /* The threshold is set on the Supplies & equipment section head now (it varies
+     by contract), so this stat follows it rather than holding the load value. */
+  import { usd } from '../../data/lib-entry.mjs';
+  document.addEventListener('cbf-lib:threshold', (e: any) => {
+    const v = document.querySelector('[data-threshold-stat] .esa-stat__value');
+    if (v && typeof e.detail?.threshold === 'number') v.textContent = usd(e.detail.threshold);
+  });
+</script>
 
 <style>
   .cbf-lib-context__head h1 {

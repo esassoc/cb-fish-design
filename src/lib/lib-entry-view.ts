@@ -34,6 +34,7 @@
 import {
   SHAPES,
   categories,
+  indirectScopes,
   categoryFixedUnit,
   effectiveQty,
   baseLabelFor,
@@ -71,16 +72,33 @@ import {
   isDerivedFringe,
   TRAVEL_KINDS,
   VEHICLE_KINDS,
+  VEHICLE_TYPES,
+  MEETING_KINDS,
+  OTHER_KINDS,
   vehicleKind,
+  vehicleTypeLabel,
+  gsaCompareRate,
+  kindOfLine,
+  isVendorDefined,
+  isFringeOverride,
+  fringeDefaults,
+  staffOf,
+  acctCodeOf,
+  needsSeason,
+  seasonLabel,
+  tripFullCost,
+  trips,
   perItemCost,
   onThreshold,
   thresholdTargetFor,
   isClassOverride,
   canOverrideThreshold,
+  thresholdTested,
   filingConsequence,
   equipmentClassLabel,
   countOf,
   usd,
+  pct,
   qtyFmt,
 } from '../data/lib-entry.mjs';
 
@@ -95,14 +113,19 @@ export const money = (n: number) => usd(n, { cents: cents(n) });
 export const numText = (n: number | null | undefined) =>
   n == null ? '' : cents(n) ? String(n) : n.toLocaleString('en-US');
 
-/* ── The GSA gate — VEHICLES only now ───────────────────────────────────────
+/* ── The GSA reference — VEHICLES only, and a NOTE rather than a gate ──────────
    Travel used to live here too: its rate came off the schedule and the vendor
    could override it, so the gate asked whether the override cleared the ceiling.
    Travel has since inverted — the typed rate is the default and claiming a
    published one is an explicit act (see the standard-rate helpers below) — so a
    travel line can no longer be "over ceiling": it either IS the published rate
-   or makes no claim on it. What is left under this heading is shape B, the GSA
-   Fleet lines, where the reference is the whole shape of the line. */
+   or makes no claim on it. What is left under this heading is the vehicle lines,
+   read against the GSA Fleet rate for their TYPE.
+
+   Above the GSA rate is no longer a failure. CORs asked for the flexibility to
+   support vendors who do not pay GSA rates, so an override above it — or a
+   commercial or motor-pool rate above it — is stated on the row and noted for
+   the COR (see advisoriesFor), and blocks nothing. */
 export const gsaOf = (l: Line) => gsaRate(l.gsaKey);
 export const overridden = (l: Line) => isScheduleRated(l) && l.rateOverride != null;
 export const gsaOver = (l: Line) => {
@@ -111,21 +134,40 @@ export const gsaOver = (l: Line) => {
 };
 export const gsaSrcText = (l: Line) => {
   const g = gsaOf(l);
-  /* Says what the control DOES rather than restating the row named above it: the
-     rate is referenced, not typed, and the schedule sets the ceiling. */
-  return g
-    ? `Rate referenced from this GSA row — not typed. Ceiling ${money(g.ceiling)}.`
-    : 'Pick the GSA schedule row this line references — it sets the rate.';
+  /* Says where the number comes from: the vehicle TYPE looks the row up. */
+  if (!g) return 'Pick a vehicle type to look up its GSA rate.';
+  return overridden(l)
+    ? `GSA rate for this type: ${money(g.rate)}.`
+    : `GSA Fleet rate for ${g.season}.`;
 };
+/** The note an above-GSA rate carries — information for the COR, not an error. */
 export const gsaErrText = (l: Line) => {
   const g = gsaOf(l);
-  if (!g) return 'Select the GSA schedule row this line references.';
-  return `${money(l.rateOverride)} is over the ${g.kind} ceiling of ${money(g.ceiling)} for ${g.location} (${g.season}) — ${money(l.rateOverride - g.ceiling)} over.`;
+  if (l.shape !== SHAPES.AUTHORITY) {
+    const cmp = gsaCompareRate(l);
+    if (cmp == null) return '';
+    return `${money((l.rate ?? 0) - cmp)} more than the ${money(cmp)} GSA rate for this type.`;
+  }
+  if (!g || l.rateOverride == null) return '';
+  return `${money(l.rateOverride - g.ceiling)} more than the ${money(g.ceiling)} GSA rate for this type.`;
 };
 export const gsaLabel = (l: Line) => {
   const g = gsaOf(l);
   return g ? `${g.location} · ${g.kind} · ${g.season}` : 'Select a schedule row';
 };
+/** A non-GSA vehicle line (commercial lease, motor pool) above the GSA rate. */
+export const compareAbove = (l: Line) => {
+  const cmp = gsaCompareRate(l);
+  return cmp != null && (l.rate ?? 0) > cmp;
+};
+/** What the GSA rate for the same type is, beside a typed vehicle rate. */
+export const compareText = (l: Line) => {
+  const cmp = gsaCompareRate(l);
+  if (cmp == null) return '';
+  return `GSA rate for this type: ${money(cmp)}/month.`;
+};
+/** Any vehicle line priced above GSA, whichever way it got there. */
+export const aboveGsa = (l: Line) => gsaOver(l) || compareAbove(l);
 
 /* ── The standard rate, as a CLAIM a travel line makes ──────────────────────
    A travel rate is typed. Three kinds have a published standard the vendor may
@@ -152,7 +194,7 @@ export const standardAmountText = (l: Line) => {
 };
 /** The typed rate kept underneath a claim — what dropping it would restore. */
 export const supersededText = (l: Line) =>
-  l?.rate == null ? '' : `Your rate of ${money(l.rate)} is kept, and returns if you drop the claim.`;
+  l?.rate == null ? '' : `Your rate of ${money(l.rate)} returns if you drop the claim.`;
 /* ── What a claimed row SHOWS, and what it does not ─────────────────────────
    A claimed rate cell used to carry six things: the disabled typed box, the
    resolved amount, the source sentence, the superseded sentence, a location
@@ -182,28 +224,38 @@ export const localityOptions = (year: number | string) =>
 export const fiscalYearOptions = () =>
   FISCAL_YEARS.map((y: number) => ({ label: `FY${y}`, value: String(y) }));
 
-/* ── Capitalization threshold — PLACEMENT, not a verdict ────────────────────
-   The per-item cost files the item; the cell shows the division that was done
+/* ── Capitalization threshold — a SUGGESTION, and a move the vendor owns ─────
+   The per-item cost files a new item; the cell shows the division that was done
    and the CONSEQUENCE of the side it landed on, because crossing the threshold
-   takes the item out of the indirect base and onto Property Inventory. */
+   takes the item out of the indirect base and onto Property Inventory. Any line
+   can be moved to the other side by hand, and a hand placement against the
+   threshold is noted for the COR rather than refused. */
 export const perItem = (l: Line, a: Amounts) => perItemCost(l, a);
 export const capOverride = (l: Line) => isClassOverride(l);
 /* A lump is only suspicious once it is big enough to be hiding a capitalizable
    item; below the threshold it cannot be, and says nothing. */
 export const capLumpOpen = (l: Line, a: Amounts) =>
-  onThreshold(l) && l.shape === SHAPES.LUMP && (a[l.id] ?? 0) >= contract.capitalizationThreshold;
-export const capPass = (l: Line, a: Amounts) => !capOverride(l) && !capLumpOpen(l, a);
+  onThreshold(l) && l.shape === SHAPES.LUMP && l.block !== 'capital' && (a[l.id] ?? 0) >= contract.capitalizationThreshold;
+/** Whether an itemized line sits where its per-item cost would put it. */
+export const capAgainst = (l: Line, a: Amounts) =>
+  thresholdTested(l) && l.block !== (perItem(l, a) >= contract.capitalizationThreshold ? 'capital' : 'expensed');
+export const capPass = (l: Line, a: Amounts) => !capAgainst(l, a) && !capLumpOpen(l, a);
 export const capFiledText = (l: Line, a: Amounts) =>
   `${money(perItem(l, a))} per item — filed as ${equipmentClassLabel(l.block)}.`;
 export const capWhyText = (l: Line, cfg: any) => filingConsequence(l, cfg);
 export const capOverrideText = (l: Line, a: Amounts) =>
-  `Filed as ${equipmentClassLabel(l.block)} against the sort: at ${money(perItem(l, a))} per item the ${usd(contract.capitalizationThreshold)} threshold makes this ${equipmentClassLabel(thresholdTargetFor(l))}. An override of the threshold needs the COR's agreement — say why on this line.`;
+  capAgainst(l, a)
+    ? `At ${money(perItem(l, a))} per item, the ${usd(contract.capitalizationThreshold)} threshold suggests ${equipmentClassLabel(thresholdTargetFor(l))}.`
+    : `Moved to ${equipmentClassLabel(l.block)} by hand — the threshold agrees.`;
 export const capLumpText = (l: Line, a: Amounts) =>
-  `A ${money(a[l.id] ?? 0)} lump has no per-item cost, so the ${usd(contract.capitalizationThreshold)} threshold cannot reach inside it. Itemize this line — quantity × cost each — so each item files itself.`;
-/* The override runs one way — see canOverrideThreshold. */
-export const capCanOverride = (l: Line, a: Amounts) => canOverrideThreshold(l, a);
+  `At ${money(a[l.id] ?? 0)}, this lump could hide a capital item. Itemize it if it does.`;
+/* Any equipment line, either direction, itemized or lump. */
+export const capCanOverride = (l: Line, _a?: Amounts) => canOverrideThreshold(l);
+/* The move names its DESTINATION, because that is the decision being made. */
 export const capToggleText = (l: Line) =>
-  capOverride(l) ? 'Use the threshold' : 'File as a supply instead';
+  `Move to ${equipmentClassLabel(thresholdTargetFor(l)).toLowerCase()}`;
+/* Handing a hand-placed line back to the sort. */
+export const capResetText = (l: Line) => (capOverride(l) && thresholdTested(l) ? 'File by threshold' : '');
 
 /* ── The period guard, on the axis every time unit shares ───────────────────
    Converting the line's time to months FIRST makes one rule cover every unit:
@@ -213,12 +265,15 @@ export const monthsTested = (l: Line) => isSalaryLine(l);
 export const monthsOver = (l: Line, lines: Line[]) => periodProblem(l, lines) != null;
 export const timeText = (l: Line, lines: Line[]) =>
   countOf(effectiveQty(l, lines), timeUnit(l).plural);
+const perPerson = (l: Line) => (staffOf(l) > 1 ? ' each' : '');
 export const monthsText = (l: Line, lines: Line[]) =>
   timeUnit(l).key === 'month'
-    ? `${timeText(l, lines)} of the ${contractMonths}-month contract period`
-    : `${timeText(l, lines)} ≈ ${countOf(timeInMonths(l, lines), 'months')} of the ${contractMonths}-month contract period`;
+    ? `${timeText(l, lines)}${perPerson(l)} of the ${contractMonths}-month contract period`
+    : `${timeText(l, lines)}${perPerson(l)} ≈ ${countOf(timeInMonths(l, lines), 'months')} of the ${contractMonths}-month contract period`;
 export const monthsErrText = (l: Line, lines: Line[]) =>
-  `${timeText(l, lines)} is ${qtyFmt(timeInMonths(l, lines))} months of work in a ${contractMonths}-month contract period — one individual cannot be budgeted for more time than the contract runs.`;
+  timeUnit(l).key === 'month'
+    ? `${timeText(l, lines)} per person is past the ${contractMonths}-month contract period. Shorten it to fit.`
+    : `${timeText(l, lines)} per person is ${qtyFmt(timeInMonths(l, lines))} months — past the ${contractMonths}-month contract period. Shorten it to fit.`;
 
 /* The unit decides what the number beside it MEANS, so it captions the rate. */
 export const rateLabelOf = (l: Line) => (isSalaryLine(l) ? timeUnit(l).rateLabel : 'Cost per unit');
@@ -240,7 +295,13 @@ export const fringePctText = (l: Line) => (fringePctOf(l) * 100).toFixed(1);
    number. The cents still live in the priced total. */
 export const fringeAmtText = (l: Line, lines: Line[], a: Amounts) =>
   usd(fringeOnLine(l, lines, a));
-export const fringeFactText = (l: Line) => `${fringePctText(l)}% fringe`;
+export const fringeFactText = (l: Line) =>
+  `${fringePctText(l)}% fringe${isFringeOverride(l) ? ' — overrides the default' : ''}`;
+/** Whether this salary line follows the budget default, for the reset control. */
+export const fringeOverridden = (l: Line) => isFringeOverride(l);
+/** The default, as the field and the reset control state it. */
+export const fringeDefaultText = () => (fringeDefaults.pct * 100).toFixed(1);
+export const fringeResetText = () => `Use the ${fringeDefaultText()}% default`;
 
 /* There is deliberately no fringeOffText() any more. It printed a justification
    for any rate that differed from the house rate ("Seasonal rate — no retirement
@@ -264,7 +325,7 @@ export const fringeRateText = (l: Line, lines: Line[]) =>
 /* A derived row cannot be allocated on its own, so the error names the row that
    CAN fix it. */
 export const derivedAllocErrText = (l: Line, lines: Line[]) =>
-  `Follows ${baseLabelFor(l, lines)} — allocate that position’s salary lines and this follows.`;
+  `Allocate the ${baseLabelFor(l, lines)} salary lines — this fringe line takes their split.`;
 
 /* ── Line identity: which control NAMES this line ───────────────────────────
    Four categories know their own line's name better than the vendor does, so
@@ -279,7 +340,18 @@ export const identOf = (l: Line): string =>
 export const displayLabel = (l: Line, lines: Line[]): string =>
   l.shape === SHAPES.TRAVEL ? travelLabel(l)
   : l.category === 'personnel-fringe' ? fringeLabel(l, lines)
+  : l.category === 'vehicles' ? vehicleLabel(l)
   : l.label ?? '';
+/** A vehicle line names its kind and its type — "GSA lease — ½-ton pickup 4x4,
+    crew cab" — because the type is what a COR checks against the work. A
+    vendor-defined one names what the vendor said it is. */
+export const vehicleLabel = (l: Line): string => {
+  const k = vehicleKind(l.vehicleKind);
+  if (!k) return l.label ?? '';
+  const name = k.vendorDefined ? ((l.desc ?? '').trim() || k.label) : k.label;
+  const type = vehicleTypeLabel(l.vehicleType);
+  return type ? `${name} — ${type}` : name;
+};
 /** WHERE the line sits — the section that owns it, as one line of text.
     A name alone does not identify a line ("Mileage" appears under three trips),
     so every surface that addresses a line away from the grid — the line editor's
@@ -322,15 +394,19 @@ export const scopeOf = (l: Line): string => {
    name a unit the heading had already named — and nothing kept the two agreeing.
    Neither category has a second dimension either (a line is one course, or one
    space), so locking is also what stops "3 registrations × 2 ?" being offered. */
+/* A KIND fixes the unit in four categories now — vehicles, meetings & training
+   and other direct costs, each through its own kind list — except where the kind
+   is vendor-defined, which names its own unit. */
+const kindUnit = (l: Line) => (l.shape === SHAPES.TRAVEL ? null : (kindOfLine(l) as any)?.unit ?? null);
 export const unitLocked = (l: Line) =>
-  (l.category === 'vehicles' && !!vehicleKind(l.vehicleKind)) ||
+  !!kindUnit(l) ||
   isSalaryLine(l) ||
   !!categoryFixedUnit(l.category);
 export const lockedUnit = (l: Line) =>
   isSalaryLine(l)
     ? timeUnit(l).plural
-    : (categoryFixedUnit(l.category) ?? vehicleKind(l.vehicleKind)?.unit ?? l.qtyUnit ?? '');
-export const lockedUnit2 = (l: Line) => vehicleKind(l.vehicleKind)?.secondUnit ?? l.qty2Unit ?? '';
+    : (categoryFixedUnit(l.category) ?? kindUnit(l) ?? l.qtyUnit ?? '');
+export const lockedUnit2 = (l: Line) => (kindOfLine(l) as any)?.secondUnit ?? l.qty2Unit ?? '';
 /* Three renderings of the unit cell, exactly one live: an open text box, a
    time-unit SELECT on a personnel line, or a value a vehicle kind already fixed. */
 export const unitPicked = (l: Line) => isSalaryLine(l);
@@ -364,9 +440,9 @@ export const allocErrText = (l: Line, lines: Line[]) => {
 export const qtyFactText = (l: Line, lines: Line[]) => {
   if (l.shape === SHAPES.TRAVEL) return travelChain(l);
   const one = `${qtyFmt(effectiveQty(l, lines))} ${lockedUnit(l) || l.qtyUnit || ''}`.trim();
-  /* A personnel line is one individual — number × unit cost, no second
-     multiplicand exists to print. */
-  if (isSalaryLine(l)) return one;
+  /* A personnel line's second multiplicand is its staff count, and only when
+     there is more than one person. */
+  if (isSalaryLine(l)) return staffOf(l) > 1 ? `${one} × ${staffOf(l)} staff` : one;
   return l.qty2 != null ? `${one} × ${qtyFmt(l.qty2)} ${l.qty2Unit ?? ''}`.trim() : one;
 };
 export const allocFactText = (l: Line) => {
@@ -374,22 +450,30 @@ export const allocFactText = (l: Line) => {
   return e.length ? e.map(([id, p]) => `${id} ${p}%`).join(' · ') : 'Not allocated';
 };
 
-/** Row state carried as an inline background tint — never a colored left border. */
-export const rowFlag = (l: Line, lines: Line[], a: Amounts) =>
-  gsaOver(l) ? 'gsa'
-  : allocSum(l) !== 100 ? 'alloc'
-  : !capPass(l, a) ? 'capital'
+/** Row state carried as an inline background tint — never a colored left border.
+ *  Only BLOCKING states tint a row. An above-GSA rate or a hand-placed item is
+ *  the vendor's to choose, so it is stated in its cell and noted for the COR,
+ *  not painted as a problem. */
+export const rowFlag = (l: Line, lines: Line[], _a?: Amounts) =>
+  allocSum(l) !== 100 ? 'alloc'
   : monthsOver(l, lines) ? 'months'
   : null;
 
 /* ── Indirect scope, spelled out so re-scoping is legible ───────────────────── */
+/* Counted in SCOPES, not categories: Supplies & equipment is two scopes (its
+   supplies are in the base, its capital equipment is not), so counting
+   categories said "Supplies & equipment excluded" about a section half of which
+   the rate reaches. */
 export const excludedLabels = (cfg: any) =>
-  categories.filter((c: any) => !cfg.appliesTo.includes(c.key)).map((c: any) => c.label);
+  indirectScopes.filter((x: any) => !cfg.appliesTo.includes(x.key)).map((x: any) => x.label);
+const listText = (xs: string[]) =>
+  xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`;
 export const scopeText = (cfg: any) => {
   const out = excludedLabels(cfg);
+  const inScope = indirectScopes.filter((x: any) => cfg.appliesTo.includes(x.key)).length;
   return out.length
-    ? `${cfg.appliesTo.length} of ${categories.length} categories in scope — ${out.join(' and ')} excluded`
-    : `All ${categories.length} categories in scope`;
+    ? `${inScope} of ${indirectScopes.length} cost groups in scope — ${listText(out)} excluded`
+    : `All ${indirectScopes.length} cost groups in scope`;
 };
 
 /* ── Option lists for the pickers ───────────────────────────────────────────
@@ -422,3 +506,58 @@ export const gsaOptionsFor = (l: Line) => {
       : gsaRatesFor(l.category);
   return rows.map((g: any) => ({ label: `${g.location} · ${g.kind} · ${g.season}`, value: g.key }));
 };
+
+/* ── Accounting code — the vendor's own, on every line ─────────────────────── */
+export const acctText = (l: Line, lines: Line[]) => acctCodeOf(l, lines);
+export const acctFactText = (l: Line, lines: Line[]) => {
+  const c = acctCodeOf(l, lines);
+  return c ? `Code ${c}` : 'No accounting code';
+};
+
+/* ── Staff on a personnel line ─────────────────────────────────────────────── */
+export const staffText = (l: Line) => String(staffOf(l));
+
+/* ── Kinds the vendor picks, per category ───────────────────────────────────── */
+export const vehicleTypeOptions = () => VEHICLE_TYPES.map((t: any) => ({ label: t.label, value: t.key }));
+export const meetingKindOptions = () => MEETING_KINDS.map((k: any) => ({ label: k.label, value: k.key }));
+export const otherKindOptions = () => OTHER_KINDS.map((k: any) => ({ label: k.label, value: k.key }));
+/** Whether this line names itself with a typed DESCRIPTION beside its kind. */
+export const takesDesc = (l: Line) =>
+  isVendorDefined(l) && (l.shape === SHAPES.TRAVEL || l.category === 'vehicles');
+/** Whether a vehicle line shows the vehicle type picker — every kind but "other". */
+export const takesVehicleType = (l: Line) =>
+  l.category === 'vehicles' && !!vehicleKind(l.vehicleKind) && !vehicleKind(l.vehicleKind)?.vendorDefined;
+export const vendorDefined = (l: Line) => isVendorDefined(l);
+
+/* ── Linking a meeting to the trip that gets there ─────────────────────────── */
+export const tripLinkOptions = () => [
+  { label: 'Not linked to a trip', value: '' },
+  ...trips.map((t: any) => ({ label: `${tripLabel(t)} trip`, value: t.key })),
+];
+/** The trip head's full-cost line: travel, plus what is linked to it. */
+export const tripCostText = (tripKey: string, lines: Line[], a: Amounts) => {
+  const c = tripFullCost(tripKey, lines, a);
+  if (!c.linked.length) return '';
+  const n = c.linked.length;
+  return `Full trip: ${usd(c.total)} — ${usd(c.travel)} travel + ${usd(c.meetings)} ${n === 1 ? 'linked meeting' : `for ${n} linked meetings`}`;
+};
+
+/* ── A lodging claim's season, said on the row ─────────────────────────────── */
+export const seasonText = (l: Line) => {
+  const ref = standardOn(l);
+  if (!ref || !needsSeason(l.travelKind, ref.locality)) return '';
+  return seasonLabel(ref.locality, ref.season) || 'Season not chosen';
+};
+
+/* ── M&IE partial days ─────────────────────────────────────────────────────── */
+export const hasPartialDays = (l: Line) => !!travelKind(l?.travelKind)?.partialRate;
+export const partialLabelOf = (l: Line) => travelKind(l?.travelKind)?.partialLabel ?? '';
+
+/* ── The fringe default, as a sentence for the category head ───────────────── */
+export const fringeDefaultNote = (lines: Line[]) => {
+  const n = lines.filter((x: Line) => isFringeOverride(x)).length;
+  return n
+    ? `Applies to every position without its own rate. ${n} ${n === 1 ? 'line has' : 'lines have'} one.`
+    : 'Applies to every position without its own rate.';
+};
+export const pctText = (f: number) => pct(f, 1);

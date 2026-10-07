@@ -26,9 +26,9 @@ const pinSvg =
   <div class="cbf-summary__head">
     <h2 class="cbf-summary__title">Contract {s.contractNumber}: {s.contractTitle}</h2>
     <div class="cbf-summary__actions">
-      <span data-sow-report><EsaButton variant="secondary" appearance="outline" size="sm">SOW Report</EsaButton></span>
-      <span data-expand-all><EsaButton variant="secondary" appearance="ghost" size="sm">Expand All</EsaButton></span>
-      <span data-collapse-all><EsaButton variant="secondary" appearance="ghost" size="sm">Collapse All</EsaButton></span>
+      <span data-sow-report><EsaButton variant="secondary" appearance="outline" size="sm">SOW report</EsaButton></span>
+      <span data-expand-all><EsaButton variant="secondary" appearance="ghost" size="sm">Expand all</EsaButton></span>
+      <span data-collapse-all><EsaButton variant="secondary" appearance="ghost" size="sm">Collapse all</EsaButton></span>
     </div>
   </div>
 
@@ -38,20 +38,20 @@ const pinSvg =
     <div class="cbf-summary__basics">
       <div class="cbf-summary__basics-main">
         <dl class="cbf-summary__dl">
-          <dt>Project Number</dt><dd><a class="cbf-doc-link" href="#">{s.projectNumber}</a></dd>
-          <dt>Project Title</dt><dd>{s.projectTitle}</dd>
+          <dt>Project number</dt><dd><a class="cbf-doc-link" href="#">{s.projectNumber}</a></dd>
+          <dt>Project title</dt><dd>{s.projectTitle}</dd>
           <dt>BPA PM</dt><dd>{s.bpaPm}</dd>
-          <dt>Project Stage</dt><dd>{s.projectStage}</dd>
-          <dt>Project Area</dt>
+          <dt>Project stage</dt><dd>{s.projectStage}</dd>
+          <dt>Project area</dt>
           <dd>
             <table class="cbf-summary__subtable">
               <thead><tr><th>Province</th><th>Subbasin</th><th>%</th></tr></thead>
               <tbody><tr><td>{s.projectArea.province}</td><td>{s.projectArea.subbasin}</td><td>{s.projectArea.pct}</td></tr></tbody>
             </table>
           </dd>
-          <dt>Contract Number</dt><dd>{s.contractNumber}</dd>
-          <dt>Contract Title</dt><dd>{s.contractTitle}</dd>
-          <dt>Contract Continuation</dt>
+          <dt>Contract number</dt><dd>{s.contractNumber}</dd>
+          <dt>Contract title</dt><dd>{s.contractTitle}</dd>
+          <dt>Contract continuation</dt>
           <dd>
             <table class="cbf-summary__subtable">
               <thead><tr><th>Previous</th><th>Will be renewed</th><th>Next</th></tr></thead>
@@ -62,28 +62,28 @@ const pinSvg =
               </tr></tbody>
             </table>
           </dd>
-          <dt>Contract Status</dt><dd>{s.status}</dd>
-          <dt>Contract Description</dt>
+          <dt>Contract status</dt><dd>{s.status}</dd>
+          <dt>Contract description</dt>
           <dd><p class="cbf-summary__desc-lede">{s.descriptionLede}</p><p class="cbf-summary__desc">{s.description}</p></dd>
-          <dt>Account Type(s)</dt><dd>{s.accountTypes}</dd>
-          <dt>Contract Start Date</dt><dd>{s.startDate}</dd>
-          <dt>Contract End Date</dt><dd>{s.endDate}</dd>
+          <dt>Account type(s)</dt><dd>{s.accountTypes}</dd>
+          <dt>Contract start date</dt><dd>{s.startDate}</dd>
+          <dt>Contract end date</dt><dd>{s.endDate}</dd>
           <dt>Current Contract Value</dt><dd>{s.currentValue}</dd>
           <dt>Expenditures</dt>
           <dd>{s.expenditures}<span class="typography-meta cbf-summary__note">* {s.expendituresNote}</span></dd>
           <dt>BPA CO</dt><dd><a class="cbf-doc-link" href="#">{s.bpaCo}</a></dd>
           <dt>BPA COR</dt><dd><a class="cbf-doc-link" href="#">{s.bpaCor}</a></dd>
-          <dt>Env. Compliance Lead</dt><dd><a class="cbf-doc-link" href="#">{s.envComplianceLead}</a></dd>
-          <dt>Contract Contractor</dt><dd><a class="cbf-doc-link" href="#">{s.contractor}</a></dd>
-          <dt>Work Order Task(s)</dt><dd><a class="cbf-doc-link" href="#">{s.workOrderTasks}</a></dd>
-          <dt>Contract Type</dt><dd>{s.contractType}</dd>
+          <dt>Env. compliance lead</dt><dd><a class="cbf-doc-link" href="#">{s.envComplianceLead}</a></dd>
+          <dt>Contract contractor</dt><dd><a class="cbf-doc-link" href="#">{s.contractor}</a></dd>
+          <dt>Work order task(s)</dt><dd><a class="cbf-doc-link" href="#">{s.workOrderTasks}</a></dd>
+          <dt>Contract type</dt><dd>{s.contractType}</dd>
           <dt>Accrual category</dt><dd>{s.accrualCategory}</dd>
-          <dt>Pricing Method</dt><dd>{s.pricingMethod}</dd>
+          <dt>Pricing method</dt><dd>{s.pricingMethod}</dd>
         </dl>
       </div>
       <div class="cbf-summary__map" aria-hidden="true">
         <div class="cbf-summary__map-canvas"><Fragment set:html={pinSvg} /></div>
-        <p class="cbf-summary__map-cap typography-meta">Click the map to see this Contract's location details.</p>
+        <p class="cbf-summary__map-cap typography-meta">Select the map to see this contract's location details.</p>
       </div>
     </div>
   </EsaCollapsible>
@@ -125,7 +125,7 @@ const pinSvg =
     );
     root.querySelector('[data-sow-report] button')?.addEventListener('click', () => {
       const sb = document.querySelector('[data-snackbar]') as any;
-      (sb?.info ?? sb?.success)?.call(sb, 'The SOW Report is out of scope for this prototype.', { duration: 4000 });
+      (sb?.info ?? sb?.success)?.call(sb, 'The SOW report is out of scope for this prototype.', { duration: 4000 });
     });
   }
 </script>

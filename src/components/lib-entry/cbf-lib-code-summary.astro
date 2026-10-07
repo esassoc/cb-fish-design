@@ -1,0 +1,201 @@
+---
+/*
+ * cbf-lib-code-summary — the LIB, subtotalled by the VENDOR'S accounting codes.
+ *
+ * ── WHY ─────────────────────────────────────────────────────────────────────
+ * A LIB is organized the way BPA reads a budget: by category. A vendor's books
+ * are organized by their own GL or cost codes. When an invoice arrives, the
+ * question is "which budget lines does this charge belong to" — and it can only
+ * be answered if the two can be lined up. Every line carries an optional code
+ * (`acctCode`); this section adds them up by code, and lets either reader view
+ * the grid through one code at a time. Uncoded lines are a row of their own, so
+ * the gap is visible rather than silently missing from every subtotal.
+ *
+ * ── EVENT CONTRACT (all on `document`) ──────────────────────────────────────
+ * LISTEN   'cbf-lib:totals'       detail.byCode, detail.codeCounts, detail.total
+ * DISPATCH 'cbf-lib:code-filter'  detail: { code: string | null } — the grid
+ *          hides lines booked to other codes; null shows everything again
+ *
+ * bcn-lego-checked: the actions are esa-button, the active-filter marker is
+ * esa-badge. The code list is a semantic <table> — a short ledger read down a
+ * money column, the same call cbf-lib-cost-table and the reconciliation rail's
+ * ledger make; the ecology catalog has no table lego and AG Grid's search/filter
+ * chrome would be heavier than the dozen rows it holds. Beacon is not cloned on
+ * this machine.
+ */
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import { priceLines, costLines, acctCodeOf, usd } from '../../data/lib-entry.mjs';
+
+const priced = priceLines();
+const counts: Record<string, number> = {};
+costLines.forEach((l: any) => {
+  const c = acctCodeOf(l, costLines);
+  counts[c] = (counts[c] ?? 0) + 1;
+});
+/* Coded first in code order, then the uncoded row last. */
+const codes = Object.keys(priced.byCode).sort((a, b) =>
+  a === '' ? 1 : b === '' ? -1 : a.localeCompare(b, 'en', { numeric: true }),
+);
+const total = priced.totals.direct;
+---
+
+<section class="cbf-lcs stack" data-gap="sm" data-code-summary aria-labelledby="cbf-lcs-title">
+  <header class="repel" data-gap="sm">
+    <span class="stack" data-gap="3xs">
+      <h2 class="typography-heading-sm" id="cbf-lcs-title">Direct cost by accounting code</h2>
+      <p class="cbf-lcs__note typography-body-sm">
+        Subtotals by the vendor’s own codes, for matching invoices to this budget. Indirect isn’t included.
+      </p>
+    </span>
+    <span class="cluster" data-gap="2xs" data-lcs-active hidden>
+      <EsaBadge value="Filtered" variant="info" size="sm" />
+      <span class="cbf-lcs__note typography-body-sm" data-lcs-active-text></span>
+      <span data-lcs-clear>
+        <EsaButton size="xs" variant="secondary" appearance="soft">Show all lines</EsaButton>
+      </span>
+    </span>
+  </header>
+
+  <div class="cbf-lcs__box">
+    <table class="cbf-lcs__table">
+      <thead>
+        <tr>
+          <th scope="col">Accounting code</th>
+          <th scope="col" class="cbf-lcs__num">Lines</th>
+          <th scope="col" class="cbf-lcs__num">Direct cost</th>
+          <th scope="col" class="cbf-lcs__num">Share</th>
+          <th scope="col"><span class="cbf-lcs__sr">View</span></th>
+        </tr>
+      </thead>
+      <tbody data-lcs-rows>
+        {codes.map((c) => (
+          <tr data-code={c}>
+            <th scope="row">{c || 'No code'}</th>
+            <td class="cbf-lcs__num" data-lcs-count>{counts[c] ?? 0}</td>
+            <td class="cbf-lcs__num" data-lcs-amount>{usd(priced.byCode[c])}</td>
+            <td class="cbf-lcs__num" data-lcs-share>{total ? `${((priced.byCode[c] / total) * 100).toFixed(1)}%` : '—'}</td>
+            <td class="cbf-lcs__act">
+              <span data-lcs-show>
+                <EsaButton size="xs" variant="secondary" appearance="soft">Show only</EsaButton>
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    {/* One row cloned per new code that appears as the vendor types. */}
+    <template data-lcs-template>
+      <tr data-code="">
+        <th scope="row"></th>
+        <td class="cbf-lcs__num" data-lcs-count></td>
+        <td class="cbf-lcs__num" data-lcs-amount></td>
+        <td class="cbf-lcs__num" data-lcs-share></td>
+        <td class="cbf-lcs__act">
+          <span data-lcs-show>
+            <EsaButton size="xs" variant="secondary" appearance="soft">Show only</EsaButton>
+          </span>
+        </td>
+      </tr>
+    </template>
+  </div>
+</section>
+
+<script>
+  import { usd } from '../../data/lib-entry.mjs';
+
+  const root = document.querySelector<HTMLElement>('[data-code-summary]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string, s: ParentNode = root) => s.querySelector<T>(sel);
+    const setText = (el: Element | null, t: string) => { if (el) el.textContent = t; };
+    let active: string | null = null;
+    const label = (c: string) => c || 'No code';
+
+    const paintActive = () => {
+      const on = active != null;
+      ($('[data-lcs-active]') as HTMLElement).hidden = !on;
+      setText($('[data-lcs-active-text]'), on ? `Showing ${label(active!)} lines only` : '');
+      root.querySelectorAll<HTMLElement>('tr[data-code]').forEach((tr) => {
+        tr.classList.toggle('is-active', on && tr.dataset.code === active);
+        setText($('[data-lcs-show] .esa-button__label', tr), on && tr.dataset.code === active ? 'Showing' : 'Show only');
+      });
+    };
+    const setFilter = (code: string | null) => {
+      active = code;
+      document.dispatchEvent(new CustomEvent('cbf-lib:code-filter', { detail: { code } }));
+      paintActive();
+    };
+
+    root.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-lcs-clear]')) { setFilter(null); return; }
+      const tr = t.closest('[data-lcs-show]')?.closest('tr[data-code]') as HTMLElement | null;
+      if (tr) setFilter(active === tr.dataset.code ? null : tr.dataset.code ?? '');
+    });
+
+    /* Kept in step with the grid. A code that appears gets a row; one that no
+       line carries any more loses its row — and if it was the active filter,
+       the filter goes with it rather than hiding every line. */
+    document.addEventListener('cbf-lib:totals', (e: any) => {
+      const d = e.detail ?? {};
+      if (!d.byCode) return;
+      const body = $('[data-lcs-rows]')!;
+      const tpl = $('[data-lcs-template]') as HTMLTemplateElement | null;
+      const codes = Object.keys(d.byCode).sort((a, b) =>
+        a === '' ? 1 : b === '' ? -1 : a.localeCompare(b, 'en', { numeric: true }),
+      );
+      const direct = d.direct || 0;
+      const want = new Set(codes);
+      body.querySelectorAll<HTMLElement>('tr[data-code]').forEach((tr) => { if (!want.has(tr.dataset.code ?? '')) tr.remove(); });
+      codes.forEach((c) => {
+        let tr = body.querySelector<HTMLElement>(`tr[data-code="${CSS.escape(c)}"]`);
+        if (!tr && tpl) {
+          tr = (tpl.content.firstElementChild as HTMLElement).cloneNode(true) as HTMLElement;
+          tr.dataset.code = c;
+        }
+        if (!tr) return;
+        setText(tr.querySelector('th'), label(c));
+        setText($('[data-lcs-count]', tr), String(d.codeCounts?.[c] ?? 0));
+        setText($('[data-lcs-amount]', tr), usd(d.byCode[c]));
+        setText($('[data-lcs-share]', tr), direct ? `${((d.byCode[c] / direct) * 100).toFixed(1)}%` : '—');
+        body.appendChild(tr);
+      });
+      if (active != null && !want.has(active)) setFilter(null);
+      else paintActive();
+    });
+  }
+</script>
+
+<style>
+  .cbf-lcs__note { margin: 0; color: var(--color-content-default-secondary); max-width: 64ch; }
+  .cbf-lcs__sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .cbf-lcs__box {
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-200);
+    background: var(--color-background-elevation-raised);
+    overflow: hidden;
+  }
+  .cbf-lcs__table { width: 100%; border-collapse: collapse; font-size: 14px; color: var(--color-content-default); }
+  .cbf-lcs__table th,
+  .cbf-lcs__table :global(td),
+  .cbf-lcs__table :global(tbody th) {
+    padding: var(--spacing-200) var(--spacing-300);
+    text-align: left;
+    border-top: 1px solid var(--color-border-default-subtle);
+  }
+  .cbf-lcs__table thead th {
+    border-top: 0;
+    background: var(--color-background-elevation-sunken);
+    font-size: 13px;
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-lcs__table :global(tbody th) { font-weight: var(--typography-font-weight-medium); font-variant-numeric: tabular-nums; }
+  .cbf-lcs__num,
+  .cbf-lcs__table :global(.cbf-lcs__num) { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .cbf-lcs__table :global(.cbf-lcs__act) { text-align: right; width: 1%; white-space: nowrap; }
+  .cbf-lcs__table :global(tr.is-active > *) { background: var(--color-background-utility-info-subtle); }
+  [hidden] { display: none !important; }
+</style>

@@ -46,8 +46,8 @@ import EsaButton from '@esa/ecology/esa-button.astro';
 <esa-side-dialog size="md" position="right" heading="Trip" data-libs-trip-editor>
   <div class="cbf-lste stack" data-gap="lg">
     <p class="cbf-lste__lede typography-body-sm">
-      A trip carries what every line under it would otherwise repeat. Raise how many times
-      it happens and every cost in the trip moves together.
+      A trip holds the destination and timing that every line in it shares. Change how many
+      times it happens and every cost in the trip moves together.
     </p>
 
     <esa-text-field
@@ -69,7 +69,7 @@ import EsaButton from '@esa/ecology/esa-button.astro';
       data-trip-field="occurrences"
       size="md"
       label="Times it happens"
-      help-text="A journey that repeats is one trip that happens N times — not N unrelated rows."
+      help-text="Enter a repeating journey once, then set how many times it happens."
     ></esa-text-field>
 
     <div class="cbf-lste__effect repel" data-gap="sm">
@@ -103,7 +103,7 @@ import EsaButton from '@esa/ecology/esa-button.astro';
         <EsaButton size="sm" variant="secondary" appearance="soft">Delete trip, keep the lines</EsaButton>
       </span>
       <span data-delete-all>
-        <EsaButton size="sm" variant="danger" appearance="soft" icon="trash-2">Delete trip and lines</EsaButton>
+        <EsaButton size="sm" variant="danger" appearance="soft" icon="trash-2">Delete trip and its lines</EsaButton>
       </span>
     </span>
     <span class="cluster" data-gap="sm">
@@ -172,8 +172,8 @@ import EsaButton from '@esa/ecology/esa-button.astro';
       setText(
         $('[data-effect-note]'),
         under.length
-          ? `${countOf(under.length, 'lines')} · every one of them happens ${countOf(draft.occurrences || 1, 'times')}.`
-          : 'No lines yet — add them from the trip once it is saved.',
+          ? `${countOf(under.length, 'lines')} · each happens ${countOf(draft.occurrences || 1, 'times')}.`
+          : 'No lines yet. Add them from the trip after you save it.',
       );
       /* What each delete would do to those lines, stated where the count is
          rather than inside a button label. Keeping them costs the occurrence
@@ -185,8 +185,8 @@ import EsaButton from '@esa/ecology/esa-button.astro';
         !under.length
           ? ''
           : occ > 1
-            ? `Deleting this trip can keep these ${under.length} lines: they file under “Not part of a trip”, each keeping this destination and each priced once rather than ${countOf(occ, 'times')}.`
-            : `Deleting this trip can keep these ${under.length} lines: they file under “Not part of a trip”, each keeping this destination.`,
+            ? `If you keep these ${under.length} lines, they move to “Not part of a trip” with this destination, priced once instead of ${countOf(occ, 'times')}.`
+            : `If you keep these ${under.length} lines, they move to “Not part of a trip” with this destination.`,
       );
       show($('[data-delete-note]'), mode === 'edit' && under.length > 0);
     };

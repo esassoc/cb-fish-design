@@ -130,8 +130,8 @@ const views = sheetIds
               </>
             ) : (
               <p class="cbf-lss__meta typography-body-sm">
-                The parent line carries no work-element allocation yet — assign it in the grid
-                before this subcontract can be submitted.
+                The parent line isn’t allocated to work elements yet. Allocate it in the grid
+                before you submit the budget.
               </p>
             )}
           </div>
@@ -148,20 +148,19 @@ const views = sheetIds
           </ul>
         </EsaAlertBox>
         <p class="cbf-lss__meta typography-body-sm">
-          The state tax on construction is the same percentage-of-a-base shape as fringe and
-          indirect on the parent LIB — it just sits down here, on the sub-sheet, computed off
-          items 1–3 rather than off anything in the grid above. It is entered and resolved on
-          the full sheet, not on this summary.
+          State tax on construction works like fringe and indirect — a percentage of a base — but
+          it’s figured on items 1–3 of this sheet, not on the main grid. It’s entered on the full
+          sheet, not on this summary.
         </p>
       </section>
 
       {/* ── 3 · The recursed category set — read-only stand-in, labeled as one ── */}
       <section class="stack" data-gap="sm">
         <div class="stack" data-gap="3xs">
-          <h3 class="cbf-lss__h3 typography-body-md">The category set, run again</h3>
+          <h3 class="cbf-lss__h3 typography-body-md">Subcontract budget by category</h3>
           <p class="cbf-lss__meta typography-body-sm">
-            Summary only — the full category set opens in the subcontract's own sheet. No line
-            detail, quantities, or rates are carried here, and nothing on this panel is editable.
+            Read-only summary. Line detail, quantities and rates are on the subcontract’s own
+            sheet.
           </p>
         </div>
 
@@ -181,8 +180,8 @@ const views = sheetIds
             </dl>
             <p class="cbf-lss__meta typography-body-sm">
               {reconciles
-                ? `Ties to the ${usd(sheet.total)} lump carried on the LIB. No indirect is added on top.`
-                : `Does not yet tie to the ${usd(sheet.total)} lump carried on the LIB — the full sheet reconciles it.`}
+                ? `Matches the ${usd(sheet.total)} lump-sum line on the LIB. No indirect is added.`
+                : `Doesn’t match the ${usd(sheet.total)} lump-sum line on the LIB yet — the full sheet reconciles it.`}
             </p>
           </div>
         </EsaCard>

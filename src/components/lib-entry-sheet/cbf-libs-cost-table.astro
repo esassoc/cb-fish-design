@@ -215,11 +215,11 @@ const fringeShown = (l: any) => isSalaryLine(l);
 const fringeText = (l: any) =>
   `${(fringePctOf(l) * 100).toFixed(1)}% fringe · ${money(fringeOnLine(l, lines, priced.amounts))} carried in Personnel — Fringe`;
 const capFailText = (l: any) =>
-  capOverride(l) ? 'Overrides the threshold' : 'Too large to test per item';
+  capOverride(l) ? 'Overrides the threshold' : "Lump — can't test per item";
 const capErrText = (l: any) =>
   capOverride(l)
-    ? `Filed as ${equipmentClassLabel(l.block)} against the sort: at ${money(perItem(l))} per item the ${usd(contract.capitalizationThreshold)} threshold makes this ${equipmentClassLabel(thresholdTargetFor(l))}. This override needs the COR's agreement.`
-    : `A ${money(amt(l.id))} lump has no per-item cost, so the ${usd(contract.capitalizationThreshold)} threshold cannot reach inside it. Itemize this line so each item files itself.`;
+    ? `Filed as ${equipmentClassLabel(l.block)} by hand. At ${money(perItem(l))} per item, the ${usd(contract.capitalizationThreshold)} threshold would make this ${equipmentClassLabel(thresholdTargetFor(l))}, so the COR has to agree.`
+    : `A ${money(amt(l.id))} lump sum has no per-item cost, so the ${usd(contract.capitalizationThreshold)} threshold can't test it. Itemize this line so each item files itself.`;
 
 /* ── Grouping — identical to the entry grid, because the LEDGER shape is the
    thing both versions agree on. ── */
@@ -479,7 +479,7 @@ const t0 = priced.totals;
 
                     <span class="cluster" data-gap="2xs" data-gsa-wrap hidden={!isScheduleRated(item.line)}>
                       <span data-gsa="under" hidden={!overridden(item.line) || gsaOver(item.line)}>
-                        <EsaBadge value="Overridden, within ceiling" variant="warning" />
+                        <EsaBadge value="Your own rate, within ceiling" variant="warning" />
                       </span>
                       <span data-gsa="over" hidden={!gsaOver(item.line)}>
                         <EsaBadge value="Over GSA ceiling" variant="danger" />
@@ -511,7 +511,7 @@ const t0 = priced.totals;
                     {item.line.sheet && (
                       <span data-open-sheet={item.line.sheet} data-open-sheet-line={item.line.id}>
                         <EsaButton size="xs" variant="secondary" appearance="soft" icon="external-link">
-                          Subcontract sheet
+                          Open subcontract sheet
                         </EsaButton>
                       </span>
                     )}
@@ -754,11 +754,11 @@ const typedSrcText = V.typedSrcText;
     const fringeText = (l: any, a: any) =>
       `${(fringePctOf(l) * 100).toFixed(1)}% fringe · ${money(fringeOnLine(l, lines, a))} carried in Personnel — Fringe`;
     const capFailText = (l: any) =>
-      capOverride(l) ? 'Overrides the threshold' : 'Too large to test per item';
+      capOverride(l) ? 'Overrides the threshold' : "Lump — can't test per item";
     const capErrText = (l: any, a: any) =>
       capOverride(l)
-        ? `Filed as ${equipmentClassLabel(l.block)} against the sort: at ${money(perItem(l, a))} per item the ${usd(contract.capitalizationThreshold)} threshold makes this ${equipmentClassLabel(thresholdTargetFor(l))}. This override needs the COR's agreement.`
-        : `A ${money(a[l.id] ?? 0)} lump has no per-item cost, so the ${usd(contract.capitalizationThreshold)} threshold cannot reach inside it. Itemize this line so each item files itself.`;
+        ? `Filed as ${equipmentClassLabel(l.block)} by hand. At ${money(perItem(l, a))} per item, the ${usd(contract.capitalizationThreshold)} threshold would make this ${equipmentClassLabel(thresholdTargetFor(l))}, so the COR has to agree.`
+        : `A ${money(a[l.id] ?? 0)} lump sum has no per-item cost, so the ${usd(contract.capitalizationThreshold)} threshold can't test it. Itemize this line so each item files itself.`;
 
     /* ── Tiny DOM setters (esa-* internals are stable markup) ── */
     const show = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };

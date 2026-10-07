@@ -630,6 +630,80 @@ the call sites, since the row itself says a human must decide.
 
 ---
 
+### Nothing detects a stale sibling hub checkout — the same spoke renders opposite-correctly on two machines
+
+**Status:** Open — needs upstream change. Local damage resolved: spoke PRs #41/#43
+(2026-09-09) partially reverted the `1bd8bce` token migration, and PR #44 (2026-09-10)
+reverted both after re-verifying against a current hub (`7700af9`) — including the
+`theme-cb-fish.css` alias fork that would have become self-referential on the next
+codemod run. The tooling gap itself remains; see below.
+**Affects:** Every spoke, on every machine, via the `file:` symlink to the sibling
+`ecology` checkout — worst during a vocabulary flip like the 2026-08-13/16
+property-first rename.
+
+**Problem:**
+A spoke migrated with `migrate-tokens.mjs` is correct only against a hub checkout at
+or after the migration rows it applied — but the `file:` symlink means "the hub" is
+whatever commit each developer last pulled, and **no tool compares the two**.
+
+Concretely, in this spoke: `1bd8bce` (2026-08-19) applied the codemod against a
+current hub, where the components genuinely read the new names (`esa-app-bar` reads
+`--color-background-brand`, `esa-range-slider` reads `--color-content-default` /
+`--color-border-default` / `--color-background-brand`, `esa-button` has
+`variant="chrome"` + `iconRight`). A teammate whose ecology checkout predated
+2026-08-13 then saw **real** regressions on their machine — the pre-flip components
+there still read `--color-primary` / `--color-text-primary` / `--form-bg`, so every
+migrated override was unset and each component fell to its literal fallback
+(`esa-app-bar`'s is `#46a758`: the "green nav"), and pre-fold `esa-button` silently
+ignored `variant="chrome"` / `iconRight` (the "pill buttons, no chevrons").
+
+The resulting fix PRs (#41, #43) diagnosed the codemod as buggy — "renamed to
+invented names that don't exist in the hub" — and restored the pre-migration names.
+Both statements are true on the stale hub and false on a current one. The map-sow
+overrides (#43) **replaced** the new names, so they are inert against a current hub
+and those panels re-break on any machine that has pulled; the theme additions (#41)
+merely duplicate the hub's own deprecated-alias layer. Two machines, opposite
+correct answers, and no error output on either names the actual variable: the hub
+commit under the symlink.
+
+**Requested change:**
+Make the skew loud and named. Either or both:
+1. **Stamp the vocabulary.** `migrate-tokens.mjs --write` records the newest
+   migration `since` date it applied (e.g. `.esa-migrated`, or a field in
+   `package.json`). `doctor.mjs` compares that stamp against the linked hub's
+   `migrations.json` and its declared tokens, and FAILs with the actual instruction —
+   "this spoke's vocabulary is newer than the linked hub checkout: `git pull` in
+   ../ecology" — instead of letting the mismatch surface as per-component visual
+   regressions.
+2. **Upgrade the existing signal.** doctor's "tokens read here that the hub does not
+   declare" list already catches this case, but it is informational and does not say
+   *why* the name is missing. A read whose name appears as a migration **destination**
+   in `migrations.json` but is not declared by the linked hub is, precisely, "your hub
+   is older than your spoke" — worth a dedicated, loud diagnosis distinct from
+   genuinely retired names.
+3. **Guard the rewrite when a rename's DESTINATION is already declared in the same
+   file.** A skew-era "fix" leaves a spoke declaring the hub's own compat alias
+   (`--color-primary: var(--color-background-brand)`) alongside the real
+   `--color-background-brand` override. The next `--write` run renames the alias's
+   declaration into `--color-background-brand: var(--color-background-brand)` — a
+   duplicate declaration of an existing property where the later, **self-referential**
+   one wins the cascade, resolves as a cycle to invalid, and drops the token for every
+   reader (the green-nav failure, reintroduced by the tool on a fully current hub).
+   `findCollapseCollisions` cannot see it: it only checks two *from* names collapsing
+   into one *to*, never "*to* is already declared here." Same value-loss class, same
+   remedy — report it and refuse to rewrite that pair until a human deletes one side.
+
+**Local follow-up (CBFish, not upstream):** done in PR #44 (`git revert -m 1` of the
+#41 and #43 merges, verified against hub `7700af9`): map-sow.css and the nav are back
+on the migrated vocabulary and the `EsaButton variant="chrome"` API, and the theme
+alias fork is gone. The "~30 remaining files" cleanup #41 proposed was correctly
+never applied — those call sites were already right. Remaining crumb: two rows in
+`src/pages/design-system/foundations/color.astro` still document `color-primary` /
+`color-surface-inverse` as the override names (display strings only — no rendering
+or doctor impact).
+
+---
+
 ## @esa/tokens — colour ramps
 
 ### The hub's `--color-gold-*` is Radix gold, and a spoke's same-named ramp vanished into it
@@ -661,3 +735,28 @@ Two things, either of which would have caught it:
    dropped declarations, which is the silent-rendering class the `removed:true` rows
    exist to prevent. A read with a fallback still renders and can stay a warning.
 
+
+## esa-text-field — `type="number"` cannot be valid for a decimal, and the invalid state throws
+
+### No `step` is forwarded, and `syncValidity` passes an empty message to `setValidity`
+
+**Status:** Open. Worked around locally: the LIB indirect-rate field (`cbf-lib-indirect-config`)
+uses `inputmode="decimal"` instead of `type="number"`.
+**Affects:** Any `<esa-text-field type="number">` holding a non-integer value.
+
+**Problem:**
+Two defects that compound:
+1. `esa-text-field` forwards no `step` to its inner `<input>`, so a `type="number"` field
+   takes the browser default of `step="1"`. Its seeded value of `26.75` is therefore a real
+   `stepMismatch` — the field is invalid on load, with no way to declare it otherwise.
+2. `syncValidity()` copies the inner flags and uses `inner.validationMessage` as the
+   message. When the inner input is not being rendered (here, inside a container the COR
+   lens hides with `display: none`), the browser reports an EMPTY validation message, and
+   `ElementInternals.setValidity(flags, '')` throws: *"The second argument should not be
+   empty if one or more flags in the first argument are true."* It surfaces as an uncaught
+   exception from Lit's `updated()` on every update of that field.
+
+**Requested change:**
+- Forward `step` (and `min`/`max`, if not already) like the other constraint attributes.
+- In `syncValidity`, fall back to a non-empty message when `validationMessage` is empty
+  (e.g. `Enter a valid ${label}.`), so an invalid-but-hidden field can never throw.

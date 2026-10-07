@@ -171,16 +171,15 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
   <esa-side-dialog data-lic-dialog heading="Configure the indirect rate" size="lg" open={open || undefined}>
     <div class="stack" data-gap="lg">
       <p class="cbf-lic__lede typography-body-md">
-        The rate, the document that authorizes it, the period it covers, and — the part that gets
-        checked — exactly which cost subtotals it is applied to. Every change here re-bases the
-        indirect calculation immediately, both below and in the cost grid.
+        Set the rate, its reference document and dates, and which cost subtotals it applies to —
+        the part BPA checks most closely. Totals here and in the cost grid update as you go.
       </p>
 
       <div class="cbf-lic__fields grid" data-gap="md">
         <esa-text-field
           data-lic-field="rate"
           label="Indirect rate"
-          type="number"
+          inputmode="decimal"
           suffix="%"
           value={(config.rate * 100).toFixed(2)}
           help-text="As approved in the reference document."
@@ -206,21 +205,19 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
       <div class="stack" data-gap="sm">
         <h3 class="typography-title">Rate structure</h3>
         <esa-radio-group data-lic-mode orientation="horizontal" size="md"></esa-radio-group>
-        <EsaAlertBox variant="info" title="Dual rates are not entered on this screen">
-          A dual rate charges on-site and off-site work at two different rates, and a rate that
-          changes part-way through the contract has to be weighted by the months on each side of
-          the change. Neither calculation is built here — a dual-rate budget is worked out with
-          your contracting officer before the LIB is entered.
+        <EsaAlertBox variant="info" title="Dual rates aren’t entered here">
+          Work out a dual-rate budget with your contracting officer before entering the LIB. This
+          screen doesn’t split on-site and off-site rates, or weight a rate that changes mid-contract
+          by the months on each side.
         </EsaAlertBox>
       </div>
 
       <div class="stack" data-gap="sm">
         <h3 class="typography-title">What this rate is applied to</h3>
         <p class="cbf-lic__hint typography-body-sm">
-          A subtotal counts toward the indirect base only while it is checked. Uncheck one and watch
-          the base and the indirect dollars below drop by that amount. Supplies &amp; Equipment is
-          listed as its two classes rather than as one line, because capitalizing an item is exactly
-          the thing that takes it out of the base — so the scope has to be sayable at that level.
+          Only checked subtotals count toward the indirect base — uncheck one and the totals below drop
+          by its amount. Supplies &amp; equipment is split by class, because capitalizing an item
+          takes it out of the base.
         </p>
         <ul class="cbf-lic__picker" data-lic-picker>
           {indirectScopes.map((scope) => (
@@ -263,7 +260,7 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
       </div>
       <div class="cbf-lic__actions repel">
         <EsaButton variant="ghost" size="md" data-lic-reset>
-          Reset to the approved scope
+          Reset to approved rate and scope
         </EsaButton>
         <EsaButton variant="primary" size="md" data-lic-done>Done</EsaButton>
       </div>

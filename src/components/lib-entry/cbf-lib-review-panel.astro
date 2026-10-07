@@ -125,23 +125,23 @@ const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
       {/* ── The vendor, while the COR is still working: no marks, no guessing ── */}
       <div data-rp-role="vendor" data-rp-when="in-review">
         <EsaAlertBox variant="info" title="This budget is with BPA">
-          Nothing is required of you while the review is open. If changes are needed you will get
-          the budget back with every line marked, and the marks will appear on this screen.
+          Nothing is needed from you during the review. If BPA needs changes, the budget comes back
+          to you with the marked lines shown here.
         </EsaAlertBox>
       </div>
 
       {/* ── Approved ─────────────────────────────────────────────────────── */}
       <div data-rp-when="approved">
         <EsaAlertBox variant="success" title="Approved">
-          This line item budget is approved for {contract.fiscalYear}. The marks below stay on the
-          record for the contract file.
+          This line item budget is approved for {contract.fiscalYear}. The marks below stay in the
+          contract file.
         </EsaAlertBox>
       </div>
 
       {/* ── How the COR marks a line. Said once, where they start. ───────── */}
       <p class="cbf-lrp__howto typography-body-sm" data-rp-role="cor">
-        Mark a line with the flag button at the end of its row. Every mark carries a reason and a
-        note saying what has to change — the vendor sees them only once you return the budget.
+        Use the flag button at the end of a row to mark a line, with a reason and what has to
+        change. The vendor sees your marks only after you return the budget.
       </p>
 
       {/* ── The memo: written by the COR, read by the vendor ─────────────── */}
@@ -404,7 +404,7 @@ const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
       setText(
         $('[data-rp-decide-note]'),
         blocking > 0
-          ? `${blocking} required change${blocking === 1 ? '' : 's'} — the budget can be returned, not approved.`
+          ? `Approval is blocked by ${blocking} required change${blocking === 1 ? '' : 's'}. You can still return the budget.`
           : counts.total === 0
             ? 'Nothing is marked. Approving accepts the budget as submitted.'
             : 'Only questions are outstanding — you can approve or return.',
@@ -416,7 +416,7 @@ const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
         review.status === 'approved'
           ? 'Nothing further is needed on this budget.'
           : counts.outstanding === 0
-            ? 'Every item is marked addressed. Resubmit the budget from the reconciliation rail.'
+            ? 'Every item is marked addressed. Resubmit the budget under Reconciliation.'
             : `Fix each line, then mark it addressed. Resubmitting unlocks when all ${counts.total} are cleared.`,
       );
     };
@@ -464,7 +464,8 @@ const lineCat = (id: string) => categoryOf(lineOf(id)?.category)?.label ?? '';
         review.status = 'returned';
         review.addressed = [];
         commit();
-        toast(`Budget returned to ${reviewMeta.vendorContact} with ${reviewCounts(review).total} marks.`);
+        { const n = reviewCounts(review).total;
+          toast(`Budget returned to ${reviewMeta.vendorContact} with ${n} mark${n === 1 ? '' : 's'}.`); }
         return;
       }
       if (t.closest('[data-rp-approve]')) {

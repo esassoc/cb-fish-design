@@ -58,13 +58,13 @@ export const severityMeta = {
     short: 'Required',
     /** esa-badge variant. */
     variant: 'danger',
-    hint: 'The vendor must change this line before the budget can be approved.',
+    hint: 'Blocks approval until the vendor changes this line.',
   },
   [SEVERITIES.QUESTION]: {
     label: 'Question',
     short: 'Question',
     variant: 'warning',
-    hint: 'The vendor must explain this line. It may not need to change.',
+    hint: 'Asks the vendor to explain this line. It may not need to change.',
   },
 };
 
@@ -74,10 +74,10 @@ export const severityMeta = {
  * the reporting a free-text-only review can never support.
  */
 export const REASONS = [
-  { key: 'rate-over-ceiling', label: 'Rate exceeds an authority ceiling' },
+  { key: 'rate-over-ceiling', label: 'Rate exceeds the published rate' },
   { key: 'missing-allocation', label: 'Work-element allocation incomplete' },
   { key: 'documentation', label: 'Supporting documentation required' },
-  { key: 'wrong-category', label: 'Line is in the wrong cost category' },
+  { key: 'wrong-category', label: 'Cost category is wrong' },
   { key: 'quantity', label: 'Quantity or unit needs justification' },
   { key: 'unallowable', label: 'Cost appears unallowable on this contract' },
   { key: 'indirect', label: 'Indirect treatment is wrong' },
@@ -125,8 +125,9 @@ export const seedReview = () => ({
          this line claims no published rate, and the number is above the one that
          is published for Boise. That is allowed, and it has to be justified. */
       note:
-        'Boise lodging is entered at $172 and claims no standard rate. FY2026 publishes $166 ' +
-        'for Boise — either claim it, or attach the approved lodging exception for the difference.',
+        'Boise lodging is entered at $189 and claims no standard rate. FY2026 publishes $178 ' +
+        'for Boise in the Apr–Oct peak season the September workshop falls in — either claim it, ' +
+        'or attach the approved lodging exception for the difference.',
       author: contract.bpaCor,
       date: '08/03/2026',
     },
@@ -226,7 +227,7 @@ export const statusText = (review, role) => {
       : `${reviewMeta.reviewer} returned this budget on ${reviewMeta.returnedOn}. ${c.outstanding} of ${c.total} item${c.total === 1 ? '' : 's'} still to address.`;
   }
   return role === 'cor'
-    ? `In review. ${c.total} mark${c.total === 1 ? '' : 's'} so far — nothing is visible to the vendor until you return or approve it.`
+    ? `In review. ${c.total} mark${c.total === 1 ? '' : 's'} so far — the vendor sees none until you return or approve the budget.`
     : `Submitted ${reviewMeta.submittedOn}. ${reviewMeta.reviewer} is reviewing it.`;
 };
 

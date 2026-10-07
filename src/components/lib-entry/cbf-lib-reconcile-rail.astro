@@ -61,9 +61,10 @@ import EsaProgressBar from '@esa/ecology/esa-progress-bar.astro';
 import {
   contract,
   indirectConfig,
-  categories,
   priceLines,
   submitChecksFor,
+  advisoriesFor,
+  indirectScopes,
   usd,
   pct,
 } from '../../data/lib-entry.mjs';
@@ -111,6 +112,14 @@ const reviewCheck: SubmitCheck = {
 };
 
 const checks: SubmitCheck[] = [...submitChecksFor(), reviewCheck];
+
+// ── Noted for the COR — the findings that BLOCK NOTHING ─────────────────────
+// A vehicle above the GSA rate, an item placed against the threshold, a lump
+// too large to test, a fringe override, a vendor-defined line, an uncoded line.
+// Each is the vendor's to choose, so none of them is a gate — but the vendor
+// should see what the COR will see before they submit.
+const advisories = advisoriesFor();
+const liveAdvisories = advisories.filter((a) => a.ids.length > 0);
 const liveChecks = checks.filter((c) => c.key !== 'review' || reviewGateApplies);
 const blocked = liveChecks.filter((c) => !c.pass);
 const cleared = liveChecks.length - blocked.length;
@@ -125,7 +134,9 @@ const submitLabel =
 // widening the indirect scope — so the rail renders it honestly: the meter
 // clamps at 100% (a bar cannot show 104%) while the text states the overage.
 const isOver = totals.total > contract.contractValue;
-const meterValue = Math.max(0, Math.min(100, totals.pctOfValue * 100));
+// Rounded to a tenth: esa-progress-bar prints the value it is given verbatim, and
+// a raw float printed "98.87856000000001%" in the bar's own header.
+const meterValue = Math.round(Math.max(0, Math.min(100, totals.pctOfValue * 100)) * 10) / 10;
 
 const remainingText = isOver
   ? `${usd(Math.abs(totals.remaining))} over the ceiling`
@@ -137,7 +148,8 @@ const remainingText = isOver
 // explainable, so both are on screen.
 const ratePct = pct(indirectConfig.rate);
 // Kept byte-identical to the client re-render in the script below.
-const scopeText = `on ${indirectConfig.appliesTo.length} of ${categories.length} categories`;
+// Counted in indirect SCOPES — Supplies & equipment is two of them.
+const scopeText = `on ${indirectConfig.appliesTo.length} of ${indirectScopes.length} cost groups`;
 
 const blockedText = (n: number) =>
   n === 0
@@ -148,7 +160,7 @@ const blockedText = (n: number) =>
   class:list={['cbf-lib-rail', 'stack', isOver && 'is-over']}
   data-gap="lg"
   data-lib-rail
-  aria-label="Budget reconciliation and submit gate"
+  aria-label="Budget reconciliation and submit checklist"
 >
   <header class="stack" data-gap="3xs">
     <h2 class="typography-heading-md">{title}</h2>
@@ -242,12 +254,41 @@ const blockedText = (n: number) =>
     </ul>
   </section>
 
+  {/* ── Noted for the COR ─────────────────────────────────────────────────── */}
+  <section
+    class="cbf-lib-rail__notes stack"
+    data-gap="sm"
+    aria-label="Noted for the COR"
+    data-advisories
+    hidden={liveAdvisories.length === 0}
+  >
+    <div class="stack" data-gap="3xs">
+      <h3 class="typography-title">Noted for the COR</h3>
+      <p class="cbf-lib-rail__check-detail typography-body-sm">These don’t block submitting. The COR sees each one.</p>
+    </div>
+    <ul class="cbf-lib-rail__checks stack" data-gap="2xs">
+      {advisories.map((a) => (
+        <li class="cbf-lib-rail__note" data-advisory={a.key} hidden={a.ids.length === 0}>
+          <span class="cbf-lib-rail__check-body">
+            <span class="cbf-lib-rail__mark cbf-lib-rail__mark--info">
+              <EsaIcon name="info" size="sm" label="Noted" />
+            </span>
+            <span class="cbf-lib-rail__check-text">
+              <span class="cbf-lib-rail__check-label typography-body-sm">{a.label}</span>
+              <span class="cbf-lib-rail__check-detail typography-body-sm" data-advisory-detail>{a.detail}</span>
+            </span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  </section>
+
   {/* ── The COR reads this rail; they do not act on it. Their two decisions —
        return and approve — belong to the review panel, next to the marks that
        justify them, not beside the vendor's submit button. ── */}
   <p class="cbf-lib-rail__cor typography-body-sm" data-rail-cor>
-    You are reading the vendor's reconciliation. Returning or approving this budget happens in the
-    review panel above, with the marks you made.
+    You're viewing the vendor's reconciliation. Return or approve the budget from your review,
+    next to the marks you made.
   </p>
 
   {/* ── The submit action the vendor still owns ──────────────────────────── */}
@@ -283,7 +324,7 @@ const blockedText = (n: number) =>
   // broadcasts them; this rail only re-renders what it already painted on the
   // server. Formatting comes from the shared data module so the rail and the
   // grid can never print the same dollar two different ways.
-  import { contract, contractMonths, categories, usd, pct } from '../../data/lib-entry.mjs';
+  import { contract, contractMonths, indirectScopes, usd, pct } from '../../data/lib-entry.mjs';
 
   interface LibTotals {
     total: number;
@@ -296,6 +337,8 @@ const blockedText = (n: number) =>
     unallocated: number;
     capitalFailing: number;
     monthsFailing?: number;
+    checks?: { key: string; pass: boolean; detail: string }[];
+    advisories?: { key: string; detail: string; ids: string[] }[];
   }
 
   interface IndirectConfig {
@@ -327,8 +370,12 @@ const blockedText = (n: number) =>
       // + aria value + variant class is the documented way to animate one.
       const bar = rail.querySelector<HTMLElement>('[data-meter] .esa-progress-bar');
       const fill = bar?.querySelector<HTMLElement>('.esa-progress-bar__fill');
-      const shown = Math.max(0, Math.min(100, d.pctOfValue * 100));
+      const shown = Math.round(Math.max(0, Math.min(100, d.pctOfValue * 100)) * 10) / 10;
       if (fill) fill.style.width = `${shown}%`;
+      /* The header's percentage is static server markup too — without this it
+         kept the load-time figure while the bar beneath it moved. */
+      const valueText = bar?.querySelector('.esa-progress-bar__value');
+      if (valueText) valueText.textContent = `${shown}%`;
       if (bar) {
         bar.setAttribute('aria-valuenow', String(Math.round(shown)));
         bar.classList.toggle('esa-progress-bar--primary', !over);
@@ -406,6 +453,28 @@ const blockedText = (n: number) =>
 
       applyTotals(d);
 
+      /* The grid now broadcasts the WHOLE gate, computed from its live lines,
+         so every row follows — including the ones the counts below could never
+         carry. `indirect` is the exception: its pass rests on the reference
+         document, which only the indirect block's own event knows. */
+      if (Array.isArray(d.checks)) {
+        d.checks.forEach((c) => { if (c.key !== 'indirect') setCheck(c.key, c.pass, c.detail); });
+      }
+      if (Array.isArray(d.advisories)) {
+        let any = false;
+        d.advisories.forEach((a) => {
+          const row = rail.querySelector<HTMLElement>(`[data-advisory="${a.key}"]`);
+          if (!row) return;
+          row.hidden = a.ids.length === 0;
+          any = any || a.ids.length > 0;
+          const det = row.querySelector('[data-advisory-detail]');
+          if (det) det.textContent = a.detail;
+        });
+        const box = rail.querySelector<HTMLElement>('[data-advisories]');
+        if (box) box.hidden = !any;
+      }
+      if (Array.isArray(d.checks)) { refreshGate(); return; }
+
       setCheck(
         'allocation',
         d.unallocated === 0,
@@ -436,8 +505,8 @@ const blockedText = (n: number) =>
           'months',
           d.monthsFailing === 0,
           d.monthsFailing === 0
-            ? `All positions within ${contractMonths} months`
-            : `${d.monthsFailing} position${plural(d.monthsFailing)} over ${contractMonths} months`,
+            ? `All personnel lines within ${contractMonths} months per person`
+            : `${d.monthsFailing} line${plural(d.monthsFailing)} budgeted past ${contractMonths} months`,
         );
       }
       setCheck(
@@ -465,7 +534,7 @@ const blockedText = (n: number) =>
       text('[data-ledger="indirect-rate"]', pct(cfg.rate));
       text(
         '[data-ledger="indirect-scope"]',
-        `on ${cfg.appliesTo.length} of ${categories.length} categories`,
+        `on ${cfg.appliesTo.length} of ${indirectScopes.length} cost groups`,
       );
       /* An approved rate stays approved however the vendor scopes it — but a
          budget carrying NO reference document has no approval to stand on, and a
@@ -642,6 +711,10 @@ const blockedText = (n: number) =>
   }
   .cbf-lib-rail__check.is-pass .cbf-lib-rail__mark--pass { display: inline-flex; color: var(--color-content-utility-success); }
   .cbf-lib-rail__check.is-fail .cbf-lib-rail__mark--fail { display: inline-flex; color: var(--color-content-utility-warning); }
+  /* A COR note is information, not a failure — untinted, with the info glyph in
+     the quiet secondary tone so it never reads as one more thing to fix. */
+  .cbf-lib-rail__note { list-style: none; padding: var(--spacing-150) var(--spacing-200); }
+  .cbf-lib-rail__note .cbf-lib-rail__mark--info { display: inline-flex; color: var(--color-content-default-secondary); }
 
   .cbf-lib-rail__check-text {
     display: flex;

@@ -29,7 +29,7 @@ export const prototypes: Prototype[] = [
     slug: 'lib-entry',
     title: 'LIB entry & COR review',
     description:
-      'The vendor’s Line Item Budget entry screen — an inline grid for entering budget lines with their cross-line dependencies visible — that a role switch flips into the BPA COR’s lens to mark, return, or approve the budget.',
+      'The vendor’s line item budget (LIB) grid, with cross-line dependencies in view. A role switch shows the BPA COR’s side: mark, return or approve.',
     route: '/lib-entry',
     createdAt: '2026-08-05',
     status: 'in-progress',
@@ -111,7 +111,7 @@ export const prototypes: Prototype[] = [
     slug: 'lib-pi-editing',
     title: 'LIB & PI document editing',
     description:
-      'A supportive, fully explained process for unlocking Line Item Budget and Property Inventory document edits under select business conditions — replace a file in place with all specifications retained, approvals reset, and the COR notified when an already-approved document changes.',
+      'Unlock LIB and PI document edits when business rules allow: replace a file in place, keep its details, reset approvals, and alert the COR if it was approved.',
     route: '/lib-pi-editing',
     createdAt: '2026-07-23',
     ticket: 'CBF-8204',
