@@ -763,6 +763,13 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
 .wz-step-hip { margin: 2px 0 14px; }
 /* A step switched on only because a picked category's step depends on it. */
 .wz-step-needed { font-size: 13px; line-height: 1.4; color: var(--color-content-default-secondary); }
+/* Fish species present (StreamNet) on Pre-project complete: one stacked entry per
+   species/run, separated by hairlines rather than boxed like the metric rows. */
+.fish-list { margin-bottom: 12px; }
+.fish-list__item { padding: 8px 0; border-top: 1px solid var(--color-border-default); }
+.fish-list__item:last-child { border-bottom: 1px solid var(--color-border-default); }
+.fish-list__name { font-size: 13px; font-weight: var(--typography-font-weight-semibold); color: var(--color-content-default); line-height: 1.4; }
+.fish-list__use { font-size: 13px; color: var(--color-content-default-secondary); line-height: 1.4; }
 /* 'Types of work' picker: one esa-checkbox-group per HIP category family. */
 .wz-hip-group { display: block; margin-bottom: 16px; }
 
@@ -822,6 +829,9 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
 #sowbody h2:first-child { margin-top: 0; }
 #sowbody h3 { font-size: 11px; font-weight: var(--typography-font-weight-bold); color: var(--color-background-default-knockout); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--color-border-default); padding-bottom: 3px; margin: 10px 0 6px; }
 .sow-hip { gap: 4px 8px; margin: 2px 0 8px; font-size: 12px; }
+/* No known fish use callout in the export's fish distribution section — a tinted box
+   with a full border, so it survives printing and reads apart from the tables. */
+.sow-warning { margin: 4px 0 8px; padding: 8px 10px; border: 1px solid var(--color-border-warning); border-radius: var(--radius-sm); background: var(--color-background-warning-subtle); color: var(--color-content-warning); line-height: 1.5; }
 .smeta { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 14px; margin-bottom: 8px; }
 .smeta dt { color: var(--color-content-default-tertiary); font-weight: var(--typography-font-weight-semibold); }
 .smeta dd { color: var(--color-content-default); }
