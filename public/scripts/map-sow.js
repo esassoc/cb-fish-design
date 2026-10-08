@@ -351,30 +351,63 @@ function fetchFishPresence(we) {
 
 // Placeholder for the species-at-site summary; fillFishPresence() swaps in the result.
 // style: 'rows' (wizard metric rows) or 'table' (export).
+// style 'warn' (boundary/reach steps) shows only the no-fish warning, and nothing while
+// checking or when fish use is recorded.
 function fishPresencePlaceholder(we, style) {
-  return '<div class="fish-presence" data-we="' + we.id + '" data-style="' + style + '"><div class="wz-tip">Checking StreamNet fish distribution…</div></div>';
+  var checking = style === 'warn' ? '' : '<div class="wz-tip">Checking StreamNet fish distribution…</div>';
+  return '<div class="fish-presence" data-we="' + we.id + '" data-style="' + style + '">' + checking + '</div>';
 }
+
+// Warning text when StreamNet records no current fish use at the site: nothing at all,
+// or only historical use. Returns null when current use is recorded. "None recorded"
+// rather than "no fish": StreamNet only knows what partner agencies have surveyed.
+function noFishUseWarning(groups, where) {
+  var HIST = 'Historical (use type unknown)';
+  if (!groups.length) {
+    return {title: 'No known fish use.', body: 'StreamNet has no fish distribution recorded ' + where + ', so this work may not benefit fish.'};
+  }
+  var historicalOnly = groups.every(function(g){ return g.uses.every(function(u){ return u === HIST; }); });
+  if (historicalOnly) {
+    return {title: 'Only historical fish use is recorded.', body: 'StreamNet records no current fish use ' + where + ', so this work may not benefit fish.'};
+  }
+  return null;
+}
+
 function fillFishPresence(we) {
   var els = document.querySelectorAll('.fish-presence[data-we="' + we.id + '"]');
   if (!els.length) return;
   var put = function(fn) { els.forEach(function(el){ el.innerHTML = fn(el.dataset.style); }); };
   fetchFishPresence(we).then(function(groups) {
     put(function(style) {
+      // Same geometry choice as fetchFishPresence(): boundary if drawn, else the reach.
+      var where = (we.ppData['perimeter'] && we.ppData['perimeter'].layer) ? 'within the project boundary' : 'along the stream reach';
+      var warn = groups ? noFishUseWarning(groups, where) : null;
+      var warnHtml = !warn ? '' : style === 'table'
+        ? '<div class="sow-warning"><b>&#9888; ' + warn.title + '</b> ' + warn.body + '</div>'
+        : '<div class="wz-status warning">&#9888; <b>' + warn.title + '</b> ' + warn.body + '</div>';
+      if (style === 'warn') return warnHtml;
       if (groups === null) return '<div class="wz-tip">Draw the project boundary or stream reach to check fish distribution.</div>';
-      if (!groups.length) return '<div class="wz-tip">StreamNet has no fish distribution recorded within the project boundary.</div>';
-      if (style === 'table') {
-        return '<table><thead><tr><th>Species</th><th>Run</th><th>Use type</th></tr></thead><tbody>'
-          + groups.map(function(g){ return '<tr><td>' + g.species + '</td><td>' + (g.run || '—') + '</td><td>' + g.uses.join('; ') + '</td></tr>'; }).join('')
-          + '</tbody></table>';
-      }
-      return groups.map(function(g) {
-        return '<div class="wz-metric-row"><span class="wz-metric-label">' + g.species + (g.run ? ' (' + g.run.toLowerCase() + ' run)' : '') + '</span>'
-          + '<span class="wz-metric-val">' + g.uses.join('; ') + '</span></div>';
-      }).join('');
+      if (!groups.length) return warnHtml;
+      return warnHtml + fishPresenceList(groups, style);
     });
   }).catch(function() {
-    put(function(){ return '<div class="wz-tip">Couldn\'t reach the StreamNet service. Try again shortly.</div>'; });
+    put(function(style){ return style === 'warn' ? '' : '<div class="wz-tip">Couldn\'t reach the StreamNet service, so fish distribution couldn\'t be checked. Try again shortly.</div>'; });
   });
+}
+
+// Species list: a table in the export, metric rows in the wizard.
+function fishPresenceList(groups, style) {
+  if (style === 'table') {
+    return '<table><thead><tr><th>Species</th><th>Run</th><th>Use type</th></tr></thead><tbody>'
+      + groups.map(function(g){ return '<tr><td>' + g.species + '</td><td>' + (g.run || '—') + '</td><td>' + g.uses.join('; ') + '</td></tr>'; }).join('')
+      + '</tbody></table>';
+  }
+  // Stacked (name, then use type) — the side-by-side metric row wraps both columns
+  // raggedly in the narrow wizard panel.
+  return '<div class="fish-list">' + groups.map(function(g) {
+    return '<div class="fish-list__item"><div class="fish-list__name">' + g.species + (g.run ? ' (' + g.run.toLowerCase() + ' run)' : '') + '</div>'
+      + '<div class="fish-list__use">' + g.uses.join('; ') + '</div></div>';
+  }).join('') + '</div>';
 }
 
 // Click-to-identify while the StreamNet layer is on: lists the species, runs and use
@@ -10276,7 +10309,7 @@ function renderWizardStep() {
     }
     // esa-select instances above are inserted with no options/value (Lit properties,
     // not attributes) — wire them up now that they're in the DOM.
-    if (step.id === 'pp_done' && we) fillFishPresence(we);
+    if ((step.id === 'pp_done' || step.id === 'perimeter' || step.id === 'reach') && we) fillFishPresence(we);
     if (keepPicker) {
       // picker groups already wired and showing the user's selection
     } else if (step.id === 'hip_select' && we) {
@@ -11215,6 +11248,9 @@ function wizardStepBody(we, step, idx) {
       // h += '<button class="wz-action-btn secondary" onclick="openWEModal(null)">&#43; Add Another Work Element</button>';
       break;
   }
+  // Early no-fish warning once the boundary or reach is drawn, so it shows before the
+  // rest of pre-project is entered (pp_done and the export show the full species list).
+  if ((step.id === 'perimeter' || step.id === 'reach') && wizardStepStatus(we, step.id) === 'done') h += fishPresencePlaceholder(we, 'warn');
   return h;
 }
 
