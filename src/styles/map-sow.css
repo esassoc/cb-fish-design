@@ -311,6 +311,17 @@ esa-select.pm-input, esa-text-field.pm-input { width: 100%; border: none; paddin
 .layer-section-title { font-size: 10px; font-weight: var(--typography-font-weight-bold); color: var(--color-content-default-knockout, #fff); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
 .layer-row { display: flex; align-items: center; gap: 6px; font-size: 11px; color: rgba(255,255,255,0.75); cursor: pointer; padding: 2px 0; user-select: none; }
 .layer-row input[type=radio], .layer-row input[type=checkbox] { accent-color: var(--cbf-blue-500); cursor: pointer; }
+/* StreamNet species picker, shown under its checkbox while the layer is on. */
+/* The field is transparent by default, which loses its dark text on this dark panel —
+   give it the default light surface. */
+.layer-species-select { display: block; margin: 4px 0 6px 18px; --color-background-field: var(--color-background-default); }
+/* bcn-lego-checked: Leaflet builds its own popup chrome at runtime, so no esa- lego can
+   render inside it; Beacon has no map identify popup. This only spaces the plain text
+   content of the StreamNet click-to-identify popup. */
+.sn-popup { font-size: 13px; line-height: 1.4; color: var(--color-content-default); }
+.sn-popup__title { font-weight: var(--typography-font-weight-semibold); }
+.sn-popup__source { color: var(--color-content-default-secondary); margin-bottom: 6px; }
+.sn-popup__row { padding: 4px 0; border-top: 1px solid var(--color-border-default); }
 .layer-opacity-slider {
   display: block;
   width: 100%;
