@@ -257,6 +257,149 @@ var SOW_COLOR = {};
 var CHU_COLOR = {};
 var CHU_CYCLE = ['riffle','pool','glide','run'];
 var WETLAND_COLOR = {};
+// ── StreamNet fish distribution (PSMFC) ─────────────────────────────────────
+// Public ArcGIS MapServer: one polyline layer per species/run plus an all-species
+// layer. No WMS or tile cache, so the map draws it as MapServer export images (see
+// StreamNetLayer in the map init) and queries it for click-to-identify and the
+// species-at-site summary. Species names are the service's own layer names.
+var STREAMNET_URL = 'https://gis.psmfc.org/server/rest/services/StreamNet/Fish_Distribution/MapServer';
+var STREAMNET_ALL_ID = 21;
+var STREAMNET_SPECIES = [
+  {id: 21, label: 'All species combined'},
+  {id: 0, label: 'Fall Chinook'}, {id: 1, label: 'Spring Chinook'}, {id: 2, label: 'Summer Chinook'},
+  {id: 3, label: 'Coho Salmon'}, {id: 4, label: 'Chum Salmon'}, {id: 5, label: 'Pink Salmon'},
+  {id: 6, label: 'Sockeye Salmon'}, {id: 7, label: 'Summer Steelhead'}, {id: 8, label: 'Winter Steelhead'},
+  {id: 9, label: 'Kokanee'}, {id: 10, label: 'White Sturgeon'}, {id: 11, label: 'Green Sturgeon'},
+  {id: 12, label: 'Bonneville Cutthroat Trout'}, {id: 13, label: 'Westslope Cutthroat Trout'},
+  {id: 14, label: 'Yellowstone Cutthroat Trout'}, {id: 15, label: 'Bull Trout'}, {id: 16, label: 'Rainbow Trout'},
+  {id: 17, label: 'Redband Trout'}, {id: 18, label: 'Pacific Lamprey'}, {id: 19, label: 'Burbot'},
+  {id: 20, label: 'Northern Pikeminnow'}
+];
+// The service's own line colors (species layers are styled by use type; the
+// all-species layer is one color), mirrored here for the map legend.
+var STREAMNET_USE_TYPES = [
+  {label: 'Spawning and rearing', color: 'rgb(230,0,0)'},
+  {label: 'Rearing and migration', color: 'rgb(85,255,0)'},
+  {label: 'Migration only', color: 'rgb(179,89,51)'},
+  {label: 'Presence (use type unknown)', color: 'rgb(130,130,130)'},
+  {label: 'Historical (use type unknown)', color: 'rgb(169,0,230)'}
+];
+var STREAMNET_ALL_COLOR = 'rgb(33,149,153)';
+var streamnetLayer = null; // set in the map init
+
+function streamnetSpeciesLabel(id) {
+  var m = STREAMNET_SPECIES.filter(function(x){ return x.id === id; })[0];
+  return m ? m.label : '';
+}
+
+// Runs a distinct-values query against a StreamNet layer. Resolves to the features' attributes.
+function streamnetQuery(layerId, params) {
+  var q = Object.assign({
+    spatialRel: 'esriSpatialRelIntersects', inSR: '4326',
+    outFields: 'StreamName,Species,Run,UseType,UseTypeID',
+    returnDistinctValues: 'true', returnGeometry: 'false', f: 'json'
+  }, params);
+  var qs = Object.keys(q).map(function(k){ return k + '=' + encodeURIComponent(q[k]); }).join('&');
+  return fetch(STREAMNET_URL + '/' + layerId + '/query?' + qs)
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d.error) throw new Error(d.error.message || 'StreamNet query failed');
+      return (d.features || []).map(function(f){ return f.attributes; });
+    });
+}
+
+// Groups query rows into one entry per species + run, use types ordered as the service lists them.
+function streamnetGroup(rows) {
+  var order = STREAMNET_USE_TYPES.map(function(u){ return u.label; });
+  var groups = {};
+  rows.forEach(function(r) {
+    var key = r.Species + '|' + r.Run;
+    if (!groups[key]) groups[key] = {species: r.Species, run: (r.Run && r.Run !== 'N/A') ? r.Run : '', uses: []};
+    if (groups[key].uses.indexOf(r.UseType) < 0) groups[key].uses.push(r.UseType);
+  });
+  return Object.keys(groups).sort().map(function(k) {
+    var g = groups[k];
+    g.uses.sort(function(a, b){ return order.indexOf(a) - order.indexOf(b); });
+    return g;
+  });
+}
+
+// Species and use types along the project: queried with the project boundary if it's
+// drawn, otherwise the stream reach. Cached per work element until that geometry changes.
+function fetchFishPresence(we) {
+  var per = we.ppData['perimeter'], reach = we.ppData['reach_len'];
+  var geom = null, geomType = null;
+  if (per && per.layer && per.layer.getLatLngs) {
+    var ring = per.layer.getLatLngs()[0].map(function(ll){ return [ll.lng, ll.lat]; });
+    ring.push(ring[0]);
+    geom = {rings: [ring]}; geomType = 'esriGeometryPolygon';
+  } else if (reach && reach.layer && reach.layer.getLatLngs) {
+    var pts = reach.layer.getLatLngs();
+    if (pts.length && Array.isArray(pts[0])) pts = pts[0];
+    geom = {paths: [pts.map(function(ll){ return [ll.lng, ll.lat]; })]}; geomType = 'esriGeometryPolyline';
+  }
+  if (!geom) return Promise.resolve(null);
+  var key = JSON.stringify(geom);
+  if (we.fishPresence && we.fishPresence.key === key) return we.fishPresence.promise;
+  geom.spatialReference = {wkid: 4326};
+  var promise = streamnetQuery(STREAMNET_ALL_ID, {geometry: JSON.stringify(geom), geometryType: geomType})
+    .then(streamnetGroup);
+  we.fishPresence = {key: key, promise: promise};
+  promise.catch(function(){ if (we.fishPresence && we.fishPresence.key === key) we.fishPresence = null; });
+  return promise;
+}
+
+// Placeholder for the species-at-site summary; fillFishPresence() swaps in the result.
+// style: 'rows' (wizard metric rows) or 'table' (export).
+function fishPresencePlaceholder(we, style) {
+  return '<div class="fish-presence" data-we="' + we.id + '" data-style="' + style + '"><div class="wz-tip">Checking StreamNet fish distribution…</div></div>';
+}
+function fillFishPresence(we) {
+  var els = document.querySelectorAll('.fish-presence[data-we="' + we.id + '"]');
+  if (!els.length) return;
+  var put = function(fn) { els.forEach(function(el){ el.innerHTML = fn(el.dataset.style); }); };
+  fetchFishPresence(we).then(function(groups) {
+    put(function(style) {
+      if (groups === null) return '<div class="wz-tip">Draw the project boundary or stream reach to check fish distribution.</div>';
+      if (!groups.length) return '<div class="wz-tip">StreamNet has no fish distribution recorded within the project boundary.</div>';
+      if (style === 'table') {
+        return '<table><thead><tr><th>Species</th><th>Run</th><th>Use type</th></tr></thead><tbody>'
+          + groups.map(function(g){ return '<tr><td>' + g.species + '</td><td>' + (g.run || '—') + '</td><td>' + g.uses.join('; ') + '</td></tr>'; }).join('')
+          + '</tbody></table>';
+      }
+      return groups.map(function(g) {
+        return '<div class="wz-metric-row"><span class="wz-metric-label">' + g.species + (g.run ? ' (' + g.run.toLowerCase() + ' run)' : '') + '</span>'
+          + '<span class="wz-metric-val">' + g.uses.join('; ') + '</span></div>';
+      }).join('');
+    });
+  }).catch(function() {
+    put(function(){ return '<div class="wz-tip">Couldn\'t reach the StreamNet service. Try again shortly.</div>'; });
+  });
+}
+
+// Click-to-identify while the StreamNet layer is on: lists the species, runs and use
+// types recorded for the stream reach under the click (within a few pixels).
+function identifyStreamNet(latlng) {
+  if (!streamnetLayer || !map.hasLayer(streamnetLayer)) return;
+  var pt = map.latLngToContainerPoint(latlng), tol = 6;
+  var sw = map.containerPointToLatLng([pt.x - tol, pt.y + tol]);
+  var ne = map.containerPointToLatLng([pt.x + tol, pt.y - tol]);
+  var layerId = streamnetLayer.options.layerId;
+  streamnetQuery(layerId, {geometry: [sw.lng, sw.lat, ne.lng, ne.lat].join(','), geometryType: 'esriGeometryEnvelope'})
+    .then(function(rows) {
+      if (!rows.length) return;
+      var streams = rows.map(function(r){ return r.StreamName; }).filter(function(n, i, a){ return n && a.indexOf(n) === i; });
+      var html = '<div class="sn-popup"><div class="sn-popup__title">' + (streams.join(', ') || 'Unnamed stream') + '</div>'
+        + '<div class="sn-popup__source">StreamNet · ' + streamnetSpeciesLabel(layerId) + '</div>'
+        + streamnetGroup(rows).map(function(g) {
+            return '<div class="sn-popup__row"><b>' + g.species + (g.run ? ' (' + g.run.toLowerCase() + ' run)' : '') + '</b><br>' + g.uses.join('; ') + '</div>';
+          }).join('')
+        + '</div>';
+      L.popup({maxWidth: 280}).setLatLng(latlng).setContent(html).openOn(map);
+    })
+    .catch(function(){ setMapHint('Couldn\'t reach the StreamNet service. Try again shortly.'); });
+}
+
 var activeBasemap = 'Street map'; // read by updateNaipYearDisplay() outside the map-init closure
 var STRUCT_COLOR = {};
 var STRUCT_LABEL = {cms:'Channel margin', mcs:'Mid channel', css:'Channel spanning', fps:'Floodplain', scs:'Secondary channel'};
@@ -469,6 +612,22 @@ window.onload = function() {
     })
   };
 
+  // StreamNet has no tile cache or WMS, so each 256px tile is a MapServer export of the
+  // selected species layer (options.layerId) for that tile's Web Mercator extent.
+  var StreamNetLayer = L.TileLayer.extend({
+    getTileUrl: function(coords) {
+      var ts = this.getTileSize();
+      var nwPx = coords.scaleBy(ts);
+      var a = L.CRS.EPSG3857.project(this._map.unproject(nwPx, coords.z));
+      var b = L.CRS.EPSG3857.project(this._map.unproject(nwPx.add(ts), coords.z));
+      return STREAMNET_URL + '/export?bbox=' + [a.x, b.y, b.x, a.y].join(',')
+        + '&bboxSR=3857&imageSR=3857&size=' + ts.x + ',' + ts.y
+        + '&format=png32&transparent=true&dpi=96&layers=show:' + this.options.layerId + '&f=image';
+    }
+  });
+  streamnetLayer = new StreamNetLayer('', {layerId: STREAMNET_ALL_ID, opacity: 0.9, maxZoom: 20, attribution: 'StreamNet / PSMFC'});
+  overlays['StreamNet fish distribution'] = streamnetLayer;
+
   basemaps['Street map'].addTo(map);
   overlays['NHD streams'].addTo(map);
 
@@ -533,10 +692,29 @@ window.onload = function() {
         slider.style.display='none';
         if (name === 'NHD streams') { cb.checked = true; slider.style.display='block'; }
         slider.addEventListener('change', function(e){ overlays[name].setOpacity(e.detail.value / 100); });
+        var speciesSel = null;
+        if (overlays[name] === streamnetLayer) {
+          // One StreamNet layer at a time; the legend names the species shown.
+          speciesSel = document.createElement('esa-select');
+          speciesSel.className = 'layer-species-select';
+          speciesSel.setAttribute('size', 'sm');
+          speciesSel.options = STREAMNET_SPECIES.map(function(sp){ return {label: sp.label, value: String(sp.id)}; });
+          speciesSel.value = String(streamnetLayer.options.layerId);
+          speciesSel.style.display = 'none';
+          speciesSel.addEventListener('change', function() {
+            streamnetLayer.options.layerId = +speciesSel.value;
+            streamnetLayer.redraw();
+            map.closePopup();
+            renderLegend();
+          });
+        }
         cb.onchange = function() {
           if(cb.checked){ overlays[name].addTo(map); slider.style.display='block'; } else { map.removeLayer(overlays[name]); slider.style.display='none'; }
+          if (speciesSel) { speciesSel.style.display = cb.checked ? 'block' : 'none'; if (!cb.checked) map.closePopup(); renderLegend(); }
         };
-        row.appendChild(cb); row.appendChild(document.createTextNode(' '+name)); panel.appendChild(row); panel.appendChild(slider);
+        row.appendChild(cb); row.appendChild(document.createTextNode(' '+name)); panel.appendChild(row);
+        if (speciesSel) panel.appendChild(speciesSel);
+        panel.appendChild(slider);
       });
 
       var refWrap = document.createElement('div'); refWrap.id = 'ref-image-section';
@@ -9376,6 +9554,8 @@ function mapClick(e) {
     if(sowDrawing.geo==='segment'&&drawPts.length===2)finishSOWDraw();
     return;
   }
+  // No drawing mode claimed the click: identify StreamNet fish distribution if it's on.
+  identifyStreamNet(e.latlng);
 }
 function mapMove(e) {
   if(reachTrimming){reachTrimMove(e.latlng);return;}
@@ -9512,6 +9692,13 @@ function renderLegend() {
       h+='<div class="leg-row"><span class="leg-line" style="background:'+PC_CHANNEL_COLORS[i % PC_CHANNEL_COLORS.length]+'"></span>'+pc.name+'</div>';
     });
     h+='</div>';
+  }
+  if (streamnetLayer && map.hasLayer(streamnetLayer)) {
+    var snId = streamnetLayer.options.layerId;
+    h+='<div class="leg-section"><div class="leg-sec-title">StreamNet: '+streamnetSpeciesLabel(snId)+'</div>';
+    if (snId === STREAMNET_ALL_ID) h+='<div class="leg-row"><span class="leg-line" style="background:'+STREAMNET_ALL_COLOR+'"></span>Known fish distribution</div>';
+    else STREAMNET_USE_TYPES.forEach(function(u){ h+='<div class="leg-row"><span class="leg-line" style="background:'+u.color+'"></span>'+u.label+'</div>'; });
+    h+='<div class="leg-row" style="font-size:11px;color:var(--color-text-muted,#888)">Click a stream for species details</div></div>';
   }
   h+='<div class="leg-section"><div class="leg-row" style="cursor:pointer;color:#1e5386;text-decoration:underline;font-size:11px" onclick="openMapColorEditor()">&#127912; Edit map colors</div></div>';
   el.innerHTML=h;
@@ -10089,6 +10276,7 @@ function renderWizardStep() {
     }
     // esa-select instances above are inserted with no options/value (Lit properties,
     // not attributes) — wire them up now that they're in the DOM.
+    if (step.id === 'pp_done' && we) fillFishPresence(we);
     if (keepPicker) {
       // picker groups already wired and showing the user's selection
     } else if (step.id === 'hip_select' && we) {
@@ -10519,6 +10707,8 @@ function wizardStepBody(we, step, idx) {
           h += '<div class="wz-metric-row"><span class="wz-metric-label">'+m[0]+'</span>';
           h += '<span class="wz-metric-val '+(m[1]?'':'missing')+'">'+( m[1] || 'not entered')+'</span></div>';
         });
+        h += '<div class="wz-group-head divided">Fish species present (StreamNet)</div>';
+        h += fishPresencePlaceholder(we, 'rows');
       }
       h += '<div class="wz-tip">Click Next to begin entering habitat work details.</div>';
       break;
@@ -11797,6 +11987,7 @@ function openSOW() {
     var ppWetSumExp = fpMultiSum(we, 'pp_wetland');
     h+='<tr><td>Existing wetland areas</td><td>measured</td><td>'+(ppWetSumExp.count>0?ppWetSumExp.acres.toFixed(2)+' acres ('+ppWetSumExp.count+')':'—')+'</td></tr>';
     h+='</tbody></table>';
+    h+='<h3>Fish distribution (StreamNet)</h3>' + fishPresencePlaceholder(we, 'table');
 
     // ── Pre-Project Habitat Units — same shape as a primary channel's "— Habitat
     // Units" section below, but reach-level (once per work element, from
@@ -12064,6 +12255,7 @@ function openSOW() {
   });
 
   document.getElementById('sowbody').innerHTML=h;
+  workElements.forEach(fillFishPresence);
   document.getElementById('sowmodal').show();
   // Build the preview maps after the modal's own dialog has shown and its containers
   // are laid out in the DOM — same deferred-after-injection pattern as drawCHUPie() above.
