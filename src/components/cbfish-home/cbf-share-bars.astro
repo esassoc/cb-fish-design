@@ -1,0 +1,75 @@
+---
+// cbf-share-bars — a ranked list of parts of one total: label, value, and a bar
+// scaled to the largest part. Used by the metric drilldown (by state, by
+// program area) and the basin explorer's state panel.
+//
+// bcn-lego-checked: esa-progress-bar is the closest lego but it is a
+// role="progressbar" for an operation in progress (label is "a gerund"), so
+// using it for share-of-total would announce "Uploading 34%"-style semantics.
+// esa-chart (AG Charts) is a canvas chart with a 2.8MB peer dependency this
+// spoke does not install, out of proportion for 3–4 labelled bars that already
+// state every value as text. Checked Beacon (no part-to-whole list). The list is
+// a real <ul>; the bars are decorative and aria-hidden.
+interface Part {
+  label: string;
+  value: number;
+  /** Already-formatted value text, e.g. "48,200 acres". */
+  display: string;
+}
+interface Props {
+  parts: Part[];
+  /** Accessible name for the list. */
+  label: string;
+}
+const { parts, label } = Astro.props;
+const max = Math.max(1, ...parts.map((p) => p.value));
+---
+<ul class="cbf-share-bars" aria-label={label}>
+  {parts.map((p) => (
+    <li class="cbf-share-bars__row">
+      <span class="cbf-share-bars__label typography-body-sm">{p.label}</span>
+      <span class="cbf-share-bars__value typography-label-sm-strong">{p.display}</span>
+      <span class="cbf-share-bars__track" aria-hidden="true">
+        <span class="cbf-share-bars__fill" style={`--share: ${(p.value / max) * 100}%`}></span>
+      </span>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .cbf-share-bars {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-300);
+  }
+  .cbf-share-bars__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--spacing-100) var(--spacing-300);
+  }
+  .cbf-share-bars__label { color: var(--color-content-default-secondary); min-width: 0; }
+  .cbf-share-bars__value { font-variant-numeric: tabular-nums; }
+  .cbf-share-bars__track {
+    grid-column: 1 / -1;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: var(--color-background-brand-subtle);
+    overflow: hidden;
+  }
+  .cbf-share-bars__fill {
+    display: block;
+    height: 100%;
+    width: var(--share);
+    border-radius: inherit;
+    background: var(--color-background-brand);
+    transform-origin: left;
+    animation: cbf-share-grow 600ms cubic-bezier(.2,.7,.2,1) both;
+  }
+  @keyframes cbf-share-grow { from { transform: scaleX(0); } }
+  @media (prefers-reduced-motion: reduce) {
+    .cbf-share-bars__fill { animation: none; }
+  }
+</style>

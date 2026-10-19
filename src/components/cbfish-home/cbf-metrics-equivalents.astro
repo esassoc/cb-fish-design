@@ -1,0 +1,170 @@
+---
+// cbf-metrics-equivalents — homepage results at everyday scale (CBF-8287),
+// after the icon-and-sentence list in BPA's 2023 Fish & Wildlife Program review
+// (p. 6: "854,000 acres … more than 9 times the size of Seattle"). One row per
+// measure: title, the total, and its comparison. Opening a row draws the
+// comparison as a strip of reference shapes (one per Seattle, park, forest…)
+// (or dots, for a per-person count) and links to the measure's
+// /program-results page.
+//
+// Comparisons are computed from the totals (equivalentPhrase), so they stay
+// right when the placeholder figures are replaced.
+//
+// bcn-lego-checked: rows are native <details>/<summary> disclosure — keyboard
+// and screen-reader behaviour for free. esa-collapsible was checked: its
+// summary slot is a text label, and these summaries carry a title, number and
+// sentence in a row layout. The chevron is esa-icon, the link esa-button. Checked
+// Beacon (no comparison-list pattern). Layout and the strip are local.
+import EsaIcon from '@esa/ecology/esa-icon.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import { METRICS, EQUIVALENTS, equivalentPhrase, formatCompact, formatFull } from '../../data/cbfish-home-metrics';
+import { withBase } from '../../lib/base';
+
+const STRIP_MAX = 40; // draw at most this many reference shapes; say so past it
+const rows = METRICS.map((m) => {
+  const eq = equivalentPhrase(m);
+  const ref = EQUIVALENTS[m.id];
+  const n = eq ? eq.multiple : 0;
+  const whole = Math.min(STRIP_MAX, Math.floor(n));
+  const part = n < STRIP_MAX ? n - Math.floor(n) : 0;
+  return { m, eq, ref, whole, part, capped: n > STRIP_MAX };
+});
+---
+<section class="cbf-metrics-equivalents" aria-labelledby="cbf-metrics-equivalents-h">
+  <div class="cbf-metrics-equivalents__head">
+    <h2 id="cbf-metrics-equivalents-h" class="typography-heading-md">Results at everyday scale</h2>
+    <p class="typography-body-md cbf-metrics-equivalents__lede">What twenty years of work adds up to, measured against places people know. Open a row to see it.</p>
+  </div>
+
+  <ul class="cbf-metrics-equivalents__list">
+    {rows.map(({ m, eq, ref, whole, part, capped }, i) => (
+      <li>
+        <details class="cbf-metrics-equivalents__row" open={i === 0} name="cbf-equivalents">
+          <summary class="cbf-metrics-equivalents__summary">
+            <span class="cbf-metrics-equivalents__text">
+              <span class="cbf-metrics-equivalents__title">{m.short}</span>
+              <span class="cbf-metrics-equivalents__sentence typography-body-md">
+                <strong>{formatCompact(m.total)} {m.unit}</strong>{eq ? `, ${eq.text}.` : '.'}
+              </span>
+            </span>
+            <span class="cbf-metrics-equivalents__chevron" aria-hidden="true"><EsaIcon name="chevron-down" size="md" /></span>
+          </summary>
+
+          {eq && ref && (
+            <div class="cbf-metrics-equivalents__detail">
+              <p class="typography-label-sm cbf-metrics-equivalents__key">
+                {ref.kind === 'per'
+                  ? `Each dot is one ${m.unit.replace(/s$/, '')}: ${formatFull(Math.round(eq.multiple))} for every ${ref.reference}`
+                  : `Each shape is the size of ${ref.reference}, about ${formatFull(ref.size)} ${m.unit}`}
+              </p>
+              {ref.kind === 'area' ? (
+                <div class="cbf-metrics-equivalents__strip" aria-hidden="true">
+                  {Array.from({ length: whole }, (_, k) => <span class="cbf-metrics-equivalents__unit" style={`--k: ${k}`}></span>)}
+                  {part > 0.05 && <span class="cbf-metrics-equivalents__unit is-part" style={`--k: ${whole}; --part: ${part}`}></span>}
+                  {capped && <span class="cbf-metrics-equivalents__more typography-label-sm">+ {formatFull(Math.round(eq.multiple) - STRIP_MAX)} more</span>}
+                </div>
+              ) : (
+                <div class="cbf-metrics-equivalents__dots" aria-hidden="true">
+                  {Array.from({ length: Math.min(200, Math.round(eq.multiple)) }, (_, k) => <span style={`--k: ${k}`}></span>)}
+                </div>
+              )}
+              <EsaButton variant="primary" appearance="outline" size="sm" href={withBase(`/program-results/${m.id}`)} iconRight="arrow-right">
+                View contributing contracts
+              </EsaButton>
+            </div>
+          )}
+        </details>
+      </li>
+    ))}
+  </ul>
+  <p class="typography-body-xs cbf-metrics-equivalents__note">Comparisons use approximate public sizes and are computed from each total.</p>
+</section>
+
+<style>
+  .cbf-metrics-equivalents { display: flex; flex-direction: column; gap: var(--spacing-500); }
+  .cbf-metrics-equivalents__head { display: flex; flex-direction: column; gap: var(--spacing-200); max-width: 70ch; }
+  .cbf-metrics-equivalents__head h2 { margin: 0; }
+  .cbf-metrics-equivalents__lede { margin: 0; color: var(--color-content-default-secondary); }
+
+  .cbf-metrics-equivalents__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md, 0.5rem);
+    background: var(--color-background-elevation-raised);
+    overflow: hidden;
+  }
+  .cbf-metrics-equivalents__list > li + li { border-top: 1px solid var(--color-border-default-subtle); }
+  .cbf-metrics-equivalents__summary {
+    list-style: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--spacing-500);
+    padding: var(--spacing-500) var(--spacing-600);
+    cursor: pointer;
+    transition: background 140ms ease;
+  }
+  .cbf-metrics-equivalents__summary::-webkit-details-marker { display: none; }
+  .cbf-metrics-equivalents__summary:hover { background: var(--color-background-brand-subtle); }
+  .cbf-metrics-equivalents__summary:focus-visible { outline: 2px solid var(--color-background-brand); outline-offset: -2px; }
+  .cbf-metrics-equivalents__text { display: flex; flex-direction: column; gap: var(--spacing-100); }
+  .cbf-metrics-equivalents__title {
+    font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
+    font-size: 20px;
+    font-weight: var(--typography-font-weight-bold, 700);
+    color: var(--color-content-default);
+  }
+  .cbf-metrics-equivalents__sentence { color: var(--color-content-default-secondary); }
+  .cbf-metrics-equivalents__sentence strong { color: var(--color-background-brand); }
+  .cbf-metrics-equivalents__chevron { color: var(--color-content-default-tertiary); display: inline-flex; transition: transform 200ms ease; }
+  .cbf-metrics-equivalents__row[open] .cbf-metrics-equivalents__chevron { transform: rotate(180deg); }
+  .cbf-metrics-equivalents__row[open] .cbf-metrics-equivalents__summary { background: var(--color-background-brand-subtle); }
+
+  .cbf-metrics-equivalents__detail {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-400);
+    padding: var(--spacing-200) var(--spacing-600) var(--spacing-600);
+  }
+  .cbf-metrics-equivalents__key { margin: 0; color: var(--color-content-default-tertiary); }
+  .cbf-metrics-equivalents__strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  /* one reference area = one rounded tile; a partial tile fills by its fraction */
+  .cbf-metrics-equivalents__unit {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--color-background-brand);
+    animation: cbf-eq-in 300ms cubic-bezier(.2,.8,.2,1) both;
+    animation-delay: calc(var(--k) * 25ms);
+  }
+  .cbf-metrics-equivalents__unit.is-part {
+    background: linear-gradient(to right, var(--color-background-brand) calc(var(--part) * 100%), var(--color-background-brand-subtle) 0);
+    outline: 1px dashed var(--color-background-brand);
+    outline-offset: -1px;
+  }
+  @keyframes cbf-eq-in { from { transform: scale(.3); opacity: .001; } }
+  .cbf-metrics-equivalents__more { color: var(--color-content-default-secondary); margin-left: var(--spacing-200); }
+  .cbf-metrics-equivalents__dots { display: flex; flex-wrap: wrap; gap: 5px; max-width: 34rem; }
+  .cbf-metrics-equivalents__dots > span {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-background-brand);
+    animation: cbf-eq-in 300ms ease both;
+    animation-delay: calc(var(--k) * 6ms);
+  }
+  .cbf-metrics-equivalents__note { margin: 0; color: var(--color-content-default-tertiary); }
+
+  @media (max-width: 680px) {
+    .cbf-metrics-equivalents__summary { gap: var(--spacing-300); padding: var(--spacing-400); }
+    .cbf-metrics-equivalents__detail { padding: var(--spacing-400); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cbf-metrics-equivalents__unit,
+    .cbf-metrics-equivalents__dots > span { animation: none; }
+    .cbf-metrics-equivalents__chevron { transition: none; }
+  }
+</style>

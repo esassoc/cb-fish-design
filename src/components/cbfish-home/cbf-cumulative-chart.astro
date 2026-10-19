@@ -1,0 +1,159 @@
+---
+// cbf-cumulative-chart — a cumulative area chart of one metric by fiscal year:
+// soft area fill, a faint grid, an emphasized endpoint, and (when `interactive`)
+// a hover/keyboard scrubber that reads out the running total for any year.
+// Used small inside the metric drilldown and large in the "Growth" option.
+//
+// bcn-lego-checked: esa-chart is the hub's charting lego, but it wraps AG Charts
+// Community, an optional 2.8MB peer dependency this spoke does not install —
+// adding it for one area series on the public homepage is out of proportion
+// (flagged for review in CBF-8287). Checked Beacon (charts there are AG Charts
+// too, no lightweight series pattern). This is a tokenized inline SVG with the
+// same accessibility contract esa-chart asks for: a role="img" name stating the
+// trend, keyboard access to every point, and the data as text (the readout).
+interface Props {
+  series: { fy: number; value: number }[];
+  /** Accessible name: what the chart shows and its overall trend. */
+  label: string;
+  unit: string;
+  height?: number;
+  interactive?: boolean;
+}
+const { series, label, unit, height = 220, interactive = false } = Astro.props;
+
+const W = 640, H = height;
+const pad = { top: 16, right: 16, bottom: 28, left: 8 };
+const max = Math.max(...series.map((d) => d.value));
+const niceMax = max * 1.08;
+const x = (i: number) => pad.left + (i / (series.length - 1)) * (W - pad.left - pad.right);
+const y = (v: number) => pad.top + (1 - v / niceMax) * (H - pad.top - pad.bottom);
+const line = series.map((d, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(d.value).toFixed(1)}`).join('');
+const area = `${line}L${x(series.length - 1).toFixed(1)},${y(0)}L${x(0).toFixed(1)},${y(0)}Z`;
+const grid = [0.25, 0.5, 0.75, 1].map((f) => y(niceMax * f * 0.92));
+const ticks = series.map((d, i) => ({ i, fy: d.fy })).filter((d) => d.fy % 5 === 0);
+const last = series.length - 1;
+const gid = `cbf-cc-${Math.random().toString(36).slice(2, 8)}`;
+const fyLabel = (fy: number) => `FY${String(fy).slice(2)}`;
+---
+<figure class:list={['cbf-cumulative-chart', interactive && 'is-interactive']}
+  data-cumulative-chart={interactive ? '' : undefined}
+  data-series={interactive ? JSON.stringify(series) : undefined}
+  data-unit={unit}>
+  <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} preserveAspectRatio="none">
+    <defs>
+      <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" class="cbf-cumulative-chart__stop-top" />
+        <stop offset="100%" class="cbf-cumulative-chart__stop-bottom" />
+      </linearGradient>
+    </defs>
+    {grid.map((gy) => <line x1={pad.left} x2={W - pad.right} y1={gy} y2={gy} class="cbf-cumulative-chart__grid" />)}
+    <path d={area} fill={`url(#${gid})`} />
+    <path d={line} class="cbf-cumulative-chart__line" pathLength="1" />
+    <circle cx={x(last)} cy={y(series[last].value)} r="5" class="cbf-cumulative-chart__end" />
+    {ticks.map((t) => (
+      <text x={x(t.i)} y={H - 8} font-size={H < 200 ? 20 : 13} text-anchor={t.i === 0 ? 'start' : t.i === last ? 'end' : 'middle'} class="cbf-cumulative-chart__tick">{fyLabel(t.fy)}</text>
+    ))}
+    {interactive && (
+      <g class="cbf-cumulative-chart__cursor" data-cursor hidden>
+        <line y1={pad.top} y2={H - pad.bottom} class="cbf-cumulative-chart__cursor-line" />
+        <circle r="6" class="cbf-cumulative-chart__cursor-dot" />
+      </g>
+    )}
+  </svg>
+  {interactive && (
+    <div class="cbf-cumulative-chart__readout typography-body-sm" aria-live="polite" data-readout>
+      <strong>{fyLabel(series[last].fy)}</strong> · {series[last].value.toLocaleString('en-US')} {unit} to date
+    </div>
+  )}
+  {interactive && (
+    <input class="cbf-cumulative-chart__scrub" type="range" min="0" max={last} value={last} step="1"
+      aria-label={`Fiscal year, ${fyLabel(series[0].fy)} to ${fyLabel(series[last].fy)}`} data-scrub />
+  )}
+</figure>
+
+<style>
+  .cbf-cumulative-chart { margin: 0; position: relative; }
+  .cbf-cumulative-chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .cbf-cumulative-chart__stop-top { stop-color: var(--color-background-brand-muted); stop-opacity: .35; }
+  .cbf-cumulative-chart__stop-bottom { stop-color: var(--color-background-brand-muted); stop-opacity: 0; }
+  .cbf-cumulative-chart__grid { stroke: var(--color-border-default-subtle); stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .cbf-cumulative-chart__line {
+    fill: none;
+    stroke: var(--color-background-brand);
+    stroke-width: 2.5;
+    /* no non-scaling-stroke here: it breaks pathLength-based dashes, which cut
+       the draw-in animation short */
+    stroke-dasharray: 1;
+    animation: cbf-cc-draw 1100ms cubic-bezier(.3,.6,.2,1) both;
+  }
+  @keyframes cbf-cc-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+  .cbf-cumulative-chart__end { fill: var(--cbf-gold-300); stroke: var(--color-background-default-knockout); stroke-width: 2; }
+  .cbf-cumulative-chart__tick {
+    fill: var(--color-content-default-tertiary);
+    font-family: var(--typography-font-family-sans);
+  }
+  /* SVG elements ignore the HTML hidden attribute's UA style */
+  .cbf-cumulative-chart__cursor[hidden] { display: none; }
+  .cbf-cumulative-chart__cursor-line { stroke: var(--color-background-default-knockout); stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+  .cbf-cumulative-chart__cursor-dot { fill: var(--color-background-elevation-raised); stroke: var(--color-background-brand); stroke-width: 3; }
+  .cbf-cumulative-chart__readout {
+    margin-top: var(--spacing-200);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-cumulative-chart__readout strong { color: var(--color-content-default); }
+  /* the range input is the keyboard + touch handle; it sits over the plot,
+     transparent, so dragging anywhere on the chart scrubs the years. */
+  .cbf-cumulative-chart__scrub {
+    position: absolute;
+    inset: 0 0 auto 0;
+    width: 100%;
+    height: calc(100% - 2.5rem);
+    margin: 0;
+    opacity: 0;
+    cursor: ew-resize;
+  }
+  .cbf-cumulative-chart__scrub:focus-visible { opacity: 0; }
+  .cbf-cumulative-chart.is-interactive:has(.cbf-cumulative-chart__scrub:focus-visible) svg {
+    outline: 2px solid var(--color-border-focus, var(--color-background-brand));
+    outline-offset: 4px;
+    border-radius: var(--radius-200, 4px);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cbf-cumulative-chart__line { animation: none; }
+  }
+</style>
+
+<script>
+  const fy = (n: number) => `FY${String(n).slice(2)}`;
+  document.querySelectorAll<HTMLElement>('[data-cumulative-chart]').forEach((fig) => {
+    const series: { fy: number; value: number }[] = JSON.parse(fig.dataset.series || '[]');
+    const unit = fig.dataset.unit ?? '';
+    const svg = fig.querySelector('svg')!;
+    const cursor = fig.querySelector<SVGGElement>('[data-cursor]')!;
+    const readout = fig.querySelector<HTMLElement>('[data-readout]')!;
+    const scrub = fig.querySelector<HTMLInputElement>('[data-scrub]')!;
+    const pts = [...svg.querySelectorAll<SVGPathElement>('.cbf-cumulative-chart__line')][0];
+    // read the drawn point positions back from the path, so script and SVG never disagree
+    const coords = (pts.getAttribute('d') || '').split(/[ML]/).filter(Boolean).map((p) => p.split(',').map(Number));
+    const show = (i: number) => {
+      const [cx, cy] = coords[i];
+      cursor.removeAttribute('hidden');
+      cursor.querySelector('line')!.setAttribute('x1', String(cx));
+      cursor.querySelector('line')!.setAttribute('x2', String(cx));
+      cursor.querySelector('circle')!.setAttribute('cx', String(cx));
+      cursor.querySelector('circle')!.setAttribute('cy', String(cy));
+      const d = series[i];
+      const prev = i ? series[i - 1].value : 0;
+      readout.innerHTML = `<strong>${fy(d.fy)}</strong> · ${d.value.toLocaleString('en-US')} ${unit} to date <span>(+${(d.value - prev).toLocaleString('en-US')} that year)</span>`;
+    };
+    scrub.addEventListener('input', () => show(Number(scrub.value)));
+    fig.addEventListener('pointermove', (e) => {
+      const r = svg.getBoundingClientRect();
+      const i = Math.max(0, Math.min(series.length - 1, Math.round(((e.clientX - r.left) / r.width) * (series.length - 1))));
+      scrub.value = String(i);
+      show(i);
+    });
+    fig.addEventListener('pointerleave', () => { if (document.activeElement !== scrub) { cursor.setAttribute('hidden', ''); } });
+  });
+</script>

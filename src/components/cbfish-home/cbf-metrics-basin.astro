@@ -1,0 +1,261 @@
+---
+// cbf-metrics-basin — homepage metrics, option "Basin map" (CBF-8287): the four
+// program states as a schematic map, shaded by the selected measure, with the
+// Columbia and Snake drawn through them. Hover or select a state to read all
+// five measures for it; the panel links to the selected measure's
+// /program-results page.
+//
+// The outlines are deliberately SCHEMATIC (a dozen points per state, simple
+// equirectangular projection): recognisable at a glance, light enough to inline,
+// and no tile server — so it also renders inside locked-down preview frames.
+// A real build would swap in the subbasin geometry CBFish already maps.
+//
+// bcn-lego-checked: the measure picker IS esa-button-toggle; the panel uses
+// esa-stat and esa-button. No esa- map lego exists, and the map-sow prototype's
+// map stack (live basemap tiles) is the wrong weight for a homepage summary.
+// Checked Beacon (maps there are full GIS views). States are real <button>-like
+// SVG links with keyboard focus; every value is also in the panel as text.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import { METRICS, STATES, formatCompact, type StateCode } from '../../data/cbfish-home-metrics';
+import { withBase } from '../../lib/base';
+import { OUTLINES, RIVERS } from '../../data/basin-geo';
+
+const S = 40, COS = Math.cos((46 * Math.PI) / 180);
+const px = ([lon, lat]: [number, number]) => [((lon + 125) * COS * S).toFixed(1), ((49.4 - lat) * S).toFixed(1)].join(',');
+const ring = (pts: [number, number][]) => `M${pts.map(px).join('L')}Z`;
+const path = (pts: [number, number][]) => `M${pts.map(px).join('L')}`;
+const W = Math.round((125 - 103.8) * COS * S), H = Math.round((49.4 - 41.8) * S);
+const LABEL_AT: Record<StateCode, [number, number]> = { WA: [-120.4, 47.4], OR: [-120.5, 43.9], ID: [-114.6, 43.6], MT: [-109.6, 47.0] };
+
+const first = METRICS[0];
+const shareOf = (m: (typeof METRICS)[number], s: StateCode) => m.byState[s] / Math.max(...Object.values(m.byState));
+const data = METRICS.map((m) => ({ id: m.id, short: m.short, unit: m.unit, byState: m.byState }));
+---
+<section class="cbf-metrics-basin" aria-labelledby="cbf-metrics-basin-h" data-basin data-metrics={JSON.stringify(data)}>
+  <div class="cbf-metrics-basin__head">
+    <div class="cbf-metrics-basin__intro">
+      <h2 id="cbf-metrics-basin-h" class="typography-heading-md">Results across the basin</h2>
+      <p class="typography-body-md cbf-metrics-basin__lede">Since 2005, in Idaho, Montana, Oregon, and Washington. Choose a measure, then select a state.</p>
+    </div>
+    <esa-button-toggle size="sm" label="Measure" data-basin-measure></esa-button-toggle>
+  </div>
+
+  <div class="cbf-metrics-basin__frame">
+    <div class="cbf-metrics-basin__map">
+      <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label="Program states">
+        {STATES.map((s) => (
+          <a href="#" class="cbf-metrics-basin__state" data-state={s.code} aria-label={s.name}
+            style={`--share: ${shareOf(first, s.code)}`}>
+            <path d={ring(OUTLINES[s.code])} />
+          </a>
+        ))}
+        {RIVERS.map((r) => <path d={path(r)} class="cbf-metrics-basin__river" />)}
+        {STATES.map((s) => {
+          const [x, y] = px(LABEL_AT[s.code]).split(',');
+          return (
+            <g class="cbf-metrics-basin__label" transform={`translate(${x} ${y})`} data-label={s.code} aria-hidden="true">
+              <text class="cbf-metrics-basin__label-code" text-anchor="middle" y="-6">{s.code}</text>
+              <text class="cbf-metrics-basin__label-value" text-anchor="middle" y="14" data-label-value>{formatCompact(first.byState[s.code])}</text>
+            </g>
+          );
+        })}
+      </svg>
+      <div class="cbf-metrics-basin__legend typography-body-xs" aria-hidden="true">
+        <span>Less</span><span class="cbf-metrics-basin__ramp"></span><span>More</span>
+        <span class="cbf-metrics-basin__legend-rivers"><span class="cbf-metrics-basin__river-key"></span>Columbia and Snake rivers</span>
+      </div>
+    </div>
+
+    {STATES.map((s, i) => (
+      <aside class="cbf-metrics-basin__panel" data-panel={s.code} hidden={i !== 0} aria-live="polite">
+        <p class="cbf-metrics-basin__panel-eyebrow typography-label-xs">State results since 2005</p>
+        <h3 class="cbf-metrics-basin__panel-title">{s.name}</h3>
+        <dl class="cbf-metrics-basin__rows">
+          {METRICS.map((m) => (
+            <div class="cbf-metrics-basin__row" data-row={m.id}>
+              <dt class="typography-body-sm">{m.short}</dt>
+              <dd>
+                <span class="cbf-metrics-basin__row-value">{m.byState[s.code] ? formatCompact(m.byState[s.code]) : '—'}</span>
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <EsaButton variant="primary" appearance="outline" href={withBase(`/program-results/${first.id}`)} iconRight="arrow-right" data-basin-open>View {first.short.toLowerCase()} contracts</EsaButton>
+      </aside>
+    ))}
+  </div>
+</section>
+
+<style>
+  .cbf-metrics-basin { display: flex; flex-direction: column; gap: var(--spacing-500); }
+  .cbf-metrics-basin__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: var(--spacing-400);
+  }
+  /* five measures don't fit a phone row: let the picker scroll on its own */
+  .cbf-metrics-basin__head > esa-button-toggle { max-width: 100%; overflow-x: auto; }
+  .cbf-metrics-basin__intro { display: flex; flex-direction: column; gap: var(--spacing-200); max-width: 60ch; }
+  .cbf-metrics-basin__lede { margin: 0; color: var(--color-content-default-secondary); }
+
+  .cbf-metrics-basin__frame {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 21rem);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-400, 12px);
+    overflow: hidden;
+    background: var(--color-background-elevation-raised);
+  }
+  .cbf-metrics-basin__map {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-300);
+    padding: var(--spacing-600);
+    background:
+      radial-gradient(120% 90% at 0% 0%, var(--color-background-brand-subtle), transparent 60%),
+      var(--color-background-elevation-raised);
+    min-width: 0;
+  }
+  .cbf-metrics-basin__map svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .cbf-metrics-basin__state path {
+    /* choropleth: mix from the palest to the deepest brand blue by share */
+    fill: color-mix(in srgb, var(--cbf-blue-700) calc(var(--share) * 85% + 12%), var(--cbf-blue-50));
+    stroke: var(--color-background-elevation-raised);
+    stroke-width: 2.5;
+    stroke-linejoin: round;
+    transition: fill 420ms ease, transform 200ms ease, filter 200ms ease;
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  .cbf-metrics-basin__state:hover path,
+  .cbf-metrics-basin__state:focus-visible path { filter: brightness(1.12); }
+  .cbf-metrics-basin__state:focus-visible { outline: none; }
+  .cbf-metrics-basin__state:focus-visible path,
+  .cbf-metrics-basin__state.is-active path { stroke: var(--cbf-gold-300); stroke-width: 4; }
+  .cbf-metrics-basin__river {
+    fill: none;
+    stroke: var(--cbf-blue-200);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: none;
+    opacity: .9;
+  }
+  .cbf-metrics-basin__label { pointer-events: none; }
+  .cbf-metrics-basin__label text { font-family: var(--typography-font-family-display, var(--typography-font-family-sans)); paint-order: stroke; stroke-width: 3px; stroke-linejoin: round; }
+  .cbf-metrics-basin__label-code { font-size: 13px; font-weight: var(--typography-font-weight-semibold); letter-spacing: .08em; fill: var(--color-content-default-knockout); stroke: color-mix(in srgb, var(--cbf-blue-950) 55%, transparent); }
+  .cbf-metrics-basin__label-value { font-size: 20px; font-weight: var(--typography-font-weight-bold); fill: var(--color-content-default-knockout); stroke: color-mix(in srgb, var(--cbf-blue-950) 55%, transparent); }
+  .cbf-metrics-basin__legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-200);
+    color: var(--color-content-default-tertiary);
+  }
+  .cbf-metrics-basin__ramp {
+    width: 7rem;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: linear-gradient(to right, color-mix(in srgb, var(--cbf-blue-700) 12%, var(--cbf-blue-50)), var(--cbf-blue-700));
+  }
+  .cbf-metrics-basin__legend-rivers { display: inline-flex; align-items: center; gap: var(--spacing-100); margin-left: var(--spacing-400); }
+  .cbf-metrics-basin__river-key { width: 1.5rem; height: 3px; border-radius: 2px; background: var(--cbf-blue-200); }
+
+  .cbf-metrics-basin__panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-300);
+    padding: var(--spacing-600) var(--spacing-500);
+    border-left: 1px solid var(--color-border-default-subtle);
+  }
+  .cbf-metrics-basin__panel[hidden] { display: none; }
+  .cbf-metrics-basin__panel-eyebrow { margin: 0; color: var(--color-content-default-tertiary); }
+  .cbf-metrics-basin__panel-title {
+    margin: 0;
+    font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
+    font-size: 28px;
+    font-weight: var(--typography-font-weight-bold, 700);
+  }
+  .cbf-metrics-basin__rows { margin: 0 0 var(--spacing-200); display: flex; flex-direction: column; }
+  .cbf-metrics-basin__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: var(--spacing-300);
+    padding: var(--spacing-300) var(--spacing-200);
+    border-bottom: 1px solid var(--color-border-default-subtle);
+    border-radius: var(--radius-200, 4px);
+    transition: background 200ms ease;
+  }
+  .cbf-metrics-basin__row dt { color: var(--color-content-default-secondary); }
+  .cbf-metrics-basin__row dd { margin: 0; text-align: right; }
+  .cbf-metrics-basin__row-value { font-size: 18px; font-weight: var(--typography-font-weight-semibold); font-variant-numeric: tabular-nums; }
+  .cbf-metrics-basin__row.is-current { background: var(--color-background-brand-subtle); }
+  .cbf-metrics-basin__row.is-current dt { color: var(--color-content-default); font-weight: var(--typography-font-weight-semibold); }
+
+  @media (max-width: 860px) {
+    .cbf-metrics-basin__frame { grid-template-columns: minmax(0, 1fr); }
+    .cbf-metrics-basin__panel { border-left: 0; border-top: 1px solid var(--color-border-default-subtle); }
+    .cbf-metrics-basin__map { padding: var(--spacing-400); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cbf-metrics-basin__state path { transition: none; }
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-button-toggle';
+
+  const root = document.querySelector<HTMLElement>('[data-basin]');
+  if (root) {
+    const metrics: { id: string; short: string; unit: string; byState: Record<string, number> }[] = JSON.parse(root.dataset.metrics || '[]');
+    const toggle = root.querySelector<HTMLElement & { options: unknown[]; value: string }>('[data-basin-measure]')!;
+    const states = [...root.querySelectorAll<SVGAElement>('[data-state]')];
+    const compact = (n: number) =>
+      n >= 1e9 ? `${+(n / 1e9).toFixed(1)}B` : n >= 1e6 ? `${+(n / 1e6).toFixed(1)}M` : n >= 1e4 ? `${Math.round(n / 1e3)}K` : n.toLocaleString('en-US');
+    let current = metrics[0];
+    let active = 'WA';
+
+    toggle.options = metrics.map((m) => ({ label: m.short, value: m.id }));
+    toggle.value = current.id;
+
+    const paint = () => {
+      const max = Math.max(...Object.values(current.byState));
+      states.forEach((a) => {
+        const v = current.byState[a.dataset.state!] ?? 0;
+        a.style.setProperty('--share', String(v / max));
+        a.setAttribute('aria-label', `${a.getAttribute('aria-label')!.split(':')[0]}: ${v.toLocaleString('en-US')} ${current.unit}`);
+        const label = root.querySelector(`[data-label="${a.dataset.state}"] [data-label-value]`);
+        if (label) label.textContent = v ? compact(v) : '—';
+      });
+      root.querySelectorAll<HTMLElement>('[data-row]').forEach((r) => r.classList.toggle('is-current', r.dataset.row === current.id));
+      root.querySelectorAll<HTMLElement>('[data-basin-open]').forEach((b) => {
+        if (b instanceof HTMLAnchorElement) b.href = b.href.replace(/program-results\/[a-z]+/, `program-results/${current.id}`);
+        (b.querySelector('.esa-button__label') ?? b).textContent = `View ${current.short.toLowerCase()} contracts`;
+      });
+    };
+    const activate = (code: string) => {
+      active = code;
+      states.forEach((a) => a.classList.toggle('is-active', a.dataset.state === code));
+      // paint the active state last (but under the rivers) so its outline isn't covered by a neighbour
+      const on = states.find((a) => a.dataset.state === code);
+      const river = root.querySelector('.cbf-metrics-basin__river');
+      if (on && river && on.nextElementSibling !== river) river.before(on);
+      root.querySelectorAll<HTMLElement>('[data-panel]').forEach((p) => (p.hidden = p.dataset.panel !== code));
+    };
+
+    toggle.addEventListener('change', (e) => {
+      current = metrics.find((m) => m.id === (e as CustomEvent).detail.value) ?? current;
+      paint();
+    });
+    states.forEach((a) => {
+      a.addEventListener('click', (e) => { e.preventDefault(); activate(a.dataset.state!); });
+      a.addEventListener('mouseenter', () => activate(a.dataset.state!));
+      a.addEventListener('focus', () => activate(a.dataset.state!));
+    });
+    paint();
+    activate(active);
+  }
+</script>

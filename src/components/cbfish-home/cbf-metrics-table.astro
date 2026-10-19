@@ -1,0 +1,171 @@
+---
+// cbf-metrics-table — homepage results as a "Current metrics" table (CBF-8287),
+// after the table on p. 7 of BPA's 2023 Fish & Wildlife Program review (Area ·
+// Description · FY 2023 · Since 2005). Fresher than the print version: pick the
+// fiscal year for the single-year column, each row carries that year's share
+// of the running total (as text) and a 20-year trend line, and the whole row links to the
+// measure's /program-results page.
+//
+// bcn-lego-checked: a real <table> (caption, scoped headers) — ecology has no
+// table lego, and AG Grid is for browsing records, not four summary rows. The
+// year picker IS esa-button-toggle; links are plain anchors in the description
+// cell (the row highlight is CSS on :has()). Checked Beacon (summary tables are
+// plain tables). Sparklines are decorative and aria-hidden;
+// every value is in a cell as text.
+import { METRICS, AREA, LAST_FY, formatFull } from '../../data/cbfish-home-metrics';
+import { withBase } from '../../lib/base';
+
+const YEARS = [LAST_FY, LAST_FY - 1, LAST_FY - 2, LAST_FY - 3, LAST_FY - 4];
+const fy = (y: number) => `FY${String(y).slice(2)}`;
+const gainIn = (s: { fy: number; value: number }[], y: number) => {
+  const i = s.findIndex((d) => d.fy === y);
+  return i <= 0 ? s[0].value : s[i].value - s[i - 1].value;
+};
+const spark = (s: { value: number }[]) => {
+  const max = Math.max(...s.map((d) => d.value));
+  return s.map((d, i) => `${i ? 'L' : 'M'}${((i / (s.length - 1)) * 100).toFixed(1)},${(22 - (d.value / max) * 20).toFixed(1)}`).join('');
+};
+const rows = METRICS.map((m) => ({
+  m,
+  area: AREA[m.id],
+  byYear: Object.fromEntries(YEARS.map((y) => [y, gainIn(m.cumulative, y)])),
+}));
+---
+<section class="cbf-metrics-table" aria-labelledby="cbf-metrics-table-h" data-metrics-table
+  data-years={JSON.stringify(YEARS.map((y) => ({ label: fy(y), value: String(y) })))}>
+  <div class="cbf-metrics-table__head">
+    <div class="cbf-metrics-table__intro">
+      <h2 id="cbf-metrics-table-h" class="typography-heading-md">Current metrics</h2>
+      <p class="typography-body-md cbf-metrics-table__lede">One year's results next to the running total since 2005. Choose a fiscal year; select a row for its contracts.</p>
+    </div>
+    <esa-button-toggle size="sm" label="Fiscal year" data-year-pick></esa-button-toggle>
+  </div>
+
+  <div class="cbf-metrics-table__scroll">
+    <table class="cbf-metrics-table__table">
+      <caption class="visually-hidden">Program results by area: selected fiscal year and cumulative since 2005</caption>
+      <thead>
+        <tr>
+          <th scope="col">Area</th>
+          <th scope="col">Description</th>
+          <th scope="col" class="is-num"><span data-year-head>{fy(LAST_FY)}</span></th>
+          <th scope="col" class="is-num">Since 2005</th>
+          <th scope="col"><span class="visually-hidden">Trend, FY05 to FY25</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map(({ m, area, byYear }) => (
+          <tr data-row data-by-year={JSON.stringify(byYear)} data-total={m.total} data-unit={m.unit}>
+            <th scope="row" class="cbf-metrics-table__area">{area}</th>
+            <td>
+              <a class="cbf-metrics-table__link" href={withBase(`/program-results/${m.id}`)}>{m.label}</a>
+            </td>
+            <td class="is-num">
+              <span class="cbf-metrics-table__year" data-year-value>{formatFull(byYear[LAST_FY])}</span>
+              <span class="cbf-metrics-table__share-text typography-body-xs" data-year-share>
+                {((byYear[LAST_FY] / m.total) * 100).toFixed(1)}% of total
+              </span>
+            </td>
+            <td class="is-num cbf-metrics-table__total">{formatFull(m.total)}</td>
+            <td class="cbf-metrics-table__spark-cell">
+              <svg class="cbf-metrics-table__spark" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
+                <path d={spark(m.cumulative)} />
+              </svg>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<style>
+  .cbf-metrics-table { display: flex; flex-direction: column; gap: var(--spacing-500); }
+  .cbf-metrics-table__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: var(--spacing-400);
+  }
+  .cbf-metrics-table__intro { display: flex; flex-direction: column; gap: var(--spacing-200); max-width: 60ch; }
+  .cbf-metrics-table__intro h2 { margin: 0; }
+  .cbf-metrics-table__lede { margin: 0; color: var(--color-content-default-secondary); }
+  .cbf-metrics-table__head > esa-button-toggle { max-width: 100%; overflow-x: auto; }
+
+  .cbf-metrics-table__scroll {
+    /* positioned, so the visually-hidden header text stays inside the scroller */
+    position: relative;
+    overflow-x: auto;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md, 0.5rem);
+    background: var(--color-background-elevation-raised);
+  }
+  .cbf-metrics-table__table { width: 100%; min-width: 44rem; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .cbf-metrics-table__table thead th {
+    padding: var(--spacing-300) var(--spacing-500);
+    text-align: left;
+    font-size: 14px;
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default-knockout, #fff);
+    background: var(--color-background-brand);
+  }
+  .cbf-metrics-table__table td,
+  .cbf-metrics-table__table tbody th {
+    padding: var(--spacing-400) var(--spacing-500);
+    border-top: 1px solid var(--color-border-default-subtle);
+    vertical-align: middle;
+    text-align: left;
+  }
+  .cbf-metrics-table__table .is-num,
+  .cbf-metrics-table__table thead th.is-num { text-align: right; }
+  .cbf-metrics-table__area {
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-background-brand);
+    background: var(--color-background-brand-subtle);
+    width: 14rem;
+  }
+  .cbf-metrics-table__link { color: var(--color-content-default); text-decoration: none; font-weight: var(--typography-font-weight-medium, 500); }
+  .cbf-metrics-table__link::after { content: ' →'; color: var(--color-background-brand); opacity: 0; transition: opacity 140ms ease; }
+  .cbf-metrics-table__table tbody tr { transition: background 140ms ease; }
+  .cbf-metrics-table__table tbody tr:has(.cbf-metrics-table__link:hover),
+  .cbf-metrics-table__table tbody tr:has(.cbf-metrics-table__link:focus-visible) { background: var(--color-background-brand-subtle); }
+  .cbf-metrics-table__table tbody tr:has(.cbf-metrics-table__link:hover) .cbf-metrics-table__link::after,
+  .cbf-metrics-table__table tbody tr:has(.cbf-metrics-table__link:focus-visible) .cbf-metrics-table__link::after { opacity: 1; }
+  .cbf-metrics-table__link:hover { text-decoration: underline; }
+
+  .cbf-metrics-table__year { display: block; margin-bottom: 2px; font-size: 17px; font-weight: var(--typography-font-weight-semibold); }
+  .cbf-metrics-table__share-text { color: var(--color-content-default-tertiary); }
+  .cbf-metrics-table__total {
+    font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
+    font-size: 22px;
+    font-weight: var(--typography-font-weight-bold, 700);
+    color: var(--color-background-brand);
+  }
+  .cbf-metrics-table__spark-cell { width: 9rem; }
+  .cbf-metrics-table__spark { display: block; width: 8rem; height: 28px; overflow: visible; }
+  .cbf-metrics-table__spark path { fill: none; stroke: var(--color-background-brand); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+
+<script>
+  import '@esa/ecology/esa-button-toggle';
+
+  const root = document.querySelector<HTMLElement>('[data-metrics-table]');
+  if (root) {
+    const pick = root.querySelector<HTMLElement & { options: unknown[]; value: string }>('[data-year-pick]')!;
+    const years: { label: string; value: string }[] = JSON.parse(root.dataset.years || '[]');
+    pick.options = years;
+    pick.value = years[0].value;
+    pick.addEventListener('change', (e) => {
+      const y = (e as CustomEvent).detail.value as string;
+      root.querySelector('[data-year-head]')!.textContent = years.find((o) => o.value === y)!.label;
+      root.querySelectorAll<HTMLElement>('[data-row]').forEach((row) => {
+        const v = JSON.parse(row.dataset.byYear || '{}')[y] ?? 0;
+        const total = Number(row.dataset.total);
+        row.querySelector('[data-year-value]')!.textContent = v.toLocaleString('en-US');
+        row.querySelector('[data-year-share]')!.textContent = `${((v / total) * 100).toFixed(1)}% of total`;
+      });
+    });
+  }
+</script>
