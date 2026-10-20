@@ -1,0 +1,72 @@
+---
+// /program-results/<metric> — the drilldown page behind each homepage result
+// (CBF-8287): the total and how it built up since FY05, where it happened (by
+// state) and what kind of work produced it (by program area), then every
+// contributing contract in a searchable grid. Tabs jump between the five
+// measures. Replaces the side-sheet drilldown: a page has a shareable URL and
+// room for the contracts list. Thin assembler; figures are placeholders
+// (src/data/cbfish-home-metrics.ts) until CBF-8302.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CbfPublicNav from '../../components/shared/cbf-public-nav.astro';
+import CbfAppPanel from '../../components/shared/cbf-app-panel.astro';
+import CbfPageHeading from '../../components/shared/cbf-page-heading.astro';
+import CbfReportTabs from '../../components/shared/cbf-report-tabs.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import CbfProgramResultsSummary from '../../components/program-results/cbf-program-results-summary.astro';
+import CbfContributingContractsGrid from '../../components/program-results/cbf-contributing-contracts-grid.astro';
+import { METRICS, CONTRACTS, type Metric } from '../../data/cbfish-home-metrics';
+import { withBase } from '../../lib/base';
+
+export function getStaticPaths() {
+  return METRICS.map((m) => ({ params: { metric: m.id }, props: { metric: m } }));
+}
+const { metric } = Astro.props as { metric: Metric };
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+const crumbs = [
+  { label: 'Home', href: withBase('/home'), icon: homeIcon },
+  { label: 'Program results' },
+  { label: metric.short },
+];
+const tabs = METRICS.map((m) => ({ label: m.short, href: withBase(`/program-results/${m.id}`), active: m.id === metric.id }));
+---
+<!-- manifest:
+  layout: esa-container > cbf-app-panel
+  sections:
+    - top nav        -> cbf-public-nav
+    - page frame     -> esa-container
+    - page heading   -> cbf-page-heading
+    - measure tabs   -> cbf-report-tabs
+    - draft notice   -> esa-alert-box
+    - summary        -> cbf-program-results-summary
+    - contracts      -> cbf-contributing-contracts-grid
+-->
+<BaseLayout title={`Program results: ${metric.short} — Columbia Basin Fish & Wildlife Program`}>
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1440px">
+      <CbfAppPanel crumbs={crumbs}>
+        <CbfPageHeading title={`Program results: ${metric.short}`} />
+        <CbfReportTabs tabs={tabs} ariaLabel="Program results measures" />
+        <EsaAlertBox variant="info">
+          Draft figures for review. Final numbers and the full contract list will come from CBFish data, refreshed nightly.
+        </EsaAlertBox>
+
+        <CbfProgramResultsSummary metric={metric} contractCount={CONTRACTS[metric.id].length} />
+
+        <div class="stack" data-gap="md">
+          <h2 class="typography-heading-md">Contracts behind this result</h2>
+          <CbfContributingContractsGrid metric={metric} rows={CONTRACTS[metric.id]} />
+        </div>
+      </CbfAppPanel>
+    </EsaContainer>
+  </main>
+</BaseLayout>
+
+<style>
+  /* page-level outer rhythm only — every section is a component (manifest above) */
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+</style>

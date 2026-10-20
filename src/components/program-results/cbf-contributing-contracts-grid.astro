@@ -1,0 +1,148 @@
+---
+// cbf-contributing-contracts-grid — the contracts behind one program-results
+// measure (CBF-8287): a searchable, sortable grid with each contract's
+// contribution to the measure, its contractor, state, status and period.
+// The landing table for a homepage drilldown.
+//
+// FILTER FROM THE LINK: a URL hash of `#program-<slug>` or `#state-<code>`
+// (built by filterToken) narrows the grid to that program area or state, with
+// a one-click "Show all contracts" — so a homepage block can link straight to
+// the contracts behind its share.
+//
+// Same AG Grid + search + record-count + CSV conventions as the RM&E grids
+// (cbf-rme-work-elements-grid is the reference), wired through the shared
+// wireDataGrid helper.
+//
+// bcn-lego-checked: ecology has NO table/grid lego (checked the catalog) and
+// AG Grid Community is this spoke's established tabular surface. Every other
+// control is a lego or shared spoke part: cbf-search-field for search,
+// esa-button (icon-only) for the CSV download, esa-button (ghost) to clear
+// a link filter.
+import CbfSearchField from '../search/cbf-search-field.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import '../shared/cbf-data-grid-chrome.css';
+import { STATES, filterToken, type ContributingContract, type Metric } from '../../data/cbfish-home-metrics';
+
+interface Props {
+  metric: Metric;
+  rows: ContributingContract[];
+}
+const { metric, rows } = Astro.props;
+const stateName = Object.fromEntries(STATES.map((s) => [s.code, s.name]));
+const data = rows.map((r) => ({ ...r, stateName: stateName[r.state] }));
+// every filter a link can ask for, token -> label
+const filters = Object.fromEntries([
+  ...metric.byProgram.map((p) => [filterToken('program', p.name), { field: 'program', value: p.name, label: p.name }]),
+  ...STATES.map((st) => [filterToken('state', st.code), { field: 'state', value: st.code, label: st.name }]),
+]);
+const unitLabel = `${metric.unit.charAt(0).toUpperCase()}${metric.unit.slice(1)}`;
+---
+<section class="cbf-contracts-grid stack" data-gap="md" data-unit-label={unitLabel} data-csv-name={`${metric.id}-contracts.csv`}
+  data-filters={JSON.stringify(filters)}>
+  <div class="cbf-contracts-grid__filter" data-filter-bar hidden>
+    <span class="typography-body-sm">Showing contracts for <strong data-filter-label></strong></span>
+    <EsaButton variant="ghost" size="sm" data-filter-clear>Show all contracts</EsaButton>
+  </div>
+  <header class="cbf-data-grid__header repel">
+    <span class="typography-meta cbf-data-grid__count-label">Contributing contracts</span>
+    <div class="cbf-data-grid__search">
+      <CbfSearchField
+        placeholder="Search contract, contractor, title, or state…"
+        iconSize={18}
+        data-contracts-search
+        aria-label="Search contributing contracts"
+      />
+    </div>
+  </header>
+
+  <div class="cbf-data-grid__grid" data-contracts-grid></div>
+
+  <footer class="cbf-data-grid__footer repel">
+    <span class="typography-meta" data-contracts-count>
+      Showing {rows.length} of {rows.length} contracts
+    </span>
+    <EsaButton variant="chrome" iconOnly icon="download" label="Download CSV" size="sm" data-contracts-csv />
+  </footer>
+
+  <script type="application/json" data-contracts-data set:html={JSON.stringify(data)}></script>
+</section>
+
+<style>
+  .cbf-contracts-grid__filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-300);
+    padding: var(--spacing-300) var(--spacing-400);
+    border-radius: var(--radius-200, 4px);
+    background: var(--color-background-brand-subtle);
+  }
+  .cbf-contracts-grid__filter[hidden] { display: none; }
+</style>
+
+<script>
+  import type { ValueFormatterParams, ValueGetterParams } from 'ag-grid-community';
+  import { gridDateFormatter as dateFmt, asGridDate as asDate, wireDataGrid } from '../shared/grid-chrome';
+
+  type Row = {
+    contractNumber: string; projectNumber: string; title: string; contractor: string;
+    state: string; stateName: string; program: string; status: string; start: string; end: string; contribution: number;
+  };
+  type Filter = { field: 'program' | 'state'; value: string; label: string };
+  const quick = (field: keyof Row) => (p: { data?: Row }) => String(p.data?.[field] ?? '');
+  const dateCol = (headerName: string, field: 'start' | 'end') => ({
+    headerName, field, colId: field, minWidth: 130,
+    cellDataType: 'date',
+    valueGetter: (p: ValueGetterParams) => asDate((p.data as Row | undefined)?.[field]),
+    valueFormatter: (p: ValueFormatterParams) => (p.value instanceof Date ? dateFmt.format(p.value) : ''),
+  });
+
+  document.querySelectorAll<HTMLElement>('.cbf-contracts-grid').forEach((root) => {
+    const filters: Record<string, Filter> = JSON.parse(root.dataset.filters || '{}');
+    const bar = root.querySelector<HTMLElement>('[data-filter-bar]')!;
+    let active: Filter | null = null;
+    const handle = wireDataGrid<Row>({
+      root,
+      gridSelector: '[data-contracts-grid]',
+      dataSelector: '[data-contracts-data]',
+      searchSelector: '[data-contracts-search]',
+      countSelector: '[data-contracts-count]',
+      csvSelector: '[data-contracts-csv]',
+      countNoun: 'contracts',
+      csvFileName: root.dataset.csvName ?? 'contracts.csv',
+      columnDefs: [
+        { headerName: 'Contract number', field: 'contractNumber', colId: 'contractNumber', minWidth: 150, getQuickFilterText: quick('contractNumber') },
+        { headerName: 'Contract title', field: 'title', colId: 'title', flex: 2, minWidth: 280, getQuickFilterText: quick('title') },
+        { headerName: 'Contractor', field: 'contractor', colId: 'contractor', flex: 2, minWidth: 260, getQuickFilterText: quick('contractor') },
+        { headerName: 'Program area', field: 'program', colId: 'program', minWidth: 200, getQuickFilterText: quick('program') },
+        { headerName: 'State', field: 'stateName', colId: 'stateName', minWidth: 120, getQuickFilterText: quick('stateName') },
+        {
+          headerName: `Contribution (${(root.dataset.unitLabel ?? '').toLowerCase()})`, field: 'contribution', colId: 'contribution',
+          minWidth: 180, type: 'rightAligned', sort: 'desc',
+          valueFormatter: (p) => (typeof p.value === 'number' ? p.value.toLocaleString('en-US') : ''),
+        },
+        { headerName: 'Status', field: 'status', colId: 'status', minWidth: 110, getQuickFilterText: quick('status') },
+        dateCol('Start', 'start'),
+        dateCol('End', 'end'),
+        { headerName: 'Project number', field: 'projectNumber', colId: 'projectNumber', minWidth: 150, getQuickFilterText: quick('projectNumber') },
+      ],
+      gridOptions: {
+        isExternalFilterPresent: () => active !== null,
+        doesExternalFilterPass: (node) => !active || node.data?.[active.field] === active.value,
+      },
+    });
+    if (!handle) return;
+    const apply = () => {
+      active = filters[location.hash.slice(1)] ?? null;
+      bar.hidden = !active;
+      if (active) bar.querySelector('[data-filter-label]')!.textContent = active.label;
+      handle.gridApi.onFilterChanged();
+    };
+    root.querySelector('[data-filter-clear]')!.addEventListener('click', () => {
+      try { history.replaceState(null, '', location.pathname + location.search); } catch { /* sandboxed frame */ }
+      apply();
+    });
+    window.addEventListener('hashchange', apply);
+    apply();
+  });
+</script>
