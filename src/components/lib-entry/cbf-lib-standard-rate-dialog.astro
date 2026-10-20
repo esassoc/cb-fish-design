@@ -74,6 +74,7 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
         <esa-combobox
           class="cbf-lsr__field"
           size="md"
+          mode="autocomplete"
           label="Location"
           data-std-locality
           placeholder="Pick the schedule location"
@@ -143,7 +144,7 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
     seasonLabel,
     standardNeedsLocality,
     standardRateFor,
-    isListedLocality,
+    localityBasis,
     resolveLocality,
     defaultRateYear,
   } from '../../data/lib-entry.mjs';
@@ -173,7 +174,7 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
     /* The trip's start month, if it has one — the seed for the season. */
     let startMonth: number | null = null;
 
-    const seasonal = () => needsSeason(kindKey, draft.locality);
+    const seasonal = () => needsSeason(kindKey, draft.locality, draft.year);
     const resolved = () => standardRateFor(kindKey, draft.locality, draft.year, draft.season);
 
     const paint = () => {
@@ -190,7 +191,7 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
       );
       show($('[data-std-badge]'), ok);
       const badge = $('[data-std-badge] .esa-badge__text');
-      const sl = seasonal() ? seasonLabel(draft.locality, draft.season) : '';
+      const sl = seasonal() ? seasonLabel(draft.locality, draft.season, draft.year) : '';
       setText(badge, ['Standard rate', sl, `FY${draft.year}`].filter(Boolean).join(' · '));
       setText(
         $('[data-std-kept]'),
@@ -203,14 +204,12 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
          destination that is not separately listed resolves to CONUS, and the
          vendor is told which place that was rather than discovering it in the
          total. */
-      const unlisted = needsWhere && !!seed && !isListedLocality(seed);
-      show($('[data-std-seed]'), unlisted);
-      setText(
-        $('[data-std-seed]'),
-        unlisted
-          ? `${seed} isn’t listed separately on the FY${draft.year} schedule, so it gets the Standard CONUS rate.`
-          : '',
-      );
+      /* Now that a destination is a picked place, its rate area is found by its
+         county — and the note says how, for every destination, not only the
+         ones that fall back to CONUS. */
+      const said = needsWhere && !!seed;
+      show($('[data-std-seed]'), said);
+      setText($('[data-std-seed]'), said ? `${seed}: ${localityBasis(seed)}.` : '');
 
       const confirm = $('[data-std-confirm] button') as HTMLButtonElement | null;
       if (confirm) confirm.disabled = !ok;
@@ -232,9 +231,9 @@ import EsaBadge from '@esa/ecology/esa-badge.astro';
          when the locality changes: a season key from Portland means nothing in
          Boise's table. */
       const sea: any = $('[data-std-season-select]');
-      const list = seasonal() ? seasonsFor(draft.locality) : [];
+      const list = seasonal() ? seasonsFor(draft.locality, draft.year) : [];
       if (!list.some((x: any) => x.key === draft.season)) {
-        draft.season = startMonth ? seasonForMonth(draft.locality, startMonth) : '';
+        draft.season = startMonth ? seasonForMonth(draft.locality, startMonth, draft.year) : '';
       }
       if (sea) {
         sea.options = list.map((x: any) => ({ label: x.label, value: x.key }));

@@ -31,7 +31,7 @@
  * ── EVENT CONTRACT (all on `document`) ──────────────────────────────────────
  * DISPATCH 'cbf-lib:totals'            — same payload as the inline grid, so the
  *   reconciliation rail and the overhead block are reused unchanged.
- * DISPATCH 'cbf-lib:open-subcontract'  — the subcontract jump-out, unchanged.
+ * NAVIGATES to /lib-entry/subcontract/<sheet> (was 'cbf-lib:open-subcontract')  — the subcontract jump-out, unchanged.
  * DISPATCH 'cbf-libs:open-editor'      — open the line sheet.
  *   detail: { mode: 'create'|'edit'|'review', draft, lines, cfg, scope }
  * DISPATCH 'cbf-libs:open-trip-editor' — open the trip sheet.
@@ -577,6 +577,7 @@ const t0 = priced.totals;
 </section>
 
 <script>
+  import { withBase } from '../../lib/base';
   import * as V from '../../lib/lib-entry-view';
   import '@esa/ecology/esa-dropdown-menu';
   import {
@@ -1227,11 +1228,8 @@ const typedSrcText = V.typedSrcText;
 
       const seam = t.closest?.('[data-open-sheet]') as HTMLElement | null;
       if (seam) {
-        document.dispatchEvent(
-          new CustomEvent('cbf-lib:open-subcontract', {
-            detail: { sheetId: seam.dataset.openSheet, lineId: seam.dataset.openSheetLine },
-          }),
-        );
+        /* A subcontract's budget is a LIB of its own, on its own page. */
+        window.location.href = withBase(`/lib-entry/subcontract/${seam.dataset.openSheet || 'new'}`);
         return;
       }
 

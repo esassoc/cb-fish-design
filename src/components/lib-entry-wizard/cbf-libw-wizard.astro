@@ -42,7 +42,7 @@
  * ── EVENT CONTRACT (all on `document`) ──────────────────────────────────────
  * DISPATCH 'cbf-lib:totals'           — same payload as the other two versions,
  *   which is what lets cbf-lib-reconcile-rail be reused unchanged.
- * DISPATCH 'cbf-lib:open-subcontract' — the subcontract jump-out.
+ * NAVIGATES to /lib-entry/subcontract/<sheet> (was 'cbf-lib:open-subcontract') — the subcontract jump-out.
  * LISTEN   'cbf-lib:indirect-config'  — the reused overhead block owns rate+scope.
  * LISTEN   'cbf-lib:review'           — the reused review panel owns the marks.
  * LISTEN   'cbf-lib:focus-line'       — "Go to line" from the review panel now
@@ -148,6 +148,7 @@ const stepIndexOf: Record<string, number> = Object.fromEntries(steps.map((s, i) 
 </div>
 
 <script>
+  import { withBase } from '../../lib/base';
   /* The shared view derivations — see the note in cbf-libs-line-editor. */
   import * as V from '../../lib/lib-entry-view';
   import '@esa/ecology/esa-text-field';
@@ -1525,11 +1526,8 @@ const stepIndexOf: Record<string, number> = Object.fromEntries(steps.map((s, i) 
 
       const seam = t.closest?.('[data-open-sheet]') as HTMLElement | null;
       if (seam?.dataset.openSheet) {
-        document.dispatchEvent(
-          new CustomEvent('cbf-lib:open-subcontract', {
-            detail: { sheetId: seam.dataset.openSheet, lineId: seam.dataset.openSheetLine },
-          }),
-        );
+        /* A subcontract's budget is a LIB of its own, on its own page. */
+        window.location.href = withBase(`/lib-entry/subcontract/${seam.dataset.openSheet || 'new'}`);
         return;
       }
 

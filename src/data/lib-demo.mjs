@@ -56,6 +56,9 @@ export function isBlank() {
  * priceLines() takes it without a special case.
  */
 export const blankConfig = () => ({
+  rateIds: [],
+  subawardCap: false,
+  base: '',
   rate: 0,
   referenceDoc: '',
   effectiveStart: '',

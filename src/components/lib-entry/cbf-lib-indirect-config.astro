@@ -10,7 +10,19 @@
  *   1. the rate itself,
  *   2. the reference document that authorizes it (the NICRA or equivalent),
  *   3. the period it is effective for, and
- *   4. a MANUAL pick of which cost subtotals the rate is applied to.
+ *   4. which cost subtotals the rate is applied to.
+ *
+ * WHY IT PICKS INSTEAD OF TYPING (2026-10)
+ * 1–3 are not the vendor's to type. CBFish keeps every organization's approved
+ * rates under Data management → Vendor indirect rates, each with a status, its
+ * effective dates and its NICRA (or the CO's de minimis agreement), approved by
+ * the CO. So this block PICKS the record(s) that apply and shows their facts
+ * read-only. More than one can be picked, because a contract period often runs
+ * past the end of a NICRA: BPA pays the rate in force for the invoice's time
+ * frame, so each month takes the rate that covers it and the block shows the
+ * coverage — and warns when months are left uncovered. (4) is PRESET from the
+ * picked rate's base (MTDC, say); the vendor may still change it, and a scope
+ * that departs from the base is noted for the COR.
  *
  * WHY IT IS AUDIT-CRITICAL
  * (4) is the one that gets budgets sent back. Capital equipment and subcontracts
@@ -29,17 +41,16 @@
  * esa-side-dialog. The audit-critical facts are never hidden, and they repaint live
  * while the drawer is open, so the strip and the picker can never disagree.
  *
- * DUAL RATE IS OUT OF SCOPE — HONESTLY
- * The rate-structure choice renders both options with `dual` disabled and an
- * esa-alert-box saying why. A dual rate splits on-site/off-site work, and a rate
- * that changes mid-contract has to be month-weighted across the change; neither is
- * built here. The choice is shown so the vendor knows it exists and knows this
- * screen is not where it happens — nothing about dual is faked.
+ * ON-SITE / OFF-SITE DUAL RATES ARE STILL OUT OF SCOPE
+ * A rate that changes mid-contract is handled now (coverage, above). A dual rate
+ * that splits work by site is not: it needs each cost tagged on- or off-site,
+ * which no line carries. The drawer says so in one sentence.
  *
  * EVENT CONTRACT (this component talks to its siblings on `document`)
  *   dispatch  cbf-lib:indirect-config
- *             detail: { config: { rate, referenceDoc, effectiveStart,
- *                                 effectiveEnd, mode, appliesTo } }
+ *             detail: { config: { rateIds, appliesTo, mode, and the DERIVED
+ *                                 rate, referenceDoc, effectiveStart,
+ *                                 effectiveEnd, subawardCap, base } }
  *             `rate` is a FRACTION (0.2675, not 26.75). `appliesTo` is an array of
  *             scope keys in `indirectScopes` order. Dates are MM/DD/YYYY, matching
  *             the data module. Fired ONCE on mount (after the frame, so sibling
@@ -49,11 +60,10 @@
  *   same numbers with priceLines(costLines, config) from the SAME data module, so
  *   the two surfaces are arithmetically identical by construction.
  *
- * bcn-lego-checked: every control here is a lego — rate + reference document =
- * esa-text-field (the rate uses the lego's `suffix` affix for %), effective dates =
- * esa-date-picker, rate structure = esa-radio-group (its per-option `disabled` is
- * exactly how "dual exists but not here" wants to render), the applicability picker
- * = esa-checkbox, the out-of-scope note = esa-alert-box, the numbers = esa-stat, the
+ * bcn-lego-checked: every control here is a lego — the rate picker and the
+ * applicability picker = esa-checkbox rows (a disabled box is how an expired or
+ * draft rate says "not usable here"), status = esa-badge, the expiry warning =
+ * esa-alert-box, the out-of-scope note = esa-alert-box, the numbers = esa-stat, the
  * panel = esa-card, the overlay = esa-side-dialog (Esc / click-outside / close
  * button / symmetric slide-out / full-viewport scrim all ship in the lego), buttons
  * = esa-button. esa-checkbox-group was checked FIRST and rejected on merit: it
@@ -73,28 +83,21 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import {
   indirectConfig,
   indirectScopes,
-  scopeAmount,
   costLines,
   priceLines,
+  VENDOR_INDIRECT_RATES,
+  RATE_STATUS,
+  INDIRECT_BASES,
+  scopesForBase,
+  resolveIndirect,
+  SUBAWARD_CAP,
   usd,
   pct,
 } from '../../data/lib-entry.mjs';
 
-interface IndirectConfig {
-  /** Stored as a FRACTION — 0.2675 renders as 26.75%. */
-  rate: number;
-  referenceDoc: string;
-  /** MM/DD/YYYY, matching the data module. */
-  effectiveStart: string;
-  effectiveEnd: string;
-  mode: 'single' | 'dual';
-  /** Scope keys the rate is applied to, in `indirectScopes` order. */
-  appliesTo: string[];
-}
-
 interface Props {
   /** The starting configuration. Defaults to the data module's `indirectConfig`. */
-  config?: IndirectConfig;
+  config?: any;
   /** Heading on the always-visible summary strip. */
   heading?: string;
   /** Render with the configuration drawer already open (demo / deep-link). */
@@ -102,122 +105,126 @@ interface Props {
 }
 
 const {
-  config = indirectConfig as IndirectConfig,
+  config = indirectConfig,
   heading = 'Indirect rate',
   open = false,
 } = Astro.props;
 
-/** MM/DD/YYYY → the ISO value esa-date-picker's native input wants. */
-const toIso = (us: string) => {
-  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(us ?? '');
-  return m ? `${m[3]}-${m[1]}-${m[2]}` : '';
-};
-
+const resolved = resolveIndirect(config);
 const priced = priceLines(costLines, config);
 const inScope = new Set(config.appliesTo);
+const preset = new Set(scopesForBase(config.base));
+const base = INDIRECT_BASES[config.base];
 const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
+const picked = new Set(config.rateIds ?? []);
 ---
 
 <section
   class="cbf-lic stack"
   data-gap="sm"
   data-lic
-  data-config={JSON.stringify(config)}
+  data-config={JSON.stringify({ rateIds: config.rateIds, appliesTo: config.appliesTo, mode: config.mode })}
   aria-label="Indirect rate"
 >
-  {/* ── The always-visible summary. Rate, authority, period, scope, and the two
-       audit numbers — none of it hides behind the drawer. ── */}
-  <EsaCard variant="outlined">
-    <div class="cbf-lic__strip repel">
-      <div class="cbf-lic__ident stack" data-gap="xs">
-        <div class="cluster" data-gap="xs">
-          <h2 class="typography-heading-md">{heading}</h2>
-          <EsaBadge value="Single rate" variant="secondary" size="sm" />
-        </div>
-        <p class="cbf-lic__authority typography-body-md">
-          <strong data-lic-rate>{pct(config.rate)}</strong>
-          <span class="cbf-lic__sep" aria-hidden="true">·</span>
-          <span data-lic-doc>{config.referenceDoc}</span>
-        </p>
-        <p class="cbf-lic__meta typography-body-sm">
-          Effective <span data-lic-start>{config.effectiveStart}</span> through
-          <span data-lic-end>{config.effectiveEnd}</span>
-          <span class="cbf-lic__sep" aria-hidden="true">·</span>
-          applied to <span data-lic-scope>{scopeLabel}</span> cost subtotals
-        </p>
-      </div>
-
-      <div class="cbf-lic__figures cluster" data-gap="lg">
-        <div class="cbf-lic__num" data-lic-stat="base">
-          <EsaStat value={usd(priced.totals.indirectBase)} label="Indirect base" sub="scoped subtotals" />
-        </div>
-        <div class="cbf-lic__num" data-lic-stat="indirect">
-          <EsaStat value={usd(priced.totals.indirect)} label="Indirect" sub={`at ${pct(config.rate)}`} />
-        </div>
-        <EsaButton variant="primary" appearance="outline" size="md" icon="settings" data-lic-open>
-          Configure…
-        </EsaButton>
-      </div>
-    </div>
+  {/* ── The always-visible summary, in one line ────────────────────────────
+       WHICH rate, from WHICH agreement, on WHAT base — the facts only this block
+       states. It used to add the indirect base and the indirect dollars as two
+       large stats, which made it a 156px card, and both numbers are already in
+       the grid's totals and the reconciliation rail beside the running total.
+       They stay in the drawer's base × rate = indirect band, where the scope that
+       moves them is changed. ── */}
+  <EsaCard variant="outlined" padding="compact">
+  <div class="cbf-lic__strip repel">
+    <p class="cbf-lic__authority typography-body-md">
+      <span class="cbf-lic__label">Indirect rate</span>
+      <strong data-lic-rate>{pct(config.rate)}</strong>
+      <span data-lic-blended hidden={resolved.segments.filter((s) => s.rateId).length < 2}> blended</span>
+      <span class="cbf-lic__sep" aria-hidden="true">·</span>
+      <span data-lic-doc>{config.referenceDoc || 'No indirect rate picked'}</span>
+      <span class="cbf-lic__sep" aria-hidden="true">·</span>
+      <span class="cbf-lic__meta">
+        <span data-lic-base-badge hidden={!base}><EsaBadge value={base?.short ?? ''} variant="info" size="sm" /></span>
+        on <span data-lic-scope>{scopeLabel}</span> cost groups<span data-lic-cap hidden={!config.subawardCap}>, first {usd(SUBAWARD_CAP)} of each subaward</span>
+      </span>
+    </p>
+    <span class="cluster" data-gap="sm">
+      <span data-lic-gap-strip hidden={!resolved.gapMonths}>
+        <EsaBadge value="Rate gap in the contract period" variant="warning" size="sm" />
+      </span>
+      <EsaButton variant="secondary" appearance="outline" size="sm" icon="settings" data-lic-open>
+        Configure…
+      </EsaButton>
+    </span>
+  </div>
   </EsaCard>
 
-  {/* ── The configuration surface. Everything applies live; the strip behind and
-       the computation band below both repaint on every toggle. ── */}
-  {/* `open` must be ABSENT when closed, not `open="false"`. Astro stringifies a
-      false boolean onto a custom element, and esa-side-dialog's `open` is a Lit
-      `{type: Boolean}` property — which keys off attribute PRESENCE, so the
-      string "false" set it to true and the drawer server-rendered open over the
-      page. `undefined` is the only value Astro omits. */}
+  {/* `open` must be ABSENT when closed, not `open="false"`: esa-side-dialog's
+      `open` is a Lit Boolean property that keys off attribute PRESENCE, so the
+      string "false" would render the drawer open. `undefined` is omitted. */}
   <esa-side-dialog data-lic-dialog heading="Configure the indirect rate" size="lg" open={open || undefined}>
     <div class="stack" data-gap="lg">
       <p class="cbf-lic__lede typography-body-md">
-        Set the rate, its reference document and dates, and which cost subtotals it applies to —
-        the part BPA checks most closely. Totals here and in the cost grid update as you go.
+        Pick your organization’s approved rate. Rates, their agreements and dates are managed under
+        Data management → Vendor indirect rates.
       </p>
 
-      <div class="cbf-lic__fields grid" data-gap="md">
-        <esa-text-field
-          data-lic-field="rate"
-          label="Indirect rate"
-          inputmode="decimal"
-          suffix="%"
-          value={(config.rate * 100).toFixed(2)}
-          help-text="As approved in the reference document."
-        ></esa-text-field>
-        <esa-text-field
-          data-lic-field="referenceDoc"
-          label="Reference document"
-          value={config.referenceDoc}
-          help-text="The negotiated agreement this rate comes from."
-        ></esa-text-field>
-        <esa-date-picker
-          data-lic-field="effectiveStart"
-          label="Effective from"
-          value={toIso(config.effectiveStart)}
-        ></esa-date-picker>
-        <esa-date-picker
-          data-lic-field="effectiveEnd"
-          label="Effective through"
-          value={toIso(config.effectiveEnd)}
-        ></esa-date-picker>
-      </div>
-
+      {/* ── 1. Which approved rate(s) apply ─────────────────────────────── */}
       <div class="stack" data-gap="sm">
-        <h3 class="typography-title">Rate structure</h3>
-        <esa-radio-group data-lic-mode orientation="horizontal" size="md"></esa-radio-group>
-        <EsaAlertBox variant="info" title="Dual rates aren’t entered here">
-          Work out a dual-rate budget with your contracting officer before entering the LIB. This
-          screen doesn’t split on-site and off-site rates, or weight a rate that changes mid-contract
-          by the months on each side.
-        </EsaAlertBox>
+        <h3 class="typography-title">Rates</h3>
+        <ul class="cbf-lic__picker" data-lic-rates>
+          {VENDOR_INDIRECT_RATES.map((r) => (
+            <li class="cbf-lic__row repel" data-lic-rate-row={r.id} data-in={String(picked.has(r.id))} data-usable={String(RATE_STATUS[r.status].usable)}>
+              <span class="stack" data-gap="3xs">
+                <esa-checkbox
+                  data-lic-rate-pick={r.id}
+                  label={`${r.label} · ${pct(r.rate)}`}
+                  size="md"
+                  checked={picked.has(r.id) || undefined}
+                  disabled={!RATE_STATUS[r.status].usable || undefined}
+                ></esa-checkbox>
+                <span class="cbf-lic__hint typography-body-sm">
+                  {INDIRECT_BASES[r.base]?.short} · {r.start}–{r.end || 'no end date'} · {r.doc}
+                  {!RATE_STATUS[r.status].usable && ` · ${RATE_STATUS[r.status].label}`}
+                </span>
+              </span>
+              {/* A badge only where the status bears on the pick; an expired or
+                  draft rate can't be picked, and its grey line already says why. */}
+              {RATE_STATUS[r.status].usable && (
+                <EsaBadge value={RATE_STATUS[r.status].label} variant={RATE_STATUS[r.status].variant} size="sm" />
+              )}
+            </li>
+          ))}
+        </ul>
+        <p class="cbf-lic__hint typography-body-sm">
+          On-site and off-site dual rates aren’t supported here yet.
+        </p>
       </div>
 
+      {/* ── 2. Coverage: which rate prices which months ─────────────────── */}
+      <div class="stack" data-gap="sm">
+        <h3 class="typography-title">Coverage across the contract period</h3>
+        <ul class="cbf-lic__picker" data-lic-coverage>
+          {resolved.segments.map((sg) => (
+            <li class="cbf-lic__row repel" data-in={String(!!sg.rateId)}>
+              <span>{sg.period}</span>
+              <span class="cbf-lic__amount">{sg.rateId ? `${sg.label} · ${pct(sg.rate)}` : 'No rate'}</span>
+            </li>
+          ))}
+        </ul>
+        <span data-lic-gap hidden={!resolved.gapMonths}>
+          <EsaAlertBox variant="warning" title="A rate expires before the contract ends">
+            <span data-lic-gap-text></span>
+          </EsaAlertBox>
+        </span>
+      </div>
+
+      {/* ── 3. What the rate is applied to — preset from the base ──────── */}
       <div class="stack" data-gap="sm">
         <h3 class="typography-title">What this rate is applied to</h3>
-        <p class="cbf-lic__hint typography-body-sm">
-          Only checked subtotals count toward the indirect base — uncheck one and the totals below drop
-          by its amount. Supplies &amp; equipment is split by class, because capitalizing an item
-          takes it out of the base.
+        <p class="cbf-lic__hint typography-body-sm" data-lic-base-hint>
+          {base
+            ? `Preset to ${base.label.toLowerCase()} (${base.short}), the base in your agreement. Change it only if your agreement says otherwise — the COR sees any difference.`
+            : 'Pick a rate first — its base sets what the rate is applied to.'}
         </p>
         <ul class="cbf-lic__picker" data-lic-picker>
           {indirectScopes.map((scope) => (
@@ -225,15 +232,21 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
               class="cbf-lic__row repel"
               data-lic-row={scope.key}
               data-in={String(inScope.has(scope.key))}
-              data-nested={scope.parent ? '' : undefined}
             >
-              <esa-checkbox
-                data-lic-cat={scope.key}
-                label={scope.parent ? `${scope.parentLabel} — ${scope.label}` : scope.label}
-                size="md"
-                checked={inScope.has(scope.key)}
-              ></esa-checkbox>
-              <span class="cbf-lic__amount" data-lic-row-amount>{usd(scopeAmount(priced, scope.key))}</span>
+              <span class="stack" data-gap="3xs">
+                <esa-checkbox
+                  data-lic-cat={scope.key}
+                  label={scope.parent ? `${scope.parentLabel} — ${scope.label}` : scope.label}
+                  size="md"
+                  checked={inScope.has(scope.key) || undefined}
+                ></esa-checkbox>
+                <span class="cbf-lic__hint typography-body-sm" data-lic-row-note>
+                  {inScope.has(scope.key) !== preset.has(scope.key) && base
+                    ? (preset.has(scope.key) ? `In ${base.short} — left out` : `Outside ${base.short} — added`)
+                    : scope.key === 'subcontracts' && config.subawardCap ? `First ${usd(SUBAWARD_CAP)} of each subaward` : ''}
+                </span>
+              </span>
+              <span class="cbf-lic__amount" data-lic-row-amount>{usd(priced.baseByScope[scope.key] ?? 0)}</span>
             </li>
           ))}
         </ul>
@@ -243,15 +256,11 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
     <div slot="footer" class="cbf-lic__footer stack" data-gap="sm">
       <div class="cbf-lic__equation cluster" data-gap="md">
         <div class="cbf-lic__num" data-lic-eq="base">
-          <EsaStat
-            value={usd(priced.totals.indirectBase)}
-            label="Indirect base"
-            sub={`${scopeLabel} subtotals`}
-          />
+          <EsaStat value={usd(priced.totals.indirectBase)} label="Indirect base" sub={`${scopeLabel} cost groups`} />
         </div>
         <span class="cbf-lic__op" aria-hidden="true">×</span>
         <div class="cbf-lic__num" data-lic-eq="rate">
-          <EsaStat value={pct(config.rate)} label="Indirect rate" sub="approved" />
+          <EsaStat value={pct(config.rate)} label="Indirect rate" sub="blended across the period" />
         </div>
         <span class="cbf-lic__op" aria-hidden="true">=</span>
         <div class="cbf-lic__num" data-lic-eq="indirect">
@@ -260,7 +269,7 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
       </div>
       <div class="cbf-lic__actions repel">
         <EsaButton variant="ghost" size="md" data-lic-reset>
-          Reset to approved rate and scope
+          Reset scope to the rate’s base
         </EsaButton>
         <EsaButton variant="primary" size="md" data-lic-done>Done</EsaButton>
       </div>
@@ -270,11 +279,19 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
 
 <script>
   import '@esa/ecology/esa-side-dialog';
-  import '@esa/ecology/esa-text-field';
-  import '@esa/ecology/esa-date-picker';
   import '@esa/ecology/esa-checkbox';
-  import '@esa/ecology/esa-radio-group';
-  import { indirectScopes, scopeAmount, costLines, priceLines, usd, pct } from '../../data/lib-entry.mjs';
+  import {
+    indirectScopes,
+    costLines,
+    priceLines,
+    INDIRECT_BASES,
+    scopesForBase,
+    resolveIndirect,
+    withResolvedIndirect,
+    SUBAWARD_CAP,
+    usd,
+    pct,
+  } from '../../data/lib-entry.mjs';
   import { isBlank, blankConfig } from '../../data/lib-demo.mjs';
 
   const root = document.querySelector<HTMLElement>('[data-lic]');
@@ -283,209 +300,192 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
   function init(root: HTMLElement) {
     const $ = <T extends HTMLElement = HTMLElement>(sel: string, scope: ParentNode = root) =>
       scope.querySelector<T>(sel);
-
-    /* The demo's "Clear all entries" (src/data/lib-demo.mjs). A cleared form has
-       no approved rate on it, so blank is what the APPROVED baseline itself is —
-       which also keeps the drawer's "Reset to approved" honest, rather than
-       restoring a rate the cleared screen never showed. */
-    const BLANK = isBlank();
-
-    // The approved configuration is serialized onto the root by the Astro render,
-    // so the markup and this script can never start from different numbers.
-    const APPROVED = BLANK ? blankConfig() : JSON.parse(root.dataset.config || '{}');
-    const config = { ...APPROVED, appliesTo: [...(APPROVED.appliesTo ?? [])] };
-
-    /* Every number the strip and the drawer quote is priced from the SAME engine
-       the grid uses. On a cleared form the grid holds no lines, so this prices
-       against none either — an indirect base built out of lines that are not on
-       the screen is the one number this block must never show. */
-    const baseLines = BLANK ? [] : costLines;
-
-    // The data module speaks MM/DD/YYYY; esa-date-picker wraps a native date input,
-    // which speaks ISO. Translate at the boundary and keep the config in MM/DD/YYYY.
-    const toIso = (us: string) => {
-      const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(us ?? '');
-      return m ? `${m[3]}-${m[1]}-${m[2]}` : '';
-    };
-    const fromIso = (iso: string) => {
-      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso ?? '');
-      return m ? `${m[2]}/${m[3]}/${m[1]}` : '';
-    };
-
-    const setText = (sel: string, text: string) => {
-      const el = $(sel);
+    const setText = (sel: string, text: string, scope: ParentNode = root) => {
+      const el = $(sel, scope);
       if (el) el.textContent = text;
     };
+    const show = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };
 
+    /* The demo's "Clear all entries": a cleared form has nothing picked and
+       nothing in scope. */
+    const BLANK = isBlank();
+    const APPROVED = BLANK ? blankConfig() : JSON.parse(root.dataset.config || '{}');
+    const config: any = withResolvedIndirect({
+      ...APPROVED,
+      rateIds: [...(APPROVED.rateIds ?? [])],
+      appliesTo: [...(APPROVED.appliesTo ?? [])],
+    });
+    const baseLines = BLANK ? [] : costLines;
     const dialog = $('[data-lic-dialog]') as any;
 
-    // ── Rate structure: both options render; `dual` is disabled on purpose. ──
-    const modeEl = $('[data-lic-mode]') as any;
-    if (modeEl) {
-      modeEl.options = [
-        { label: 'Single rate', value: 'single' },
-        { label: 'Dual rate — on-site / off-site', value: 'dual', disabled: true },
-      ];
-      modeEl.value = config.mode ?? 'single';
-    }
-
-    /** The single broadcast the cost grid listens to. */
     const fire = () => {
       document.dispatchEvent(
         new CustomEvent('cbf-lib:indirect-config', {
-          detail: { config: { ...config, appliesTo: [...config.appliesTo] } },
+          detail: { config: { ...config, rateIds: [...config.rateIds], appliesTo: [...config.appliesTo] } },
         }),
       );
     };
 
+    const sameSet = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x));
+
     const render = () => {
-      // Priced from the SAME engine the grid uses, so the two can't disagree.
+      withResolvedIndirect(config);
+      const r = resolveIndirect(config);
       const priced = priceLines(baseLines, config);
       const { totals } = priced;
+      const base = (INDIRECT_BASES as any)[config.base];
+      const preset = scopesForBase(config.base);
       const scope = `${config.appliesTo.length} of ${indirectScopes.length}`;
+      const used = r.segments.filter((s: any) => s.rateId);
 
-      // Always-visible strip.
-      setText('[data-lic-rate]', pct(config.rate));
-      setText('[data-lic-doc]', config.referenceDoc || 'No reference document');
-      setText('[data-lic-start]', config.effectiveStart || '—');
-      setText('[data-lic-end]', config.effectiveEnd || '—');
+      // Strip.
+      /* With a gap, the 12-month blend averages in zero months — show the rate
+         that IS in force, and say how much of the period it covers. */
+      setText('[data-lic-rate]', pct(r.gapMonths ? r.coveredRate : config.rate));
+      const blended = $('[data-lic-blended]');
+      show(blended, used.length > 1 || r.gapMonths > 0);
+      setText('[data-lic-blended]', r.gapMonths ? ` · covers ${r.coveredMonths} of ${r.totalMonths} months` : ' blended');
+      setText('[data-lic-doc]', config.referenceDoc || 'No indirect rate picked');
       setText('[data-lic-scope]', scope);
+      show($('[data-lic-cap]'), !!config.subawardCap);
+      show($('[data-lic-base-badge]'), !!base);
+      setText('[data-lic-base-badge] .esa-badge__text', base?.short ?? '');
+      show($('[data-lic-gap-strip]'), r.gapMonths > 0);
       setText('[data-lic-stat="base"] .esa-stat__value', usd(totals.indirectBase));
       setText('[data-lic-stat="indirect"] .esa-stat__value', usd(totals.indirect));
       setText('[data-lic-stat="indirect"] .esa-stat__sub', `at ${pct(config.rate)}`);
 
-      // The computation band in the drawer footer — base × rate = indirect.
-      setText('[data-lic-eq="base"] .esa-stat__value', usd(totals.indirectBase));
-      setText('[data-lic-eq="base"] .esa-stat__sub', `${scope} subtotals`);
-      setText('[data-lic-eq="rate"] .esa-stat__value', pct(config.rate));
-      setText('[data-lic-eq="indirect"] .esa-stat__value', usd(totals.indirect));
+      // Rate rows.
+      root.querySelectorAll<HTMLElement>('[data-lic-rate-row]').forEach((row) => {
+        row.dataset.in = String(config.rateIds.includes(row.dataset.licRateRow));
+      });
 
-      // Picker rows — the subtotal is a roll-up, so it is independent of scope;
-      // what changes is whether the row counts toward the base. A row is a
-      // category, or a BLOCK where the rate does not reach the whole category.
+      // Coverage — rebuilt, because the runs change with the pick.
+      const cov = $('[data-lic-coverage]');
+      if (cov) {
+        cov.replaceChildren(...r.segments.map((sg: any) => {
+          const li = document.createElement('li');
+          li.className = 'cbf-lic__row repel';
+          li.dataset.in = String(!!sg.rateId);
+          const a = document.createElement('span'); a.textContent = sg.period;
+          const b = document.createElement('span'); b.className = 'cbf-lic__amount';
+          b.textContent = sg.rateId ? `${sg.label} · ${pct(sg.rate)}` : 'No rate';
+          li.append(a, b);
+          return li;
+        }));
+      }
+      const gapWrap = $('[data-lic-gap]');
+      show(gapWrap, r.gapMonths > 0);
+      if (r.gapMonths > 0) {
+        const lastEnd = r.picks.map((p: any) => p.end).filter(Boolean).sort().pop();
+        const gaps = r.segments.filter((s: any) => !s.rateId).map((s: any) => s.period).join(', ');
+        setText('[data-lic-gap-text]', `${lastEnd ? `Your rate ends ${lastEnd}, so ` : ''}${gaps} ${lastEnd ? 'carries' : 'carry'} no indirect. Pick the next rate if it’s been submitted, or plan a line item transfer or CCR once it’s approved.`);
+      }
+
+      // Scope rows.
+      setText('[data-lic-base-hint]', base
+        ? `Preset to ${base.label.toLowerCase()} (${base.short}), the base in your agreement. Change it only if your agreement says otherwise — the COR sees any difference.`
+        : 'Pick a rate first — its base sets what the rate is applied to.');
       indirectScopes.forEach((sc: any) => {
         const row = $(`[data-lic-row="${sc.key}"]`);
         if (!row) return;
-        row.dataset.in = String(config.appliesTo.includes(sc.key));
+        const on = config.appliesTo.includes(sc.key);
+        row.dataset.in = String(on);
         const amount = row.querySelector('[data-lic-row-amount]');
-        if (amount) amount.textContent = usd(scopeAmount(priced, sc.key));
+        if (amount) amount.textContent = usd(priced.baseByScope?.[sc.key] ?? 0);
+        const note = row.querySelector('[data-lic-row-note]');
+        if (note) {
+          note.textContent = base && on !== preset.includes(sc.key)
+            ? (preset.includes(sc.key) ? `In ${base.short} — left out` : `Outside ${base.short} — added`)
+            : sc.key === 'subcontracts' && config.subawardCap ? `First ${usd(SUBAWARD_CAP)} of each subaward` : '';
+        }
       });
+
+      // Equation band.
+      setText('[data-lic-eq="base"] .esa-stat__value', usd(totals.indirectBase));
+      setText('[data-lic-eq="base"] .esa-stat__sub', `${scope} cost groups`);
+      setText('[data-lic-eq="rate"] .esa-stat__value', pct(config.rate));
+      setText('[data-lic-eq="rate"] .esa-stat__sub', used.length > 1 ? 'blended across the period' : 'for the period');
+      setText('[data-lic-eq="indirect"] .esa-stat__value', usd(totals.indirect));
 
       fire();
     };
 
-    // ── Every esa-* control fires a composed `change`; delegate the lot. ──
     root.addEventListener('change', (e: Event) => {
-      const el = e.target as HTMLElement & { value?: string; checked?: boolean };
-      const key = el.dataset?.licCat;
-      const field = el.dataset?.licField;
-
-      if (key) {
+      const el = e.target as HTMLElement & { checked?: boolean };
+      const scopeKey = el.dataset?.licCat;
+      const rateId = el.dataset?.licRatePick;
+      if (scopeKey) {
         const on = !!el.checked;
-        // Rebuild from `indirectScopes` so appliesTo always stays in LIB order.
         config.appliesTo = indirectScopes
-          .filter((sc: any) => (sc.key === key ? on : config.appliesTo.includes(sc.key)))
+          .filter((sc: any) => (sc.key === scopeKey ? on : config.appliesTo.includes(sc.key)))
           .map((sc: any) => sc.key);
-      } else if (field === 'rate') {
-        const n = Number(el.value);
-        config.rate = Number.isFinite(n) ? Math.min(Math.max(n, 0), 100) / 100 : 0;
-      } else if (field === 'referenceDoc') {
-        config.referenceDoc = String(el.value ?? '');
-      } else if (field === 'effectiveStart' || field === 'effectiveEnd') {
-        config[field] = fromIso(String(el.value ?? '')) || config[field];
-      } else if (el.dataset && 'licMode' in el.dataset) {
-        // `dual` is disabled in the group, so this can only ever land on 'single'.
-        config.mode = el.value === 'dual' ? 'dual' : 'single';
+      } else if (rateId) {
+        /* A scope still sitting on the OLD base's preset follows the new base; one
+           the vendor changed by hand is theirs and stays. */
+        const wasPreset = sameSet(config.appliesTo, scopesForBase(config.base));
+        config.rateIds = el.checked
+          ? [...new Set([...config.rateIds, rateId])]
+          : config.rateIds.filter((x: string) => x !== rateId);
+        withResolvedIndirect(config);
+        if (wasPreset || !config.appliesTo.length) config.appliesTo = scopesForBase(config.base);
       } else {
         return;
       }
       render();
     });
 
-    // ── Open / close. esa-side-dialog owns Esc, click-outside, the close button,
-    //    the symmetric slide-out, and the full-viewport scrim. ──
     root.addEventListener('click', (e: Event) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('[data-lic-open]')) dialog?.show();
-      else if (target.closest('[data-lic-done]')) dialog?.close();
-      else if (target.closest('[data-lic-reset]')) resetToApproved();
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-lic-open]')) dialog?.show();
+      else if (t.closest('[data-lic-done]')) dialog?.close();
+      else if (t.closest('[data-lic-reset]')) {
+        config.appliesTo = scopesForBase(config.base);
+        indirectScopes.forEach((sc: any) => {
+          const box = $(`[data-lic-cat="${sc.key}"]`) as any;
+          if (box) box.checked = config.appliesTo.includes(sc.key);
+        });
+        render();
+      }
     });
 
-    /** Write the config onto every control — the drawer's fields and the picker. */
-    const writeControls = () => {
-      const rateEl = $('[data-lic-field="rate"]') as any;
-      /* No rate is EMPTY, not 0.00 — a cleared form asks the question; a zero
-         answers it, and answers it with a number no NICRA ever carried. */
-      if (rateEl) rateEl.value = config.rate ? (config.rate * 100).toFixed(2) : '';
-      const docEl = $('[data-lic-field="referenceDoc"]') as any;
-      if (docEl) docEl.value = config.referenceDoc;
-      const startEl = $('[data-lic-field="effectiveStart"]') as any;
-      if (startEl) startEl.value = toIso(config.effectiveStart);
-      const endEl = $('[data-lic-field="effectiveEnd"]') as any;
-      if (endEl) endEl.value = toIso(config.effectiveEnd);
-      if (modeEl) modeEl.value = config.mode;
-      indirectScopes.forEach((sc: any) => {
-        const box = $(`[data-lic-cat="${sc.key}"]`) as any;
-        if (box) box.checked = config.appliesTo.includes(sc.key);
-      });
-    };
-
-    /** Put every control and the config back to the approved configuration. */
-    const resetToApproved = () => {
-      config.rate = APPROVED.rate;
-      config.referenceDoc = APPROVED.referenceDoc;
-      config.effectiveStart = APPROVED.effectiveStart;
-      config.effectiveEnd = APPROVED.effectiveEnd;
-      config.mode = APPROVED.mode;
-      config.appliesTo = [...APPROVED.appliesTo];
-      writeControls();
-      render();
-    };
-
-    // ── The COR lens ────────────────────────────────────────────────────────
-    // A reviewer has to be able to OPEN this drawer — which subtotals the rate
-    // is charged on is the audit-critical fact of the whole block, and the strip
-    // only says how many. But they must not be able to re-scope the vendor's
-    // rate from inside a review. So the drawer stays inspectable and every
-    // control in it goes disabled, which is the one place on this screen where a
-    // disabled control is the honest read: not "you failed to fill this in", but
-    // "this is someone else's configuration".
-    const lensControls = () => [
-      ...root.querySelectorAll('[data-lic-field], [data-lic-cat]'),
-      modeEl,
-    ].filter(Boolean) as any[];
-
+    /* The COR lens: inspectable, not editable — every box disabled, reset hidden.
+       Rate rows that can't be used stay disabled in both lenses. */
     const applyLens = () => {
       const cor = document.documentElement.dataset.cbfRole === 'cor';
-      lensControls().forEach((el) => { el.disabled = cor; });
+      root.querySelectorAll<any>('[data-lic-cat]').forEach((b) => { b.disabled = cor; });
+      root.querySelectorAll<any>('[data-lic-rate-pick]').forEach((b) => {
+        const row = b.closest('[data-lic-rate-row]') as HTMLElement | null;
+        b.disabled = cor || row?.dataset.usable !== 'true';
+      });
       const reset = $('[data-lic-reset]')?.closest('.esa-button') as HTMLElement | null;
       if (reset) reset.hidden = cor;
-      // The button that opens the drawer says what the role can do with it.
       const openLabel = root.querySelector('[data-lic-open] .esa-button__label');
-      if (openLabel) openLabel.textContent = cor ? 'Review the scope…' : 'Configure…';
+      if (openLabel) openLabel.textContent = cor ? 'Review the rate…' : 'Configure…';
     };
-
     document.addEventListener('cbf-role:change', applyLens);
     applyLens();
 
-    // A cleared form server-rendered the approved rate into every control, so the
-    // controls have to be written back from the blank config before the first
-    // paint — the strip and the drawer would otherwise still be quoting it.
-    if (BLANK) writeControls();
+    if (BLANK) {
+      root.querySelectorAll<any>('[data-lic-rate-pick], [data-lic-cat]').forEach((b) => { b.checked = false; });
+    }
 
-    // Paint, then announce on the next frame so sibling module scripts (which run
-    // before DOMContentLoaded) have their listeners attached when the mount event
-    // for the cost grid's first repaint goes out.
     render();
     requestAnimationFrame(fire);
   }
 </script>
 
 <style>
-  /* ── Always-visible summary strip ── */
+  /* ── Always-visible summary, one row ── */
   .cbf-lic__strip {
-    --align: flex-end;
-    --gap: var(--spacing-500);
+    --align: center;
+    --gap: var(--spacing-400);
+  }
+  .cbf-lic__authority { margin: 0; }
+  .cbf-lic__label {
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
+    margin-inline-end: var(--spacing-200);
   }
   .cbf-lic__ident {
     min-inline-size: 22rem;
@@ -565,6 +565,23 @@ const scopeLabel = `${config.appliesTo.length} of ${indirectScopes.length}`;
   .cbf-lic__row[data-in='false'] .cbf-lic__amount {
     font-weight: var(--typography-font-weight-regular);
     color: var(--color-content-default-tertiary);
+  }
+
+  /* Coverage rows are rebuilt by the script whenever the pick changes, and
+     script-built nodes carry no Astro scope attribute — so their row styling is
+     global, keyed to the list's own hook. */
+  :global([data-lic-coverage] > li) {
+    padding: var(--spacing-300) var(--spacing-400);
+    border-block-start: 1px solid var(--color-border-default-subtle);
+  }
+  :global([data-lic-coverage] > li:first-child) { border-block-start: none; }
+  :global([data-lic-coverage] > li[data-in='false']) {
+    background: var(--color-background-utility-warning-subtle);
+  }
+  :global([data-lic-coverage] .cbf-lic__amount) {
+    font-weight: var(--typography-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-content-default);
   }
 
   /* ── Drawer footer: the computation band, then the actions ── */

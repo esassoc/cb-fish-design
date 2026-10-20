@@ -458,7 +458,7 @@ const blockedText = (n: number) =>
          carry. `indirect` is the exception: its pass rests on the reference
          document, which only the indirect block's own event knows. */
       if (Array.isArray(d.checks)) {
-        d.checks.forEach((c) => { if (c.key !== 'indirect') setCheck(c.key, c.pass, c.detail); });
+        d.checks.forEach((c) => setCheck(c.key, c.pass, c.detail));
       }
       if (Array.isArray(d.advisories)) {
         let any = false;
@@ -536,18 +536,9 @@ const blockedText = (n: number) =>
         '[data-ledger="indirect-scope"]',
         `on ${cfg.appliesTo.length} of ${indirectScopes.length} cost groups`,
       );
-      /* An approved rate stays approved however the vendor scopes it — but a
-         budget carrying NO reference document has no approval to stand on, and a
-         green tick there would be the check lying about the one thing it exists
-         to assert. That is the state a cleared budget starts in (the demo's
-         "Clear all entries") and the state a vendor is in before they configure
-         the block at all. */
-      if (cfg.referenceDoc) {
-        setCheck('indirect', true, `${pct(cfg.rate)} — ${cfg.referenceDoc}`);
-      } else {
-        setCheck('indirect', false, 'No approved rate reference on this budget');
-      }
-
+      /* The indirect CHECK is computed by the grid from the picked rates and
+         arrives with the rest of the gate on 'cbf-lib:totals'; this handler
+         only restates the rate and scope in the ledger. */
       refreshGate();
     });
 

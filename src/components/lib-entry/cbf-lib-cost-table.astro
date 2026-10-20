@@ -121,7 +121,7 @@
  *   unallocated    = unallocatedLines(lines).length
  *   capitalFailing = overrides + untestable lumps        // what the sort can't settle
  *   monthsFailing  = monthsOverPeriod(lines).length
- * DISPATCH 'cbf-lib:open-subcontract' — a subcontracts row's jump-out
+ * NAVIGATES to /lib-entry/subcontract/<sheet> (was 'cbf-lib:open-subcontract') — a subcontracts row's jump-out
  *   detail: { sheetId, lineId }        // sheetId = line.sheet
  * LISTEN   'cbf-lib:indirect-config' — a sibling owns the overhead block,
  *   including WHICH categories the rate applies to.
@@ -164,12 +164,14 @@
 import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaBadge from '@esa/ecology/esa-badge.astro';
 import EsaFieldError from '@esa/ecology/esa-field-error.astro';
+import EsaIcon from '@esa/ecology/esa-icon.astro';
 import EsaIconButton from '@esa/ecology/esa-button.astro';
 import CbfDragHandle from '../shared/cbf-drag-handle.astro';
 import '../../styles/cbf-row-reorder.css';
 import {
   SHAPES,
-  categories,
+  budgetFor,
+  localityBasis,
   categoryOf,
   costLines,
   priceLines,
@@ -220,7 +222,6 @@ import {
   blockOf,
   filingConsequence,
   countOf,
-  indirectConfig,
   usd,
   pct,
   qtyFmt,
@@ -242,13 +243,24 @@ interface Props {
   heading?: string | null;
   /** One line of context under the heading. Pass null to omit. */
   lede?: string | null;
+  /**
+   * Which budget to render: 'main' (the contract's LIB) or a subcontract sheet
+   * id, whose LIB has the same sections less Subcontracts, no indirect and no
+   * work-element split. See budgetFor / activateBudget in src/data/lib-entry.mjs.
+   */
+  budget?: string;
 }
 const {
   heading = 'Line item budget',
   lede = `${contract.number} · ${contract.fiscalYear} · ${contract.periodStart}–${contract.periodEnd}`,
+  budget = 'main',
 } = Astro.props;
 
-const lines: any[] = costLines;
+const B = budgetFor(budget);
+const isSub = B.kind === 'subcontract';
+const categories: any[] = B.categories;
+const indirectConfig: any = B.cfg;
+const lines: any[] = B.lines;
 const priced = priceLines(lines, indirectConfig);
 const amt = (id: string): number => priced.amounts[id] ?? 0;
 
@@ -336,7 +348,7 @@ const allocTitle = V.allocTitle;
 const allocErrText = (l: any) => V.allocErrText(l, lines);
 const allocFactText = V.allocFactText;
 const qtyFactText = (l: any) => V.qtyFactText(l, lines);
-const rowFlag = (l: any) => V.rowFlag(l, lines, A);
+const rowFlag = (l: any) => V.rowFlag(l, lines, A, { allocate: !isSub });
 
 const excludedLabels = V.excludedLabels;
 const scopeText = V.scopeText;
@@ -358,9 +370,15 @@ const itemsFor = (cat: any): any[] =>
 
 
 const t0 = priced.totals;
+
+/* The row-actions trigger is a vertical ellipsis — the conventional "more
+   actions" glyph. The hub's icon registry has no ellipsis (logged in
+   docs/hub-issues.md), so the Lucide paths go through esa-icon's own `paths`
+   fallback, inside a chrome esa-button: both legos, used as their APIs allow. */
+const KEBAB_PATHS = '<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>';
 ---
 
-<section class="cbf-lct stack" data-gap="md" data-lct>
+<section class="cbf-lct stack" data-gap="md" data-lct data-budget={B.id} data-budget-kind={B.kind}>
   {heading && (
     <header class="repel" data-gap="sm">
       <span class="stack" data-gap="3xs">
@@ -373,10 +391,15 @@ const t0 = priced.totals;
           to support both. So import sits in the grid's own header, not behind a
           menu: a vendor who budgets in a workbook brings it here, and the lines
           land in this same grid, where every check runs on them. */}
-      <span data-vendor-only>
-        <EsaButton size="sm" variant="secondary" appearance="outline" icon="upload" data-open-import>
-          Import from Excel
-        </EsaButton>
+      <span class="cluster" data-gap="xs">
+        {/* Folding every section at once — the overview, or the whole budget. */}
+        <span data-unfold-all><EsaButton size="sm" variant="ghost" icon="chevron-down">Expand all</EsaButton></span>
+        <span data-fold-all><EsaButton size="sm" variant="ghost" icon="chevron-up">Collapse all</EsaButton></span>
+        <span data-vendor-only>
+          <EsaButton size="sm" variant="secondary" appearance="outline" icon="upload" data-open-import>
+            Import from Excel
+          </EsaButton>
+        </span>
       </span>
     </header>
   )}
@@ -396,69 +419,72 @@ const t0 = priced.totals;
          column has to line up with the subtotals and the table foot. -->
     <table class="cbf-lct__table" aria-label="Line item budget cost lines">
       {categories.map((cat: any) => (
-        <tbody data-cat={cat.key} data-split={cat.key === 'personnel-salary' ? (personnelSplit.on ? 'on' : 'off') : undefined}>
+        <tbody data-cat={cat.key} data-collapsed data-split={cat.key === 'personnel-salary' ? (personnelSplit.on ? 'on' : 'off') : undefined}>
           {/* ── Category header: label, note, subtotal, and the inline add ── */}
           <tr class="cbf-lct__cathead">
             <th scope="colgroup" colspan={ENTRY_COLUMNS}>
+              <span class="repel cbf-lct__cathead-row" data-gap="sm">
               <span class="stack" data-gap="2xs">
-                <span class="cbf-lct__cat-label">{cat.label}</span>
-                {cat.note && <span class="cbf-lct__note">{cat.note}</span>}
+                {/* ── The section's description, on request ────────────────────
+                    Each category explains itself in two or three sentences, and
+                    at nine categories that was a paragraph above every section —
+                    read once, then scrolled past on every visit. It sits behind
+                    "Learn more" beside the name now: one click away for the
+                    first-time vendor and the reviewer, no height for everyone
+                    else. A popover rather than a disclosure, because a disclosure
+                    still costs every heading a row while closed. */}
+                <span class="cluster" data-gap="2xs">
+                  {/* ── Folding the section (Notion's toggle) ─────────────────
+                      Nine open sections were a 6,000px page read top to bottom.
+                      Folded, a section is one line — what it is, how many lines,
+                      what it costs, and whether anything in it needs attention —
+                      and the vendor opens the one they are working in. */}
+                  <span data-cat-toggle>
+                    <EsaButton variant="chrome" size="xs" iconOnly icon="chevron-down" label={`Show or hide ${cat.label}`} aria-expanded="false" />
+                  </span>
+                  {cat.icon && (
+                    <span class="cbf-lct__cat-icon" aria-hidden="true">
+                      <EsaIcon name={cat.icon} paths={cat.iconPaths} size="sm" />
+                    </span>
+                  )}
+                  <span class="cbf-lct__cat-label">{cat.label}</span>
+                  <span class="cbf-lct__note" data-cat-count></span>
+                  {/* What a folded section still has to say: something inside it
+                      needs a fix. Counted from the same issues the line's side
+                      panel lists. */}
+                  <span data-cat-issues hidden>
+                    <EsaBadge value="Needs attention" variant="warning" size="sm" />
+                  </span>
+                  {/* Said only when it is news: a budget default fringe other
+                      than the system's own. At the system default, nothing. */}
+                  {cat.key === 'personnel-salary' && (
+                    <span data-fringe-badge hidden={!V.fringeBadge()}>
+                      <EsaBadge value={V.fringeBadge() ?? ''} variant="info" size="sm" />
+                    </span>
+                  )}
+                  {cat.note && (
+                    <esa-popover position="right" trigger="click" offset="6" data-cat-note>
+                      <EsaButton size="xs" variant="ghost" icon="info" label={`Learn more about ${cat.label}`}>Learn more</EsaButton>
+                      <div slot="content" class="cbf-lct__cat-note">{cat.note}</div>
+                    </esa-popover>
+                  )}
+                </span>
 
-                {/* ── Budget-level settings, where the lines they govern start ──
-                    Personnel carries the DEFAULT fringe rate every position
-                    follows unless its line overrides it, and the choice of
-                    whether to split admin from technical at all. Supplies carries
-                    the contract's capitalization threshold, which varies by
-                    contract and so is the vendor's to state. Each sits on its own
-                    section head rather than in a settings panel, because a rate
-                    read beside the lines it prices is a rate that gets checked. */}
-                {cat.key === 'personnel-salary' && (
-                  <span class="cluster" data-gap="md" data-cat-controls>
-                    <span class="cluster" data-gap="2xs">
-                      <esa-text-field
-                        class="cbf-lct__field cbf-lct__field--pct"
-                        size="sm"
-                        label="Default fringe"
-                        suffix="%"
-                        data-budget-field="fringeDefault"
-                        value={V.fringeDefaultText()}
-                      ></esa-text-field>
-                      <span class="cbf-lct__note" data-fringe-default-note>{V.fringeDefaultNote(lines)}</span>
-                    </span>
-                    <span data-vendor-only>
-                      <esa-switch-toggle
-                        label="Split administrative and technical"
-                        data-split-toggle
-                        checked={personnelSplit.on || undefined}
-                      ></esa-switch-toggle>
-                    </span>
-                    <span class="cbf-lct__fact" data-fact="fringe-default">
-                      {`Default fringe ${V.fringeDefaultText()}%`}
-                    </span>
-                  </span>
-                )}
+                {/* ── Section settings: summarised here, changed in the menu ──────
+                    Personnel carries the DEFAULT fringe rate and whether to split
+                    administrative from technical; Supplies carries the contract's
+                    capitalization threshold. They used to be live fields on the
+                    head, which made every one of these heads three lines tall for
+                    settings that change once a budget. Now they are changed from
+                    the section's three-dot menu, and the head states what they are
+                    set to in one line — for both lenses. */}
                 {cat.key === 'supplies' && (
-                  <span class="cluster" data-gap="2xs" data-cat-controls>
-                    <esa-text-field
-                      class="cbf-lct__field cbf-lct__field--threshold"
-                      size="sm"
-                      label="Capitalization threshold"
-                      prefix="$"
-                      data-budget-field="threshold"
-                      value={numText(contract.capitalizationThreshold)}
-                    ></esa-text-field>
-                    <span class="cbf-lct__note">Per item.</span>
-                    <span class="cbf-lct__fact" data-fact="threshold">
-                      {`Capitalization threshold ${usd(contract.capitalizationThreshold)} per item`}
-                    </span>
-                  </span>
+                  <span class="cbf-lct__note" data-cat-summary={cat.key}>{V.sectionSummary(cat.key, lines)}</span>
                 )}
               </span>
-            </th>
-            <td class="cbf-lct__cell cbf-lct__cell--num">
-              <strong class="cbf-lct__money" data-cat-total={cat.key}>{usd(priced.byCategory[cat.key] ?? 0)}</strong>
-            </td>
-            <td class="cbf-lct__cell" colspan="2">
+              {/* Adding, on the head's right — always shown: it is the section's
+                  main action. Only ROW controls wait for hover. */}
+              <span class="cbf-lct__cat-add">
               {cat.derived ? (
                 /* A generated section has nothing to add TO. The affordance it
                    owes the vendor is not "Add line" but where the lines come
@@ -497,6 +523,26 @@ const t0 = priced.totals;
                   data-add-line={`${cat.key}||${cat.shapes[0]}`}
                 >Add line</EsaButton>
               )}
+              </span>
+              </span>
+            </th>
+            <td class="cbf-lct__cell cbf-lct__cell--num">
+              <strong class="cbf-lct__money" data-cat-total={cat.key}>{usd(priced.byCategory[cat.key] ?? 0)}</strong>
+            </td>
+            {/* The section's own menu, at the end of its head — the same place
+                and the same three dots every row below uses for its own. Every
+                section can copy lines from another contract; two also carry
+                settings. A generated section (fringe) has neither. */}
+            <td class="cbf-lct__cell cbf-lct__cell--act">
+              {!cat.derived && (
+                <span data-vendor-only>
+                  <esa-dropdown-menu position="below-end" data-cat-menu={cat.key}>
+                    <EsaButton variant="chrome" size="sm" class="cbf-lct__kebab" aria-label={`Options for ${cat.label}`} title={`Options for ${cat.label}`}>
+                      <EsaIcon name="ellipsis-vertical" paths={KEBAB_PATHS} size="sm" />
+                    </EsaButton>
+                  </esa-dropdown-menu>
+                </span>
+              )}
             </td>
           </tr>
 
@@ -523,7 +569,6 @@ const t0 = priced.totals;
               </>
             )}
             <th scope="col" class="cbf-lct__col-num">Amount</th>
-            <th scope="col" class="cbf-lct__col-we">Work element</th>
             <th scope="col" class="cbf-lct__col-act"><span class="cbf-lct__sr">Row actions</span></th>
           </tr>
 
@@ -544,6 +589,7 @@ const t0 = priced.totals;
                 data-trip={item.block.trip ? item.block.key : undefined}
               >
                 <th scope="rowgroup" colspan={ENTRY_COLUMNS}>
+                  <span class="repel" data-gap="sm">
                   <span class="stack" data-gap="2xs">
                     <span class="cbf-lct__block-label">{item.block.label}</span>
 
@@ -569,14 +615,19 @@ const t0 = priced.totals;
                               only travel where GSA itemises, which is the opposite
                               of how per diem works. A weir on Rock Creek is a real
                               destination that simply prices at CONUS. */}
-                          <esa-text-field
-                            class="cbf-lct__field cbf-lct__field--dest"
-                            size="sm"
-                            label="Destination"
-                            data-trip-field="locality"
-                            value={item.block.trip.locality}
-                            placeholder="City, ST"
-                          ></esa-text-field>
+                          <span class="stack" data-gap="3xs">
+                            <esa-combobox
+                              class="cbf-lct__field cbf-lct__field--dest"
+                              size="sm"
+                              mode="autocomplete"
+                              label="Destination"
+                              data-trip-field="locality"
+                              data-place
+                              data-value={item.block.trip.locality}
+                              placeholder="Search a town or county"
+                            ></esa-combobox>
+                            <span class="cbf-lct__note" data-trip-basis>{localityBasis(item.block.trip.locality)}</span>
+                          </span>
                           <esa-text-field
                             class="cbf-lct__field cbf-lct__field--trip"
                             size="sm"
@@ -615,13 +666,7 @@ const t0 = priced.totals;
                       </>
                     )}
                   </span>
-                </th>
-                <td class="cbf-lct__cell cbf-lct__cell--num">
-                  <span class="cbf-lct__money" data-block-total={`${cat.key}:${item.block.key}`}>
-                    {usd(priced.byBlock[`${cat.key}:${item.block.key}`] ?? 0)}
-                  </span>
-                </td>
-                <td class="cbf-lct__cell">
+                  <span>
                   {(item.block.trip || item.block.standalone) && (
                     /* Adding INSIDE a trip: the menu is the travel kinds, because
                        the kind is what the vendor is actually choosing. The
@@ -633,6 +678,13 @@ const t0 = priced.totals;
                       </EsaButton>
                     </esa-dropdown-menu>
                   )}
+                  </span>
+                  </span>
+                </th>
+                <td class="cbf-lct__cell cbf-lct__cell--num">
+                  <span class="cbf-lct__money" data-block-total={`${cat.key}:${item.block.key}`}>
+                    {usd(priced.byBlock[`${cat.key}:${item.block.key}`] ?? 0)}
+                  </span>
                 </td>
                 {/* The head's delete keeps the ROW-ACTION column, so every trash
                     icon on this grid sits on one vertical line — a trip delete
@@ -645,12 +697,12 @@ const t0 = priced.totals;
                     one just goes. */}
                 <td class="cbf-lct__cell cbf-lct__cell--act">
                   {item.block.trip && (
-                    <span data-delete-trip>
-                      <EsaIconButton variant="chrome" iconOnly
-                        icon="trash-2"
-                        size="sm"
-                        label={`Delete trip — ${item.block.label}`}
-                      />
+                    <span data-trip-menu-wrap data-vendor-only>
+                      <esa-dropdown-menu position="below-end" data-trip-menu>
+                        <EsaButton variant="chrome" size="sm" class="cbf-lct__kebab" aria-label={`Actions for this trip — ${item.block.label}`} title={`Actions for this trip — ${item.block.label}`}>
+                          <EsaIcon name="ellipsis-vertical" paths={KEBAB_PATHS} size="sm" />
+                        </EsaButton>
+                      </esa-dropdown-menu>
                     </span>
                   )}
                 </td>
@@ -716,30 +768,12 @@ const t0 = priced.totals;
                       </span>
                       <esa-text-field
                         class="cbf-lct__field cbf-lct__field--label"
-                        size="md"
+                        size="sm"
                         data-field="label"
                         value={item.line.label}
                         placeholder="Describe this cost line"
                         aria-label={`Cost line description — ${item.line.label || 'new line'}`}
                       ></esa-text-field>
-                      {/* ── A meeting linked to the trip that gets there ──────
-                          Registration lives here and the travel lives in Travel —
-                          two categories apart, so nobody could see what the
-                          conference costs in full. Linking the two keeps each
-                          cost in the category the funder reads it in, and puts
-                          the sum on the trip head. */}
-                      <span data-trip-link hidden={item.line.category !== 'meetings'}>
-                        <esa-select
-                          class="cbf-lct__select"
-                          size="sm"
-                          data-trip-link-select
-                          placeholder="Not linked to a trip"
-                          aria-label={`Trip for this meeting — ${item.line.label || 'new line'}`}
-                        ></esa-select>
-                      </span>
-                      <span class="cbf-lct__fact" data-fact="trip-link" hidden={!item.line.linkedTrip}>
-                        {item.line.linkedTrip ? `Travel: ${tripLabel(tripOf(item.line.linkedTrip))} trip` : ''}
-                      </span>
                     </span>
 
                     {/* ── The position: typed here, referenced everywhere after ──
@@ -759,15 +793,12 @@ const t0 = priced.totals;
                     <span data-ident="position" hidden={identOf(item.line) !== 'position'}>
                       <esa-combobox
                         class="cbf-lct__select"
-                        size="md"
+                        size="sm"
                         mode="autocomplete"
                         data-position-combo
                         placeholder="Type a position title"
                         aria-label={`Position title — ${displayLabel(item.line) || 'new line'}`}
                       ></esa-combobox>
-                      <span data-position-err hidden={!!positionKey(displayLabel(item.line))}>
-                        <EsaFieldError message="Name the position. Its fringe line and any linked lines refer back to it." icon />
-                      </span>
 
                       {/* The type is NOT printed on the row: it belongs to the
                           position, and the sub-block heading this row sits under
@@ -779,55 +810,31 @@ const t0 = priced.totals;
                     <span class="stack" data-gap="2xs" data-ident="travel-kind" hidden={identOf(item.line) !== 'travel-kind'}>
                       <esa-select
                         class="cbf-lct__select"
-                        size="md"
+                        size="sm"
                         data-travel-kind-select
                         placeholder={travelKind(item.line.travelKind)?.label ?? 'Pick a travel kind'}
                         aria-label={`Travel kind — ${displayLabel(item.line) || 'new line'}`}
                       ></esa-select>
-                      {/* A vendor-defined kind says what it is — the kind list
-                          could not, which is why it was chosen. */}
-                      <span data-desc hidden={!V.takesDesc(item.line)}>
-                        <esa-text-field
-                          class="cbf-lct__field cbf-lct__field--label"
-                          size="md"
-                          data-field="desc"
-                          value={item.line.desc ?? ''}
-                          placeholder="What is this travel cost?"
-                          aria-label={`Description — ${displayLabel(item.line) || 'new line'}`}
-                        ></esa-text-field>
-                      </span>
-
-                      {/* ── The one fact an ungrouped line cannot inherit ──────
-                          A line inside a trip takes its destination from the trip
-                          head, where it is typed once for every line under it. A
-                          line on its own has nowhere else to carry it, so it
-                          carries it here — same field, same CONUS resolution,
-                          said for one line instead of a group. It is hidden the
-                          moment the line joins a trip, because then the head is
-                          the only honest place to change it. */}
+                      {/* ── Destination, for a line outside a trip ─────────────
+                          Stays on the row, not in the side panel: it is required,
+                          and it decides the standard rate the line can claim. A
+                          line in a trip takes the trip's, so it is hidden there.
+                          Purpose of travel is a detail and lives in the panel. */}
                       <span class="stack" data-gap="3xs" data-travel-dest hidden={!isLooseTravel(item.line)}>
-                        <esa-text-field
+                        <esa-combobox
                           class="cbf-lct__field cbf-lct__field--dest"
-                          size="md"
+                          size="sm"
+                          mode="autocomplete"
                           data-field="locality"
-                          value={item.line.locality ?? ''}
-                          placeholder="Destination — City, ST"
+                          data-place
+                          data-value={item.line.locality ?? ''}
+                          placeholder="Destination — search a town or county"
                           aria-label={`Destination — ${displayLabel(item.line) || 'new line'}`}
-                        ></esa-text-field>
-                        <esa-text-field
-                          class="cbf-lct__field cbf-lct__field--dest"
-                          size="md"
-                          data-field="purpose"
-                          value={item.line.purpose ?? ''}
-                          placeholder="Purpose of travel"
-                          aria-label={`Purpose of travel — ${displayLabel(item.line) || 'new line'}`}
-                        ></esa-text-field>
+                        ></esa-combobox>
+                        <span class="cbf-lct__note" data-dest-basis>{localityBasis(item.line.locality)}</span>
                         <span data-dest-err hidden={!!(item.line.locality ?? '').trim()}>
                           <EsaFieldError message="Add a destination — every travel cost needs one." icon />
                         </span>
-                      </span>
-                      <span class="cbf-lct__fact" data-fact="purpose" hidden={!isLooseTravel(item.line) || !item.line.purpose}>
-                        {item.line.purpose ? `Purpose: ${item.line.purpose}` : ''}
                       </span>
                     </span>
 
@@ -835,39 +842,28 @@ const t0 = priced.totals;
                     <span class="stack" data-gap="2xs" data-ident="vehicle-kind" hidden={identOf(item.line) !== 'vehicle-kind'}>
                       <esa-select
                         class="cbf-lct__select"
-                        size="md"
+                        size="sm"
                         data-vehicle-kind-select
                         placeholder={vehicleKind(item.line.vehicleKind)?.label ?? 'Pick a vehicle kind'}
                         aria-label={`Vehicle kind — ${displayLabel(item.line) || 'new line'}`}
                       ></esa-select>
-                      {/* ── The vehicle TYPE, off the controlled list ─────────
-                          The detail a COR needs to check the class against the
-                          work, and the key the GSA rate is looked up by. Searched
-                          rather than scrolled — twenty types is past what a
-                          plain dropdown reads well. */}
+                      {/* ── The vehicle TYPE stays on the row ─────────────────
+                          Not a detail for the side panel: for a GSA lease or
+                          mileage line the type IS the rate — it is the key the
+                          GSA rate is looked up by — so a row without it is a
+                          row that cannot be priced. Searched rather than
+                          scrolled: twenty types is past what a plain dropdown
+                          reads well. */}
                       <span data-vehicle-type hidden={!V.takesVehicleType(item.line)}>
                         <esa-combobox
                           class="cbf-lct__select"
-                          size="md"
+                          size="sm"
                           mode="autocomplete"
                           data-vehicle-type-select
                           placeholder="Pick the vehicle type"
                           search-placeholder="Search vehicle types…"
                           aria-label={`Vehicle type — ${displayLabel(item.line) || 'new line'}`}
                         ></esa-combobox>
-                        <span data-vehicle-type-err hidden={!vehicleKind(item.line.vehicleKind)?.needsType || !!item.line.vehicleType}>
-                          <EsaFieldError message="Pick a vehicle type. It sets the GSA rate and lets the COR check the class." icon />
-                        </span>
-                      </span>
-                      <span data-desc hidden={!V.takesDesc(item.line)}>
-                        <esa-text-field
-                          class="cbf-lct__field cbf-lct__field--label"
-                          size="md"
-                          data-field="desc"
-                          value={item.line.desc ?? ''}
-                          placeholder="What is this vehicle cost?"
-                          aria-label={`Description — ${displayLabel(item.line) || 'new line'}`}
-                        ></esa-text-field>
                       </span>
                     </span>
 
@@ -882,36 +878,11 @@ const t0 = priced.totals;
 
                     <span class="cbf-lct__fact cbf-lct__fact--label" data-fact="label">{displayLabel(item.line)}</span>
 
-                    {/* ── The vendor's own accounting code ─────────────────────
-                        Every line, so an invoice can be lined up against the
-                        budget it bills. Small and last in the cell: it prices
-                        nothing, and it is read when matching, not when building.
-                        A generated fringe line has no field of its own — it
-                        carries its salary lines' code. */}
-                    <span class="cluster" data-gap="2xs" data-acct>
-                      <span data-acct-edit hidden={derivedRow(item.line)}>
-                        <esa-text-field
-                          class="cbf-lct__field cbf-lct__field--code"
-                          size="sm"
-                          prefix="Code"
-                          data-field="acctCode"
-                          value={item.line.acctCode ?? ''}
-                          placeholder="Accounting code"
-                          aria-label={`Accounting code — ${displayLabel(item.line) || 'new line'}`}
-                        ></esa-text-field>
-                      </span>
-                      <span class="cbf-lct__note" data-acct-derived hidden={!derivedRow(item.line)}>
-                        {V.acctFactText(item.line, lines)}
-                      </span>
-                      <span class="cbf-lct__fact cbf-lct__note" data-fact="acct" hidden={derivedRow(item.line)}>
-                        {V.acctFactText(item.line, lines)}
-                      </span>
-                      {/* Quiet, not a warning: a vendor-defined line is allowed.
-                          The badge is what keeps it from blending into the
-                          standard kinds when the COR reads down the section. */}
-                      <span data-vendor-badge hidden={!V.vendorDefined(item.line)}>
-                        <EsaBadge value="Vendor-defined" variant="secondary" size="sm" />
-                      </span>
+                    {/* Quiet, not a warning: a vendor-defined line is allowed.
+                        The badge is what keeps it from blending into the
+                        standard kinds when the COR reads down the section. */}
+                    <span data-vendor-badge hidden={!V.vendorDefined(item.line)}>
+                      <EsaBadge value="Vendor-defined" variant="info" size="sm" />
                     </span>
 
                     {/* No second line under the name. The slot used to carry two
@@ -968,7 +939,7 @@ const t0 = priced.totals;
                 {item.line.shape === SHAPES.LUMP ? (
                   <td class="cbf-lct__cell cbf-lct__cell--void" colspan={ENTRY_COLUMNS - 1}>
                     <div class="stack" data-gap="2xs">
-                      <span class="cbf-lct__note">No quantity, no rate — one amount.</span>
+                      <span class="cbf-lct__note" data-lump-note>{item.line.category === 'subcontracts' ? 'From its own LIB — BPA doesn’t accept a lump sum.' : 'No quantity, no rate — one amount.'}</span>
                       {/* ── The one way left to defeat the sort ────────────────
                           Equipment files itself from its per-item cost, and a
                           lump has none — so a lump is where a capitalizable item
@@ -977,33 +948,20 @@ const t0 = priced.totals;
                           to itemize before the sort can reach inside. */}
                       <span class="stack" data-gap="2xs" data-cap-lump hidden={!capLumpOpen(item.line)}>
                         <span><EsaBadge value="Can’t test per item" variant="info" size="sm" /></span>
-                        <span class="cbf-lct__note" data-cap-lump-err>{capLumpText(item.line)}</span>
                       </span>
-                      {/* A lump has no per-item cost for the threshold to read,
-                          so where it sits is ONLY ever the vendor's call — and
-                          the same move an itemized line has is offered here. */}
-                      <span data-cap-toggle data-vendor-only hidden={!onThreshold(item.line)}>
-                        <EsaButton size="xs" variant="secondary" appearance="soft">
-                          {capToggleText(item.line)}
-                        </EsaButton>
+                      {/* The seam: one line HERE, the subcontract's own budget
+                          THERE. On every lump row because new rows are cloned per
+                          shape; fillRow shows it for subcontracts only. */}
+                      <span class="cluster" data-gap="2xs" data-sub-sheet hidden={item.line.category !== 'subcontracts'}>
+                        <EsaButton
+                          size="sm"
+                          variant="secondary"
+                          appearance="soft"
+                          icon="external-link"
+                          data-open-sheet={item.line.sheet ?? ''}
+                          data-open-sheet-line={item.line.id}
+                        >Open subcontract LIB</EsaButton>
                       </span>
-                      <span class="cbf-lct__note" data-cap-lump-filed hidden={!onThreshold(item.line)}>
-                        {onThreshold(item.line) ? capWhyText(item.line) : ''}
-                      </span>
-                      {item.line.sheet && (
-                        <span class="cluster" data-gap="2xs">
-                          {/* The seam: a lump HERE, a full recursed category set THERE. */}
-                          <EsaButton
-                            size="sm"
-                            variant="secondary"
-                            appearance="soft"
-                            icon="external-link"
-                            data-open-sheet={item.line.sheet}
-                            data-open-sheet-line={item.line.id}
-                          >Open subcontract sheet</EsaButton>
-                          <span class="cbf-lct__note">Itemized on its own sheet — no indirect applied there.</span>
-                        </span>
-                      )}
                     </div>
                   </td>
                 ) : item.line.shape === SHAPES.PCT_OF_BASE ? (
@@ -1052,7 +1010,7 @@ const t0 = priced.totals;
                         <span class="cluster" data-gap="2xs" data-travel-count>
                           <esa-text-field
                             class="cbf-lct__field cbf-lct__field--qty"
-                            size="md"
+                            size="sm"
                             data-field="count"
                             value={numText(travelCount(item.line))}
                             aria-label={`Count — ${displayLabel(item.line)}`}
@@ -1072,7 +1030,7 @@ const t0 = priced.totals;
                           <span class="cbf-lct__times" aria-hidden="true">×</span>
                           <esa-text-field
                             class="cbf-lct__field cbf-lct__field--qty"
-                            size="md"
+                            size="sm"
                             data-field="duration"
                             value={numText(item.line.duration)}
                             aria-label={`Duration — ${displayLabel(item.line)}`}
@@ -1091,7 +1049,7 @@ const t0 = priced.totals;
                         <span class="cbf-lct__times" aria-hidden="true">+</span>
                         <esa-text-field
                           class="cbf-lct__field cbf-lct__field--qty"
-                          size="md"
+                          size="sm"
                           data-field="partialDays"
                           value={numText(item.line.partialDays ?? 0)}
                           aria-label={`Travel days at 75% — ${displayLabel(item.line)}`}
@@ -1121,7 +1079,7 @@ const t0 = priced.totals;
                           <span class="cluster" data-gap="2xs" data-qty-typed hidden={!!item.line.qtyFrom}>
                             <esa-text-field
                               class="cbf-lct__field cbf-lct__field--qty"
-                              size="md"
+                              size="sm"
                               data-field="qty"
                               value={numText(item.line.qty)}
                               aria-label={`Quantity — ${displayLabel(item.line)}`}
@@ -1132,7 +1090,7 @@ const t0 = priced.totals;
                                 vendor has to guess the house word for. */}
                             <esa-text-field
                               class="cbf-lct__field cbf-lct__field--unit"
-                              size="md"
+                              size="sm"
                               data-field="qtyUnit"
                               data-unit-open
                               value={item.line.qtyUnit ?? ''}
@@ -1152,7 +1110,7 @@ const t0 = priced.totals;
                             <span data-unit-select hidden={!unitPicked(item.line)}>
                               <esa-select
                                 class="cbf-lct__select cbf-lct__select--unit"
-                                size="md"
+                                size="sm"
                                 data-time-unit-select
                                 placeholder={timeUnit(item.line).plural}
                                 aria-label={`Time unit — ${displayLabel(item.line)}`}
@@ -1173,7 +1131,7 @@ const t0 = priced.totals;
                             <span class="cbf-lct__times" aria-hidden="true">×</span>
                             <esa-text-field
                               class="cbf-lct__field cbf-lct__field--qty cbf-lct__field--staff"
-                              size="md"
+                              size="sm"
                               data-field="staff"
                               value={V.staffText(item.line)}
                               aria-label={`Staff on this line — ${displayLabel(item.line)}`}
@@ -1181,32 +1139,18 @@ const t0 = priced.totals;
                             <span class="cbf-lct__unit">staff</span>
                           </span>
 
-                          {/* The way BACK. A broken link that could not be remade
-                              would just be a slower delete-and-re-add, and the
-                              dependency is the thing worth keeping — so the line
-                              remembers what it used to follow and offers it by
-                              name. Only ever shown on a line that has detached. */}
-                          <span
-                            data-qty-refollow
-                            hidden={!item.line.qtyFromWas || !!item.line.qtyFrom}
-                          >
-                            <EsaButton size="xs" variant="secondary" appearance="soft" data-refollow-qty>
-                              {item.line.qtyFromWas ? `Follow ${labelOfId(item.line.qtyFromWas)}` : 'Follow again'}
-                            </EsaButton>
-                          </span>
-
                           <span class="cluster" data-gap="2xs" data-qty2 hidden={item.line.qty2 == null}>
                             <span class="cbf-lct__times" aria-hidden="true">×</span>
                             <esa-text-field
                               class="cbf-lct__field cbf-lct__field--qty"
-                              size="md"
+                              size="sm"
                               data-field="qty2"
                               value={numText(item.line.qty2)}
                               aria-label={`Second quantity — ${displayLabel(item.line)}`}
                             ></esa-text-field>
                             <esa-text-field
                               class="cbf-lct__field cbf-lct__field--unit"
-                              size="md"
+                              size="sm"
                               data-field="qty2Unit"
                               data-unit2-open
                               value={item.line.qty2Unit ?? ''}
@@ -1237,20 +1181,13 @@ const t0 = priced.totals;
                         </span>
 
                         {/* The contract period is a ceiling on staffing months,
-                            and it is arithmetic — so the form does it, in both
-                            states, rather than leaving it to the reviewer. */}
-                        <span class="stack" data-gap="2xs" data-months-wrap hidden={!monthsTested(item.line)}>
-                          <span class="cluster" data-gap="2xs">
-                            <span data-months="pass" hidden={monthsOver(item.line)}>
-                              <EsaBadge value="Within contract period" variant="success" />
-                            </span>
-                            <span data-months="fail" hidden={!monthsOver(item.line)}>
-                              <EsaBadge value="Past contract period" variant="danger" />
-                            </span>
-                          </span>
-                          <span class="cbf-lct__note" data-months-note>{monthsText(item.line)}</span>
-                          <span data-months-err hidden={!monthsOver(item.line)}>
-                            <EsaFieldError message={monthsErrText(item.line)} icon />
+                            and it is arithmetic — so the form checks it. It speaks
+                            only when the line is PAST it: a pass badge and sentence
+                            on every salary row was the largest repeated block on
+                            the grid, and the rail already says when all pass. */}
+                        <span class="stack" data-gap="2xs" data-months-wrap hidden={!monthsTested(item.line) || !monthsOver(item.line)}>
+                          <span data-months="fail">
+                            <EsaBadge value="Past contract period" variant="danger" size="sm" />
                           </span>
                         </span>
 
@@ -1261,20 +1198,6 @@ const t0 = priced.totals;
                           </span>
                           <span class="cbf-lct__note" data-cell="derived-src">
                             {item.line.qtyFrom ? `Follows ${labelOfId(item.line.qtyFrom)}` : ''}
-                          </span>
-                          {/* The link has to be BREAKABLE. Following the position is
-                              the right default — a phone budgeted for 12 months
-                              against a position staffed for 10.5 is the drift this
-                              prevents — but it is a default, not a fact: a device on
-                              an annual plan outlives the season that uses it, and
-                              without this the vendor's only way to say so was to
-                              delete the line and re-add it in another category.
-                              Breaking it keeps the number it resolved to, so the
-                              cell never blanks. */}
-                          <span data-qty-detach>
-                            <EsaButton size="xs" variant="secondary" appearance="soft" data-detach-qty>
-                              Use my own quantity
-                            </EsaButton>
                           </span>
                         </span>
 
@@ -1302,7 +1225,7 @@ const t0 = priced.totals;
                              lands in it. The unit-bearing rate gets its own width. */
                           rateSuffixOf(item.line) && 'cbf-lct__field--rate-unit',
                         ]}
-                        size="md"
+                        size="sm"
                         prefix="$"
                         suffix={rateSuffixOf(item.line)}
                         data-field="rate"
@@ -1320,21 +1243,8 @@ const t0 = priced.totals;
                           the same type is the yardstick a COR reads it against,
                           so it is stated, and a rate above it is noted. Noted,
                           not blocked: a vendor may pay more than GSA charges. */}
-                      <span class="stack" data-gap="2xs" data-compare hidden={!V.compareText(item.line)}>
-                        <span class="cbf-lct__note" data-compare-text>{V.compareText(item.line)}</span>
-                        <span class="stack" data-gap="2xs" data-compare-above hidden={!V.compareAbove(item.line)}>
-                          <span><EsaBadge value="Above the GSA rate" variant="info" size="sm" /></span>
-                          <span class="cbf-lct__note" data-compare-note>{V.gsaErrText(item.line)}</span>
-                        </span>
-                      </span>
-
-                      {/* ── A second rate for the same position ───────────────
-                          A fiscal-year crossover, a COLA, a step increase: the
-                          COR consensus was a second line with the same title.
-                          This makes it one gesture — the time is split across
-                          the two lines and the new one opens on its rate. */}
-                      <span data-rate-step data-vendor-only hidden={!isSalaryLine(item.line)}>
-                        <EsaButton size="xs" variant="secondary" appearance="soft" icon="plus">Add another rate</EsaButton>
+                      <span data-compare-above hidden={!V.compareAbove(item.line)}>
+                        <EsaBadge value="Above the GSA rate" variant="info" size="sm" />
                       </span>
 
                       {/* ── Where this item filed itself, and what that costs ──
@@ -1346,31 +1256,9 @@ const t0 = priced.totals;
                           differ by contract, so placing an item is the vendor's
                           call, and a placement against the threshold is noted
                           for the COR rather than refused. */}
-                      <span class="stack" data-gap="2xs" data-cap-wrap hidden={!thresholdTested(item.line)}>
-                        <span data-cap="filed" hidden={capOverride(item.line)}>
-                          <span class="stack" data-gap="3xs">
-                            <span class="cbf-lct__filed" data-cap-filed>{capFiledText(item.line)}</span>
-                            <span class="cbf-lct__note" data-cap-why>{capWhyText(item.line)}</span>
-                          </span>
-                        </span>
-                        <span data-cap="override" hidden={!capOverride(item.line)}>
-                          <span class="stack" data-gap="2xs">
-                            <span data-cap-against hidden={!V.capAgainst(item.line, A)}>
-                              <EsaBadge value="Moved by hand" variant="info" size="sm" />
-                            </span>
-                            <span class="cbf-lct__note" data-cap-err>{capOverrideText(item.line)}</span>
-                            <span class="cbf-lct__note" data-cap-why-ovr>{capWhyText(item.line)}</span>
-                          </span>
-                        </span>
-                        <span class="cluster" data-gap="2xs" data-vendor-only>
-                          <span data-cap-toggle hidden={!capCanOverride(item.line)}>
-                            <EsaButton size="xs" variant="secondary" appearance="soft">
-                              {capToggleText(item.line)}
-                            </EsaButton>
-                          </span>
-                          <span data-cap-reset hidden={!V.capResetText(item.line)}>
-                            <EsaButton size="xs" variant="ghost">{V.capResetText(item.line) || 'File by threshold'}</EsaButton>
-                          </span>
+                      <span class="stack" data-gap="2xs" data-cap-wrap hidden={!thresholdTested(item.line) || !capOverride(item.line)}>
+                        <span data-cap-against hidden={!V.capAgainst(item.line, A)}>
+                          <EsaBadge value="Moved by hand" variant="info" size="sm" />
                         </span>
                       </span>
                     </div>
@@ -1401,28 +1289,32 @@ const t0 = priced.totals;
                   <td class="cbf-lct__cell cbf-lct__cell--fringe">
                     <div class="stack" data-gap="2xs">
                       <div class="cluster" data-gap="2xs" data-fringe>
-                        <esa-text-field
-                          class="cbf-lct__field cbf-lct__field--pct"
-                          size="md"
-                          suffix="%"
-                          data-field="fringePct"
-                          value={fringePctText(item.line)}
-                          aria-label={`Fringe rate — ${displayLabel(item.line)}`}
-                        ></esa-text-field>
+                        {/* Following the budget default, the rate is a value, not
+                            a box: there is nothing to decide on this line until the
+                            vendor chooses to override it, which is a row action
+                            ("Override fringe rate") rather than a field that turns
+                            into an override the moment anyone types in it. */}
+                        <span class="cbf-lct__derived" data-fringe-default hidden={V.fringeOverridden(item.line)}>
+                          {`${fringePctText(item.line)}% default ·`}
+                        </span>
+                        <span data-fringe-input hidden={!V.fringeOverridden(item.line)}>
+                          <esa-text-field
+                            class="cbf-lct__field cbf-lct__field--pct"
+                            size="sm"
+                            suffix="%"
+                            data-field="fringePct"
+                            value={fringePctText(item.line)}
+                            aria-label={`Fringe rate — ${displayLabel(item.line)}`}
+                          ></esa-text-field>
+                        </span>
                         <span class="cbf-lct__fact" data-fact="fringe">{fringeFactText(item.line)}</span>
                         <span class="cbf-lct__derived cbf-lct__fringe-amt" data-fringe-note>{fringeAmtText(item.line)}</span>
                       </div>
-                      {/* Following the default is the quiet state; an override
-                          says so, because "why is this one different" is what a
-                          reviewer reads this column for — and it is one click
-                          back to the default. */}
-                      <span class="cluster" data-gap="2xs" data-fringe-override hidden={!V.fringeOverridden(item.line)}>
-                        <span class="cbf-lct__note">Own rate</span>
-                        <span data-fringe-reset data-vendor-only>
-                          <EsaButton size="xs" variant="ghost">{V.fringeResetText()}</EsaButton>
-                        </span>
-                      </span>
-                      <span class="cbf-lct__note" data-fringe-follows hidden={V.fringeOverridden(item.line)}>Uses the default</span>
+                      {/* The quiet state is the default; the note marks the
+                          exception, because "why is this one different" is what a
+                          reviewer reads this column for. The way back to the
+                          default is in the row menu. */}
+                      <span class="cbf-lct__note" data-fringe-override hidden={!V.fringeOverridden(item.line)}>Own rate</span>
                     </div>
                   </td>
                 )}
@@ -1455,7 +1347,7 @@ const t0 = priced.totals;
                           claim, where "what happens to my rate" is asked. */}
                       <esa-text-field
                         class="cbf-lct__field cbf-lct__field--rate"
-                        size="md"
+                        size="sm"
                         prefix="$"
                         data-field="rate"
                         data-typed-rate
@@ -1500,19 +1392,9 @@ const t0 = priced.totals;
                         </span>
                       </span>
 
-                      {/* Offered only where something is actually published. On
-                          airfare, ground transport and registration the cell says
-                          so instead, because "no standard available" and "you
-                          chose not to claim one" are different facts. */}
-                      <span data-standard-toggle hidden={!canClaimStandard(item.line)}>
-                        <EsaButton size="xs" variant="secondary" appearance="soft">
-                          {claimsStandard(item.line) ? 'Use my own rate' : 'Use the standard rate'}
-                        </EsaButton>
-                      </span>
-                      <span class="cbf-lct__note" data-cell="typed-src" hidden={claimsStandard(item.line)}>
-                        {typedSrcText(item.line)}
-                      </span>
-
+                      {/* Claiming or dropping a published rate is in the row's
+                          actions menu. An unclaimed rate is the default and says
+                          nothing; the COR's mirror below still states which. */}
                       <span class="cbf-lct__fact" data-fact="travel-rate">{money(effectiveRate(item.line))}</span>
                       <span class="cbf-lct__fact" data-fact="travel-rate-src">
                         {claimsStandard(item.line) ? standardSrcText(item.line) : typedSrcText(item.line)}
@@ -1529,13 +1411,8 @@ const t0 = priced.totals;
                           cell, IS the lookup — a vendor used to search the fleet
                           schedule for a row and could pick a class that did not
                           match the vehicle they named. */}
-                      <span class="cbf-lct__ref" data-cell="ref-rate">{money(effectiveRate(item.line))}</span>
-                      <span class="cbf-lct__note" data-cell="ref-src">{gsaSrcText(item.line)}</span>
-
                       <span class="cluster" data-gap="2xs">
-                        <span data-gsa="pass" hidden={overridden(item.line) || !gsaOf(item.line)}>
-                          <EsaBadge value="GSA rate" variant="success" size="sm" />
-                        </span>
+                        <span class="cbf-lct__ref" data-cell="ref-rate" hidden={overridden(item.line)}>{money(effectiveRate(item.line))}</span>
                         <span data-gsa="under" hidden={!overridden(item.line) || gsaOver(item.line)}>
                           <EsaBadge value="Your own rate" variant="info" size="sm" />
                         </span>
@@ -1543,6 +1420,7 @@ const t0 = priced.totals;
                           <EsaBadge value="Above the GSA rate" variant="info" size="sm" />
                         </span>
                       </span>
+                      <span class="cbf-lct__note" data-cell="ref-src" hidden={!!gsaOf(item.line) && !overridden(item.line)}>{gsaSrcText(item.line)}</span>
 
                       {/* ── The override: for vendors not paying the GSA rate ──
                           CORs asked for this flexibility. A rate above GSA is
@@ -1551,19 +1429,13 @@ const t0 = priced.totals;
                       <span data-override-wrap hidden={!overridden(item.line)}>
                         <esa-text-field
                           class="cbf-lct__field cbf-lct__field--rate"
-                          size="md"
+                          size="sm"
                           prefix="$"
                           data-field="rateOverride"
                           value={numText(item.line.rateOverride)}
                           aria-label={`Your rate — ${displayLabel(item.line)}`}
                         ></esa-text-field>
                       </span>
-                      <span>
-                        <EsaButton size="xs" variant="secondary" appearance="soft" data-toggle-override>
-                          {overridden(item.line) ? 'Use the GSA rate' : 'Use my own rate'}
-                        </EsaButton>
-                      </span>
-                      <span class="cbf-lct__note" data-gsa-err hidden={!gsaOver(item.line)}>{gsaErrText(item.line)}</span>
                     </div>
                   </td>
                 )}
@@ -1594,7 +1466,7 @@ const t0 = priced.totals;
                     <>
                       <esa-text-field
                         class="cbf-lct__field cbf-lct__field--amount"
-                        size="md"
+                        size="sm"
                         prefix="$"
                         data-field="amount"
                         value={numText(item.line.amount)}
@@ -1609,61 +1481,6 @@ const t0 = priced.totals;
                   )}
                 </td>
 
-                {/* ── 6. Work-element allocation — on EVERY row, whatever the shape ── */}
-                <td class="cbf-lct__cell cbf-lct__cell--we">
-                  <div class="stack" data-gap="2xs">
-                    {/* A derived row's split is not its own — it is the split of
-                        the salary lines it follows, inherited weighted by their
-                        dollars. Offering an editor here would offer a way to make
-                        the two disagree, which is the bug this whole section
-                        stopped being able to have. So it reads as a value for
-                        both roles, and the error below points at the row that can
-                        actually fix it. */}
-                    <span class="cbf-lct__derived" data-alloc-derived hidden={!derivedRow(item.line)}>
-                      {allocFactText(item.line)}
-                    </span>
-
-                    {/* ── The split is ENTERED on a side sheet ──────────────
-                        It used to be typed in a popover hanging off this button.
-                        That is sized by its anchor and clipped by the viewport,
-                        so it worked for this contract's six work elements and
-                        would not have worked for twenty — and it had nowhere to
-                        put "split evenly across all", which has to sit beside the
-                        list it rewrites. What stays here is the summary and the
-                        state, which is what the column is for: the row says how
-                        the line is split, and opening the sheet is how it
-                        changes. See cbf-lib-alloc-sheet. */}
-                    <span data-alloc-editor hidden={derivedRow(item.line)}>
-                      <span data-alloc-state="set" hidden={allocSum(item.line) !== 100}>
-                        <EsaButton size="md" variant="secondary" appearance="outline" title={allocTitle(item.line)}>
-                          {allocSummary(item.line)}
-                        </EsaButton>
-                      </span>
-                      <span data-alloc-state="unset" hidden={allocSum(item.line) === 100}>
-                        <EsaButton size="md" variant="warning" appearance="outline" title={allocTitle(item.line)}>
-                          {allocSummary(item.line)}
-                        </EsaButton>
-                      </span>
-                    </span>
-
-                    {/* COR lens: the split as a value, not an editor. A derived
-                        row already reads as one for both roles, so it keeps the
-                        mirror out of the way rather than printing it twice. */}
-                    <span
-                      class="cbf-lct__fact"
-                      data-fact="alloc"
-                      title={allocTitle(item.line)}
-                      hidden={derivedRow(item.line)}
-                    >
-                      {allocFactText(item.line)}
-                    </span>
-
-                    <span data-alloc-row-err hidden={allocSum(item.line) === 100}>
-                      <EsaFieldError message={allocErrText(item.line)} icon />
-                    </span>
-                  </div>
-                </td>
-
                 {/* ── 7. Row action — delete for the vendor, MARK for the COR ──
                     The same slot, because they are the same thing from each side:
                     the one operation that role performs on a line it is looking
@@ -1673,8 +1490,30 @@ const t0 = priced.totals;
                   {/* No delete on a derived row: it exists because a salary line
                       exists, and it stops existing when that one does. A button
                       here would be an offer the model cannot honour. */}
-                  <span data-delete-line hidden={derivedRow(item.line)}>
-                    <EsaIconButton variant="chrome" iconOnly icon="trash-2" size="sm" label={`Delete line — ${displayLabel(item.line)}`} />
+                  {/* ── One menu for everything else a vendor can do to the row ──
+                      Add another rate, claim or drop a published rate, use or
+                      drop the GSA rate, move across the threshold, follow or stop
+                      following a linked quantity, delete. Each used to be its own
+                      button stacked under a field, which is most of why a row
+                      was 100–200px tall; one trigger in the action column costs
+                      no height at all. The items are built per row and per state
+                      on every paint (see rowMenuItems), so a menu never offers
+                      something the line cannot do. */}
+                  {/* ── Open the line's details (Notion's "open as side peek") ──
+                      The grid keeps the numbers; the rest of the line — code,
+                      work-element split, destination and purpose, vehicle type,
+                      description, trip link, and every note about it — is one
+                      click away in the side panel. Both lenses can open it; the
+                      COR reads it, the vendor edits it. */}
+                  <span class="cbf-lct__hover" data-peek-open>
+                    <EsaButton size="xs" variant="secondary" appearance="soft" aria-label={`Open details — ${displayLabel(item.line) || 'new line'}`}>Open</EsaButton>
+                  </span>
+                  <span class="cbf-lct__hover" data-row-menu-wrap data-vendor-only hidden={derivedRow(item.line)}>
+                    <esa-dropdown-menu position="below-end" data-row-menu>
+                      <EsaButton variant="chrome" size="sm" class="cbf-lct__kebab" aria-label={`Actions for this line — ${displayLabel(item.line) || 'new line'}`} title={`Actions for this line — ${displayLabel(item.line) || 'new line'}`}>
+                        <EsaIcon name="ellipsis-vertical" paths={KEBAB_PATHS} size="sm" />
+                      </EsaButton>
+                    </esa-dropdown-menu>
                   </span>
 
                   <span data-mark-cell>
@@ -1747,7 +1586,7 @@ const t0 = priced.totals;
           <td class="cbf-lct__cell cbf-lct__cell--num">
             <span data-cat-total="personnel-fringe">{usd(priced.byCategory['personnel-fringe'] ?? 0)}</span>
           </td>
-          <td class="cbf-lct__cell" colspan="2"></td>
+          <td class="cbf-lct__cell"></td>
         </tr>
         <tr>
           <th scope="row" colspan={ENTRY_COLUMNS}>
@@ -1755,34 +1594,37 @@ const t0 = priced.totals;
             <span class="cbf-lct__note">Sum of every cost line above.</span>
           </th>
           <td class="cbf-lct__cell cbf-lct__cell--num"><span data-total="direct">{usd(t0.direct)}</span></td>
-          <td class="cbf-lct__cell" colspan="2"></td>
+          <td class="cbf-lct__cell"></td>
         </tr>
-        <tr data-indirect-row>
+        <tr data-indirect-row hidden={isSub}>
           <th scope="row" colspan={ENTRY_COLUMNS}>
             Indirect base
             <span class="cbf-lct__note" data-indirect-scope>{scopeText(indirectConfig)}</span>
           </th>
           <td class="cbf-lct__cell cbf-lct__cell--num"><span data-total="indirectBase">{usd(t0.indirectBase)}</span></td>
-          <td class="cbf-lct__cell" colspan="2"></td>
+          <td class="cbf-lct__cell"></td>
         </tr>
-        <tr data-indirect-row>
+        <tr data-indirect-row hidden={isSub}>
           <th scope="row" colspan={ENTRY_COLUMNS}>
             Indirect at <span data-indirect-rate>{pct(indirectConfig.rate)}</span>
             <span class="cbf-lct__note" data-indirect-ref>{indirectConfig.referenceDoc}</span>
           </th>
           <td class="cbf-lct__cell cbf-lct__cell--num"><span data-total="indirect">{usd(t0.indirect)}</span></td>
-          <td class="cbf-lct__cell" colspan="2"></td>
+          <td class="cbf-lct__cell"></td>
         </tr>
         <tr class="cbf-lct__grand" data-indirect-row>
           <th scope="row" colspan={ENTRY_COLUMNS}>
-            Total this contract period
-            <span class="cbf-lct__note" data-total-note>
+            {isSub ? 'Subcontract total' : 'Total this contract period'}
+            <span class="cbf-lct__note" data-total-note hidden={isSub}>
               {pct(t0.pctOfValue, 1)} of the {usd(contract.contractValue)} Contract Value ·
               {' '}{usd(t0.remaining)} remaining
             </span>
           </th>
-          <td class="cbf-lct__cell cbf-lct__cell--num"><strong data-total="total">{usd(t0.total)}</strong></td>
-          <td class="cbf-lct__cell" colspan="2"></td>
+          {/* A span, not <strong>: the Astro compiler treats a <strong> in the
+              table's last cell as still open and re-opens it after </table>,
+              which swallowed the dialogs below into the grand total. */}
+          <td class="cbf-lct__cell cbf-lct__cell--num"><span class="cbf-lct__grand-total" data-total="total">{usd(t0.total)}</span></td>
+          <td class="cbf-lct__cell"></td>
         </tr>
       </tfoot>
     </table>
@@ -1802,6 +1644,87 @@ const t0 = priced.totals;
     pricing at. "None of this is happening" takes them with it. Before travel
     could be entered outside a trip there was only the second, and a vendor who
     meant the first had to retype every line. */}
+{/* ── A line's details, in a side peek ─────────────────────────────────────
+    Notion's "open as side peek": the grid row keeps the numbers a budget is
+    read for — what the line is, how many, at what rate, for how much — and
+    everything else about the line lives here, one click away. The panel is
+    the grid's own: it edits the same line object, and every edit runs the same
+    recompute a cell edit does, so the row, the totals and the rail move with it.
+
+    Sections are shown only when they apply to the line in front of you: a
+    destination and purpose for travel outside a trip, a vehicle type for a
+    vehicle, a description for a vendor-defined line, a trip link for a meeting.
+    What needs fixing comes first, and the COR's full mark comes last. */}
+<esa-side-dialog data-peek heading="Line details" size="md">
+  <div class="cbf-lct-peek stack" data-gap="lg">
+    <p class="cbf-lct__note" data-peek-scope></p>
+
+    <div class="stack" data-gap="xs" data-peek-issues hidden></div>
+
+    <div class="stack" data-gap="sm" data-peek-sec="travel" hidden>
+      <esa-text-field data-peek-field="purpose" size="md" label="Purpose of travel" placeholder="What the trip is for"></esa-text-field>
+    </div>
+
+    <div data-peek-sec="desc" hidden>
+      <esa-text-field data-peek-field="desc" size="md" label="Description" placeholder="What is this cost?"></esa-text-field>
+    </div>
+
+    <div data-peek-sec="trip-link" hidden>
+      <esa-select data-peek-trip-link size="md" label="Trip" placeholder="Not linked to a trip"
+        help-text="The trip's header then shows its full cost, travel and meeting together."></esa-select>
+    </div>
+
+    <div class="stack" data-gap="2xs" data-peek-sec="code">
+      <esa-text-field data-peek-field="acctCode" size="md" label="Accounting code" placeholder="Your GL or cost code"
+        help-text="So invoices can be matched to this line."></esa-text-field>
+      <p class="cbf-lct__note" data-peek-code-derived hidden></p>
+    </div>
+
+    <div class="stack" data-gap="2xs" data-peek-sec="split">
+      <span class="typography-label-md">Work-element split</span>
+      <span class="cbf-lct__peek-value" data-peek-split></span>
+      <span data-peek-split-edit data-vendor-only>
+        <EsaButton size="sm" variant="secondary" appearance="outline">Edit split…</EsaButton>
+      </span>
+    </div>
+
+    <div class="stack" data-gap="2xs" data-peek-sec="notes" hidden>
+      <span class="typography-label-md">Notes</span>
+      <div class="stack" data-gap="2xs" data-peek-notes></div>
+    </div>
+
+    <div class="stack cbf-lct__mark" data-gap="3xs" data-peek-sec="mark" hidden>
+      <span class="typography-label-md" data-peek-mark-head></span>
+      <span class="cbf-lct__mark-note" data-peek-mark-note></span>
+      <span class="cbf-lct__note" data-peek-mark-by></span>
+    </div>
+
+    {/* The error rendering, cloned per issue — a lego, not a hand-rolled line. */}
+    <template data-peek-error-tpl><EsaFieldError message="" icon /></template>
+  </div>
+  <div slot="footer" class="cluster cbf-lct__dialog-actions" data-gap="sm">
+    <span data-peek-done><EsaButton size="sm" variant="primary">Done</EsaButton></span>
+  </div>
+</esa-side-dialog>
+
+{/* ── A section setting, changed ───────────────────────────────────────────
+    One small dialog for the number-valued settings a section's menu offers —
+    the default fringe rate, the capitalization threshold. It states what the
+    change reaches before it is saved, because both move money on many lines. */}
+<esa-dialog data-cat-settings size="sm" heading="Section setting">
+  <div class="stack" data-gap="sm">
+    <esa-text-field data-cat-setting-field size="md" label="Setting"></esa-text-field>
+  </div>
+  <div slot="footer" class="cluster cbf-lct__dialog-actions" data-gap="sm">
+    <span data-cat-setting-save>
+      <EsaButton size="sm" variant="primary">Save</EsaButton>
+    </span>
+    <span data-cat-setting-cancel>
+      <EsaButton size="sm" variant="secondary" appearance="outline">Cancel</EsaButton>
+    </span>
+  </div>
+</esa-dialog>
+
 <esa-dialog data-del-trip-dialog size="sm" heading="Delete this trip?">
   <p data-del-trip-body></p>
   <div slot="footer" class="cluster" data-gap="sm">
@@ -1825,8 +1748,12 @@ const t0 = priced.totals;
   import '@esa/ecology/esa-popover';
   import '@esa/ecology/esa-dropdown-menu';
   import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-side-dialog';
   import '@esa/ecology/esa-radio-group';
   import '@esa/ecology/esa-textarea';
+  import { subcontractSheets, subSheetIssues, subLineProblem, budgetRules, activateBudget, placeOptions, localityBasis } from '../../data/lib-entry.mjs';
+  import { withBase } from '../../lib/base';
+  import { fixSideDialog } from '../../lib/side-dialog-fix';
   import {
     SEVERITIES,
     REASONS,
@@ -1929,7 +1856,6 @@ const t0 = priced.totals;
     isFringeOverride,
     acctCodeOf,
 } from '../../data/lib-entry.mjs';
-  import '@esa/ecology/esa-switch-toggle';
   import { initRowReorder, moveInList } from '../../lib/row-reorder';
   import { isBlank, blankConfig } from '../../data/lib-demo.mjs';
 
@@ -1937,6 +1863,9 @@ const t0 = priced.totals;
   if (root) init(root);
 
   function init(root: HTMLElement) {
+    /* A subcontract page swaps the data module to the subcontract's budget —
+       its lines, trips, sections and (no) indirect — before anything reads it. */
+    activateBudget(root.dataset.budget ?? 'main');
     /* Working copies — edits, added and deleted lines mutate THESE, never the
        module's exports, so every derived number stays honest across a repaint. */
     const lines: any[] = costLines.map((l: any) => ({ ...l, allocations: { ...(l.allocations ?? {}) } }));
@@ -2201,6 +2130,16 @@ const t0 = priced.totals;
       tr.dataset.shape = line.shape;
       tr.dataset.cat = line.category;
       tr.dataset.block = blockOf(line);
+      {
+        setText($('[data-dest-basis]', tr), localityBasis(line.locality));
+        const isSub = line.category === 'subcontracts';
+        show($('[data-sub-sheet]', tr), isSub);
+        const btn = $('[data-open-sheet-line]', tr);
+        if (btn) { btn.dataset.openSheetLine = line.id; btn.dataset.openSheet = line.sheet ?? ''; }
+        setText($('[data-lump-note]', tr), isSub
+          ? 'From its own LIB — BPA doesn’t accept a lump sum.'
+          : 'No quantity, no rate — one amount.');
+      }
 
       /* ── Reconcile the cell COUNT before touching any value ────────────────
          Row templates are captured per SHAPE, and shape A is shared by the one
@@ -2228,7 +2167,8 @@ const t0 = priced.totals;
         else if (key === 'count') el.value = numText(travelCount(line));
         /* Places, codes and descriptions are not numbers — the generic branch
            below would run them through numText and put NaN in the box. */
-        else if (key === 'locality' || key === 'acctCode' || key === 'desc' || key === 'purpose') el.value = line[key] ?? '';
+        else if (key === 'locality') setPlace(el, line.locality ?? '');
+        else if (key === 'acctCode' || key === 'desc' || key === 'purpose') el.value = line[key] ?? '';
         else if (key === 'staff') el.value = V.staffText(line);
         else if (key === 'partialDays') el.value = numText(line.partialDays ?? 0);
         else el.value = numText(line[key]);
@@ -2253,14 +2193,72 @@ const t0 = priced.totals;
       if (okSel) { okSel.options = V.otherKindOptions(); okSel.value = line.otherKind ?? ''; }
       const tlSel: any = $('[data-trip-link-select]', tr);
       if (tlSel) { tlSel.options = V.tripLinkOptions(); tlSel.value = line.linkedTrip ?? ''; }
-      const del = $('[data-delete-line] button', tr);
+      const trigger = $('[data-row-menu] button', tr);
       const name = displayLabel(line) || 'new line';
-      del?.setAttribute('aria-label', `Delete line — ${name}`);
-      del?.setAttribute('title', `Delete line — ${name}`);
+      trigger?.setAttribute('aria-label', `Actions for this line — ${name}`);
+      trigger?.setAttribute('title', `Actions for this line — ${name}`);
+    };
+
+    /* ── A row's actions menu, built for THIS line in its CURRENT state ───────
+       Only what the line can actually do: a salary line can take another rate,
+       a travel line with a published rate can claim or drop it, a GSA vehicle
+       line can leave or return to the GSA rate, equipment can cross the
+       threshold, a linked quantity can be broken or remade. Delete is last and
+       set apart, because it is the one that cannot be undone. */
+    const rowMenuItems = (line: any, a: any) => {
+      const items: any[] = [];
+      const add = (label: string, act: string) => items.push({ label, action: `row|${act}` });
+      if (isSalaryLine(line)) {
+        add('Add another rate', 'rate-step');
+        if (V.fringeOverridden(line)) add(V.fringeResetText(), 'fringe-reset');
+        else add('Override fringe rate', 'fringe-override');
+      }
+      if (line.shape === SHAPES.TRAVEL && canClaimStandard(line)) {
+        if (claimsStandard(line)) add('Use my own rate', 'standard-toggle');
+        else add('Use the standard rate…', 'standard-edit');
+      }
+      if (line.shape === SHAPES.AUTHORITY) add(overridden(line) ? 'Use the GSA rate' : 'Use my own rate', 'gsa-override');
+      if (onThreshold(line)) {
+        add(capToggleText(line), 'cap-move');
+        if (V.capResetText(line)) add(V.capResetText(line), 'cap-reset');
+      }
+      /* Filing a travel line — the drag's moves, as menu items. */
+      if (line.shape === SHAPES.TRAVEL) {
+        trips
+          .filter((t: any) => t.key !== line.trip)
+          .forEach((t: any) => add(`Move to ${tripLabel(t)}`, `move|${t.key}`));
+        if (line.trip) add('Remove from trip', `move|${NO_TRIP}`);
+        add(line.trip ? 'Move to a new trip' : 'New trip from this line', 'new-trip');
+      }
+      if (line.qtyFrom) add('Use my own quantity', 'detach-qty');
+      else if (line.qtyFromWas && lineById(line.qtyFromWas)) add(`Follow ${labelOfId(line.qtyFromWas)}`, 'refollow-qty');
+      if (items.length) items.push({ divider: true });
+      items.push({ label: 'Delete line', action: 'row|delete', variant: 'danger' });
+      return items;
+    };
+
+    /* Every control on a row names its line ("Quantity — PIT tags"). A new row
+       is a CLONE of another line's row, so without this it would announce the
+       line it was copied from — and a renamed line would keep its old name.
+       The part before the first " — " says what the control is; the rest is
+       rewritten from the line as it is now. */
+    const relabelRow = (tr: HTMLElement, line: any) => {
+      const name = displayLabel(line) || 'new line';
+      tr.querySelectorAll<HTMLElement>('[aria-label], [title]').forEach((el) => {
+        ['aria-label', 'title'].forEach((attr) => {
+          const cur = el.getAttribute(attr);
+          if (!cur || !cur.includes(' — ')) return;
+          const next = cur.startsWith('Reorder ')
+            ? `Reorder ${name} — press Space to lift it, then use the arrow keys`
+            : `${cur.split(' — ')[0]} — ${name}`;
+          if (next !== cur) el.setAttribute(attr, next);
+        });
+      });
     };
 
     const paintRow = (tr: HTMLElement | null, line: any, priced: any) => {
       if (!tr) return;
+      relabelRow(tr, line);
       const a = priced.amounts;
       const sum = allocSum(line);
       const over = gsaOver(line);
@@ -2282,8 +2280,10 @@ const t0 = priced.totals;
         setText($('[data-fact="fringe"]', tr), fringeFactText(line));
         const ovr = V.fringeOverridden(line);
         show($('[data-fringe-override]', tr), ovr);
-        show($('[data-fringe-follows]', tr), !ovr);
-        setBtnLabel($('[data-fringe-reset]', tr), V.fringeResetText());
+        show($('[data-fringe-input]', tr), ovr);
+        const dflt = $('[data-fringe-default]', tr);
+        show(dflt, !ovr);
+        setText(dflt, `${fringePctText(line)}% default ·`);
       }
 
       /* ── The facts a line carries beside its name ──────────────────────────
@@ -2320,6 +2320,9 @@ const t0 = priced.totals;
       show($('[data-compare]', tr), !!cmpText);
       setText($('[data-compare-text]', tr), cmpText);
       const above = V.compareAbove(line);
+      /* Above GSA, the note states the GSA figure itself — so the plain
+         "GSA rate for this type" line would say it twice. */
+      show($('[data-compare-text]', tr), !above);
       show($('[data-compare-above]', tr), above);
       if (above) setText($('[data-compare-note]', tr), V.gsaErrText(line));
 
@@ -2328,7 +2331,9 @@ const t0 = priced.totals;
       show($('[data-alloc-derived]', tr), derived);
       show($('[data-alloc-editor]', tr), !derived);
       show($('[data-fact="alloc"]', tr), !derived);
-      show($('[data-delete-line]', tr), !derived);
+      show($('[data-row-menu-wrap]', tr), !derived);
+      const rowMenu: any = $('[data-row-menu]', tr);
+      if (rowMenu && !derived) rowMenu.items = rowMenuItems(line, a);
 
       /* Identity — reveal the one control that names a line in THIS category, and
          keep the derived names (fringe, travel) current. */
@@ -2409,59 +2414,44 @@ const t0 = priced.totals;
         setText($('[data-fact="travel-rate-src"]', tr), claimed ? standardSrcText(line) : typedSrcText(line));
       }
 
-      /* Staffing months against the contract period — shown in both states. */
+      /* Staffing months against the contract period — said only when PAST it. */
       const monthsWrap = $('[data-months-wrap]', tr);
       if (monthsWrap) {
-        const tested = monthsTested(line);
-        show(monthsWrap, tested);
-        if (tested) {
-          const bad = monthsOver(line);
-          show($('[data-months="pass"]', tr), !bad);
-          show($('[data-months="fail"]', tr), bad);
-          setText($('[data-months-note]', tr), monthsText(line));
-          const mErr = $('[data-months-err]', tr);
-          show(mErr, bad);
-          if (bad) setErrText(mErr, monthsErrText(line));
-        }
+        const bad = monthsTested(line) && monthsOver(line);
+        show(monthsWrap, bad);
+        if (bad) setErrText($('[data-months-err]', tr), monthsErrText(line));
       }
 
-      /* Rate — shape B is a REFERENCED value, and the gate shows both verdicts. */
-      setText($('[data-cell="ref-rate"]', tr), money(effectiveRate(line)));
-      setText($('[data-cell="ref-src"]', tr), gsaSrcText(line));
-      show($('[data-gsa="pass"]', tr), isScheduleRated(line) && !overridden(line) && !!gsaOf(line));
-      show($('[data-gsa="under"]', tr), overridden(line) && !over);
+      /* Rate — a GSA vehicle line's referenced rate and its badge share a line;
+         the source sentence speaks only when it adds something (no type yet, or
+         the GSA figure an override departs from). */
+      const ovrd = overridden(line);
+      const ref = $('[data-cell="ref-rate"]', tr);
+      setText(ref, money(effectiveRate(line)));
+      show(ref, !ovrd);
+      const refSrc = $('[data-cell="ref-src"]', tr);
+      setText(refSrc, gsaSrcText(line));
+      show(refSrc, !gsaOf(line) || ovrd);
+      show($('[data-gsa="under"]', tr), ovrd && !over);
       show($('[data-gsa="over"]', tr), over);
-      show($('[data-override-wrap]', tr), overridden(line));
-      setBtnLabel($('[data-toggle-override]', tr)?.closest('.esa-button') ?? null,
-        overridden(line) ? 'Use the GSA rate' : 'Use my own rate');
-      /* Above GSA is a NOTE now — stated, noted for the COR, never a failure. */
+      show($('[data-override-wrap]', tr), ovrd);
+      /* Above GSA is a NOTE — stated, noted for the COR, never a failure. */
       const gErr = $('[data-gsa-err]', tr);
       show(gErr, over);
       if (over) setText(gErr, gsaErrText(line));
 
-      /* The capitalization threshold — where the item filed itself and what that
-         does to it, or the override that overruled the sort. */
+      /* The capitalization threshold speaks only for a line placed by hand —
+         every other item sits under the heading that already names its class
+         and what that class means for the indirect base. */
       const capWrap = $('[data-cap-wrap]', tr);
       if (capWrap) {
-        const tested = thresholdTested(line);
-        show(capWrap, tested);
-        if (tested) {
-          const ovr = capOverride(line);
-          show($('[data-cap="filed"]', tr), !ovr);
-          show($('[data-cap="override"]', tr), ovr);
-          setText($('[data-cap-filed]', tr), capFiledText(line, a));
-          setText($('[data-cap-why]', tr), capWhyText(line));
-          setText($('[data-cap-why-ovr]', tr), capWhyText(line));
+        const ovr = thresholdTested(line) && capOverride(line);
+        show(capWrap, ovr);
+        if (ovr) {
           show($('[data-cap-against]', tr), V.capAgainst(line, a));
-          if (ovr) setText($('[data-cap-err]', tr), capOverrideText(line, a));
-          show($('[data-cap-reset]', tr), !!V.capResetText(line));
+          setText($('[data-cap-err]', tr), capOverrideText(line, a));
         }
       }
-      /* The move to the other class — on itemized lines and lumps alike. */
-      $$('[data-cap-toggle]', tr).forEach((el) => {
-        show(el, onThreshold(line));
-        setBtnLabel(el, capToggleText(line));
-      });
 
       /* And the lump the threshold cannot reach into. */
       const capLump = $('[data-cap-lump]', tr);
@@ -2469,13 +2459,11 @@ const t0 = priced.totals;
         const open = capLumpOpen(line, a);
         show(capLump, open);
         if (open) setText($('[data-cap-lump-err]', tr), capLumpText(line, a));
-        const filed = $('[data-cap-lump-filed]', tr);
-        show(filed, onThreshold(line));
-        setText(filed, onThreshold(line) ? capWhyText(line) : '');
       }
 
       /* Amount — typed only for a lump. */
       setText($('[data-cell="amount"]', tr), usd(a[line.id] ?? 0));
+      setText($('[data-fact="amount"]', tr), usd(a[line.id] ?? 0));
 
       /* Work element — unfinished must READ unfinished. */
       show($('[data-alloc-state="set"]', tr), sum === 100);
@@ -2488,7 +2476,7 @@ const t0 = priced.totals;
 
       /* Inline background tint — never a colored left border — and only for the
          states that BLOCK submission. See V.rowFlag. */
-      const flag = V.rowFlag(line, lines, a) ?? '';
+      const flag = V.rowFlag(line, lines, a, { allocate: budgetRules.allocate }) ?? (lineIssues(line, a).errors.length ? 'alloc' : '');
       if (flag) tr.dataset.flag = flag;
       else tr.removeAttribute('data-flag');
 
@@ -2538,9 +2526,11 @@ const t0 = priced.totals;
         setText(costEl, cost);
       });
       /* The budget-level settings restate themselves for the COR lens. */
-      setText($('[data-fact="fringe-default"]'), `Default fringe ${V.fringeDefaultText()}%`);
-      setText($('[data-fringe-default-note]'), V.fringeDefaultNote(lines));
-      setText($('[data-fact="threshold"]'), `Capitalization threshold ${usd(contract.capitalizationThreshold)} per item`);
+      $$('[data-cat-summary]').forEach((el) => setText(el, V.sectionSummary(el.dataset.catSummary!, lines)));
+      const fb = $('[data-fringe-badge]');
+      const fbText = V.fringeBadge();
+      show(fb, !!fbText);
+      if (fbText) setBadgeText(fb, fbText);
     };
 
     const paintTotals = (t: any) => {
@@ -2551,7 +2541,7 @@ const t0 = priced.totals;
       setText($('[data-indirect-rate]'), pct(cfg.rate));
       setText($('[data-indirect-ref]'), cfg.referenceDoc ?? '');
       setText($('[data-indirect-scope]'), scopeText(cfg));
-      setText(
+      if (budgetRules.kind === 'contract') setText(
         $('[data-total-note]'),
         `${pct(t.pctOfValue, 1)} of the ${usd(contract.contractValue)} Contract Value · ${
           t.remaining >= 0 ? `${usd(t.remaining)} remaining` : `${usd(Math.abs(t.remaining))} over`
@@ -2592,6 +2582,8 @@ const t0 = priced.totals;
       document.dispatchEvent(
         new CustomEvent('cbf-lib:totals', {
           detail: {
+            /* The live lines — a subcontract page checks BPA's rules against them. */
+            lines,
             total: t.total,
             direct: t.direct,
             indirect: t.indirect,
@@ -2608,7 +2600,7 @@ const t0 = priced.totals;
                the grid just priced — the rail renders these rather than
                re-deriving a subset of them from counts. */
             checks: submitChecksFor(lines, cfg),
-            advisories: advisoriesFor(lines),
+            advisories: advisoriesFor(lines, cfg),
             /* Subtotals by the vendor's accounting code, for the code summary. */
             byCode: priceLines(lines, cfg).byCode,
             codeCounts: lines.reduce((acc: any, l: any) => {
@@ -2680,6 +2672,177 @@ const t0 = priced.totals;
       });
     };
 
+    /* ── What a line needs, and what is worth knowing about it ──────────────
+       One list, read by three places that used to each say it their own way:
+       the line's side peek (in full), the row (as a tint) and the section head
+       (as a "needs attention" badge while folded). `error` blocks submission;
+       `note` is for the reader. */
+    const lineIssues = (line: any, a: any) => {
+      const errors: string[] = [];
+      const notes: string[] = [];
+      if (budgetRules.allocate && !derivedRow(line) && allocSum(line) !== 100) errors.push(allocErrText(line));
+      if (budgetRules.kind === 'subcontract') {
+        const bad = subLineProblem(line);
+        if (bad) errors.push(bad);
+      }
+      if (isSalaryLine(line) && !positionKey(titleOfLine(line))) errors.push('Name the position. Its fringe line and any linked lines refer back to it.');
+      if (monthsTested(line) && monthsOver(line)) errors.push(monthsErrText(line));
+      if (isLooseTravel(line) && !(line.locality ?? '').trim()) errors.push('Add a destination — every travel cost needs one.');
+      if (line.category === 'vehicles' && vehicleKind(line.vehicleKind)?.needsType && !line.vehicleType) errors.push('Pick a vehicle type. It sets the GSA rate and lets the COR check the class.');
+      if (V.vendorDefined(line)) {
+        const text = V.takesDesc(line) ? line.desc : line.label;
+        if (!(text ?? '').trim()) errors.push('Say what this line is — it’s vendor-defined.');
+      }
+      if (line.category === 'subcontracts') {
+        const sheet = line.sheet ? (subcontractSheets as any)[line.sheet] : null;
+        if (!sheet) errors.push('Enter this subcontract’s budget on its own LIB. BPA doesn’t accept a lump sum.');
+        else subSheetIssues(sheet).forEach((msg: string) => errors.push(`Subcontract LIB: ${msg}`));
+      }
+      if (thresholdTested(line) && capOverride(line)) notes.push(capOverrideText(line, a));
+      if (capLumpOpen(line, a)) notes.push(capLumpText(line, a));
+      if (gsaOver(line) || V.compareAbove(line)) notes.push(gsaErrText(line));
+      else if (V.compareText(line)) notes.push(V.compareText(line));
+      if (line.shape === SHAPES.AUTHORITY && !gsaOf(line)) notes.push(gsaSrcText(line));
+      return { errors, notes };
+    };
+
+    /* ── The side peek ───────────────────────────────────────────────────── */
+    const peek: any = document.querySelector('[data-peek]');
+    fixSideDialog(peek);
+    let peekLine: any = null;
+    const pq = <T extends HTMLElement = HTMLElement>(sel: string) => peek?.querySelector(sel) as T | null;
+    const paintPeek = (priced?: any) => {
+      if (!peek || !peekLine) return;
+      const line = peekLine;
+      if (!lineById(line.id)) { peek.close(); peekLine = null; return; }
+      const a = (priced ?? priceLines(lines, cfg)).amounts;
+      const cor = role() === 'cor';
+      peek.heading = displayLabel(line) || 'Untitled line';
+      setText(pq('[data-peek-scope]'), [V.scopeOf(line), usd(a[line.id] ?? 0)].filter(Boolean).join(' · '));
+      const { errors, notes } = lineIssues(line, a);
+      const box = pq('[data-peek-issues]');
+      const tpl = pq('[data-peek-error-tpl]') as HTMLTemplateElement | null;
+      if (box) {
+        box.replaceChildren(...errors.map((msg) => {
+          const n = (tpl?.content.firstElementChild?.cloneNode(true) ?? document.createElement('p')) as HTMLElement;
+          setErrText(n, msg);
+          if (!n.querySelector('.esa-field-error__text')) n.textContent = msg;
+          return n;
+        }));
+        show(box, errors.length > 0);
+      }
+      const notesBox = pq('[data-peek-notes]');
+      if (notesBox) {
+        notesBox.replaceChildren(...notes.map((msg) => {
+          const n = document.createElement('p');
+          n.className = 'cbf-lct__note';
+          n.textContent = msg;
+          return n;
+        }));
+      }
+      show(pq('[data-peek-sec="notes"]'), notes.length > 0);
+
+      show(pq('[data-peek-sec="travel"]'), isLooseTravel(line));
+      show(pq('[data-peek-sec="desc"]'), V.takesDesc(line));
+      show(pq('[data-peek-sec="trip-link"]'), line.category === 'meetings');
+      const derived = derivedRow(line);
+      show(pq('[data-peek-field="acctCode"]'), !derived);
+      const cd = pq('[data-peek-code-derived]');
+      show(cd, derived);
+      setText(cd, derived ? `${acctFactText(line)} — from its salary lines.` : '');
+      setText(pq('[data-peek-split]'), derived ? `${allocFactText(line)} — follows its salary lines.` : allocFactText(line));
+      show(pq('[data-peek-split-edit]'), !derived && !cor);
+      show(pq('[data-peek-sec="split"]'), budgetRules.allocate);
+
+      const f = markOf(line.id);
+      const markOn = !!f && (cor || isIssued(review));
+      show(pq('[data-peek-sec="mark"]'), markOn);
+      const markSec = pq('[data-peek-sec="mark"]');
+      if (markSec) markSec.dataset.sev = f?.severity ?? '';
+      if (f) {
+        setText(pq('[data-peek-mark-head]'), `${severityMeta[f.severity]?.label ?? 'Mark'} — ${reasonLabel(f.reason)}`);
+        setText(pq('[data-peek-mark-note]'), f.note || 'No note written.');
+        setText(pq('[data-peek-mark-by]'), `${f.author} · ${f.date}`);
+      }
+      peek.querySelectorAll('[data-peek-field], [data-peek-trip-link]').forEach((el: any) => { el.disabled = cor; });
+    };
+    const fillPeek = (line: any) => {
+      const set = (sel: string, v: any) => { const el: any = pq(sel); if (el) el.value = v ?? ''; };
+      set('[data-peek-field="purpose"]', line.purpose);
+      set('[data-peek-field="desc"]', line.desc);
+      set('[data-peek-field="acctCode"]', line.acctCode);
+      const tl: any = pq('[data-peek-trip-link]');
+      if (tl) { tl.options = V.tripLinkOptions(); tl.value = line.linkedTrip ?? ''; }
+    };
+    const openPeek = (line: any) => {
+      if (!peek || !line) return;
+      peekLine = line;
+      fillPeek(line);
+      paintPeek();
+      peek.show();
+    };
+    peek?.addEventListener('change', (e: any) => {
+      const el = e.target as HTMLElement;
+      const line = peekLine;
+      if (!line) return;
+      const field = (el.dataset as any)?.peekField;
+      const v = String((el as any).value ?? (e.detail?.value ?? '')).trim();
+      if (field) {
+        line[field] = v;
+        if (field === 'desc') syncLabel(line);
+      } else if ('peekTripLink' in (el.dataset as any)) {
+        if (v) line.linkedTrip = v; else delete line.linkedTrip;
+      } else {
+        return;
+      }
+      const tr = rowOf(line.id);
+      if (tr) fillRow(tr, line);
+      recompute(line.id);
+    });
+    peek?.addEventListener('click', (e: any) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-peek-done]')) { peek.close(); return; }
+      if (t.closest('[data-peek-split-edit]') && peekLine) {
+        const line = peekLine;
+        peek.close();
+        document.dispatchEvent(new CustomEvent('cbf-lib:open-alloc', {
+          detail: { line, label: displayLabel(line) || 'Untitled line', amount: priceLines(lines, cfg).amounts[line.id] },
+        }));
+      }
+    });
+    peek?.addEventListener('close', () => { peekLine = null; });
+
+    /* ── Folding sections ────────────────────────────────────────────────
+       Folded by default — the page opens as an overview of nine lines — and
+       remembered per viewer for the session. Anything that brings a line into
+       view (adding one, copying in, "Go to line") opens its section first. */
+    const FOLD_KEY = 'cbf-lib-open-sections';
+    const readOpen = (): string[] => {
+      try { return JSON.parse(sessionStorage.getItem(FOLD_KEY) ?? '[]'); } catch { return []; }
+    };
+    const writeOpen = () => {
+      try {
+        const open = $$('tbody[data-cat]').filter((tb) => !tb.hasAttribute('data-collapsed')).map((tb) => tb.dataset.cat!);
+        sessionStorage.setItem(FOLD_KEY, JSON.stringify(open));
+      } catch { /* storage unavailable — folding still works for this view */ }
+    };
+    const setFolded = (tbody: HTMLElement | null, folded: boolean, remember = true) => {
+      if (!tbody) return;
+      tbody.toggleAttribute('data-collapsed', folded);
+      $('[data-cat-toggle] button', tbody)?.setAttribute('aria-expanded', String(!folded));
+      if (remember) writeOpen();
+    };
+    const openSectionOf = (line: any) => setFolded($(`tbody[data-cat="${line?.category}"]`), false);
+    /* Before a row is scrolled to, its section opens — a folded row has no box to scroll to. */
+    const unfoldTo = (el: Element | null | undefined) => {
+      const tb = el?.closest('tbody[data-cat]') as HTMLElement | null;
+      if (tb?.hasAttribute('data-collapsed')) setFolded(tb, false);
+    };
+    {
+      const open = readOpen();
+      $$('tbody[data-cat]').forEach((tb) => setFolded(tb, !open.includes(tb.dataset.cat!), false));
+    }
+
     let tripSig = '';
     const recompute = (originId?: string) => {
       syncFringeRows();
@@ -2692,6 +2855,19 @@ const t0 = priced.totals;
       const priced = priceLines(lines, cfg);
       lines.forEach((l) => paintRow(rowOf(l.id), l, priced));
       paintGroups(priced);
+      /* Each section head says how many lines it holds and whether any of them
+         needs a fix — the two facts a folded section still owes the reader. */
+      categories.forEach((cat: any) => {
+        const tb = $(`tbody[data-cat="${cat.key}"]`);
+        if (!tb) return;
+        const inCat = lines.filter((l) => l.category === cat.key);
+        setText($('[data-cat-count]', tb), inCat.length ? `${inCat.length} line${inCat.length === 1 ? '' : 's'}` : 'No lines');
+        const bad = inCat.filter((l) => lineIssues(l, priced.amounts).errors.length).length;
+        const badge = $('[data-cat-issues]', tb);
+        show(badge, bad > 0);
+        if (bad) setBadgeText(badge, `${bad} need${bad === 1 ? 's' : ''} attention`);
+      });
+      paintPeek(priced);
       paintTotals(priced.totals);
       fireTotals(priced.totals);
       if (originId) flash(dependentsOf(originId, lines).map((l: any) => rowOf(l.id)));
@@ -2858,9 +3034,127 @@ const t0 = priced.totals;
         ],
       );
     };
-    $$('[data-add-menu]').forEach(wireAddMenu);
+    $$('[data-add-menu]').forEach((m: any) => {
+      wireAddMenu(m);
+      /* A subcontract LIB takes no lump sums — so it isn't offered one. */
+      if (!budgetRules.lumps) {
+        m.items = (m.items ?? [])
+          .filter((i: any) => !String(i.action ?? '').includes(`|${SHAPES.LUMP}|`))
+          .filter((i: any, k: number, all: any[]) => !(i.divider && (k === all.length - 1 || all[k + 1]?.divider)));
+      }
+    });
 
     /** A trip's own add menu: the six travel kinds, scoped to that trip. */
+    /* ── Section settings ─────────────────────────────────────────────────
+       Applied by the section's three-dot menu (and the dialog it opens). Each
+       one re-prices what it reaches and says so with a flash. */
+    const setFringeDefault = (pctValue: number) => {
+      /* Every salary line that follows the default re-prices, and so does its
+         generated fringe line; a line with its own rate does not move — that is
+         what overriding means. */
+      fringeDefaults.pct = Math.max(0, pctValue) / 100;
+      lines.filter((l) => isSalaryLine(l) && !isFringeOverride(l)).forEach((l) => {
+        const tr = rowOf(l.id);
+        if (tr) fillRow(tr, l);
+      });
+      recompute();
+      flash(lines.filter((l) => isSalaryLine(l) && !isFringeOverride(l)).map((l) => rowOf(l.id)));
+    };
+    const setThreshold = (dollars: number) => {
+      /* Re-files the lines the threshold still owns; a line placed by hand
+         stays where the vendor put it, and is noted if the new figure disagrees. */
+      contract.capitalizationThreshold = Math.max(0, dollars);
+      lines.filter((l) => thresholdTested(l) && !isClassOverride(l)).forEach((l) => fileLine(l));
+      recompute();
+      document.dispatchEvent(new CustomEvent('cbf-lib:threshold', {
+        detail: { threshold: contract.capitalizationThreshold },
+      }));
+    };
+    const setSplit = (on: boolean) => {
+      /* Off, the sub-block heads go and every position reads under one heading;
+         each line keeps its type, so turning it back on restores the split. */
+      personnelSplit.on = on;
+      const tbody = $('tbody[data-cat="personnel-salary"]');
+      if (tbody) tbody.dataset.split = on ? 'on' : 'off';
+      const menu: any = $('[data-add-menu="personnel-salary"]');
+      if (menu) wireAddMenu(menu);
+      recompute();
+    };
+
+    /** A section's menu, built for its CURRENT state: its settings, if it has
+        any, then copying lines in from another of the organization's contracts. */
+    const wireCatMenus = () => {
+      $$('[data-cat-menu]').forEach((m: any) => {
+        const key = m.dataset.catMenu;
+        const settings: any[] =
+          key === 'personnel-salary' ? [
+            { label: `Adjust default fringe (${V.fringeDefaultText()}%)…`, action: 'cat|fringe' },
+            { label: personnelSplit.on ? 'Stop splitting administrative and technical' : 'Split administrative and technical', action: 'cat|split' },
+          ]
+          : key === 'supplies' ? [{ label: `Adjust capitalization threshold (${usd(contract.capitalizationThreshold)})…`, action: 'cat|threshold' }]
+          : [];
+        m.items = [
+          ...settings,
+          ...(settings.length ? [{ divider: true }] : []),
+          { label: 'Copy lines from another contract…', action: 'cat|copy' },
+        ];
+      });
+    };
+
+    /* The one dialog both number-valued settings use. */
+    const setDialog: any = document.querySelector('[data-cat-settings]');
+    let pendingSetting = '';
+    const openSetting = (which: string) => {
+      if (!setDialog) return;
+      pendingSetting = which;
+      const f: any = setDialog.querySelector('[data-cat-setting-field]');
+      if (which === 'fringe') {
+        setDialog.heading = 'Default fringe rate';
+        f.label = 'Default rate';
+        f.prefix = '';
+        f.suffix = '%';
+        f.value = V.fringeDefaultText();
+        const own = lines.filter((l) => isFringeOverride(l)).length;
+        f.helpText = own
+          ? `Applies to every position without its own rate. ${own} ${own === 1 ? 'line keeps its' : 'lines keep their'} own.`
+          : 'Applies to every position without its own rate.';
+      } else {
+        setDialog.heading = 'Capitalization threshold';
+        f.label = 'Threshold per item';
+        f.prefix = '$';
+        f.suffix = '';
+        f.value = numText(contract.capitalizationThreshold);
+        f.helpText = 'New items at or above it go to Capital equipment. Lines you moved by hand stay put.';
+      }
+      setDialog.show();
+      window.requestAnimationFrame(() => f?.shadowRoot?.querySelector('input')?.focus());
+    };
+    setDialog?.addEventListener('click', (e: any) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-cat-setting-cancel]')) { setDialog.close(); return; }
+      if (t.closest('[data-cat-setting-save]')) {
+        const v = num(setDialog.querySelector('[data-cat-setting-field]')?.value);
+        if (pendingSetting === 'fringe') setFringeDefault(v);
+        else if (pendingSetting === 'threshold') setThreshold(v);
+        setDialog.close();
+        wireCatMenus();
+      }
+    });
+
+    /** A trip head's actions menu. Ungrouping keeps the lines (firma2's tag
+        board: removing a group never takes its rows with it); deleting asks
+        which the vendor meant. */
+    const wireTripMenu = (head: HTMLElement) => {
+      const menu: any = $('[data-trip-menu]', head);
+      if (menu) menu.items = [
+        { label: 'Ungroup — keep the lines', action: 'trip|ungroup' },
+        { divider: true },
+        { label: 'Delete trip', action: 'trip|delete', variant: 'danger' },
+      ];
+    };
+    $$('tr[data-trip]').forEach(wireTripMenu);
+    wireCatMenus();
+
     const wireTravelMenu = (menu: any) => {
       menu.items = TRAVEL_KINDS.map((k: any) => ({
         label: k.label,
@@ -3045,6 +3339,7 @@ const t0 = priced.totals;
       if (seed?.__quiet) { delete line.__quiet; return tr; }
       recompute();
       fileLine(line);
+      unfoldTo(tr);
       tr.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       window.requestAnimationFrame(() => {
         /* Focus whatever this category's FIRST question actually is — the free-text
@@ -3108,6 +3403,7 @@ const t0 = priced.totals;
       /* Both block subtotals changed, and so did the indirect base — the rate
          reaches the expensed block and not the capital one. */
       recompute();
+      unfoldTo(tr);
       tr?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     };
 
@@ -3130,12 +3426,16 @@ const t0 = priced.totals;
       const totalCell = $('[data-block-total]', head);
       totalCell?.setAttribute('data-block-total', `travel:${trip.key}`);
       setText(totalCell, usd(0));
-      const dest: any = $('[data-trip-field="locality"]', head);
-      if (dest) dest.value = trip.locality ?? '';
+      setPlace($('[data-trip-field="locality"]', head), trip.locality ?? '');
+      setText($('[data-trip-basis]', head), localityBasis(trip.locality));
       const occ: any = $('[data-trip-field="occurrences"]', head);
       if (occ) occ.value = String(trip.occurrences ?? 1);
       const menu: any = $('[data-add-travel]', head);
       if (menu) { menu.dataset.addTravel = trip.key; wireTravelMenu(menu); }
+      wireTripMenu(head);
+      const trig = $('[data-trip-menu] button', head);
+      trig?.setAttribute('aria-label', `Actions for this trip — ${tripLabel(trip)}`);
+      trig?.setAttribute('title', `Actions for this trip — ${tripLabel(trip)}`);
       return head;
     };
 
@@ -3156,6 +3456,7 @@ const t0 = priced.totals;
       $(`tbody[data-cat="travel"]`)?.appendChild(head);
       head.classList.add('is-added');
       window.setTimeout(() => head.classList.remove('is-added'), 1500);
+      unfoldTo(head);
       head.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       recompute();
       focusTripHead(head);
@@ -3389,6 +3690,75 @@ const t0 = priced.totals;
       return true;
     };
 
+    /**
+     * Put a line at the end of a sub-block — a trip, or "Not part of a trip".
+     * The one move behind three gestures: dropping a row on a block's head, and
+     * the row menu's "Move to <trip>" and "Remove from trip" (firma2's tag board:
+     * whatever a drag does, a menu does too, for anyone who can't or won't drag
+     * — WCAG 2.5.7). A trip the move empties is no longer a fact about the
+     * budget, so it goes.
+     */
+    /** Give a destination picker its value — with the option that displays it. */
+    function setPlace(el: any, value: string) {
+      if (!el) return;
+      el.options = placeOptions('', value ?? '');
+      el.value = value ?? '';
+    }
+    customElements.whenDefined('esa-combobox').then(() => {
+      $$('[data-place]').forEach((el: any) => setPlace(el, el.dataset.value ?? ''));
+    });
+
+    function moveIntoBlock(line: any, tr: HTMLElement, blockKey: string): boolean {
+      const head = $(`tr[data-blockhead="${blockKey}"]`);
+      if (!head) return false;
+      const siblings = $$(`tr[data-line][data-block="${blockKey}"]`).filter((r) => r !== tr);
+      const last = siblings[siblings.length - 1];
+      const fromTrip = line.trip;
+      if (last) last.after(tr); else head.after(tr);
+      refile(line, tr, blockKey);
+      if (last?.dataset.line) moveInList(lines, line.id, last.dataset.line, 'after');
+      emptiedTrips(lines, [fromTrip]).forEach((key) => {
+        $(`tr[data-trip="${key}"]`)?.remove();
+        removeTrip(key);
+      });
+      recompute(line.id);
+      flash([tr]);
+      return true;
+    }
+
+    /**
+     * A trip of its own for one line — firma2's "Convert to group". The trip
+     * opens on the line's own destination, last of the trips (just above "Not
+     * part of a trip"), with the caret in its destination so its name is
+     * confirmed rather than assumed.
+     */
+    function newTripFrom(line: any, tr: HTMLElement) {
+      const from = line.trip;
+      const trip: any = createTrip({
+        locality: travelLocality(line) ?? '',
+        window: 'Dates to be set',
+        occurrences: 1,
+      });
+      const head = buildTripHead(trip);
+      const looseHead = $(`tr[data-blockhead="${NO_TRIP}"]`);
+      if (!head || !looseHead) return;
+      looseHead.before(head);
+      head.after(tr);
+      /* In the list, after the last line of any trip — where its row now sits. */
+      const before = $$('tbody[data-cat="travel"] tr[data-line]').filter((r) => r !== tr && r.dataset.block !== NO_TRIP);
+      const prev = before[before.length - 1];
+      if (prev?.dataset.line) moveInList(lines, line.id, prev.dataset.line, 'after');
+      refile(line, tr, trip.key);
+      emptiedTrips(lines, [from]).forEach((key) => {
+        $(`tr[data-trip="${key}"]`)?.remove();
+        removeTrip(key);
+      });
+      head.classList.add('is-added');
+      window.setTimeout(() => head.classList.remove('is-added'), 1500);
+      recompute(line.id);
+      focusTripHead(head);
+    }
+
     initRowReorder({
       root,
       itemSelector: 'tr[data-line]',
@@ -3435,21 +3805,7 @@ const t0 = priced.totals;
         /* Dropping on a sub-block HEAD means "put it in here", with no opinion
            about where among the lines already there — so it lands last, the
            same place the block's own Add button puts a new line. */
-        if (zone === 'into') {
-          const blockKey = target.dataset.blockhead ?? '';
-          const siblings = $$(`tr[data-line][data-block="${blockKey}"]`).filter((r) => r !== item);
-          const last = siblings[siblings.length - 1];
-          const fromTrip = line.trip;
-          if (last) last.after(item); else target.after(item);
-          refile(line, item, blockKey);
-          if (last?.dataset.line) moveInList(lines, line.id, last.dataset.line, 'after');
-          emptiedTrips(lines, [fromTrip]).forEach((key) => {
-            $(`tr[data-trip="${key}"]`)?.remove();
-            removeTrip(key);
-          });
-          recompute(line.id);
-          return true;
-        }
+        if (zone === 'into') return moveIntoBlock(line, item, target.dataset.blockhead ?? '');
 
         const fromTrip = line.trip;
         if (zone === 'before') target.before(item); else target.after(item);
@@ -3465,7 +3821,41 @@ const t0 = priced.totals;
     });
 
     root.addEventListener('menu-action', (e: any) => {
-      const [catKey, block, shape, kind] = String(e.detail ?? '').split('|');
+      const detail = String(e.detail ?? '');
+      /* A section's settings menu. */
+      if (detail.startsWith('cat|')) {
+        const which = detail.slice(4);
+        const catKey = ((e.target as HTMLElement)?.closest?.('[data-cat-menu]') as HTMLElement | null)?.dataset.catMenu ?? '';
+        if (which === 'copy') document.dispatchEvent(new CustomEvent('cbf-lib:open-copy', { detail: { category: catKey } }));
+        else if (which === 'split') { setSplit(!personnelSplit.on); wireCatMenus(); }
+        else openSetting(which);
+        return;
+      }
+      /* A trip head's actions menu. */
+      if (detail === 'trip|ungroup') {
+        const head = (e.target as HTMLElement)?.closest?.('tr[data-trip]') as HTMLElement | null;
+        const key = head?.dataset.trip;
+        if (!key) return;
+        /* Free when nothing changes but the grouping. A trip that happens more
+           than once is different: its lines would each be priced once instead,
+           so that goes through the dialog that says so. */
+        if ((tripOf(key)?.occurrences ?? 1) > 1 && lines.some((l) => l.trip === key)) askDeleteTrip(key);
+        else ungroupTrip(key);
+        return;
+      }
+      if (detail === 'trip|delete') {
+        const head = (e.target as HTMLElement)?.closest?.('tr[data-trip]') as HTMLElement | null;
+        if (head?.dataset.trip) askDeleteTrip(head.dataset.trip);
+        return;
+      }
+      /* A row's actions menu: `row|<action>`, for the row the menu sits in. */
+      if (detail.startsWith('row|')) {
+        const tr = (e.target as HTMLElement)?.closest?.('tr[data-line]') as HTMLElement | null;
+        const line = tr ? lineById(tr.dataset.line!) : null;
+        if (tr && line) runRowAction(detail.slice(4), line, tr);
+        return;
+      }
+      const [catKey, block, shape, kind] = detail.split('|');
       if (catKey && shape) addLine(catKey, block, shape, kind ?? '');
     });
 
@@ -3476,6 +3866,8 @@ const t0 = priced.totals;
        that row's options with a "Use <term>" row when the term matches no title
        already on this budget. */
     root.addEventListener('search', (e: any) => {
+      const pick = (e.target as HTMLElement)?.closest?.('[data-place]') as any;
+      if (pick) { pick.options = placeOptions(e.detail?.term ?? '', pick.value); return; }
       const el = e.target as HTMLElement;
       if (!el?.dataset || !('positionCombo' in el.dataset)) return;
       (el as any).options = positionOptionsFor(e.detail?.term ?? '');
@@ -3508,6 +3900,7 @@ const t0 = priced.totals;
              off the destination in the first place. A line that claims a
              published rate states its own location when it makes the claim. */
           trip.locality = String(raw ?? '').trim();
+          setText($('[data-trip-basis]', head), localityBasis(trip.locality));
             } else {
           /* A journey happens at least once. */
           trip[field] = Math.max(1, num(raw));
@@ -3520,46 +3913,6 @@ const t0 = priced.totals;
         /* A renamed trip is renamed in every meeting's trip picker too. */
         refreshTripLinks();
         flash(moved.map((l) => rowOf(l.id)));
-        return;
-      }
-
-      /* ── Budget-level settings on the section heads ───────────────────────── */
-      const budgetField = (el.dataset as any)?.budgetField;
-      if (budgetField === 'fringeDefault') {
-        /* The default fringe rate. Every salary line that follows it re-prices
-           on this keystroke, and so does its generated fringe line; a line that
-           overrides it does not move — that is what overriding means. */
-        const v = num((el as any).value);
-        fringeDefaults.pct = Math.max(0, v) / 100;
-        lines.filter((l) => isSalaryLine(l) && !isFringeOverride(l)).forEach((l) => {
-          const f: any = $('[data-field="fringePct"]', rowOf(l.id) ?? root);
-          if (f) f.value = fringePctText(l);
-        });
-        recompute();
-        flash(lines.filter((l) => l.category === 'personnel-fringe').map((l) => rowOf(l.id)));
-        return;
-      }
-      if (budgetField === 'threshold') {
-        /* The contract's capitalization threshold. It re-files the lines the
-           sort still owns; a line the vendor placed by hand stays where they put
-           it, and is reported if the new threshold disagrees. */
-        contract.capitalizationThreshold = Math.max(0, num((el as any).value));
-        lines.filter((l) => thresholdTested(l) && !isClassOverride(l)).forEach((l) => fileLine(l));
-        recompute();
-        document.dispatchEvent(new CustomEvent('cbf-lib:threshold', {
-          detail: { threshold: contract.capitalizationThreshold },
-        }));
-        return;
-      }
-      if ('splitToggle' in ((el.dataset as any) ?? {})) {
-        /* Admin/technical is a per-budget choice. Off, the sub-block heads go and
-           every position reads under one heading; each line keeps its type, so
-           turning it back on restores the split exactly. */
-        personnelSplit.on = !!(e.detail?.checked ?? (el as any).checked);
-        const tbody = $('tbody[data-cat="personnel-salary"]');
-        if (tbody) tbody.dataset.split = personnelSplit.on ? 'on' : 'off';
-        const menu: any = $('[data-add-menu="personnel-salary"]');
-        if (menu) wireAddMenu(menu);
         return;
       }
 
@@ -3654,6 +4007,7 @@ const t0 = priced.totals;
         /* Names the line. It no longer moves any money: a claim on a published
            rate carries its own location, stated once when the claim is made. */
         line.locality = String((el as any).value ?? '').trim();
+        setText($('[data-dest-basis]', tr), localityBasis(line.locality));
         syncLabel(line);
         recompute(line.id);
         return;
@@ -3701,16 +4055,28 @@ const t0 = priced.totals;
         return;
       }
 
+      /* Fold or unfold one section. */
+      const toggle = t.closest?.('[data-cat-toggle]');
+      if (toggle) {
+        const tb = toggle.closest('tbody[data-cat]') as HTMLElement | null;
+        setFolded(tb, !tb?.hasAttribute('data-collapsed'));
+        return;
+      }
+      if (t.closest?.('[data-fold-all]')) { $$('tbody[data-cat]').forEach((tb) => setFolded(tb, true, false)); writeOpen(); return; }
+      if (t.closest?.('[data-unfold-all]')) { $$('tbody[data-cat]').forEach((tb) => setFolded(tb, false, false)); writeOpen(); return; }
+      const peekBtn = t.closest?.('[data-peek-open]');
+      if (peekBtn) {
+        const tr = peekBtn.closest('tr[data-line]') as HTMLElement | null;
+        const line = tr ? lineById(tr.dataset.line!) : null;
+        if (line) openPeek(line);
+        return;
+      }
+
       if (t.closest?.('[data-open-import]')) {
         document.dispatchEvent(new CustomEvent('cbf-lib:open-import'));
         return;
       }
 
-      if (t.closest?.('[data-delete-trip]')) {
-        const head = t.closest('tr[data-trip]') as HTMLElement | null;
-        if (head?.dataset.trip) askDeleteTrip(head.dataset.trip);
-        return;
-      }
 
       const add = t.closest?.('[data-add-line]') as HTMLElement | null;
       if (add) {
@@ -3721,11 +4087,8 @@ const t0 = priced.totals;
 
       const sheet = t.closest?.('[data-open-sheet]') as HTMLElement | null;
       if (sheet) {
-        document.dispatchEvent(
-          new CustomEvent('cbf-lib:open-subcontract', {
-            detail: { sheetId: sheet.dataset.openSheet, lineId: sheet.dataset.openSheetLine },
-          }),
-        );
+        /* A subcontract's budget is a LIB of its own, on its own page. */
+        window.location.href = withBase(`/lib-entry/subcontract/${sheet.dataset.openSheet || 'new'}`);
         return;
       }
 
@@ -3734,7 +4097,24 @@ const t0 = priced.totals;
       const line = lineById(tr.dataset.line!);
       if (!line) return;
 
-      if (t.closest('[data-delete-line]')) {
+      /* The few row actions still ON the row: the allocation button, the pencil
+         on a claimed rate, and the fringe reset. Everything else is in the row's
+         actions menu and arrives through 'menu-action' below. */
+      const act =
+        t.closest('[data-alloc-editor]') ? 'alloc'
+        : t.closest('[data-standard-edit]') ? 'standard-edit'
+        : t.closest('[data-fringe-reset]') ? 'fringe-reset'
+        : '';
+      if (act) runRowAction(act, line, tr);
+    });
+
+    /* ── Every action a row can take, in one place ──────────────────────────
+       Called by the row's own controls (above) and by its actions menu, so a
+       click and a menu item can never do two different things. */
+    function runRowAction(act: string, line: any, tr: HTMLElement) {
+      if (act.startsWith('move|')) { moveIntoBlock(line, tr, act.slice(5)); return; }
+      if (act === 'new-trip') { newTripFrom(line, tr); return; }
+      if (act === 'delete') {
         /* A derived row has no delete affordance, and must not acquire one by
            accident: deleting it would only have it regenerated on the next
            recompute, which reads as a control that does not work. */
@@ -3753,7 +4133,7 @@ const t0 = priced.totals;
          remembers the source in `qtyFromWas` so the link can be remade by name.
          A fringe row is excluded: its quantity is not followed, it is generated,
          and there is nothing underneath to fall back to. */
-      if (t.closest('[data-detach-qty]')) {
+      if (act === 'detach-qty') {
         if (derivedRow(line) || !line.qtyFrom) return;
         line.qty = effectiveQty(line, lines);
         line.qtyFromWas = line.qtyFrom;
@@ -3762,7 +4142,7 @@ const t0 = priced.totals;
         recompute();
         return;
       }
-      if (t.closest('[data-refollow-qty]')) {
+      if (act === 'refollow-qty') {
         if (!line.qtyFromWas || !lineById(line.qtyFromWas)) return;
         line.qtyFrom = line.qtyFromWas;
         delete line.qtyFromWas;
@@ -3773,7 +4153,7 @@ const t0 = priced.totals;
 
       /* The split is entered on the side sheet — this button is the way in, and
          the summary on it is the way out. */
-      if (t.closest('[data-alloc-editor]')) {
+      if (act === 'alloc') {
         if (derivedRow(line)) return;
         document.dispatchEvent(
           new CustomEvent('cbf-lib:open-alloc', {
@@ -3800,8 +4180,8 @@ const t0 = priced.totals;
          Dropping the claim IS an edit, and it stays on the row: it restores the
          typed rate, which was never thrown away, and there is nothing to
          confirm. */
-      if (t.closest('[data-standard-edit]') || t.closest('[data-standard-toggle]')) {
-        const dropping = !!line.standard && !t.closest('[data-standard-edit]');
+      if (act === 'standard-edit' || act === 'standard-toggle') {
+        const dropping = !!line.standard && act === 'standard-toggle';
         if (dropping) {
           delete line.standard;
           fillRow(tr, line);
@@ -3822,7 +4202,7 @@ const t0 = priced.totals;
         return;
       }
 
-      if (t.closest('[data-toggle-override]')) {
+      if (act === 'gsa-override') {
         if (line.rateOverride == null) line.rateOverride = gsaRate(line.gsaKey)?.rate ?? 0;
         else delete line.rateOverride;
         const f: any = $('[data-field="rateOverride"]', tr);
@@ -3835,18 +4215,19 @@ const t0 = priced.totals;
          Either direction, itemized or lump. The move PINS the line — the sort
          leaves it where the vendor put it from then on — and if that is against
          the threshold, it is noted for the COR, not refused. */
-      if (t.closest('[data-cap-toggle]')) {
+      if (act === 'cap-move') {
         if (!onThreshold(line)) return;
         const to = thresholdTargetFor(line);
         line.classOverride = true;
         line.block = to;
         const moved = rebuildRow(line, line.category, to);
         recompute();
+        unfoldTo(moved);
         moved?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         return;
       }
       /* Handing a hand-placed item back to the threshold, which re-files it. */
-      if (t.closest('[data-cap-reset]')) {
+      if (act === 'cap-reset') {
         delete line.classOverride;
         fileLine(line);
         recompute(line.id);
@@ -3858,7 +4239,7 @@ const t0 = priced.totals;
          split, inserted right below it. The time is divided between the two so
          the position's total time is unchanged, and the caret lands on the new
          line's rate — the one number that is different. */
-      if (t.closest('[data-rate-step]')) {
+      if (act === 'rate-step') {
         if (!isSalaryLine(line)) return;
         const total = line.qty ?? 0;
         const first = Math.round((total / 2) * 2) / 2;
@@ -3889,14 +4270,26 @@ const t0 = priced.totals;
         return;
       }
 
+      /* Overriding the default for THIS line. It opens on the rate in force, so
+         nothing moves until the vendor types a different one. */
+      if (act === 'fringe-override') {
+        line.fringePct = fringeDefaults.pct;
+        fillRow(tr, line);
+        recompute(line.id);
+        window.requestAnimationFrame(() => {
+          ($('[data-field="fringePct"]', tr) as any)?.shadowRoot?.querySelector('input')?.focus();
+        });
+        return;
+      }
+
       /* Back to the budget's default fringe rate. */
-      if (t.closest('[data-fringe-reset]')) {
+      if (act === 'fringe-reset') {
         delete line.fringePct;
         fillRow(tr, line);
         recompute(line.id);
         return;
       }
-    });
+    }
 
     /* ── The overhead block owns the rate AND its scope; this grid owns the base.
        Re-scoping must be visible HERE, so the indirect rows flash on receipt. ── */
@@ -3935,6 +4328,7 @@ const t0 = priced.totals;
       const { lineId, openFlag } = e.detail ?? {};
       const tr = lineId ? rowOf(lineId) : null;
       if (!tr) return;
+      unfoldTo(tr);
       tr.scrollIntoView({ block: 'center', behavior: 'smooth' });
       flash([tr]);
       if (openFlag && role() === 'cor') {
@@ -3978,6 +4372,7 @@ const t0 = priced.totals;
       recompute();
       lines.forEach((l) => fileLine(l));
       refreshPositionOptions();
+      added.forEach(unfoldTo);
       flash(added);
       added[0]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
       document.dispatchEvent(new CustomEvent('cbf-lib:imported', { detail: { count: added.length } }));
@@ -4098,20 +4493,26 @@ const t0 = priced.totals;
      narrower still — one width has to hold the widest, because a column cannot
      size itself per row. Anything above this and the cluster wraps, which is
      exactly the stacked reading the chain exists to prevent. */
-  .cbf-lct__col-qty { min-width: 388px; }
-  .cbf-lct__col-rate { min-width: 215px; }
+  .cbf-lct__col-qty { min-width: 300px; }
+  .cbf-lct__col-rate { min-width: 180px; }
   /* Holds a rate and the dollars that rate produces, side by side, so it is
      wider than the percentage alone would need. It still exists to be read DOWN
      — "why is this one 22.3%" — but the dollars beside it keep the row readable
      ACROSS, straight into the Amount column next door. Only Personnel — Salary
      fills it; every other section spans its rate cell over the gap. */
-  .cbf-lct__col-fringe { min-width: 205px; }
+  .cbf-lct__col-fringe { min-width: 180px; }
+  /* Rate and the dollars it generates read as one phrase — "35.1% default ·
+     $17,506" — so they never break across lines. */
+  .cbf-lct__cell--fringe [data-fringe] { flex-wrap: nowrap; white-space: nowrap; }
   .cbf-lct__col-we { min-width: 140px; }
   .cbf-lct__col-act { width: 44px; }
   .cbf-lct__col-num { text-align: right; min-width: 115px; }
 
+  /* Tightened for density: rows carry their content on one or two lines now
+     (passing states say nothing, row actions live in one menu), so the cell
+     padding no longer needs to separate stacks of notes and buttons. */
   .cbf-lct__cell {
-    padding: var(--spacing-250) var(--spacing-300);
+    padding: var(--spacing-150) var(--spacing-250);
     vertical-align: top;
     border-top: 1px solid var(--color-border-default-subtle);
   }
@@ -4162,6 +4563,56 @@ const t0 = priced.totals;
     border-bottom: 1px solid var(--color-border-default);
     vertical-align: middle;
   }
+  /* ── Folding (Notion's toggle) ──
+     A folded section keeps only its head row: name, count, subtotal, and the
+     "needs attention" badge. The chevron points right while folded. */
+  tbody[data-collapsed] > tr:not(.cbf-lct__cathead) { display: none; }
+  [data-cat-toggle] :global(esa-icon),
+  [data-cat-toggle] :global(svg) { transition: transform 150ms ease; }
+  tbody[data-collapsed] [data-cat-toggle] :global(esa-icon),
+  tbody[data-collapsed] [data-cat-toggle] :global(svg) { transform: rotate(-90deg); }
+  @media (prefers-reduced-motion: reduce) {
+    [data-cat-toggle] :global(esa-icon),
+    [data-cat-toggle] :global(svg) { transition: none; }
+  }
+
+  /* ── Row controls on hover (Notion's ⋮⋮) ──
+     Section and trip heads keep their actions (add, section menu) always in
+     view; only a ROW's own controls (Open, its menu) wait. Present in the
+     layout always (no reflow), visible only on the row being pointed at or
+     tabbed into. Touch screens have no hover — there they
+     simply stay visible. */
+  @media (hover: hover) {
+    .cbf-lct__hover { opacity: 0; transition: opacity 120ms ease; }
+    tr:hover .cbf-lct__hover,
+    tr:focus-within .cbf-lct__hover,
+    .cbf-lct__hover:has([aria-expanded='true']),
+    .cbf-lct__hover:focus-within { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cbf-lct__hover { transition: none; }
+  }
+
+  /* ── The side peek ── */
+  .cbf-lct__peek-value {
+    font-size: 14px;
+    color: var(--color-content-default);
+  }
+
+  /* The section description in its popover: readable width, body text. */
+  .cbf-lct__cat-note {
+    display: block;
+    width: 22rem;
+    max-width: 80vw;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--color-content-default);
+  }
+  /* Quieter than the name it introduces: secondary tone, sized to the label. */
+  .cbf-lct__cat-icon {
+    display: inline-flex;
+    color: var(--color-content-default-secondary);
+  }
   .cbf-lct__cat-label {
     font-size: 16px;
     font-weight: var(--typography-font-weight-semibold);
@@ -4187,15 +4638,6 @@ const t0 = priced.totals;
   .cbf-lct__note {
     font-size: 13px;
     color: var(--color-content-default-secondary);
-    max-width: 46ch;
-  }
-  /* Where an item filed itself. A statement of fact the vendor did not type, so
-     it reads a step above the quiet notes around it — 14px and primary text —
-     without becoming a status colour. Filing correctly is the ordinary outcome
-     and must not look like an alarm; the consequence line under it stays quiet. */
-  .cbf-lct__filed {
-    font-size: 14px;
-    color: var(--color-content-default);
     max-width: 46ch;
   }
   /* "Nothing governs this rate" — a typed-rate line. Aligned with the controls in
@@ -4238,21 +4680,21 @@ const t0 = priced.totals;
      Discoverability wins over visual quiet on an entry surface. Don't re-quiet
      these without solving the "where do I type" problem some other way. */
   .cbf-lct__field--label { width: 100%; }
-  .cbf-lct__field--qty { width: 76px; }
+  .cbf-lct__field--qty { width: 64px; }
   /* 88px, not 96: two of these plus two numbers and the × have to fit one line
      in the widest case (a supplies item with a second quantity, where BOTH units
      are open text boxes). At 96 the pair overflowed the column by 8px and the
      chain wrapped — which is the stacked reading it exists to prevent. The
      longest house unit word, "months", still fits whole. */
-  .cbf-lct__field--unit { width: 88px; }
-  .cbf-lct__field--rate { width: 116px; }
+  .cbf-lct__field--unit { width: 80px; }
+  .cbf-lct__field--rate { width: 104px; }
   /* Fits "$ 4,750 /month" whole: both affixes are segmented addons that eat into
      the box, and the longest unit word is the one that has to fit. */
-  .cbf-lct__field--rate-unit { width: 196px; }
+  .cbf-lct__field--rate-unit { width: 168px; }
   /* Wide enough for a 4-character rate plus the % suffix chip — at 92px a
      trailing 3 clipped while a trailing 1 fit, which reads as a data error. */
-  .cbf-lct__field--pct { width: 104px; }
-  .cbf-lct__field--amount { width: 130px; margin-inline-start: auto; }
+  .cbf-lct__field--pct { width: 84px; }
+  .cbf-lct__field--amount { width: 116px; margin-inline-start: auto; }
   .cbf-lct__field--trip { width: 116px; }
   /* 218, not 230: on a travel line outside a trip this field (and the purpose
      field under it) is the widest thing in the line column, and at 230 it pushed
@@ -4264,9 +4706,15 @@ const t0 = priced.totals;
   /* Wide enough that its label sits on one line. */
   .cbf-lct__field--threshold { width: 190px; }
   /* A whole-person count is one or two digits. */
-  .cbf-lct__field--staff { width: 64px; }
+  .cbf-lct__field--staff { width: 52px; }
   /* The vendor's ledger code — short, and quieter than the name above it. */
-  .cbf-lct__field--code { width: 180px; }
+  .cbf-lct__field--code { width: 96px; }
+  .cbf-lct__col-code { min-width: 112px; }
+  .cbf-lct__dialog-actions { justify-content: flex-end; }
+  /* A section's settings summary is one line across the head, not a 46ch note. */
+  .cbf-lct__note[data-cat-summary] { max-width: none; }
+
+  .cbf-lct__acct > [data-acct-edit] { display: contents; }
   .cbf-lct__select { width: 100%; }
   /* The time unit sits beside the number it qualifies, so it is sized like the
      unit box it replaced rather than filling the cell. */
@@ -4335,6 +4783,19 @@ const t0 = priced.totals;
   .cbf-lct__alloc-sum strong {
     font-variant-numeric: tabular-nums;
     color: var(--color-content-default);
+  }
+
+  /* ── Line rows: no dividers, a tint on hover ──
+     Each row is already a row of boxed fields, so a rule under it said nothing
+     the boxes didn't. Lines stay where they mark structure — section, sub-group,
+     column head, totals. The hover tint carries the eye from the name to the
+     Amount ~1,000px away, and lights up with the row's hover-only controls.
+     Declared BEFORE the flag tints so a flagged row keeps its warning colour. */
+  tr[data-line] > .cbf-lct__cell { border-top: none; }
+  @media (hover: hover) {
+    tr[data-line]:hover > .cbf-lct__cell {
+      background: color-mix(in srgb, var(--color-content-default) 3%, transparent);
+    }
   }
 
   /* ── Row state: an inline background tint, NEVER a colored left border ── */
@@ -4406,7 +4867,10 @@ const t0 = priced.totals;
     font-size: 16px;
     font-weight: var(--typography-font-weight-semibold);
   }
-  .cbf-lct__grand .cbf-lct__cell strong { font-variant-numeric: tabular-nums; }
+  .cbf-lct__grand-total {
+    font-weight: var(--typography-font-weight-bold);
+    font-variant-numeric: tabular-nums;
+  }
 
   /* ── The two lenses ───────────────────────────────────────────────────────
      VENDOR sees entry controls and no mark editor. COR sees the same grid as
@@ -4419,6 +4883,10 @@ const t0 = priced.totals;
     font-variant-numeric: tabular-nums;
   }
   .cbf-lct__fact--label { font-weight: var(--typography-font-weight-medium); }
+
+  /* A subcontract's amount comes from its sheet: shown, never typed. */
+  tr[data-cat='subcontracts'] [data-field='amount'] { display: none; }
+  :global(html:not([data-cbf-role='cor'])) tr[data-cat='subcontracts'] [data-fact='amount'] { display: inline !important; }
 
   /* Vendor lens (the default): the mirrors and the mark editor stay out. */
   :global(html:not([data-cbf-role='cor'])) .cbf-lct__fact,

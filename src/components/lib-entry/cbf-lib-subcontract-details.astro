@@ -1,0 +1,434 @@
+---
+// cbf-lib-subcontract-details — the top of a subcontract's own LIB page
+// (/lib-entry/subcontract/<sheet>): what the subcontract is, what it puts on the
+// contract's budget, and what BPA needs before it can be reviewed.
+//
+// WHY IT EXISTS: a subcontract is one line on the contract's LIB, and behind it
+// is a LIB of its own — entered on the same grid, below this section. What that
+// grid can't hold is what makes a subcontract a subcontract (BPA Fish & Wildlife
+// Program, "Line-Item Budget Requirements For Subcontractor Costs"):
+//
+//   • its type — cost reimbursement / time & materials, firm fixed price not yet
+//     bid, or firm fixed price already bid out — which decides what BPA needs;
+//   • who prepared the budget, and why they can price the work;
+//   • a cost share, where BPA funds part of a larger project;
+//   • for a fixed price already bid out, NO budget: the bid results, a copy of
+//     the winning bid, and why the winner was chosen if it wasn't the lowest bid.
+//     The page hides the grid for that type.
+//
+// The rules and the arithmetic live in src/data/lib-entry.mjs (SUB_TYPES,
+// subLineAmount, subSheetIssues), so the contract's grid reads the same issues
+// on the parent line.
+//
+// EVENTS: listens to 'cbf-lib:totals' from the grid below (its live lines and
+// total) and 'cbf-role:change'. Toggles the page's [data-sub-lib] wrapper.
+//
+// bcn-lego-checked: the type is esa-radio-group; cost share is esa-checkbox;
+// every value is esa-text-field / esa-textarea; the winning bid is
+// esa-file-upload; the issues are esa-alert-box; the panels are esa-card; every
+// action is esa-button. There is no table lego in the catalog (ls
+// node_modules/@esa/ecology/src/components/), so the bid tabulation is a plain
+// semantic <table> holding those legos, as cbf-lib-cost-table does. Beacon is
+// not cloned on this machine.
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaCard from '@esa/ecology/esa-card.astro';
+import {
+  subcontractSheets,
+  costLines,
+  contract,
+  usd,
+  subLineAmount,
+  subProjectTotal,
+  subTypeOf,
+} from '../../data/lib-entry.mjs';
+import { withBase } from '../../lib/base';
+
+interface Props {
+  /** The subcontract sheet id — a key of subcontractSheets ('new' for a blank one). */
+  sheetId: string;
+}
+const { sheetId } = Astro.props;
+const sheet: any = (subcontractSheets as any)[sheetId];
+const parent: any = costLines.find((l: any) => l.id === sheet?.parentLine) ?? null;
+const title = parent?.label || 'New subcontract';
+---
+<section class="cbf-lsd stack" data-gap="lg" data-lsd data-sheet={sheetId}>
+  {/* ── Which subcontract, and what it puts on the contract's budget ── */}
+  <header class="repel cbf-lsd__head" data-gap="md">
+    <div class="stack" data-gap="2xs">
+      <h1 class="typography-heading-md cbf-lsd__title">Subcontract: {title}</h1>
+      <p class="cbf-lsd__meta">
+        On contract {contract.number}’s LIB as one line · No indirect rate ·
+        No work-element split — the contract’s line carries it
+      </p>
+      <a class="cbf-lsd__back" href={withBase('/lib-entry')}>Back to the contract’s LIB</a>
+    </div>
+    <div class="cbf-lsd__totals cluster" data-gap="xl">
+      <div class="stack" data-gap="3xs">
+        <span class="cbf-lsd__figure" data-lsd-project>{usd(subProjectTotal(sheet))}</span>
+        <span class="cbf-lsd__meta" data-lsd-project-label>Subcontract total</span>
+      </div>
+      <div class="stack" data-gap="3xs">
+        <span class="cbf-lsd__figure" data-lsd-line>{usd(subLineAmount(sheet))}</span>
+        <span class="cbf-lsd__meta" data-lsd-line-label>On the contract’s LIB</span>
+      </div>
+    </div>
+  </header>
+
+  {/* ── What still blocks it, said once ── */}
+  <div data-lsd-issues-wrap hidden>
+    <EsaAlertBox variant="warning" title="Before BPA can review this subcontract">
+      <ul class="cbf-lsd__issues stack" data-gap="2xs" data-lsd-issues></ul>
+    </EsaAlertBox>
+  </div>
+
+  {/* ── The kind of subcontract decides what BPA needs ── */}
+  <EsaCard variant="filled">
+    <div class="cbf-lsd__about">
+      <div class="stack" data-gap="sm">
+        <div data-lsd-type-wrap>
+          <esa-radio-group data-lsd-type size="md" label="Type of subcontract"></esa-radio-group>
+        </div>
+        <p class="cbf-lsd__body" data-lsd-needs>{subTypeOf(sheet.type).needs}</p>
+      </div>
+
+      <div class="stack" data-gap="md">
+        <div class="stack" data-gap="sm" data-lsd-estimator>
+          <h2 class="cbf-lsd__h2">Who prepared the budget</h2>
+          <p class="cbf-lsd__body">Someone who could credibly bid the work — an engineer or a general contractor, for example.</p>
+          <esa-text-field data-lsd-field="estimatorName" size="md" label="Name"></esa-text-field>
+          <esa-text-field data-lsd-field="estimatorBasis" size="md" label="Role and basis for the budget" placeholder="e.g. Civil engineer, priced from 2026 bids"></esa-text-field>
+        </div>
+
+        <div class="stack" data-gap="sm">
+          <esa-checkbox data-lsd-costshare label="BPA is cost-sharing a larger project"></esa-checkbox>
+          <div class="stack" data-gap="2xs" data-lsd-costshare-wrap hidden>
+            <p class="cbf-lsd__body">The budget covers the whole project, not only BPA’s part. The contract’s line carries BPA’s share.</p>
+            <div class="cbf-lsd__narrow">
+              <esa-text-field data-lsd-field="bpaShare" size="md" prefix="$" inputmode="decimal" label="BPA’s share"></esa-text-field>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </EsaCard>
+
+  {/* ── Already bid out: the tabulation, the winner, the bid itself ── */}
+  <section class="stack" data-gap="lg" data-lsd-bids hidden>
+    <div class="stack" data-gap="sm">
+      <h2 class="cbf-lsd__h2">Bid results</h2>
+      <div class="cbf-lsd__narrow">
+        <esa-text-field data-lsd-field="engineerEstimate" size="md" prefix="$" inputmode="decimal" label="Engineer’s estimate"></esa-text-field>
+      </div>
+      <table class="cbf-lsd__table" aria-label="Bids received">
+        <thead>
+          <tr>
+            <th scope="col">Bidder</th>
+            <th scope="col" class="cbf-lsd__amt">Bid</th>
+            <th scope="col"><span class="cbf-lsd__sr">Remove</span></th>
+          </tr>
+        </thead>
+        <tbody data-lsd-bid-rows></tbody>
+      </table>
+      <span data-lsd-edit>
+        <EsaButton size="sm" variant="ghost" icon="plus" data-lsd-add-bid>Add bid</EsaButton>
+      </span>
+    </div>
+
+    <div data-lsd-winner-wrap>
+      <esa-radio-group data-lsd-winner size="md" label="Winning bid"></esa-radio-group>
+    </div>
+
+    <div class="cbf-lsd__reason" data-lsd-reason-wrap hidden>
+      <esa-textarea data-lsd-field="reason" size="md" rows="3" auto-resize label="Why this bidder, not the lowest bid"
+        placeholder="e.g. Quality concerns with the lowest bidder’s prior work"></esa-textarea>
+    </div>
+
+    <div class="stack cbf-lsd__reason" data-gap="2xs">
+      <esa-file-upload data-lsd-file label="Copy of the winning bid" accept=".pdf,.doc,.docx" max-size-mb="25"></esa-file-upload>
+      <p class="cbf-lsd__meta" data-lsd-file-name hidden></p>
+    </div>
+  </section>
+
+  <template data-lsd-bid-tpl>
+    <tr>
+      <td><esa-text-field data-k="bidder" size="sm" placeholder="Bidder"></esa-text-field></td>
+      <td class="cbf-lsd__amt"><esa-text-field data-k="amount" size="sm" prefix="$" inputmode="decimal"></esa-text-field></td>
+      <td class="cbf-lsd__act"><span data-lsd-edit><EsaButton size="xs" variant="chrome" iconOnly icon="x" label="Remove bid" data-lsd-remove-bid /></span></td>
+    </tr>
+  </template>
+</section>
+
+<script>
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-radio-group';
+  import '@esa/ecology/esa-checkbox';
+  import '@esa/ecology/esa-textarea';
+  import '@esa/ecology/esa-file-upload';
+  import {
+    subcontractSheets,
+    SUB_TYPES,
+    subTypeOf,
+    subItemized,
+    subProjectTotal,
+    subLineAmount,
+    subSheetIssues,
+    subLowestBid,
+    newSubId,
+    usd,
+  } from '../../data/lib-entry.mjs';
+
+  const root = document.querySelector<HTMLElement>('[data-lsd]');
+  const sheet: any = root ? (subcontractSheets as any)[root.dataset.sheet!] : null;
+
+  if (root && sheet) {
+    /* The grid's live lines; until it reports, the seeded ones. */
+    let lines: any[] = sheet.lines;
+
+    const q = <T extends HTMLElement = HTMLElement>(sel: string, r: ParentNode = root) => r.querySelector(sel) as T | null;
+    const qa = (sel: string, r: ParentNode = root) => Array.from(r.querySelectorAll<HTMLElement>(sel));
+    const show = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };
+    const setText = (el: Element | null, t: string) => { if (el && el.textContent !== t) el.textContent = t; };
+    const cor = () => document.documentElement.dataset.cbfRole === 'cor';
+    const numOrNull = (v: any) => {
+      const t = String(v ?? '').replace(/[$,%\s]/g, '');
+      return t === '' || Number.isNaN(Number(t)) ? null : Number(t);
+    };
+    const valText = (n: any) => (n == null ? '' : String(n));
+    const grid = document.querySelector<HTMLElement>('[data-sub-lib]');
+
+    const paintWinnerOptions = () => {
+      const w: any = q('[data-lsd-winner]');
+      if (!w) return;
+      w.options = (sheet.bids.entries ?? []).map((b: any, i: number) => ({
+        value: b.id,
+        label: `${(b.bidder ?? '').trim() || `Bid ${i + 1}`} — ${numOrNull(b.amount) == null ? 'no amount' : usd(numOrNull(b.amount))}`,
+      }));
+      w.value = sheet.bids.winner ?? '';
+    };
+    const renderBids = () => {
+      const body = q('[data-lsd-bid-rows]')!;
+      body.replaceChildren();
+      (sheet.bids.entries ?? []).forEach((b: any, i: number) => {
+        const tr = q<HTMLTemplateElement>('[data-lsd-bid-tpl]')!.content.firstElementChild!.cloneNode(true) as HTMLElement;
+        tr.dataset.bid = b.id;
+        body.appendChild(tr);
+        const bidder: any = q('[data-k="bidder"]', tr);
+        const amount: any = q('[data-k="amount"]', tr);
+        bidder.value = b.bidder ?? '';
+        bidder.setAttribute('aria-label', `Bidder ${i + 1}`);
+        amount.value = valText(b.amount);
+        amount.setAttribute('aria-label', `Bid ${i + 1} amount`);
+      });
+      paintWinnerOptions();
+    };
+
+    const paint = () => {
+      const itemized = subItemized(sheet);
+      show(grid, itemized);
+      show(q('[data-lsd-estimator]'), itemized);
+      show(q('[data-lsd-bids]'), !itemized);
+      setText(q('[data-lsd-needs]'), subTypeOf(sheet.type).needs);
+      show(q('[data-lsd-costshare-wrap]'), !!sheet.costShare?.on);
+
+      if (!itemized) {
+        const low = subLowestBid(sheet);
+        const winner = (sheet.bids.entries ?? []).find((b: any) => b.id === sheet.bids.winner);
+        const needsReason = !!(winner && low && low.id !== winner.id && numOrNull(low.amount)! < numOrNull(winner.amount)!);
+        show(q('[data-lsd-reason-wrap]'), needsReason || !!(sheet.bids.reason ?? '').trim());
+        const fileName = q('[data-lsd-file-name]');
+        show(fileName, !!sheet.bids.file);
+        setText(fileName, sheet.bids.file ? `Attached: ${sheet.bids.file}` : '');
+      }
+
+      setText(q('[data-lsd-project]'), usd(subProjectTotal(sheet, lines)));
+      setText(q('[data-lsd-project-label]'), itemized
+        ? (sheet.costShare?.on ? 'Whole project total' : 'Subcontract total')
+        : 'Winning bid');
+      setText(q('[data-lsd-line]'), usd(subLineAmount(sheet, lines)));
+      setText(q('[data-lsd-line-label]'), sheet.costShare?.on ? 'BPA’s share, on the contract’s LIB' : 'On the contract’s LIB');
+
+      const errors = subSheetIssues(sheet, lines);
+      q('[data-lsd-issues]')!.replaceChildren(...errors.map((msg: string) => {
+        const li = document.createElement('li');
+        li.textContent = msg;
+        return li;
+      }));
+      show(q('[data-lsd-issues-wrap]'), errors.length > 0);
+    };
+
+    /* The COR reads; the vendor edits. */
+    const paintRole = () => {
+      const ro = cor();
+      qa('esa-text-field, esa-checkbox, esa-textarea, esa-file-upload').forEach((el: any) => { el.disabled = ro; });
+      /* esa-radio-group has no disabled property — inert its wrapper instead. */
+      qa('[data-lsd-type-wrap], [data-lsd-winner-wrap]').forEach((el) => { (el as any).inert = ro; });
+      qa('[data-lsd-edit]').forEach((el) => show(el, !ro));
+      show(q('[data-lsd-file]'), !ro);
+    };
+
+    /* ── Fill ── */
+    customElements.whenDefined('esa-radio-group').then(() => {
+      const type: any = q('[data-lsd-type]');
+      type.options = SUB_TYPES.map(({ value, label }: any) => ({ value, label }));
+      type.value = sheet.type;
+    });
+    customElements.whenDefined('esa-checkbox').then(() => {
+      (q('[data-lsd-costshare]') as any).checked = !!sheet.costShare?.on;
+    });
+    customElements.whenDefined('esa-text-field').then(() => {
+      const set = (k: string, v: any) => { const el: any = q(`[data-lsd-field="${k}"]`); if (el) el.value = valText(v); };
+      set('bpaShare', sheet.costShare?.bpaShare);
+      set('estimatorName', sheet.estimator?.name);
+      set('estimatorBasis', sheet.estimator?.basis);
+      set('engineerEstimate', sheet.bids?.engineerEstimate);
+      renderBids();
+      paintRole();
+    });
+    customElements.whenDefined('esa-textarea').then(() => {
+      const el: any = q('[data-lsd-field="reason"]');
+      if (el) el.value = sheet.bids?.reason ?? '';
+    });
+    paint();
+
+    document.addEventListener('cbf-lib:totals', (e: any) => {
+      if (Array.isArray(e.detail?.lines)) lines = e.detail.lines;
+      paint();
+    });
+    document.addEventListener('cbf-role:change', paintRole);
+
+    /* ── Edits ── */
+    const onEdit = (e: any) => {
+      const el = e.target as HTMLElement;
+      const value = (el as any).value ?? e.detail?.value ?? '';
+      if (el.matches('[data-lsd-type]')) {
+        if (e.type !== 'change' || !value) return;
+        sheet.type = value;
+      } else if (el.matches('[data-lsd-costshare]')) {
+        if (e.type !== 'change') return;
+        sheet.costShare = { ...(sheet.costShare ?? {}), on: !!(el as any).checked };
+      } else if (el.matches('[data-lsd-winner]')) {
+        if (e.type !== 'change') return;
+        sheet.bids.winner = value || null;
+      } else if (el.matches('[data-lsd-file]')) {
+        sheet.bids.file = (e.detail?.files ?? [])[0]?.name ?? null;
+      } else if ((el.dataset as any)?.lsdField) {
+        const f = (el.dataset as any).lsdField;
+        if (f === 'bpaShare') sheet.costShare.bpaShare = numOrNull(value);
+        else if (f === 'estimatorName') sheet.estimator.name = String(value);
+        else if (f === 'estimatorBasis') sheet.estimator.basis = String(value);
+        else if (f === 'engineerEstimate') sheet.bids.engineerEstimate = numOrNull(value);
+        else if (f === 'reason') sheet.bids.reason = String(value);
+      } else if ((el.dataset as any)?.k) {
+        const b = sheet.bids.entries.find((x: any) => x.id === (el.closest('tr[data-bid]') as HTMLElement | null)?.dataset.bid);
+        if (!b) return;
+        if ((el.dataset as any).k === 'amount') b.amount = numOrNull(value);
+        else b.bidder = String(value);
+        paintWinnerOptions();
+      } else {
+        return;
+      }
+      paint();
+    };
+    root.addEventListener('input', onEdit);
+    root.addEventListener('change', onEdit);
+
+    root.addEventListener('click', (e: any) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-lsd-add-bid]')) {
+        const b = { id: newSubId('bid'), bidder: '', amount: null };
+        sheet.bids.entries.push(b);
+        renderBids();
+        paint();
+        paintRole();
+        (q(`tr[data-bid="${b.id}"] [data-k="bidder"]`) as any)?.focus?.();
+        return;
+      }
+      const rm = t.closest('[data-lsd-remove-bid]');
+      if (rm) {
+        const id = (rm.closest('tr[data-bid]') as HTMLElement | null)?.dataset.bid;
+        sheet.bids.entries = sheet.bids.entries.filter((x: any) => x.id !== id);
+        if (sheet.bids.winner === id) sheet.bids.winner = null;
+        renderBids();
+        paint();
+        paintRole();
+      }
+    });
+  }
+</script>
+
+<style>
+  /* .stack / .cluster set display:flex, which ties with [hidden]'s UA rule. */
+  .cbf-lsd [hidden] { display: none !important; }
+
+  .cbf-lsd__head { --align: flex-end; }
+  .cbf-lsd__title { margin: 0; }
+  .cbf-lsd__meta {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-lsd__body {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.45;
+    color: var(--color-content-default);
+  }
+  .cbf-lsd__h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
+  }
+  .cbf-lsd__back {
+    font-size: 14px;
+    color: var(--color-content-link, var(--color-content-brand));
+  }
+  .cbf-lsd__totals { text-align: end; }
+  .cbf-lsd__figure {
+    font-size: var(--font-size-500);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-lsd__issues {
+    margin: 0;
+    padding-inline-start: var(--spacing-500);
+  }
+  /* Two columns on a wide screen: the type on the left, who prepared it and the
+     cost share on the right. One column when there isn't room. */
+  .cbf-lsd__about {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(24rem, 100%), 1fr));
+    gap: var(--spacing-600);
+  }
+  .cbf-lsd__narrow { max-width: 16rem; }
+  .cbf-lsd__reason { max-width: 48rem; }
+
+  .cbf-lsd__table {
+    width: 100%;
+    max-width: 48rem;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .cbf-lsd__table th {
+    text-align: left;
+    padding: var(--spacing-100) var(--spacing-150);
+    font-size: 13px;
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default-secondary);
+    border-bottom: 1px solid var(--color-border-default);
+  }
+  .cbf-lsd__table td { padding: var(--spacing-100) var(--spacing-150); }
+  .cbf-lsd__amt { width: 10rem; }
+  .cbf-lsd__act { width: 1%; text-align: right; }
+  .cbf-lsd__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>

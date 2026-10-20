@@ -760,3 +760,86 @@ Two defects that compound:
 - Forward `step` (and `min`/`max`, if not already) like the other constraint attributes.
 - In `syncValidity`, fall back to a non-empty message when `validationMessage` is empty
   (e.g. `Enter a valid ${label}.`), so an invalid-but-hidden field can never throw.
+
+## esa-icon — no "more actions" glyph
+
+### The registry has no `ellipsis` / `ellipsis-vertical`, and esa-button can't take custom paths
+
+**Status:** Open — request. Worked around locally: the LIB grid's per-row actions menu
+(`cbf-lib-cost-table`) uses the `menu` (hamburger) glyph with an explicit label,
+"Actions for this line — …".
+**Affects:** Any row- or card-level overflow menu built on `esa-dropdown-menu` + an icon-only
+`esa-button`.
+
+**Problem:**
+`icon-registry.ts` carries ~50 Lucide glyphs and none of the overflow ones (`ellipsis`,
+`ellipsis-vertical`). `esa-icon` accepts a `paths` fallback, but `esa-button` only takes an
+icon NAME, so a spoke cannot supply the glyph without hand-rolling a button. The hamburger
+reads as navigation, not as "more actions for this row".
+
+**Requested change:**
+Add `ellipsis` and `ellipsis-vertical` to the registry (Lucide paths: three circles of r=1).
+
+## Form controls — no compact size that keeps readable text
+
+### The size ramp couples padding to type, so density costs legibility
+
+**Status:** Open — request. Worked around locally: the LIB grid (`cbf-lib-cost-table`) runs
+every row control at `sm`, accepting 12px values, because its rows were mostly padding.
+**Affects:** Any dense entry grid built from `esa-text-field`, `esa-select`, `esa-combobox`
+and `esa-button`.
+
+**Problem:**
+Measured on the LIB grid: `md` = 45px tall with 15px text and 12px padding; `sm` = 37px with
+12px text; `xs` = 31px with 10px text. Each step changes padding AND type together, and the
+padding/height tokens were deleted (rightly — px heights can't follow rem text). So a spoke
+that needs a compact row has only two choices: keep readable 14–15px values with 12px of
+padding, or shrink the values below the house's own 14px dense-data floor. There is no
+"less padding, same text" step, and no spoke-level lever (the design rules forbid overriding
+the components' private `--_field-padding-*`).
+
+**Requested change:**
+A density axis independent of type — e.g. a `density="compact"` attribute (or a `compact`
+size) that keeps the `md`/`sm` text composite and drops padding one or two spacing rungs —
+across the field family and `esa-button` together, so sibling controls in a row still match.
+
+## esa-select / esa-button — `sm` does not match `esa-text-field` `sm` in height
+
+**Status:** Open. Accepted locally, not worked around: the LIB grid's row pickers stay on
+`esa-select` (so they keep their chevron), and the rows that carry one are ~7px taller than the
+rest. Swapping them to `esa-combobox mode="autocomplete"` matched the heights but dropped the
+chevron, so a list no longer looked like a list; `mode="select"` is deprecated.
+**Affects:** Any row that mixes a select or a button with text fields at the same size.
+
+**Problem:**
+Measured on the LIB grid at `sm`: `esa-text-field` and `esa-combobox` render 37px, `esa-select`
+renders 42–44px, and `esa-button` renders 34px. `esa-select` also has no `xs` (`SIZES` is
+sm/md/lg), so there is no step at which it lines up with a 37px field. Sibling controls in a row
+are supposed to match exactly; at `sm` they cannot.
+
+**Requested change:**
+Align the select trigger's and the button's padding + type rung with the text field at each
+size, or document the intended pairing (which select size sits beside which field size).
+
+## esa-side-dialog — `position="right"` renders on the left, content-height
+
+**Status:** Open — needs upstream change (2-line fix below). Worked around locally in
+`cbf-lib-cost-table` (the LIB grid's line-details side peek) by appending the fix to that one
+instance's shadow root.
+**Affects:** Every `esa-side-dialog`, in Chromium at least. `position="right"` (the default)
+opens as a short box pinned to the top-left; `position="left"` happens to land on the left but
+is still content-height rather than full-height.
+
+**Problem:**
+`dialog.panel` sets `position: fixed`, `top`/`bottom` and `right` (or `left`), and clears the
+UA's margin/max-width/max-height, but not the UA's `inset-inline-start: 0` /
+`inset-inline-end: 0` or `height: fit-content`. With a fixed width, `left: 0` + `right: 16px`
+is over-constrained and `left` wins in LTR, so a right drawer pins left; and `height:
+fit-content` beats the `top` + `bottom` stretch. Measured: rect `x=0, y=16, w=400, h=614` in a
+1600×1200 viewport, computed `left: 0px; right: 16px`.
+
+**Requested change:**
+```css
+:host([position='right']) dialog.panel { left: auto; height: auto; }
+:host([position='left'])  dialog.panel { right: auto; height: auto; }
+```

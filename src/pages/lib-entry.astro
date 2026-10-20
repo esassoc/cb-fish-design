@@ -8,13 +8,13 @@
 // months; indirect follows the sum of whatever the rate is scoped to). A grid can
 // hold that; a one-line-at-a-time modal fights it. So entry happens inline in the
 // grid, and the two things that genuinely are NOT cost lines get their own
-// surfaces: the audit-critical indirect block, and the subcontract jump-out whose
-// detail recurses into its own sheet.
+// surfaces: the audit-critical indirect block, and each subcontract, whose detail
+// is a LIB of its own on its own page (/lib-entry/subcontract/<sheet>).
 //
 // Thin assembler — all behavior lives in the lib-entry components and the pricing
 // engine in src/data/lib-entry.mjs. The components talk over three document
 // events: cbf-lib:totals (grid → rail), cbf-lib:indirect-config (config → grid,
-// rail), cbf-lib:open-subcontract (grid → sheet).
+// rail).
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
 import CbfAppPanel from '../components/shared/cbf-app-panel.astro';
@@ -29,11 +29,11 @@ import CbfLibReviewPanel from '../components/lib-entry/cbf-lib-review-panel.astr
 import CbfLibIndirectConfig from '../components/lib-entry/cbf-lib-indirect-config.astro';
 import CbfLibCostTable from '../components/lib-entry/cbf-lib-cost-table.astro';
 import CbfLibReconcileRail from '../components/lib-entry/cbf-lib-reconcile-rail.astro';
-import CbfLibSubcontractSheet from '../components/lib-entry/cbf-lib-subcontract-sheet.astro';
 import CbfLibAllocSheet from '../components/lib-entry/cbf-lib-alloc-sheet.astro';
 import CbfLibStandardRateDialog from '../components/lib-entry/cbf-lib-standard-rate-dialog.astro';
 import CbfLibCodeSummary from '../components/lib-entry/cbf-lib-code-summary.astro';
 import CbfLibImportDialog from '../components/lib-entry/cbf-lib-import-dialog.astro';
+import CbfLibCopyDialog from '../components/lib-entry/cbf-lib-copy-dialog.astro';
 import { withBase } from '../lib/base';
 import { contract, contractTabs } from '../data/lib-entry.mjs';
 
@@ -59,15 +59,15 @@ const crumbs = [
     - role lens          -> cbf-role-switch            (shared — prototype device: vendor ⇄ BPA COR)
     - contract frame     -> cbf-app-panel              (shared — breadcrumb strip)
     - contract tab bar   -> cbf-contract-tabs          (shared — LIB active)
-    - header strip       -> cbf-lib-context-header     (auto-filled context + the Contract Value ceiling)
+    - header strip       -> cbf-lib-context-header     (contract title + one line: sponsor, period, Contract Value, COR)
     - review             -> cbf-lib-review-panel       (COR console / vendor change list + the decision)
     - indirect block     -> cbf-lib-indirect-config    (rate, reference doc, dates, applicability picker)
     - cost grid          -> cbf-lib-cost-table         (5 line shapes, 10 categories, inline entry, dependencies,
                                                         per-line COR marks, read-only COR lens, accounting codes)
     - code summary       -> cbf-lib-code-summary       (direct cost by the vendor's accounting code + filter)
     - reconciliation     -> cbf-lib-reconcile-rail     (running total vs Contract Value, submit gate, COR notes)
-    - subcontract sheet  -> cbf-lib-subcontract-sheet  (the jump-out — stubbed recursed sheet)
     - import dialog      -> cbf-lib-import-dialog      (Excel/CSV path into the same grid)
+    - copy dialog        -> cbf-lib-copy-dialog        (copy a section's lines from another contract of the same org)
 -->
 <BaseLayout title="Line item budget entry — Columbia Basin Fish &amp; Wildlife Program">
   <CbfPublicNav />
@@ -110,13 +110,13 @@ const crumbs = [
     </EsaContainer>
   </main>
 
-  <!-- The subcontract jump-out — opened by a row in the grid, not by the page. -->
-  <CbfLibSubcontractSheet />
   <CbfLibAllocSheet />
   <!-- Claiming a published travel rate — confirmed here, never typed on the row. -->
   <CbfLibStandardRateDialog />
   <!-- The workbook path in — opened by the grid header, lands lines in the grid. -->
   <CbfLibImportDialog />
+  <!-- Copying lines in from another of the organization's contracts — opened by a section's menu. -->
+  <CbfLibCopyDialog />
 
   <esa-snackbar-container data-snackbar></esa-snackbar-container>
 
@@ -131,17 +131,19 @@ const crumbs = [
      the gate checklist without wrapping every detail line.
 
      --sidebar-content-min is the load-bearing value, and it is not a taste
-     setting: it is the grid's MIN-CONTENT width, measured. The seven column
-     floors in cbf-lib-cost-table sum to ~1443px, and the table CANNOT scroll
+     setting: it is the grid's MIN-CONTENT width, measured. With the grid's
+     controls at the compact `sm` size and the accounting code in its own column
+     (2026-10), its min-content is ~1367px,
+     and the table CANNOT scroll
      inside its own box (the allocation popovers and the add-line shape menus
      position absolutely and have to escape it). So if the sidebar hands the grid
      any less than that, the table does not shrink — it bursts its column and
      paints its Amount column and its add-line buttons UNDER the rail.
-     90.25rem (1444px) is that floor plus a hair, and the hair is all there is:
-     1444 + the 1.5rem gap + the 20rem rail is 1788, against the 1920px container
-     minus its padding = 1790. The side-by-side layout survives at full width by
-     2px. Anything more generous here (91rem was) silently costs the rail its
-     place beside the grid at EVERY width, because the container caps at 1920.
+     85.5rem (1368px) is that floor plus a hair. 1368 + the 1.5rem gap + the
+     20rem rail is 1712, so the rail sits beside the grid from an 1842px window
+     up (it used to need the full 1920px container, with 2px to spare). Keep the
+     hair a hair: anything generous here silently costs the rail its place beside
+     the grid at widths where the table would in fact fit.
      Re-measure if those column floors move: `getComputedStyle` won't tell you,
      but cloning the table at `width: min-content` will.
 
@@ -151,15 +153,15 @@ const crumbs = [
      popover is worse than a sideways scroll), and it is unchanged here. What the
      floor fixes is the case in between, where the sidebar used to hold the rail
      alongside a column the table could not fit in. */
-  .cbf-page :global(.sidebar) { --sidebar-width: 20rem; --sidebar-content-min: min(90.25rem, 100%); }
+  .cbf-page :global(.sidebar) { --sidebar-width: 20rem; --sidebar-content-min: min(85.5rem, 100%); }
   /* Once stacked, the rail belongs ABOVE the grid — it's the running total the
      vendor watches while typing, not a footnote to scroll past.
      The breakpoint is the WRAP point, not a device size: the sidebar goes
-     side-by-side at exactly 1918px (content floor + gap + rail + the container's
+     side-by-side at exactly 1842px (content floor + gap + rail + the container's
      padding), so every width below that is stacked and needs the order
      corrected. Measured, not guessed — and it tracks --sidebar-content-min, so
      move one and you move the other. */
-  @media (max-width: 1917px) {
+  @media (max-width: 1841px) {
     .cbf-page :global(.sidebar[data-side='end'] > :first-child) { order: 0; }
   }
   /* esa-popover and esa-dropdown-menu position absolutely and cannot escape a

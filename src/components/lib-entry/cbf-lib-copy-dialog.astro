@@ -1,0 +1,210 @@
+---
+/*
+ * cbf-lib-copy-dialog — copy line items into one section of the LIB from another
+ * contract the same organization manages.
+ *
+ * Opened from a section's three-dot menu ("Copy lines from another contract…").
+ * The vendor picks the contract, ticks the lines, and they land in the grid as
+ * ordinary lines — through the same door the Excel import uses, so every check
+ * runs on them. What does not come across (WSE splits, trips, subcontract
+ * sheets) is said in the dialog, before the copy, not discovered after it. See
+ * src/data/lib-org-contracts.mjs for why each one stays behind.
+ *
+ * ── EVENT CONTRACT (all on `document`) ──────────────────────────────────────
+ * LISTEN   'cbf-lib:open-copy'     detail: { category }
+ * DISPATCH 'cbf-lib:import-lines'  detail: { lines: record[] } — the grid adds them
+ *
+ * bcn-lego-checked: the modal is esa-dialog, the contract picker esa-select, each
+ * line and "select all" an esa-checkbox, the carry-over note esa-alert-box, the
+ * actions esa-button. The only CSS is the divided list frame the line checkboxes
+ * sit in — the same frame cbf-lib-indirect-config uses for its pickers; ecology
+ * has no list lego. Beacon is not cloned on this machine.
+ */
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+---
+
+<esa-dialog data-copy-dialog size="md" heading="Copy lines from another contract">
+  <div class="cbf-lcd stack" data-gap="md">
+    <p class="cbf-lcd__note typography-body-sm" data-copy-subject></p>
+
+    <esa-select data-copy-contract size="md" label="Contract" placeholder="Pick a contract"></esa-select>
+
+    <div class="stack" data-gap="xs" data-copy-pick hidden>
+      <div class="repel" data-gap="sm">
+        <esa-checkbox data-copy-all size="md" label="Select all"></esa-checkbox>
+        <span class="cbf-lcd__note typography-body-sm" role="status" data-copy-count></span>
+      </div>
+      <ul class="cbf-lcd__list" data-copy-lines></ul>
+    </div>
+
+    <EsaAlertBox variant="info" title="What comes across">
+      Lines keep their quantities, rate and accounting code, but arrive without a WSE split, and travel
+      arrives outside any trip. Check the rates — they’re from the other contract.
+    </EsaAlertBox>
+  </div>
+
+  <div slot="footer" class="cluster cbf-lcd__actions" data-gap="sm">
+    <span data-copy-confirm>
+      <EsaButton size="sm" variant="primary">Copy lines</EsaButton>
+    </span>
+    <span data-copy-cancel>
+      <EsaButton size="sm" variant="secondary" appearance="outline">Cancel</EsaButton>
+    </span>
+  </div>
+</esa-dialog>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-checkbox';
+  import { contractsWithLinesIn, orgContract, copyRecordOf, sectionLabel, managingOrg } from '../../data/lib-org-contracts.mjs';
+  import { priceLines, gsaKeyForVehicle, usd, SHAPES } from '../../data/lib-entry.mjs';
+  import * as V from '../../lib/lib-entry-view';
+
+  const dialog = document.querySelector<HTMLElement>('[data-copy-dialog]') as any;
+  if (dialog) init(dialog);
+
+  function init(dialog: any) {
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string) => dialog.querySelector<T>(sel);
+    const setText = (el: Element | null, t: string) => { if (el) el.textContent = t; };
+    const show = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };
+    let category = '';
+    let source: any = null;
+    let picked = new Set<number>();
+
+    /* The source line as the grid would show it — its name and its amount. */
+    const preview = (l: any) => {
+      const rec: any = { ...copyRecordOf(l), id: 'preview' };
+      if (rec.shape === SHAPES.AUTHORITY) rec.gsaKey = gsaKeyForVehicle(rec.vehicleKind, rec.vehicleType);
+      const amount = priceLines([rec], { appliesTo: [], rate: 0 }).amounts.preview ?? 0;
+      const name = V.displayLabel(rec, [rec]) || rec.label || 'Line';
+      const qty = V.qtyFactText(rec, [rec]);
+      return { name, detail: rec.shape === SHAPES.LUMP ? 'Lump sum' : qty, amount: usd(amount) };
+    };
+
+    const paintCount = () => {
+      const n = picked.size;
+      setText($('[data-copy-count]'), source ? `${n} of ${source.lines.filter((l: any) => l.category === category).length} selected` : '');
+      const all: any = $('[data-copy-all]');
+      const total = source ? source.lines.filter((l: any) => l.category === category).length : 0;
+      if (all) all.checked = n > 0 && n === total;
+      const btn = $('[data-copy-confirm] button') as HTMLButtonElement | null;
+      if (btn) btn.disabled = n === 0;
+      setText($('[data-copy-confirm] .esa-button__label'), n ? `Copy ${n} line${n === 1 ? '' : 's'}` : 'Copy lines');
+    };
+
+    const paintLines = () => {
+      const list = $('[data-copy-lines]');
+      if (!list) return;
+      list.replaceChildren();
+      if (!source) { show($('[data-copy-pick]'), false); paintCount(); return; }
+      source.lines.forEach((l: any, i: number) => {
+        if (l.category !== category) return;
+        const p = preview(l);
+        const li = document.createElement('li');
+        li.className = 'cbf-lcd__row';
+        const box: any = document.createElement('esa-checkbox');
+        box.setAttribute('size', 'md');
+        box.setAttribute('label', p.name);
+        box.dataset.copyLine = String(i);
+        box.checked = picked.has(i);
+        const meta = document.createElement('span');
+        meta.className = 'cbf-lcd__meta';
+        meta.textContent = `${p.detail} · ${p.amount}`;
+        li.append(box, meta);
+        list.append(li);
+      });
+      show($('[data-copy-pick]'), true);
+      paintCount();
+    };
+
+    document.addEventListener('cbf-lib:open-copy', (e: any) => {
+      category = e.detail?.category ?? '';
+      source = null;
+      picked = new Set();
+      dialog.heading = `Copy ${sectionLabel(category).toLowerCase()} lines`;
+      setText($('[data-copy-subject]'), `From another contract managed by ${managingOrg()}.`);
+      const sel: any = $('[data-copy-contract]');
+      const options = contractsWithLinesIn(category).map((c: any) => ({
+        label: `${c.number} · ${c.fiscalYear} · ${c.project} ${c.title}`,
+        value: c.id,
+      }));
+      if (sel) { sel.options = options; sel.value = ''; sel.helpText = options.length ? '' : `No other contract has ${sectionLabel(category).toLowerCase()} lines.`; }
+      paintLines();
+      dialog.show();
+    });
+
+    dialog.addEventListener('change', (e: any) => {
+      const el = e.target as HTMLElement;
+      if ((el.dataset as any)?.copyContract != null) {
+        const v = Array.isArray(e.detail?.value) ? e.detail.value[0] : (e.detail?.value ?? (el as any).value);
+        source = orgContract(String(v ?? ''));
+        /* A fresh contract opens with every line in this section ticked — the
+           common case is "bring last year's travel", then untick the exceptions. */
+        picked = new Set(source ? source.lines.map((l: any, i: number) => (l.category === category ? i : -1)).filter((i: number) => i >= 0) : []);
+        paintLines();
+        return;
+      }
+      if ((el.dataset as any)?.copyAll != null) {
+        const on = !!(el as any).checked;
+        picked = new Set(on && source ? source.lines.map((l: any, i: number) => (l.category === category ? i : -1)).filter((i: number) => i >= 0) : []);
+        dialog.querySelectorAll('[data-copy-line]').forEach((b: any) => { b.checked = picked.has(Number(b.dataset.copyLine)); });
+        paintCount();
+        return;
+      }
+      const idx = (el.dataset as any)?.copyLine;
+      if (idx != null) {
+        if ((el as any).checked) picked.add(Number(idx)); else picked.delete(Number(idx));
+        paintCount();
+      }
+    });
+
+    dialog.addEventListener('click', (e: any) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-copy-cancel]')) { dialog.close(); return; }
+      if (t.closest('[data-copy-confirm]')) {
+        if (!source || !picked.size) return;
+        const lines = [...picked].sort((a, b) => a - b).map((i) => copyRecordOf(source.lines[i]));
+        document.dispatchEvent(new CustomEvent('cbf-lib:import-lines', { detail: { lines } }));
+        dialog.close();
+      }
+    });
+  }
+</script>
+
+<style>
+  .cbf-lcd__note { margin: 0; color: var(--color-content-default-secondary); }
+  .cbf-lcd__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 18rem;
+    overflow: auto;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-200);
+    background: var(--color-background-elevation-raised);
+  }
+  /* Rows are built by the script, so their styles are keyed to the list hook. */
+  /* Name on the first line, quantity and amount under it — a long quantity
+     ("3 travelers × (0 full days + 2 travel days at 75%)") must never squeeze the
+     name it describes into a sliver. */
+  .cbf-lcd__list :global(.cbf-lcd__row) {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-050);
+    padding: var(--spacing-200) var(--spacing-300);
+    border-block-start: 1px solid var(--color-border-default-subtle);
+  }
+  .cbf-lcd__list :global(.cbf-lcd__row:first-child) { border-block-start: none; }
+  .cbf-lcd__list :global(.cbf-lcd__meta) {
+    font-size: 14px;
+    color: var(--color-content-default-secondary);
+    font-variant-numeric: tabular-nums;
+    /* Indented to sit under the label, past the checkbox. */
+    padding-inline-start: var(--spacing-700);
+  }
+  .cbf-lcd__actions { justify-content: flex-end; }
+  [hidden] { display: none !important; }
+</style>

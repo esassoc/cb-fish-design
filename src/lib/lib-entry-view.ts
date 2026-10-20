@@ -82,6 +82,8 @@ import {
   isVendorDefined,
   isFringeOverride,
   fringeDefaults,
+  DEFAULT_FRINGE_PCT,
+  personnelSplit,
   staffOf,
   acctCodeOf,
   needsSeason,
@@ -443,7 +445,7 @@ export const qtyFactText = (l: Line, lines: Line[]) => {
   /* A personnel line's second multiplicand is its staff count, and only when
      there is more than one person. */
   if (isSalaryLine(l)) return staffOf(l) > 1 ? `${one} × ${staffOf(l)} staff` : one;
-  return l.qty2 != null ? `${one} × ${qtyFmt(l.qty2)} ${l.qty2Unit ?? ''}`.trim() : one;
+  return l.qty2 != null ? `${one} × ${countOf(l.qty2, lockedUnit2(l) || l.qty2Unit || '')}`.trim() : one;
 };
 export const allocFactText = (l: Line) => {
   const e = allocEntries(l);
@@ -454,8 +456,9 @@ export const allocFactText = (l: Line) => {
  *  Only BLOCKING states tint a row. An above-GSA rate or a hand-placed item is
  *  the vendor's to choose, so it is stated in its cell and noted for the COR,
  *  not painted as a problem. */
-export const rowFlag = (l: Line, lines: Line[], _a?: Amounts) =>
-  allocSum(l) !== 100 ? 'alloc'
+/* `allocate: false` on a subcontract LIB — the parent line carries the split. */
+export const rowFlag = (l: Line, lines: Line[], _a?: Amounts, { allocate = true }: { allocate?: boolean } = {}) =>
+  allocate && allocSum(l) !== 100 ? 'alloc'
   : monthsOver(l, lines) ? 'months'
   : null;
 
@@ -545,8 +548,8 @@ export const tripCostText = (tripKey: string, lines: Line[], a: Amounts) => {
 /* ── A lodging claim's season, said on the row ─────────────────────────────── */
 export const seasonText = (l: Line) => {
   const ref = standardOn(l);
-  if (!ref || !needsSeason(l.travelKind, ref.locality)) return '';
-  return seasonLabel(ref.locality, ref.season) || 'Season not chosen';
+  if (!ref || !needsSeason(l.travelKind, ref.locality, ref.year)) return '';
+  return seasonLabel(ref.locality, ref.season, ref.year) || 'Season not chosen';
 };
 
 /* ── M&IE partial days ─────────────────────────────────────────────────────── */
@@ -561,3 +564,20 @@ export const fringeDefaultNote = (lines: Line[]) => {
     : 'Applies to every position without its own rate.';
 };
 export const pctText = (f: number) => pct(f, 1);
+
+/* ── Section settings, summarised on the section head ─────────────────────
+   The settings themselves live in the section's three-dot menu; the head keeps
+   one quiet line saying what they are set to, so a reviewer reading down the
+   budget never has to open a menu to learn the rate in force. */
+/** The Personnel head's badge — only when the budget's default fringe differs
+    from the system default; null otherwise. */
+export const fringeBadge = () =>
+  Math.abs(fringeDefaults.pct - DEFAULT_FRINGE_PCT) > 1e-9 ? `Fringe: ${(fringeDefaults.pct * 100).toFixed(2)}%` : null;
+export const sectionHasSettings = (catKey: string) => catKey === 'personnel-salary' || catKey === 'supplies';
+export const sectionSummary = (catKey: string, lines: Line[]) => {
+  /* Personnel has no summary line: the split shows itself (the Technical and
+     Administrative headings are there or they are not), and the default fringe
+     only needs saying when it is NOT the system default — see fringeBadge. */
+  if (catKey === 'supplies') return `Capitalization threshold ${usd(contract.capitalizationThreshold)} per item`;
+  return '';
+};

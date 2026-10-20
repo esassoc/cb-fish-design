@@ -49,7 +49,6 @@ import EsaContainer from '@esa/ecology/esa-container.astro';
 import CbfPrototypeStrip from '../components/shared/cbf-prototype-strip.astro';
 import CbfLibViewSwitch from '../components/lib-entry/cbf-lib-view-switch.astro';
 import CbfLibContextHeader from '../components/lib-entry/cbf-lib-context-header.astro';
-import CbfLibSubcontractSheet from '../components/lib-entry/cbf-lib-subcontract-sheet.astro';
 import CbfLibwWizard from '../components/lib-entry-wizard/cbf-libw-wizard.astro';
 import { withBase } from '../lib/base';
 import { contract, contractTabs } from '../data/lib-entry.mjs';
@@ -80,7 +79,6 @@ const crumbs = [
                                                         cbf-libw-line-form, cbf-libw-review-step,
                                                         and REUSES cbf-lib-reconcile-rail,
                                                         cbf-lib-indirect-config, cbf-lib-review-panel)
-    - subcontract sheet  -> cbf-lib-subcontract-sheet  (REUSED — the jump-out stub)
 -->
 <BaseLayout title="Line item budget entry (wizard) — Columbia Basin Fish &amp; Wildlife Program">
   <CbfPublicNav />
@@ -106,8 +104,6 @@ const crumbs = [
     </EsaContainer>
   </main>
 
-  <!-- The subcontract jump-out — opened by a card on the Subcontracts step. -->
-  <CbfLibSubcontractSheet />
 
   <esa-snackbar-container data-snackbar></esa-snackbar-container>
 

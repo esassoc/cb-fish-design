@@ -1,0 +1,1049 @@
+{
+ "source": "GSA Per Diem API v2 (api.gsa.gov/travel/perdiem), by state and fiscal year",
+ "states": [
+  "WA",
+  "OR",
+  "ID",
+  "MT"
+ ],
+ "standard": {
+  "2026": {
+   "mie": 68,
+   "lodging": 110
+  },
+  "2027": {
+   "mie": 68,
+   "lodging": 113
+  }
+ },
+ "years": {
+  "2026": [
+   {
+    "state": "ID",
+    "area": "Boise",
+    "counties": [
+     "Ada"
+    ],
+    "mie": 86,
+    "lodging": [
+     167,
+     167,
+     167,
+     167,
+     167,
+     191,
+     191,
+     191,
+     191,
+     191,
+     167,
+     167
+    ]
+   },
+   {
+    "state": "ID",
+    "area": "Coeur d'Alene",
+    "counties": [
+     "Kootenai"
+    ],
+    "mie": 74,
+    "lodging": [
+     142,
+     142,
+     142,
+     142,
+     142,
+     217,
+     217,
+     217,
+     142,
+     142,
+     142,
+     142
+    ]
+   },
+   {
+    "state": "ID",
+    "area": "Sun Valley / Ketchum",
+    "counties": [
+     "Blaine",
+     "Elmore"
+    ],
+    "mie": 80,
+    "lodging": [
+     300,
+     300,
+     300,
+     181,
+     181,
+     295,
+     295,
+     295,
+     295,
+     191,
+     191,
+     300
+    ]
+   },
+   {
+    "state": "MT",
+    "area": "Big Sky / West Yellowstone / Gardiner",
+    "counties": [
+     "Gallatin",
+     "Park"
+    ],
+    "mie": 80,
+    "lodging": [
+     176,
+     176,
+     176,
+     176,
+     176,
+     310,
+     310,
+     310,
+     310,
+     176,
+     176,
+     176
+    ]
+   },
+   {
+    "state": "MT",
+    "area": "Helena",
+    "counties": [
+     "Lewis and Clark"
+    ],
+    "mie": 74,
+    "lodging": [
+     132,
+     132,
+     132,
+     132,
+     132,
+     132,
+     132,
+     132,
+     132,
+     132,
+     132,
+     132
+    ]
+   },
+   {
+    "state": "MT",
+    "area": "Kalispell / Whitefish",
+    "counties": [
+     "Flathead"
+    ],
+    "mie": 80,
+    "lodging": [
+     124,
+     124,
+     124,
+     124,
+     124,
+     124,
+     232,
+     232,
+     232,
+     124,
+     124,
+     124
+    ]
+   },
+   {
+    "state": "MT",
+    "area": "Missoula",
+    "counties": [
+     "Missoula"
+    ],
+    "mie": 74,
+    "lodging": [
+     130,
+     130,
+     130,
+     130,
+     130,
+     195,
+     195,
+     195,
+     195,
+     130,
+     130,
+     130
+    ]
+   },
+   {
+    "state": "OR",
+    "area": "Beaverton",
+    "counties": [
+     "Washington"
+    ],
+    "mie": 80,
+    "lodging": [
+     132,
+     132,
+     132,
+     132,
+     132,
+     132,
+     132,
+     132,
+     132,
+     132,
+     132,
+     132
+    ]
+   },
+   {
+    "state": "OR",
+    "area": "Bend",
+    "counties": [
+     "Deschutes"
+    ],
+    "mie": 86,
+    "lodging": [
+     125,
+     125,
+     125,
+     125,
+     125,
+     192,
+     192,
+     192,
+     125,
+     125,
+     125,
+     125
+    ]
+   },
+   {
+    "state": "OR",
+    "area": "Clackamas",
+    "counties": [
+     "Clackamas"
+    ],
+    "mie": 80,
+    "lodging": [
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136
+    ]
+   },
+   {
+    "state": "OR",
+    "area": "Eugene / Florence",
+    "counties": [
+     "Lane"
+    ],
+    "mie": 80,
+    "lodging": [
+     132,
+     132,
+     132,
+     132,
+     132,
+     192,
+     192,
+     162,
+     162,
+     132,
+     132,
+     132
+    ]
+   },
+   {
+    "state": "OR",
+    "area": "Lincoln City",
+    "counties": [
+     "Lincoln"
+    ],
+    "mie": 92,
+    "lodging": [
+     120,
+     120,
+     120,
+     120,
+     120,
+     120,
+     167,
+     167,
+     120,
+     120,
+     120,
+     120
+    ]
+   },
+   {
+    "state": "OR",
+    "area": "Portland",
+    "counties": [
+     "Multnomah"
+    ],
+    "mie": 86,
+    "lodging": [
+     155,
+     155,
+     155,
+     155,
+     155,
+     155,
+     155,
+     155,
+     155,
+     155,
+     155,
+     155
+    ]
+   },
+   {
+    "state": "OR",
+    "area": "Seaside",
+    "counties": [
+     "Clatsop"
+    ],
+    "mie": 86,
+    "lodging": [
+     141,
+     141,
+     141,
+     141,
+     141,
+     141,
+     236,
+     236,
+     141,
+     141,
+     141,
+     141
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Everett / Lynnwood",
+    "counties": [
+     "Snohomish"
+    ],
+    "mie": 86,
+    "lodging": [
+     113,
+     113,
+     113,
+     113,
+     113,
+     140,
+     140,
+     140,
+     113,
+     113,
+     113,
+     113
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Ocean Shores",
+    "counties": [
+     "Grays Harbor"
+    ],
+    "mie": 86,
+    "lodging": [
+     110,
+     110,
+     110,
+     110,
+     110,
+     110,
+     132,
+     132,
+     110,
+     110,
+     110,
+     110
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Olympia / Tumwater",
+    "counties": [
+     "Thurston"
+    ],
+    "mie": 80,
+    "lodging": [
+     151,
+     151,
+     151,
+     151,
+     151,
+     151,
+     175,
+     175,
+     128,
+     128,
+     128,
+     151
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Port Angeles / Port Townsend",
+    "counties": [
+     "Clallam",
+     "Jefferson"
+    ],
+    "mie": 92,
+    "lodging": [
+     137,
+     137,
+     137,
+     137,
+     137,
+     137,
+     235,
+     235,
+     137,
+     137,
+     137,
+     137
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Richland / Pasco",
+    "counties": [
+     "Benton",
+     "Franklin"
+    ],
+    "mie": 86,
+    "lodging": [
+     130,
+     130,
+     130,
+     130,
+     130,
+     130,
+     130,
+     130,
+     130,
+     130,
+     130,
+     130
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Seattle",
+    "counties": [
+     "King"
+    ],
+    "mie": 92,
+    "lodging": [
+     188,
+     188,
+     188,
+     188,
+     188,
+     248,
+     248,
+     248,
+     248,
+     188,
+     188,
+     188
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Spokane",
+    "counties": [
+     "Spokane"
+    ],
+    "mie": 86,
+    "lodging": [
+     126,
+     126,
+     126,
+     126,
+     126,
+     126,
+     126,
+     126,
+     126,
+     126,
+     126,
+     126
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Tacoma",
+    "counties": [
+     "Pierce"
+    ],
+    "mie": 86,
+    "lodging": [
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Vancouver",
+    "counties": [
+     "Clark",
+     "Cowlitz",
+     "Skamania"
+    ],
+    "mie": 86,
+    "lodging": [
+     155,
+     155,
+     155,
+     155,
+     155,
+     155,
+     155,
+     155,
+     155,
+     155,
+     155,
+     155
+    ]
+   }
+  ],
+  "2027": [
+   {
+    "state": "ID",
+    "area": "Boise",
+    "counties": [
+     "Ada"
+    ],
+    "mie": 86,
+    "lodging": [
+     176,
+     176,
+     176,
+     176,
+     176,
+     201,
+     201,
+     201,
+     201,
+     201,
+     176,
+     176
+    ]
+   },
+   {
+    "state": "ID",
+    "area": "Coeur d'Alene",
+    "counties": [
+     "Kootenai"
+    ],
+    "mie": 74,
+    "lodging": [
+     148,
+     148,
+     148,
+     148,
+     148,
+     227,
+     227,
+     227,
+     148,
+     148,
+     148,
+     148
+    ]
+   },
+   {
+    "state": "ID",
+    "area": "Sun Valley / Ketchum",
+    "counties": [
+     "Blaine",
+     "Elmore"
+    ],
+    "mie": 80,
+    "lodging": [
+     316,
+     316,
+     316,
+     183,
+     183,
+     293,
+     293,
+     293,
+     293,
+     184,
+     184,
+     316
+    ]
+   },
+   {
+    "state": "MT",
+    "area": "Big Sky / West Yellowstone / Gardiner",
+    "counties": [
+     "Gallatin",
+     "Park"
+    ],
+    "mie": 80,
+    "lodging": [
+     169,
+     169,
+     169,
+     169,
+     169,
+     326,
+     326,
+     326,
+     326,
+     169,
+     169,
+     169
+    ]
+   },
+   {
+    "state": "MT",
+    "area": "Helena",
+    "counties": [
+     "Lewis and Clark"
+    ],
+    "mie": 74,
+    "lodging": [
+     140,
+     140,
+     140,
+     140,
+     140,
+     140,
+     140,
+     140,
+     140,
+     140,
+     140,
+     140
+    ]
+   },
+   {
+    "state": "MT",
+    "area": "Kalispell / Whitefish",
+    "counties": [
+     "Flathead"
+    ],
+    "mie": 80,
+    "lodging": [
+     126,
+     126,
+     126,
+     126,
+     126,
+     126,
+     244,
+     244,
+     244,
+     126,
+     126,
+     126
+    ]
+   },
+   {
+    "state": "MT",
+    "area": "Missoula",
+    "counties": [
+     "Missoula"
+    ],
+    "mie": 74,
+    "lodging": [
+     135,
+     135,
+     135,
+     135,
+     135,
+     199,
+     199,
+     199,
+     199,
+     135,
+     135,
+     135
+    ]
+   },
+   {
+    "state": "OR",
+    "area": "Beaverton",
+    "counties": [
+     "Washington"
+    ],
+    "mie": 80,
+    "lodging": [
+     138,
+     138,
+     138,
+     138,
+     138,
+     138,
+     138,
+     138,
+     138,
+     138,
+     138,
+     138
+    ]
+   },
+   {
+    "state": "OR",
+    "area": "Bend",
+    "counties": [
+     "Deschutes"
+    ],
+    "mie": 86,
+    "lodging": [
+     123,
+     123,
+     123,
+     123,
+     123,
+     195,
+     195,
+     195,
+     154,
+     154,
+     123,
+     123
+    ]
+   },
+   {
+    "state": "OR",
+    "area": "Clackamas",
+    "counties": [
+     "Clackamas"
+    ],
+    "mie": 80,
+    "lodging": [
+     137,
+     137,
+     137,
+     137,
+     137,
+     137,
+     137,
+     137,
+     137,
+     137,
+     137,
+     137
+    ]
+   },
+   {
+    "state": "OR",
+    "area": "Eugene / Florence",
+    "counties": [
+     "Lane"
+    ],
+    "mie": 80,
+    "lodging": [
+     146,
+     146,
+     146,
+     146,
+     146,
+     202,
+     202,
+     146,
+     146,
+     146,
+     146,
+     146
+    ]
+   },
+   {
+    "state": "OR",
+    "area": "Lincoln City",
+    "counties": [
+     "Lincoln"
+    ],
+    "mie": 92,
+    "lodging": [
+     127,
+     127,
+     127,
+     127,
+     127,
+     127,
+     178,
+     178,
+     127,
+     127,
+     127,
+     127
+    ]
+   },
+   {
+    "state": "OR",
+    "area": "Portland",
+    "counties": [
+     "Multnomah"
+    ],
+    "mie": 86,
+    "lodging": [
+     161,
+     161,
+     161,
+     161,
+     161,
+     161,
+     161,
+     161,
+     161,
+     161,
+     161,
+     161
+    ]
+   },
+   {
+    "state": "OR",
+    "area": "Seaside",
+    "counties": [
+     "Clatsop"
+    ],
+    "mie": 86,
+    "lodging": [
+     145,
+     145,
+     145,
+     145,
+     145,
+     145,
+     237,
+     237,
+     145,
+     145,
+     145,
+     145
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Everett / Lynnwood",
+    "counties": [
+     "Snohomish"
+    ],
+    "mie": 86,
+    "lodging": [
+     120,
+     120,
+     120,
+     120,
+     120,
+     147,
+     147,
+     147,
+     120,
+     120,
+     120,
+     120
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Ocean Shores",
+    "counties": [
+     "Grays Harbor"
+    ],
+    "mie": 86,
+    "lodging": [
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     155,
+     155,
+     136,
+     136,
+     136,
+     136
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Olympia / Tumwater",
+    "counties": [
+     "Thurston"
+    ],
+    "mie": 80,
+    "lodging": [
+     149,
+     149,
+     149,
+     149,
+     149,
+     176,
+     176,
+     176,
+     149,
+     149,
+     149,
+     149
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Port Angeles / Port Townsend",
+    "counties": [
+     "Clallam",
+     "Jefferson"
+    ],
+    "mie": 92,
+    "lodging": [
+     131,
+     131,
+     131,
+     131,
+     131,
+     252,
+     252,
+     252,
+     252,
+     131,
+     131,
+     131
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Richland / Pasco",
+    "counties": [
+     "Benton",
+     "Franklin"
+    ],
+    "mie": 86,
+    "lodging": [
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136,
+     136
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Seattle",
+    "counties": [
+     "King"
+    ],
+    "mie": 92,
+    "lodging": [
+     188,
+     188,
+     188,
+     188,
+     188,
+     255,
+     255,
+     255,
+     255,
+     255,
+     188,
+     188
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Spokane",
+    "counties": [
+     "Spokane"
+    ],
+    "mie": 86,
+    "lodging": [
+     126,
+     126,
+     126,
+     126,
+     126,
+     126,
+     126,
+     126,
+     126,
+     126,
+     126,
+     126
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Tacoma",
+    "counties": [
+     "Pierce"
+    ],
+    "mie": 86,
+    "lodging": [
+     143,
+     143,
+     143,
+     143,
+     143,
+     143,
+     143,
+     143,
+     143,
+     143,
+     143,
+     143
+    ]
+   },
+   {
+    "state": "WA",
+    "area": "Vancouver",
+    "counties": [
+     "Clark",
+     "Cowlitz",
+     "Skamania"
+    ],
+    "mie": 86,
+    "lodging": [
+     161,
+     161,
+     161,
+     161,
+     161,
+     161,
+     161,
+     161,
+     161,
+     161,
+     161,
+     161
+    ]
+   }
+  ]
+ }
+}
