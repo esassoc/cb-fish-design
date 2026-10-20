@@ -1,0 +1,47 @@
+---
+// cbf-contract-contacts — the full contact list for a contract (opened from the
+// Overview's Key contacts, in a drawer): everyone on the contract from both
+// organizations, with the live page's columns (full name,
+// organization, write permission, contact role, email, work phone) and its
+// Notifications control.
+//
+// bcn-lego-checked: the table is the shared cbf-overview table (no table lego in
+// ecology); the Notifications control is esa-button. Beacon is not on this machine.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import './cbf-overview.css';
+import { OVERVIEW } from '../../data/contract-overview.mjs';
+
+interface Props {
+  contract: string;
+}
+const { contract } = Astro.props;
+const { contacts } = (OVERVIEW as any)[contract];
+---
+<table class="cbf-summary-table">
+  <thead>
+    <tr><th>Full name</th><th>Organization</th><th>Write permission</th><th>Contact role</th><th>Email</th><th>Work phone</th></tr>
+  </thead>
+  <tbody>
+    {contacts.map((p: any) => (
+      <tr>
+        <td>{p.name}</td>
+        <td>{p.org}</td>
+        <td>{p.write ? 'Yes' : 'No'}</td>
+        <td>{p.role}</td>
+        <td><a href={`mailto:${p.email}`}>{p.email}</a></td>
+        <td class="is-nowrap">{p.phone}</td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+<div class="cbf-contacts__after">
+  <span data-out-of-scope="Contact notifications">
+    <EsaButton variant="secondary" appearance="outline" size="sm">Notifications</EsaButton>
+  </span>
+</div>
+
+<style>
+  .cbf-contacts__after {
+    margin-block-start: var(--spacing-400);
+  }
+</style>

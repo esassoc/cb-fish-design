@@ -17,6 +17,10 @@
 // no equivalent (prod apps don't ship demo switchers).
 import EsaBadge from '@esa/ecology/esa-badge.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+// The contract header's demo state (whose turn it is) — separate from the CR/CCR
+// state, which drives the editing rules on this page only.
+import CbfContractStateSwitch from '../contract-shell/cbf-contract-state-switch.astro';
+import CbfContractNavSwitch from '../contract-shell/cbf-contract-nav-switch.astro';
 ---
 <aside class="cbf-demo-controls" aria-label="Prototype settings">
   <div class="cbf-demo-controls__row">
@@ -30,6 +34,8 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     <div class="cbf-demo-controls__toggles">
       <esa-button-toggle data-demo-role label="Who is viewing" size="sm"></esa-button-toggle>
       <esa-button-toggle data-demo-award label="CR/CCR state" size="sm"></esa-button-toggle>
+      <CbfContractStateSwitch />
+      <CbfContractNavSwitch />
     </div>
   </div>
 

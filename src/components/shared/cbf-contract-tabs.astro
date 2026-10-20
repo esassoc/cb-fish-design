@@ -1,6 +1,6 @@
 ---
-// cbf-contract-tabs — the CBFish contract tab strip (Summary / SOW / WE Budgets /
-// LIB / …). Shared chrome: any contract SUB-PAGE in this spoke mounts it directly
+// cbf-contract-tabs — the CBFish contract tab strip (Overview / Scope / Budget / …,
+// level 1 of the structure in src/data/contract-shell.mjs). Shared chrome: any contract SUB-PAGE in this spoke mounts it directly
 // under the breadcrumb so the page reads as a native cbfish tab rather than a form
 // floating on its own screen. It is the strip ONLY — it renders no panels; the page
 // renders its own content beneath it (which is also why every contract page can keep
@@ -12,10 +12,15 @@
 // collapses to its own spacing-400 top pad, which reads as the gap between the strip
 // and the page content — so there is no need to fight it.
 //
-// Prototype fidelity: the real app has ~11 contract tabs and we only ever build one
-// or two of them. Rather than DISABLE the rest (which would read as "broken for this
-// contract" and kill the keyboard roving), every tab stays clickable; selecting a tab
-// that isn't `live` snaps the selection back and explains itself in a snackbar.
+// Prototype fidelity: a contract has eight tabs and we only ever build one or two of
+// them. Rather than DISABLE the rest (which would read as "broken for this contract"
+// and kill the keyboard roving), every tab stays clickable. A tab with an `href` is a
+// built page and navigates; a `live` tab is a panel on this page and is announced;
+// anything else snaps the selection back and explains itself in a snackbar.
+//
+// A tab's `badge` is the count of things waiting on the VIEWER there — never an
+// inventory count. cbf-contract-shell re-sets the badges when the role or the demo
+// state changes (it assigns the element's `tabs` property).
 //
 // bcn-lego-checked: the tab strip IS esa-tab-layout — nothing here re-implements a
 // tab bar. Checked the ecology catalog for a strip-only/nav variant (esa-tab-layout is
@@ -26,15 +31,23 @@
 interface Tab {
   key: string;
   label: string;
-  /** True when the tab exists in this prototype. Everything else toasts + snaps back. */
+  /** True when the tab is a panel on this page. */
   live?: boolean;
+  /** A built page for this tab. Selecting the tab navigates there. */
+  href?: string;
+  /** Items waiting on the viewer in this tab. */
+  badge?: number;
 }
 interface Props {
   tabs: Tab[];
   /** The `key` of the selected tab. */
   active: string;
+  /** 'underline' for the sections, 'segmented' for a section's pages. */
+  appearance?: 'underline' | 'segmented';
+  /** Accessible name for the strip. */
+  label?: string;
 }
-const { tabs, active } = Astro.props;
+const { tabs, active, appearance = 'underline', label } = Astro.props;
 
 const activeIndex = Math.max(
   0,
@@ -42,16 +55,17 @@ const activeIndex = Math.max(
 );
 // esa-tab-layout parses its `tabs` attribute as JSON (property type Array), so the
 // strip is server-rendered complete — the script below only adds the inert-tab rule.
-const tabDefs = tabs.map((t) => ({ label: t.label }));
+const tabDefs = tabs.map((t) => ({ label: t.label, ...(t.badge ? { badge: t.badge } : {}) }));
 ---
 
 <esa-tab-layout
   class="cbf-contract-tabs"
   size="md"
-  appearance="underline"
+  appearance={appearance}
+  aria-label={label}
   active-index={activeIndex}
   tabs={JSON.stringify(tabDefs)}
-  data-contract-tabs={JSON.stringify(tabs.map((t) => ({ key: t.key, label: t.label, live: !!t.live })))}
+  data-contract-tabs={JSON.stringify(tabs.map((t) => ({ key: t.key, label: t.label, live: !!t.live, href: t.href ?? '' })))}
   data-active-index={activeIndex}
 ></esa-tab-layout>
 
@@ -76,7 +90,7 @@ const tabDefs = tabs.map((t) => ({ label: t.label }));
   import '@esa/ecology/esa-tab-layout';
 
   type TabEl = HTMLElement & { activeIndex: number };
-  type TabMeta = { key: string; label: string; live: boolean };
+  type TabMeta = { key: string; label: string; live: boolean; href: string };
 
   function setup(root: HTMLElement): void {
     const el = root as TabEl;
@@ -86,7 +100,8 @@ const tabDefs = tabs.map((t) => ({ label: t.label }));
     } catch {
       /* malformed data → every tab is treated as inert, which fails safe */
     }
-    const activeIndex = Number(root.dataset.activeIndex ?? 0) || 0;
+    // The page's own tab. Panel pages move it as panels change, so it's not a const.
+    let activeIndex = Number(root.dataset.activeIndex ?? 0) || 0;
 
     const toast = (msg: string): void => {
       const sb = document.querySelector('[data-snackbar]') as any;
@@ -98,6 +113,10 @@ const tabDefs = tabs.map((t) => ({ label: t.label }));
       // Re-clicking the page's own tab is a no-op, never a "not in this prototype" toast.
       if (index === activeIndex) return;
       const tab = meta[index];
+      if (tab?.href) {
+        window.location.href = tab.href;
+        return;
+      }
       if (!tab || !tab.live) {
         // Snap the selection back to the page's own tab — clicking (or arrowing onto)
         // a tab we didn't build must never leave the strip pointing somewhere else.
@@ -107,11 +126,26 @@ const tabDefs = tabs.map((t) => ({ label: t.label }));
       }
       // A live sibling tab: let the selection stand and tell the page, which owns
       // whatever it means to switch (navigate, swap a section, …).
+      activeIndex = index;
       root.dispatchEvent(
         new CustomEvent('cbf:contract-tab-change', {
           detail: { key: tab.key, index },
           bubbles: true,
         }),
+      );
+    });
+
+    // Selecting a panel tab from elsewhere (the Go to menu, a header action):
+    // `cbf:contract-tab-select` { key } moves the strip and announces the change
+    // exactly as a click would, so the page has one event to listen to.
+    document.addEventListener('cbf:contract-tab-select', (e) => {
+      const key = (e as CustomEvent<{ key: string }>).detail?.key;
+      const index = meta.findIndex((t) => t.key === key);
+      if (index < 0 || !meta[index].live) return;
+      activeIndex = index;
+      el.activeIndex = index;
+      root.dispatchEvent(
+        new CustomEvent('cbf:contract-tab-change', { detail: { key, index }, bubbles: true }),
       );
     });
   }

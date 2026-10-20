@@ -80,6 +80,8 @@ const { note = '', label = 'Prototype controls' } = Astro.props;
      finds the same control in the same place on every screen that carries it. */
   .cbf-proto-strip__actions {
     --justify: flex-end;
-    flex: none;
+    /* Shrinks so its devices wrap onto a second line instead of running off screen. */
+    flex: 0 1 auto;
+    min-inline-size: 0;
   }
 </style>

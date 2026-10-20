@@ -1,0 +1,367 @@
+---
+/*
+ * cbf-libmvp-indirect-config — the indirect block of the v1 Line Item Budget
+ * entry screen (/lib-mvp). A FORK of cbf-lib-indirect-config (behind /lib-entry),
+ * cut to docs/lib-mvp-scope.md: ONE CO-approved rate and its base.
+ *
+ * WHAT IT IS
+ * A CONFIGURATION SURFACE, not a cost line — which is why it is its own component
+ * rather than a row in the cost grid. An indirect rate is never just a number. It
+ * carries four things that all have to agree:
+ *   1. the rate itself,
+ *   2. the reference document that authorizes it (the NICRA or equivalent),
+ *   3. the period it is effective for, and
+ *   4. the base it is charged on — which decides which cost groups it reaches.
+ *
+ * WHY IT PICKS INSTEAD OF TYPING
+ * None of the four is the vendor's to type. CBFish keeps every organization's
+ * rates under Data management → Vendor indirect rates, each with a status, its
+ * effective dates and its reference document, approved by the CO. So this block
+ * PICKS one record and shows its facts read-only. Only usable records are offered
+ * (active, approved, pending — `pickableRates`); a pending rate passes the submit
+ * gate and is noted for the COR by the rail's advisories.
+ *
+ * WHY THE SCOPE IS NOT EDITABLE IN V1
+ * The record states its base, and the base IS the scope (`withResolvedIndirect`
+ * derives `appliesTo`). So the block shows what the rate reaches, and what it
+ * leaves out, in words — capital equipment and rent fall outside MTDC, and that
+ * is exactly the line a reviewer checks. Under MTDC only the first $25,000 of
+ * each subaward counts, and the block says so.
+ *
+ * WHAT V1 LEAVES OUT (vs the /lib-entry block)
+ * Picking several rates with month-by-month coverage and a blended rate (v2), an
+ * editable scope and its deviation notes, the configuration drawer with its
+ * live base × rate preview, and the dual-rate note. One rate fits inline.
+ *
+ * WHO MAY CHANGE IT
+ * The vendor, while the budget is a draft or returned (`vendorCanEdit`). With the
+ * COR, approved, or in the COR lens it is read-only: the picker goes away and the
+ * facts stay.
+ *
+ * EVENT CONTRACT (on `document`)
+ *   dispatch  EVENTS.indirect   detail: { config: { rateId } }
+ *             What the LIB stores is the pick; every other fact is derived by
+ *             `withResolvedIndirect`, so a listener resolves it the same way.
+ *             Fired ONCE on mount (after the frame, so sibling listeners are
+ *             registered) and after every change of pick.
+ *   listen    EVENTS.review     detail: { review }   → toggles read-only
+ *   listen    cbf-role:change                         → toggles read-only
+ *
+ * bcn-lego-checked: every control is a lego — the one-of-N rate pick =
+ * esa-radio-group (single choice is its exact job; esa-select was checked and
+ * passed over because it hides the three or four alternatives behind a click, and
+ * seeing them side by side is how a vendor checks they have the current one),
+ * status = esa-badge, the subaward cap note = esa-alert-box, the panel = esa-card.
+ * The only bespoke CSS is the facts list (a <dl> — ecology has no description-
+ * list lego, same finding as cbf-baselines-table and cbf-lib-pi-documents) and
+ * the one-line summary strip. Beacon is not cloned on this machine.
+ */
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import {
+  indirectConfig,
+  indirectScopes,
+  pickableRates,
+  RATE_STATUS,
+  INDIRECT_BASES,
+  SUBAWARD_CAP,
+  usd,
+  pct,
+} from '../../data/lib-mvp.mjs';
+
+interface Props {
+  /** The starting configuration. Defaults to the data module's `indirectConfig`. */
+  config?: any;
+  /** Heading on the block. */
+  heading?: string;
+}
+
+const { config = indirectConfig, heading = 'Indirect rate' } = Astro.props;
+
+const base = INDIRECT_BASES[config.base];
+const rates = pickableRates();
+const rateOption = (r: any) => ({
+  value: r.id,
+  label: `${r.label} · ${pct(r.rate)} of ${INDIRECT_BASES[r.base]?.short ?? 'its base'}`,
+});
+const scopeText = (keys: string[]) =>
+  indirectScopes
+    .filter((s) => keys.includes(s.key))
+    .map((s) => (s.parent ? `${s.label.toLowerCase()} (${s.parentLabel.toLowerCase()})` : s.label.toLowerCase()))
+    .join(', ');
+const reached = config.appliesTo ?? [];
+const left = indirectScopes.map((s) => s.key).filter((k) => !reached.includes(k));
+const effective = config.rateId
+  ? `${config.effectiveStart}–${config.effectiveEnd || 'no end date'}`
+  : '';
+/* Only usable statuses can be picked, so only they need a badge. */
+const statusKeys = Object.keys(RATE_STATUS).filter((k) => (RATE_STATUS as any)[k].usable);
+---
+
+<section
+  class="cbf-libmvp-ic"
+  data-libmvp-ic
+  data-libmvp-surface
+  data-config={JSON.stringify({ rateId: config.rateId ?? null })}
+  aria-label={heading}
+>
+  <EsaCard variant="outlined" padding="compact">
+    <div class="stack" data-gap="md">
+      {/* ── One line: WHICH rate, from WHICH agreement, on WHAT base ── */}
+      <div class="cbf-libmvp-ic__strip repel">
+        <p class="cbf-libmvp-ic__authority typography-body-md">
+          <span class="cbf-libmvp-ic__label">{heading}</span>
+          <strong data-ic-rate>{config.rateId ? pct(config.rate) : '—'}</strong>
+          <span class="cbf-libmvp-ic__sep" aria-hidden="true">·</span>
+          <span data-ic-name>{config.label || 'No indirect rate selected'}</span>
+          <span data-ic-base-wrap hidden={!base}>
+            <span class="cbf-libmvp-ic__sep" aria-hidden="true">·</span>
+            <span class="cbf-libmvp-ic__meta">on <span data-ic-base>{base?.short ?? ''}</span></span>
+          </span>
+        </p>
+        <span class="cbf-libmvp-ic__status">
+          {statusKeys.map((k) => (
+            <span data-ic-status={k} hidden={config.status !== k}>
+              <EsaBadge value={(RATE_STATUS as any)[k].label} variant={(RATE_STATUS as any)[k].variant} size="sm" />
+            </span>
+          ))}
+        </span>
+      </div>
+
+      <div class="cbf-libmvp-ic__body grid" data-gap="lg">
+        {/* ── The pick — the vendor's lens only, while they can edit ── */}
+        <div class="stack" data-gap="xs" data-ic-picker>
+          <esa-radio-group
+            data-ic-pick
+            size="md"
+            label="Approved rate"
+            options={JSON.stringify(rates.map(rateOption))}
+            value={config.rateId ?? undefined}
+          ></esa-radio-group>
+          <p class="cbf-libmvp-ic__hint typography-body-sm">
+            Rates, their agreements and dates are managed under Data management → Vendor indirect rates.
+          </p>
+        </div>
+
+        {/* ── The facts of the picked record, always read-only ── */}
+        <dl class="cbf-libmvp-ic__facts stack" data-gap="xs" data-ic-facts hidden={!config.rateId}>
+          <div>
+            <dt class="typography-body-sm">Effective</dt>
+            <dd class="typography-body-sm" data-ic-effective>{effective}</dd>
+          </div>
+          <div>
+            <dt class="typography-body-sm">Reference document</dt>
+            <dd class="typography-body-sm" data-ic-doc>{config.referenceDoc}</dd>
+          </div>
+          <div>
+            <dt class="typography-body-sm">Base</dt>
+            <dd class="typography-body-sm" data-ic-base-long>{base ? `${base.label} (${base.short})` : ''}</dd>
+          </div>
+          <div>
+            <dt class="typography-body-sm">Applied to</dt>
+            <dd class="typography-body-sm" data-ic-reaches>{scopeText(reached) || 'Nothing'}</dd>
+          </div>
+          <div data-ic-left-wrap hidden={left.length === 0}>
+            <dt class="typography-body-sm">Not applied to</dt>
+            <dd class="typography-body-sm" data-ic-left>{scopeText(left)}</dd>
+          </div>
+        </dl>
+
+        <p class="cbf-libmvp-ic__hint typography-body-sm" data-ic-empty hidden={!!config.rateId}>
+          Select the approved rate this budget is charged at. Its base sets what the rate applies to.
+        </p>
+      </div>
+
+      <span data-ic-cap hidden={!config.subawardCap}>
+        <EsaAlertBox variant="info" title="Subaward cap">
+          Under MTDC, only the first {usd(SUBAWARD_CAP)} of each subaward counts toward the indirect base.
+        </EsaAlertBox>
+      </span>
+
+      <p class="cbf-libmvp-ic__hint typography-body-sm" data-ic-locked hidden>
+        Read-only — <span data-ic-locked-why>the budget is with the COR</span>.
+      </p>
+    </div>
+  </EsaCard>
+</section>
+
+<script>
+  import '@esa/ecology/esa-radio-group';
+  import {
+    EVENTS,
+    indirectScopes,
+    INDIRECT_BASES,
+    RATE_STATUS,
+    pickIndirectRate,
+    withResolvedIndirect,
+    pct,
+  } from '../../data/lib-mvp.mjs';
+  import { isBlank, blankConfig } from '../../data/lib-mvp-demo.mjs';
+  import { loadReview, vendorCanEdit } from '../../data/lib-mvp-review.mjs';
+
+  const root = document.querySelector<HTMLElement>('[data-libmvp-ic]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string) => root.querySelector<T>(sel);
+    const setText = (sel: string, text: string) => {
+      const el = $(sel);
+      if (el) el.textContent = text;
+    };
+    const show = (sel: string, on: boolean) => {
+      const el = $(sel);
+      if (el) el.hidden = !on;
+    };
+
+    /* The demo's "Clear all entries": nothing picked. */
+    const seeded = JSON.parse(root.dataset.config || '{}');
+    const config: any = withResolvedIndirect(isBlank() ? blankConfig() : { ...blankConfig(), rateId: seeded.rateId ?? null });
+    const pick = $<HTMLElement & { value: string | null }>('[data-ic-pick]');
+
+    const scopeText = (keys: string[]) =>
+      indirectScopes
+        .filter((s: any) => keys.includes(s.key))
+        .map((s: any) => (s.parent ? `${s.label.toLowerCase()} (${s.parentLabel.toLowerCase()})` : s.label.toLowerCase()))
+        .join(', ');
+
+    const fire = () => {
+      document.dispatchEvent(
+        new CustomEvent(EVENTS.indirect, { detail: { config: { rateId: config.rateId ?? null } } }),
+      );
+    };
+
+    const render = () => {
+      const picked = !!config.rateId;
+      const base = (INDIRECT_BASES as any)[config.base];
+      setText('[data-ic-rate]', picked ? pct(config.rate) : '—');
+      setText('[data-ic-name]', config.label || 'No indirect rate selected');
+      show('[data-ic-base-wrap]', !!base);
+      setText('[data-ic-base]', base?.short ?? '');
+      Object.keys(RATE_STATUS).forEach((k) => show(`[data-ic-status="${k}"]`, config.status === k));
+
+      show('[data-ic-facts]', picked);
+      show('[data-ic-empty]', !picked);
+      setText('[data-ic-effective]', picked ? `${config.effectiveStart}–${config.effectiveEnd || 'no end date'}` : '');
+      setText('[data-ic-doc]', config.referenceDoc);
+      setText('[data-ic-base-long]', base ? `${base.label} (${base.short})` : '');
+      const left = indirectScopes.map((s: any) => s.key).filter((k: string) => !config.appliesTo.includes(k));
+      setText('[data-ic-reaches]', scopeText(config.appliesTo) || 'Nothing');
+      setText('[data-ic-left]', scopeText(left));
+      show('[data-ic-left-wrap]', picked && left.length > 0);
+      show('[data-ic-cap]', !!config.subawardCap);
+    };
+
+    root.addEventListener('change', (e: Event) => {
+      const el = e.target as HTMLElement & { value?: string | null };
+      if (!el?.dataset || !('icPick' in el.dataset)) return;
+      pickIndirectRate(config, el.value || null);
+      render();
+      fire();
+    });
+
+    // ── Read-only: the COR lens, or a budget the vendor can't edit right now ──
+    let review: any = loadReview();
+    const applyLock = () => {
+      const cor = document.documentElement.dataset.cbfRole === 'cor';
+      const editable = !cor && vendorCanEdit(review);
+      show('[data-ic-picker]', editable);
+      show('[data-ic-locked]', !editable);
+      setText(
+        '[data-ic-locked-why]',
+        cor
+          ? 'the vendor selects the rate'
+          : review.status === 'approved'
+            ? 'the budget is approved and locked'
+            : 'the budget is with the COR for review',
+      );
+      setText(
+        '[data-ic-empty]',
+        editable
+          ? 'Select the approved rate this budget is charged at. Its base sets what the rate applies to.'
+          : 'No indirect rate selected yet.',
+      );
+      root.dataset.readonly = String(!editable);
+    };
+    document.addEventListener(EVENTS.review, (e: Event) => {
+      const next = (e as CustomEvent).detail?.review;
+      if (!next) return;
+      review = next;
+      applyLock();
+    });
+    document.addEventListener('cbf-role:change', applyLock);
+
+    if (pick) pick.value = config.rateId ?? null;
+    applyLock();
+    render();
+    requestAnimationFrame(fire);
+  }
+</script>
+
+<style>
+  /* An author `display` (.stack, .grid) beats the UA's `[hidden]` rule, and every
+     show/hide here is the hidden attribute — so restate it, scoped to this block. */
+  [hidden] {
+    display: none !important;
+  }
+
+  /* ── The one-line summary ── */
+  .cbf-libmvp-ic__strip {
+    --align: center;
+    --gap: var(--spacing-400);
+  }
+  .cbf-libmvp-ic__authority {
+    margin: 0;
+    color: var(--color-content-default);
+  }
+  .cbf-libmvp-ic__label {
+    font-weight: var(--typography-font-weight-semibold);
+    margin-inline-end: var(--spacing-200);
+  }
+  .cbf-libmvp-ic__authority strong {
+    font-weight: var(--typography-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-libmvp-ic__meta {
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-libmvp-ic__sep {
+    color: var(--color-content-default-tertiary);
+    padding-inline: var(--spacing-100);
+  }
+
+  /* Picker and facts side by side when there is room, stacked when not. */
+  .cbf-libmvp-ic__body {
+    --grid-min: 20rem;
+    align-items: start;
+  }
+
+  .cbf-libmvp-ic__hint {
+    margin: 0;
+    color: var(--color-content-default-secondary);
+    max-inline-size: 68ch;
+  }
+
+  /* ── The facts list — ecology has no description-list lego ── */
+  .cbf-libmvp-ic__facts {
+    margin: 0;
+  }
+  .cbf-libmvp-ic__facts > div {
+    display: grid;
+    grid-template-columns: 10rem 1fr;
+    gap: var(--spacing-300);
+  }
+  .cbf-libmvp-ic__facts dt {
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-libmvp-ic__facts dd {
+    margin: 0;
+    color: var(--color-content-default);
+  }
+  /* The first letter of the scope lists is lowercase in the data join; the list
+     reads as a sentence fragment, so capitalize only its first word. */
+  .cbf-libmvp-ic__facts [data-ic-reaches]::first-letter,
+  .cbf-libmvp-ic__facts [data-ic-left]::first-letter {
+    text-transform: uppercase;
+  }
+</style>

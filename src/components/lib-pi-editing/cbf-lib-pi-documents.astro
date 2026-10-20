@@ -13,7 +13,7 @@
 // therefore semantic <table>s that faithfully port the real CBFish tables from
 // the CBF-8204 screenshots. The email "envelope" card is likewise bespoke — no
 // esa-* models a rendered email preview, and Beacon is not on this machine.
-// Everything else IS a lego: tabs = esa-tab-layout; row menus = esa-dropdown-menu
+// Everything else IS a lego: tabs = the contract shell's strip; row menus = esa-dropdown-menu
 // (trigger esa-icon-button); dialogs = esa-dialog; banners/warnings =
 // esa-alert-box; replace-upload = esa-file-upload; Title/Description =
 // esa-text-field/esa-textarea; SOW revision = esa-select; buttons = esa-button;
@@ -21,7 +21,7 @@
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaIconButton from '@esa/ecology/esa-button.astro';
-import CbfContractSummary from './cbf-contract-summary.astro';
+import CbfContractOverview from '../contract-shell/cbf-contract-overview.astro';
 import {
   contract,
   documents,
@@ -35,17 +35,17 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
 <section class="cbf-lipd stack" data-gap="md" data-lipd>
   <!-- The editing-state banner lives in the Prototype settings bar (cbf-doc-demo-controls),
        not here — LIB/PI editing is a rare action and shouldn't occupy the contract. -->
-  <!-- The full contract tab strip is built by the script from CONTRACT_TABS; only
-       Documents & Workflow are enabled, and the two panels below are re-slotted to
-       their live index (it shifts when a contract manager loses the COR-only tabs). -->
-  <esa-tab-layout data-lipd-tabs active-index="0" size="md" appearance="underline">
-    <!-- ═══════════════ Summary (enabled — default) ═══════════════ -->
-    <div data-panel="summary" slot="panel-0" class="cbf-lipd__panel stack" data-gap="md">
-      <CbfContractSummary />
+  <!-- The tab strip is the contract shell's (cbf-contract-shell). These three are
+       its Overview, Changes and approvals, and Documents tabs as in-page panels:
+       the script shows the one the strip selects (cbf:contract-tab-change). -->
+  <div data-lipd-panels>
+    <!-- ═══════════════ Overview (default) ═══════════════ -->
+    <div data-panel="summary" class="cbf-lipd__panel stack" data-gap="md">
+      <CbfContractOverview contract="pi" />
     </div>
 
     <!-- ═══════════════ Documents (enabled) ═══════════════ -->
-    <div data-panel="documents" slot="panel-9" class="cbf-lipd__panel stack" data-gap="md">
+    <div data-panel="documents" class="cbf-lipd__panel stack" data-gap="md" hidden>
       <p class="cbf-lipd__intro">
         Store and manage this contract's attachments. Replacing a file the Contracting Officer's
         Representative (COR) approved clears that approval and emails the COR automatically.
@@ -105,8 +105,8 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
       </div>
     </div>
 
-    <!-- ═══════════════ Workflow (enabled) ═══════════════ -->
-    <div data-panel="workflow" slot="panel-5" class="cbf-lipd__panel stack" data-gap="md">
+    <!-- ═══════════════ Changes and approvals › Workflow ═══════════════ -->
+    <div data-panel="workflow" class="cbf-lipd__panel stack" data-gap="md" hidden>
       <div class="cbf-lipd__status repel">
         <div class="cbf-lipd__status-facts">
           <span>Contract status: <strong>Issued</strong></span>
@@ -147,7 +147,7 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
         </table>
       </div>
     </div>
-  </esa-tab-layout>
+  </div>
 
   <!-- ── Edit-properties dialog (the real modal, with the supportive fixes) ── -->
   <esa-dialog data-edit-dialog size="lg" heading="Edit attachment properties">
@@ -271,7 +271,6 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
 </section>
 
 <script>
-  import '@esa/ecology/esa-tab-layout';
   import '@esa/ecology/esa-dropdown-menu';
   import '@esa/ecology/esa-dialog';
   import '@esa/ecology/esa-select';
@@ -289,7 +288,6 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     APPROVAL_COLS,
     CHECK_SVG,
     editRule,
-    contractTabsFor,
     WORKFLOW_ROWS,
     REV1_APPROVALS,
     SOW_REV2_APPROVALS,
@@ -369,52 +367,30 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
     if (roleToggle) {
       roleToggle.options = ROLES.map((r: any) => ({ label: r.label, value: r.value }));
       roleToggle.value = state.role;
-      // Role also gates which contract tabs are visible, so rebuild the strip.
-      roleToggle.addEventListener('change', () => { state.role = roleToggle.value; buildTabs(); update(); });
+      roleToggle.addEventListener('change', () => { state.role = roleToggle.value; announceRole(); update(); });
     }
 
-    // ── Tabs — the full contract strip, mirroring the live app ───────────────
-    // Only Documents & Workflow are enabled; the rest render disabled for context.
-    // Contract managers don't see the COR-only tabs, so the visible set (and the two
-    // live panels' slot indices) shift with the role — rebuild on every change.
-    const tabsEl = $('[data-lipd-tabs]', root) as any;
-    const summaryPanel = $('[data-panel="summary"]', root)!;
-    const docPanel = $('[data-panel="documents"]', root)!;
-    const wfPanel = $('[data-panel="workflow"]', root)!;
-    let activeKey = 'summary';
-
-    // Keep the trailing breadcrumb in step with the selected tab. (The current crumb
-    // is the last .esa-breadcrumbs__item rendered by the breadcrumbs lego.)
-    const CRUMB_LABEL: Record<string, string> = {
-      summary: 'Contract summary',
-      workflow: 'Workflow',
-      documents: 'Documents',
-    };
-    // Update ONLY the trailing crumb. The breadcrumbs lego marks every href-less
-    // item as .esa-breadcrumbs__current, so target the last crumb explicitly rather
-    // than the first match (which would clobber "Projects").
-    const syncCrumb = () => {
-      const items = document.querySelectorAll('.esa-breadcrumbs__item');
-      const cur = items[items.length - 1]?.querySelector('.esa-breadcrumbs__current');
-      if (cur && CRUMB_LABEL[activeKey]) cur.textContent = CRUMB_LABEL[activeKey];
-    };
-
-    const buildTabs = () => {
-      const vis = contractTabsFor(state.role);
-      tabsEl.tabs = vis.map((t: any) => ({ label: t.label, disabled: !t.panel }));
-      const idx = (key: string) => vis.findIndex((t: any) => t.key === key);
-      summaryPanel.setAttribute('slot', `panel-${idx('summary')}`);
-      docPanel.setAttribute('slot', `panel-${idx('documents')}`);
-      wfPanel.setAttribute('slot', `panel-${idx('workflow')}`);
-      // Keep whichever enabled tab was active selected across the rebuild.
-      tabsEl.activeIndex = vis.findIndex((t: any) => t.key === activeKey);
-      syncCrumb();
-    };
-    tabsEl.addEventListener('tabchange', (e: any) => {
-      const t = contractTabsFor(state.role)[e.detail.index];
-      if (t?.panel) { activeKey = t.key; syncCrumb(); }
+    // ── Panels — driven by the contract shell's tab strip ────────────────────
+    // The shell owns the strip and the crumb; this only shows the panel for the
+    // selected tab. Tab keys are the shell's (src/data/contract-shell.mjs).
+    const PANEL_FOR: Record<string, string> = { overview: 'summary', changes: 'workflow', documents: 'documents' };
+    const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-panel]'));
+    document.addEventListener('cbf:contract-tab-change', (e: Event) => {
+      const panel = PANEL_FOR[(e as CustomEvent<{ key: string }>).detail?.key];
+      if (!panel) return;
+      panels.forEach((p) => (p.hidden = p.dataset.panel !== panel));
     });
-    buildTabs();
+
+    // ── The shell's role lens ────────────────────────────────────────────────
+    // The shell reads the viewer from <html data-cbf-role> (vendor | cor). The
+    // contract manager is the vendor's side; QC and the F&W approver are BPA, so
+    // they see the BPA side of the header (and the BPA-only pages).
+    const announceRole = () => {
+      const lens = state.role === 'cm' ? 'vendor' : 'cor';
+      document.documentElement.dataset.cbfRole = lens;
+      document.dispatchEvent(new CustomEvent('cbf-role:change', { detail: { role: lens } }));
+    };
+    announceRole();
 
     // ── SOW revision select — drives the approval grid + history per revision ──
     // rev1 = original requisition (locked); rev2 = the CCR (live, editable).
@@ -779,6 +755,8 @@ const typeLabel = (d: (typeof documents)[number]) => (d.subtype ? `${d.type}: ${
 
 <style>
   .cbf-lipd__panel { padding-block-start: var(--spacing-400); }
+  /* .stack sets display:flex, which would beat the UA's [hidden] rule. */
+  .cbf-lipd__panel[hidden] { display: none; }
   .cbf-lipd__intro { margin: 0; color: var(--color-content-default-secondary); max-width: 90ch; }
   .cbf-lipd__toolbar { align-items: center; }
   /* Wide workflow tables scroll horizontally. NB: overflow-x:auto forces overflow-y

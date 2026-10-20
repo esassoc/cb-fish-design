@@ -918,22 +918,6 @@ export const indirectConfig = {
   appliesTo: [],
 };
 
-/**
- * The contract tab strip. Only LIB is live in this prototype — the rest are real
- * destinations in cbfish that this screen deliberately sits inside, so the LIB
- * form reads as a native contract tab rather than a form floating on its own page.
- */
-export const contractTabs = [
-  { key: 'summary', label: 'Summary' },
-  { key: 'sow', label: 'SOW' },
-  { key: 'we-budgets', label: 'WE budgets' },
-  { key: 'lib', label: 'LIB', live: true },
-  { key: 'property-inventory', label: 'Property Inventory' },
-  { key: 'status-reports', label: 'Status reports' },
-  { key: 'workflow', label: 'Workflow' },
-  { key: 'documents', label: 'Documents' },
-];
-
 /** Work elements on this contract's SOW. Every line still needs its WE split. */
 export const workElements = [
   { id: 'A', code: '119', title: 'Manage and Administer Projects' },

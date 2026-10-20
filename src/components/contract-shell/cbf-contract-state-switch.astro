@@ -1,0 +1,61 @@
+---
+/*
+ * cbf-contract-state-switch — PROTOTYPE device: which situation the contract is in.
+ *
+ * The shell's header changes with the contract's state (who the next action is
+ * assigned to, what's due, which flags show), and in a prototype there is no
+ * workflow to drive it. This picks one of the five demo states in
+ * src/data/contract-shell.mjs. Paired with the role lens it covers both sides of
+ * each: a vendor action reads "Assigned to you" to the vendor and "Assigned to
+ * <vendor>" to the COR.
+ *
+ * The state is one attribute on the document element, `data-contract-state`, set
+ * before first paint by cbf-contract-shell's inline script; every state's header is
+ * server-rendered and CSS reveals the live one, so switching is instant.
+ *
+ * EVENT CONTRACT (on `document`)
+ *   dispatch  cbf-contract-state:change   detail: { state }
+ *
+ * bcn-lego-checked: the control IS esa-button-toggle (the one-of-N lego, same as
+ * cbf-role-switch). It sits inside cbf-prototype-strip (or the /lib-pi-editing
+ * settings bar), which owns the "this isn't CBFish" frame. Beacon is not on this
+ * machine.
+ *
+ * The options travel as a data attribute rather than a client import: the data
+ * module pulls in the LIB pricing engine, which /lib-pi-editing has no use for.
+ */
+import { STATES, STATE_KEY, DEFAULT_STATE } from '../../data/contract-shell.mjs';
+
+const config = {
+  options: STATES.map((s) => ({ label: s.label, value: s.key })),
+  key: STATE_KEY,
+  fallback: DEFAULT_STATE,
+};
+---
+<esa-button-toggle
+  class="cbf-contract-state-switch"
+  size="sm"
+  label="Contract state"
+  data-contract-state-control={JSON.stringify(config)}
+></esa-button-toggle>
+
+<script>
+  import '@esa/ecology/esa-button-toggle';
+
+  document.querySelectorAll<HTMLElement & { options: any[]; value: string }>('[data-contract-state-control]').forEach((control) => {
+    const { options, key, fallback } = JSON.parse(control.dataset.contractStateControl ?? '{}');
+    control.options = options;
+    control.value = document.documentElement.dataset.contractState ?? fallback;
+
+    control.addEventListener('change', () => {
+      const state = control.value;
+      document.documentElement.dataset.contractState = state;
+      try {
+        window.sessionStorage?.setItem(key, state);
+      } catch {
+        /* private mode — the switch still works for this page view */
+      }
+      document.dispatchEvent(new CustomEvent('cbf-contract-state:change', { detail: { state } }));
+    });
+  });
+</script>

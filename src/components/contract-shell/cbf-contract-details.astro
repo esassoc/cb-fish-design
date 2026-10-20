@@ -1,0 +1,75 @@
+---
+// cbf-contract-details — the Overview rail's "Contract details": the facts people
+// actually use to place a contract (period, value, status, type, pricing method,
+// renewal, work order). The live page gives all 25+ Basics fields equal weight; the
+// full list (and the map) is one click away, in a drawer (cbf-contract-basics).
+//
+// The drawer is opened by the shared [data-cs-drawer-open] wiring in
+// cbf-contract-people, which always renders beside this on the Overview.
+//
+// bcn-lego-checked: a stacked <dl> with type roles (no key-value lego in ecology);
+// the full list is cbf-contract-basics in esa-side-dialog; the trigger is
+// esa-button. Beacon is not on this machine. CSS: the stacked dl.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import CbfContractBasics from './cbf-contract-basics.astro';
+import { CONTRACTS } from '../../data/contract-shell.mjs';
+import './cbf-overview.css';
+
+interface Props {
+  contract: string;
+}
+const { contract } = Astro.props;
+const c = (CONTRACTS as any)[contract];
+const s = c.summary;
+const facts = [
+  { label: 'Period of performance', value: `${s.startDate} – ${s.endDate}` },
+  { label: 'Current contract value', value: s.currentValue },
+  { label: 'Contract status', value: s.status },
+  { label: 'Contract type', value: s.contractType },
+  { label: 'Pricing method', value: s.pricingMethod },
+  { label: 'Will be renewed', value: s.continuation.willBeRenewed },
+  { label: 'Work order task(s)', value: s.workOrderTasks },
+];
+---
+<section class="cbf-ov-section stack" data-gap="sm" id="contract-basics" aria-labelledby="cbf-ov-details">
+  <h2 id="cbf-ov-details" class="typography-heading-md">Contract details</h2>
+  <dl class="cbf-details">
+    {facts.map((x) => (
+      <div class="cbf-details__row">
+        <dt class="typography-label-sm">{x.label}</dt>
+        <dd class="typography-body-md">{x.value}</dd>
+      </div>
+    ))}
+  </dl>
+  <span data-cs-drawer-open="details">
+    <EsaButton variant="secondary" appearance="outline" size="sm">All contract details</EsaButton>
+  </span>
+
+  <esa-side-dialog position="right" size="lg" heading={`Contract ${c.number}`} data-cs-drawer="details">
+    <CbfContractBasics contract={contract} />
+  </esa-side-dialog>
+</section>
+
+<style>
+  /* The full list is a wide table / two-column fact list; the lego's 520px "lg"
+     cuts its columns off. Its public width hook, clamped to the viewport by the lego. */
+  [data-cs-drawer] {
+    --side-dialog-width-lg: 60rem;
+  }
+  .cbf-details {
+    margin: 0;
+  }
+  .cbf-details__row {
+    padding-block: var(--spacing-200);
+    border-block-end: 1px solid var(--color-border-default-subtle, var(--color-border-default));
+  }
+  .cbf-details__row:first-child {
+    padding-block-start: 0;
+  }
+  .cbf-details dt {
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-details dd {
+    margin: 0;
+  }
+</style>

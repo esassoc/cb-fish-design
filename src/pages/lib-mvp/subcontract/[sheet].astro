@@ -1,0 +1,79 @@
+---
+// /lib-mvp/subcontract/<sheet> — a subcontract's child Line Item Budget, v1
+// scope (docs/lib-mvp-scope.md → "Subcontracts"). A FORK of
+// /lib-entry/subcontract/<sheet>.
+//
+// A subcontract is one line on the contract's LIB; behind it is a child LIB,
+// entered on the SAME grid (cbf-libmvp-cost-table, handed this subcontract's
+// budget). Same sections less Subcontracts (one level deep), no indirect block.
+// The contract's line takes its amount from here, and the child is reviewed in
+// the contract's one review cycle.
+//
+// Thin assembler — the subcontractor's name, type and attached document, the
+// child's total and its issues are cbf-libmvp-subcontract-details; the budget
+// is cbf-libmvp-cost-table. The child's lines persist in sessionStorage under
+// `cbf-libmvp-lines:<sheet>` and its details under `cbf-libmvp-sheet:<sheet>`.
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import CbfPublicNav from '../../../components/shared/cbf-public-nav.astro';
+import CbfContractShell from '../../../components/contract-shell/cbf-contract-shell.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import CbfPrototypeStrip from '../../../components/shared/cbf-prototype-strip.astro';
+import CbfRoleSwitch from '../../../components/shared/cbf-role-switch.astro';
+import CbfLibmvpSubcontractDetails from '../../../components/lib-mvp/cbf-libmvp-subcontract-details.astro';
+import CbfLibmvpCostTable from '../../../components/lib-mvp/cbf-libmvp-cost-table.astro';
+import { subcontractSheets, costLines } from '../../../data/lib-mvp.mjs';
+import { ROLE_KEY } from '../../../data/lib-mvp-review.mjs';
+
+export function getStaticPaths() {
+  return Object.keys(subcontractSheets).map((sheet) => ({ params: { sheet } }));
+}
+
+const { sheet } = Astro.params as { sheet: string };
+const parent: any = costLines.find((l: any) => l.id === (subcontractSheets as any)[sheet]?.parentLine);
+const name = parent?.label || 'New subcontract';
+---
+<!-- manifest:
+  layout: esa-container > cbf-prototype-strip + cbf-contract-shell > stack(xl)
+  sections:
+    - nav                   -> cbf-public-nav                   (shared)
+    - prototype strip       -> cbf-prototype-strip              (shared — role lens only)
+    - role lens             -> cbf-role-switch                  (shared — vendor ⇄ BPA COR; roleKey = lib-mvp-review's)
+    - contract shell        -> cbf-contract-shell               (shared — breadcrumb + Go to, header, tabs; … › Line item budget › Subcontract)
+    - subcontract           -> cbf-libmvp-subcontract-details   (name, type, attached document, child total, issues, back link)
+    - subcontract budget    -> cbf-libmvp-cost-table            (budget=<sheet>)
+-->
+<BaseLayout title={`${name} — subcontract LIB — Columbia Basin Fish & Wildlife Program`}>
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <CbfPrototypeStrip note="A subcontract’s own budget, behind one line on the contract’s LIB.">
+        <CbfRoleSwitch roleKey={ROLE_KEY} />
+      </CbfPrototypeStrip>
+
+      <CbfContractShell contract="lib-mvp" tab="budget" child="lib" trail={[{ label: `Subcontract: ${name}` }]}>
+        <div class="stack" data-gap="xl">
+          <CbfLibmvpSubcontractDetails sheetId={sheet} />
+          <CbfLibmvpCostTable
+            budget={sheet}
+            heading="Subcontract budget"
+            lede="The contract’s sections, without Subcontracts. No indirect rate applies."
+          />
+        </div>
+      </CbfContractShell>
+    </EsaContainer>
+  </main>
+
+  <esa-snackbar-container data-snackbar></esa-snackbar-container>
+
+  <script>
+    import '@esa/ecology/esa-snackbar-container';
+  </script>
+</BaseLayout>
+
+<style>
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+  /* Same reason as /lib-mvp: the grid's popovers and add menus have to escape
+     the rounded panel. */
+  .cbf-page :global(.cbf-app-panel) { overflow: visible; }
+</style>

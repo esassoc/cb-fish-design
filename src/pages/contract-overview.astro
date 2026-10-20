@@ -1,0 +1,50 @@
+---
+// /contract-overview — the contract's Overview tab: the tasks on the contract,
+// then the Contract Summary (Basics, contacts, and the other sections). Same contract as /lib-entry
+// (CR-411206), inside the same cbf-contract-shell, so moving between Overview and
+// Budget › Line item budget shows the header holding still while the tab changes.
+//
+// The Overview is where the header's "N more tasks" and "View all tasks" land: the
+// header shows the single most urgent action; this lists all of them, for both
+// sides of the contract.
+//
+// No prototype controls here — those live on the LIB prototype (/lib-entry). This
+// page shows the vendor's view, in the contract state last picked there (the shell
+// reads it from the session; the default is the vendor's turn).
+//
+// Thin assembler — the shell owns the header, tabs and Go to; the Overview is the
+// same cbf-contract-overview /lib-pi-editing shows for its contract.
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import CbfContractShell from '../components/contract-shell/cbf-contract-shell.astro';
+import CbfContractOverview from '../components/contract-shell/cbf-contract-overview.astro';
+---
+<!-- manifest:
+  layout: esa-container > cbf-contract-shell
+  sections:
+    - nav             -> cbf-public-nav             (shared)
+    - contract shell  -> cbf-contract-shell         (shared — breadcrumb + Go to, header, tabs; Overview)
+    - overview        -> cbf-contract-overview      (shared with /lib-pi-editing — Tasks, Basics, contacts and the other summary sections)
+-->
+<BaseLayout title="Contract overview — Columbia Basin Fish &amp; Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <CbfContractShell contract="lib" tab="overview">
+        <CbfContractOverview contract="lib" />
+      </CbfContractShell>
+    </EsaContainer>
+  </main>
+
+  <esa-snackbar-container data-snackbar></esa-snackbar-container>
+
+  <script>
+    import '@esa/ecology/esa-snackbar-container';
+  </script>
+</BaseLayout>
+
+<style>
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+</style>

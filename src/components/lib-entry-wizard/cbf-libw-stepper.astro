@@ -88,7 +88,8 @@ const { steps, active = 0 } = Astro.props;
 
   .cbf-libwn {
     position: sticky;
-    top: 0;
+    /* Below the contract shell's sticky bar (cbf-contract-shell sets the height). */
+    top: var(--cbf-contract-bar-h, 0px);
     z-index: 2;
     padding-block: var(--spacing-300);
     background: var(--color-background-elevation-raised);

@@ -1,0 +1,60 @@
+/* cbf-overview — shared styles for the contract Overview's sections.
+
+   SECTIONS follow the vendor dashboard's rhythm (cbf-vendor-financial-outlook):
+   an h2 with a quiet caption or link on the right, content below, a rule
+   underneath. TABLES are the one table style every Overview table uses: a sunken
+   header row, subtle row rules, no vertical borders.
+
+   bcn-lego-checked: ecology has no section-header or table lego (checked the
+   catalog; esa-page-header is a PAGE title, and the spoke's other read-only tables
+   are plain semantic <table>s — see cbf-lib-pi-documents). Beacon is not on this
+   machine. */
+
+.cbf-ov-section {
+  padding-block-end: var(--spacing-600);
+  border-block-end: 1px solid var(--color-border-default);
+}
+.cbf-ov-section:last-child {
+  padding-block-end: 0;
+  border-block-end: 0;
+}
+.cbf-ov-section__head {
+  --align: baseline;
+  flex-wrap: wrap;
+}
+.cbf-ov-section__head h2,
+.cbf-ov-section__head h3 {
+  margin: 0;
+}
+.cbf-ov-section__caption {
+  color: var(--color-content-default-tertiary);
+}
+.cbf-ov-link {
+  color: var(--color-content-link);
+}
+
+.cbf-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.cbf-summary-table th,
+.cbf-summary-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: var(--spacing-200) var(--spacing-400);
+  border-bottom: 1px solid var(--color-border-default-subtle, var(--color-border-default));
+}
+.cbf-summary-table th {
+  background: var(--color-background-elevation-sunken, #f4f4f4);
+  font-weight: var(--typography-font-weight-semibold);
+}
+.cbf-summary-table .is-nowrap {
+  white-space: nowrap;
+}
+.cbf-summary-table .is-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.cbf-summary-table a {
+  color: var(--color-content-link);
+}

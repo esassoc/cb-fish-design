@@ -1,0 +1,566 @@
+---
+/*
+ * cbf-libmvp-review-panel — the COR's review console AND the vendor's change
+ * list, cut to v1 (docs/lib-mvp-scope.md → "COR review"). A FORK of
+ * src/components/lib-entry/cbf-lib-review-panel.astro, which stays the
+ * long-term version behind /lib-entry.
+ *
+ * ── WHY ONE COMPONENT ───────────────────────────────────────────────────────
+ * One review is a round trip on ONE document: the COR marks lines and decides;
+ * the vendor works the same marks off and resubmits. So this panel renders both
+ * lenses from the same review state and reveals the half that belongs to
+ * whoever is looking (cbf-role-switch → `<html data-cbf-role>`).
+ *
+ * ── ONE CYCLE, EVERY LIB ────────────────────────────────────────────────────
+ * The list holds every mark in the cycle — the contract's LIB AND each child
+ * subcontract LIB (`flag.budget` is 'main' or a sheet id). A mark on a child
+ * line says which subcontract it is on, and its "Go to line" is a link to that
+ * subcontract's page (/lib-mvp/subcontract/<sheet>#<lineId>) rather than a jump
+ * within this page.
+ *
+ * ── WHAT EACH LENS GETS ─────────────────────────────────────────────────────
+ * COR      every mark (severity, reason, note, Go to line) and the two decisions
+ *          — Return for revision, or Approve. Approve is blocked while any
+ *          REQUIRED mark is open, and the panel says why. Marks are made and
+ *          edited on the grid row, never here.
+ * VENDOR   the same marks as a change list: each shows whether it is addressed,
+ *          and while the budget is returned the vendor ticks "Mark addressed".
+ *          Working the Required marks down clears submit gate 8 in the rail.
+ * v1 has no private-until-return marks, no return memo and no cycle count —
+ * the vendor sees marks as they are made (see src/data/lib-mvp-review.mjs).
+ *
+ * ── EVENT CONTRACT (all on `document`; names from EVENTS in lib-mvp.mjs) ────
+ * LISTEN   EVENTS.review      detail: { review, counts }
+ *          The grid fires this when the COR marks / unmarks a row; this panel
+ *          re-renders from it, ignoring its own echo by state identity.
+ * LISTEN   'cbf-role:change'  detail: { role }   — repaints role-worded copy.
+ * DISPATCH EVENTS.review      (fireReview) after a decision or an addressed tick,
+ *          and once on mount so the grid and rail start from the stored review.
+ * DISPATCH EVENTS.focusLine   detail: { lineId, budget: 'main' }
+ *          "Go to line" for a mark on the contract's LIB.
+ * After Return / Approve: saveReview + fireReview, then a snackbar on the page's
+ * `[data-snackbar]` saying the vendor is emailed.
+ *
+ * ── THE LIST IS TEMPLATE-CLONED, NOT STRING-BUILT ───────────────────────────
+ * The server renders one complete item into a <template> — both severity badges,
+ * both Go-to-line forms (in-page button, child-page link) and the vendor's
+ * checkbox — and the script clones it per mark and toggles what is already
+ * there, so no esa-* markup is rebuilt as strings.
+ *
+ * bcn-lego-checked: every element here is a lego — panel = esa-card, status and
+ * severity = esa-badge, counts = esa-stat, decisions and jumps = esa-button
+ * (href for the child-page link), "Mark addressed" = esa-checkbox, the approved
+ * and with-BPA states = esa-alert-box, the no-marks state = esa-empty-state. I
+ * walked the catalog (ls node_modules/@esa/ecology/src/components/): there is no
+ * review/comment/annotation/approval lego. What this file owns is composition
+ * only: the item frame and the role/status reveal rules. Beacon is not cloned
+ * on this machine.
+ */
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import { contract } from '../../data/lib-mvp.mjs';
+import {
+  SEVERITIES,
+  severityMeta,
+  reviewMeta,
+  seedReview,
+  reviewCounts,
+  statusText,
+  statusBadge,
+} from '../../data/lib-mvp-review.mjs';
+
+// SSR renders the seeded review's header; the script re-renders everything from
+// sessionStorage on mount.
+const review = seedReview();
+const counts = reviewCounts(review);
+const badge = statusBadge(review);
+---
+
+<section
+  class="cbf-lmrp"
+  data-review-panel
+  data-libmvp-surface
+  data-status={review.status}
+  aria-labelledby="cbf-lmrp-title"
+>
+  <EsaCard variant="outlined">
+    <div class="stack" data-gap="lg">
+      {/* ── Who this is, where it stands ─────────────────────────────────── */}
+      <header class="cbf-lmrp__head repel" data-gap="md">
+        <div class="stack" data-gap="2xs">
+          <div class="cluster" data-gap="xs">
+            <h2 id="cbf-lmrp-title" class="typography-heading-md" data-rp-title>
+              BPA review of this budget
+            </h2>
+            <span data-rp-badge>
+              <EsaBadge value={badge.value} variant={badge.variant} size="sm" />
+            </span>
+          </div>
+          <p class="cbf-lmrp__status typography-body-md" data-rp-status>{statusText(review, 'vendor')}</p>
+          <p class="cbf-lmrp__meta typography-body-sm" data-rp-meta>
+            Submitted {reviewMeta.submittedOn} by {reviewMeta.vendorContact} · reviewer {reviewMeta.reviewer},
+            {reviewMeta.reviewerRole} · one review covers this LIB and every subcontract LIB
+          </p>
+        </div>
+
+        <div class="cbf-lmrp__counts cluster" data-gap="lg">
+          <div class="cbf-lmrp__num">
+            <EsaStat value={String(counts.required)} label="Changes required" sub="must be fixed" />
+          </div>
+          <div class="cbf-lmrp__num">
+            <EsaStat value={String(counts.questions)} label="Questions" sub="must be answered" />
+          </div>
+          <div class="cbf-lmrp__num">
+            <EsaStat value={`${counts.addressed}/${counts.total}`} label="Addressed" sub="by the vendor" />
+          </div>
+        </div>
+      </header>
+
+      {/* ── The vendor, while the COR is working: read-only, marks visible ── */}
+      <div data-rp-role="vendor" data-rp-when="in-review">
+        <EsaAlertBox variant="info" title="This budget is with BPA">
+          It’s read-only while {reviewMeta.reviewer} reviews it. Marks appear below as they’re made;
+          you can work on them once the budget is returned to you.
+        </EsaAlertBox>
+      </div>
+
+      {/* ── Approved ─────────────────────────────────────────────────────── */}
+      <div data-rp-when="approved">
+        <EsaAlertBox variant="success" title="Approved">
+          This line item budget is approved for {contract.fiscalYear} and locked. Later changes go
+          through the contract change process. The marks below stay in the contract file.
+        </EsaAlertBox>
+      </div>
+
+      {/* ── How the COR marks a line. Said once, where they start. ───────── */}
+      <p class="cbf-lmrp__howto typography-body-sm" data-rp-role="cor">
+        Mark a line from its row in the budget below — on this LIB or a subcontract’s — with
+        Required or Question, a reason, and what has to change. The vendor sees each mark as you
+        make it.
+      </p>
+
+      {/* ── The marks ─────────────────────────────────────────────────────── */}
+      <div class="stack" data-gap="sm">
+        <div class="repel" data-gap="sm">
+          <h3 class="typography-title">Marked lines</h3>
+          <span class="cbf-lmrp__count typography-body-sm" role="status" data-rp-outstanding>
+            {counts.outstanding} of {counts.total} outstanding
+          </span>
+        </div>
+
+        <ul class="cbf-lmrp__list stack" data-gap="xs" data-rp-list></ul>
+
+        <div data-rp-empty hidden>
+          <EsaEmptyState
+            title="No lines are marked"
+            description="Nothing on this budget or its subcontracts is marked for change."
+            size="sm"
+          />
+        </div>
+      </div>
+
+      {/* ── The decisions only the COR can make ───────────────────────────── */}
+      <div class="cbf-lmrp__decide repel" data-gap="sm" data-rp-role="cor">
+        <p class="cbf-lmrp__decide-note typography-body-sm" data-rp-decide-note></p>
+        <div class="cluster" data-gap="xs">
+          <span data-rp-return>
+            <EsaButton size="md" variant="warning" appearance="outline" icon="corner-up-left">
+              Return for revision
+            </EsaButton>
+          </span>
+          <span data-rp-approve>
+            <EsaButton size="md" variant="primary" icon="check">Approve budget</EsaButton>
+          </span>
+        </div>
+      </div>
+
+      {/* ── What the vendor does next ────────────────────────────────────── */}
+      <p class="cbf-lmrp__next typography-body-sm" data-rp-role="vendor" data-rp-next></p>
+    </div>
+  </EsaCard>
+
+  {/* One complete item, cloned per mark. */}
+  <template data-rp-item-tpl>
+    <li class="cbf-lmrp__item" data-rp-item>
+      <div class="cbf-lmrp__item-body stack" data-gap="2xs">
+        <div class="cluster" data-gap="2xs">
+          <span data-rp-sev={SEVERITIES.REQUIRED}>
+            <EsaBadge
+              value={severityMeta[SEVERITIES.REQUIRED].short}
+              variant={severityMeta[SEVERITIES.REQUIRED].variant}
+              size="sm"
+            />
+          </span>
+          <span data-rp-sev={SEVERITIES.QUESTION}>
+            <EsaBadge
+              value={severityMeta[SEVERITIES.QUESTION].short}
+              variant={severityMeta[SEVERITIES.QUESTION].variant}
+              size="sm"
+            />
+          </span>
+          <span class="cbf-lmrp__line" data-rp-line></span>
+          <span class="cbf-lmrp__sep" aria-hidden="true">·</span>
+          <span class="cbf-lmrp__cat typography-body-sm" data-rp-cat></span>
+          <span data-rp-done-badge>
+            <EsaBadge value="Addressed" variant="success" size="sm" />
+          </span>
+        </div>
+
+        <p class="cbf-lmrp__reason typography-body-sm" data-rp-reason></p>
+        <p class="cbf-lmrp__note typography-body-md" data-rp-note></p>
+        <p class="cbf-lmrp__by typography-body-sm" data-rp-by></p>
+      </div>
+
+      <div class="cbf-lmrp__item-actions cluster" data-gap="2xs">
+        {/* A mark on this LIB jumps within the page… */}
+        <span data-rp-goto>
+          <EsaButton size="sm" variant="secondary" appearance="soft" icon="arrow-right">
+            Go to line
+          </EsaButton>
+        </span>
+        {/* …a mark on a subcontract LIB opens that subcontract's page. */}
+        <span data-rp-goto-link>
+          <EsaButton size="sm" variant="secondary" appearance="soft" icon="arrow-right" href="#">
+            Go to line
+          </EsaButton>
+        </span>
+        <span data-rp-role="vendor" class="cbf-lmrp__addressed">
+          <esa-checkbox data-rp-addressed label="Mark addressed" size="md"></esa-checkbox>
+        </span>
+      </div>
+    </li>
+  </template>
+</section>
+
+<script>
+  import '@esa/ecology/esa-checkbox';
+  import { budgetFor, categoryOf, EVENTS } from '../../data/lib-mvp.mjs';
+  import {
+    reasonLabel,
+    reviewMeta,
+    loadReview,
+    saveReview,
+    reviewCounts,
+    statusText,
+    statusBadge,
+    isAddressed,
+    canApprove,
+    returnReview,
+    approveReview,
+    setAddressed,
+    fireReview,
+    blankReview,
+  } from '../../data/lib-mvp-review.mjs';
+  import { isBlank } from '../../data/lib-mvp-demo.mjs';
+  import { withBase } from '../../lib/base';
+
+  const root = document.querySelector<HTMLElement>('[data-review-panel]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    /* The demo's "Clear all entries" (src/data/lib-mvp-demo.mjs): a budget with
+       no lines has not been through a review, so the marks go with the lines. A
+       blank review is broadcast on mount like any other, so the grid and the
+       rail agree with it. */
+    let review: any = isBlank() ? blankReview() : loadReview();
+
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string, scope: ParentNode = root) =>
+      scope.querySelector<T>(sel);
+    const $$ = (sel: string, scope: ParentNode = root) =>
+      Array.from(scope.querySelectorAll<HTMLElement>(sel));
+    const role = () => (document.documentElement.dataset.cbfRole === 'cor' ? 'cor' : 'vendor');
+    const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+    /* A mark's line lives on the contract's LIB or a child LIB. Child lines are
+       persisted by the grid under `cbf-libmvp-lines:<sheetId>` and the child's
+       details under `cbf-libmvp-sheet:<sheetId>`; fall back to the seed. */
+    const stored = (key: string) => {
+      try {
+        const raw = window.sessionStorage?.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    };
+    const linesOf = (budget: string) => {
+      const live = stored(`cbf-libmvp-lines:${budget}`);
+      return Array.isArray(live) ? live : budgetFor(budget).lines;
+    };
+    const sheetName = (budget: string) =>
+      stored(`cbf-libmvp-sheet:${budget}`)?.name || (budgetFor(budget) as any).sheet?.name || 'Unnamed subcontract';
+    const describe = (f: any) => {
+      const budget = f.budget ?? 'main';
+      const line = linesOf(budget).find((l: any) => l.id === f.lineId);
+      const cat = categoryOf(line?.category)?.label ?? '';
+      return {
+        budget,
+        label: line?.label || '(untitled line)',
+        where: budget === 'main' ? cat : `Subcontract: ${sheetName(budget)}${cat ? ` · ${cat}` : ''}`,
+      };
+    };
+
+    const setText = (el: Element | null, text: string) => {
+      if (el) el.textContent = text;
+    };
+    const show = (el: Element | null, on: boolean) => {
+      if (el) (el as HTMLElement).hidden = !on;
+    };
+    /** esa-badge renders <span.esa-badge><span.esa-badge__text>. */
+    const setBadge = (wrap: Element | null, value: string, variant: string) => {
+      const b = wrap?.querySelector('.esa-badge');
+      if (!b) return;
+      setText(b.querySelector('.esa-badge__text') ?? b, value);
+      ['primary', 'secondary', 'success', 'warning', 'danger', 'info'].forEach((v) =>
+        b.classList.toggle(`esa-badge--${v}`, v === variant),
+      );
+    };
+    const setDisabled = (wrap: Element | null, off: boolean) => {
+      const btn = wrap?.querySelector('button');
+      if (btn) btn.disabled = off;
+      wrap?.querySelector('.esa-button')?.classList.toggle('esa-button--disabled', off);
+    };
+
+    const itemTemplate = $<HTMLTemplateElement>('[data-rp-item-tpl]')?.content.firstElementChild as
+      | HTMLElement
+      | undefined;
+
+    const fillItem = (li: HTMLElement, f: any) => {
+      const d = describe(f);
+      const done = isAddressed(review, f.lineId);
+      li.dataset.lineId = f.lineId;
+      li.dataset.budget = d.budget;
+      li.dataset.severity = f.severity;
+      li.dataset.addressed = String(done);
+      setText($('[data-rp-line]', li), d.label);
+      setText($('[data-rp-cat]', li), d.where);
+      setText($('[data-rp-reason]', li), reasonLabel(f.reason));
+      setText($('[data-rp-note]', li), f.note || 'No note written.');
+      setText($('[data-rp-by]', li), `${f.author} · ${f.date}`);
+
+      const child = d.budget !== 'main';
+      show($('[data-rp-goto]', li), !child);
+      show($('[data-rp-goto-link]', li), child);
+      const a = $<HTMLAnchorElement>('[data-rp-goto-link] a', li);
+      if (a && child) a.href = withBase(`/lib-mvp/subcontract/${d.budget}#${f.lineId}`);
+
+      const box = $('[data-rp-addressed]', li) as any;
+      if (box) {
+        box.checked = done;
+        /* The vendor ticks marks only while the budget is back with them. */
+        box.disabled = review.status !== 'returned';
+      }
+    };
+
+    const renderList = () => {
+      const list = $('[data-rp-list]');
+      if (!list || !itemTemplate) return;
+      const flags = review.flags ?? [];
+      const existing = new Map($$('[data-rp-item]', list).map((li) => [li.dataset.lineId!, li]));
+      flags.forEach((f: any) => {
+        let li = existing.get(f.lineId);
+        if (li) existing.delete(f.lineId);
+        else li = itemTemplate.cloneNode(true) as HTMLElement;
+        fillItem(li, f);
+        list.appendChild(li); // keep DOM order equal to review order
+      });
+      existing.forEach((li) => li.remove());
+      show($('[data-rp-empty]'), flags.length === 0);
+    };
+
+    const decideNote = (counts: any) => {
+      const open = counts.openRequired;
+      if (review.status === 'draft') return 'Nothing to decide yet — the vendor hasn’t submitted this budget.';
+      if (review.status === 'returned') return 'Returned to the vendor. You can decide again when they resubmit.';
+      if (review.status === 'approved') return 'Approved and locked.';
+      if (open > 0)
+        return `Approve is unavailable while ${plural(open, 'required change')} ${open === 1 ? 'is' : 'are'} open. Return the budget so the vendor can address ${open === 1 ? 'it' : 'them'}.`;
+      if (counts.total === 0) return 'Nothing is marked. Approving accepts the budget as submitted.';
+      return 'No required changes are open — you can approve, or return the budget with your questions.';
+    };
+
+    const vendorNext = (counts: any) => {
+      if (review.status === 'approved') return 'Nothing further is needed on this budget.';
+      if (review.status === 'in-review') return 'Nothing is needed from you until BPA returns or approves the budget.';
+      if (review.status === 'draft') return 'Submit the budget from the reconciliation rail once every check passes.';
+      return counts.openRequired === 0
+        ? 'Every required change is addressed. Resubmit the budget from the reconciliation rail.'
+        : `Fix each marked line, then mark it addressed. You can resubmit once ${plural(counts.openRequired, 'required change')} ${counts.openRequired === 1 ? 'is' : 'are'} addressed.`;
+    };
+
+    const render = () => {
+      const counts = reviewCounts(review);
+      const r = role();
+      const badge = statusBadge(review);
+
+      root.dataset.status = review.status;
+      setBadge($('[data-rp-badge]'), badge.value, badge.variant);
+      setText($('[data-rp-title]'), r === 'cor' ? 'Your review of this budget' : 'BPA review of this budget');
+      setText($('[data-rp-status]'), statusText(review, r));
+      show($('[data-rp-meta]'), review.status !== 'draft');
+
+      const stats = $$('.cbf-lmrp__counts .esa-stat__value');
+      if (stats[0]) stats[0].textContent = String(counts.required);
+      if (stats[1]) stats[1].textContent = String(counts.questions);
+      if (stats[2]) stats[2].textContent = `${counts.addressed}/${counts.total}`;
+      setText($('[data-rp-outstanding]'), `${counts.outstanding} of ${counts.total} outstanding`);
+
+      renderList();
+
+      /* COR decisions — only while the budget is with them. Approve also stays
+         shut while a REQUIRED mark is open (canApprove). Returning needs at
+         least one mark to send back. */
+      const withCor = review.status === 'in-review';
+      setDisabled($('[data-rp-approve]'), !canApprove(review));
+      setDisabled($('[data-rp-return]'), !withCor || counts.total === 0);
+      setText($('[data-rp-decide-note]'), decideNote(counts));
+
+      setText($('[data-rp-next]'), vendorNext(counts));
+    };
+
+    /** Save, repaint, and tell the grid and the rail. */
+    const commit = () => {
+      saveReview(review);
+      render();
+      fireReview(review);
+    };
+
+    const toast = (message: string, kind: 'success' | 'info' = 'info') => {
+      const sb = document.querySelector('[data-snackbar]') as any;
+      (sb?.[kind] ?? sb?.info)?.call(sb, message, { duration: 5000 });
+    };
+
+    // ── The grid owns marking; this panel owns the list and the decision ──
+    document.addEventListener(EVENTS.review, (e: Event) => {
+      const incoming = (e as CustomEvent).detail?.review;
+      if (!incoming || incoming === review) return;
+      review = incoming;
+      render();
+    });
+
+    document.addEventListener('cbf-role:change', render);
+
+    root.addEventListener('click', (e: Event) => {
+      const t = e.target as HTMLElement;
+      const li = t.closest('[data-rp-item]') as HTMLElement | null;
+
+      if (li && t.closest('[data-rp-goto]')) {
+        document.dispatchEvent(
+          new CustomEvent(EVENTS.focusLine, { detail: { lineId: li.dataset.lineId, budget: 'main' } }),
+        );
+        return;
+      }
+
+      if (t.closest('[data-rp-return]')) {
+        if (review.status !== 'in-review' || !(review.flags ?? []).length) return;
+        review = returnReview(review);
+        commit();
+        const n = reviewCounts(review).total;
+        toast(
+          `Budget returned with ${plural(n, 'mark')}. ${reviewMeta.vendorContact} is emailed that it’s back for revision.`,
+        );
+        return;
+      }
+      if (t.closest('[data-rp-approve]')) {
+        if (!canApprove(review)) return;
+        review = approveReview(review);
+        commit();
+        toast(`Line item budget approved and locked. ${reviewMeta.vendorContact} is emailed the approval.`, 'success');
+      }
+    });
+
+    root.addEventListener('change', (e: Event) => {
+      const el = e.target as HTMLElement & { checked?: boolean };
+      if (!el.dataset || !('rpAddressed' in el.dataset)) return;
+      const li = el.closest('[data-rp-item]') as HTMLElement | null;
+      if (!li || review.status !== 'returned') return;
+      review = setAddressed(review, li.dataset.lineId!, !!el.checked);
+      commit();
+    });
+
+    render();
+    // Announce once after mount so the grid and the rail start from this state
+    // even when their scripts registered after this one ran.
+    requestAnimationFrame(() => fireReview(review));
+  }
+</script>
+
+<style>
+  /* ── Role and status reveal ───────────────────────────────────────────────
+     Both lenses are server-rendered; the document's role attribute reveals one.
+     Written as :global(html[...]) so the scoped class still does the selecting. */
+  :global(html[data-cbf-role='cor']) .cbf-lmrp [data-rp-role='vendor'],
+  :global(html:not([data-cbf-role='cor'])) .cbf-lmrp [data-rp-role='cor'] {
+    display: none !important;
+  }
+
+  /* Status-only blocks. */
+  .cbf-lmrp [data-rp-when] { display: none; }
+  .cbf-lmrp[data-status='in-review'] [data-rp-when='in-review'],
+  .cbf-lmrp[data-status='approved'] [data-rp-when='approved'] { display: block; }
+
+  /* ── Head ─────────────────────────────────────────────────────────────── */
+  .cbf-lmrp__head { --align: flex-start; }
+  .cbf-lmrp__status { color: var(--color-content-default); max-inline-size: 72ch; }
+  .cbf-lmrp__meta { color: var(--color-content-default-secondary); }
+  .cbf-lmrp__counts { --align: flex-end; }
+  /* Supporting figures inside a strip — a step down from the page-hero stat. */
+  .cbf-lmrp__num { --stat-value-size: var(--font-size-500); }
+  .cbf-lmrp__num :global(.esa-stat__value) { font-variant-numeric: tabular-nums; }
+
+  .cbf-lmrp__howto { color: var(--color-content-default-secondary); max-inline-size: 76ch; }
+
+  /* ── The marks ────────────────────────────────────────────────────────── */
+  .cbf-lmrp__count { color: var(--color-content-default-secondary); font-variant-numeric: tabular-nums; }
+  .cbf-lmrp__list { list-style: none; margin: 0; padding: 0; }
+
+  .cbf-lmrp__item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-400);
+    padding: var(--spacing-300) var(--spacing-400);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-200);
+    /* Severity is carried by the badge and a background tint INSIDE the item —
+       never a colored left border. */
+    background: var(--color-background-utility-danger-subtle);
+  }
+  .cbf-lmrp__item[data-severity='question'] { background: var(--color-background-utility-warning-subtle); }
+  .cbf-lmrp__item[data-addressed='true'] { background: var(--color-background-elevation-sunken); }
+
+  .cbf-lmrp__item-body { flex: 1 1 28rem; min-inline-size: 0; }
+  .cbf-lmrp__item-actions { flex: none; --align: center; }
+
+  /* One severity badge shows; the other is rendered and hidden. */
+  .cbf-lmrp__item [data-rp-sev] { display: none; }
+  .cbf-lmrp__item[data-severity='required'] [data-rp-sev='required'],
+  .cbf-lmrp__item[data-severity='question'] [data-rp-sev='question'] { display: inline-flex; }
+  .cbf-lmrp__item [data-rp-done-badge] { display: none; }
+  .cbf-lmrp__item[data-addressed='true'] [data-rp-done-badge] { display: inline-flex; }
+  /* An addressed mark stays readable, just visibly settled. */
+  .cbf-lmrp__item[data-addressed='true'] .cbf-lmrp__note { color: var(--color-content-default-secondary); }
+
+  .cbf-lmrp__line { font-weight: var(--typography-font-weight-semibold); color: var(--color-content-default); }
+  .cbf-lmrp__sep { color: var(--color-content-default-tertiary); }
+  .cbf-lmrp__cat { color: var(--color-content-default-secondary); }
+  .cbf-lmrp__reason { color: var(--color-content-default-secondary); font-weight: var(--typography-font-weight-medium); }
+  .cbf-lmrp__note { color: var(--color-content-default); max-inline-size: 76ch; }
+  .cbf-lmrp__by { color: var(--color-content-default-secondary); }
+
+  /* ── Decisions ────────────────────────────────────────────────────────── */
+  .cbf-lmrp__decide {
+    --align: center;
+    padding-block-start: var(--spacing-400);
+    border-block-start: 1px solid var(--color-border-default-subtle);
+  }
+  .cbf-lmrp__decide-note { color: var(--color-content-default-secondary); max-inline-size: 60ch; }
+  .cbf-lmrp__next { color: var(--color-content-default-secondary); }
+
+  /* Layout primitives set display:flex, which would beat the UA [hidden] rule. */
+  .cbf-lmrp [hidden] { display: none !important; }
+</style>

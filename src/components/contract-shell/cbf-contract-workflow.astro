@@ -1,0 +1,63 @@
+---
+// cbf-contract-workflow — where a contract opens: its workflow view (IA redesign,
+// "The contract workflow view"). Top to bottom:
+//   phase      setup / issuance / closeout → a stage strip (step, who's up, gates
+//              as upcoming conditions); implementation → just a label,
+//              "Implementation, month 6 of 12", in the section caption
+//   tracks     contract-wide tracks (invoices, an open CCR), one card each
+//   grid       work elements × Environmental compliance / Budget / Reporting /
+//              Milestones; each cell links to that WE in the matching section
+//
+// Who's up reads "you" vs a name, so the strip and tracks render per (role ×
+// state) in data-cs-v; the grid and the phase label depend only on state (data-cs-s).
+// Must sit inside a cbf-contract-shell, whose reveal rules show the live variant.
+// Data is contract-agnostic, so every contract (lib, pi) shows the same grid.
+//
+// bcn-lego-checked: composition only — the cbf-overview section pattern (h2 +
+// caption, `stack`, `repel`) around three spoke components (stage strip, tracks,
+// WE grid) that each name their own legos. Beacon is not on this machine. No CSS.
+import CbfContractStageStrip from './cbf-contract-stage-strip.astro';
+import CbfContractTracks from './cbf-contract-tracks.astro';
+import CbfWeGrid from './cbf-we-grid.astro';
+import { CONTRACTS, STATES, VIEWER_ROLES, periodProgress } from '../../data/contract-shell.mjs';
+import { gridFor, tracksFor, phaseViewFor } from '../../data/contract-workflow.mjs';
+import './cbf-overview.css';
+
+interface Props {
+  /** Key into CONTRACTS. */
+  contract: string;
+}
+const { contract } = Astro.props;
+const c = (CONTRACTS as any)[contract];
+const period = periodProgress(c);
+const views = STATES.map((s) => ({ key: s.key, phase: phaseViewFor(s.key, period) as any }));
+---
+<section class="cbf-ov-section stack" data-gap="lg" id="contract-workflow" aria-labelledby="cbf-ov-workflow">
+  <header class="cbf-ov-section__head repel">
+    <h2 id="cbf-ov-workflow" class="typography-heading-md">Workflow</h2>
+    {views.map((v) => (
+      <div data-cs-s={v.key}>
+        <span class="cbf-ov-section__caption typography-meta">{v.phase.strip ? v.phase.strip.label : v.phase.label}</span>
+      </div>
+    ))}
+  </header>
+
+  {VIEWER_ROLES.flatMap((role) =>
+    views.map((v) => (
+      <div data-cs-v={`${role}:${v.key}`}>
+        <div class="stack" data-gap="lg">
+          {v.phase.strip && (
+            <CbfContractStageStrip label={v.phase.strip.label} steps={v.phase.strip.steps} role={role} c={c} />
+          )}
+          <CbfContractTracks tracks={tracksFor(v.key)} role={role} c={c} />
+        </div>
+      </div>
+    )),
+  )}
+
+  {views.map((v) => (
+    <div data-cs-s={v.key}>
+      <CbfWeGrid rows={gridFor(v.key)} c={c} />
+    </div>
+  ))}
+</section>

@@ -1,0 +1,278 @@
+---
+// cbf-libmvp-subcontract-details — the top of a subcontract's own LIB page
+// (/lib-mvp/subcontract/<sheet>), cut to v1 (docs/lib-mvp-scope.md →
+// "Subcontracts"). A FORK of src/components/lib-entry/cbf-lib-subcontract-details.astro,
+// which stays the long-term version behind /lib-entry.
+//
+// WHY IT EXISTS: a subcontract is one line on the contract's LIB, and behind it
+// is a child LIB — entered on the same grid, below this section. What the grid
+// can't hold is what makes it a subcontract. v1 keeps exactly three things:
+//
+//   • the subcontractor's name;
+//   • its type (SUB_TYPES) — which says what BPA needs on the child LIB;
+//   • an optional attached document (a quote, a bid).
+//
+// …plus two read-outs: the child's total (what rolls up into the parent line)
+// and the child's issues against submit gate 9 (subSheetIssues). Cost share,
+// preparer / basis, and the bid table are cut; the grid is always shown.
+//
+// PERSISTENCE: name / type / document edits are kept in sessionStorage under
+// `cbf-libmvp-sheet:<sheetId>` as `{ name, type, document }`, so they survive
+// the role switch's reload and the review panel on /lib-mvp can read the name.
+// The child's lines are the grid's (`cbf-libmvp-lines:<sheetId>`); this reads
+// them for the issues and never writes them.
+//
+// EVENTS (names from EVENTS in lib-mvp.mjs, on `document`):
+//   listen  EVENTS.totals      detail.budget === this sheet → the live total,
+//                              and re-check the issues
+//   listen  EVENTS.review      the open Required marks feed the issues
+//   listen  'cbf-role:change'  COR reads; the vendor edits in draft / returned
+//
+// bcn-lego-checked: the name is esa-text-field, the type is esa-radio-group,
+// the document is esa-file-upload (to attach) and esa-file-list (the attached
+// one, removable), the issues are esa-alert-box, the panel is esa-card, the
+// total is esa-stat. I walked the catalog (ls node_modules/@esa/ecology/src/components/):
+// there is no subcontract / child-budget lego. This file owns composition only.
+// Beacon is not cloned on this machine.
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import { subcontractSheets, costLines, contract, usd, subLineAmount, subTypeOf } from '../../data/lib-mvp.mjs';
+import { withBase } from '../../lib/base';
+
+interface Props {
+  /** The subcontract sheet id — a key of subcontractSheets ('new' for a blank one). */
+  sheetId: string;
+}
+const { sheetId } = Astro.props;
+const sheet: any = (subcontractSheets as any)[sheetId];
+const parent: any = costLines.find((l: any) => l.id === sheet?.parentLine) ?? null;
+const title = parent?.label || 'New subcontract';
+---
+<section class="cbf-lmsd stack" data-gap="lg" data-lmsd data-libmvp-surface data-sheet={sheetId}>
+  {/* ── Which subcontract, and what it puts on the contract's budget ── */}
+  <header class="repel cbf-lmsd__head" data-gap="md">
+    <div class="stack" data-gap="2xs">
+      <h1 class="typography-heading-md cbf-lmsd__title">Subcontract: {title}</h1>
+      <p class="cbf-lmsd__meta typography-body-sm">
+        One line on contract {contract.number}’s LIB · No indirect rate · Reviewed with the contract’s LIB
+      </p>
+      <a class="cbf-lmsd__back typography-body-sm" href={withBase('/lib-mvp')}>Back to the contract’s LIB</a>
+    </div>
+    <div class="cbf-lmsd__total">
+      <EsaStat value={usd(subLineAmount(sheet))} label="Subcontract total" sub="On the contract’s LIB" />
+    </div>
+  </header>
+
+  {/* ── What still keeps it from passing gate 9, said once ── */}
+  <div data-lmsd-issues-wrap hidden>
+    <EsaAlertBox variant="warning" title="Before this subcontract can be submitted">
+      <ul class="cbf-lmsd__issues stack" data-gap="2xs" data-lmsd-issues></ul>
+    </EsaAlertBox>
+  </div>
+
+  {/* ── Name, type, document ── */}
+  <EsaCard variant="filled">
+    <div class="cbf-lmsd__about">
+      <div class="stack" data-gap="sm">
+        <esa-text-field data-lmsd-name size="md" label="Subcontractor name"></esa-text-field>
+        <div data-lmsd-type-wrap>
+          <esa-radio-group data-lmsd-type size="md" label="Type of subcontract"></esa-radio-group>
+        </div>
+        <p class="cbf-lmsd__body typography-body-md" data-lmsd-needs>{subTypeOf(sheet.type).needs}</p>
+      </div>
+
+      <div class="stack" data-gap="sm">
+        <h2 class="typography-title">Attached document</h2>
+        <p class="cbf-lmsd__body typography-body-md">
+          Optional — a quote, an estimate, or a copy of the winning bid.
+        </p>
+        <esa-file-list data-lmsd-doc downloadable="false"></esa-file-list>
+        <p class="cbf-lmsd__meta typography-body-sm" data-lmsd-no-doc hidden>No document attached.</p>
+        <div data-lmsd-upload-wrap>
+          <esa-file-upload data-lmsd-upload label="Attach a document" accept=".pdf,.doc,.docx,.xls,.xlsx" max-size-mb="25"></esa-file-upload>
+        </div>
+      </div>
+    </div>
+  </EsaCard>
+</section>
+
+<script>
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-radio-group';
+  import '@esa/ecology/esa-file-upload';
+  import '@esa/ecology/esa-file-list';
+  import { subcontractSheets, SUB_TYPES, subTypeOf, subLineAmount, subSheetIssues, usd, EVENTS } from '../../data/lib-mvp.mjs';
+  import { loadReview, openRequiredFlags, vendorCanEdit, reviewMeta } from '../../data/lib-mvp-review.mjs';
+
+  const root = document.querySelector<HTMLElement>('[data-lmsd]');
+  const sheetId = root?.dataset.sheet ?? '';
+  const seed: any = (subcontractSheets as any)[sheetId];
+
+  if (root && seed) {
+    const SHEET_KEY = `cbf-libmvp-sheet:${sheetId}`;
+    const LINES_KEY = `cbf-libmvp-lines:${sheetId}`;
+    const read = (key: string) => {
+      try {
+        const raw = window.sessionStorage?.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    };
+
+    /* This page's working copy of the sheet's details: the seed, overlaid with
+       whatever this tab already edited. */
+    const kept = read(SHEET_KEY) ?? {};
+    const details: { name: string; type: string; document: any } = {
+      name: kept.name ?? seed.name ?? '',
+      type: SUB_TYPES.some((t: any) => t.value === kept.type) ? kept.type : seed.type,
+      document: kept.document !== undefined ? kept.document : seed.document,
+    };
+    const save = () => {
+      try {
+        window.sessionStorage?.setItem(SHEET_KEY, JSON.stringify(details));
+      } catch {
+        /* a full or blocked store must never break the screen */
+      }
+    };
+
+    let review: any = loadReview();
+    let total: number | null = null;
+
+    const q = <T extends HTMLElement = HTMLElement>(sel: string) => root.querySelector(sel) as T | null;
+    const show = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };
+    const setText = (el: Element | null, t: string) => { if (el && el.textContent !== t) el.textContent = t; };
+    const lines = () => {
+      const live = read(LINES_KEY);
+      return Array.isArray(live) ? live : seed.lines;
+    };
+    const canEdit = () => document.documentElement.dataset.cbfRole !== 'cor' && vendorCanEdit(review);
+
+    const paintTotal = () => {
+      setText(root.querySelector('.esa-stat__value'), usd(total ?? subLineAmount(seed, lines())));
+    };
+
+    const paintIssues = () => {
+      const issues = subSheetIssues({ ...seed, ...details, lines: lines() }, { openRequired: openRequiredFlags(review) });
+      q('[data-lmsd-issues]')!.replaceChildren(...issues.map((msg: string) => {
+        const li = document.createElement('li');
+        li.textContent = msg;
+        return li;
+      }));
+      show(q('[data-lmsd-issues-wrap]'), issues.length > 0);
+    };
+
+    const paintDoc = () => {
+      const list: any = q('[data-lmsd-doc]');
+      const doc = details.document;
+      if (list) list.files = doc ? [{ name: doc.uploadedOn ? `${doc.name} · attached ${doc.uploadedOn}` : doc.name }] : [];
+      show(list, !!doc);
+      show(q('[data-lmsd-no-doc]'), !doc && !canEdit());
+      show(q('[data-lmsd-upload-wrap]'), !doc && canEdit());
+    };
+
+    /* The COR reads; the vendor edits while the budget is in draft or returned. */
+    const paintRole = () => {
+      const ro = !canEdit();
+      const name: any = q('[data-lmsd-name]');
+      if (name) name.disabled = ro;
+      const list: any = q('[data-lmsd-doc]');
+      if (list) list.removable = !ro;
+      /* esa-radio-group has no disabled property — inert its wrapper instead. */
+      const typeWrap: any = q('[data-lmsd-type-wrap]');
+      if (typeWrap) typeWrap.inert = ro;
+      paintDoc();
+    };
+
+    const paint = () => {
+      setText(q('[data-lmsd-needs]'), subTypeOf(details.type).needs);
+      paintTotal();
+      paintIssues();
+      paintRole();
+    };
+
+    /* ── Fill ── */
+    customElements.whenDefined('esa-text-field').then(() => {
+      const el: any = q('[data-lmsd-name]');
+      if (el) el.value = details.name;
+    });
+    customElements.whenDefined('esa-radio-group').then(() => {
+      const el: any = q('[data-lmsd-type]');
+      if (!el) return;
+      el.options = SUB_TYPES.map(({ value, label }: any) => ({ value, label }));
+      el.value = details.type;
+    });
+    customElements.whenDefined('esa-file-list').then(paintDoc);
+    paint();
+
+    /* ── Live inputs from the grid and the review ── */
+    document.addEventListener(EVENTS.totals, (e: any) => {
+      if (e.detail?.budget !== sheetId) return;
+      if (typeof e.detail.total === 'number') total = e.detail.total;
+      paintTotal();
+      paintIssues();
+    });
+    document.addEventListener(EVENTS.review, (e: any) => {
+      if (e.detail?.review) review = e.detail.review;
+      paintIssues();
+      paintRole();
+    });
+    document.addEventListener('cbf-role:change', paintRole);
+
+    /* ── Edits ── */
+    root.addEventListener('input', (e: any) => {
+      if (!(e.target as HTMLElement).matches('[data-lmsd-name]')) return;
+      details.name = String(e.target.value ?? '');
+      save();
+    });
+    root.addEventListener('change', (e: any) => {
+      const el = e.target as HTMLElement & { value?: string };
+      if (el.matches('[data-lmsd-name]')) {
+        details.name = String(el.value ?? '');
+      } else if (el.matches('[data-lmsd-type]')) {
+        if (!el.value) return;
+        details.type = el.value;
+      } else if (el.matches('[data-lmsd-upload]')) {
+        const file = (e.detail?.files ?? [])[0];
+        if (!file) return;
+        details.document = { name: file.name, size: file.size, uploadedOn: reviewMeta.today };
+        /* The upload has done its job; a fresh one replaces it if the document
+           is removed, so it never shows a stale selection. */
+        const fresh = el.cloneNode(false);
+        el.replaceWith(fresh);
+      } else {
+        return;
+      }
+      save();
+      paint();
+    });
+    root.addEventListener('remove', (e: any) => {
+      if (!(e.target as HTMLElement).matches('[data-lmsd-doc]')) return;
+      details.document = null;
+      save();
+      paint();
+    });
+  }
+</script>
+
+<style>
+  /* .stack / .cluster set display:flex, which ties with [hidden]'s UA rule. */
+  .cbf-lmsd [hidden] { display: none !important; }
+
+  .cbf-lmsd__head { --align: flex-end; }
+  .cbf-lmsd__title { margin: 0; }
+  .cbf-lmsd__meta { margin: 0; color: var(--color-content-default-secondary); }
+  .cbf-lmsd__body { margin: 0; color: var(--color-content-default); max-inline-size: 60ch; }
+  .cbf-lmsd__back { color: var(--color-content-link, var(--color-content-brand)); }
+  .cbf-lmsd__total { text-align: end; --stat-value-size: var(--font-size-500); }
+  .cbf-lmsd__total :global(.esa-stat__value) { font-variant-numeric: tabular-nums; }
+  .cbf-lmsd__issues { margin: 0; padding-inline-start: var(--spacing-500); }
+  /* Two columns on a wide screen: who and what kind on the left, the document
+     on the right. One column when there isn't room. */
+  .cbf-lmsd__about {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(24rem, 100%), 1fr));
+    gap: var(--spacing-600);
+  }
+</style>

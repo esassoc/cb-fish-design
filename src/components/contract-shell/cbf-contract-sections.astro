@@ -1,0 +1,168 @@
+---
+// cbf-contract-sections — the contract's section list: the vertical alternative to
+// the tab strip (IA doc, decision 4, "A section list, not tabs"). Sections in
+// lifecycle order, named for what they hold; the CURRENT section shows its pages
+// in place; a count marks where work waits on the viewer. It works for a record
+// with three sections or nine, which a tab strip doesn't.
+//
+// Same structure as the tabs and the breadcrumb (TABS in src/data/contract-shell.mjs),
+// so they can't disagree. The shell shows this or cbf-contract-tabs, depending on
+// <html data-contract-nav> (the doc keeps the choice open pending the SIG-B check,
+// so the prototype carries both; cbf-contract-nav-switch flips it).
+//
+// Links resolve like every other link in the shell: a built page navigates; an
+// unbuilt one carries `#goto:<tab>[/<child>]`, which the shell turns into a panel
+// switch or an "outside this prototype" toast. Counts are server-rendered for the
+// default lens and repainted by the shell (`data-cs-section-badge`) when the role or
+// state changes. On a page with panels, `cbf:contract-tab-change` moves the current
+// section.
+//
+// bcn-lego-checked: esa-sidebar-nav is the nearest lego, but a section with pages
+// becomes a toggle button rather than a link, its expanded set is private state,
+// and it renders client-side only (the rail would flash in). Checked
+// esa-tab-layout (horizontal only) and esa-link-column (no current state). Counts
+// are esa-badge. The item surface is the CBFish nav-menu item from cbf-report-tabs
+// (brand-subtle selection), so the rail reads as the same family as that menu.
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import { withBase } from '../../lib/base';
+import { TABS, CONTRACTS, VIEWER_ROLES, childrenFor, childLabel, hrefFor } from '../../data/contract-shell.mjs';
+
+interface Props {
+  contract: string;
+  /** The current section (tab key). */
+  active: string;
+  /** The current page inside it, when the page is one. */
+  child?: string;
+  /** Sections this page renders as in-page panels. */
+  panels?: string[];
+  /** Per-section counts for the default lens. */
+  badges?: Record<string, number>;
+}
+const { contract, active, child, panels = [], badges = {} } = Astro.props;
+const c = (CONTRACTS as any)[contract];
+
+// A section opens its first built page (at the top, not a #section of it).
+const sectionHref = (key: string) => {
+  if (panels.includes(key)) return `#goto:${key}`;
+  const t = TABS.find((x) => x.key === key)!;
+  const built = t.children.map((ch) => hrefFor(c, `${key}/${ch.key}`)).find(Boolean);
+  return built ? withBase(built.split('#')[0]) : `#goto:${key}`;
+};
+const pageHref = (key: string, ch: string) => {
+  const built = hrefFor(c, `${key}/${ch}`);
+  return built ? withBase(built) : `#goto:${key}/${ch}`;
+};
+---
+<nav class="cbf-sections" aria-label="Contract sections" data-cs-sections data-active={active}>
+  <ol class="cbf-sections__list" role="list">
+    {TABS.map((t) => (
+      <li class="cbf-sections__item" data-section={t.key} data-current={t.key === active ? '' : undefined}>
+        <a
+          class="cbf-sections__link typography-body-sm"
+          href={sectionHref(t.key)}
+          aria-current={t.key === active ? (child ? 'true' : 'page') : undefined}
+        >
+          <span>{t.label}</span>
+          <span class="cbf-sections__count" data-cs-section-badge={t.key} hidden={!badges[t.key]}>
+            <EsaBadge value={String(badges[t.key] ?? '')} variant="info" />
+          </span>
+        </a>
+        {/* Pages show in place under the current section only; per role, since
+            vendors never see the BPA-only pages. */}
+        {VIEWER_ROLES.map((role) => (
+          <ul class="cbf-sections__pages" role="list" data-cs-r={role}>
+            {childrenFor(t, role).map((ch: any) => (
+              <li>
+                <a
+                  class="cbf-sections__page typography-body-sm"
+                  href={pageHref(t.key, ch.key)}
+                  aria-current={t.key === active && ch.key === child ? 'page' : undefined}
+                >
+                  {childLabel(ch)}
+                </a>
+              </li>
+            ))}
+          </ul>
+        ))}
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style>
+  /* The page lists take their display from the role lens (one per role, revealed
+     with display:flex), so only the direction is set here. */
+  .cbf-sections__list,
+  .cbf-sections__pages {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .cbf-sections__list {
+    display: flex;
+  }
+  /* The role lens reveals one page list per section with display:flex; only the
+     current section's pages show at all. */
+  .cbf-sections__item:not([data-current]) .cbf-sections__pages {
+    display: none !important;
+  }
+  .cbf-sections__pages {
+    margin-block: 2px var(--spacing-200);
+    padding-inline-start: var(--spacing-300);
+  }
+  .cbf-sections__link,
+  .cbf-sections__page {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-200);
+    padding: var(--spacing-200) var(--spacing-300);
+    border-radius: var(--radius-100);
+    color: var(--color-content-default);
+    text-decoration: none;
+  }
+  .cbf-sections__page {
+    padding-block: var(--spacing-150);
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-sections__link:hover,
+  .cbf-sections__page:hover {
+    background: var(--color-background-brand-subtle);
+    color: var(--color-background-brand);
+  }
+  /* The current section is named in weight; the current page carries the selection. */
+  .cbf-sections__item[data-current] > .cbf-sections__link {
+    font-weight: var(--typography-font-weight-semibold);
+  }
+  .cbf-sections__link[aria-current='page'],
+  .cbf-sections__page[aria-current='page'] {
+    background: var(--color-background-brand-subtle);
+    color: var(--color-background-brand);
+    font-weight: var(--typography-font-weight-semibold);
+  }
+  .cbf-sections__count[hidden] {
+    display: none;
+  }
+</style>
+
+<script>
+  // Mark the current section (pages show under it) and keep it in step with a
+  // page that switches panels in place.
+  document.querySelectorAll<HTMLElement>('[data-cs-sections]').forEach((nav) => {
+    const mark = (key: string): void => {
+      nav.querySelectorAll<HTMLElement>('.cbf-sections__item').forEach((li) => {
+        const on = li.dataset.section === key;
+        li.toggleAttribute('data-current', on);
+        const link = li.querySelector('.cbf-sections__link');
+        if (on) link?.setAttribute('aria-current', 'page');
+        else link?.removeAttribute('aria-current');
+      });
+    };
+    document.addEventListener('cbf:contract-tab-change', (e) => {
+      const key = (e as CustomEvent<{ key: string }>).detail?.key;
+      if (key) mark(key);
+    });
+  });
+</script>

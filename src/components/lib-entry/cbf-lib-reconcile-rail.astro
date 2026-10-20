@@ -598,7 +598,8 @@ const blockedText = (n: number) =>
      brand panel. The only saturated color in it is the primary submit button. */
   .cbf-lib-rail {
     position: sticky;
-    top: var(--spacing-500);
+    /* Below the contract shell's sticky bar (cbf-contract-shell sets the height). */
+    top: calc(var(--cbf-contract-bar-h, 0px) + var(--spacing-500));
     align-self: start;
     padding: var(--spacing-500);
     background: var(--color-background-elevation-raised);
@@ -606,7 +607,7 @@ const blockedText = (n: number) =>
     border-radius: var(--radius-200);
     /* The gate can outgrow a short viewport; the rail scrolls itself rather than
        dragging the page or jacking the scroll. */
-    max-height: calc(100vh - var(--spacing-800));
+    max-height: calc(100vh - var(--cbf-contract-bar-h, 0px) - var(--spacing-800));
     overflow-y: auto;
   }
   /* Once the layout stacks (the page drops the rail above the grid rather than

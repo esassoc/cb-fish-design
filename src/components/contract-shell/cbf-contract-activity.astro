@@ -1,0 +1,60 @@
+---
+// cbf-contract-activity — the Overview's "Recent activity": the last handoffs
+// between the vendor and BPA, newest first. The header shows only the latest one
+// ("Last update"); this is the short history behind it, so either side can see
+// how the contract got here without opening the workflow.
+//
+// The newest entry is the demo state's own last update, so the list renders once
+// per state and the contract shell's reveal rules show the live one.
+//
+// bcn-lego-checked: a list in the stack primitive with type roles; the link is a
+// plain anchor resolved by the shell (#goto:). Checked the catalog for a timeline
+// or activity-feed lego (none; esa-link-column is a sitemap column). Beacon is not
+// on this machine. CSS: the date column and row rules.
+import { CONTRACTS, STATES, shortDate } from '../../data/contract-shell.mjs';
+import { OVERVIEW } from '../../data/contract-overview.mjs';
+import './cbf-overview.css';
+
+interface Props {
+  contract: string;
+}
+const { contract } = Astro.props;
+const c = (CONTRACTS as any)[contract];
+const history = (OVERVIEW as any)[contract].activity;
+const who = (by: string) => (by === 'vendor' ? c.vendorContact.name : c.cor.name);
+---
+<section class="cbf-ov-section stack" data-gap="sm" id="contract-activity" aria-labelledby="cbf-ov-activity">
+  <header class="cbf-ov-section__head repel">
+    <h2 id="cbf-ov-activity" class="typography-heading-md">Recent activity</h2>
+    <a class="cbf-ov-link typography-body-sm" href="#goto:changes/workflow">Open approval history</a>
+  </header>
+  {STATES.map((s) => (
+    <ol class="cbf-activity" data-cs-s={s.key}>
+      {[{ ...s.last }, ...history].map((e: any) => (
+        <li class="cbf-activity__item">
+          <span class="cbf-activity__date typography-body-sm">{shortDate(e.date)}</span>
+          <span class="typography-body-md">{who(e.by)} {e.text}</span>
+        </li>
+      ))}
+    </ol>
+  ))}
+</section>
+
+<style>
+  .cbf-activity {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cbf-activity__item {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    gap: var(--spacing-400);
+    padding-block: var(--spacing-200);
+    border-block-end: 1px solid var(--color-border-default-subtle, var(--color-border-default));
+  }
+  .cbf-activity__date {
+    color: var(--color-content-default-secondary);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

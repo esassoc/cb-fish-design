@@ -1,0 +1,158 @@
+---
+// cbf-contract-status — the header's "who is it assigned to, what's next" block for ONE viewer
+// in ONE contract state. The shell renders one per (role × state) and reveals the
+// live one, the house pattern for the role lens (see cbf-role-switch): switching is
+// instant and nothing is rebuilt on the client.
+//
+// Two parts:
+//   summary  — two lines under the esa-page-header title:
+//   1. THE ASSIGNMENT — what's next, who owns it, and (when it's the viewer's) the
+//      button that does it, on the SAME line, so the task and its fix read as one
+//      thing instead of a sentence on the left and a button across the page. One
+//      label pattern for every state, so it reads the same whoever owns the work:
+//        "Assigned to you"      the viewer's most urgent action, its due date, ONE
+//                               primary button, and "N more tasks" for the rest
+//        "Assigned to <owner>"  what the other side (or BPA) owes and when — no
+//                               button, because there is nothing for the viewer
+//        "No actions due"       and the next scheduled thing, so the row never
+//                               disappears and the layout never jumps
+//   2. CONTEXT — one quiet line: the last handoff between the two sides, who is on
+//      the other side (and how to reach them), where in the period we are, up to
+//      three flags, and the reserved running-balance slot.
+//
+//   compact  — the assignment alone on one line — the sticky bar's version.
+//
+// Buttons and menu items never navigate on their own when the destination isn't
+// built: they carry `#goto:<tab>/<child>` and the shell decides (open the panel,
+// scroll to it, or say it's outside the prototype).
+//
+// bcn-lego-checked: the button is esa-button, the overflow is esa-dropdown-menu
+// (items set by the shell script from data-cs-more), flags and the overdue marker
+// are esa-badge, rows are the cluster/repel primitives. Checked the catalog for a
+// "next action" / task-banner lego: esa-alert-box is a message with a tone, which
+// would make every state read as a warning; esa-card is a container, not a status
+// line. Beacon is not on this machine. The only CSS here is text colors and
+// alignment.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import { withBase } from '../../lib/base';
+
+interface Props {
+  /** One headerModel() from src/data/contract-shell.mjs. */
+  model: any;
+  /** Which part of the header this renders: the two lines under the title, or
+      the sticky bar's one line. */
+  part?: 'summary' | 'compact';
+}
+const { model: m, part = 'summary' } = Astro.props;
+
+const hrefOf = (a: { href: string | null; target: string }) => (a.href ? withBase(a.href) : `#goto:${a.target}`);
+
+const ownerLabel = m.owner ? `Assigned to ${m.owner}` : 'No actions due';
+
+const moreItems = [
+  ...m.more.map((a: any) => ({ label: `${a.task} · ${a.when}`, action: `goto:${a.target}` })),
+  ...(m.more.length ? [{ divider: true, label: '' }] : []),
+  { label: 'View all tasks', action: 'goto:overview/tasks' },
+];
+---
+{part === 'compact' && (
+  <div class="cbf-cs-status-compact cluster" data-gap="sm">
+    <span class="cbf-cs-status__owner typography-label-md">{ownerLabel}</span>
+    {m.lead && <span class="cbf-cs-status__task typography-body-sm">{m.lead.task}</span>}
+    {m.lead?.overdue && <EsaBadge value="Overdue" variant="danger" size="sm" />}
+    {m.turn === 'you' && (
+      <EsaButton variant="primary" size="xs" href={hrefOf(m.lead)} data-cs-goto={m.lead.target}>
+        {m.lead.verb}
+      </EsaButton>
+    )}
+  </div>
+)}
+
+{part === 'summary' && (
+  <div class="cbf-cs-status stack" data-gap="2xs">
+    <p class="cbf-cs-status__line cluster" data-gap="xs">
+      {m.lead ? (
+        <>
+          <span class="cbf-cs-status__owner typography-label-md">{`${ownerLabel}:`}</span>
+          <span class="cbf-cs-status__task typography-body-md">{m.lead.task}</span>
+          {m.lead.when && <span class="cbf-cs-status__sep" aria-hidden="true">·</span>}
+          {m.lead.when && <span class="cbf-cs-status__when typography-body-md">{m.lead.when}</span>}
+          {m.lead.overdue && <EsaBadge value="Overdue" variant="danger" size="sm" />}
+          {m.turn === 'you' && (
+            <span class="cbf-cs-status-actions cluster" data-gap="2xs">
+              <EsaButton variant="primary" size="sm" iconRight="arrow-right" href={hrefOf(m.lead)} data-cs-goto={m.lead.target}>
+                {m.lead.verb}
+              </EsaButton>
+              <esa-dropdown-menu position="below-start" data-cs-more={JSON.stringify(moreItems)}>
+                <EsaButton variant="secondary" appearance="ghost" size="sm" iconRight="chevron-down">
+                  {m.more.length ? `${m.more.length} more ${m.more.length === 1 ? 'task' : 'tasks'}` : 'View all tasks'}
+                </EsaButton>
+              </esa-dropdown-menu>
+            </span>
+          )}
+        </>
+      ) : (
+        <>
+          <span class="cbf-cs-status__owner typography-label-md">{`${ownerLabel}.`}</span>
+          <span class="cbf-cs-status__task typography-body-md">{`Next: ${m.next.task} ${m.next.when}`}</span>
+        </>
+      )}
+    </p>
+
+    <p class="cbf-cs-status__context cluster typography-body-sm" data-gap="xs">
+      <span>{`Last update: ${m.last.actor} ${m.last.text} (${m.last.when})`}</span>
+      <span class="cbf-cs-status__sep" aria-hidden="true">·</span>
+      <span>
+        {m.counterparty.label}: <a href={`mailto:${m.counterparty.email}`} title={m.counterparty.email}>{m.counterparty.name}</a>
+      </span>
+      <span class="cbf-cs-status__sep" aria-hidden="true">·</span>
+      <span>{m.period}</span>
+      <span class="cbf-cs-status__sep" aria-hidden="true">·</span>
+      <span class="cbf-cs-status__pending" title="Shown once the running balance calculation is confirmed (open question Q14)">
+        Running balance: not yet available
+      </span>
+      {m.flags.map((f: any) => <EsaBadge value={f.label} variant={f.variant} size="sm" />)}
+    </p>
+  </div>
+)}
+
+<style>
+  .cbf-cs-status-actions {
+    --align: center;
+  }
+  .cbf-cs-status__owner {
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-cs-status__line,
+  .cbf-cs-status__context {
+    margin: 0;
+    --align: center;
+  }
+  .cbf-cs-status__task {
+    color: var(--color-content-default);
+  }
+  .cbf-cs-status__when,
+  .cbf-cs-status__context {
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-cs-status__sep,
+  .cbf-cs-status__pending {
+    color: var(--color-content-default-tertiary);
+  }
+  .cbf-cs-status__context a {
+    color: var(--color-content-link);
+  }
+  /* A task and its due date read as one line. The panel is absolutely positioned
+     inside the narrow trigger, so shrink-to-fit would wrap it; give it a floor. */
+  .cbf-cs-status-actions esa-dropdown-menu {
+    --dropdown-menu-min-width: 22rem;
+    --dropdown-menu-max-width: 26rem;
+  }
+  .cbf-cs-status-compact {
+    --align: center;
+  }
+  .cbf-cs-status-compact .cbf-cs-status__task {
+    color: var(--color-content-default-secondary);
+  }
+</style>

@@ -1,0 +1,70 @@
+---
+// cbf-contract-tracks — the workflow view's contract-wide tracks (invoices, an
+// open change request): one card each, showing the latest item, its status in
+// words, who's up and for how long. Who's up comes from recorded events only;
+// when a track has no one up, the card says what CBFish does know (its status).
+//
+// One instance per (role × state) — "you" depends on the viewer — so this sits
+// inside a data-cs-v wrapper that the contract shell reveals.
+//
+// bcn-lego-checked: each track IS esa-card (outlined) and its status IS esa-badge;
+// the row is the `grid` primitive. Links are plain anchors the shell resolves
+// (#goto:). Beacon is not on this machine. CSS: secondary text color only.
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import { withBase } from '../../lib/base';
+import { hrefFor } from '../../data/contract-shell.mjs';
+import { whoLabel } from '../../data/contract-workflow.mjs';
+
+interface Track {
+  key: string;
+  label: string;
+  item: string;
+  status: string;
+  tone: 'done' | 'active' | 'waiting' | 'late' | 'none';
+  up?: { who: string; since: string; days: number; when: string };
+  target: string;
+}
+interface Props {
+  tracks: Track[];
+  role: string;
+  /** The contract record (CONTRACTS[key]). */
+  c: any;
+}
+const { tracks, role, c } = Astro.props;
+const VARIANT = { done: 'success', active: 'info', waiting: 'warning', late: 'danger' } as const;
+const hrefOf = (target: string) => (hrefFor(c, target) ? withBase(hrefFor(c, target)) : `#goto:${target}`);
+const days = (n: number) => `${n} ${n === 1 ? 'day' : 'days'}`;
+---
+{tracks.length > 0 && (
+  <div class="cbf-tracks grid" data-gap="md">
+    {tracks.map((t) => (
+      <EsaCard title={t.label} variant="outlined" padding="compact">
+        <div class="stack" data-gap="xs">
+          <a class="cbf-ov-link typography-body-md" href={hrefOf(t.target)}>{t.item}</a>
+          <span>
+            {t.tone === 'none'
+              ? <span class="cbf-tracks__quiet typography-body-sm">{t.status}</span>
+              : <EsaBadge value={t.status} variant={VARIANT[t.tone]} size="sm" />}
+          </span>
+          {t.up ? (
+            <span class="typography-body-sm">
+              {whoLabel(t.up, role, c) === 'you' ? 'With you' : `With ${whoLabel(t.up, role, c)}`} for {days(t.up.days)}, since {t.up.when}
+            </span>
+          ) : (
+            <span class="cbf-tracks__quiet typography-body-sm">No one is waiting on this</span>
+          )}
+        </div>
+      </EsaCard>
+    ))}
+  </div>
+)}
+
+<style>
+  .cbf-tracks {
+    --grid-min: 16rem;
+  }
+  .cbf-tracks__quiet {
+    color: var(--color-content-default-secondary);
+  }
+</style>

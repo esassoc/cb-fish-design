@@ -68,43 +68,6 @@ export const contractContacts = [
   { role: 'Env. compliance lead', name: 'Edward Gresh' },
 ];
 
-/** The collapsed Summary-tab sections beneath Basics — each a short prototype stand-in
- *  (collapsed by default; the live app fills these with their own detail). */
-export const summarySections = [
-  { key: 'photos', title: 'Photos', icon: 'image', note: 'Photos added to this contract will appear here.' },
-  { key: 'contacts', title: 'Contract contacts', icon: 'users' },
-  { key: 'sow', title: 'Statement of work (SOW)', icon: 'file-text', note: 'The full statement of work is on the SOW tab.' },
-  { key: 'deliverables', title: 'Deliverable status', icon: 'clipboard-check', note: 'Deliverable tracking is out of scope for this prototype.' },
-  { key: 'metrics', title: 'Metrics', icon: 'chart-column', note: 'Environmental and implementation metrics are out of scope for this prototype.' },
-  { key: 'focal-species', title: 'Focal species', icon: 'fish', note: 'White Sturgeon (Kootenai River population); Burbot.' },
-  { key: 'env-compliance', title: 'Environmental compliance', icon: 'shield-check', note: 'Environmental compliance detail is out of scope for this prototype.' },
-  { key: 'reports', title: 'Reports', icon: 'file-chart-column', note: 'Contract reports are out of scope for this prototype.' },
-];
-
-/**
- * The contract view's full tab strip, mirroring the live app (in order). Only the
- * two tabs flagged `panel` are interactive in this prototype — the rest render as
- * disabled context so the contract frame reads like the real thing. `corOnly` tabs
- * are hidden from contract managers, who see a narrower set.
- */
-export const CONTRACT_TABS = [
-  { key: 'summary', label: 'Summary', panel: true },
-  { key: 'sow', label: 'SOW' },
-  { key: 'we-budgets', label: 'WE budgets' },
-  { key: 'status-reports', label: 'Status reports' },
-  { key: 'pre-award', label: 'Pre-award' },
-  { key: 'workflow', label: 'Workflow', panel: true },
-  { key: 'review-sow', label: 'Review SOW' },
-  { key: 'email-archive', label: 'Email archive', corOnly: true },
-  { key: 'internal-notes', label: 'Internal notes', corOnly: true },
-  { key: 'documents', label: 'Documents', panel: true },
-  { key: 'cor-file', label: 'COR file', corOnly: true },
-];
-
-/** The tabs a given role sees. Contract managers don't get the COR-only tabs. */
-export const contractTabsFor = (role) =>
-  CONTRACT_TABS.filter((t) => (role === 'cm' ? !t.corOnly : true));
-
 /** Award lifecycle states, in order. `tier` groups them into the three rule tiers. */
 export const AWARD_STATES = [
   { value: 'pending', label: 'Pending', tier: 1 },

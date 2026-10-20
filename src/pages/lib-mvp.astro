@@ -1,0 +1,121 @@
+---
+// /lib-mvp — the vendor's Line Item Budget entry screen cut to v1 scope
+// (docs/lib-mvp-scope.md), living as the LIB tab inside the CBFish contract
+// shell. A FORK of /lib-entry, which stays intact as the long-term vision; the
+// two share no components, data or storage keys.
+//
+// What v1 must do, and what this page assembles for it: one standard category
+// taxonomy entered inline in a grid; a complete review loop (vendor submits,
+// BPA COR marks and returns or approves, vendor fixes and resubmits); and totals
+// that reconcile to the Contract Value with indirect and subcontracts rolled in.
+// Each subcontract's child LIB is its own page (/lib-mvp/subcontract/<sheet>).
+//
+// Thin assembler — all behavior lives in the lib-mvp components and the pricing
+// engine in src/data/lib-mvp.mjs (review model: src/data/lib-mvp-review.mjs).
+// The components talk over the document events in EVENTS (lib-mvp.mjs):
+// totals (grid → rail), indirect (config → grid, rail), focusLine (review
+// panel, rail → grid), review (grid ⇄ review panel ⇄ rail).
+import BaseLayout from '../layouts/BaseLayout.astro';
+import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
+import CbfContractShell from '../components/contract-shell/cbf-contract-shell.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import CbfPrototypeStrip from '../components/shared/cbf-prototype-strip.astro';
+import CbfRoleSwitch from '../components/shared/cbf-role-switch.astro';
+import CbfLibmvpDemoControls from '../components/lib-mvp/cbf-libmvp-demo-controls.astro';
+import CbfLibmvpReviewPanel from '../components/lib-mvp/cbf-libmvp-review-panel.astro';
+import CbfLibmvpIndirectConfig from '../components/lib-mvp/cbf-libmvp-indirect-config.astro';
+import CbfLibmvpCostTable from '../components/lib-mvp/cbf-libmvp-cost-table.astro';
+import CbfLibmvpReconcileRail from '../components/lib-mvp/cbf-libmvp-reconcile-rail.astro';
+import { ROLE_KEY } from '../data/lib-mvp-review.mjs';
+---
+<!-- manifest:
+  layout: esa-container > cbf-prototype-strip + cbf-contract-shell > sidebar(end)
+  sections:
+    - nav                -> cbf-public-nav              (shared)
+    - prototype strip    -> cbf-prototype-strip         (shared — the dashed frame the two devices below sit in)
+    - demo controls      -> cbf-libmvp-demo-controls    (prototype device: reset to / clear the sample budget)
+    - role lens          -> cbf-role-switch             (shared — prototype device: vendor ⇄ BPA COR; roleKey = lib-mvp-review's)
+    - contract shell     -> cbf-contract-shell          (shared — breadcrumb + Go to, header, tabs; Budget › Line item budget)
+    - review             -> cbf-libmvp-review-panel     (COR console / vendor change list across parent + child LIBs, Return / Approve)
+    - indirect block     -> cbf-libmvp-indirect-config  (one CO-approved rate and its base)
+    - cost grid          -> cbf-libmvp-cost-table       (3 line shapes, 9 categories, inline entry, linked quantities,
+                                                         per-line COR marks, read-only COR lens)
+    - reconciliation     -> cbf-libmvp-reconcile-rail   (running total vs Contract Value, 9 submit gates, 3 advisories)
+-->
+<BaseLayout title="Line item budget — Columbia Basin Fish &amp; Wildlife Program">
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <!-- Everything a presenter needs and CBFish would never ship, in one dashed
+           frame: the reset / clear pair, and the lens — one budget, two people,
+           both server-rendered with whichever role is selected revealed. -->
+      <CbfPrototypeStrip note="One line item budget, seen by the vendor who enters it and the BPA COR who reviews it.">
+        <CbfLibmvpDemoControls />
+        <CbfRoleSwitch roleKey={ROLE_KEY} />
+      </CbfPrototypeStrip>
+
+      <CbfContractShell contract="lib-mvp" tab="budget" child="lib">
+
+        <!-- The rail sits beside the grid and stays with it as the vendor scrolls:
+             the running total is what they watch while they type. -->
+        <div class="sidebar" data-side="end" data-gap="lg">
+          <aside class="cbf-lib-mvp__rail">
+            <CbfLibmvpReconcileRail />
+          </aside>
+          <div class="stack" data-gap="lg">
+            <!-- The review sits ABOVE the money: for the vendor it is the work
+                 list that decides what to change before resubmitting, and for
+                 the COR it is the console they decide from. -->
+            <CbfLibmvpReviewPanel />
+            <CbfLibmvpIndirectConfig />
+            <CbfLibmvpCostTable />
+          </div>
+        </div>
+      </CbfContractShell>
+    </EsaContainer>
+  </main>
+
+  <esa-snackbar-container data-snackbar></esa-snackbar-container>
+
+  <script>
+    import '@esa/ecology/esa-snackbar-container';
+  </script>
+</BaseLayout>
+
+<style>
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+  /* The rail column: narrow enough to leave the grid room, wide enough to hold
+     the gate checklist without wrapping every detail line.
+
+     --sidebar-content-min is the load-bearing value, and it is not a taste
+     setting: it should be the grid's MIN-CONTENT width, measured. The table
+     cannot scroll inside its own box (the add-line shape menus and the mark
+     popovers position absolutely and have to escape it), so if the sidebar hands
+     the grid less than that, the table bursts its column and paints its Amount
+     column and add-line buttons UNDER the rail.
+
+     TODO(lib-mvp): re-measure. 85.5rem is /lib-entry's floor (~1367px, with its
+     allocation and accounting-code columns). The MVP grid drops both columns, so
+     its min-content is smaller and this value is now too generous — it costs the
+     rail its place beside the grid at widths where the table would fit. Clone
+     the table at `width: min-content` in the browser (getComputedStyle won't tell
+     you), set this to that floor plus a hair, and move the stacking breakpoint
+     below with it.
+
+     min(…, 100%) so the floor can never make the COLUMN wider than the page. */
+  .cbf-page :global(.sidebar) { --sidebar-width: 20rem; --sidebar-content-min: min(85.5rem, 100%); }
+  /* Once stacked, the rail belongs ABOVE the grid — it's the running total the
+     vendor watches while typing, not a footnote to scroll past.
+     The breakpoint is the WRAP point: content floor + 1.5rem gap + 20rem rail +
+     the container's padding (1842px for the 85.5rem floor). TODO(lib-mvp): it
+     tracks --sidebar-content-min, so re-derive it when that is re-measured. */
+  @media (max-width: 1841px) {
+    .cbf-page :global(.sidebar[data-side='end'] > :first-child) { order: 0; }
+  }
+  /* esa-popover and esa-dropdown-menu position absolutely and cannot escape a
+     clipping ancestor; cbf-app-panel clips (rounded-corner card). Let the panel
+     overflow on THIS page only, so the grid's mark popovers and add-line menus
+     show in full. */
+  .cbf-page :global(.cbf-app-panel) { overflow: visible; }
+</style>

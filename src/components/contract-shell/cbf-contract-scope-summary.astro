@@ -1,0 +1,60 @@
+---
+// cbf-contract-scope-summary — the Overview's "Scope" section: what this contract
+// pays for, at a glance. Its work elements rolled up by accrual category, with each
+// category's share of the budget, largest first. The work-element grid itself
+// lives on the Scope tab; this links there, and to the SOW report.
+//
+// bcn-lego-checked: the table is the shared cbf-overview table; each share is
+// esa-progress-bar (determinate, with its value shown, so it still reads in forced
+// colors). No table lego in ecology; Beacon is not on this machine. CSS: the share
+// column's width.
+import EsaProgressBar from '@esa/ecology/esa-progress-bar.astro';
+import { CONTRACTS, TODAY } from '../../data/contract-shell.mjs';
+import { overviewFacts } from '../../data/contract-overview.mjs';
+import './cbf-overview.css';
+
+interface Props {
+  contract: string;
+}
+const { contract } = Astro.props;
+const c = (CONTRACTS as any)[contract];
+const f = overviewFacts(contract, TODAY, { value: 1, spent: 0 }, { start: c.periodStart, end: c.periodEnd });
+---
+<section class="cbf-ov-section stack" data-gap="sm" id="contract-scope" aria-labelledby="cbf-ov-scope">
+  <header class="cbf-ov-section__head repel">
+    <h2 id="cbf-ov-scope" class="typography-heading-md">Scope</h2>
+    <span class="cluster" data-gap="md">
+      <a class="cbf-ov-link typography-body-sm" href="#goto:scope/sow">Open statement of work</a>
+      <a class="cbf-ov-link typography-body-sm" href="#goto:scope/sow-report">SOW report (PDF)</a>
+    </span>
+  </header>
+  <p class="cbf-scope__lede typography-body-md">
+    {f.scope.count} work elements, {f.scope.total} in all.
+  </p>
+  <table class="cbf-summary-table">
+    <thead>
+      <tr><th>Accrual category</th><th class="is-num">Work elements</th><th class="is-num">Budget</th><th class="cbf-scope__share">Share of budget</th></tr>
+    </thead>
+    <tbody>
+      {f.scope.byCategory.map((row: any) => (
+        <tr>
+          <td>{row.category}</td>
+          <td class="is-num">{row.count}</td>
+          <td class="is-num">{row.budgetLabel}</td>
+          <td class="cbf-scope__share"><EsaProgressBar value={Math.round(row.share * 100)} size="sm" /></td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</section>
+
+<style>
+  .cbf-scope__lede {
+    margin: 0;
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-scope__share {
+    inline-size: 30%;
+    min-inline-size: 10rem;
+  }
+</style>

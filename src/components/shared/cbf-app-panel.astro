@@ -18,14 +18,18 @@ interface Crumb {
   icon?: string;
 }
 interface Props {
-  crumbs: Crumb[];
+  /** The trail. Omit when the `crumbs` slot supplies its own strip content. */
+  crumbs?: Crumb[];
 }
-const { crumbs } = Astro.props;
+const { crumbs = [] } = Astro.props;
 const hasSidebar = Astro.slots.has('sidebar');
+// A caller that owns more than the trail (the contract shell's Go to menu, its
+// state-dependent "CCR pending" crumb) fills the strip itself; the strip stays here.
+const hasCrumbSlot = Astro.slots.has('crumbs');
 ---
 <section class="cbf-app-panel">
   <div class="cbf-app-panel__crumb">
-    <EsaBreadcrumbs items={crumbs} />
+    {hasCrumbSlot ? <slot name="crumbs" /> : <EsaBreadcrumbs items={crumbs} />}
   </div>
   <div class:list={['cbf-app-panel__body', hasSidebar && 'cbf-app-panel__body--split']}>
     {hasSidebar && (

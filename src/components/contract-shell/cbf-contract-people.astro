@@ -1,0 +1,87 @@
+---
+// cbf-contract-people — the Overview rail's "Key contacts": the five people you
+// actually reach for on a contract (COR, contracting officer, environmental
+// compliance lead, the vendor's contract manager and technical contact), each with
+// email and phone. The live page lists every contact in one flat table with an
+// admin column in the middle; that full table is one click away, in a drawer.
+//
+// bcn-lego-checked: people are a list in the stack primitive with type roles; the
+// full list is cbf-contract-contacts inside esa-side-dialog (with the side-dialog
+// fix, like the contract details drawer); the trigger is esa-button. Checked
+// esa-avatar (we have no photos, and initials add nothing to a role-first list) and
+// esa-card (one card per person is heavier than the rail needs). Beacon is not on
+// this machine. CSS: row rules and text colors.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import CbfContractContacts from './cbf-contract-contacts.astro';
+import { CONTRACTS, TODAY } from '../../data/contract-shell.mjs';
+import { overviewFacts } from '../../data/contract-overview.mjs';
+import './cbf-overview.css';
+
+interface Props {
+  contract: string;
+}
+const { contract } = Astro.props;
+const c = (CONTRACTS as any)[contract];
+const f = overviewFacts(contract, TODAY, { value: 1, spent: 0 }, { start: c.periodStart, end: c.periodEnd });
+---
+<section class="cbf-ov-section stack" data-gap="sm" id="contract-contacts" aria-labelledby="cbf-ov-people">
+  <h2 id="cbf-ov-people" class="typography-heading-md">Key contacts</h2>
+  <ul class="cbf-people">
+    {f.keyContacts.map((p: any) => (
+      <li class="cbf-people__item stack" data-gap="3xs">
+        <span class="cbf-people__role typography-label-sm">{p.role}</span>
+        <span class="typography-body-md">{p.name}</span>
+        <a class="cbf-ov-link cbf-people__reach typography-body-sm" href={`mailto:${p.email}`}>{p.email}</a>
+        <span class="cbf-people__phone typography-body-sm">{p.phone}</span>
+      </li>
+    ))}
+  </ul>
+  <span data-cs-drawer-open="contacts">
+    <EsaButton variant="secondary" appearance="outline" size="sm">All {f.contactCount} contacts</EsaButton>
+  </span>
+
+  <esa-side-dialog position="right" size="lg" heading="Contract contacts" data-cs-drawer="contacts">
+    <CbfContractContacts contract={contract} />
+  </esa-side-dialog>
+</section>
+
+<script>
+  import '@esa/ecology/esa-side-dialog';
+  import { fixSideDialog } from '../../lib/side-dialog-fix';
+
+  // One wiring for every Overview drawer: a [data-cs-drawer-open="x"] opens
+  // [data-cs-drawer="x"].
+  document.querySelectorAll<HTMLElement & { show(): void }>('[data-cs-drawer]').forEach((drawer) => {
+    fixSideDialog(drawer);
+    document
+      .querySelector(`[data-cs-drawer-open="${drawer.dataset.csDrawer}"]`)
+      ?.addEventListener('click', () => drawer.show());
+  });
+</script>
+
+<style>
+  /* The full list is a wide table / two-column fact list; the lego's 520px "lg"
+     cuts its columns off. Its public width hook, clamped to the viewport by the lego. */
+  [data-cs-drawer] {
+    --side-dialog-width-lg: 60rem;
+  }
+  .cbf-people {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cbf-people__item {
+    padding-block: var(--spacing-300);
+    border-block-end: 1px solid var(--color-border-default-subtle, var(--color-border-default));
+  }
+  .cbf-people__item:first-child {
+    padding-block-start: 0;
+  }
+  .cbf-people__role,
+  .cbf-people__phone {
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-people__reach {
+    overflow-wrap: anywhere;
+  }
+</style>

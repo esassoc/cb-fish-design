@@ -1,0 +1,59 @@
+---
+// cbf-contract-tasks — the Overview's first section: every open task on the
+// contract, for both sides and BPA, most urgent first. The header shows only the
+// top one; its "N more tasks" menu ends here.
+//
+// Rendered once per (role × state); the contract shell's reveal rules show the live
+// one, so this must sit inside a cbf-contract-shell.
+//
+// bcn-lego-checked: the table is the shared cbf-overview table (no table lego in
+// ecology); the overdue marker is esa-badge. Beacon is not on this machine.
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import { withBase } from '../../lib/base';
+import { allModels } from '../../data/contract-shell.mjs';
+import './cbf-overview.css';
+
+interface Props {
+  contract: string;
+}
+const { contract } = Astro.props;
+const models = allModels(contract);
+const hrefOf = (a: any) => (a.href ? withBase(a.href) : `#goto:${a.target}`);
+---
+<section class="cbf-ov-section stack" data-gap="sm" id="contract-tasks" aria-labelledby="cbf-ov-tasks">
+  <h2 id="cbf-ov-tasks" class="typography-heading-md">Tasks</h2>
+  {Object.entries(models).map(([key, m]: [string, any]) => (
+    <div data-cs-v={key}>
+      {m.mine.length + m.theirs.length ? (
+        <table class="cbf-summary-table">
+          <thead><tr><th>Task</th><th>Assigned to</th><th>Due</th></tr></thead>
+          <tbody>
+            {[...m.mine, ...m.theirs].map((a: any) => (
+              <tr>
+                <td><a href={hrefOf(a)}>{a.task}</a></td>
+                <td>{a.owner === m.role ? 'You' : a.who ? `${a.party} ${a.who}` : a.party}</td>
+                <td class="is-nowrap">
+                  <span class="cluster" data-gap="xs">
+                    {a.when.replace(/^Due /, '')}
+                    {a.overdue && <EsaBadge value="Overdue" variant="danger" size="sm" />}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p class="cbf-tasks__none typography-body-md">
+          {m.next ? `No actions due. Next: ${m.next.task} ${m.next.when}.` : 'No actions due.'}
+        </p>
+      )}
+    </div>
+  ))}
+</section>
+
+<style>
+  .cbf-tasks__none {
+    margin: 0;
+    color: var(--color-content-default-secondary);
+  }
+</style>

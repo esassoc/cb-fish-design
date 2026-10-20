@@ -1,0 +1,117 @@
+---
+// cbf-we-grid — the workflow view's work element grid. Rows are the contract's
+// work elements; columns are the tracks each moves through (COLUMNS in
+// contract-workflow.mjs). Each cell says its status in words and links to that WE
+// in the matching section. Depends only on the demo state, so the caller renders
+// one per state (data-cs-s).
+//
+// bcn-lego-checked: the table is the shared cbf-overview table (ecology has no
+// table or data-grid lego — same call as cbf-contract-tasks); statuses are
+// esa-badge, spending is esa-progress-bar. Beacon is not on this machine. CSS: the
+// horizontal-scroll wrapper (so the grid reflows on narrow screens), column
+// widths, and secondary text color.
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaProgressBar from '@esa/ecology/esa-progress-bar.astro';
+import { withBase } from '../../lib/base';
+import { hrefFor } from '../../data/contract-shell.mjs';
+import { COLUMNS } from '../../data/contract-workflow.mjs';
+import './cbf-overview.css';
+
+interface Cell {
+  text: string;
+  tone?: 'done' | 'active' | 'waiting' | 'late' | 'none';
+  note?: string;
+  pct?: number;
+}
+interface Row {
+  code: string;
+  title: string;
+  cells: Record<string, Cell>;
+}
+interface Props {
+  rows: Row[];
+  /** The contract record (CONTRACTS[key]). */
+  c: any;
+}
+const { rows, c } = Astro.props;
+const VARIANT = { done: 'success', active: 'info', waiting: 'warning', late: 'danger' } as const;
+const hrefOf = (target: string) => (hrefFor(c, target) ? withBase(hrefFor(c, target)) : `#goto:${target}`);
+---
+<div class="cbf-we-grid" role="region" aria-label="Work elements by track" tabindex="0">
+  <table class="cbf-summary-table">
+    <thead>
+      <tr>
+        <th scope="col">Work element</th>
+        {COLUMNS.map((col) => <th scope="col">{col.label}</th>)}
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map((r) => (
+        <tr>
+          <th scope="row" class="cbf-we-grid__we">
+            <span class="stack" data-gap="3xs">
+              <span class="typography-label-md-strong">WE {r.code}</span>
+              <span class="cbf-we-grid__sub typography-body-sm">{r.title}</span>
+              {(r.location || r.species) && (
+                <span class="cbf-we-grid__sub typography-body-sm">
+                  {r.location && <a href={hrefOf('scope/locations')}>{r.location}</a>}
+                  {r.location && r.species && ' · '}
+                  {r.species && <a href={hrefOf('scope/focal-species')}>{r.species}</a>}
+                </span>
+              )}
+            </span>
+          </th>
+          {COLUMNS.map((col) => {
+            const cell = r.cells[col.key];
+            if (!cell) return <td>—</td>;
+            return (
+              <td>
+                <a class="cbf-we-grid__cell stack" data-gap="2xs" href={hrefOf(col.section)}>
+                  <span class="visually-hidden">WE {r.code}, {col.label}: </span>
+                  {col.key === 'budget' ? (
+                    <>
+                      <span class="typography-body-sm">{cell.text}</span>
+                      <EsaProgressBar value={Math.round((cell.pct ?? 0) * 100)} size="xs" label="Spent" />
+                    </>
+                  ) : cell.tone && cell.tone !== 'none' ? (
+                    <span><EsaBadge value={cell.text} variant={VARIANT[cell.tone]} size="sm" /></span>
+                  ) : (
+                    <span class="cbf-we-grid__sub typography-body-sm">{cell.text}</span>
+                  )}
+                  {cell.note && <span class="cbf-we-grid__sub typography-body-sm">{cell.note}</span>}
+                </a>
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<style>
+  /* Positioned so the cells' visually-hidden (absolute) labels are clipped by the
+     scroller instead of widening the page. */
+  .cbf-we-grid {
+    position: relative;
+    overflow-x: auto;
+  }
+  .cbf-we-grid table {
+    min-inline-size: 52rem;
+  }
+  .cbf-we-grid__we {
+    min-inline-size: 12rem;
+    background: transparent;
+    font-weight: inherit;
+  }
+  .cbf-we-grid__cell {
+    text-decoration: none;
+    color: var(--color-content-default);
+  }
+  .cbf-we-grid__cell:hover {
+    text-decoration: underline;
+  }
+  .cbf-we-grid__sub {
+    color: var(--color-content-default-secondary);
+  }
+</style>

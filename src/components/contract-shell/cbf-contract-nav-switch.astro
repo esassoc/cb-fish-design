@@ -1,0 +1,49 @@
+---
+/*
+ * cbf-contract-nav-switch — PROTOTYPE device: section list or tab strip.
+ *
+ * Tabs are the default (familiar, and they keep the content's width); the section
+ * list stays available for comparison. This flips `data-contract-nav` on the
+ * document element (set before first paint by cbf-contract-shell's inline script,
+ * also from `?nav=sections|tabs`); both navs are server-rendered and CSS shows one.
+ *
+ * bcn-lego-checked: the control IS esa-button-toggle, the same one-of-N lego as
+ * cbf-contract-state-switch and cbf-role-switch. Beacon is not on this machine.
+ */
+import { NAV_KEY, DEFAULT_NAV } from '../../data/contract-shell.mjs';
+
+const config = {
+  options: [
+    { label: 'Tabs', value: 'tabs' },
+    { label: 'Section list', value: 'sections' },
+  ],
+  key: NAV_KEY,
+  fallback: DEFAULT_NAV,
+};
+---
+<esa-button-toggle
+  class="cbf-contract-nav-switch"
+  size="sm"
+  label="Contract navigation"
+  data-contract-nav-control={JSON.stringify(config)}
+></esa-button-toggle>
+
+<script>
+  import '@esa/ecology/esa-button-toggle';
+
+  document.querySelectorAll<HTMLElement & { options: any[]; value: string }>('[data-contract-nav-control]').forEach((control) => {
+    const { options, key, fallback } = JSON.parse(control.dataset.contractNavControl ?? '{}');
+    control.options = options;
+    control.value = document.documentElement.dataset.contractNav ?? fallback;
+
+    control.addEventListener('change', () => {
+      const nav = control.value;
+      document.documentElement.dataset.contractNav = nav;
+      try {
+        window.sessionStorage?.setItem(key, nav);
+      } catch {
+        /* private mode — the switch still works for this page view */
+      }
+    });
+  });
+</script>

@@ -843,3 +843,16 @@ fit-content` beats the `top` + `bottom` stretch. Measured: rect `x=0, y=16, w=40
 :host([position='right']) dialog.panel { left: auto; height: auto; }
 :host([position='left'])  dialog.panel { right: auto; height: auto; }
 ```
+
+---
+
+## esa-popover — no end alignment, no viewport clamp
+
+**Status:** Open — needs upstream change. Worked around in `cbf-contract-goto.astro` with a native `popover` that a small script pins under the trigger (end-aligned, clamped to the viewport). It was briefly an `esa-side-dialog`, but that took the menu away from its button.
+**Affects:** Any `<esa-popover>` whose trigger sits near a viewport edge, or whose panel is wider than the space either side of the trigger's center.
+
+**Problem:**
+`position="bottom"` (and `top`) always centers the panel under the trigger (`left: 50%; transform: translateX(-50%)`), and nothing measures the viewport. A wide panel opened from a trigger at the right edge of the page (the contract shell's Go to menu, ~60rem of link columns) runs off screen. There are no `::part`s, so a spoke can't move the panel box itself.
+
+**Requested change:**
+Add start/end alignment to match `esa-dropdown-menu` (`bottom-start`, `bottom-end`, …), and/or clamp the panel inside the viewport after measuring.

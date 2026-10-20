@@ -1,0 +1,66 @@
+---
+// /contract/<tab>/<page> — PLACEHOLDER pages for the contract's sections (Scope,
+// Budget, Environmental compliance, Reporting, Invoices, Changes and approvals,
+// Documents): one screen per page, reached from the section's second row of tabs.
+// Sample content, nothing is wired. The Workflow section is /contract-overview; the
+// line item budget stays /lib-entry.
+//
+// Thin assembler — the shell owns the header, both rows of tabs and Go to; the
+// page is cbf-contract-page-screen.
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import CbfPublicNav from '../../../components/shared/cbf-public-nav.astro';
+import CbfPrototypeStrip from '../../../components/shared/cbf-prototype-strip.astro';
+import CbfRoleSwitch from '../../../components/shared/cbf-role-switch.astro';
+import CbfContractStateSwitch from '../../../components/contract-shell/cbf-contract-state-switch.astro';
+import CbfContractNavSwitch from '../../../components/contract-shell/cbf-contract-nav-switch.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import CbfContractShell from '../../../components/contract-shell/cbf-contract-shell.astro';
+import CbfContractPageScreen from '../../../components/contract-shell/cbf-contract-page-screen.astro';
+import { TABS, childLabel } from '../../../data/contract-shell.mjs';
+
+export function getStaticPaths() {
+  return TABS.filter((t) => t.key !== 'overview').flatMap((t) =>
+    t.children
+      .filter((ch: any) => !ch.mode)
+      .map((ch) => ({ params: { tab: t.key, page: ch.key } })),
+  );
+}
+const { tab, page } = Astro.params as { tab: string; page: string };
+const t = TABS.find((x) => x.key === tab)!;
+const label = childLabel(t.children.find((ch) => ch.key === page)!);
+---
+<!-- manifest:
+  layout: esa-container > cbf-prototype-strip + cbf-contract-shell
+  sections:
+    - nav             -> cbf-public-nav             (shared)
+    - controls        -> cbf-prototype-strip        (shared — role, state, nav switches)
+    - contract shell  -> cbf-contract-shell         (shared — breadcrumb + Go to, header, section and page tabs)
+    - page            -> cbf-contract-page-screen   (header, figures, content)
+-->
+<BaseLayout title={`${label} — Contract CR-411206 — Columbia Basin Fish & Wildlife Program`}>
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <CbfPrototypeStrip note="Placeholder page: what this could hold. Sample content, nothing is wired.">
+        <CbfRoleSwitch />
+        <CbfContractStateSwitch />
+        <CbfContractNavSwitch />
+      </CbfPrototypeStrip>
+
+      <CbfContractShell contract="lib" tab={tab} child={page}>
+        <CbfContractPageScreen tab={tab} page={page} />
+      </CbfContractShell>
+    </EsaContainer>
+  </main>
+
+  <esa-snackbar-container data-snackbar></esa-snackbar-container>
+
+  <script>
+    import '@esa/ecology/esa-snackbar-container';
+  </script>
+</BaseLayout>
+
+<style>
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+</style>

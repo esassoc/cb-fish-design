@@ -21,6 +21,12 @@
  * An `is:inline` script sets the attribute at parse time, BEFORE the page paints,
  * so a reload in the COR lens never flashes the vendor screen first.
  *
+ * WHERE THE LENS IS STORED: sessionStorage, under `roleKey`. It defaults to
+ * /lib-entry's key (ROLE_KEY in src/data/lib-review.mjs); a prototype that keeps
+ * its own review passes its own key (/lib-mvp passes ROLE_KEY from
+ * src/data/lib-mvp-review.mjs), so the two prototypes never share a lens in one
+ * tab. The attribute and the event are the same on every page either way.
+ *
  * EVENT CONTRACT (on `document`)
  *   dispatch  cbf-role:change   detail: { role }   // 'vendor' | 'cor'
  *   Fired after the attribute is set, on mount and on every switch, so components
@@ -36,18 +42,28 @@
  * the caption — belongs to cbf-prototype-strip. Beacon is not cloned on this
  * machine.
  */
-import { ROLE_KEY } from '../../data/lib-review.mjs';
+import { ROLE_KEY as DEFAULT_ROLE_KEY } from '../../data/lib-review.mjs';
 
 interface Props {
+  /** The sessionStorage key the lens persists under. Defaults to /lib-entry's. */
+  roleKey?: string;
   /** The role the page renders as when nothing is stored yet. */
   initial?: 'vendor' | 'cor';
+  /** What each side is doing on THIS screen, after the person's name. */
+  vendorDoing?: string;
+  corDoing?: string;
 }
-const { initial = 'vendor' } = Astro.props;
+const {
+  roleKey = DEFAULT_ROLE_KEY,
+  initial = 'vendor',
+  vendorDoing = 'entering this budget',
+  corDoing = 'reviewing this budget for BPA',
+} = Astro.props;
 ---
 
 <!-- Set the lens before first paint, so a reload in the COR view never flashes
      the vendor screen. Inline on purpose: a module script is deferred. -->
-<script is:inline define:vars={{ initial, ROLE_KEY }}>
+<script is:inline define:vars={{ initial, ROLE_KEY: roleKey }}>
   (() => {
     let role = initial;
     try {
@@ -66,7 +82,14 @@ const { initial = 'vendor' } = Astro.props;
      side of the document you are on, and the name says who that is on this
      contract. Both belong to the lens, so both travel with it into whatever
      frame the page slots it into. -->
-<div class="cbf-role-switch stack" data-gap="3xs" data-role-switch>
+<div
+  class="cbf-role-switch stack"
+  data-gap="3xs"
+  data-role-switch
+  data-role-key={roleKey}
+  data-vendor-doing={vendorDoing}
+  data-cor-doing={corDoing}
+>
   <esa-button-toggle
     class="cbf-role-switch__control"
     size="sm"
@@ -78,7 +101,7 @@ const { initial = 'vendor' } = Astro.props;
 
 <script>
   import '@esa/ecology/esa-button-toggle';
-  import { ROLES, ROLE_KEY, roleMeta } from '../../data/lib-review.mjs';
+  import { ROLES, ROLE_KEY as DEFAULT_ROLE_KEY, roleMeta } from '../../data/lib-review.mjs';
 
   const root = document.querySelector<HTMLElement>('[data-role-switch]');
   if (root) {
@@ -86,6 +109,7 @@ const { initial = 'vendor' } = Astro.props;
       '[data-role-control]',
     );
     const who = root.querySelector<HTMLElement>('[data-role-who]');
+    const roleKey = root.dataset.roleKey || DEFAULT_ROLE_KEY;
 
     const current = () =>
       document.documentElement.dataset.cbfRole === 'cor' ? 'cor' : 'vendor';
@@ -98,17 +122,15 @@ const { initial = 'vendor' } = Astro.props;
     const paintWho = (role: string) => {
       const meta = roleMeta(role);
       if (who) {
-        who.textContent =
-          role === 'cor'
-            ? `${meta.who} — reviewing this budget for BPA`
-            : `${meta.who} — entering this budget`;
+        const doing = role === 'cor' ? root!.dataset.corDoing : root!.dataset.vendorDoing;
+        who.textContent = `${meta.who} — ${doing}`;
       }
     };
 
     const apply = (role: string) => {
       document.documentElement.dataset.cbfRole = role;
       try {
-        window.sessionStorage?.setItem(ROLE_KEY, role);
+        window.sessionStorage?.setItem(roleKey, role);
       } catch {
         /* ignore */
       }

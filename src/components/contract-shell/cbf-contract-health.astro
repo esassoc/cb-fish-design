@@ -1,0 +1,110 @@
+---
+// cbf-contract-health — the Overview's "Status" band: is anything on this contract
+// off track? Four answers, each a number with what it's out of, each linking to the
+// tab that owns the detail (IA rule: one canonical home per item — the Overview
+// summarizes, it doesn't host the grids).
+//
+//   Deliverables              late, else due within 90 days, else on track
+//   Environmental compliance  work elements that need clearance and don't have it
+//   Status reports            from the demo state's open actions (overdue / due / up to date)
+//   Budget                    share of the contract value spent vs share of the period
+//                             gone. The running balance stays out until Q14 settles
+//                             how it's calculated.
+//
+// Same construction as the vendor dashboard's Financial outlook: an h2 with an as-of
+// caption, then a row of esa-stat blocks.
+//
+// Status reports differ by demo state, so that block renders once per state and the
+// contract shell's reveal rules show the live one.
+//
+// bcn-lego-checked: each figure IS esa-stat; the row is the `cluster` primitive;
+// the links are plain anchors resolved by the shell (#goto:). Checked esa-alert-box
+// (a message, which would make every figure read as a warning) and esa-card (adds
+// chrome the Financial outlook band deliberately doesn't have). Beacon is not on
+// this machine. CSS: the block's width and the link spacing.
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import { CONTRACTS, STATES, TODAY, shortDate, allModels } from '../../data/contract-shell.mjs';
+import { overviewFacts } from '../../data/contract-overview.mjs';
+import './cbf-overview.css';
+
+interface Props {
+  contract: string;
+}
+const { contract } = Astro.props;
+const c = (CONTRACTS as any)[contract];
+const dollars = (s: string) => Number(String(s).replace(/[$,]/g, '')) || 0;
+const f = overviewFacts(
+  contract,
+  TODAY,
+  { value: dollars(c.summary.currentValue), spent: dollars(c.summary.expenditures) },
+  { start: c.periodStart, end: c.periodEnd },
+);
+const models = allModels(contract);
+
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+const deliverables = {
+  value: f.deliverables.late.length
+    ? `${f.deliverables.late.length} late`
+    : f.deliverables.soon.length
+      ? `${f.deliverables.soon.length} due soon`
+      : 'On track',
+  sub: `${f.deliverables.concluded} of ${f.deliverables.total} concluded`,
+};
+const compliance = {
+  value: f.compliance.notCleared.length ? `${f.compliance.notCleared.length} not cleared` : 'All cleared',
+  sub: `${f.compliance.needs - f.compliance.notCleared.length} of ${plural(f.compliance.needs, 'work element')} needing clearance`,
+};
+const budget = {
+  value: `${f.budget.spentPct}% spent`,
+  sub: `${f.budget.spent} of ${f.budget.value}, with ${f.budget.elapsedPct}% of the period gone`,
+};
+
+// Status reports, per demo state: the open status-report action, if any.
+const reporting = STATES.map((s) => {
+  const m: any = models[`vendor:${s.key}`];
+  const a = [...m.mine, ...m.theirs].find((x: any) => x.target === 'reporting/status-reports');
+  if (a?.overdue) return { state: s.key, value: 'Overdue', sub: `${a.task}, ${a.when.replace(/^Due/, 'due')}` };
+  if (a) return { state: s.key, value: a.when, sub: a.task };
+  const next = m.next?.target === 'reporting/status-reports' ? `Next: ${m.next.task} ${m.next.when}` : 'No report due';
+  return { state: s.key, value: 'Up to date', sub: next };
+});
+---
+<section class="cbf-ov-section stack" data-gap="sm" id="contract-status" aria-labelledby="cbf-ov-status">
+  <header class="cbf-ov-section__head repel">
+    <h2 id="cbf-ov-status" class="typography-heading-md">Status</h2>
+    <span class="cbf-ov-section__caption typography-meta">As of {shortDate(TODAY)}</span>
+  </header>
+
+  <div class="cbf-health cluster" data-gap="xl">
+    <div class="cbf-health__item stack" data-gap="xs">
+      <EsaStat value={deliverables.value} label="Deliverables" sub={deliverables.sub} />
+      <a class="cbf-ov-link typography-body-sm" href="#goto:reporting/milestones">Open deliverables</a>
+    </div>
+    <div class="cbf-health__item stack" data-gap="xs">
+      <EsaStat value={compliance.value} label="Environmental compliance" sub={compliance.sub} />
+      <a class="cbf-ov-link typography-body-sm" href="#goto:compliance/environmental">Open compliance</a>
+    </div>
+    <div class="cbf-health__item stack" data-gap="xs">
+      {reporting.map((r) => (
+        <div data-cs-s={r.state}><EsaStat value={r.value} label="Status reports" sub={r.sub} /></div>
+      ))}
+      <a class="cbf-ov-link typography-body-sm" href="#goto:reporting/status-reports">Open status reports</a>
+    </div>
+    <div class="cbf-health__item stack" data-gap="xs">
+      <EsaStat value={budget.value} label="Budget" sub={budget.sub} />
+      <a class="cbf-ov-link typography-body-sm" href="#goto:budget/expenditures">Open budget</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cbf-health {
+    --align: flex-start;
+    row-gap: var(--spacing-500);
+  }
+  .cbf-health__item {
+    flex: 1 1 12rem;
+    max-inline-size: 18rem;
+  }
+</style>

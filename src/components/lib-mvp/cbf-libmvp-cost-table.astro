@@ -1,0 +1,2112 @@
+---
+/*
+ * cbf-libmvp-cost-table — the vendor Line Item Budget (LIB) entry grid, v1.
+ * The LIB of a CBFish contract at /lib-mvp, and of each subcontract at
+ * /lib-mvp/subcontract/<sheet>.
+ *
+ * A FORK of src/components/lib-entry/cbf-lib-cost-table.astro (the long-term
+ * exploration behind /lib-entry, left untouched), cut to docs/lib-mvp-scope.md
+ * and read against src/data/lib-mvp.mjs. What v1 cut is gone from the markup,
+ * not hidden: trips, published-rate claims, GSA columns, work-element
+ * allocation, accounting codes, import and copy, the personnel split, rate
+ * steps, capitalization-threshold filing and drag-to-reorder.
+ *
+ * ── THE DESIGN CLAIM ────────────────────────────────────────────────────────
+ * A LIB is a web of cross-line dependencies, not a list of independent rows:
+ * fringe is a percentage of a salary line, a cell phone's months may FOLLOW a
+ * position, indirect is a percentage of whatever its base reaches. A grid holds
+ * that web — the salary line and everything that follows it are on screen at
+ * once — so there is no add-line modal: "Add line" appends an editable row
+ * inline, of the kind the vendor picked.
+ *
+ * ── EVERY CATEGORY CAPTIONS ITS OWN COLUMNS ─────────────────────────────────
+ * No global <thead>. "Quantity" is months in Personnel, rooms × nights in a
+ * lodging line and nothing at all in Fringe, so each of the nine categories
+ * emits its own caption row (`columns` in src/data/lib-mvp.mjs). Only Amount
+ * and the row action keep one name, because the money column has to line up
+ * with the subtotals and the foot.
+ *
+ * ── THE THREE LINE SHAPES — the ROW decides its cells ───────────────────────
+ *   qty-rate     identity · quantity (+ a second quantity where the unit has
+ *                one) · cost per unit. The vendor types the rate. Travel is one
+ *                of these: a kind, a typed destination, count × duration × rate.
+ *   pct-of-base  fringe ONLY, generated one per salary line. Nothing to type:
+ *                the row says what it is a percentage of and where to edit it.
+ *   lump         label · one amount · a description (gated). A subcontract
+ *                line is a lump whose amount is its child LIB's total.
+ * A collapsed cell is a spanned cell, never a dead input.
+ *
+ * ── "WHAT IS THIS LINE" IS A PICKER, NOT PROSE ──────────────────────────────
+ * Plain dropdowns over fixed lists: travel kind, vehicle kind + vehicle type,
+ * meeting kind, other kind, a position's time unit. The kind fixes the units;
+ * a vehicle TYPE prefills the GSA Fleet rate as an editable default
+ * (prefillVehicleRate never overwrites a number the vendor typed).
+ *
+ * ── LINKED QUANTITIES — one hop, to a position ──────────────────────────────
+ * From the row menu: follow a position's time, stop following ("Use my own
+ * quantity", which freezes the value), or follow it again. Editing the
+ * position flashes every row that just moved (`dependentsOf`).
+ *
+ * ── ARITHMETIC IS NEVER DONE HERE ───────────────────────────────────────────
+ * Every amount, subtotal and total comes from `priceLines(lines, cfg)`, re-run
+ * in full after every edit, so a dependent line cannot silently disagree with
+ * its base.
+ *
+ * ── WHO MAY TOUCH WHAT ──────────────────────────────────────────────────────
+ * The vendor edits only while `vendorCanEdit(review)` (draft / returned); while
+ * the budget is with the COR, or once it is approved, the vendor reads the
+ * same facts the COR does, under a short notice. The COR marks lines only
+ * while `corCanMark(review)` (in review). Both renderings are in the markup;
+ * the read lens is the document's `data-cbf-role="cor"` (set before paint) or
+ * this grid's own `data-lens="read"`.
+ *
+ * ── AUTOSAVE ────────────────────────────────────────────────────────────────
+ * There is no backend, so a committed edit (a field's change on blur, a pick,
+ * a menu action) writes this budget's working lines to sessionStorage
+ * (`cbf-libmvp-lines:<budget>`, see src/lib/lib-mvp-view.ts) and shows
+ * "Saved". The main budget reads every stored child sheet on mount, so a
+ * child LIB's total reaches its subcontract line on the parent page.
+ *
+ * ── EVENT CONTRACT (all on `document`, names from EVENTS in lib-mvp.mjs) ────
+ * DISPATCH EVENTS.totals — on mount and after EVERY recompute. The budget's
+ *   lines are written to storage BEFORE it fires.
+ *   detail: { budget, total, direct, indirect, indirectBase, remaining,
+ *             pctOfValue, checks, advisories, lines }
+ *   budget     'main' or the subcontract sheet id
+ *   checks     submitChecksFor(lines, cfg, { openRequired, budgetId })
+ *   advisories advisoriesFor(lines, cfg)
+ * LISTEN EVENTS.indirect     detail: { config: { rateId } } — reprice, re-fire.
+ * LISTEN EVENTS.review       detail: { review } — repaint marks and
+ *   permissions, recompute the checks, re-fire totals.
+ * LISTEN EVENTS.focusLine    detail: { lineId, budget? } — open the section,
+ *   scroll to and flash the row. A line on another budget is ignored; a page
+ *   links to it instead (`/lib-mvp/subcontract/<sheet>#<lineId>`), which the
+ *   grid honors on mount.
+ * LISTEN cbf-role:change     repaint the lens.
+ * When the grid changes a mark (setFlag / removeFlag / setAddressed) it calls
+ *   saveReview + fireReview.
+ * NAVIGATES to /lib-mvp/subcontract/<sheet> from a subcontract row.
+ *
+ * bcn-lego-checked: the house rule points data tables at AG Grid, but that rule
+ * governs SCANNABLE data grids with search / filter / download chrome. This is an
+ * ENTRY FORM — a live control and its own validation state in most cells, with
+ * per-row shape branching and colspan collapse — so a semantic <table> carrying
+ * esa-* controls is both correct and far lighter. Same call the /lib-entry grid,
+ * cbf-baselines-table and cbf-lib-pi-documents already made; the ecology catalog
+ * was re-checked and has no table/grid lego. Everything that ISN'T the grid is a
+ * lego: entry cells = esa-text-field, pickers = esa-select, add-line and row
+ * menus = esa-dropdown-menu, the COR mark editor = esa-popover + esa-radio-group
+ * + esa-textarea, "addressed" = esa-checkbox, notices = esa-alert-box, the
+ * first-run state = esa-empty-state, validation = esa-field-error, verdicts =
+ * esa-badge, the fringe setting = esa-dialog. The "Saved" indicator is an
+ * esa-icon beside one line of text — no lego carries a passive save status.
+ * Beacon is not cloned on this machine.
+ */
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaFieldError from '@esa/ecology/esa-field-error.astro';
+import EsaIcon from '@esa/ecology/esa-icon.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import {
+  SHAPES,
+  budgetFor,
+  priceLines,
+  effectiveQty,
+  baseAmountFor,
+  baseLabelFor,
+  contract,
+  timeUnit,
+  isSalaryLine,
+  travelKind,
+  vehicleKind,
+  vehicleTypeLabel,
+  meetingKind,
+  otherKind,
+  ENTRY_COLUMNS,
+  hasFringeCell,
+  rateSpan,
+  blockOf,
+  usd,
+  pct,
+  qtyFmt,
+} from '../../data/lib-mvp.mjs';
+import {
+  SEVERITIES,
+  severityMeta,
+  reasonLabel,
+  seedReview,
+  flagFor,
+  isAddressed,
+  vendorCanEdit,
+  openRequiredFlags,
+} from '../../data/lib-mvp-review.mjs';
+import * as V from '../../lib/lib-mvp-view';
+
+interface Props {
+  /**
+   * Which budget to render: 'main' (the contract's LIB) or a subcontract sheet
+   * id, whose child LIB has the same sections less Subcontracts, and no
+   * indirect. See budgetFor / activateBudget in src/data/lib-mvp.mjs.
+   */
+  budget?: string;
+  /** Section heading above the grid. Pass null to let the page own the heading. */
+  heading?: string | null;
+  /** One line of context under the heading. Pass null to omit. */
+  lede?: string | null;
+}
+const {
+  budget = 'main',
+  heading = 'Line item budget',
+  lede = `${contract.number} · ${contract.fiscalYear} · ${contract.periodStart}–${contract.periodEnd}`,
+} = Astro.props;
+
+const B: any = budgetFor(budget);
+const isSub = B.kind === 'subcontract';
+const categories: any[] = B.categories;
+const cfg: any = B.cfg;
+const lines: any[] = B.lines;
+const priced = priceLines(lines, cfg);
+const A = priced.amounts;
+const amt = (id: string): number => A[id] ?? 0;
+const t0 = priced.totals;
+
+/* ── The COR's review layer ─────────────────────────────────────────────────
+   Server-rendered from the seeded review, then kept live by the script. A mark
+   renders inside the cost-line cell, under the line it disputes. Only this
+   budget's marks — one review covers the parent and every child LIB. */
+const review = seedReview();
+const openRequired = openRequiredFlags(review);
+const flagOf = (l: any) => {
+  const f = flagFor(review, l.id);
+  return f && (f.budget ?? 'main') === B.id ? f : null;
+};
+
+/* ── View derivations, bound to THIS scope's data ───────────────────────────
+   The bodies live in src/lib/lib-mvp-view.ts; the client script binds the same
+   ones to its live state, so the two scopes cannot drift. */
+const displayLabel = (l: any) => V.displayLabel(l, lines);
+const firstError = (l: any) => V.lineErrors(l, lines)[0] ?? '';
+
+/* ── Grouping: a flat item list per category, so the row markup is written once
+   whether or not the category has sub-blocks (only Supplies does). ── */
+const linesIn = (catKey: string, blockKey?: string) =>
+  lines.filter((l) => l.category === catKey && (blockKey ? l.block === blockKey : true));
+const itemsFor = (cat: any): any[] =>
+  cat.blocks
+    ? cat.blocks.flatMap((b: any) => [
+        { kind: 'block', block: b },
+        ...linesIn(cat.key, b.key).map((line: any) => ({ kind: 'line', line })),
+      ])
+    : linesIn(cat.key).map((line: any) => ({ kind: 'line', line }));
+
+/* ── Row templates, one per SHAPE ───────────────────────────────────────────
+   An added line clones a real server-rendered row of its shape, so its esa-*
+   legos and colspan collapse are byte-identical to the SSR ones. A budget may
+   have no row of some shape (a new subcontract's LIB has none at all), so one
+   blank row per shape renders in a hidden tbody the script takes and removes.
+   The salary template also carries the fringe cell other qty-rate rows drop. */
+const TEMPLATE_LINES = [
+  { id: 'tpl-qty-rate', category: 'personnel-salary', shape: SHAPES.QTY_RATE, label: '', qty: 1, staff: 1, timeUnit: 'month', qtyUnit: 'months', rate: 0 },
+  { id: 'tpl-pct-of-base', category: 'personnel-fringe', shape: SHAPES.PCT_OF_BASE, derived: true, base: { type: 'line', lineId: '' }, pct: 0 },
+  { id: 'tpl-lump', category: 'other', shape: SHAPES.LUMP, label: '', amount: 0, desc: '' },
+];
+const groups: any[] = [
+  ...categories.map((cat) => ({ cat, items: itemsFor(cat) })),
+  { cat: null, items: TEMPLATE_LINES.map((line) => ({ kind: 'line', line })) },
+];
+
+/* The row-actions trigger is a vertical ellipsis. The hub's icon registry has
+   none (logged in docs/hub-issues.md), so the Lucide paths go through esa-icon's
+   own `paths` fallback, inside a chrome esa-button. */
+const KEBAB_PATHS = '<circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>';
+---
+
+<section class="cbf-lct stack" data-gap="md" data-lct data-libmvp-surface data-budget={B.id} data-budget-kind={B.kind}>
+  <header class="repel" data-gap="sm">
+    <span class="stack" data-gap="3xs">
+      {heading && <h2 class="typography-heading-md">{heading}</h2>}
+      {lede && <p class="cbf-lct__lede">{lede}</p>}
+    </span>
+    <span class="cluster" data-gap="xs">
+      {/* Per-line autosave, made visible: a committed edit says it landed. */}
+      <span class="cbf-lct__saved" role="status" aria-live="polite">
+        <span class="cluster" data-gap="3xs" data-saved hidden>
+          <EsaIcon name="check" size="sm" />
+          <span>Saved</span>
+        </span>
+      </span>
+      <span data-unfold-all><EsaButton size="sm" variant="ghost" icon="chevron-down">Expand all</EsaButton></span>
+      <span data-fold-all><EsaButton size="sm" variant="ghost" icon="chevron-up">Collapse all</EsaButton></span>
+    </span>
+  </header>
+
+  {/* ── Why the grid is read-only right now — one notice, for whoever is reading ── */}
+  <div data-notice="in-review" hidden>
+    <EsaAlertBox variant="info" title="With the BPA COR for review">
+      You can’t edit the budget while it’s in review. It opens again if the COR returns it.
+    </EsaAlertBox>
+  </div>
+  <div data-notice="approved" hidden>
+    <EsaAlertBox variant="success" title="Approved and locked">
+      Changes to this budget now go through a contract change.
+    </EsaAlertBox>
+  </div>
+  <div data-notice="cor-wait" hidden>
+    <EsaAlertBox variant="info" title="Not in review">
+      You can mark lines once the vendor submits the budget.
+    </EsaAlertBox>
+  </div>
+
+  {/* ── First run: a budget with nothing in it yet ── */}
+  <div data-empty hidden>
+    <EsaEmptyState title="No cost lines yet" description="Add a line to any section below." size="md" />
+  </div>
+
+  <!-- overflow stays visible at desktop on purpose: the esa-popover mark editor,
+       the esa-select panels and the esa-dropdown-menu menus position absolutely
+       and cannot escape a clipping ancestor. Narrow viewports fall back to
+       horizontal scrolling and accept the clipping. -->
+  <div class="cbf-lct__scroll">
+    <table class="cbf-lct__table" aria-label="Line item budget cost lines">
+      {groups.map((g: any) => (
+        <tbody
+          data-cat={g.cat?.key}
+          data-collapsed={g.cat ? '' : undefined}
+          data-tpl={g.cat ? undefined : ''}
+          hidden={!g.cat}
+        >
+          {g.cat && (
+            <>
+              {/* ── Category head: name, count, subtotal, and the inline add ── */}
+              <tr class="cbf-lct__cathead">
+                <th scope="colgroup" colspan={ENTRY_COLUMNS}>
+                  <span class="repel cbf-lct__cathead-row" data-gap="sm">
+                    {/* Folding: folded, a section is one line — what it is, how
+                        many lines, what it costs, and whether any needs a fix. */}
+                    <span class="cluster" data-gap="2xs">
+                      <span data-cat-toggle>
+                        <EsaButton variant="chrome" size="xs" iconOnly icon="chevron-down" label={`Show or hide ${g.cat.label}`} aria-expanded="false" />
+                      </span>
+                      {g.cat.icon && (
+                        <span class="cbf-lct__cat-icon" aria-hidden="true">
+                          <EsaIcon name={g.cat.icon} paths={g.cat.iconPaths} size="sm" />
+                        </span>
+                      )}
+                      <span class="cbf-lct__cat-label">{g.cat.label}</span>
+                      <span class="cbf-lct__note" data-cat-count>
+                        {(() => { const n = linesIn(g.cat.key).length; return n ? `${n} line${n === 1 ? '' : 's'}` : 'No lines'; })()}
+                      </span>
+                      <span data-cat-issues hidden>
+                        <EsaBadge value="Needs attention" variant="warning" size="sm" />
+                      </span>
+                      {g.cat.key === 'personnel-salary' && (
+                        <span data-fringe-badge hidden={!V.fringeBadge()}>
+                          <EsaBadge value={V.fringeBadge() ?? ''} variant="info" size="sm" />
+                        </span>
+                      )}
+                      {g.cat.note && (
+                        <esa-popover position="right" trigger="click" offset="6">
+                          <EsaButton size="xs" variant="ghost" icon="info" label={`Learn more about ${g.cat.label}`}>Learn more</EsaButton>
+                          <div slot="content" class="cbf-lct__cat-note">{g.cat.note}</div>
+                        </esa-popover>
+                      )}
+                    </span>
+                    <span class="cbf-lct__cat-add" data-vendor-only>
+                      {g.cat.derived ? (
+                        /* A generated section has nothing to add TO — the cell
+                           says where its lines come from instead. */
+                        <span class="cbf-lct__note">Set fringe on the salary lines.</span>
+                      ) : g.cat.shapes.length > 1 || g.cat.blocks || g.cat.kinds ? (
+                        /* More than one kind (or sub-block): the add is a menu. */
+                        <esa-dropdown-menu position="below-end" data-add-menu={g.cat.key}>
+                          <EsaButton size="sm" variant="primary" appearance="outline" icon="plus">Add line</EsaButton>
+                        </esa-dropdown-menu>
+                      ) : (
+                        <EsaButton size="sm" variant="primary" appearance="outline" icon="plus" data-add-line={`${g.cat.key}||${g.cat.shapes[0]}|`}>
+                          Add line
+                        </EsaButton>
+                      )}
+                    </span>
+                  </span>
+                </th>
+                <td class="cbf-lct__cell cbf-lct__cell--num">
+                  <strong class="cbf-lct__money" data-cat-total={g.cat.key}>{usd(priced.byCategory[g.cat.key] ?? 0)}</strong>
+                </td>
+                {/* The section's own menu — Personnel's default fringe rate is the
+                    one section setting v1 keeps. */}
+                <td class="cbf-lct__cell cbf-lct__cell--act">
+                  {g.cat.key === 'personnel-salary' && (
+                    <span data-vendor-only>
+                      <esa-dropdown-menu position="below-end" data-cat-menu={g.cat.key}>
+                        <EsaButton variant="chrome" size="sm" class="cbf-lct__kebab" aria-label={`Options for ${g.cat.label}`} title={`Options for ${g.cat.label}`}>
+                          <EsaIcon name="ellipsis-vertical" paths={KEBAB_PATHS} size="sm" />
+                        </EsaButton>
+                      </esa-dropdown-menu>
+                    </span>
+                  )}
+                </td>
+              </tr>
+
+              {/* ── This category's OWN column captions ── */}
+              <tr class="cbf-lct__colhead">
+                <th scope="col" class="cbf-lct__col-line">{g.cat.columns.line}</th>
+                {g.cat.columns.span ? (
+                  <th scope="col" class="cbf-lct__col-span" colspan={ENTRY_COLUMNS - 1}>{g.cat.columns.span}</th>
+                ) : (
+                  <>
+                    <th scope="col" class="cbf-lct__col-qty">
+                      {g.cat.columns.qty ?? <span class="cbf-lct__sr">This section has no quantity column</span>}
+                    </th>
+                    <th scope="col" class="cbf-lct__col-rate" colspan={g.cat.columns.fringe ? undefined : 2}>{g.cat.columns.rate}</th>
+                    {g.cat.columns.fringe && <th scope="col" class="cbf-lct__col-fringe">{g.cat.columns.fringe}</th>}
+                  </>
+                )}
+                <th scope="col" class="cbf-lct__col-num">Amount</th>
+                <th scope="col" class="cbf-lct__col-act"><span class="cbf-lct__sr">Row actions</span></th>
+              </tr>
+            </>
+          )}
+
+          {g.items.map((item: any) =>
+            item.kind === 'block' ? (
+              /* ── Sub-block head with its own subtotal (Supplies only) ──
+                 Which class an item lands in decides whether the indirect rate
+                 reaches it and whether it becomes tracked property, so the
+                 block states its rule. */
+              <tr class="cbf-lct__blockhead" data-blockhead={item.block.key}>
+                <th scope="rowgroup" colspan={ENTRY_COLUMNS}>
+                  <span class="stack" data-gap="2xs">
+                    <span class="cbf-lct__block-label">{item.block.label}</span>
+                    {item.block.note && <span class="cbf-lct__note">{item.block.note}</span>}
+                  </span>
+                </th>
+                <td class="cbf-lct__cell cbf-lct__cell--num">
+                  <span class="cbf-lct__money" data-block-total={`${g.cat.key}:${item.block.key}`}>
+                    {usd(priced.byBlock[`${g.cat.key}:${item.block.key}`] ?? 0)}
+                  </span>
+                </td>
+                <td class="cbf-lct__cell cbf-lct__cell--act"></td>
+              </tr>
+            ) : (
+              <tr
+                data-line={item.line.id}
+                data-shape={item.line.shape}
+                data-cat={item.line.category}
+                data-block={blockOf(item.line)}
+                data-flag={V.rowFlag(item.line, lines)}
+              >
+                {/* ── 1. The line's IDENTITY — and the mark, if it carries one ──
+                     Every identity control ships on every row and the ones this
+                     category uses are revealed, which keeps a CLONED row correct
+                     in whatever category it lands. */}
+                <td class="cbf-lct__cell cbf-lct__cell--line">
+                  <div class="stack" data-gap="2xs">
+                    <span data-kind-pick="travel" hidden={item.line.category !== 'travel'}>
+                      <esa-select class="cbf-lct__select" size="sm" data-travel-kind-select
+                        placeholder={travelKind(item.line.travelKind)?.label ?? 'Pick a travel kind'}
+                        aria-label={`Travel kind — ${displayLabel(item.line) || 'new line'}`}></esa-select>
+                    </span>
+                    <span data-kind-pick="vehicles" hidden={item.line.category !== 'vehicles'}>
+                      <esa-select class="cbf-lct__select" size="sm" data-vehicle-kind-select
+                        placeholder={vehicleKind(item.line.vehicleKind)?.label ?? 'Pick a vehicle cost'}
+                        aria-label={`Vehicle cost — ${displayLabel(item.line) || 'new line'}`}></esa-select>
+                    </span>
+                    {/* The TYPE stays on the row: the COR checks the class against
+                        the work, and it is what prefills the GSA rate. */}
+                    <span data-vehicle-type hidden={!V.takesVehicleType(item.line)}>
+                      <esa-select class="cbf-lct__select" size="sm" data-vehicle-type-select
+                        placeholder={vehicleTypeLabel(item.line.vehicleType) || 'Pick the vehicle type'}
+                        aria-label={`Vehicle type — ${displayLabel(item.line) || 'new line'}`}></esa-select>
+                    </span>
+                    <span data-kind-pick="meetings" hidden={item.line.category !== 'meetings'}>
+                      <esa-select class="cbf-lct__select" size="sm" data-meeting-kind-select
+                        placeholder={meetingKind(item.line.meetingKind)?.label ?? 'Pick a kind'}
+                        aria-label={`Kind of training cost — ${displayLabel(item.line) || 'new line'}`}></esa-select>
+                    </span>
+                    <span data-kind-pick="other" hidden={!(item.line.category === 'other' && item.line.shape === SHAPES.QTY_RATE)}>
+                      <esa-select class="cbf-lct__select" size="sm" data-other-kind-select
+                        placeholder={otherKind(item.line.otherKind)?.label ?? 'Pick a kind'}
+                        aria-label={`Kind of cost — ${displayLabel(item.line) || 'new line'}`}></esa-select>
+                    </span>
+
+                    {/* Typed name — a position title, an item, a subcontractor. */}
+                    <span data-ident-label hidden={V.identOf(item.line) !== 'label'}>
+                      <esa-text-field class="cbf-lct__field cbf-lct__field--label" size="sm" data-field="label"
+                        value={item.line.label ?? ''}
+                        placeholder={V.labelPlaceholderOf(item.line)}
+                        aria-label={`Name — ${displayLabel(item.line) || 'new line'}`}></esa-text-field>
+                    </span>
+
+                    {/* Travel names where it goes as plain text — never looked up. */}
+                    <span data-travel-dest hidden={item.line.category !== 'travel'}>
+                      <esa-text-field class="cbf-lct__field cbf-lct__field--label" size="sm" data-field="destination"
+                        value={item.line.destination ?? ''}
+                        placeholder="Destination — a town, county or site"
+                        aria-label={`Destination — ${displayLabel(item.line) || 'new line'}`}></esa-text-field>
+                    </span>
+
+                    {/* A lump says what it covers (gated); a vendor-defined travel
+                        or vehicle line says what it is (its name). */}
+                    <span data-desc hidden={!V.takesDesc(item.line)}>
+                      <esa-text-field class="cbf-lct__field cbf-lct__field--label" size="sm" data-field="desc"
+                        value={item.line.desc ?? ''}
+                        placeholder={V.descPlaceholderOf(item.line)}
+                        aria-label={`Description — ${displayLabel(item.line) || 'new line'}`}></esa-text-field>
+                    </span>
+
+                    {/* Fringe names itself after the position it follows. */}
+                    <span class="cbf-lct__derived" data-cell="ident-derived" hidden={V.identOf(item.line) !== 'derived'}>
+                      {displayLabel(item.line)}
+                    </span>
+
+                    {/* The read lens: the name and description as values. */}
+                    <span class="cbf-lct__fact cbf-lct__fact--label" data-fact="label">{displayLabel(item.line) || 'Untitled line'}</span>
+                    <span class="cbf-lct__fact cbf-lct__note" data-fact="desc" hidden={!V.isPlainLump(item.line) || !(item.line.desc ?? '').trim()}>
+                      {item.line.desc ?? ''}
+                    </span>
+
+                    {/* Quiet, not a warning: a vendor-defined line is allowed. */}
+                    <span data-vendor-badge hidden={!V.vendorDefined(item.line)}>
+                      <EsaBadge value="Vendor-defined" variant="info" size="sm" />
+                    </span>
+
+                    {/* Inline validation — only the submit gates that read one line. */}
+                    <span data-line-err hidden={!firstError(item.line)}>
+                      <EsaFieldError message={firstError(item.line)} icon />
+                    </span>
+
+                    {/* ── The COR's mark, on the line it disputes ──
+                        Visible as soon as it is made. The vendor ticks it
+                        addressed here, beside the numbers it is about. */}
+                    <span class="cbf-lct__mark stack" data-gap="3xs" data-mark
+                      data-sev={flagOf(item.line)?.severity ?? ''}
+                      hidden={!flagOf(item.line)}>
+                      <span class="cluster" data-gap="2xs">
+                        <span data-mark-sev={SEVERITIES.REQUIRED}>
+                          <EsaBadge value={severityMeta[SEVERITIES.REQUIRED].short} variant={severityMeta[SEVERITIES.REQUIRED].variant} size="sm" />
+                        </span>
+                        <span data-mark-sev={SEVERITIES.QUESTION}>
+                          <EsaBadge value={severityMeta[SEVERITIES.QUESTION].short} variant={severityMeta[SEVERITIES.QUESTION].variant} size="sm" />
+                        </span>
+                        <span class="cbf-lct__mark-reason" data-mark-reason>
+                          {flagOf(item.line) ? reasonLabel(flagOf(item.line)!.reason) : ''}
+                        </span>
+                        <span data-mark-done hidden={!flagOf(item.line) || !isAddressed(review, item.line.id)}>
+                          <EsaBadge value="Addressed" variant="success" size="sm" />
+                        </span>
+                      </span>
+                      <span class="cbf-lct__mark-note" data-mark-note>{flagOf(item.line)?.note ?? ''}</span>
+                      <span class="cbf-lct__note" data-mark-by>
+                        {flagOf(item.line) ? `${flagOf(item.line)!.author} · ${flagOf(item.line)!.date}` : ''}
+                      </span>
+                      <span data-mark-address-wrap data-vendor-only hidden={!flagOf(item.line) || !vendorCanEdit(review)}>
+                        <esa-checkbox size="sm" data-mark-address label="Addressed"
+                          checked={isAddressed(review, item.line.id) || undefined}></esa-checkbox>
+                      </span>
+                    </span>
+                  </div>
+                </td>
+
+                {/* ── 2. Quantity — spanned away for a lump, void for fringe ── */}
+                {item.line.shape === SHAPES.LUMP ? (
+                  <td class="cbf-lct__cell cbf-lct__cell--void" colspan={ENTRY_COLUMNS - 1}>
+                    <div class="stack" data-gap="2xs">
+                      <span class="cbf-lct__note" data-lump-note>
+                        {item.line.category === 'subcontracts' ? 'Itemized on its own LIB. Its total lands here.' : 'One amount, described.'}
+                      </span>
+                      {/* The seam: one line HERE, the subcontract's budget THERE. */}
+                      <span class="cluster" data-gap="2xs" data-sub-sheet hidden={item.line.category !== 'subcontracts'}>
+                        <EsaButton size="sm" variant="secondary" appearance="soft" icon="external-link"
+                          data-open-sheet={item.line.sheet ?? ''}>Open subcontract LIB</EsaButton>
+                        <span class="cbf-lct__note" data-sub-status>
+                          {item.line.category === 'subcontracts' ? V.subStatusText(item.line, openRequired) : ''}
+                        </span>
+                      </span>
+                    </div>
+                  </td>
+                ) : item.line.shape === SHAPES.PCT_OF_BASE ? (
+                  <td class="cbf-lct__cell cbf-lct__cell--void">
+                    <span class="cbf-lct__void-mark">No quantity</span>
+                  </td>
+                ) : (
+                  <td class="cbf-lct__cell cbf-lct__cell--qty">
+                    <div class="stack" data-gap="2xs">
+                      {/* ONE line, because it is ONE multiplication. */}
+                      <span class="cluster cbf-lct__qty-chain" data-gap="2xs">
+                        <span class="cluster" data-gap="2xs" data-qty-typed hidden={V.qtyLinked(item.line, lines)}>
+                          <esa-text-field class="cbf-lct__field cbf-lct__field--qty" size="sm" data-field="qty"
+                            value={V.numText(item.line.qty)}
+                            aria-label={`Quantity — ${displayLabel(item.line)}`}></esa-text-field>
+                          <esa-text-field class="cbf-lct__field cbf-lct__field--unit" size="sm" data-field="qtyUnit" data-unit-open
+                            value={item.line.qtyUnit ?? ''} placeholder="Unit"
+                            hidden={V.unitLocked(item.line)}
+                            aria-label={`Unit — ${displayLabel(item.line)}`}></esa-text-field>
+                          {/* A salary unit has to be TIME, so it is a list. */}
+                          <span data-unit-select hidden={!V.unitPicked(item.line)}>
+                            <esa-select class="cbf-lct__select cbf-lct__select--unit" size="sm" data-time-unit-select
+                              placeholder={timeUnit(item.line).plural}
+                              aria-label={`Time unit — ${displayLabel(item.line)}`}></esa-select>
+                          </span>
+                          <span class="cbf-lct__unit" data-unit-locked hidden={!V.unitStatic(item.line)}>{V.lockedUnit(item.line)}</span>
+                        </span>
+
+                        {/* How many people, at this time and rate — salary only. */}
+                        <span class="cluster" data-gap="2xs" data-staff hidden={!isSalaryLine(item.line)}>
+                          <span class="cbf-lct__times" aria-hidden="true">×</span>
+                          <esa-text-field class="cbf-lct__field cbf-lct__field--staff" size="sm" data-field="staff"
+                            value={V.staffText(item.line)}
+                            aria-label={`Staff on this line — ${displayLabel(item.line)}`}></esa-text-field>
+                          <span class="cbf-lct__unit">staff</span>
+                        </span>
+
+                        {/* The second quantity — only where the unit has one. */}
+                        <span class="cluster" data-gap="2xs" data-qty2 hidden={!V.hasQty2(item.line)}>
+                          <span class="cbf-lct__times" aria-hidden="true">×</span>
+                          <esa-text-field class="cbf-lct__field cbf-lct__field--qty" size="sm" data-field="qty2"
+                            value={V.numText(item.line.qty2)}
+                            aria-label={`Second quantity — ${displayLabel(item.line)}`}></esa-text-field>
+                          <esa-text-field class="cbf-lct__field cbf-lct__field--unit" size="sm" data-field="qty2Unit" data-unit2-open
+                            value={item.line.qty2Unit ?? ''} placeholder="Unit"
+                            hidden={V.unit2Locked(item.line)}
+                            aria-label={`Second unit — ${displayLabel(item.line)}`}></esa-text-field>
+                          <span class="cbf-lct__unit" data-unit2-locked hidden={!V.unit2Locked(item.line)}>{V.lockedUnit2(item.line)}</span>
+                        </span>
+                      </span>
+
+                      {/* The contract period is a ceiling on time per person —
+                          said only when the line is PAST it. */}
+                      <span data-months-wrap hidden={!V.monthsTested(item.line) || !V.monthsOver(item.line, lines)}>
+                        <EsaBadge value="Past contract period" variant="danger" size="sm" />
+                      </span>
+
+                      {/* A linked quantity is read-only and names the position. */}
+                      <span class="stack" data-gap="3xs" data-qty-derived hidden={!V.qtyLinked(item.line, lines)}>
+                        <span class="cbf-lct__derived" data-cell="derived-qty">
+                          {`${qtyFmt(effectiveQty(item.line, lines))} ${V.lockedUnit(item.line) || item.line.qtyUnit || ''}`.trim()}
+                        </span>
+                        <span class="cbf-lct__note" data-cell="derived-src">{V.qtySourceText(item.line, lines)}</span>
+                      </span>
+
+                      <span class="cbf-lct__fact" data-fact="qty" hidden={V.qtyLinked(item.line, lines)}>
+                        {V.qtyFactText(item.line, lines)}
+                      </span>
+                    </div>
+                  </td>
+                )}
+
+                {/* ── 3. Rate — typed ── */}
+                {item.line.shape === SHAPES.QTY_RATE && (
+                  <td class="cbf-lct__cell cbf-lct__cell--rate" colspan={rateSpan(item.line)}>
+                    <div class="stack" data-gap="2xs">
+                      <esa-text-field
+                        class:list={['cbf-lct__field', 'cbf-lct__field--rate', V.rateSuffixOf(item.line) && 'cbf-lct__field--rate-unit']}
+                        size="sm" prefix="$" suffix={V.rateSuffixOf(item.line)} data-field="rate"
+                        value={V.numText(item.line.rate)}
+                        aria-label={`${V.rateLabelOf(item.line)} — ${displayLabel(item.line)}`}></esa-text-field>
+                      <span class="cbf-lct__fact" data-fact="rate">{V.money(Number(item.line.rate) || 0)}</span>
+                      {/* Where a prefilled vehicle rate came from. Stated, never
+                          compared — the above-GSA flag is v2. */}
+                      <span class="cbf-lct__note" data-vehicle-note hidden={!V.vehicleRateNote(item.line)}>{V.vehicleRateNote(item.line)}</span>
+                    </div>
+                  </td>
+                )}
+
+                {/* ── 3b. Fringe — a column, because fringe rates are read DOWN ──
+                     Following the budget default it is a value; overriding is a
+                     row action, which turns it into a field. */}
+                {hasFringeCell(item.line) && (
+                  <td class="cbf-lct__cell cbf-lct__cell--fringe">
+                    <div class="stack" data-gap="2xs">
+                      <div class="cluster" data-gap="2xs" data-fringe>
+                        <span class="cbf-lct__derived" data-fringe-default hidden={V.fringeOverridden(item.line)}>
+                          {`${V.fringePctText(item.line)}% default ·`}
+                        </span>
+                        <span data-fringe-input hidden={!V.fringeOverridden(item.line)}>
+                          <esa-text-field class="cbf-lct__field cbf-lct__field--pct" size="sm" suffix="%" data-field="fringePct"
+                            value={V.fringePctText(item.line)}
+                            aria-label={`Fringe rate — ${displayLabel(item.line)}`}></esa-text-field>
+                        </span>
+                        <span class="cbf-lct__fact" data-fact="fringe">{V.fringeFactText(item.line)}</span>
+                        <span class="cbf-lct__derived cbf-lct__fringe-amt" data-fringe-note>{V.fringeAmtText(item.line, lines, A)}</span>
+                      </div>
+                      <span class="cbf-lct__note" data-fringe-override hidden={!V.fringeOverridden(item.line)}>Own rate</span>
+                    </div>
+                  </td>
+                )}
+
+                {/* ── A fringe row's rate cell: where the number CAME FROM ── */}
+                {item.line.shape === SHAPES.PCT_OF_BASE && (
+                  <td class="cbf-lct__cell cbf-lct__cell--rate" colspan={rateSpan(item.line)}>
+                    <div class="stack" data-gap="2xs">
+                      <span class="cbf-lct__ref" data-cell="fringe-pct">{V.fringeRateText(item.line)}</span>
+                      <span class="cbf-lct__note" data-cell="fringe-src">{V.fringeSrcText(item.line, lines)}</span>
+                      <span class="cbf-lct__derived" data-cell="base">
+                        {`${V.money(baseAmountFor(item.line, lines, A))} base · ${baseLabelFor(item.line, lines)}`}
+                      </span>
+                    </div>
+                  </td>
+                )}
+
+                {/* ── 4. Amount — typed only for a plain lump ── */}
+                <td class="cbf-lct__cell cbf-lct__cell--num">
+                  {item.line.shape === SHAPES.LUMP ? (
+                    <>
+                      <span data-amount-edit hidden={item.line.category === 'subcontracts'}>
+                        <esa-text-field class="cbf-lct__field cbf-lct__field--amount" size="sm" prefix="$" data-field="amount"
+                          value={V.numText(item.line.amount)}
+                          aria-label={`Amount — ${displayLabel(item.line)}`}></esa-text-field>
+                      </span>
+                      <strong class="cbf-lct__fact cbf-lct__money" data-fact="amount" hidden={item.line.category === 'subcontracts'}>{usd(amt(item.line.id))}</strong>
+                      <strong class="cbf-lct__money" data-cell="amount" hidden={item.line.category !== 'subcontracts'}>{usd(amt(item.line.id))}</strong>
+                    </>
+                  ) : (
+                    <strong class="cbf-lct__money" data-cell="amount">{usd(amt(item.line.id))}</strong>
+                  )}
+                </td>
+
+                {/* ── 5. Row action — the vendor's menu, the COR's mark ──
+                     The same slot, because they are the one operation each role
+                     performs on a line. */}
+                <td class="cbf-lct__cell cbf-lct__cell--act">
+                  <span class="cbf-lct__hover" data-row-menu-wrap data-vendor-only hidden={V.derivedRow(item.line)}>
+                    <esa-dropdown-menu position="below-end" data-row-menu>
+                      <EsaButton variant="chrome" size="sm" class="cbf-lct__kebab"
+                        aria-label={`Actions for this line — ${displayLabel(item.line) || 'new line'}`}
+                        title={`Actions for this line — ${displayLabel(item.line) || 'new line'}`}>
+                        <EsaIcon name="ellipsis-vertical" paths={KEBAB_PATHS} size="sm" />
+                      </EsaButton>
+                    </esa-dropdown-menu>
+                  </span>
+
+                  <span data-mark-cell hidden>
+                    <esa-popover position="left" trigger="click" offset="6" data-mark-popover>
+                      <span data-mark-state="off" hidden={!!flagOf(item.line)}>
+                        <EsaButton variant="chrome" iconOnly icon="pencil" size="sm"
+                          label={`Mark this line for the vendor — ${displayLabel(item.line) || 'new line'}`} />
+                      </span>
+                      <span data-mark-state="on" hidden={!flagOf(item.line)}>
+                        <EsaButton variant="chrome" iconOnly icon="triangle-alert" size="sm"
+                          label={`Edit the mark on this line — ${displayLabel(item.line) || 'new line'}`} />
+                      </span>
+                      <div slot="content" class="cbf-lct__markform stack" data-gap="sm" data-mark-panel>
+                        <span class="cbf-lct__panel-head">Mark this line for the vendor</span>
+                        <span class="cbf-lct__note" data-mark-form-line>{displayLabel(item.line)}</span>
+                        <esa-radio-group data-mark-sev-input size="md" label="Type of mark"></esa-radio-group>
+                        <esa-select data-mark-reason-input size="md" label="Reason" placeholder="Pick a reason"></esa-select>
+                        <esa-textarea data-mark-note-input label="Note to the vendor" rows="3" auto-resize
+                          help-text="Say what to change, not just what’s wrong."
+                          value={flagOf(item.line)?.note ?? ''}></esa-textarea>
+                        <span class="repel" data-gap="sm">
+                          <span data-mark-remove hidden={!flagOf(item.line)}>
+                            <EsaButton size="sm" variant="ghost">Remove mark</EsaButton>
+                          </span>
+                          <span data-mark-save>
+                            <EsaButton size="sm" variant="primary">Save mark</EsaButton>
+                          </span>
+                        </span>
+                      </div>
+                    </esa-popover>
+                  </span>
+                </td>
+              </tr>
+            ),
+          )}
+        </tbody>
+      ))}
+
+      {/* ── The close: direct, indirect base, indirect, and the total ── */}
+      <tfoot class="cbf-lct__totals">
+        {/* The vendor cannot see Personnel — fringe, so the foot reports its
+            subtotal; the section heads they CAN see then add up. */}
+        <tr data-fringe-rollup>
+          <th scope="row" colspan={ENTRY_COLUMNS}>
+            Personnel — fringe
+            <span class="cbf-lct__note">Generated from the salary lines above, at the fringe rate on each.</span>
+          </th>
+          <td class="cbf-lct__cell cbf-lct__cell--num">
+            <span data-cat-total="personnel-fringe">{usd(priced.byCategory['personnel-fringe'] ?? 0)}</span>
+          </td>
+          <td class="cbf-lct__cell"></td>
+        </tr>
+        <tr>
+          <th scope="row" colspan={ENTRY_COLUMNS}>
+            Direct cost
+            <span class="cbf-lct__note">Sum of every cost line above.</span>
+          </th>
+          <td class="cbf-lct__cell cbf-lct__cell--num"><span data-total="direct">{usd(t0.direct)}</span></td>
+          <td class="cbf-lct__cell"></td>
+        </tr>
+        <tr data-indirect-row hidden={isSub}>
+          <th scope="row" colspan={ENTRY_COLUMNS}>
+            Indirect base
+            <span class="cbf-lct__note" data-indirect-scope>{V.scopeText(cfg)}</span>
+          </th>
+          <td class="cbf-lct__cell cbf-lct__cell--num"><span data-total="indirectBase">{usd(t0.indirectBase)}</span></td>
+          <td class="cbf-lct__cell"></td>
+        </tr>
+        <tr data-indirect-row hidden={isSub}>
+          <th scope="row" colspan={ENTRY_COLUMNS}>
+            Indirect at <span data-indirect-rate>{pct(cfg.rate)}</span>
+            <span class="cbf-lct__note" data-indirect-ref>{V.indirectRefText(cfg)}</span>
+          </th>
+          <td class="cbf-lct__cell cbf-lct__cell--num"><span data-total="indirect">{usd(t0.indirect)}</span></td>
+          <td class="cbf-lct__cell"></td>
+        </tr>
+        <tr class="cbf-lct__grand">
+          <th scope="row" colspan={ENTRY_COLUMNS}>
+            {isSub ? 'Subcontract total' : 'Total this contract period'}
+            <span class="cbf-lct__note" data-total-note hidden={isSub}>
+              {`${pct(t0.pctOfValue, 1)} of the ${usd(contract.contractValue)} Contract Value · ${usd(t0.remaining)} remaining`}
+            </span>
+          </th>
+          {/* A span, not <strong>: the Astro compiler treats a <strong> in the
+              table's last cell as still open and re-opens it after </table>. */}
+          <td class="cbf-lct__cell cbf-lct__cell--num"><span class="cbf-lct__grand-total" data-total="total">{usd(t0.total)}</span></td>
+          <td class="cbf-lct__cell"></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>
+
+{/* Without the script nothing can unfold a section, so the server-rendered
+    budget shows whole. */}
+<noscript><style is:inline>tbody[data-collapsed] > tr { display: table-row !important; }</style></noscript>
+
+{/* ── The budget's default fringe rate ──
+    One small dialog, because the change reaches every position that follows
+    the default — it says so before it is saved. */}
+<esa-dialog data-fringe-dialog size="sm" heading="Default fringe rate">
+  <div class="stack" data-gap="sm">
+    <esa-text-field data-fringe-default-field size="md" label="Default rate" suffix="%"></esa-text-field>
+  </div>
+  <div slot="footer" class="cluster cbf-lct__dialog-actions" data-gap="sm">
+    <span data-fringe-cancel><EsaButton size="sm" variant="secondary" appearance="outline">Cancel</EsaButton></span>
+    <span data-fringe-save><EsaButton size="sm" variant="primary">Save</EsaButton></span>
+  </div>
+</esa-dialog>
+
+<script>
+  import * as V from '../../lib/lib-mvp-view';
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-popover';
+  import '@esa/ecology/esa-dropdown-menu';
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-radio-group';
+  import '@esa/ecology/esa-textarea';
+  import '@esa/ecology/esa-checkbox';
+  import { withBase } from '../../lib/base';
+  import {
+    SEVERITIES,
+    REASONS,
+    severityMeta,
+    reasonLabel,
+    loadReview,
+    saveReview,
+    fireReview,
+    flagFor,
+    isAddressed,
+    setFlag,
+    removeFlag,
+    setAddressed,
+    vendorCanEdit,
+    corCanMark,
+    isLocked,
+    openRequiredFlags,
+  } from '../../data/lib-mvp-review.mjs';
+  import {
+    EVENTS,
+    SHAPES,
+    contract,
+    categories,
+    costLines,
+    indirectConfig,
+    budgetRules,
+    activateBudget,
+    subcontractSheets,
+    syncSubcontractAmounts,
+    subIndirectCfg,
+    withResolvedIndirect,
+    priceLines,
+    effectiveQty,
+    baseAmountFor,
+    baseLabelFor,
+    dependentsOf,
+    categoryFixedUnit,
+    timeUnit,
+    isSalaryLine,
+    titleOfLine,
+    travelKind,
+    vehicleKind,
+    meetingKind,
+    otherKind,
+    VEHICLE_KINDS,
+    MEETING_KINDS,
+    OTHER_KINDS,
+    prefillVehicleRate,
+    linkQtyTo,
+    detachQty,
+    refollowQty,
+    syncFringeLines,
+    fringeDefaults,
+    isFringeOverride,
+    hasFringeCell,
+    rateSpan,
+    blockOf,
+    submitChecksFor,
+    advisoriesFor,
+    usd,
+    pct,
+    qtyFmt,
+  } from '../../data/lib-mvp.mjs';
+  import { isBlank, blankConfig } from '../../data/lib-mvp-demo.mjs';
+
+  const root = document.querySelector<HTMLElement>('[data-lct]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const $ = <T extends HTMLElement = HTMLElement>(sel: string, scope: ParentNode = root) =>
+      scope.querySelector<T>(sel);
+    const $$ = (sel: string, scope: ParentNode = root) => Array.from(scope.querySelectorAll<HTMLElement>(sel));
+
+    /* ── Row templates, captured and taken out before anything reads rows ── */
+    const rowTemplates: Record<string, HTMLTableRowElement> = {};
+    const tplBody = $('tbody[data-tpl]');
+    $$('tr[data-shape]', tplBody ?? root).forEach((tr) => {
+      if (tplBody) rowTemplates[tr.dataset.shape!] = tr.cloneNode(true) as HTMLTableRowElement;
+    });
+    const fringeCellTemplate = (tplBody?.querySelector('.cbf-lct__cell--fringe') as HTMLTableCellElement | null)
+      ?.cloneNode(true) as HTMLTableCellElement | undefined;
+    tplBody?.remove();
+
+    /* ── Which budget, and its working copy ─────────────────────────────────
+       A subcontract page swaps the data module to that child LIB (its lines,
+       its sections, no indirect) before anything reads it. Edits then mutate
+       THIS copy, never the module's exports. */
+    const budgetId = root.dataset.budget ?? 'main';
+    activateBudget(budgetId);
+    const isSub = budgetRules.kind === 'subcontract';
+
+    /* The parent reads every stored child LIB, so the totals they carry reach
+       its subcontract lines — priceLines prices a subcontract line from its
+       sheet. Stored lines carry their generated fringe lines, priced at the
+       child's own rates; they are not re-synced against this page's default. */
+    if (!isSub) {
+      V.storedBudgetIds().forEach((id) => {
+        const sheet = (subcontractSheets as any)[id];
+        const stored = id !== 'main' && sheet ? V.loadStoredLines(id) : null;
+        if (stored) sheet.lines = stored.lines;
+      });
+    }
+
+    const stored = V.loadStoredLines(budgetId);
+    const blank = !isSub && isBlank();
+    if (stored?.fringePct != null) fringeDefaults.pct = stored.fringePct;
+    const lines: any[] = stored
+      ? structuredClone(stored.lines)
+      : blank ? [] : structuredClone(costLines);
+    let cfg: any = isSub ? subIndirectCfg() : blank ? blankConfig() : { ...indirectConfig, appliesTo: [...indirectConfig.appliesTo] };
+
+    /* A subcontract's name belongs to its details (another surface, which
+       stores it); the parent line follows it. */
+    if (!isSub) {
+      lines.filter((l) => l.category === 'subcontracts' && l.sheet).forEach((l) => {
+        try {
+          const raw = sessionStorage.getItem(`cbf-libmvp-sheet:${l.sheet}`);
+          const name = raw ? String(JSON.parse(raw)?.name ?? '').trim() : '';
+          if (name) l.label = name;
+        } catch { /* no stored details */ }
+      });
+    }
+
+    let seq = 0;
+    const newId = () => `${budgetId === 'main' ? 'new' : `${budgetId}-new`}-${++seq}-${Date.now().toString(36)}`;
+    const rowOf = (id: string) => $(`tr[data-line="${CSS.escape(id)}"]`);
+    const lineById = (id: string) => lines.find((l) => l.id === id);
+    const num = (s: string) => {
+      const v = parseFloat(String(s ?? '').replace(/[^0-9.\-]/g, ''));
+      return Number.isFinite(v) ? v : 0;
+    };
+
+    /* ── View derivations — the SAME bodies the frontmatter uses ── */
+    const displayLabel = (l: any) => V.displayLabel(l, lines);
+    /* Keep the stored label in step with a derived one, so the review panel —
+       which addresses lines BY NAME — never quotes a name the grid stopped
+       showing. Mutates, so it is local rather than a view derivation. */
+    const syncLabel = (l: any) => {
+      if (l.category === 'travel' || l.category === 'vehicles' || l.category === 'personnel-fringe') l.label = displayLabel(l);
+    };
+
+    /* ── Tiny DOM setters (esa-* internals are stable markup) ── */
+    const show = (el: Element | null, on: boolean) => { if (el) (el as HTMLElement).hidden = !on; };
+    const setText = (el: Element | null, text: string) => { if (el && el.textContent !== text) el.textContent = text; };
+    /** esa-field-error renders <p.esa-field-error><span.esa-field-error__text>. */
+    const setErrText = (wrap: Element | null, text: string) => setText(wrap?.querySelector('.esa-field-error__text') ?? null, text);
+    /** esa-badge renders <span.esa-badge><span.esa-badge__text>. */
+    const setBadgeText = (wrap: Element | null, text: string) => setText(wrap?.querySelector('.esa-badge__text') ?? null, text);
+
+    /* ── Who is reading, and what they may do ────────────────────────────────
+       The vendor edits in draft / returned; the COR marks while in review.
+       Everyone else reads the facts lens. */
+    let review: any = loadReview();
+    const role = () => (document.documentElement.dataset.cbfRole === 'cor' ? 'cor' : 'vendor');
+    const canEdit = () => role() === 'vendor' && vendorCanEdit(review);
+    const canMark = () => role() === 'cor' && corCanMark(review);
+    const markOf = (id: string) => {
+      const f = flagFor(review, id);
+      return f && (f.budget ?? 'main') === budgetId ? f : null;
+    };
+    const openRequired = () => openRequiredFlags(review);
+
+    const paintPermissions = () => {
+      const cor = role() === 'cor';
+      if (canEdit()) root.removeAttribute('data-lens'); else root.dataset.lens = 'read';
+      show($('[data-notice="in-review"]'), !cor && review.status === 'in-review');
+      show($('[data-notice="approved"]'), isLocked(review));
+      show($('[data-notice="cor-wait"]'), cor && !corCanMark(review) && !isLocked(review));
+      $$('[data-mark-cell]').forEach((el) => show(el, canMark()));
+    };
+
+    /* ── The COR's mark editor ── */
+    const SEV_OPTIONS = [
+      { label: severityMeta[SEVERITIES.REQUIRED].label, value: SEVERITIES.REQUIRED },
+      { label: severityMeta[SEVERITIES.QUESTION].label, value: SEVERITIES.QUESTION },
+    ];
+    const REASON_OPTIONS = REASONS.map((r: any) => ({ label: r.label, value: r.key }));
+
+    const fillMarkForm = (tr: HTMLElement, line: any) => {
+      const f = markOf(line.id);
+      const sev: any = $('[data-mark-sev-input]', tr);
+      if (sev) { sev.options = SEV_OPTIONS; sev.value = f?.severity ?? SEVERITIES.REQUIRED; }
+      const reason: any = $('[data-mark-reason-input]', tr);
+      if (reason) { reason.options = REASON_OPTIONS; reason.value = f?.reason ?? ''; }
+      const note: any = $('[data-mark-note-input]', tr);
+      if (note) note.value = f?.note ?? '';
+      setText($('[data-mark-form-line]', tr), displayLabel(line) || 'Untitled line');
+    };
+
+    const paintMark = (tr: HTMLElement | null, line: any) => {
+      if (!tr) return;
+      const f = markOf(line.id);
+      const band = $('[data-mark]', tr);
+      show(band, !!f);
+      if (band) band.dataset.sev = f?.severity ?? '';
+      const done = !!f && isAddressed(review, line.id);
+      if (f) {
+        setText($('[data-mark-reason]', tr), reasonLabel(f.reason));
+        setText($('[data-mark-note]', tr), f.note || 'No note written.');
+        setText($('[data-mark-by]', tr), `${f.author} · ${f.date}`);
+      }
+      show($('[data-mark-done]', tr), done);
+      show($('[data-mark-address-wrap]', tr), !!f && role() === 'vendor' && vendorCanEdit(review));
+      const box: any = $('[data-mark-address]', tr);
+      if (box) box.checked = done;
+      show($('[data-mark-state="off"]', tr), !f);
+      show($('[data-mark-state="on"]', tr), !!f);
+      show($('[data-mark-remove]', tr), !!f);
+    };
+    const paintReview = () => lines.forEach((l) => paintMark(rowOf(l.id), l));
+
+    /** The grid changed a mark: write it, tell everyone, repaint. */
+    const commitReview = (next: any) => {
+      review = next;
+      saveReview(review);
+      paintReview();
+      fireReview(review);
+      recompute();
+    };
+
+    /* ── Painting: fillRow writes identity + entry VALUES (never while typing),
+       paintRow writes everything DERIVED. ── */
+    const fillRow = (tr: HTMLElement, line: any) => {
+      tr.dataset.line = line.id;
+      tr.dataset.shape = line.shape;
+      tr.dataset.cat = line.category;
+      tr.dataset.block = blockOf(line);
+
+      /* Reconcile the cell COUNT first: the qty-rate template is shared by the
+         one category with a fringe cell and the ones that span over it. */
+      const rateCell = $('.cbf-lct__cell--rate', tr) as HTMLTableCellElement | null;
+      let fringeCell = $('.cbf-lct__cell--fringe', tr) as HTMLTableCellElement | null;
+      if (hasFringeCell(line) && !fringeCell && fringeCellTemplate) {
+        fringeCell = fringeCellTemplate.cloneNode(true) as HTMLTableCellElement;
+        rateCell?.after(fringeCell);
+      } else if (!hasFringeCell(line) && fringeCell) {
+        fringeCell.remove();
+      }
+      if (rateCell) rateCell.colSpan = rateSpan(line);
+
+      const isSubLine = line.category === 'subcontracts';
+      show($('[data-sub-sheet]', tr), isSubLine);
+      const open = $('[data-open-sheet]', tr);
+      if (open) open.dataset.openSheet = line.sheet ?? '';
+      setText($('[data-lump-note]', tr), isSubLine ? 'Itemized on its own LIB. Its total lands here.' : 'One amount, described.');
+      show($('[data-amount-edit]', tr), line.shape === SHAPES.LUMP && !isSubLine);
+
+      $$('[data-field]', tr).forEach((el: any) => {
+        const key = el.dataset.field;
+        if (key === 'label' || key === 'destination' || key === 'desc' || key === 'qtyUnit' || key === 'qty2Unit') el.value = line[key] ?? '';
+        else if (key === 'fringePct') el.value = V.fringePctText(line);
+        else if (key === 'staff') el.value = V.staffText(line);
+        else el.value = V.numText(line[key]);
+      });
+      const label: any = $('[data-field="label"]', tr);
+      if (label) label.placeholder = V.labelPlaceholderOf(line);
+      const desc: any = $('[data-field="desc"]', tr);
+      if (desc) desc.placeholder = V.descPlaceholderOf(line);
+
+      /* Option lists are constant, so they are safe to seed on every fill. */
+      const seed = (sel: string, options: any[], value: string) => {
+        const el: any = $(sel, tr);
+        if (el) { el.options = options; el.value = value ?? ''; }
+      };
+      seed('[data-time-unit-select]', V.timeUnitOptions(), timeUnit(line).key);
+      seed('[data-travel-kind-select]', V.travelKindOptions(), line.travelKind);
+      seed('[data-vehicle-kind-select]', V.vehicleKindOptions(), line.vehicleKind);
+      seed('[data-vehicle-type-select]', V.vehicleTypeOptions(), line.vehicleType);
+      seed('[data-meeting-kind-select]', V.meetingKindOptions(), line.meetingKind);
+      seed('[data-other-kind-select]', V.otherKindOptions(), line.otherKind);
+    };
+
+    /* ── A row's menu, built for THIS line in its CURRENT state ──────────────
+       Only what the line can do: override or reset its fringe, follow / stop
+       following / re-follow a position's time, move between supplies and
+       capital equipment. Delete is last and set apart. */
+    const rowMenuItems = (line: any) => {
+      const items: any[] = [];
+      const add = (label: string, act: string) => items.push({ label, action: `row|${act}` });
+      if (isSalaryLine(line)) {
+        if (V.fringeOverridden(line)) add(V.fringeResetText(), 'fringe-reset');
+        else add('Override fringe rate', 'fringe-override');
+      }
+      if (V.qtyLinked(line, lines)) {
+        add('Use my own quantity', 'detach-qty');
+      } else {
+        const was = V.detachedSource(line, lines);
+        if (was) add(`Follow ${titleOfLine(was) || 'the untitled position'} again`, 'refollow-qty');
+        V.linkOptions(line, lines).forEach((s: any) =>
+          add(`Quantity follows ${titleOfLine(s) || 'an untitled position'}`, `link|${s.id}`));
+      }
+      if (line.category === 'supplies') add(V.moveClassText(line), 'move-class');
+      if (items.length) items.push({ divider: true });
+      items.push({ label: 'Delete line', action: 'row|delete', variant: 'danger' });
+      return items;
+    };
+
+    /* Every control on a row names its line ("Quantity — PIT tags"). A new row
+       is a CLONE, so the part after " — " is rewritten from the line as it is. */
+    const relabelRow = (tr: HTMLElement, line: any) => {
+      const name = displayLabel(line) || 'new line';
+      tr.querySelectorAll<HTMLElement>('[aria-label], [title]').forEach((el) => {
+        ['aria-label', 'title'].forEach((attr) => {
+          const cur = el.getAttribute(attr);
+          if (!cur || !cur.includes(' — ')) return;
+          const next = `${cur.split(' — ')[0]} — ${name}`;
+          if (next !== cur) el.setAttribute(attr, next);
+        });
+      });
+    };
+
+    const paintRow = (tr: HTMLElement | null, line: any, priced: any) => {
+      if (!tr) return;
+      relabelRow(tr, line);
+      const a = priced.amounts;
+      const cat = line.category;
+
+      /* Identity — reveal the controls that name a line in THIS category. */
+      show($('[data-kind-pick="travel"]', tr), cat === 'travel');
+      show($('[data-kind-pick="vehicles"]', tr), cat === 'vehicles');
+      show($('[data-kind-pick="meetings"]', tr), cat === 'meetings');
+      show($('[data-kind-pick="other"]', tr), cat === 'other' && line.shape === SHAPES.QTY_RATE);
+      show($('[data-vehicle-type]', tr), V.takesVehicleType(line));
+      show($('[data-ident-label]', tr), V.identOf(line) === 'label');
+      show($('[data-travel-dest]', tr), cat === 'travel');
+      show($('[data-desc]', tr), V.takesDesc(line));
+      const derived = $('[data-cell="ident-derived"]', tr);
+      show(derived, V.identOf(line) === 'derived');
+      setText(derived, displayLabel(line));
+      setText($('[data-fact="label"]', tr), displayLabel(line) || 'Untitled line');
+      const descFact = $('[data-fact="desc"]', tr);
+      show(descFact, V.isPlainLump(line) && !!(line.desc ?? '').trim());
+      setText(descFact, line.desc ?? '');
+      show($('[data-vendor-badge]', tr), V.vendorDefined(line));
+
+      /* Inline validation, the first thing the line still needs. */
+      const err = V.lineErrors(line, lines)[0] ?? '';
+      const errWrap = $('[data-line-err]', tr);
+      show(errWrap, !!err);
+      if (err) setErrText(errWrap, err);
+
+      /* Quantity — typed, or linked and named. */
+      const linked = V.qtyLinked(line, lines);
+      show($('[data-qty-typed]', tr), !linked);
+      show($('[data-qty-derived]', tr), linked);
+      setText($('[data-cell="derived-qty"]', tr), `${qtyFmt(effectiveQty(line, lines))} ${V.lockedUnit(line) || line.qtyUnit || ''}`.trim());
+      setText($('[data-cell="derived-src"]', tr), V.qtySourceText(line, lines));
+      show($('[data-unit-open]', tr), !V.unitLocked(line));
+      show($('[data-unit-select]', tr), V.unitPicked(line));
+      const locked = $('[data-unit-locked]', tr);
+      show(locked, V.unitStatic(line));
+      setText(locked, V.lockedUnit(line));
+      show($('[data-staff]', tr), isSalaryLine(line));
+      show($('[data-qty2]', tr), V.hasQty2(line));
+      show($('[data-unit2-open]', tr), !V.unit2Locked(line));
+      const locked2 = $('[data-unit2-locked]', tr);
+      show(locked2, V.unit2Locked(line));
+      setText(locked2, V.lockedUnit2(line));
+      show($('[data-months-wrap]', tr), V.monthsTested(line) && V.monthsOver(line, lines));
+      const qtyFact = $('[data-fact="qty"]', tr);
+      show(qtyFact, !linked);
+      setText(qtyFact, V.qtyFactText(line, lines));
+
+      /* Rate — its unit rides the box; a vehicle says where its default came from. */
+      const rateField: any = $('[data-field="rate"]', tr);
+      if (rateField) {
+        const suffix = V.rateSuffixOf(line);
+        rateField.suffix = suffix;
+        rateField.classList.toggle('cbf-lct__field--rate-unit', !!suffix);
+      }
+      setText($('[data-fact="rate"]', tr), V.money(Number(line.rate) || 0));
+      const vNote = $('[data-vehicle-note]', tr);
+      show(vNote, !!V.vehicleRateNote(line));
+      setText(vNote, V.vehicleRateNote(line));
+
+      /* Fringe, on the row that decides it, with the dollars it generates. */
+      if ($('[data-fringe]', tr)) {
+        const ovr = V.fringeOverridden(line);
+        show($('[data-fringe-input]', tr), ovr);
+        show($('[data-fringe-override]', tr), ovr);
+        const dflt = $('[data-fringe-default]', tr);
+        show(dflt, !ovr);
+        setText(dflt, `${V.fringePctText(line)}% default ·`);
+        setText($('[data-fact="fringe"]', tr), V.fringeFactText(line));
+        setText($('[data-fringe-note]', tr), V.fringeAmtText(line, lines, a));
+      }
+      if ($('[data-cell="base"]', tr)) {
+        setText($('[data-cell="fringe-pct"]', tr), V.fringeRateText(line));
+        setText($('[data-cell="fringe-src"]', tr), V.fringeSrcText(line, lines));
+        setText($('[data-cell="base"]', tr), `${V.money(baseAmountFor(line, lines, a))} base · ${baseLabelFor(line, lines)}`);
+      }
+
+      /* Amount, and — on a subcontract — how its child LIB stands. */
+      setText($('[data-cell="amount"]', tr), usd(a[line.id] ?? 0));
+      setText($('[data-fact="amount"]', tr), usd(a[line.id] ?? 0));
+      if (cat === 'subcontracts') setText($('[data-sub-status]', tr), V.subStatusText(line, openRequired()));
+
+      /* Inline tint — never a colored left border — for blocking states only. */
+      const flag = V.rowFlag(line, lines);
+      if (flag) tr.dataset.flag = flag; else tr.removeAttribute('data-flag');
+
+      show($('[data-row-menu-wrap]', tr), !V.derivedRow(line));
+      const menu: any = $('[data-row-menu]', tr);
+      if (menu && !V.derivedRow(line)) menu.items = rowMenuItems(line);
+    };
+
+    const paintGroups = (priced: any) => {
+      categories.forEach((cat: any) => {
+        /* All of them: fringe reports its subtotal on its own head and in the foot. */
+        $$(`[data-cat-total="${cat.key}"]`).forEach((el) => setText(el, usd(priced.byCategory[cat.key] ?? 0)));
+        (cat.blocks ?? []).forEach((b: any) => {
+          const k = `${cat.key}:${b.key}`;
+          setText($(`[data-block-total="${k}"]`), usd(priced.byBlock[k] ?? 0));
+        });
+        /* What a folded section still owes the reader: how many lines, and
+           whether any of them needs a fix. */
+        const tb = $(`tbody[data-cat="${cat.key}"]`);
+        if (!tb) return;
+        const inCat = lines.filter((l) => l.category === cat.key);
+        setText($('[data-cat-count]', tb), inCat.length ? `${inCat.length} line${inCat.length === 1 ? '' : 's'}` : 'No lines');
+        const bad = inCat.filter((l) => V.lineErrors(l, lines).length || V.subIssuesOf(l, openRequired()).length).length;
+        const badge = $('[data-cat-issues]', tb);
+        show(badge, bad > 0);
+        if (bad) setBadgeText(badge, `${bad} need${bad === 1 ? 's' : ''} attention`);
+      });
+      const fb = $('[data-fringe-badge]');
+      const fbText = V.fringeBadge();
+      show(fb, !!fbText);
+      if (fbText) setBadgeText(fb, fbText);
+    };
+
+    const paintTotals = (t: any) => {
+      setText($('[data-total="direct"]'), usd(t.direct));
+      setText($('[data-total="indirectBase"]'), usd(t.indirectBase));
+      setText($('[data-total="indirect"]'), usd(t.indirect));
+      setText($('[data-total="total"]'), usd(t.total));
+      setText($('[data-indirect-rate]'), pct(cfg.rate));
+      setText($('[data-indirect-ref]'), V.indirectRefText(cfg));
+      setText($('[data-indirect-scope]'), V.scopeText(cfg));
+      if (!isSub) setText($('[data-total-note]'),
+        `${pct(t.pctOfValue, 1)} of the ${usd(contract.contractValue)} Contract Value · ${
+          t.remaining >= 0 ? `${usd(t.remaining)} remaining` : `${usd(Math.abs(t.remaining))} over`}`);
+    };
+
+    /* ── Autosave: the store, then the "Saved" signal ── */
+    const persist = () => V.saveStoredLines(budgetId, { lines, fringePct: fringeDefaults.pct });
+    let savedTimer = 0;
+    const showSaved = () => {
+      const el = $('[data-saved]');
+      show(el, true);
+      window.clearTimeout(savedTimer);
+      savedTimer = window.setTimeout(() => show(el, false), 2500);
+    };
+
+    /** The one broadcast the reconciliation rail and the review panel consume. */
+    const fireTotals = (t: any) => {
+      document.dispatchEvent(new CustomEvent(EVENTS.totals, {
+        detail: {
+          budget: budgetId,
+          total: t.total,
+          direct: t.direct,
+          indirect: t.indirect,
+          indirectBase: t.indirectBase,
+          remaining: t.remaining,
+          pctOfValue: t.pctOfValue,
+          checks: submitChecksFor(lines, cfg, { openRequired: openRequired(), budgetId }),
+          advisories: advisoriesFor(lines, cfg),
+          lines,
+        },
+      }));
+    };
+
+    /* The money moment: the rows that just moved because of THIS edit flash. */
+    const flash = (els: (HTMLElement | null)[]) => {
+      els.filter(Boolean).forEach((el) => {
+        const node = el as HTMLElement;
+        node.classList.remove('is-recomputed');
+        void node.offsetWidth;
+        node.classList.add('is-recomputed');
+        window.setTimeout(() => node.classList.remove('is-recomputed'), 1500);
+      });
+    };
+
+    /* ── Mounting a row for a line: clone its shape, file it, fill it ── */
+    const insertRow = (tr: HTMLElement, line: any) => {
+      const tbody = $(`tbody[data-cat="${line.category}"]`);
+      if (!tbody) return false;
+      const block = blockOf(line);
+      if (block) {
+        const rows = $$(`tr[data-line][data-block="${block}"]`, tbody).filter((r) => r !== tr);
+        const anchor = rows[rows.length - 1] ?? $(`tr[data-blockhead="${block}"]`, tbody);
+        if (anchor) anchor.after(tr); else tbody.appendChild(tr);
+      } else {
+        tbody.appendChild(tr);
+      }
+      return true;
+    };
+    const mountRow = (line: any): HTMLTableRowElement | null => {
+      const tpl = rowTemplates[line.shape];
+      if (!tpl) return null;
+      const tr = tpl.cloneNode(true) as HTMLTableRowElement;
+      if (!insertRow(tr, line)) return null;
+      fillRow(tr, line);
+      fillMarkForm(tr, line);
+      paintMark(tr, line);
+      wireRow(tr);
+      return tr;
+    };
+
+    /* ── Keep the generated Fringe section in step with the salary section ── */
+    let fringeSig = '';
+    const syncFringeRows = () => {
+      syncFringeLines(lines);
+      const want = lines.filter((l) => l.category === 'personnel-fringe');
+      const sig = want.map((l) => l.id).join('|');
+      if (sig === fringeSig) return;
+      fringeSig = sig;
+      const tbody = $('tbody[data-cat="personnel-fringe"]');
+      if (!tbody) return;
+      const wanted = new Set(want.map((l) => l.id));
+      $$('tr[data-line]', tbody).forEach((tr) => { if (!wanted.has(tr.dataset.line!)) tr.remove(); });
+      want.forEach((line) => {
+        const tr = rowOf(line.id) ?? mountRow(line);
+        if (tr) tbody.appendChild(tr);
+      });
+    };
+
+    /* ── Folding sections — folded by default, remembered for the session ── */
+    const FOLD_KEY = 'cbf-libmvp-open-sections';
+    const readOpen = (): string[] => {
+      try { return JSON.parse(sessionStorage.getItem(FOLD_KEY) ?? '[]'); } catch { return []; }
+    };
+    const writeOpen = () => {
+      try {
+        const open = $$('tbody[data-cat]').filter((tb) => !tb.hasAttribute('data-collapsed')).map((tb) => tb.dataset.cat!);
+        sessionStorage.setItem(FOLD_KEY, JSON.stringify(open));
+      } catch { /* storage unavailable — folding still works for this view */ }
+    };
+    const setFolded = (tbody: HTMLElement | null, folded: boolean, remember = true) => {
+      if (!tbody) return;
+      tbody.toggleAttribute('data-collapsed', folded);
+      $('[data-cat-toggle] button', tbody)?.setAttribute('aria-expanded', String(!folded));
+      if (remember) writeOpen();
+    };
+    const unfoldTo = (el: Element | null | undefined) => {
+      const tb = el?.closest('tbody[data-cat]') as HTMLElement | null;
+      if (tb?.hasAttribute('data-collapsed')) setFolded(tb, false);
+    };
+    {
+      const open = readOpen();
+      $$('tbody[data-cat]').forEach((tb) => setFolded(tb, !open.includes(tb.dataset.cat!), false));
+    }
+
+    /* ── The first-run state ── */
+    const paintEmpty = () => {
+      const none = !lines.some((l) => !V.derivedRow(l));
+      const wrap = $('[data-empty]');
+      show(wrap, none);
+      if (none) setText(wrap?.querySelector('.esa-empty-state__description') ?? null,
+        canEdit() ? 'Add a line to any section below.' : 'Nothing has been entered on this budget.');
+    };
+
+    /**
+     * Re-price everything and repaint. `commit` marks a vendor's edit: those
+     * also flash the rows that moved and show "Saved". The store is written
+     * every time, BEFORE totals go out — the subcontract details read the child
+     * lines from it when they hear totals.
+     */
+    const recompute = (originId?: string, { commit = false } = {}) => {
+      syncFringeRows();
+      if (!isSub) syncSubcontractAmounts(lines);
+      const priced = priceLines(lines, cfg);
+      lines.forEach((l) => paintRow(rowOf(l.id), l, priced));
+      paintGroups(priced);
+      paintTotals(priced.totals);
+      paintEmpty();
+      persist();
+      fireTotals(priced.totals);
+      if (commit) showSaved();
+      if (originId) flash(dependentsOf(originId, lines).map((l: any) => rowOf(l.id)));
+      return priced;
+    };
+    const commitEdit = (originId?: string) => recompute(originId, { commit: true });
+
+    /* ── The mark editor's own clicks ──
+       esa-popover toggles on any click inside its anchor while the slotted panel
+       sits INSIDE that anchor, so the panel stops propagation and its Save and
+       Remove are handled here. Known hub gap, logged in docs/hub-issues.md. */
+    function wireRow(tr: HTMLElement) {
+      $$('[data-mark-panel]', tr).forEach((panel) =>
+        panel.addEventListener('click', (ev) => {
+          const t = ev.target as HTMLElement;
+          if (t.closest('[data-mark-save]')) saveMark(tr);
+          else if (t.closest('[data-mark-remove]')) removeMark(tr);
+          ev.stopPropagation();
+        }),
+      );
+    }
+    const closeMark = (tr: HTMLElement) => {
+      const pop: any = $('[data-mark-popover]', tr);
+      if (pop) pop.open = false;
+    };
+    const saveMark = (tr: HTMLElement) => {
+      const line = lineById(tr.dataset.line!);
+      if (!line || !canMark()) return;
+      const sev = ($('[data-mark-sev-input]', tr) as any)?.value;
+      commitReview(setFlag(review, {
+        lineId: line.id,
+        budget: budgetId,
+        severity: sev === SEVERITIES.QUESTION ? SEVERITIES.QUESTION : SEVERITIES.REQUIRED,
+        reason: ($('[data-mark-reason-input]', tr) as any)?.value || 'other',
+        note: String(($('[data-mark-note-input]', tr) as any)?.value ?? '').trim(),
+      }));
+      closeMark(tr);
+    };
+    const removeMark = (tr: HTMLElement) => {
+      const line = lineById(tr.dataset.line!);
+      if (!line || !canMark()) return;
+      commitReview(removeFlag(review, line.id));
+      fillMarkForm(tr, line);
+      closeMark(tr);
+    };
+
+    /* ── The kinds own the units ─────────────────────────────────────────────
+       Changing a kind resets what it fixes rather than leaving a lodging line's
+       "nights" on an airfare line. */
+    const applyTravelKind = (line: any, key: string) => {
+      const k = travelKind(key);
+      line.travelKind = key;
+      if (!k) return;
+      line.qtyUnit = k.countLabel;
+      if (k.durationLabel) { line.qty2 = line.qty2 ?? 1; line.qty2Unit = k.durationLabel; }
+      else { delete line.qty2; delete line.qty2Unit; }
+      if (k.vendorDefined) line.desc = line.desc ?? ''; else delete line.desc;
+      line.destination = line.destination ?? '';
+      line.rate = line.rate ?? 0;
+      syncLabel(line);
+    };
+    /* A vehicle kind fixes the unit(s); with a type it PREFILLS the GSA rate as
+       an editable default — never over a number the vendor typed. */
+    const applyVehicleKind = (line: any, key: string) => {
+      const prev = { vehicleKind: line.vehicleKind, vehicleType: line.vehicleType };
+      const k = vehicleKind(key);
+      line.vehicleKind = key;
+      if (!k) return;
+      if (k.unit) line.qtyUnit = k.unit;
+      else if (VEHICLE_KINDS.some((x: any) => x.unit && x.unit === line.qtyUnit)) line.qtyUnit = '';
+      if (k.secondUnit) { line.qty2 = line.qty2 ?? 1; line.qty2Unit = k.secondUnit; }
+      else { delete line.qty2; delete line.qty2Unit; }
+      if (k.vendorDefined) { delete line.vehicleType; line.desc = line.desc ?? ''; } else delete line.desc;
+      prefillVehicleRate(line, prev);
+      syncLabel(line);
+    };
+    const applyCostKind = (line: any, key: string) => {
+      const k = line.category === 'meetings' ? meetingKind(key) : otherKind(key);
+      if (line.category === 'meetings') line.meetingKind = key; else line.otherKind = key;
+      if (!k) return;
+      if (k.unit) line.qtyUnit = k.unit;
+      else if (line.qtyUnit && [...MEETING_KINDS, ...OTHER_KINDS].some((x: any) => x.unit === line.qtyUnit)) line.qtyUnit = '';
+      if (k.secondUnit) { line.qty2 = line.qty2 ?? 1; line.qty2Unit = k.secondUnit; }
+      else { delete line.qty2; delete line.qty2Unit; }
+    };
+
+    /* ── Add a line INLINE — no modal ── */
+    const addLine = (catKey: string, block: string, shape: string, kind = '') => {
+      if (!canEdit()) return;
+      const line: any = { id: newId(), category: catKey, shape, label: '' };
+      if (block) line.block = block;
+      if (shape === SHAPES.QTY_RATE) {
+        line.qty = 1;
+        line.qtyUnit = categoryFixedUnit(catKey) ?? '';
+        /* A vehicle's rate starts empty so the type can prefill it. */
+        line.rate = catKey === 'vehicles' ? null : 0;
+      }
+      if (shape === SHAPES.LUMP) {
+        line.amount = 0;
+        if (catKey === 'subcontracts') line.sheet = 'new'; else line.desc = '';
+      }
+      if (catKey === 'personnel-salary') {
+        /* Untitled on purpose — the row opens with its title empty and says so. */
+        Object.assign(line, { qty: 1, staff: 1, timeUnit: 'month', qtyUnit: 'months' });
+      }
+      if (catKey === 'travel') applyTravelKind(line, kind || 'lodging');
+      if (catKey === 'vehicles' && kind) applyVehicleKind(line, kind);
+      if ((catKey === 'meetings' || catKey === 'other') && kind && shape === SHAPES.QTY_RATE) applyCostKind(line, kind);
+      syncLabel(line);
+
+      lines.push(line);
+      const tr = mountRow(line);
+      if (!tr) { lines.pop(); return; }
+      tr.classList.add('is-added');
+      window.setTimeout(() => tr.classList.remove('is-added'), 1500);
+      commitEdit();
+      unfoldTo(tr);
+      tr.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      window.requestAnimationFrame(() => {
+        /* The first question: where it goes, for travel; its name, elsewhere. */
+        const first: any = catKey === 'travel' ? $('[data-field="destination"]', tr)
+          : catKey === 'vehicles' ? null : $('[data-field="label"]', tr);
+        first?.shadowRoot?.querySelector('input')?.focus();
+      });
+    };
+
+    /* ── Add-line menus: the vendor's vocabulary, not the model's ── */
+    const SHAPE_MENU_LABEL: Record<string, string> = {
+      [SHAPES.QTY_RATE]: 'item, a quantity × cost each',
+      [SHAPES.LUMP]: 'lump sum, one amount',
+    };
+    $$('[data-add-menu]').forEach((menu: any) => {
+      const cat: any = categories.find((c: any) => c.key === menu.dataset.addMenu);
+      if (!cat) return;
+      if (cat.kinds) {
+        menu.items = cat.kinds.flatMap((k: any) => [
+          ...(k.vendorDefined ? [{ divider: true }] : []),
+          { label: k.vendorDefined ? `${k.label} — describe your own` : k.label, action: `${cat.key}||${SHAPES.QTY_RATE}|${k.key}` },
+        ]);
+        if (cat.shapes.includes(SHAPES.LUMP)) {
+          menu.items = [...menu.items, { divider: true }, { label: 'Lump sum — one amount', action: `${cat.key}||${SHAPES.LUMP}|` }];
+        }
+        return;
+      }
+      const blocks = cat.blocks ?? [null];
+      menu.items = blocks.flatMap((b: any, bi: number) => [
+        ...(bi > 0 ? [{ divider: true }] : []),
+        ...cat.shapes.map((s: string) => ({
+          label: b ? `${b.label} — ${SHAPE_MENU_LABEL[s]}` : SHAPE_MENU_LABEL[s],
+          action: `${cat.key}|${b ? b.key : ''}|${s}|`,
+        })),
+      ]);
+    });
+
+    /* ── The one section setting: the budget's default fringe rate ── */
+    const wireCatMenus = () => {
+      $$('[data-cat-menu]').forEach((m: any) => {
+        m.items = [{ label: `Adjust default fringe (${V.fringeDefaultText()}%)…`, action: 'cat|fringe' }];
+      });
+    };
+    wireCatMenus();
+    const fringeDialog: any = document.querySelector('[data-fringe-dialog]');
+    const openFringeDialog = () => {
+      if (!fringeDialog) return;
+      const f: any = fringeDialog.querySelector('[data-fringe-default-field]');
+      const own = lines.filter((l) => isFringeOverride(l)).length;
+      f.value = V.fringeDefaultText();
+      f.helpText = own
+        ? `Applies to every position without its own rate. ${own} ${own === 1 ? 'line keeps its' : 'lines keep their'} own.`
+        : 'Applies to every position without its own rate.';
+      fringeDialog.show();
+      window.requestAnimationFrame(() => f?.shadowRoot?.querySelector('input')?.focus());
+    };
+    fringeDialog?.addEventListener('click', (e: any) => {
+      const t = e.target as HTMLElement;
+      if (t.closest('[data-fringe-cancel]')) { fringeDialog.close(); return; }
+      if (!t.closest('[data-fringe-save]')) return;
+      fringeDefaults.pct = Math.max(0, num(fringeDialog.querySelector('[data-fringe-default-field]')?.value)) / 100;
+      /* A line with its own rate does not move — that is what overriding means. */
+      const following = lines.filter((l) => isSalaryLine(l) && !isFringeOverride(l));
+      following.forEach((l) => { const tr = rowOf(l.id); if (tr) fillRow(tr, l); });
+      fringeDialog.close();
+      commitEdit();
+      flash(following.map((l) => rowOf(l.id)));
+      wireCatMenus();
+    });
+
+    /* ── Every action a row can take, in one place ── */
+    function runRowAction(act: string, line: any, tr: HTMLElement) {
+      if (!canEdit()) return;
+      if (act === 'delete') {
+        if (V.derivedRow(line)) return;
+        const i = lines.findIndex((l) => l.id === line.id);
+        if (i >= 0) lines.splice(i, 1);
+        tr.remove();
+        commitEdit();
+        return;
+      }
+      /* Linked quantity: one hop, from the menu, both directions the vendor's. */
+      if (act.startsWith('link|')) {
+        linkQtyTo(line, act.slice(5));
+        fillRow(tr, line);
+        commitEdit(act.slice(5));
+        flash([tr]);
+        return;
+      }
+      if (act === 'detach-qty') { detachQty(line, lines); fillRow(tr, line); commitEdit(); flash([tr]); return; }
+      if (act === 'refollow-qty') { refollowQty(line); fillRow(tr, line); commitEdit(); flash([tr]); return; }
+      /* Supplies are filed by hand: the row moves to the other class's block. */
+      if (act === 'move-class') {
+        line.block = V.otherClassOf(line);
+        tr.dataset.block = line.block;
+        insertRow(tr, line);
+        commitEdit();
+        unfoldTo(tr);
+        tr.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        flash([tr]);
+        return;
+      }
+      if (act === 'fringe-override') {
+        line.fringePct = fringeDefaults.pct;
+        fillRow(tr, line);
+        commitEdit(line.id);
+        window.requestAnimationFrame(() => ($('[data-field="fringePct"]', tr) as any)?.shadowRoot?.querySelector('input')?.focus());
+        return;
+      }
+      if (act === 'fringe-reset') {
+        delete line.fringePct;
+        fillRow(tr, line);
+        commitEdit(line.id);
+      }
+    }
+
+    root.addEventListener('menu-action', (e: any) => {
+      const detail = String(e.detail ?? '');
+      if (detail === 'cat|fringe') { if (canEdit()) openFringeDialog(); return; }
+      if (detail.startsWith('row|')) {
+        const tr = (e.target as HTMLElement)?.closest?.('tr[data-line]') as HTMLElement | null;
+        const line = tr ? lineById(tr.dataset.line!) : null;
+        if (tr && line) runRowAction(detail.slice(4), line, tr);
+        return;
+      }
+      const [catKey, block, shape, kind] = detail.split('|');
+      if (catKey && shape) addLine(catKey, block, shape, kind ?? '');
+    });
+
+    /* ── Every esa-* control fires a composed `change` — on blur for a text
+       field, on pick for a select. That is the per-line autosave moment. ── */
+    root.addEventListener('change', (e: any) => {
+      const el = e.target as HTMLElement;
+      const tr = el.closest?.('tr[data-line]') as HTMLElement | null;
+      const line = tr ? lineById(tr.dataset.line!) : null;
+      if (!tr || !line) return;
+      const d = el.dataset as any;
+      const value = (el as any).value;
+
+      /* The vendor's tick on a mark — a review change, not a budget edit. */
+      if ('markAddress' in d) {
+        if (role() !== 'vendor' || !vendorCanEdit(review)) return;
+        commitReview(setAddressed(review, line.id, !!(el as any).checked));
+        return;
+      }
+      if (!canEdit()) return;
+
+      if ('travelKindSelect' in d) { applyTravelKind(line, value); fillRow(tr, line); commitEdit(line.id); return; }
+      if ('vehicleKindSelect' in d) { applyVehicleKind(line, value); fillRow(tr, line); commitEdit(line.id); return; }
+      if ('vehicleTypeSelect' in d) {
+        const prev = { vehicleKind: line.vehicleKind, vehicleType: line.vehicleType };
+        line.vehicleType = String(value ?? '') || undefined;
+        prefillVehicleRate(line, prev);
+        syncLabel(line);
+        fillRow(tr, line);
+        commitEdit(line.id);
+        flash([tr]);
+        return;
+      }
+      if ('meetingKindSelect' in d || 'otherKindSelect' in d) { applyCostKind(line, value); fillRow(tr, line); commitEdit(line.id); return; }
+      if ('timeUnitSelect' in d) {
+        line.timeUnit = value;
+        line.qtyUnit = timeUnit(line).plural;
+        commitEdit(line.id);
+        return;
+      }
+
+      const field = d.field;
+      if (!field) return;
+      if (field === 'label' || field === 'qtyUnit' || field === 'qty2Unit') line[field] = String(value ?? '');
+      else if (field === 'destination' || field === 'desc') { line[field] = String(value ?? '').trim(); syncLabel(line); }
+      else if (field === 'staff') line.staff = Math.max(1, Math.round(num(value) || 1));
+      else if (field === 'fringePct') line.fringePct = num(value) / 100;
+      else line[field] = num(value);
+      commitEdit(line.id);
+    });
+
+    /* ── Clicks: fold, add, and the subcontract seam ── */
+    root.addEventListener('click', (e: any) => {
+      const t = e.target as HTMLElement;
+      const toggle = t.closest?.('[data-cat-toggle]');
+      if (toggle) {
+        const tb = toggle.closest('tbody[data-cat]') as HTMLElement | null;
+        setFolded(tb, !tb?.hasAttribute('data-collapsed'));
+        return;
+      }
+      if (t.closest?.('[data-fold-all]')) { $$('tbody[data-cat]').forEach((tb) => setFolded(tb, true, false)); writeOpen(); return; }
+      if (t.closest?.('[data-unfold-all]')) { $$('tbody[data-cat]').forEach((tb) => setFolded(tb, false, false)); writeOpen(); return; }
+      const add = t.closest?.('[data-add-line]') as HTMLElement | null;
+      if (add) {
+        const [catKey, block, shape, kind] = String(add.dataset.addLine).split('|');
+        addLine(catKey, block, shape, kind ?? '');
+        return;
+      }
+      const sheet = t.closest?.('[data-open-sheet]') as HTMLElement | null;
+      if (sheet) window.location.href = withBase(`/lib-mvp/subcontract/${sheet.dataset.openSheet || 'new'}`);
+    });
+
+    /* ── Go to line ── */
+    const focusLine = (lineId: string) => {
+      let line = lineById(lineId);
+      if (!line) return;
+      /* The vendor never sees Personnel — fringe; its salary line stands in. */
+      if (V.derivedRow(line) && role() === 'vendor') line = lineById(line.base?.lineId) ?? line;
+      const tr = rowOf(line.id);
+      if (!tr) return;
+      unfoldTo(tr);
+      tr.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      flash([tr]);
+    };
+    document.addEventListener(EVENTS.focusLine, (e: any) => {
+      const { lineId, budget } = e.detail ?? {};
+      if (!lineId || (budget && budget !== budgetId)) return;
+      focusLine(lineId);
+    });
+
+    /* ── The overhead block owns the pick; this grid owns the base ── */
+    document.addEventListener(EVENTS.indirect, (e: any) => {
+      if (isSub) return;
+      const incoming = e.detail?.config;
+      if (!incoming) return;
+      cfg = withResolvedIndirect({ ...subIndirectCfg(), rateId: incoming.rateId ?? null });
+      recompute();
+      flash($$('[data-indirect-row]'));
+    });
+
+    /* ── The review round trip — identity check first: this grid fires the
+       same event, and repainting its own echo would be work for nothing. ── */
+    document.addEventListener(EVENTS.review, (e: any) => {
+      const incoming = e.detail?.review;
+      if (!incoming || incoming === review) return;
+      review = incoming;
+      lines.forEach((l) => { const tr = rowOf(l.id); if (tr) fillMarkForm(tr, l); });
+      paintReview();
+      paintPermissions();
+      recompute();
+    });
+    document.addEventListener('cbf-role:change', () => { paintPermissions(); paintReview(); paintEmpty(); });
+
+    /* ── Mount ──────────────────────────────────────────────────────────────
+       A stored or cleared budget differs from what the server rendered, so its
+       rows are rebuilt from the working copy (in list order, each into its own
+       section and block). Otherwise the server's rows stand and are seeded. */
+    if (stored || blank) {
+      $$('tr[data-line]').forEach((tr) => tr.remove());
+      lines.forEach((l) => mountRow(l));
+    } else {
+      lines.forEach((l) => { const tr = rowOf(l.id); if (tr) { fillRow(tr, l); fillMarkForm(tr, l); } });
+      $$('tr[data-line]').forEach(wireRow);
+    }
+    fringeSig = lines.filter((l) => l.category === 'personnel-fringe').map((l) => l.id).join('|');
+    paintPermissions();
+    paintReview();
+    recompute();
+    /* A first-run budget opens every section, so there is somewhere to add. */
+    if (!lines.length) $$('tbody[data-cat]').forEach((tb) => setFolded(tb, false, false));
+
+    /* A link to a line — `#<lineId>` (or `#line=<lineId>`) — lands on it. */
+    const hash = decodeURIComponent(location.hash.replace(/^#(line=)?/, ''));
+    if (hash) window.requestAnimationFrame(() => focusLine(hash));
+
+    /* Re-broadcast on load so a sibling whose script initialises after this one
+       still gets the state (a pure snapshot, so repeating it is harmless). */
+    const rebroadcast = () => fireTotals(priceLines(lines, cfg).totals);
+    if (document.readyState === 'complete') window.setTimeout(rebroadcast, 0);
+    else window.addEventListener('load', rebroadcast, { once: true });
+  }
+</script>
+
+<style>
+  /* Dense entry surface: 14px table base, 13px for the quiet second lines — and
+     DARKENED as it shrinks (text-secondary, never a muted gray). The literal
+     sizes are deliberate: the --type-size-* clamps bottom out under the 13px
+     floor on narrow viewports. */
+  .cbf-lct__lede {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-lct__sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .cbf-lct__saved {
+    font-size: 13px;
+    color: var(--color-content-default-secondary);
+  }
+
+  /* overflow stays VISIBLE so the popovers and menus can escape; horizontal
+     scroll is the last resort at genuinely narrow widths. */
+  .cbf-lct__scroll {
+    overflow: visible;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-200);
+    background: var(--color-background-elevation-raised);
+  }
+  @media (max-width: 900px) {
+    .cbf-lct__scroll { overflow-x: auto; }
+  }
+  .cbf-lct__table {
+    width: 100%;
+    min-width: 900px;
+    border-collapse: collapse;
+    font-size: 14px;
+    color: var(--color-content-default);
+  }
+
+  /* ── Per-category column captions — quieter than a table head, because they
+     repeat nine times and must read as captions, not as nine tables. ── */
+  .cbf-lct__colhead th {
+    text-align: left;
+    padding: var(--spacing-150) var(--spacing-300);
+    background: var(--color-background-elevation-raised);
+    border-bottom: 1px solid var(--color-border-default);
+    font-size: 13px;
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default-secondary);
+    white-space: nowrap;
+  }
+  .cbf-lct__colhead .cbf-lct__col-num { text-align: right; }
+  .cbf-lct__col-span { min-width: 380px; }
+  .cbf-lct__col-line { min-width: 250px; }
+  /* Holds the whole multiplication on one line: two numbers, two units, the ×. */
+  .cbf-lct__col-qty { min-width: 300px; }
+  .cbf-lct__col-rate { min-width: 180px; }
+  .cbf-lct__col-fringe { min-width: 180px; }
+  .cbf-lct__col-act { width: 44px; }
+  .cbf-lct__col-num { text-align: right; min-width: 115px; }
+
+  .cbf-lct__cell {
+    padding: var(--spacing-150) var(--spacing-250);
+    vertical-align: top;
+    border-top: 1px solid var(--color-border-default-subtle);
+  }
+  .cbf-lct__cell--num {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .cbf-lct__cell--act { text-align: right; }
+  .cbf-lct__cell--void { color: var(--color-content-default-secondary); }
+
+  /* ── Category + sub-block heads ── */
+  .cbf-lct__cathead th {
+    text-align: left;
+    padding: var(--spacing-300);
+    background: var(--cbf-surface-section-head, var(--color-background-elevation-sunken));
+    border-top: 1px solid var(--color-border-default-strong);
+    border-bottom: 1px solid var(--color-border-default);
+    font-weight: var(--typography-font-weight-regular);
+  }
+  .cbf-lct__cathead .cbf-lct__cell {
+    background: var(--cbf-surface-section-head, var(--color-background-elevation-sunken));
+    border-top: 1px solid var(--color-border-default-strong);
+    border-bottom: 1px solid var(--color-border-default);
+    vertical-align: middle;
+  }
+  /* ── Folding — a folded section keeps only its head. ── */
+  tbody[data-collapsed] > tr:not(.cbf-lct__cathead) { display: none; }
+  [data-cat-toggle] :global(esa-icon),
+  [data-cat-toggle] :global(svg) { transition: transform 150ms ease; }
+  tbody[data-collapsed] [data-cat-toggle] :global(esa-icon),
+  tbody[data-collapsed] [data-cat-toggle] :global(svg) { transform: rotate(-90deg); }
+  @media (prefers-reduced-motion: reduce) {
+    [data-cat-toggle] :global(esa-icon),
+    [data-cat-toggle] :global(svg) { transition: none; }
+  }
+
+  /* ── Row controls on hover; always visible on touch ── */
+  @media (hover: hover) {
+    .cbf-lct__hover { opacity: 0; transition: opacity 120ms ease; }
+    tr:hover .cbf-lct__hover,
+    tr:focus-within .cbf-lct__hover,
+    .cbf-lct__hover:has([aria-expanded='true']),
+    .cbf-lct__hover:focus-within { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cbf-lct__hover { transition: none; }
+  }
+
+  .cbf-lct__cat-note {
+    display: block;
+    width: 22rem;
+    max-width: 80vw;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--color-content-default);
+  }
+  .cbf-lct__cat-icon {
+    display: inline-flex;
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-lct__cat-label {
+    font-size: 16px;
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
+  }
+  .cbf-lct__blockhead th {
+    text-align: left;
+    padding: var(--spacing-200) var(--spacing-300) var(--spacing-200) var(--spacing-500);
+    border-top: 1px solid var(--color-border-default);
+    font-weight: var(--typography-font-weight-regular);
+  }
+  .cbf-lct__blockhead .cbf-lct__cell {
+    border-top: 1px solid var(--color-border-default);
+    vertical-align: middle;
+  }
+  .cbf-lct__block-label {
+    font-size: 14px;
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
+  }
+
+  /* ── Quiet second lines ── */
+  .cbf-lct__note {
+    font-size: 13px;
+    color: var(--color-content-default-secondary);
+    max-width: 46ch;
+  }
+  .cbf-lct__void-mark {
+    font-size: 14px;
+    color: var(--color-content-default-secondary);
+    line-height: 40px;
+  }
+  /* A value the vendor did NOT type — derived. Reads as a value, never as a
+     disabled control. */
+  .cbf-lct__ref,
+  .cbf-lct__derived {
+    font-size: 14px;
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-lct__derived { font-weight: var(--typography-font-weight-regular); }
+  .cbf-lct__qty-chain {
+    --align: center;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .cbf-lct__times {
+    font-size: 13px;
+    color: var(--color-content-default-secondary);
+    align-self: center;
+  }
+
+  /* ── Entry controls ── */
+  .cbf-lct__field--label { width: 100%; }
+  .cbf-lct__field--qty { width: 64px; }
+  .cbf-lct__field--unit { width: 80px; }
+  .cbf-lct__field--staff { width: 52px; }
+  .cbf-lct__field--rate { width: 104px; }
+  /* Fits "$ 4,750 /month" whole — both affixes eat into the box. */
+  .cbf-lct__field--rate-unit { width: 168px; }
+  .cbf-lct__field--pct { width: 84px; }
+  .cbf-lct__field--amount { width: 116px; margin-inline-start: auto; }
+  .cbf-lct__select { width: 100%; }
+  .cbf-lct__select--unit { width: 104px; }
+  .cbf-lct__dialog-actions { justify-content: flex-end; }
+  .cbf-lct__unit {
+    font-size: 13px;
+    color: var(--color-content-default-secondary);
+    align-self: center;
+    white-space: nowrap;
+  }
+  /* Rate and the dollars it generates read as one phrase. */
+  .cbf-lct__cell--fringe [data-fringe] { flex-wrap: nowrap; white-space: nowrap; }
+
+  .cbf-lct__money {
+    font-variant-numeric: tabular-nums;
+    font-weight: var(--typography-font-weight-semibold);
+  }
+
+  /* Until esa-popover upgrades, every child renders inline — including the mark
+     form. Keep the panels closed until hydration (or if it never comes). */
+  esa-popover:not(:defined) [slot='content'] { display: none; }
+
+  /* ── Line rows: a subtle divider between each, a tint on hover. The first
+     row's divider collapses into the column-header rule above it. ── */
+  tr[data-line] > .cbf-lct__cell { border-top: 1px solid var(--color-border-default-subtle); }
+  @media (hover: hover) {
+    tr[data-line]:hover > .cbf-lct__cell {
+      background: color-mix(in srgb, var(--color-content-default) 3%, transparent);
+    }
+  }
+  /* ── Row state: an inline background tint, NEVER a colored left border ── */
+  tr[data-flag='months'] > .cbf-lct__cell { background: var(--color-background-utility-danger-subtle); }
+  tr[data-flag='error'] > .cbf-lct__cell { background: var(--color-background-utility-warning-subtle); }
+
+  /* ── The money moment — layered over the cell so a tinted row keeps its tint ── */
+  tr.is-recomputed > .cbf-lct__cell,
+  tr.is-recomputed > th,
+  tr.is-added > .cbf-lct__cell {
+    animation: cbf-lct-flash 1.5s var(--easing-enter) 1;
+  }
+  @keyframes cbf-lct-flash {
+    from { box-shadow: inset 0 0 0 100vmax var(--color-background-utility-info-subtle); }
+    to { box-shadow: inset 0 0 0 100vmax transparent; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    tr.is-recomputed > .cbf-lct__cell,
+    tr.is-recomputed > th,
+    tr.is-added > .cbf-lct__cell {
+      animation: none;
+      box-shadow: inset 0 0 0 100vmax var(--color-background-utility-info-subtle);
+    }
+  }
+
+  /* ── Totals ── */
+  .cbf-lct__totals th {
+    text-align: right;
+    padding: var(--spacing-250) var(--spacing-300);
+    border-top: 1px solid var(--color-border-default-subtle);
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default);
+  }
+  .cbf-lct__totals th .cbf-lct__note {
+    display: block;
+    max-width: none;
+    font-weight: var(--typography-font-weight-regular);
+  }
+  .cbf-lct__totals .cbf-lct__cell {
+    border-top: 1px solid var(--color-border-default-subtle);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-lct__totals tr:first-child th,
+  .cbf-lct__totals tr:first-child .cbf-lct__cell {
+    border-top: 1px solid var(--color-border-default-strong);
+    background: var(--color-background-elevation-sunken);
+  }
+  .cbf-lct__grand th,
+  .cbf-lct__grand .cbf-lct__cell {
+    border-top: 1px solid var(--color-border-default-strong);
+    background: var(--color-background-elevation-sunken);
+    font-size: 16px;
+    font-weight: var(--typography-font-weight-semibold);
+  }
+  .cbf-lct__grand-total {
+    font-weight: var(--typography-font-weight-bold);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── The two lenses ───────────────────────────────────────────────────────
+     EDIT (the vendor, while the budget is theirs): entry controls, no mirrors.
+     READ (the COR, or the vendor while it is in review or approved): the same
+     grid as VALUES. The COR half keys off the document's role attribute, set
+     before paint; the vendor's locked half off this grid's `data-lens`. */
+  .cbf-lct__fact {
+    display: none;
+    font-size: 14px;
+    color: var(--color-content-default);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-lct__fact--label { font-weight: var(--typography-font-weight-medium); }
+  :global(html[data-cbf-role='cor']) .cbf-lct__fact,
+  .cbf-lct[data-lens='read'] .cbf-lct__fact { display: inline; }
+
+  :global(html[data-cbf-role='cor']) .cbf-lct__field,
+  :global(html[data-cbf-role='cor']) .cbf-lct__select,
+  :global(html[data-cbf-role='cor']) [data-vendor-only],
+  :global(html[data-cbf-role='cor']) [data-line-err],
+  :global(html[data-cbf-role='cor']) [data-fringe-default],
+  :global(html[data-cbf-role='cor']) .cbf-lct__cell--qty [data-qty-typed],
+  :global(html[data-cbf-role='cor']) .cbf-lct__cell--qty [data-staff],
+  :global(html[data-cbf-role='cor']) .cbf-lct__cell--qty [data-qty2],
+  .cbf-lct[data-lens='read'] .cbf-lct__field,
+  .cbf-lct[data-lens='read'] .cbf-lct__select,
+  .cbf-lct[data-lens='read'] [data-vendor-only],
+  .cbf-lct[data-lens='read'] [data-line-err],
+  .cbf-lct[data-lens='read'] [data-fringe-default],
+  .cbf-lct[data-lens='read'] .cbf-lct__cell--qty [data-qty-typed],
+  .cbf-lct[data-lens='read'] .cbf-lct__cell--qty [data-staff],
+  .cbf-lct[data-lens='read'] .cbf-lct__cell--qty [data-qty2] {
+    display: none !important;
+  }
+
+  /* ── Personnel — fringe is a REVIEWER's section ──
+     The vendor cannot type into any of it, and every dollar is already on the
+     salary row that generated it. It stays in the markup and stays priced —
+     the COR reviews it and the indirect base is scoped by it. */
+  :global(html:not([data-cbf-role='cor'])) tbody[data-cat='personnel-fringe'] { display: none !important; }
+  :global(html[data-cbf-role='cor']) [data-fringe-rollup] { display: none !important; }
+
+  /* ── The COR's mark, on the line it disputes — a tinted band, never a
+     colored left border. ── */
+  .cbf-lct__mark {
+    margin-block-start: var(--spacing-150);
+    padding: var(--spacing-200) var(--spacing-250);
+    border-radius: var(--radius-100);
+    background: var(--color-background-utility-danger-subtle);
+  }
+  .cbf-lct__mark[data-sev='question'] { background: var(--color-background-utility-warning-subtle); }
+  .cbf-lct__mark [data-mark-sev] { display: none; }
+  .cbf-lct__mark[data-sev='required'] [data-mark-sev='required'],
+  .cbf-lct__mark[data-sev='question'] [data-mark-sev='question'] { display: inline-flex; }
+  .cbf-lct__mark-reason {
+    font-size: 13px;
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-lct__mark-note {
+    font-size: 14px;
+    color: var(--color-content-default);
+    max-width: 46ch;
+  }
+  .cbf-lct__markform { width: 360px; }
+  .cbf-lct__panel-head {
+    font-size: 14px;
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-default);
+  }
+
+  /* Layout primitives set display:flex, which would beat the UA [hidden] rule. */
+  [hidden] { display: none !important; }
+</style>

@@ -26,12 +26,30 @@ export interface Prototype {
 export const prototypes: Prototype[] = [
   // --- Active prototypes (in progress) ---
   {
+    slug: 'lib-mvp',
+    title: 'LIB MVP',
+    description:
+      'The LIB grid cut down to the v1 build scope: standard categories, one indirect rate, child LIBs for subcontracts, and the full COR review loop. Scope in docs/lib-mvp-scope.md.',
+    route: '/lib-mvp',
+    createdAt: '2026-10-20',
+    status: 'in-progress',
+  },
+  {
     slug: 'lib-entry',
     title: 'LIB entry & COR review',
     description:
       'The vendor’s line item budget (LIB) grid, with cross-line dependencies in view. A role switch shows the BPA COR’s side: mark, return or approve.',
     route: '/lib-entry',
     createdAt: '2026-08-05',
+    status: 'in-progress',
+  },
+  {
+    slug: 'contract-overview',
+    title: 'Contract overview',
+    description:
+      'The shared contract header in use on the Overview tab: who the next action is assigned to, the full task list for both sides, and the contract’s summary and contacts. Same contract and header as the LIB.',
+    route: '/contract-overview',
+    createdAt: '2026-10-20',
     status: 'in-progress',
   },
   {

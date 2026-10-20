@@ -1,0 +1,195 @@
+---
+// cbf-contract-page-screen — PLACEHOLDER: one page of a contract section (e.g.
+// Budget › Work element budgets), filled with sample content from
+// src/data/contract-tab-placeholders.mjs so the structure can be judged with
+// something in it. None of it is wired.
+//
+// The shape every section page shares, top to bottom:
+//   header   the page name, a caption line under it (version, period, owner), and
+//            the page's verbs on the right, including any `mode` of the page
+//            (Compare changes is a way of looking at the SOW, not a page)
+//   stats    the few figures that answer "where does this stand", as tiles
+//   content  the page's table or facts
+// A BPA-only page renders an empty state for the vendor lens. Buttons carry
+// `data-out-of-scope`, which the shell answers with a toast.
+//
+// bcn-lego-checked: figures are esa-stat, statuses esa-badge, verbs esa-button, the
+// vendor's blocked state esa-empty-state, tables the shared cbf-overview table (no
+// table lego in ecology). Beacon is not on this machine. CSS: the page card, the
+// stat tiles' sunken surface, and the caption's color.
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import EsaCard from '@esa/ecology/esa-card.astro';
+import { withBase } from '../../lib/base';
+import { tabOf, childOf, childLabel, CONTRACTS, hrefFor } from '../../data/contract-shell.mjs';
+import { PLACEHOLDERS } from '../../data/contract-tab-placeholders.mjs';
+import '@esa/tokens/layouts.css';
+import './cbf-overview.css';
+
+interface Props {
+  tab: string;
+  page: string;
+  /** Key into CONTRACTS, for where `cards` link. */
+  contract?: string;
+}
+const { tab, page, contract = 'lib' } = Astro.props;
+const c = (CONTRACTS as any)[contract];
+// "tab/child" → this contract's built page, or the shell's #goto: resolver.
+const linkTo = (target: string) => {
+  const built = hrefFor(c, target);
+  return built ? withBase(built) : `#goto:${target}`;
+};
+const t = tabOf(tab)!;
+const ch = childOf(tab, page) as any;
+const p = (PLACEHOLDERS as Record<string, any>)[`${tab}/${page}`] ?? { intro: 'Placeholder.' };
+// A page shows one block, or several (`blocks`), each with an optional heading.
+const blocks: any[] = p.blocks ?? (p.block ? [p.block] : []);
+// A mode belongs to the page before it (Compare changes → Statement of work).
+const i = t.children.findIndex((x: any) => x.key === page);
+const modes = [];
+for (let j = i + 1; j < t.children.length && (t.children[j] as any).mode; j++) modes.push(t.children[j]);
+---
+<section class="cbf-page-screen stack" data-gap="md" aria-labelledby="cbf-page-title">
+  <div class="repel" data-gap="md">
+    <div class="stack" data-gap="3xs">
+      <h2 id="cbf-page-title" class="typography-heading-md">{childLabel(ch)}</h2>
+      {p.caption && <p class="cbf-page-screen__caption typography-body-sm">{p.caption}</p>}
+    </div>
+    <div class="cluster" data-gap="sm">
+      {modes.map((m: any) => (
+        <EsaButton variant="secondary" appearance="outline" size="md" data-out-of-scope={m.label}>{m.label}</EsaButton>
+      ))}
+      {(p.actions ?? (p.action ? [p.action] : [])).map((a: string) => (
+        <EsaButton variant="secondary" appearance="outline" size="md" data-out-of-scope={a}>{a}</EsaButton>
+      ))}
+      {p.edit && <EsaButton variant="primary" size="md" href={withBase(p.edit.href)}>{p.edit.text}</EsaButton>}
+    </div>
+  </div>
+
+  {/* The vendor never sees a BPA-only page's content. */}
+  <div data-cs-r={ch.bpaOnly ? 'cor' : undefined}>
+  <div class="cbf-page-screen__body stack" data-gap="md">
+    {p.stats && (
+      <div class="grid cbf-page-screen__stats">
+        {p.stats.map(([label, value, sub]: string[]) => (
+          <div class="cbf-page-screen__stat"><EsaStat value={value} label={label} sub={sub} /></div>
+        ))}
+      </div>
+    )}
+
+    {p.intro && <p class="cbf-page-screen__intro typography-body-md">{p.intro}</p>}
+
+    {blocks.map((b) => (
+      <div class="stack" data-gap="sm">
+      {b.heading && <h3 class="typography-heading-sm cbf-page-screen__h3">{b.heading}</h3>}
+      {b.kind === 'table' && (
+        <table class="cbf-summary-table">
+          <thead><tr>{b.columns.map((c: string, k: number) => <th class:list={[b.num?.includes(k) && 'is-num']}>{c}</th>)}</tr></thead>
+          <tbody>
+            {b.rows.map((row: any[]) => (
+              <tr>
+                {row.map((cell: any, k: number) => (
+                  <td class:list={[b.num?.includes(k) && 'is-num', b.strong?.includes(k) && 'cbf-page-screen__strong']}>
+                    {cell && typeof cell === 'object' ? <EsaBadge value={cell.text} variant={cell.badge} size="sm" /> : cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+          {b.foot && (
+            <tfoot>
+              <tr class="cbf-page-screen__total">
+                {b.foot.map((cell: string, k: number) => <td class:list={[b.num?.includes(k) && 'is-num']}>{cell}</td>)}
+              </tr>
+            </tfoot>
+          )}
+        </table>
+      )}
+
+      {b.kind === 'facts' && (
+        <table class="cbf-summary-table">
+          <tbody>
+            {b.items.map(([label, value]: string[]) => (
+              <tr><th scope="row">{label}</th><td>{value}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {b.kind === 'link' && (
+        <div><EsaButton variant="primary" size="sm" href={withBase(b.href)}>{b.text}</EsaButton></div>
+      )}
+
+      {b.kind === 'cards' && (
+        <div class="grid cbf-page-screen__cards">
+          {b.items.map((it: any) => (
+            <EsaCard title={it.title} variant="outlined" padding="compact">
+              <div class="stack" data-gap="2xs">
+                <span class="typography-heading-sm">{it.value}</span>
+                {it.sub && <span class="cbf-page-screen__caption typography-body-sm">{it.sub}</span>}
+                <a class="cbf-ov-link typography-body-sm" href={linkTo(it.target)}>Open {it.title.charAt(0).toLowerCase() + it.title.slice(1)}</a>
+              </div>
+            </EsaCard>
+          ))}
+        </div>
+      )}
+      </div>
+    ))}
+  </div>
+  </div>
+  {ch.bpaOnly && (
+    <div data-cs-r="vendor">
+      <EsaEmptyState title="BPA staff only" description="This page holds BPA's internal records for the contract." size="sm" />
+    </div>
+  )}
+</section>
+
+<style>
+  /* The page sits in its own card, like the header above it. */
+  .cbf-page-screen {
+    padding: var(--spacing-500);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-200);
+    background: var(--color-background-elevation-raised);
+  }
+  .cbf-page-screen h2,
+  .cbf-page-screen__caption,
+  .cbf-page-screen__intro {
+    margin: 0;
+  }
+  .cbf-page-screen__caption {
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-page-screen__intro {
+    max-inline-size: 70ch;
+    color: var(--color-content-default-secondary);
+  }
+  /* The role lens reveals with display:flex; keep its one child full width. */
+  [data-cs-r] {
+    flex-direction: column;
+  }
+  .cbf-page-screen__strong,
+  .cbf-page-screen__total td {
+    font-weight: var(--typography-font-weight-semibold);
+  }
+  .cbf-page-screen__total td {
+    border-block-start: 2px solid var(--color-border-default);
+    border-block-end: 0;
+  }
+  .cbf-page-screen__h3 {
+    margin: 0;
+  }
+  .cbf-page-screen__cards {
+    --grid-min: 15rem;
+  }
+  .cbf-page-screen__stats {
+    --grid-min: 12rem;
+  }
+  .cbf-page-screen__stat {
+    padding: var(--spacing-300) var(--spacing-400);
+    border-radius: var(--radius-100);
+    background: var(--color-background-elevation-sunken);
+  }
+</style>

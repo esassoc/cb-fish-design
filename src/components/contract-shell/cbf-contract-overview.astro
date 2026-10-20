@@ -1,0 +1,66 @@
+---
+// cbf-contract-overview — the contract's Overview tab, for any contract in
+// src/data/contract-shell.mjs.
+//
+// NOT A PORT OF THE LIVE CONTRACT SUMMARY — an improvement on it. The live page is an
+// inventory: nine sections, each the full contents of another tab (a 46-row SOW
+// grid, 177 metrics, 30+ deliverables, a compliance matrix), every fact at equal
+// weight, and no statement anywhere of what is late, uncleared or overdue. Per the
+// IA proposal (one canonical home per item) the Overview SUMMARIZES AND LINKS:
+//
+//   main column                         rail
+//   Tasks         what's assigned        Key contacts      who to reach (all: drawer)
+//   Status        is anything off track  Contract details  the facts you use (all: drawer)
+//   Scope         what it pays for
+//   Recent activity  the last handoffs
+//
+// Moved to their canonical tabs: the SOW grid (Scope), metrics and deliverables
+// (Reporting), the compliance matrix (Compliance), photos (Documents), and the two
+// reports (Scope: SOW report; Budget: payment and balance history).
+//
+// The WORKFLOW VIEW (cbf-contract-workflow: phase strip or label, contract-wide
+// tracks, the work element grid) comes first and spans the full width — the grid
+// needs it — with the main column and rail below.
+//
+// Several sections differ by viewer or demo state, so this must sit inside a
+// cbf-contract-shell (its reveal rules show the live variant).
+//
+// bcn-lego-checked: layout only — the `sidebar` primitive (rail at the end, stacks
+// on narrow screens) and `stack`; every section is its own component. Beacon is not
+// on this machine. CSS: the rail width, and the rail's top rule when stacked.
+import CbfContractWorkflow from './cbf-contract-workflow.astro';
+import CbfContractTasks from './cbf-contract-tasks.astro';
+import CbfContractHealth from './cbf-contract-health.astro';
+import CbfContractScopeSummary from './cbf-contract-scope-summary.astro';
+import CbfContractActivity from './cbf-contract-activity.astro';
+import CbfContractPeople from './cbf-contract-people.astro';
+import CbfContractDetails from './cbf-contract-details.astro';
+
+interface Props {
+  /** Key into CONTRACTS. */
+  contract: string;
+}
+const { contract } = Astro.props;
+---
+<div class="stack" data-gap="xl">
+<CbfContractWorkflow contract={contract} />
+<div class="cbf-overview sidebar" data-side="end" data-gap="2xl">
+  <aside class="cbf-overview__rail stack" data-gap="xl" aria-label="Contacts and contract details">
+    <CbfContractPeople contract={contract} />
+    <CbfContractDetails contract={contract} />
+  </aside>
+  <div class="stack" data-gap="xl">
+    <CbfContractTasks contract={contract} />
+    <CbfContractHealth contract={contract} />
+    <CbfContractScopeSummary contract={contract} />
+    <CbfContractActivity contract={contract} />
+  </div>
+</div>
+</div>
+
+<style>
+  .cbf-overview {
+    --sidebar-width: 22rem;
+    --sidebar-content-min: 55%;
+  }
+</style>

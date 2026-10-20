@@ -1,0 +1,76 @@
+---
+// cbf-contract-phase — where a contract stands in its lifecycle, as one compact
+// row: Pre-award · Active · Closeout · Closed, with the current phase named and the
+// earlier ones marked done. The first of the header's three orientation facts
+// (phase, assignment, flags); it answers "where are we" and nothing else.
+//
+// Reusable on its own: any object with an ordered lifecycle passes its phases and
+// the current key (the project-level shell will pass the project's).
+//
+// bcn-lego-checked: ecology has no stepper or status-track lego (checked the full
+// catalog — esa-progress-bar is a determinate bar with no named steps, which says
+// "how far" rather than "which stage"; esa-pillbox would read as filters; esa-badge
+// names one state but loses the sequence). The spoke's only stepper,
+// cbf-libw-stepper, is the LIB wizard's step navigation (clickable, sticky,
+// per-step status) — the wrong job for a read-only status. Beacon is not on this
+// machine. This is an <ol> with aria-current and token-only marks.
+interface Phase {
+  key: string;
+  label: string;
+}
+interface Props {
+  phases: Phase[];
+  /** The `key` of the current phase. */
+  current: string;
+}
+const { phases, current } = Astro.props;
+const at = Math.max(0, phases.findIndex((p) => p.key === current));
+---
+<ol class="cbf-phase cluster" data-gap="sm" aria-label="Contract phase">
+  {phases.map((p, i) => (
+    <li
+      class:list={['cbf-phase__step typography-label-sm', i < at && 'is-done', i === at && 'is-current']}
+      aria-current={i === at ? 'step' : undefined}
+    >
+      <span class="cbf-phase__mark" aria-hidden="true"></span>
+      {p.label}
+      {i < at && <span class="visually-hidden">(done)</span>}
+    </li>
+  ))}
+</ol>
+
+<style>
+  .cbf-phase {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cbf-phase__step {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-150);
+    color: var(--color-content-default-tertiary);
+  }
+  .cbf-phase__step.is-done {
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-phase__step.is-current {
+    color: var(--color-content-default);
+    font-weight: var(--typography-font-weight-semibold);
+  }
+  /* Hollow for what's ahead, filled for what's done and current. The current mark
+     carries the brand color — the only saturated pixel in the row. */
+  .cbf-phase__mark {
+    inline-size: 0.625rem;
+    block-size: 0.625rem;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+  }
+  .is-done .cbf-phase__mark {
+    background: currentColor;
+  }
+  .is-current .cbf-phase__mark {
+    border-color: var(--color-background-brand);
+    background: var(--color-background-brand);
+  }
+</style>

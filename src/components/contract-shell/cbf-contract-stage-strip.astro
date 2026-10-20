@@ -1,0 +1,93 @@
+---
+// cbf-contract-stage-strip — the workflow view's stage strip, shown only while a
+// contract's work is sequential (setup, issuance, closeout). One step per stage:
+// its name, its state in words, who's up and by when, or — for a step that hasn't
+// opened — the gate it waits on, written as an upcoming condition, never an error.
+//
+// Who's up reads "you" for the viewing role, so the caller renders one strip per
+// (role × state) and the contract shell reveals the live one.
+//
+// bcn-lego-checked: ecology has no stepper or stage-track lego (catalog checked:
+// esa-progress-bar says "how far", not "which step, whose turn"; esa-badge names
+// one state but loses the sequence). cbf-contract-phase is the header's one-line
+// phase row with no who/due/gate, and cbf-libw-stepper is clickable wizard nav —
+// both the wrong job. Beacon is not on this machine. Layout is the `grid`
+// primitive; CSS is the step mark only, same marks as cbf-contract-phase.
+import { whoLabel } from '../../data/contract-workflow.mjs';
+
+interface Step {
+  key: string;
+  label: string;
+  status: 'current' | 'upcoming' | 'done';
+  who?: string;
+  due?: string;
+  gate?: string;
+}
+interface Props {
+  label: string;
+  steps: Step[];
+  /** The viewing role, so who's up reads "you" or the party's name. */
+  role: string;
+  /** The contract record (CONTRACTS[key]). */
+  c: any;
+}
+const { label, steps, role, c } = Astro.props;
+const STATUS = { current: 'In progress', upcoming: 'Not started', done: 'Done' } as const;
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+---
+<ol class="cbf-stage grid" data-gap="md" aria-label={`${label} steps`}>
+  {steps.map((s) => (
+    <li
+      class:list={['cbf-stage__step stack', `is-${s.status}`]}
+      data-gap="2xs"
+      aria-current={s.status === 'current' ? 'step' : undefined}
+    >
+      <span class="cbf-stage__name cluster typography-label-md-strong" data-gap="xs">
+        <span class="cbf-stage__mark" aria-hidden="true"></span>
+        {s.label}
+      </span>
+      <span class="cbf-stage__status typography-body-sm">{STATUS[s.status]}</span>
+      {s.who && (
+        <span class="typography-body-sm">
+          {cap(whoLabel({ who: s.who }, role, c) === 'you' ? 'with you' : `with ${whoLabel({ who: s.who }, role, c)}`)}{s.due && `, due ${s.due}`}
+        </span>
+      )}
+      {!s.who && s.due && <span class="typography-body-sm">Due {s.due}</span>}
+      {s.gate && <span class="cbf-stage__gate typography-body-sm">{s.gate}</span>}
+    </li>
+  ))}
+</ol>
+
+<style>
+  .cbf-stage {
+    --grid-min: 10rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cbf-stage__name {
+    --align: center;
+    color: var(--color-content-default);
+  }
+  .cbf-stage__status,
+  .cbf-stage__gate {
+    color: var(--color-content-default-secondary);
+  }
+  .is-upcoming .cbf-stage__name {
+    color: var(--color-content-default-secondary);
+  }
+  /* Hollow ahead, filled when done; the current step's mark is the only brand pixel. */
+  .cbf-stage__mark {
+    inline-size: 0.625rem;
+    block-size: 0.625rem;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+  }
+  .is-done .cbf-stage__mark {
+    background: currentColor;
+  }
+  .is-current .cbf-stage__mark {
+    border-color: var(--color-background-brand);
+    background: var(--color-background-brand);
+  }
+</style>

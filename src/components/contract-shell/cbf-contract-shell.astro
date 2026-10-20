@@ -1,0 +1,463 @@
+---
+// cbf-contract-shell — the frame every contract page sits in: breadcrumb + Go to,
+// the contract header, and the section list (or the tab strip, by
+// <html data-contract-nav>) beside the page's own content. One component, one
+// structure (src/data/contract-shell.mjs), so the sections, the tabs, Go to and the
+// breadcrumb can never disagree, and every contract page
+// gets the SAME header — there are no variants by page.
+//
+//   <CbfContractShell contract="lib" tab="budget" child="lib">
+//     …the page's content…
+//   </CbfContractShell>
+//
+// WHAT THE HEADER ANSWERS, top to bottom:
+//   identity + phase   which contract, and where it stands — the eyebrow, as on
+//                      every other page's esa-page-header
+//   the assignment     who the next action is assigned to, what it is, and the
+//                      button that does it, on one line
+//   context            last handoff, who's on the other side, month of period, flags
+//                      (both from cbf-contract-status)
+// On scroll the identity and context scroll away; a compact assignment line and the tabs
+// stick, so the action and the navigation stay in reach on long tables.
+//
+// ROLE × STATE. The header differs by viewer (vendor or COR) and by the contract's
+// situation. Every combination is SERVER-RENDERED and CSS generated below reveals
+// the live one from two attributes on <html>: `data-cbf-role` (cbf-role-switch, or
+// the page's own lens) and `data-contract-state` (set before paint by the inline
+// script here; changed by cbf-contract-state-switch). Same contract as the role
+// lens: switching is instant and lossless.
+//
+// NAVIGATION. Links to unbuilt destinations carry `#goto:<tab>/<child>`. The script
+// resolves them: a tab listed in `panels` is a panel on this page (the strip moves
+// and `cbf:contract-tab-change` fires); a built page for this contract navigates;
+// anything else says it's outside the prototype.
+//
+// EVENT CONTRACT (on `document`)
+//   listen    cbf-role:change, cbf-contract-state:change   → repaint the tab badges
+//   listen    cbf:contract-tab-change { key }              → keep the crumb in step
+//   dispatch  cbf:contract-tab-select { key }              → cbf-contract-tabs moves
+//
+// Sets `--cbf-contract-bar-h` on <html> to the sticky bar's height, so anything
+// else that sticks to the top of the page can sit below it instead of under it.
+//
+// bcn-lego-checked: the frame is cbf-app-panel (crumbs slot), the identity row is
+// esa-page-header (eyebrow = the record id and phase), the trail is
+// esa-breadcrumbs, the strip is cbf-contract-tabs (esa-tab-layout). The ecology
+// catalog has no record-header / object-shell lego (esa-app-shell is app chrome);
+// Beacon is not on this machine. CSS here is the sticky bar and variant reveal only.
+import CbfAppPanel from '../shared/cbf-app-panel.astro';
+import CbfContractTabs from '../shared/cbf-contract-tabs.astro';
+import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
+import EsaBreadcrumbs from '@esa/ecology/esa-breadcrumbs.astro';
+import CbfContractStatus from './cbf-contract-status.astro';
+import CbfContractGoto from './cbf-contract-goto.astro';
+import CbfContractSections from './cbf-contract-sections.astro';
+import { withBase } from '../../lib/base';
+import {
+  TABS,
+  PHASES,
+  STATES,
+  VIEWER_ROLES,
+  CONTRACTS,
+  DEFAULT_STATE,
+  STATE_KEY,
+  NAV_KEY,
+  DEFAULT_NAV,
+  allModels,
+  crumbsFor,
+  childOf,
+  childrenFor,
+  childLabel,
+  hrefFor,
+} from '../../data/contract-shell.mjs';
+
+interface Crumb {
+  label: string;
+  href?: string;
+}
+interface Props {
+  /** Key into CONTRACTS. */
+  contract: string;
+  /** The active tab. */
+  tab: string;
+  /** The active level-2 page, when the page is one. */
+  child?: string;
+  /** Crumbs below the child, e.g. a subcontract under the line item budget. */
+  trail?: Crumb[];
+  /** Tabs this page renders as in-page panels (it listens for cbf:contract-tab-change). */
+  panels?: string[];
+}
+const { contract, tab, child, trail = [], panels = [] } = Astro.props;
+const phaseLabel = (key: string) => PHASES.find((p) => p.key === key)?.label ?? key;
+const c = (CONTRACTS as any)[contract];
+const models = allModels(contract);
+
+const withHref = (cs: Crumb[]) => cs.map((x) => (x.href ? { ...x, href: withBase(x.href) } : x));
+const crumbs = withHref(crumbsFor(contract, tab, child, { trail }));
+const crumbsCcr = withHref(crumbsFor(contract, tab, child, { trail, ccr: true }));
+const ccrStates = STATES.filter((s) => s.ccr).map((s) => s.key);
+
+// A tab navigates to its first built page on this contract, if it has one.
+const tabHref = (key: string) => {
+  const built = TABS.find((t) => t.key === key)!.children.map((ch) => hrefFor(c, `${key}/${ch.key}`)).find(Boolean);
+  // The tab opens its page at the top, not at whichever section the first child is.
+  return built ? withBase(built.split('#')[0]) : undefined;
+};
+const defaultBadges = models[`vendor:${DEFAULT_STATE}`].badges;
+const tabs = TABS.map((t) => ({
+  key: t.key,
+  label: t.label,
+  live: t.key === tab || panels.includes(t.key),
+  href: t.key === tab ? undefined : tabHref(t.key),
+  badge: defaultBadges[t.key],
+}));
+
+// The second row: the current section's pages, per role (vendors never see the
+// BPA-only ones). Modes aren't pages. The Workflow section is one page, so it has
+// no second row.
+const sectionPages = (role: string) =>
+  childrenFor(TABS.find((t) => t.key === tab)!, role)
+    .filter((ch: any) => !ch.mode)
+    .map((ch: any) => {
+      const built = hrefFor(c, `${tab}/${ch.key}`);
+      return { key: ch.key, label: childLabel(ch), live: ch.key === child, href: ch.key === child || !built ? undefined : withBase(built) };
+    });
+const showPages = tab !== 'overview' && !!child;
+
+// Everything the client needs, precomputed — the script imports no data module.
+const clientConfig = {
+  panels,
+  tab,
+  pages: Object.fromEntries(Object.entries(c.pages).map(([k, v]) => [k, withBase(v as string)])),
+  labels: Object.fromEntries(
+    TABS.flatMap((t) => [[t.key, t.label], ...t.children.map((ch) => [`${t.key}/${ch.key}`, ch.label])]),
+  ),
+  tabLabels: TABS.map((t) => t.label),
+  badges: Object.fromEntries(Object.entries(models).map(([k, m]: [string, any]) => [k, m.badges])),
+  hereChild: child ? childOf(tab, child)?.label : null,
+};
+
+// The reveal rules: each variant is display:none unless <html> carries its role and
+// state. The vendor is the default lens, so "not cor" reads as vendor.
+const roleSel = (r: string) => (r === 'cor' ? '[data-cbf-role="cor"]' : ':not([data-cbf-role="cor"])');
+const stateSel = (s: string) =>
+  s === DEFAULT_STATE ? `:is([data-contract-state="${s}"], :not([data-contract-state]))` : `[data-contract-state="${s}"]`;
+const revealCss = [
+  '[data-cs-v], [data-cs-s], [data-cs-r], [data-cs-ccr] { display: none; }',
+  ...STATES.flatMap((s) => [
+    `html${stateSel(s.key)} [data-cs-s="${s.key}"] { display: block; }`,
+    ...VIEWER_ROLES.map((r) => `html${stateSel(s.key)}${roleSel(r)} [data-cs-v="${r}:${s.key}"] { display: block; }`),
+  ]),
+  ...VIEWER_ROLES.map((r) => `html${roleSel(r)} [data-cs-r="${r}"] { display: flex; }`),
+  `html:not(${ccrStates.map((s) => `[data-contract-state="${s}"]`).join(', ')}) [data-cs-ccr="no"] { display: block; }`,
+  ...ccrStates.map((s) => `html[data-contract-state="${s}"] [data-cs-ccr="yes"] { display: block; }`),
+].join('\n');
+---
+<!-- Pick the demo state before first paint, so a reload never flashes the default. -->
+<script is:inline define:vars={{ STATE_KEY, DEFAULT_STATE, NAV_KEY, DEFAULT_NAV, stateKeys: STATES.map((s) => s.key) }}>
+  (() => {
+    let state = DEFAULT_STATE;
+    let nav = DEFAULT_NAV;
+    const navs = ['sections', 'tabs'];
+    try {
+      const params = new URL(window.location.href).searchParams;
+      const q = params.get('state');
+      const stored = window.sessionStorage?.getItem(STATE_KEY);
+      state = stateKeys.includes(q) ? q : stateKeys.includes(stored) ? stored : DEFAULT_STATE;
+      const qn = params.get('nav');
+      const storedNav = window.sessionStorage?.getItem(NAV_KEY);
+      nav = navs.includes(qn) ? qn : navs.includes(storedNav) ? storedNav : DEFAULT_NAV;
+    } catch {
+      /* private mode — the defaults still render */
+    }
+    document.documentElement.dataset.contractState = state;
+    document.documentElement.dataset.contractNav = nav;
+  })();
+</script>
+<style is:inline set:html={revealCss}></style>
+
+<CbfAppPanel>
+  <div slot="crumbs" class="cbf-cs__crumbs repel" data-gap="md">
+    <div>
+      <div data-cs-ccr="no"><EsaBreadcrumbs items={crumbs} /></div>
+      {ccrStates.length > 0 && <div data-cs-ccr="yes"><EsaBreadcrumbs items={crumbsCcr} /></div>}
+    </div>
+    <CbfContractGoto contract={contract} />
+  </div>
+
+  <!-- display: contents — the header, the sticky bar and the content must be
+       siblings in the panel's column, or the bar's sticky range would end with
+       its own parent, right after the tabs. -->
+  <div class="cbf-cs" data-contract-shell={JSON.stringify(clientConfig)}>
+    <!-- One esa-page-header per (role × state), like every other page's header:
+         the record id and phase as the eyebrow. The action sits on the assignment
+         line, next to the task it does. -->
+    <div class="cbf-cs__head">
+      {Object.entries(models).map(([key, m]: [string, any]) => (
+        <div data-cs-v={key}>
+          <div class="stack" data-gap="sm">
+            <EsaPageHeader title={c.title} eyebrow={`Contract ${c.number} · ${phaseLabel(m.phase)}`} as="div" />
+            <CbfContractStatus model={m} />
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="cbf-cs__sentinel" aria-hidden="true" data-cs-sentinel></div>
+    <div class="cbf-cs__sticky" data-cs-sticky>
+      <div class="cbf-cs__compact repel" data-gap="md">
+        <span class="cbf-cs__compact-id typography-label-md">Contract {c.number}</span>
+        <div>
+          {Object.entries(models).map(([key, m]) => (
+            <div data-cs-v={key}><CbfContractStatus model={m} part="compact" /></div>
+          ))}
+        </div>
+      </div>
+      <div class="cbf-cs__tabs">
+        <CbfContractTabs tabs={tabs} active={tab} label="Contract sections" />
+        {showPages && VIEWER_ROLES.map((role) => (
+          <div class="cbf-cs__pages" data-cs-r={role}>
+            <CbfContractTabs tabs={sectionPages(role)} active={child!} appearance="segmented" label={`${TABS.find((t) => t.key === tab)!.label} pages`} />
+          </div>
+        ))}
+      </div>
+    </div>
+
+    <!-- Section list beside the content, or the tab strip above it: one of the two,
+         by <html data-contract-nav>. -->
+    <div class="cbf-cs__body">
+      <aside class="cbf-cs__rail">
+        <CbfContractSections contract={contract} active={tab} child={child} panels={panels} badges={defaultBadges} />
+      </aside>
+      <div class="cbf-cs__content stack" data-gap="md" id="contract-content" tabindex="-1">
+        <slot />
+      </div>
+    </div>
+  </div>
+</CbfAppPanel>
+
+<script>
+  type Config = {
+    panels: string[];
+    tab: string;
+    pages: Record<string, string>;
+    labels: Record<string, string>;
+    tabLabels: string[];
+    badges: Record<string, Record<string, number>>;
+    hereChild: string | null;
+  };
+
+  const root = document.querySelector<HTMLElement>('[data-contract-shell]');
+  if (root) init(root);
+
+  function init(root: HTMLElement): void {
+    const cfg = JSON.parse(root.dataset.contractShell ?? '{}') as Config;
+    const html = document.documentElement;
+    const role = () => (html.dataset.cbfRole === 'cor' ? 'cor' : 'vendor');
+    const state = () => html.dataset.contractState ?? '';
+
+    const toast = (msg: string): void => {
+      const sb = document.querySelector('[data-snackbar]') as any;
+      (sb?.info ?? sb?.success)?.call(sb, msg, { duration: 4000 });
+    };
+
+    // ── Tab badges: what's waiting on THIS viewer, per tab ──────────────────────
+    const strip = root.querySelector<HTMLElement & { tabs: any[]; activeIndex: number }>('.cbf-contract-tabs');
+    const keys = Object.keys(cfg.labels).filter((k) => !k.includes('/'));
+    const paintBadges = (): void => {
+      const counts = cfg.badges[`${role()}:${state()}`] ?? {};
+      root.querySelectorAll<HTMLElement>('[data-cs-section-badge]').forEach((b) => {
+        const n = counts[b.dataset.csSectionBadge ?? ''];
+        b.hidden = !n;
+        const text = b.querySelector('.esa-badge__text');
+        if (text) text.textContent = n ? String(n) : '';
+      });
+      if (!strip) return;
+      const at = strip.activeIndex;
+      strip.tabs = keys.map((k, i) => ({ label: cfg.tabLabels[i], ...(counts[k] ? { badge: counts[k] } : {}) }));
+      strip.activeIndex = at;
+    };
+    customElements.whenDefined('esa-tab-layout').then(paintBadges);
+    paintBadges();
+    document.addEventListener('cbf-role:change', paintBadges);
+    document.addEventListener('cbf-contract-state:change', paintBadges);
+
+    // ── "+N more" menus get their items from the server-rendered list ───────────
+    root.querySelectorAll<HTMLElement & { items: any[] }>('[data-cs-more]').forEach((menu) => {
+      menu.items = JSON.parse(menu.dataset.csMore ?? '[]');
+    });
+
+    // ── The crumb follows the panel on pages that switch panels in place ────────
+    const panelCrumb = (key: string): void => {
+      if (!cfg.panels.length) return;
+      document.querySelectorAll('.cbf-app-panel__crumb .esa-breadcrumbs').forEach((nav) => {
+        const current = nav.querySelectorAll('.esa-breadcrumbs__current');
+        const last = current[current.length - 1];
+        if (last) last.textContent = cfg.labels[key] ?? last.textContent;
+      });
+    };
+    document.addEventListener('cbf:contract-tab-change', (e) => {
+      panelCrumb((e as CustomEvent<{ key: string }>).detail?.key);
+    });
+
+    const content = document.getElementById('contract-content');
+    // Scroll to a section of this page (by hash), or to the top of the content.
+    // The sticky bar would cover the target, so scroll-margin carries its height.
+    const toContent = (hash = ''): void => {
+      const el = (hash && document.getElementById(hash.slice(1))) || content;
+      // A collapsed section opens when you're sent to it.
+      if (el !== content) el?.querySelector<HTMLDetailsElement>('details')?.setAttribute('open', '');
+      el?.style.setProperty('scroll-margin-top', 'calc(var(--cbf-contract-bar-h, 0px) + 1rem)');
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (el === content) content?.focus({ preventScroll: true });
+    };
+
+    // ── One resolver for every "go to" in the shell ─────────────────────────────
+    const closeMenus = (): void => {
+      document.querySelectorAll<HTMLElement>('[data-cs-goto-menu]').forEach((d) => {
+        if (d.matches(':popover-open')) d.hidePopover();
+      });
+    };
+    const goTo = (target: string): void => {
+      closeMenus();
+      if (target === 'recent') {
+        toast('Switching contracts is outside this prototype.');
+        return;
+      }
+      const [tabKey] = target.split('/');
+      const page = cfg.pages[target];
+      if (page) {
+        const url = new URL(page, window.location.href);
+        if (url.pathname === window.location.pathname) toContent(url.hash);
+        else window.location.href = page;
+        return;
+      }
+      if (cfg.panels.includes(tabKey)) {
+        document.dispatchEvent(new CustomEvent('cbf:contract-tab-select', { detail: { key: tabKey } }));
+        toContent();
+        return;
+      }
+      if (tabKey === cfg.tab && !target.includes('/')) {
+        toContent();
+        return;
+      }
+      toast(`${cfg.labels[target] ?? cfg.labels[tabKey] ?? 'That page'} is outside this prototype.`);
+    };
+
+    document.addEventListener('click', (e) => {
+      // Any control on a contract page that opens something this prototype doesn't
+      // build says so: data-out-of-scope="<what it would open>".
+      const stub = (e.target as HTMLElement).closest?.<HTMLElement>('[data-out-of-scope]');
+      if (stub) {
+        e.preventDefault();
+        toast(`${stub.dataset.outOfScope} is outside this prototype.`);
+        return;
+      }
+      const a = (e.target as HTMLElement).closest?.('a[href]') as HTMLAnchorElement | null;
+      if (!a) return;
+      const href = a.getAttribute('href') ?? '';
+      if (href.startsWith('#goto:')) {
+        e.preventDefault();
+        goTo(href.slice('#goto:'.length));
+      } else if ((a.dataset.csGoto || a.closest('[data-cs-goto-menu]')) && a.pathname === window.location.pathname) {
+        // The action or Go to link lives on this very page: don't reload, go to it.
+        e.preventDefault();
+        closeMenus();
+        toContent(a.hash);
+      }
+    });
+    root.addEventListener('menu-action', (e) => {
+      const action = String((e as CustomEvent).detail ?? '');
+      if (action.startsWith('goto:')) goTo(action.slice('goto:'.length));
+    });
+
+    // ── Sticky bar: compact assignment line shows only once the header scrolls away ───
+    const sticky = root.querySelector<HTMLElement>('[data-cs-sticky]');
+    const sentinel = root.querySelector<HTMLElement>('[data-cs-sentinel]');
+    if (sticky && sentinel) {
+      new IntersectionObserver(([entry]) => {
+        sticky.toggleAttribute('data-stuck', !entry.isIntersecting && entry.boundingClientRect.top < 0);
+      }).observe(sentinel);
+      new ResizeObserver(() => {
+        html.style.setProperty('--cbf-contract-bar-h', `${sticky.offsetHeight}px`);
+      }).observe(sticky);
+    }
+  }
+</script>
+
+<style>
+  .cbf-cs__crumbs {
+    --align: center;
+  }
+  .cbf-cs {
+    display: contents;
+  }
+  /* The panel column's gap would open up around the zero-height sentinel. */
+  .cbf-cs__sentinel {
+    block-size: 0;
+    margin-block-end: calc(-1 * var(--spacing-400));
+  }
+  /* The bar sticks to the viewport top. It needs a surface of its own or the
+     content scrolling under it shows through. */
+  .cbf-cs__sticky {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    margin-inline: calc(-1 * var(--spacing-600));
+    padding-inline: var(--spacing-600);
+    background: var(--color-background-elevation-raised);
+  }
+  .cbf-cs__sticky[data-stuck] {
+    border-block-end: 1px solid var(--color-border-default);
+    box-shadow: 0 2px 4px color-mix(in srgb, var(--color-background-default-knockout) 6%, transparent);
+  }
+  .cbf-cs__compact {
+    display: none;
+    padding-block: var(--spacing-200) 0;
+    --align: center;
+  }
+  .cbf-cs__sticky[data-stuck] .cbf-cs__compact {
+    display: flex;
+  }
+  .cbf-cs__compact-id {
+    color: var(--color-content-default);
+  }
+  .cbf-cs__pages {
+    padding-block: var(--spacing-300);
+  }
+  .cbf-cs__content:focus {
+    outline: none;
+  }
+  /* Tabs mode (the default): the strip, no rail. Section list mode: rail beside
+     the content, strip hidden. */
+  :global(html:not([data-contract-nav='sections'])) .cbf-cs__rail,
+  :global(html[data-contract-nav='sections']) .cbf-cs__tabs {
+    display: none;
+  }
+  :global(html[data-contract-nav='sections']) .cbf-cs__body {
+    display: grid;
+    grid-template-columns: 14rem minmax(0, 1fr);
+    gap: var(--spacing-600);
+    align-items: start;
+  }
+  /* The rail stays in reach under the sticky bar while the content scrolls. */
+  .cbf-cs__rail {
+    position: sticky;
+    top: calc(var(--cbf-contract-bar-h, 0px) + var(--spacing-400));
+    max-block-size: calc(100vh - var(--cbf-contract-bar-h, 0px) - var(--spacing-600));
+    overflow-y: auto;
+  }
+  /* Narrow screens: the list sits above the content, in full — never behind a
+     "More" menu. */
+  @media (max-width: 60rem) {
+    :global(html[data-contract-nav='sections']) .cbf-cs__body {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .cbf-cs__rail {
+      position: static;
+      max-block-size: none;
+      padding-block-end: var(--spacing-400);
+      border-block-end: 1px solid var(--color-border-default);
+    }
+  }
+</style>
