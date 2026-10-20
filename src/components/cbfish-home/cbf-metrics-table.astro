@@ -9,21 +9,18 @@
 // bcn-lego-checked: a real <table> (caption, scoped headers) — ecology has no
 // table lego, and AG Grid is for browsing records, not four summary rows. The
 // year picker IS esa-button-toggle; links are plain anchors in the description
-// cell (the row highlight is CSS on :has()). Checked Beacon (summary tables are
+// cell, stretched over the whole row (::before), so any cell opens it. Checked Beacon (summary tables are
 // plain tables). Sparklines are decorative and aria-hidden;
 // every value is in a cell as text.
 import { METRICS, AREA, LAST_FY, formatFull } from '../../data/cbfish-home-metrics';
 import { withBase } from '../../lib/base';
+import { sparkPath } from '../../lib/series';
 
 const YEARS = [LAST_FY, LAST_FY - 1, LAST_FY - 2, LAST_FY - 3, LAST_FY - 4];
 const fy = (y: number) => `FY${String(y).slice(2)}`;
 const gainIn = (s: { fy: number; value: number }[], y: number) => {
   const i = s.findIndex((d) => d.fy === y);
   return i <= 0 ? s[0].value : s[i].value - s[i - 1].value;
-};
-const spark = (s: { value: number }[]) => {
-  const max = Math.max(...s.map((d) => d.value));
-  return s.map((d, i) => `${i ? 'L' : 'M'}${((i / (s.length - 1)) * 100).toFixed(1)},${(22 - (d.value / max) * 20).toFixed(1)}`).join('');
 };
 const rows = METRICS.map((m) => ({
   m,
@@ -69,7 +66,7 @@ const rows = METRICS.map((m) => ({
             <td class="is-num cbf-metrics-table__total">{formatFull(m.total)}</td>
             <td class="cbf-metrics-table__spark-cell">
               <svg class="cbf-metrics-table__spark" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
-                <path d={spark(m.cumulative)} />
+                <path d={sparkPath(m.cumulative, 100, 24)} />
               </svg>
             </td>
           </tr>
@@ -127,12 +124,15 @@ const rows = METRICS.map((m) => ({
   }
   .cbf-metrics-table__link { color: var(--color-content-default); text-decoration: none; font-weight: var(--typography-font-weight-medium, 500); }
   .cbf-metrics-table__link::after { content: ' →'; color: var(--color-background-brand); opacity: 0; transition: opacity 140ms ease; }
-  .cbf-metrics-table__table tbody tr { transition: background 140ms ease; }
-  .cbf-metrics-table__table tbody tr:has(.cbf-metrics-table__link:hover),
+  /* the description link is stretched over its whole row, so any cell opens it */
+  .cbf-metrics-table__table tbody tr { position: relative; transition: background 140ms ease; }
+  .cbf-metrics-table__link::before { content: ''; position: absolute; inset: 0; }
+  .cbf-metrics-table__table tbody tr:hover { cursor: pointer; }
+  .cbf-metrics-table__table tbody tr:hover,
   .cbf-metrics-table__table tbody tr:has(.cbf-metrics-table__link:focus-visible) { background: var(--color-background-brand-subtle); }
-  .cbf-metrics-table__table tbody tr:has(.cbf-metrics-table__link:hover) .cbf-metrics-table__link::after,
+  .cbf-metrics-table__table tbody tr:hover .cbf-metrics-table__link::after,
   .cbf-metrics-table__table tbody tr:has(.cbf-metrics-table__link:focus-visible) .cbf-metrics-table__link::after { opacity: 1; }
-  .cbf-metrics-table__link:hover { text-decoration: underline; }
+  .cbf-metrics-table__table tbody tr:hover .cbf-metrics-table__link { text-decoration: underline; }
 
   .cbf-metrics-table__year { display: block; margin-bottom: 2px; font-size: 17px; font-weight: var(--typography-font-weight-semibold); }
   .cbf-metrics-table__share-text { color: var(--color-content-default-tertiary); }

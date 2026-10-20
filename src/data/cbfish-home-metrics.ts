@@ -265,7 +265,11 @@ export function equivalentPhrase(m: Metric): { multiple: number; text: string } 
   if (!e) return null;
   const x = m.total / e.size;
   const shown = x >= 10 ? Math.round(x).toLocaleString('en-US') : x >= 1 ? x.toFixed(1).replace(/\.0$/, '') : null;
-  if (e.kind === 'per') return { multiple: x, text: `about ${shown} for every ${e.reference}` };
+  if (e.kind === 'per') {
+    // below one per person, keep two decimals rather than rounding to nothing
+    if (!shown) return { multiple: x, text: `about ${x.toFixed(2)} for every ${e.reference}` };
+    return { multiple: x, text: `about ${shown} for every ${e.reference}` };
+  }
   if (!shown) return { multiple: x, text: `about ${Math.round(x * 100)}% of the size of ${e.reference}` };
   return { multiple: x, text: `about ${shown} times the size of ${e.reference}` };
 }

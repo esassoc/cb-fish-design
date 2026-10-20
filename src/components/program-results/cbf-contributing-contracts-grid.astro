@@ -16,9 +16,10 @@
 // bcn-lego-checked: ecology has NO table/grid lego (checked the catalog) and
 // AG Grid Community is this spoke's established tabular surface. Every other
 // control is a lego or shared spoke part: cbf-search-field for search,
-// esa-button (icon-only) for the CSV download.
+// esa-button (icon-only) for the CSV download, esa-button (ghost) to clear
+// a link filter.
 import CbfSearchField from '../search/cbf-search-field.astro';
-import EsaIconButton from '@esa/ecology/esa-button.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
 import '../shared/cbf-data-grid-chrome.css';
 import { STATES, filterToken, type ContributingContract, type Metric } from '../../data/cbfish-home-metrics';
 
@@ -40,7 +41,7 @@ const unitLabel = `${metric.unit.charAt(0).toUpperCase()}${metric.unit.slice(1)}
   data-filters={JSON.stringify(filters)}>
   <div class="cbf-contracts-grid__filter" data-filter-bar hidden>
     <span class="typography-body-sm">Showing contracts for <strong data-filter-label></strong></span>
-    <button type="button" class="cbf-contracts-grid__clear typography-body-sm" data-filter-clear>Show all contracts</button>
+    <EsaButton variant="ghost" size="sm" data-filter-clear>Show all contracts</EsaButton>
   </div>
   <header class="cbf-data-grid__header repel">
     <span class="typography-meta cbf-data-grid__count-label">Contributing contracts</span>
@@ -60,7 +61,7 @@ const unitLabel = `${metric.unit.charAt(0).toUpperCase()}${metric.unit.slice(1)}
     <span class="typography-meta" data-contracts-count>
       Showing {rows.length} of {rows.length} contracts
     </span>
-    <EsaIconButton variant="chrome" iconOnly icon="download" label="Download CSV" size="sm" data-contracts-csv />
+    <EsaButton variant="chrome" iconOnly icon="download" label="Download CSV" size="sm" data-contracts-csv />
   </footer>
 
   <script type="application/json" data-contracts-data set:html={JSON.stringify(data)}></script>
@@ -77,13 +78,6 @@ const unitLabel = `${metric.unit.charAt(0).toUpperCase()}${metric.unit.slice(1)}
     background: var(--color-background-brand-subtle);
   }
   .cbf-contracts-grid__filter[hidden] { display: none; }
-  .cbf-contracts-grid__clear {
-    all: unset;
-    cursor: pointer;
-    color: var(--color-content-link, var(--color-background-brand));
-    text-decoration: underline;
-  }
-  .cbf-contracts-grid__clear:focus-visible { outline: 2px solid var(--color-background-brand); outline-offset: 2px; }
 </style>
 
 <script>

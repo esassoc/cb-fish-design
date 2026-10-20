@@ -1,67 +1,51 @@
 ---
-// cbf-metrics-growth — homepage metrics, option "Growth" (CBF-8287): pick a
-// metric on the left (each tab shows its total and a sparkline), and the stage on
-// the right plots its cumulative build-up since FY05 with a year scrubber, the
-// latest year's gain, and a link to that measure's /program-results page.
+// cbf-metrics-growth — homepage "How the results have grown" (CBF-8287): a tab
+// per measure (its total as the tab badge), and each panel plots the measure's
+// cumulative build-up since FY05 with a fiscal-year slider, the latest year's
+// gain, and a link to that measure's /program-results page.
 //
-// bcn-lego-checked: the picker is a real ARIA tablist; esa-tab-layout was
-// checked, but its tabs are text labels over full panels and this picker's tabs
-// carry a number and a sparkline each, which esa-tab-layout has no slot for.
-// The stage reuses esa-stat, esa-button and cbf-cumulative-chart. Checked Beacon
-// (no metric-picker pattern). Layout and the sparkline paths are local.
+// bcn-lego-checked: the tabs ARE esa-tab-layout (tabs + per-tab
+// slot="panel-N"; it owns the ARIA tablist, roving keys and panel swap — no
+// script here). Panels compose esa-stat, esa-button and cbf-cumulative-chart
+// (whose year slider is esa-range-slider). Only panel spacing is local.
 import EsaStat from '@esa/ecology/esa-stat.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 import CbfCumulativeChart from './cbf-cumulative-chart.astro';
 import { METRICS, formatCompact, formatFull } from '../../data/cbfish-home-metrics';
 import { withBase } from '../../lib/base';
+import { latestGain } from '../../lib/series';
 
-const spark = (series: { value: number }[]) => {
-  const max = Math.max(...series.map((d) => d.value));
-  return series.map((d, i) => `${i ? 'L' : 'M'}${((i / (series.length - 1)) * 100).toFixed(1)},${(28 - (d.value / max) * 26).toFixed(1)}`).join('');
-};
-const latestGain = (s: { value: number }[]) => s.at(-1)!.value - s.at(-2)!.value;
 const perYear = (s: { value: number }[]) => Math.round(s.at(-1)!.value / s.length);
+// esa-tab-layout reads `tabs` as JSON (property type Array). Panels pass their
+// slot="panel-N" by spread: Astro drops a literal slot= on plain elements
+// rendered inside .map().
+const tabs = METRICS.map((m) => ({ label: m.short, badge: formatCompact(m.total) }));
 ---
-<section class="cbf-metrics-growth" aria-labelledby="cbf-metrics-growth-h" data-growth>
+<section class="cbf-metrics-growth" aria-labelledby="cbf-metrics-growth-h">
   <div class="cbf-metrics-growth__head">
     <h2 id="cbf-metrics-growth-h" class="typography-heading-md">How the results have grown</h2>
-    <p class="typography-body-md cbf-metrics-growth__lede">Twenty years of cumulative results. Pick a measure, then drag across the chart to see any year.</p>
+    <p class="typography-body-md cbf-metrics-growth__lede">Twenty years of cumulative results. Pick a measure, then move the fiscal-year slider or point at the chart to see any year.</p>
   </div>
 
   <div class="cbf-metrics-growth__frame">
-    <div class="cbf-metrics-growth__tabs" role="tablist" aria-label="Program measures" aria-orientation="vertical">
+    <esa-tab-layout tabs={JSON.stringify(tabs)} active-index="0" size="md">
       {METRICS.map((m, i) => (
-        <button type="button" role="tab" id={`growth-tab-${m.id}`} aria-controls={`growth-panel-${m.id}`}
-          aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? 0 : -1}
-          class="cbf-metrics-growth__tab" data-tab={m.id}>
-          <span class="cbf-metrics-growth__tab-text">
-            <span class="cbf-metrics-growth__tab-name typography-label-sm">{m.short}</span>
-            <span class="cbf-metrics-growth__tab-value">{formatCompact(m.total)}</span>
-          </span>
-          <svg class="cbf-metrics-growth__spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">
-            <path d={spark(m.cumulative)} />
-          </svg>
-        </button>
+        <div class="cbf-metrics-growth__stage" {...{ slot: `panel-${i}` }}>
+          <div class="cbf-metrics-growth__stage-head">
+            <EsaStat value={formatCompact(m.total)} label={m.label} sub="FY05–FY25, cumulative" />
+            <dl class="cbf-metrics-growth__facts">
+              <div><dt class="typography-label-xs">Added in FY25</dt><dd>+{formatFull(latestGain(m.cumulative))}</dd></div>
+              <div><dt class="typography-label-xs">Average per year</dt><dd>{formatFull(perYear(m.cumulative))}</dd></div>
+            </dl>
+          </div>
+          <CbfCumulativeChart series={m.cumulative} unit={m.unit} interactive height={260}
+            label={`Cumulative ${m.short.toLowerCase()}, rising from ${formatFull(m.cumulative[0].value)} in FY05 to ${formatFull(m.total)} ${m.unit} in FY25.`} />
+          <div class="cbf-metrics-growth__actions">
+            <EsaButton variant="primary" appearance="outline" href={withBase(`/program-results/${m.id}`)} iconRight="arrow-right">View contributing contracts</EsaButton>
+          </div>
+        </div>
       ))}
-    </div>
-
-    {METRICS.map((m, i) => (
-      <div class="cbf-metrics-growth__stage" role="tabpanel" id={`growth-panel-${m.id}`}
-        aria-labelledby={`growth-tab-${m.id}`} data-panel={m.id} hidden={i !== 0}>
-        <div class="cbf-metrics-growth__stage-head">
-          <EsaStat value={formatCompact(m.total)} label={m.label} sub="FY05–FY25, cumulative" />
-          <dl class="cbf-metrics-growth__facts">
-            <div><dt class="typography-label-xs">Added in FY25</dt><dd>+{formatFull(latestGain(m.cumulative))}</dd></div>
-            <div><dt class="typography-label-xs">Average per year</dt><dd>{formatFull(perYear(m.cumulative))}</dd></div>
-          </dl>
-        </div>
-        <CbfCumulativeChart series={m.cumulative} unit={m.unit} interactive height={260}
-          label={`Cumulative ${m.short.toLowerCase()}, rising from ${formatFull(m.cumulative[0].value)} in FY05 to ${formatFull(m.total)} ${m.unit} in FY25.`} />
-        <div class="cbf-metrics-growth__actions">
-          <EsaButton variant="primary" appearance="outline" href={withBase(`/program-results/${m.id}`)} iconRight="arrow-right">View contributing contracts</EsaButton>
-        </div>
-      </div>
-    ))}
+    </esa-tab-layout>
   </div>
 </section>
 
@@ -71,57 +55,28 @@ const perYear = (s: { value: number }[]) => Math.round(s.at(-1)!.value / s.lengt
   .cbf-metrics-growth__lede { margin: 0; color: var(--color-content-default-secondary); }
 
   .cbf-metrics-growth__frame {
-    display: grid;
-    grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr);
+    padding: var(--spacing-400) var(--spacing-600) var(--spacing-600);
     border: 1px solid var(--color-border-default);
     border-radius: var(--radius-400, 12px);
     background: var(--color-background-elevation-raised);
-    overflow: hidden;
+    min-width: 0;
   }
-  .cbf-metrics-growth__tabs {
-    display: flex;
-    flex-direction: column;
-    background: var(--color-background-brand-subtle);
-    border-right: 1px solid var(--color-border-default-subtle);
+  /* esa-tab-layout's tablist is flex/nowrap; on narrow screens let the host
+     scroll sideways instead of widening the page (same as cbf-contract-tabs) */
+  .cbf-metrics-growth__frame > esa-tab-layout {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
   }
-  .cbf-metrics-growth__tab {
-    all: unset;
-    box-sizing: border-box;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 4.5rem;
-    align-items: center;
-    gap: var(--spacing-300);
-    padding: var(--spacing-400);
-    border-bottom: 1px solid var(--color-border-default-subtle);
-    cursor: pointer;
-    transition: background 140ms ease;
-  }
-  .cbf-metrics-growth__tab:last-child { border-bottom: 0; }
-  .cbf-metrics-growth__tab:hover { background: color-mix(in srgb, var(--color-background-brand) 6%, transparent); }
-  .cbf-metrics-growth__tab:focus-visible { outline: 2px solid var(--color-background-brand); outline-offset: -2px; }
-  .cbf-metrics-growth__tab[aria-selected='true'] { background: var(--color-background-elevation-raised); }
-  .cbf-metrics-growth__tab[aria-selected='true'] .cbf-metrics-growth__tab-value { color: var(--color-background-brand); }
-  .cbf-metrics-growth__tab-text { display: flex; flex-direction: column; min-width: 0; }
-  .cbf-metrics-growth__tab-name { color: var(--color-content-default-secondary); }
-  .cbf-metrics-growth__tab-value {
-    font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
-    font-size: 20px;
-    font-weight: var(--typography-font-weight-bold, 700);
-    font-variant-numeric: tabular-nums;
-    color: var(--color-content-default);
-  }
-  .cbf-metrics-growth__spark { width: 100%; height: 28px; overflow: visible; }
-  .cbf-metrics-growth__spark path { fill: none; stroke: var(--cbf-blue-500); stroke-width: 2; vector-effect: non-scaling-stroke; }
-  .cbf-metrics-growth__tab[aria-selected='true'] .cbf-metrics-growth__spark path { stroke: var(--color-background-brand); }
-
   .cbf-metrics-growth__stage {
     display: flex;
     flex-direction: column;
     gap: var(--spacing-400);
-    padding: var(--spacing-600);
+    padding-top: var(--spacing-300);
     min-width: 0;
   }
-  .cbf-metrics-growth__stage[hidden] { display: none; }
   .cbf-metrics-growth__stage-head {
     display: flex;
     flex-wrap: wrap;
@@ -141,44 +96,10 @@ const perYear = (s: { value: number }[]) => Math.round(s.at(-1)!.value / s.lengt
   .cbf-metrics-growth__actions { display: flex; justify-content: flex-end; }
 
   @media (max-width: 860px) {
-    .cbf-metrics-growth__frame { grid-template-columns: minmax(0, 1fr); }
-    .cbf-metrics-growth__tabs {
-      flex-direction: row;
-      overflow-x: auto;
-      border-right: 0;
-      border-bottom: 1px solid var(--color-border-default-subtle);
-    }
-    .cbf-metrics-growth__tab {
-      flex: 0 0 auto;
-      grid-template-columns: auto;
-      border-bottom: 0;
-    }
-    .cbf-metrics-growth__spark { display: none; }
-    .cbf-metrics-growth__stage { padding: var(--spacing-500) var(--spacing-400); }
+    .cbf-metrics-growth__frame { padding: var(--spacing-300) var(--spacing-400) var(--spacing-500); }
   }
 </style>
 
 <script>
-  const root = document.querySelector<HTMLElement>('[data-growth]');
-  if (root) {
-    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-tab]')];
-    const select = (tab: HTMLButtonElement, focus = false) => {
-      tabs.forEach((t) => {
-        const on = t === tab;
-        t.setAttribute('aria-selected', String(on));
-        t.tabIndex = on ? 0 : -1;
-        root.querySelector<HTMLElement>(`[data-panel="${t.dataset.tab}"]`)!.hidden = !on;
-      });
-      if (focus) tab.focus();
-    };
-    tabs.forEach((t, i) => {
-      t.addEventListener('click', () => select(t));
-      t.addEventListener('keydown', (e) => {
-        const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
-        if (step) { e.preventDefault(); select(tabs[(i + step + tabs.length) % tabs.length], true); }
-        if (e.key === 'Home') { e.preventDefault(); select(tabs[0], true); }
-        if (e.key === 'End') { e.preventDefault(); select(tabs.at(-1)!, true); }
-      });
-    });
-  }
+  import '@esa/ecology/esa-tab-layout';
 </script>

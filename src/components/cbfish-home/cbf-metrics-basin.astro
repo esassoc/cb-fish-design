@@ -49,6 +49,7 @@ const data = METRICS.map((m) => ({ id: m.id, short: m.short, unit: m.unit, bySta
             <path d={ring(OUTLINES[s.code])} />
           </a>
         ))}
+        <path class="cbf-metrics-basin__highlight" d={ring(OUTLINES.WA)} data-highlight aria-hidden="true" />
         {RIVERS.map((r) => <path d={path(r)} class="cbf-metrics-basin__river" />)}
         {STATES.map((s) => {
           const [x, y] = px(LABEL_AT[s.code]).split(',');
@@ -132,8 +133,15 @@ const data = METRICS.map((m) => ({ id: m.id, short: m.short, unit: m.unit, bySta
   .cbf-metrics-basin__state:hover path,
   .cbf-metrics-basin__state:focus-visible path { filter: brightness(1.12); }
   .cbf-metrics-basin__state:focus-visible { outline: none; }
-  .cbf-metrics-basin__state:focus-visible path,
-  .cbf-metrics-basin__state.is-active path { stroke: var(--cbf-gold-300); stroke-width: 4; }
+  /* the selected state's gold outline is a separate overlay path (see script),
+     so state links keep their DOM and tab order */
+  .cbf-metrics-basin__highlight {
+    fill: none;
+    stroke: var(--cbf-gold-300);
+    stroke-width: 4;
+    stroke-linejoin: round;
+    pointer-events: none;
+  }
   .cbf-metrics-basin__river {
     fill: none;
     stroke: var(--cbf-blue-200);
@@ -207,14 +215,13 @@ const data = METRICS.map((m) => ({ id: m.id, short: m.short, unit: m.unit, bySta
 
 <script>
   import '@esa/ecology/esa-button-toggle';
+  import { formatCompact } from '../../data/cbfish-home-metrics';
 
   const root = document.querySelector<HTMLElement>('[data-basin]');
   if (root) {
     const metrics: { id: string; short: string; unit: string; byState: Record<string, number> }[] = JSON.parse(root.dataset.metrics || '[]');
     const toggle = root.querySelector<HTMLElement & { options: unknown[]; value: string }>('[data-basin-measure]')!;
     const states = [...root.querySelectorAll<SVGAElement>('[data-state]')];
-    const compact = (n: number) =>
-      n >= 1e9 ? `${+(n / 1e9).toFixed(1)}B` : n >= 1e6 ? `${+(n / 1e6).toFixed(1)}M` : n >= 1e4 ? `${Math.round(n / 1e3)}K` : n.toLocaleString('en-US');
     let current = metrics[0];
     let active = 'WA';
 
@@ -228,21 +235,21 @@ const data = METRICS.map((m) => ({ id: m.id, short: m.short, unit: m.unit, bySta
         a.style.setProperty('--share', String(v / max));
         a.setAttribute('aria-label', `${a.getAttribute('aria-label')!.split(':')[0]}: ${v.toLocaleString('en-US')} ${current.unit}`);
         const label = root.querySelector(`[data-label="${a.dataset.state}"] [data-label-value]`);
-        if (label) label.textContent = v ? compact(v) : '—';
+        if (label) label.textContent = v ? formatCompact(v) : '—';
       });
       root.querySelectorAll<HTMLElement>('[data-row]').forEach((r) => r.classList.toggle('is-current', r.dataset.row === current.id));
       root.querySelectorAll<HTMLElement>('[data-basin-open]').forEach((b) => {
-        if (b instanceof HTMLAnchorElement) b.href = b.href.replace(/program-results\/[a-z]+/, `program-results/${current.id}`);
+        if (b instanceof HTMLAnchorElement) b.href = b.href.replace(/program-results([\/-])[a-z]+/, `program-results$1${current.id}`);
         (b.querySelector('.esa-button__label') ?? b).textContent = `View ${current.short.toLowerCase()} contracts`;
       });
     };
     const activate = (code: string) => {
       active = code;
       states.forEach((a) => a.classList.toggle('is-active', a.dataset.state === code));
-      // paint the active state last (but under the rivers) so its outline isn't covered by a neighbour
+      // trace the active state with the overlay; never move the focusable link itself
       const on = states.find((a) => a.dataset.state === code);
-      const river = root.querySelector('.cbf-metrics-basin__river');
-      if (on && river && on.nextElementSibling !== river) river.before(on);
+      const shape = on?.querySelector('path')?.getAttribute('d');
+      if (shape) root.querySelector('[data-highlight]')!.setAttribute('d', shape);
       root.querySelectorAll<HTMLElement>('[data-panel]').forEach((p) => (p.hidden = p.dataset.panel !== code));
     };
 

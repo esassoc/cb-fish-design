@@ -20,6 +20,7 @@ import CbfShareBars from '../../components/cbfish-home/cbf-share-bars.astro';
 import CbfContributingContractsGrid from '../../components/program-results/cbf-contributing-contracts-grid.astro';
 import { METRICS, STATES, CONTRACTS, formatCompact, formatFull, type Metric } from '../../data/cbfish-home-metrics';
 import { withBase } from '../../lib/base';
+import { latestGain } from '../../lib/series';
 
 export function getStaticPaths() {
   return METRICS.map((m) => ({ params: { metric: m.id }, props: { metric: m } }));
@@ -35,7 +36,7 @@ const crumbs = [
 ];
 const tabs = METRICS.map((m) => ({ label: m.short, href: withBase(`/program-results/${m.id}`), active: m.id === metric.id }));
 const s = metric.cumulative;
-const latestGain = s.at(-1)!.value - s.at(-2)!.value;
+const gain = latestGain(s);
 const byState = STATES.filter((st) => metric.byState[st.code] > 0)
   .sort((a, b) => metric.byState[b.code] - metric.byState[a.code])
   .map((st) => ({ label: st.name, value: metric.byState[st.code], display: formatCompact(metric.byState[st.code]) }));
@@ -71,7 +72,7 @@ const byProgram = metric.byProgram.map((p) => ({ label: p.name, value: p.value, 
                 <EsaStat value={formatCompact(metric.total)} label={metric.label} sub="FY05–FY25, cumulative" />
                 <p class="typography-body-sm cbf-results__def">{metric.definition}</p>
                 <dl class="cbf-results__facts">
-                  <div><dt class="typography-label-xs">Added in FY25</dt><dd>+{formatFull(latestGain)}</dd></div>
+                  <div><dt class="typography-label-xs">Added in FY25</dt><dd>+{formatFull(gain)}</dd></div>
                   <div><dt class="typography-label-xs">Contributing contracts</dt><dd>{CONTRACTS[metric.id].length}</dd></div>
                 </dl>
               </div>
