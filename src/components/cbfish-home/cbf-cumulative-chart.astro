@@ -53,7 +53,7 @@ const fyLabel = (fy: number) => `FY${String(fy).slice(2)}`;
     <path d={line} class="cbf-cumulative-chart__line" pathLength="1" />
     <circle cx={x(last)} cy={y(series[last].value)} r="5" class="cbf-cumulative-chart__end" />
     {ticks.map((t) => (
-      <text x={x(t.i)} y={H - 8} font-size={H < 200 ? 20 : 13} text-anchor={t.i === 0 ? 'start' : t.i === last ? 'end' : 'middle'} class="cbf-cumulative-chart__tick">{fyLabel(t.fy)}</text>
+      <text x={x(t.i)} y={H - 8} text-anchor={t.i === 0 ? 'start' : t.i === last ? 'end' : 'middle'} class:list={['cbf-cumulative-chart__tick', H < 200 && 'is-compact']}>{fyLabel(t.fy)}</text>
     ))}
     {interactive && (
       <g class="cbf-cumulative-chart__cursor" data-cursor hidden>
@@ -90,10 +90,14 @@ const fyLabel = (fy: number) => `FY${String(fy).slice(2)}`;
   }
   @keyframes cbf-cc-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
   .cbf-cumulative-chart__end { fill: var(--cbf-gold-300); stroke: var(--color-background-default-knockout); stroke-width: 2; }
+  /* SVG text is in viewBox units and scales with the chart: a compact (short,
+     narrow) chart takes a larger step so its labels stay legible */
   .cbf-cumulative-chart__tick {
+    font-size: var(--typography-label-sm-font-size);
     fill: var(--color-content-default-tertiary);
     font-family: var(--typography-font-family-sans);
   }
+  .cbf-cumulative-chart__tick.is-compact { font-size: var(--typography-title-font-size); }
   /* SVG elements ignore the HTML hidden attribute's UA style */
   .cbf-cumulative-chart__cursor[hidden] { display: none; }
   .cbf-cumulative-chart__cursor-line { stroke: var(--color-background-default-knockout); stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }

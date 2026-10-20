@@ -91,22 +91,22 @@ const parts = (n: number) => {
   .cbf-metrics-counters__item:focus-visible { outline: 2px solid var(--color-background-brand); outline-offset: -2px; }
   .cbf-metrics-counters__value {
     font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
-    font-size: clamp(30px, 3.2vw, 42px);
+    font-size: var(--typography-display-sm-font-size);
     font-weight: var(--typography-font-weight-bold, 700);
     line-height: 1;
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
     color: var(--color-background-brand);
   }
-  .cbf-metrics-counters__word { font-size: 0.55em; font-weight: var(--typography-font-weight-semibold); }
-  .cbf-metrics-counters__label { font-size: 16px; line-height: 1.35; color: var(--color-content-default-secondary); }
+  .cbf-metrics-counters__word { font-size: var(--typography-title-font-size); font-weight: var(--typography-font-weight-semibold); }
+  .cbf-metrics-counters__label { font-size: var(--typography-body-md-font-size); line-height: 1.35; color: var(--color-content-default-secondary); }
   .cbf-metrics-counters__cta {
     margin-top: auto;
     padding-top: var(--spacing-300);
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-100);
-    font-size: 14px;
+    font-size: var(--typography-label-sm-font-size);
     font-weight: var(--typography-font-weight-semibold);
     color: var(--color-content-link, var(--color-background-brand));
   }

@@ -102,7 +102,7 @@ const rows = METRICS.map((m) => ({
   .cbf-metrics-table__table thead th {
     padding: var(--spacing-300) var(--spacing-500);
     text-align: left;
-    font-size: 14px;
+    font-size: var(--typography-label-sm-font-size);
     font-weight: var(--typography-font-weight-semibold);
     color: var(--color-content-default-knockout, #fff);
     background: var(--color-background-brand);
@@ -134,11 +134,11 @@ const rows = METRICS.map((m) => ({
   .cbf-metrics-table__table tbody tr:has(.cbf-metrics-table__link:focus-visible) .cbf-metrics-table__link::after { opacity: 1; }
   .cbf-metrics-table__table tbody tr:hover .cbf-metrics-table__link { text-decoration: underline; }
 
-  .cbf-metrics-table__year { display: block; margin-bottom: 2px; font-size: 17px; font-weight: var(--typography-font-weight-semibold); }
+  .cbf-metrics-table__year { display: block; margin-bottom: 2px; font-size: var(--typography-body-lg-font-size); font-weight: var(--typography-font-weight-semibold); }
   .cbf-metrics-table__share-text { color: var(--color-content-default-tertiary); }
   .cbf-metrics-table__total {
     font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
-    font-size: 22px;
+    font-size: var(--typography-heading-md-font-size);
     font-weight: var(--typography-font-weight-bold, 700);
     color: var(--color-background-brand);
   }

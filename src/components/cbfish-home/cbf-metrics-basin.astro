@@ -153,8 +153,8 @@ const data = METRICS.map((m) => ({ id: m.id, short: m.short, unit: m.unit, bySta
   }
   .cbf-metrics-basin__label { pointer-events: none; }
   .cbf-metrics-basin__label text { font-family: var(--typography-font-family-display, var(--typography-font-family-sans)); paint-order: stroke; stroke-width: 3px; stroke-linejoin: round; }
-  .cbf-metrics-basin__label-code { font-size: 13px; font-weight: var(--typography-font-weight-semibold); letter-spacing: .08em; fill: var(--color-content-default-knockout); stroke: color-mix(in srgb, var(--cbf-blue-950) 55%, transparent); }
-  .cbf-metrics-basin__label-value { font-size: 20px; font-weight: var(--typography-font-weight-bold); fill: var(--color-content-default-knockout); stroke: color-mix(in srgb, var(--cbf-blue-950) 55%, transparent); }
+  .cbf-metrics-basin__label-code { font-size: var(--typography-label-sm-font-size); font-weight: var(--typography-font-weight-semibold); letter-spacing: .08em; fill: var(--color-content-default-knockout); stroke: color-mix(in srgb, var(--cbf-blue-950) 55%, transparent); }
+  .cbf-metrics-basin__label-value { font-size: var(--typography-title-font-size); font-weight: var(--typography-font-weight-bold); fill: var(--color-content-default-knockout); stroke: color-mix(in srgb, var(--cbf-blue-950) 55%, transparent); }
   .cbf-metrics-basin__legend {
     display: flex;
     flex-wrap: wrap;
@@ -176,14 +176,15 @@ const data = METRICS.map((m) => ({ id: m.id, short: m.short, unit: m.unit, bySta
     flex-direction: column;
     gap: var(--spacing-300);
     padding: var(--spacing-600) var(--spacing-500);
-    border-left: 1px solid var(--color-border-default-subtle);
+    /* neutral divider between map and panel (not a status stripe) */
+    border-inline-start: 1px solid var(--color-border-default-subtle);
   }
   .cbf-metrics-basin__panel[hidden] { display: none; }
   .cbf-metrics-basin__panel-eyebrow { margin: 0; color: var(--color-content-default-tertiary); }
   .cbf-metrics-basin__panel-title {
     margin: 0;
     font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
-    font-size: 28px;
+    font-size: var(--typography-heading-lg-font-size);
     font-weight: var(--typography-font-weight-bold, 700);
   }
   .cbf-metrics-basin__rows { margin: 0 0 var(--spacing-200); display: flex; flex-direction: column; }
@@ -199,13 +200,13 @@ const data = METRICS.map((m) => ({ id: m.id, short: m.short, unit: m.unit, bySta
   }
   .cbf-metrics-basin__row dt { color: var(--color-content-default-secondary); }
   .cbf-metrics-basin__row dd { margin: 0; text-align: right; }
-  .cbf-metrics-basin__row-value { font-size: 18px; font-weight: var(--typography-font-weight-semibold); font-variant-numeric: tabular-nums; }
+  .cbf-metrics-basin__row-value { font-size: var(--typography-body-lg-font-size); font-weight: var(--typography-font-weight-semibold); font-variant-numeric: tabular-nums; }
   .cbf-metrics-basin__row.is-current { background: var(--color-background-brand-subtle); }
   .cbf-metrics-basin__row.is-current dt { color: var(--color-content-default); font-weight: var(--typography-font-weight-semibold); }
 
   @media (max-width: 860px) {
     .cbf-metrics-basin__frame { grid-template-columns: minmax(0, 1fr); }
-    .cbf-metrics-basin__panel { border-left: 0; border-top: 1px solid var(--color-border-default-subtle); }
+    .cbf-metrics-basin__panel { border-inline-start: 0; border-top: 1px solid var(--color-border-default-subtle); }
     .cbf-metrics-basin__map { padding: var(--spacing-400); }
   }
   @media (prefers-reduced-motion: reduce) {

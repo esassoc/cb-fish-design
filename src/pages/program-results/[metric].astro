@@ -13,14 +13,10 @@ import CbfPageHeading from '../../components/shared/cbf-page-heading.astro';
 import CbfReportTabs from '../../components/shared/cbf-report-tabs.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
-import EsaCard from '@esa/ecology/esa-card.astro';
-import EsaStat from '@esa/ecology/esa-stat.astro';
-import CbfCumulativeChart from '../../components/cbfish-home/cbf-cumulative-chart.astro';
-import CbfShareBars from '../../components/cbfish-home/cbf-share-bars.astro';
+import CbfProgramResultsSummary from '../../components/program-results/cbf-program-results-summary.astro';
 import CbfContributingContractsGrid from '../../components/program-results/cbf-contributing-contracts-grid.astro';
-import { METRICS, STATES, CONTRACTS, formatCompact, formatFull, type Metric } from '../../data/cbfish-home-metrics';
+import { METRICS, CONTRACTS, type Metric } from '../../data/cbfish-home-metrics';
 import { withBase } from '../../lib/base';
-import { latestGain } from '../../lib/series';
 
 export function getStaticPaths() {
   return METRICS.map((m) => ({ params: { metric: m.id }, props: { metric: m } }));
@@ -35,22 +31,16 @@ const crumbs = [
   { label: metric.short },
 ];
 const tabs = METRICS.map((m) => ({ label: m.short, href: withBase(`/program-results/${m.id}`), active: m.id === metric.id }));
-const s = metric.cumulative;
-const gain = latestGain(s);
-const byState = STATES.filter((st) => metric.byState[st.code] > 0)
-  .sort((a, b) => metric.byState[b.code] - metric.byState[a.code])
-  .map((st) => ({ label: st.name, value: metric.byState[st.code], display: formatCompact(metric.byState[st.code]) }));
-const byProgram = metric.byProgram.map((p) => ({ label: p.name, value: p.value, display: formatCompact(p.value) }));
 ---
 <!-- manifest:
   layout: esa-container > cbf-app-panel
   sections:
     - top nav        -> cbf-public-nav
+    - page frame     -> esa-container
     - page heading   -> cbf-page-heading
     - measure tabs   -> cbf-report-tabs
     - draft notice   -> esa-alert-box
-    - summary        -> esa-card > esa-stat + cbf-cumulative-chart
-    - breakdowns     -> esa-card > cbf-share-bars (by state, by program area)
+    - summary        -> cbf-program-results-summary
     - contracts      -> cbf-contributing-contracts-grid
 -->
 <BaseLayout title={`Program results: ${metric.short} — Columbia Basin Fish & Wildlife Program`}>
@@ -65,65 +55,18 @@ const byProgram = metric.byProgram.map((p) => ({ label: p.name, value: p.value, 
           Draft figures for review. Final numbers and the full contract list will come from CBFish data, refreshed nightly.
         </EsaAlertBox>
 
-        <div class="cbf-results__summary">
-          <EsaCard padding="spacious">
-            <div class="cbf-results__headline">
-              <div class="cbf-results__total">
-                <EsaStat value={formatCompact(metric.total)} label={metric.label} sub="FY05–FY25, cumulative" />
-                <p class="typography-body-sm cbf-results__def">{metric.definition}</p>
-                <dl class="cbf-results__facts">
-                  <div><dt class="typography-label-xs">Added in FY25</dt><dd>+{formatFull(gain)}</dd></div>
-                  <div><dt class="typography-label-xs">Contributing contracts</dt><dd>{CONTRACTS[metric.id].length}</dd></div>
-                </dl>
-              </div>
-              <div class="cbf-results__chart">
-                <CbfCumulativeChart series={s} unit={metric.unit} interactive height={240}
-                  label={`Cumulative ${metric.short.toLowerCase()}, from ${formatFull(s[0].value)} in FY05 to ${formatFull(metric.total)} ${metric.unit} in FY25.`} />
-              </div>
-            </div>
-          </EsaCard>
+        <CbfProgramResultsSummary metric={metric} contractCount={CONTRACTS[metric.id].length} />
 
-          <div class="cbf-results__splits">
-            <EsaCard title="By state" padding="default">
-              <CbfShareBars label={`${metric.short} by state`} parts={byState} />
-            </EsaCard>
-            <EsaCard title="By program area" padding="default">
-              <CbfShareBars label={`${metric.short} by program area`} parts={byProgram} />
-            </EsaCard>
-          </div>
+        <div class="stack" data-gap="md">
+          <h2 class="typography-heading-md">Contracts behind this result</h2>
+          <CbfContributingContractsGrid metric={metric} rows={CONTRACTS[metric.id]} />
         </div>
-
-        <h2 class="typography-heading-md cbf-results__contracts-h">Contracts behind this result</h2>
-        <CbfContributingContractsGrid metric={metric} rows={CONTRACTS[metric.id]} />
       </CbfAppPanel>
     </EsaContainer>
   </main>
 </BaseLayout>
 
 <style>
-  /* page-level rhythm only — every section is a component (manifest above) */
+  /* page-level outer rhythm only — every section is a component (manifest above) */
   .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
-  .cbf-results__summary { display: flex; flex-direction: column; gap: var(--spacing-400); }
-  .cbf-results__headline {
-    display: grid;
-    grid-template-columns: minmax(16rem, 1fr) minmax(0, 2fr);
-    gap: var(--spacing-700);
-    align-items: center;
-  }
-  .cbf-results__total { display: flex; flex-direction: column; gap: var(--spacing-400); }
-  .cbf-results__def { margin: 0; color: var(--color-content-default-secondary); max-width: 45ch; }
-  .cbf-results__facts { display: flex; gap: var(--spacing-600); margin: 0; }
-  .cbf-results__facts div { display: flex; flex-direction: column; gap: 2px; }
-  .cbf-results__facts dt { color: var(--color-content-default-tertiary); }
-  .cbf-results__facts dd { margin: 0; font-size: 18px; font-weight: var(--typography-font-weight-semibold); font-variant-numeric: tabular-nums; }
-  .cbf-results__chart { min-width: 0; }
-  .cbf-results__splits {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
-    gap: var(--spacing-400);
-  }
-  .cbf-results__contracts-h { margin: var(--spacing-400) 0 0; }
-  @media (max-width: 860px) {
-    .cbf-results__headline { grid-template-columns: minmax(0, 1fr); }
-  }
 </style>

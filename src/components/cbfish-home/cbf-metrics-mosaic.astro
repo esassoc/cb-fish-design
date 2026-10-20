@@ -229,7 +229,7 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
     border: 1px solid var(--color-border-default);
     color: var(--color-content-default);
     --_ease: 650ms cubic-bezier(.45,0,.25,1); /* slow start, gentle finish — reads as easing in */
-    transition: background var(--_ease), border-color var(--_ease), box-shadow var(--_ease);
+    transition: background var(--_ease, 650ms ease), border-color var(--_ease, 650ms ease), box-shadow var(--_ease, 650ms ease);
   }
   /* the symbol sits behind the text, bottom-right, soft */
   .cbf-metrics-mosaic__symbol {
@@ -241,8 +241,8 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
     z-index: -1;
     color: var(--color-background-brand);
     opacity: .07;
-    --_sym-cut: var(--color-background-elevation-raised);
-    transition: opacity var(--_ease);
+    --_sym-cut: var(--color-background-elevation-raised, #fcfcfc);
+    transition: opacity var(--_ease, 650ms ease);
   }
   /* hover: ease into a light CBFish blue; text stays dark */
   .cbf-metrics-mosaic__block:hover,
@@ -261,7 +261,7 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
 
   .cbf-metrics-mosaic__pct {
     font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
-    font-size: clamp(24px, 8cqmin, 44px);
+    font-size: var(--typography-display-sm-font-size);
     font-weight: var(--typography-font-weight-bold, 700);
     line-height: 1;
     font-variant-numeric: tabular-nums;
@@ -270,13 +270,13 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
   .cbf-metrics-mosaic__name {
     margin-top: 2px;
     font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
-    font-size: 18px;
+    font-size: var(--typography-body-lg-font-size);
     font-weight: var(--typography-font-weight-bold, 700);
     line-height: 1.2;
   }
   .cbf-metrics-mosaic__desc {
     max-width: 36ch;
-    font-size: 16px;
+    font-size: var(--typography-body-md-font-size);
     line-height: 1.4;
   }
   .cbf-metrics-mosaic__foot {
@@ -286,7 +286,7 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
     justify-content: space-between;
     align-items: baseline;
     gap: 2px var(--spacing-300);
-    font-size: 14px;
+    font-size: var(--typography-label-sm-font-size);
   }
   .cbf-metrics-mosaic__value { font-weight: var(--typography-font-weight-semibold); font-variant-numeric: tabular-nums; }
   .cbf-metrics-mosaic__cta { font-weight: var(--typography-font-weight-semibold); text-decoration: underline; text-underline-offset: 3px; }
@@ -301,13 +301,13 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
   @container (max-height: 6.5rem) { .cbf-metrics-mosaic__value { display: none; } }
   @container (max-height: 8.5rem) {
     .cbf-metrics-mosaic__block { padding: var(--spacing-300) var(--spacing-400); gap: 2px; }
-    .cbf-metrics-mosaic__pct { font-size: 26px; }
-    .cbf-metrics-mosaic__name { font-size: 15px; margin-top: 0; }
+    .cbf-metrics-mosaic__pct { font-size: var(--typography-heading-md-font-size); }
+    .cbf-metrics-mosaic__name { font-size: var(--typography-body-md-font-size); margin-top: 0; }
   }
   @container (max-height: 4.5rem) { .cbf-metrics-mosaic__name { display: none; } }
   @container (max-width: 9rem) {
     .cbf-metrics-mosaic__block { padding: var(--spacing-300); }
-    .cbf-metrics-mosaic__name { font-size: 15px; }
+    .cbf-metrics-mosaic__name { font-size: var(--typography-body-md-font-size); }
     .cbf-metrics-mosaic__cta { display: none; }
   }
 

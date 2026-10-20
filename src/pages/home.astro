@@ -52,13 +52,12 @@ const overview = {
     - top nav        -> cbf-public-nav
     - photo hero     -> cbf-welcome-hero
     - overview+stats -> cbf-program-overview
-    - results, six views stacked:
-        counters     -> cbf-metrics-counters
-        growth       -> cbf-metrics-growth
-        basin map    -> cbf-metrics-basin
-        mosaic       -> cbf-metrics-mosaic       # after BPA 2023 review p. 5
-        scale        -> cbf-metrics-equivalents  # after p. 6
-        table        -> cbf-metrics-table        # after p. 7
+    - totals         -> cbf-metrics-counters
+    - growth         -> cbf-metrics-growth
+    - basin map      -> cbf-metrics-basin
+    - mosaic         -> cbf-metrics-mosaic       # after BPA 2023 review p. 5
+    - scale          -> cbf-metrics-equivalents  # after p. 6
+    - table          -> cbf-metrics-table        # after p. 7
     - sitemap footer -> cbf-app-footer
 -->
 <BaseLayout title="CBFish — Columbia Basin Fish & Wildlife Program">
@@ -72,7 +71,7 @@ const overview = {
       credit={hero.credit}
     />
 
-    <div class="cbf-home__body">
+    <div class="cbf-home__body stack">
       <CbfProgramOverview heading={overview.heading} intro={overview.intro} stats={overview.stats} />
 
       <CbfMetricsCounters />
@@ -91,11 +90,9 @@ const overview = {
   /* page-level rhythm only — full-bleed hero/footer, centered max-width for the
      body band (every block is a component, see manifest). */
   .cbf-home__body {
+    --gap: var(--spacing-800);
     max-width: 1280px;
     margin: 0 auto;
     padding: var(--spacing-800) var(--spacing-600);
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-800);
   }
 </style>
