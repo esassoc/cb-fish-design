@@ -1,0 +1,14 @@
+# Global search & command palette
+
+Source prototype: https://esassoc.github.io/cb-fish-design/search/
+
+Omni-search command palette (⌘K) plus a full /search results page with faceted filtering.
+
+| Section | What it is | Spec | Screenshots |
+|---|---|---|---|
+| Admin bar | The dark system tray. | [admin-bar.md](https://esassoc.github.io/cb-fish-design/handoff/search/claude/admin-bar.md) 25 KB | [desktop](https://esassoc.github.io/cb-fish-design/handoff/search/claude/admin-bar.desktop.png) · [phone](https://esassoc.github.io/cb-fish-design/handoff/search/claude/admin-bar.phone.png) |
+| Omni — recents | The palette on open with no query — the Recent list (last-viewed records) as the zero-state, so the fast path is useful before you type a thing. | [omni-recents.md](https://esassoc.github.io/cb-fish-design/handoff/search/claude/omni-recents.md) 19 KB | [desktop](https://esassoc.github.io/cb-fish-design/handoff/search/claude/omni-recents.desktop.png) · [phone](https://esassoc.github.io/cb-fish-design/handoff/search/claude/omni-recents.phone.png) |
+| Omni — results | The palette mid-query — grouped results across types with scope pills, matched-text highlighting, and "view all" handing off to the /search page. | [omni-results.md](https://esassoc.github.io/cb-fish-design/handoff/search/claude/omni-results.md) 24 KB | [desktop](https://esassoc.github.io/cb-fish-design/handoff/search/claude/omni-results.desktop.png) · [phone](https://esassoc.github.io/cb-fish-design/handoff/search/claude/omni-results.phone.png) |
+| Results — empty | The default, no-query state — a first-class prompt, not a blank container. | [results-empty.md](https://esassoc.github.io/cb-fish-design/handoff/search/claude/results-empty.md) 3.1 KB | [desktop](https://esassoc.github.io/cb-fish-design/handoff/search/claude/results-empty.desktop.png) · [phone](https://esassoc.github.io/cb-fish-design/handoff/search/claude/results-empty.phone.png) |
+| Results — people | People-scoped results — each row resolves to a person with an Impersonate affordance (the dev/QA team are the impersonation targets in this prototype). | [results-people.md](https://esassoc.github.io/cb-fish-design/handoff/search/claude/results-people.md) 8.5 KB | [desktop](https://esassoc.github.io/cb-fish-design/handoff/search/claude/results-people.desktop.png) · [phone](https://esassoc.github.io/cb-fish-design/handoff/search/claude/results-people.phone.png) |
+| Results — projects | Project-scoped results — the same row component carrying a different entity type (project number + fiscal year + status), proving the row generalizes across ty… | [results-projects.md](https://esassoc.github.io/cb-fish-design/handoff/search/claude/results-projects.md) 8.2 KB | [desktop](https://esassoc.github.io/cb-fish-design/handoff/search/claude/results-projects.desktop.png) · [phone](https://esassoc.github.io/cb-fish-design/handoff/search/claude/results-projects.phone.png) |

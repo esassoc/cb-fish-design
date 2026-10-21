@@ -1,0 +1,264 @@
+{
+  "name": "rme-work-elements",
+  "title": "RM&E landing page",
+  "description": "The landing page for RM&E reporting — what BPA's research, monitoring, and evaluation work is and why it exists, then a sub-nav into the views and admin screens underneath it.",
+  "dir": "rme-reporting",
+  "url": "https://esassoc.github.io/cb-fish-design/rme-reporting/",
+  "baseUrl": "https://esassoc.github.io/cb-fish-design/handoff/rme-reporting/",
+  "theme": "cb-fish",
+  "generatedFrom": "derived",
+  "sections": [
+    {
+      "label": "RM&E reporting: Summary",
+      "tag": "div",
+      "selector": "body > main:nth-child(7) > div:nth-child(1)",
+      "html": "<div class=\"esa-container typography-body-md\" style=\"--_container-max: 1920px\">\n  <section class=\"cbf-app-panel\">\n    <div class=\"cbf-app-panel__crumb\">\n      <nav class=\"esa-breadcrumbs esa-breadcrumbs--md\" aria-label=\"Breadcrumb\">\n        <ol class=\"esa-breadcrumbs__list\">\n          <li class=\"esa-breadcrumbs__item\">\n            <a href=\"/cb-fish-design/home\" class=\"esa-breadcrumbs__link typography-body-md\">\n              <span class=\"esa-breadcrumbs__icon\"\n                ><svg\n                  width=\"14\"\n                  height=\"14\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  aria-hidden=\"true\"\n                >\n                  <path d=\"m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"></path>\n                  <path d=\"M9 22V12h6v10\"></path></svg\n              ></span>\n              Home\n            </a>\n            <svg\n              class=\"esa-breadcrumbs__separator\"\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <path d=\"m9 18 6-6-6-6\"></path>\n            </svg>\n          </li>\n          <li class=\"esa-breadcrumbs__item\">\n            <span class=\"esa-breadcrumbs__current typography-label-md\"> Mitigation work </span>\n            <svg\n              class=\"esa-breadcrumbs__separator\"\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              aria-hidden=\"true\"\n            >\n              <path d=\"m9 18 6-6-6-6\"></path>\n            </svg>\n          </li>\n          <li class=\"esa-breadcrumbs__item\" aria-current=\"page\">\n            <span class=\"esa-breadcrumbs__current typography-label-md\"> RM&amp;E reporting </span>\n          </li>\n        </ol>\n      </nav>\n    </div>\n    <div class=\"cbf-app-panel__body\">\n      <div class=\"cbf-app-panel__content\">\n        <h1 class=\"cbf-page-heading\">RM&amp;E reporting: Summary</h1>\n        <nav class=\"cbf-report-tabs\" aria-label=\"RM&amp;E reporting sections\">\n          <a\n            class=\"cbf-report-tabs__tab is-active\"\n            href=\"/cb-fish-design/rme-reporting\"\n            aria-current=\"page\"\n            >Summary</a\n          ><a class=\"cbf-report-tabs__tab\" href=\"/cb-fish-design/rme-work-elements\"\n            >Work statement elements</a\n          ><!-- …and 2 more like this (<a class=\"cbf-report-tabs__tab is-active\">) -->\n        </nav>\n        <section class=\"cbf-report-intro\">\n          <figure class=\"cbf-report-intro__media\">\n            <img\n              src=\"/cb-fish-design/project-budgets-hero.jpg\"\n              alt=\"A Columbia River Gorge stream in autumn\"\n              loading=\"lazy\"\n            />\n          </figure>\n          <div class=\"cbf-report-intro__copy\">\n            <p class=\"cbf-report-intro__lede\">\n              Research, monitoring, and evaluation (RM&amp;E) is the process by which BPA assesses\n              whether Fish &amp; Wildlife Program investments are achieving their intended\n              biological outcomes.\n            </p>\n            <p class=\"cbf-report-intro__body\">\n              BPA funds RM&amp;E activities across the Columbia River Basin to track the status and\n              trends of fish and wildlife populations, measure the effectiveness of habitat and\n              other restoration actions, and evaluate overall program performance. Data collected\n              through RM&amp;E contractual work efforts informs investment decisions and supports\n              adaptive management: the iterative process of implementing actions, evaluating\n              results, and making adjustments based on what the data show. BPA's RM&amp;E approach\n              is guided by the Northwest Power and Conservation Council's Fish &amp; Wildlife\n              Program and involves collaborations with fish and wildlife managers, project sponsors,\n              NOAA Fisheries, and other regional partners.\n            </p>\n          </div>\n        </section>\n      </div>\n    </div>\n  </section>\n</div>",
+      "css": ".typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.cbf-search-surface .cbf-scope-pill.is-active {\n  background: var(--color-background-brand);\n  border-color: var(--color-background-brand);\n  color: var(--color-content-default-knockout, #fff);\n}\n.cbf-search-surface .cbf-result:hover,\n.cbf-search-surface .cbf-result.is-active {\n  background: var(--color-background-brand-subtle);\n}\n.cbf-search-surface .cbf-result.is-active .cbf-result__chevron {\n  opacity: 1;\n}\n.esa-container {\n  width: 100%;\n  max-width: var(--_container-max, 1556px);\n  margin-inline: auto;\n  padding-inline: var(--spacing-600, 2rem);\n}\n.cbf-app-panel {\n  display: flex;\n  flex-direction: column;\n  min-height: 80vh;\n  border: 1px solid var(--color-border-default);\n  border-radius: var(--radius-100);\n  overflow: clip;\n  background: var(--color-background-elevation-raised);\n  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-background-default-knockout) 8%, transparent);\n}\n.cbf-app-panel__crumb {\n  background: var(--cbf-surface-crumb);\n  border-bottom: 1px solid var(--color-border-default);\n  padding: var(--spacing-400) var(--spacing-600);\n}\n.cbf-app-panel__crumb .esa-breadcrumbs {\n  --breadcrumbs-link-color: var(--color-content-default-secondary);\n  --breadcrumbs-link-hover: var(--color-background-brand);\n}\n.cbf-app-panel__body {\n  flex: 1;\n}\n.cbf-app-panel__content {\n  flex: 1;\n  min-width: 0;\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-400);\n  padding: var(--spacing-600);\n}\n.cbf-page-heading .cbf-title-count {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: 32px;\n  height: 30px;\n  padding: 0 var(--spacing-200, 8px);\n  border-radius: var(--radius-100, 4px);\n  background: var(--color-gray-3);\n  border: 1px solid var(--color-border-default);\n  color: var(--color-content-default-tertiary);\n  font-family: var(--typography-font-family-sans);\n  font-size: 16px;\n  font-weight: var(--typography-font-weight-semibold);\n  letter-spacing: 0;\n}\n.cbf-page-heading {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: var(--spacing-300, 12px);\n  margin: 0;\n  font-family: var(--typography-font-family-display);\n  font-weight: var(--typography-font-weight-medium);\n  font-size: 40px;\n  line-height: 40px;\n  letter-spacing: -1px;\n  color: var(--color-background-default-knockout);\n}\n.esa-breadcrumbs {\n  --_crumb-link-color: var(--breadcrumbs-link-color, #646464);\n  --_crumb-link-hover: var(--breadcrumbs-link-hover, #202020);\n  --_crumb-current-color: var(--color-content-default, #202020);\n  --_crumb-separator-color: var(--color-border-default-strong, #bbbbbb);\n  --_crumb-gap: var(--spacing-200, 8px);\n  display: block;\n  background: var(--breadcrumbs-bg, transparent);\n}\n.esa-breadcrumbs__list {\n  display: flex;\n  align-items: center;\n  flex-wrap: wrap;\n  gap: var(--_crumb-gap);\n  list-style: none;\n  margin: 0;\n  padding: 0;\n}\n.esa-breadcrumbs__item {\n  display: flex;\n  align-items: center;\n  gap: var(--_crumb-gap);\n}\n.esa-breadcrumbs__link {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-100, 4px);\n  color: var(--_crumb-link-color);\n  text-decoration-color: transparent;\n}\n.esa-breadcrumbs__link:hover {\n  color: var(--_crumb-link-hover);\n  text-decoration: underline;\n}\n.esa-breadcrumbs__current {\n  display: inline-flex;\n  align-items: center;\n  gap: var(--spacing-100, 4px);\n  color: var(--_crumb-current-color);\n}\n.esa-breadcrumbs__icon {\n  display: inline-flex;\n  align-items: center;\n}\n.esa-breadcrumbs__separator {\n  flex-shrink: 0;\n  color: var(--_crumb-separator-color);\n}\n.cbf-report-tabs {\n  display: flex;\n  flex-wrap: wrap;\n  align-items: center;\n  gap: var(--spacing-100);\n  padding: var(--spacing-150);\n  border: 1px solid var(--color-border-default);\n  border-radius: var(--radius-200, 8px);\n  background: var(--color-gray-3);\n}\n.cbf-report-tabs__tab {\n  padding: var(--spacing-200) var(--spacing-300);\n  border-radius: var(--radius-100);\n  color: var(--color-background-brand);\n  font-size: 16px;\n  font-weight: var(--typography-font-weight-medium);\n  white-space: nowrap;\n}\n.cbf-report-tabs__tab:hover {\n  background: color-mix(in srgb, var(--color-background-brand) 8%, transparent);\n}\n.cbf-report-tabs__tab.is-active {\n  background: var(--color-background-elevation-raised, #fff);\n  color: var(--color-background-default-knockout);\n  font-weight: var(--typography-font-weight-semibold);\n  box-shadow: 0 1px 2px\n    color-mix(in srgb, var(--color-background-default-knockout) 12%, transparent);\n}\n.cbf-report-tabs__tab.is-active:hover {\n  background: var(--color-background-elevation-raised, #fff);\n}\n.cbf-report-tabs__menu-item.is-active {\n  background: var(--color-background-brand-subtle);\n  color: var(--color-background-brand);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-report-intro {\n  display: grid;\n  grid-template-columns: minmax(280px, 38%) 1fr;\n  gap: var(--spacing-700, 2.5rem);\n  align-items: stretch;\n}\n.cbf-report-intro__media {\n  margin: 0;\n  align-self: start;\n  aspect-ratio: 3 / 2;\n  border-radius: var(--radius-100);\n  overflow: hidden;\n  background: var(--color-background-elevation-sunken);\n}\n.cbf-report-intro__media img {\n  width: 100%;\n  height: 100%;\n  object-fit: cover;\n  object-position: center bottom;\n}\n.cbf-report-intro__copy {\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-400);\n  justify-content: center;\n  min-width: 0;\n}\n.cbf-report-intro__lede {\n  margin: 0;\n  font-size: 24px;\n  line-height: 1.4;\n  font-weight: var(--typography-font-weight-semibold);\n  color: var(--color-content-default);\n}\n.cbf-report-intro__body {\n  margin: 0;\n  font-size: 18px;\n  line-height: 1.6;\n  color: var(--color-content-default-secondary);\n}\n@media (max-width: 800px) {\n  .cbf-report-intro {\n    grid-template-columns: 1fr;\n  }\n}\n@media (max-width: 800px) {\n  .cbf-report-intro__media {\n    aspect-ratio: 2 / 1;\n  }\n}",
+      "tokens": [
+        {
+          "name": "--breadcrumbs-bg",
+          "value": "transparent",
+          "tier": "component"
+        },
+        {
+          "name": "--breadcrumbs-link-color",
+          "value": "#525252",
+          "tier": "component"
+        },
+        {
+          "name": "--breadcrumbs-link-hover",
+          "value": "#3d3d3d",
+          "tier": "component"
+        },
+        {
+          "name": "--cbf-surface-crumb",
+          "value": "#f4f4f4",
+          "tier": "brand"
+        },
+        {
+          "name": "--color-background-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-subtle",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-default-knockout",
+          "value": "#13273e",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-raised",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-sunken",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default",
+          "value": "#dcdcdc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default-strong",
+          "value": "#bdbdbd",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-knockout",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-tertiary",
+          "value": "#656565",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-gray-3",
+          "value": "#f0f0f0",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-150",
+          "value": ".375rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-600",
+          "value": "2rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-700",
+          "value": "3rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--typography-body-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-family-display",
+          "value": "\"IBM Plex Sans Condensed\", \"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-family-sans",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-medium",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-semibold",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-app-panel",
+          "origin": "spoke",
+          "source": "src/components/shared/cbf-app-panel.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-page-heading",
+          "origin": "spoke",
+          "source": "src/components/shared/cbf-page-heading.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-report-intro",
+          "origin": "spoke",
+          "source": "src/components/shared/cbf-report-intro.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-report-tabs",
+          "origin": "spoke",
+          "source": "src/components/shared/cbf-report-tabs.astro",
+          "target": null
+        },
+        {
+          "name": "esa-breadcrumbs",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-breadcrumbs.astro",
+          "target": null
+        },
+        {
+          "name": "esa-container",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-container.astro",
+          "target": null
+        }
+      ],
+      "claudePath": "claude/rm-e-reporting-summary.md",
+      "repoPath": "public/handoff/rme-reporting/claude/rm-e-reporting-summary.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/rm-e-reporting-summary.desktop.png",
+        "phone": "claude/rm-e-reporting-summary.phone.png"
+      },
+      "bytes": 14906,
+      "files": 1,
+      "collapsed": 2
+    }
+  ]
+}

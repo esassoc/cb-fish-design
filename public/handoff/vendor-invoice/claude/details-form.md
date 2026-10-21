@@ -1,8 +1,15 @@
 # Details form
 
+Vendor invoice submission · source prototype: https://esassoc.github.io/cb-fish-design/vendor-invoice/
+
+![Details form, desktop](https://esassoc.github.io/cb-fish-design/handoff/vendor-invoice/claude/details-form.desktop.png)
+
+Phone width: https://esassoc.github.io/cb-fish-design/handoff/vendor-invoice/claude/details-form.phone.png
+
 Step 0 — the main data-entry form: contract reference, an auto-populated read-only project, invoice metadata (number, invoice date, performance start + end), the total amount with contract-balance validation, a final-invoice flag, supporting documents, and notes. The entire form is locked until a PDF is uploaded.
 
 ## Key decisions
+
 - Contract is an esa-combobox (autocomplete over data-combobox-options JSON). Project is a DISABLED esa-text-field auto-populated from the selected contract (data-contract-projects) — it is read-only by design and must never be user-selectable.
 - Dates use bcn-date-picker (a spoke component built on esa-text-field). The performance period is two separate fields — "Performance period — Start" and "— End" ([data-field="perf-start"]/[data-field="perf-end"]).
 - Total amount ([data-field="total-amount"]) is validated against the contract’s remaining balance (data-contract-amounts). Exceeding it shows [data-step-error="total-exceeds"] with the remaining figure interpolated; an empty total shows [data-step-error="total"].
@@ -11,13 +18,42 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
 - Lock notice ([data-form-lock-notice]) shows until pdfEverLoaded. Supporting docs are deduplicated by filename before being added to supportingDocs[].
 
 ## Gotchas
+
 - All [data-field="*"] controls are disabled until a PDF is uploaded — interacting before upload does nothing.
 - The Project field is disabled on purpose — do not "fix" it to be editable; it is driven entirely by the chosen contract.
 - The line items section is hidden — do not surface it without deliberately removing the `<div hidden>` wrapper and its global .cbf-line-item styles.
 - Dates are parsed as yyyy-mm-dd (not via Date()) to avoid a UTC off-by-one day.
 - esa-combobox / bcn-date-picker are web components — adding a NEW @esa/ecology import to this page requires clearing node_modules/.vite and restarting astro dev, or the fields render empty (504 Outdated Optimize Dep).
 
+## Components
+
+- `cbf-add-row` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-docs-input` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-final-invoice` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-form-fields` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-form-lock` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-li-input` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-li-price` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-li-qty` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-li-remove` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-li-total` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-line-item` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-line-items` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-mobile-pdf-input` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-optional` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-page-title` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-step-actions` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-support-docs` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `cbf-support-docs-group` (spoke) · `src/components/vendor-invoice/cbf-invoice-step-details.astro`
+- `esa-alert-box` (hub) · `packages/ecology/src/components/esa-alert-box.astro`
+- `esa-button` (hub) · `packages/ecology/src/components/esa-button.astro`
+- `esa-checkbox` (hub) · `packages/ecology/src/components/esa-checkbox.ts`
+- `esa-combobox` (hub) · `packages/ecology/src/components/esa-combobox.ts`
+- `esa-text-field` (hub) · `packages/ecology/src/components/esa-text-field.ts`
+- `esa-textarea` (hub) · `packages/ecology/src/components/esa-textarea.ts`
+
 ## Markup
+
 ```html
 <div class="cbf-wizard-step" data-step="0">
   <h1 class="cbf-page-title">Invoice details</h1>
@@ -40,9 +76,7 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
     <span class="cbf-form-lock__msg--wide"
       >Drop an invoice PDF on the right to unlock the form.</span
     >
-    <span class="cbf-form-lock__msg--narrow"
-      >Upload your invoice PDF to unlock the form.</span
-    >
+    <span class="cbf-form-lock__msg--narrow">Upload your invoice PDF to unlock the form.</span>
     <button type="button" class="cbf-form-lock__upload-btn" data-mobile-upload-btn="">
       <svg
         width="15"
@@ -70,6 +104,7 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
     data-mobile-upload-input=""
     tabindex="-1"
     aria-hidden="true"
+    style=""
   />
   <div class="cbf-form-fields">
     <esa-combobox
@@ -105,7 +140,7 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
       label="Invoice date"
       required="true"
       data-field="invoice-date"
-      value="2026-08-19"
+      value="2026-10-21"
       disabled=""
     ></bcn-date-picker>
     <bcn-date-picker
@@ -178,8 +213,8 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
         <div class="esa-alert-box__body">
           <div class="esa-alert-box__message">
             This amount exceeds the
-            <span data-remaining-amount="">remaining balance</span> remaining on this
-            contract. Reduce the total, or contact your contract manager.
+            <span data-remaining-amount="">remaining balance</span> remaining on this contract.
+            Reduce the total, or contact your contract manager.
           </div>
         </div>
       </div>
@@ -188,11 +223,9 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
     <div hidden="">
       <div class="cbf-line-items">
         <div class="cbf-line-items__head" aria-hidden="true">
-          <span class="cbf-li-col--desc">Description</span>
-          <span class="cbf-li-col--qty">Qty</span>
+          <span class="cbf-li-col--desc">Description</span> <span class="cbf-li-col--qty">Qty</span>
           <span class="cbf-li-col--price">Unit price</span>
-          <span class="cbf-li-col--total">Total</span>
-          <span class="cbf-li-col--action"></span>
+          <span class="cbf-li-col--total">Total</span> <span class="cbf-li-col--action"></span>
         </div>
         <div class="cbf-line-items__body" data-line-items="">
           <div class="cbf-line-item" data-row="0">
@@ -204,6 +237,7 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
               value=""
               data-li-field="description"
               data-li-idx="0"
+              style=""
             />
             <input
               disabled=""
@@ -347,6 +381,7 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
         data-docs-input=""
         tabindex="-1"
         aria-hidden="true"
+        style=""
       />
       <div data-docs-error="" hidden="">
         <div class="esa-alert-box esa-alert-box--danger typography-body-sm">
@@ -404,9 +439,7 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
         </svg>
       </div>
       <div class="esa-alert-box__body">
-        <div class="esa-alert-box__message">
-          Please upload a PDF invoice before continuing.
-        </div>
+        <div class="esa-alert-box__message">Please upload a PDF invoice before continuing.</div>
       </div>
     </div>
   </div>
@@ -440,7 +473,243 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
 ```
 
 ## Styles
+
 ```css
+.typography-body-sm {
+  font-family: var(--typography-body-sm-font-family);
+  font-size: var(--typography-body-sm-font-size);
+  font-weight: var(--typography-body-sm-font-weight);
+  line-height: var(--typography-body-sm-line-height);
+  letter-spacing: var(--typography-body-sm-letter-spacing);
+}
+.typography-microcopy-md {
+  font-family: var(--typography-microcopy-md-font-family);
+  font-size: var(--typography-microcopy-md-font-size);
+  font-weight: var(--typography-microcopy-md-font-weight);
+  line-height: var(--typography-microcopy-md-line-height);
+  letter-spacing: var(--typography-microcopy-md-letter-spacing);
+}
+.typography-body-sm {
+  font-family: var(--typography-body-sm-font-family);
+  font-size: var(--typography-body-sm-font-size);
+  font-weight: var(--typography-body-sm-font-weight);
+  line-height: var(--typography-body-sm-line-height);
+  letter-spacing: var(--typography-body-sm-letter-spacing);
+}
+.typography-microcopy-md {
+  font-family: var(--typography-microcopy-md-font-family);
+  font-size: var(--typography-microcopy-md-font-size);
+  font-weight: var(--typography-microcopy-md-font-weight);
+  line-height: var(--typography-microcopy-md-line-height);
+  letter-spacing: var(--typography-microcopy-md-letter-spacing);
+}
+.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {
+  transition: transform 0.15s ease;
+}
+.esa-nav-dropdown[open] .esa-button__native > .esa-icon:last-child {
+  transform: rotate(180deg);
+}
+.esa-button {
+  --_btn-pad-y: var(--spacing-300, 0.75rem);
+  --_btn-padding-x: var(--spacing-300, 0.75rem);
+  --_btn-radius: var(--button-radius-md, 0.5rem);
+  --_accent: var(--color-background-brand, #46a758);
+  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);
+  --_on: var(--color-content-default-knockout, #fcfcfc);
+  --_accent-text: var(--_accent);
+  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);
+  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);
+  display: inline-block;
+}
+.esa-button--variant-primary {
+  --_accent-text: var(--color-content-brand);
+}
+.esa-button--variant-secondary {
+  --_accent: var(--color-background-brand-muted);
+  --_accent-hover: var(--color-background-brand-muted-hover);
+  --_on: var(--color-content-on-brand-muted, var(--color-content-default));
+  --_accent-text: var(--color-content-brand);
+  --_accent-border: var(--color-border-default-strong, #bbbbbb);
+}
+.esa-button--variant-danger {
+  --_accent: var(--color-background-utility-danger);
+  --_accent-hover: var(--color-background-utility-danger-hover);
+  --_accent-text: var(--color-content-utility-danger);
+}
+.esa-button--appearance-fill .esa-button__native {
+  background: var(--_accent);
+  color: var(--_on);
+  border-color: var(--_accent-border, transparent);
+}
+.esa-button--appearance-fill .esa-button__native:hover:not(:disabled) {
+  background: var(--_accent-hover);
+}
+.esa-button--appearance-fill.esa-button--active .esa-button__native {
+  background: var(--_accent-hover);
+}
+.esa-button--appearance-outline .esa-button__native,
+.esa-button--appearance-dashed .esa-button__native {
+  background: transparent;
+  color: var(--_accent-text);
+  border-color: var(--_accent);
+}
+.esa-button--appearance-dashed .esa-button__native {
+  border-style: dashed;
+}
+.esa-button--appearance-outline .esa-button__native:hover:not(:disabled),
+.esa-button--appearance-dashed .esa-button__native:hover:not(:disabled) {
+  background: var(--_btn-tint-hover);
+}
+.esa-button--appearance-outline.esa-button--active .esa-button__native,
+.esa-button--appearance-dashed.esa-button--active .esa-button__native {
+  background: var(--_btn-tint-active);
+}
+.esa-button--appearance-soft .esa-button__native {
+  background: color-mix(
+    in srgb,
+    var(--color-background-elevation-sunken, #f0f0f0) 45%,
+    var(--color-background-elevation-raised, #fcfcfc)
+  );
+  color: var(--_accent-text);
+  border-color: var(--color-border-default-strong, #bbbbbb);
+}
+.esa-button--appearance-soft .esa-button__native:hover:not(:disabled),
+.esa-button--appearance-soft.esa-button--active .esa-button__native {
+  background: var(--_accent);
+  color: var(--_on);
+  border-color: var(--_accent);
+}
+.esa-button--variant-ghost .esa-button__native {
+  background: transparent;
+  color: var(--color-content-default, #202020);
+  border-color: transparent;
+}
+.esa-button--variant-ghost.esa-button--appearance-outline .esa-button__native,
+.esa-button--variant-ghost.esa-button--appearance-dashed .esa-button__native {
+  border-color: var(--color-border-default, #cecece);
+}
+.esa-button--variant-ghost .esa-button__native:hover:not(:disabled),
+.esa-button--variant-ghost.esa-button--active .esa-button__native {
+  background: var(--color-background-elevation-sunken, #f0f0f0);
+}
+.esa-button--variant-chrome .esa-button__native {
+  background: transparent;
+  color: inherit;
+  border-color: transparent;
+}
+.esa-button--variant-chrome .esa-button__native:hover:not(:disabled),
+.esa-button--variant-chrome.esa-button--active .esa-button__native,
+.esa-button--variant-chrome.esa-button--current .esa-button__native {
+  background: var(--button-chrome-bg-hover, color-mix(in srgb, currentColor 14%, transparent));
+}
+.esa-button--variant-chrome .esa-button__native:focus-visible {
+  outline-color: currentColor;
+}
+.esa-button__native {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-200, 8px);
+  width: 100%;
+  padding-block: var(--_btn-pad-y);
+  padding-inline: var(--_btn-padding-x);
+  border: var(--border-width-default, 1px) solid transparent;
+  border-radius: var(--_btn-radius);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast, 0.15s ease),
+    border-color var(--transition-fast, 0.15s ease);
+  -webkit-appearance: none;
+  appearance: none;
+}
+.esa-button__native:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);
+  outline-offset: var(--focus-ring-offset, 2px);
+}
+.esa-button--icon-only .esa-button__native {
+  padding-inline: var(--_btn-pad-y);
+  aspect-ratio: 1;
+}
+summary.esa-button {
+  list-style: none;
+  cursor: pointer;
+}
+summary.esa-button::-webkit-details-marker {
+  display: none;
+}
+summary.esa-button:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);
+  outline-offset: var(--focus-ring-offset, 2px);
+  border-radius: var(--_btn-radius);
+}
+.esa-button__label {
+  white-space: nowrap;
+}
+.cbf-line-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px 96px 88px 32px;
+  gap: var(--spacing-200);
+  padding: var(--spacing-250) var(--spacing-400);
+  border-bottom: 1px solid var(--color-border-default);
+  align-items: center;
+}
+.cbf-line-item:last-child {
+  border-bottom: 0;
+}
+.cbf-li-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: var(--spacing-150) var(--spacing-250);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-100);
+  font-family: var(--typography-font-family-sans);
+  font-size: 14px;
+  color: var(--color-content-default);
+  background: var(--color-background-elevation-raised);
+  transition:
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+  outline: none;
+}
+.cbf-li-input:focus {
+  border-color: var(--color-background-brand);
+  box-shadow: 0 0 0 3px var(--color-background-brand-subtle);
+}
+.cbf-li-input::placeholder {
+  color: var(--color-content-default-tertiary);
+}
+.cbf-li-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--color-background-elevation-sunken, #f8f9fb);
+}
+.cbf-li-qty,
+.cbf-li-price {
+  text-align: right;
+}
+.cbf-li-total {
+  font-size: 14px;
+  font-weight: var(--typography-font-weight-semibold);
+  color: var(--color-content-default);
+  text-align: right;
+}
+.cbf-li-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-100);
+  color: var(--color-content-default-tertiary);
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+.cbf-li-remove:hover {
+  background: var(--color-background-elevation-sunken, #f8f9fb);
+  color: var(--color-content-default);
+}
 .cbf-page-title {
   margin: 0 0 var(--spacing-400);
   font-family: var(--typography-font-family-display);
@@ -449,6 +718,11 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
   line-height: 1;
   letter-spacing: -1px;
   color: var(--color-background-default-knockout);
+}
+.cbf-form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-500);
 }
 .cbf-form-lock {
   display: flex;
@@ -472,6 +746,71 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
 .cbf-form-lock__upload-btn {
   display: none;
 }
+@media (max-width: 1100px) {
+  .cbf-form-lock__msg--wide {
+    display: none;
+  }
+}
+@media (max-width: 1100px) {
+  .cbf-form-lock__msg--narrow {
+    display: inline;
+  }
+}
+@media (max-width: 1100px) {
+  .cbf-form-lock__upload-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-150);
+    margin-left: auto;
+    flex: none;
+    padding: var(--spacing-150) var(--spacing-300);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-100);
+    font-size: 13px;
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-background-brand-muted);
+    background: var(--color-background-elevation-raised);
+    transition:
+      background 0.12s ease,
+      border-color 0.12s ease;
+  }
+}
+@media (max-width: 1100px) {
+  .cbf-form-lock__upload-btn:hover {
+    background: var(--color-background-brand-subtle);
+    border-color: var(--color-border-brand);
+  }
+}
+@media (max-width: 600px) {
+  .cbf-form-lock {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 600px) {
+  .cbf-form-lock__upload-btn {
+    width: 100%;
+    margin-left: 0;
+    justify-content: center;
+    gap: var(--spacing-200);
+    padding: var(--spacing-300) var(--spacing-400);
+    font-size: 16px;
+    color: var(--color-content-default-knockout, #fff);
+    background: var(--color-background-brand);
+    border-color: var(--color-background-brand);
+  }
+}
+@media (max-width: 600px) {
+  .cbf-form-lock__upload-btn svg {
+    width: 17px;
+    height: 17px;
+  }
+}
+@media (max-width: 600px) {
+  .cbf-form-lock__upload-btn:hover {
+    background: var(--color-background-brand-hover, var(--color-background-brand-muted));
+    border-color: var(--color-background-brand-hover, var(--color-background-brand-muted));
+  }
+}
 .cbf-mobile-pdf-input {
   position: absolute;
   width: 1px;
@@ -479,10 +818,82 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
   opacity: 0;
   pointer-events: none;
 }
-.cbf-form-fields {
+.cbf-optional {
+  font-size: 13px;
+  font-weight: var(--typography-font-weight-regular);
+  color: var(--color-content-default-tertiary);
+}
+.cbf-support-docs-group__label {
+  margin: 0 0 var(--spacing-050);
+  font-size: var(--font-size-200, 13px);
+  font-weight: var(--typography-font-weight-medium);
+  color: var(--color-content-default-secondary);
+}
+.cbf-support-docs-group__desc {
+  margin: 0 0 var(--spacing-300);
+  font-size: 13px;
+  color: var(--color-content-default-tertiary);
+  line-height: 1.5;
+}
+.cbf-line-items {
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-100);
+  overflow: hidden;
+}
+.cbf-line-items__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px 96px 88px 32px;
+  gap: var(--spacing-200);
+  padding: var(--spacing-300) var(--spacing-400);
+  background: var(--color-background-elevation-sunken, #f8f9fb);
+  border-bottom: 1px solid var(--color-border-default);
+  font-size: 12px;
+  font-weight: var(--typography-font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-content-default-tertiary);
+}
+.cbf-line-items__body {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-500);
+}
+.cbf-line-items__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-300) var(--spacing-400);
+  border-top: 1px solid var(--color-border-default);
+  background: var(--color-background-elevation-sunken, #f8f9fb);
+}
+.cbf-add-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-150);
+  font-size: 14px;
+  font-weight: var(--typography-font-weight-semibold);
+  color: var(--color-background-brand-muted);
+  padding: var(--spacing-150) var(--spacing-200);
+  border-radius: var(--radius-100);
+  transition: background 0.12s ease;
+}
+.cbf-add-row:hover {
+  background: var(--color-background-brand-subtle);
+}
+.cbf-add-row:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.cbf-line-items__total {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-300);
+  font-size: 15px;
+  color: var(--color-content-default-secondary);
+}
+.cbf-line-items__total strong {
+  font-size: 17px;
+  font-weight: var(--typography-font-weight-semibold);
+  color: var(--color-content-default);
 }
 .cbf-final-invoice {
   padding: var(--spacing-400) var(--spacing-450, var(--spacing-400));
@@ -494,22 +905,10 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
     background 0.15s ease,
     box-shadow 0.15s ease;
 }
-.cbf-support-docs-group__label {
-  margin: 0 0 var(--spacing-050);
-  font-size: var(--font-size-200, 13px);
-  font-weight: var(--typography-font-weight-medium);
-  color: var(--color-content-default-secondary);
-}
-.cbf-optional {
-  font-size: 13px;
-  font-weight: var(--typography-font-weight-regular);
-  color: var(--color-content-default-tertiary);
-}
-.cbf-support-docs-group__desc {
-  margin: 0 0 var(--spacing-300);
-  font-size: 13px;
-  color: var(--color-content-default-tertiary);
-  line-height: 1.5;
+.cbf-final-invoice.is-flagged {
+  border-color: var(--color-border-brand, var(--color-background-brand));
+  background: var(--color-background-brand-subtle);
+  box-shadow: 0 0 0 1px var(--color-border-brand, var(--color-background-brand));
 }
 .cbf-support-docs {
   border: 1px solid var(--color-border-default);
@@ -518,6 +917,13 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
   transition:
     border-color 0.12s ease,
     background 0.12s ease;
+}
+.cbf-support-docs.is-over {
+  border-color: var(--color-background-brand);
+  background: var(--color-background-brand-subtle);
+}
+.cbf-support-docs__list:not(:empty) {
+  border-bottom: 1px solid var(--color-border-default);
 }
 .cbf-support-docs__add {
   display: flex;
@@ -540,6 +946,16 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
   font-weight: var(--typography-font-weight-semibold);
   color: var(--color-background-brand-muted);
 }
+.cbf-support-docs__add:hover {
+  background: var(--color-background-brand-subtle);
+}
+.cbf-support-docs.is-over .cbf-support-docs__add {
+  pointer-events: none;
+}
+.cbf-support-docs__add:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 .cbf-docs-input {
   position: absolute;
   width: 1px;
@@ -558,1088 +974,119 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
 .cbf-step-actions [data-wizard-save-draft] {
   margin-left: auto;
 }
-.cbf-support-docs__add:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.cbf-page-title {
+  margin: 0 0 var(--spacing-500);
+  font-family: var(--typography-font-family-display);
+  font-weight: var(--typography-font-weight-medium);
+  font-size: 40px;
+  line-height: 1;
+  letter-spacing: -1px;
+  color: var(--color-background-default-knockout);
 }
-.typography-microcopy-md-subtle {
-  font-family: var(--typography-microcopy-md-subtle-font-family);
-  font-size: var(--typography-microcopy-md-subtle-font-size);
-  font-weight: var(--typography-microcopy-md-subtle-font-weight);
-  line-height: var(--typography-microcopy-md-subtle-line-height);
-  letter-spacing: var(--typography-microcopy-md-subtle-letter-spacing);
+.cbf-review-notice .esa-alert-box {
+  --color-background-utility-info-subtle: var(--color-background-brand-subtle);
+  --color-border-utility-info: var(--color-border-brand);
+  --color-background-utility-info: var(--color-background-brand-muted);
+  --color-content-default-secondary: var(--color-content-default);
+  font-size: 15px;
 }
-.typography-body-sm {
-  font-family: var(--typography-body-sm-font-family);
-  font-size: var(--typography-body-sm-font-size);
-  font-weight: var(--typography-body-sm-font-weight);
-  line-height: var(--typography-body-sm-line-height);
-  letter-spacing: var(--typography-body-sm-letter-spacing);
+.cbf-step-actions [data-wizard-back] {
+  margin-left: auto;
 }
-.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {
-  transition: transform 0.15s ease;
+.esa-alert-box {
+  --_alert-bg: var(--color-background-utility-info-subtle, #fbfdff);
+  --_alert-border: var(--color-border-utility-info, #acd8fc);
+  --_alert-accent: var(--color-content-utility-info, #0d74ce);
+  --_alert-icon-color: var(--_alert-accent);
+  --_alert-title-color: var(--_alert-accent);
+  --_alert-text-color: var(--alert-box-text-color, var(--color-content-default-secondary, #646464));
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-300, 0.75rem);
+  padding: var(--spacing-300, 0.75rem) var(--spacing-400, 1rem);
+  border: var(--border-width-default, 1px) solid var(--_alert-border);
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--_alert-bg);
 }
-.typography-microcopy-md {
-  font-family: var(--typography-microcopy-md-font-family);
-  font-size: var(--typography-microcopy-md-font-size);
-  font-weight: var(--typography-microcopy-md-font-weight);
-  line-height: var(--typography-microcopy-md-line-height);
-  letter-spacing: var(--typography-microcopy-md-letter-spacing);
+.esa-alert-box--danger {
+  --_alert-bg: var(--color-background-utility-danger-subtle, #fffcfc);
+  --_alert-border: var(--color-border-utility-danger, #fdbdbe);
+  --_alert-accent: var(--color-content-utility-danger, #ce2c31);
 }
-.typography-body-sm {
-  font-family: var(--typography-body-sm-font-family);
-  font-size: var(--typography-body-sm-font-size);
-  font-weight: var(--typography-body-sm-font-weight);
-  line-height: var(--typography-body-sm-line-height);
-  letter-spacing: var(--typography-body-sm-letter-spacing);
+.esa-alert-box__icon {
+  flex-shrink: 0;
+  color: var(--_alert-icon-color);
+  padding-top: 1px;
 }
-.esa-button {
-  --_btn-pad-y: var(--spacing-300, 0.75rem);
-  --_btn-padding-x: var(--spacing-300, 0.75rem);
-  --_btn-radius: var(--button-radius-md, 0.5rem);
-  --_accent: var(--color-background-brand, #46a758);
-  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);
-  --_on: var(--color-content-default-knockout, #fcfcfc);
-  --_accent-text: var(--_accent);
-  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);
-  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);
-  display: inline-block;
+.esa-alert-box__body {
+  flex: 1;
+  min-width: 0;
 }
-.esa-button--sm {
-  --_btn-pad-y: var(--spacing-250, 0.625rem);
-  --_btn-padding-x: var(--spacing-250, 0.625rem);
-  --_btn-radius: var(--button-radius-sm, 4px);
-}
-.esa-button__native {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--spacing-200, 8px);
-  width: 100%;
-  padding-block: var(--_btn-pad-y);
-  padding-inline: var(--_btn-padding-x);
-  border: var(--border-width-default, 1px) solid transparent;
-  border-radius: var(--_btn-radius);
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    background var(--transition-fast, 0.15s ease),
-    border-color var(--transition-fast, 0.15s ease);
-  -webkit-appearance: none;
-  appearance: none;
-}
-.esa-button--appearance-fill .esa-button__native {
-  background: var(--_accent);
-  color: var(--_on);
-  border-color: var(--_accent-border, transparent);
-}
-.esa-button--variant-chrome .esa-button__native {
-  background: transparent;
-  color: inherit;
-  border-color: transparent;
-}
-.esa-button__label {
-  white-space: nowrap;
-}
-summary.esa-button {
-  list-style: none;
-  cursor: pointer;
-}
-.esa-button--variant-danger {
-  --_accent: var(--color-background-utility-danger);
-  --_accent-hover: var(--color-background-utility-danger-hover);
-  --_accent-text: var(--color-content-utility-danger);
-}
-.esa-button--appearance-outline .esa-button__native,
-.esa-button--appearance-dashed .esa-button__native {
-  background: transparent;
-  color: var(--_accent-text);
-  border-color: var(--_accent);
-}
-.esa-button--variant-secondary {
-  --_accent: var(--color-background-brand-muted);
-  --_accent-hover: var(--color-background-brand-muted-hover);
-  --_on: var(--color-content-on-brand-muted, var(--color-content-default));
-  --_accent-text: var(--color-content-brand);
-  --_accent-border: var(--color-border-default-strong, #bbbbbb);
-}
-.esa-button--variant-primary {
-  --_accent-text: var(--color-content-brand);
+.esa-alert-box__message {
+  color: var(--_alert-text-color);
 }
 ```
 
 ## Tokens
-- `--border-width-default`: 1px _(semantic)_
-- `--button-radius-md`: .5rem _(component)_
-- `--button-radius-sm`: .25rem _(component)_
-- `--color-background-brand`: #1e5386 _(semantic)_
-- `--color-background-brand-hover`: #1a4570 _(semantic)_
-- `--color-background-brand-muted`: #2770b2 _(semantic)_
-- `--color-background-brand-muted-hover`: #1e5386 _(semantic)_
-- `--color-background-default-knockout`: #13273e _(semantic)_
-- `--color-background-elevation-sunken`: #f3f7fc _(semantic)_
-- `--color-background-utility-danger`: #ce2c31 _(semantic)_
-- `--color-background-utility-danger-hover`: #641723 _(semantic)_
-- `--color-border-default`: #dcdcdc _(semantic)_
-- `--color-border-default-strong`: #bdbdbd _(semantic)_
-- `--color-content-brand`: #1e5386 _(semantic)_
-- `--color-content-default`: #3d3d3d _(semantic)_
-- `--color-content-default-knockout`: #fcfcfc _(semantic)_
-- `--color-content-default-secondary`: #525252 _(semantic)_
-- `--color-content-default-tertiary`: #656565 _(semantic)_
-- `--color-content-on-brand-muted`: #203c25 _(semantic)_
-- `--color-content-utility-danger`: #ce2c31 _(semantic)_
-- `--font-size-200`: clamp(.75rem, .66rem + .44vw, .9375rem) _(primitive)_
-- `--radius-100`: .25rem _(primitive)_
-- `--spacing-050`: .125rem _(primitive)_
-- `--spacing-200`: .5rem _(primitive)_
-- `--spacing-250`: .625rem _(primitive)_
-- `--spacing-300`: .75rem _(primitive)_
-- `--spacing-400`: 1rem _(primitive)_
-- `--spacing-500`: 1.5rem _(primitive)_
-- `--spacing-700`: 3rem _(primitive)_
-- `--transition-fast`: .15s ease _(semantic)_
-- `--typography-body-sm-font-family`: "IBM Plex Sans", sans-serif _(semantic)_
-- `--typography-body-sm-font-size`: clamp(.6875rem, .61rem + .38vw, .875rem) _(semantic)_
-- `--typography-body-sm-font-weight`: 400 _(semantic)_
-- `--typography-body-sm-letter-spacing`: .01em _(semantic)_
-- `--typography-body-sm-line-height`: 1.6 _(semantic)_
-- `--typography-font-family-display`: "IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif _(semantic)_
-- `--typography-font-weight-medium`: 500 _(semantic)_
-- `--typography-font-weight-regular`: 400 _(semantic)_
-- `--typography-font-weight-semibold`: 600 _(semantic)_
-- `--typography-microcopy-md-font-family`: "IBM Plex Sans", sans-serif _(semantic)_
-- `--typography-microcopy-md-font-size`: clamp(.75rem, .66rem + .44vw, .9375rem) _(semantic)_
-- `--typography-microcopy-md-font-weight`: 500 _(semantic)_
-- `--typography-microcopy-md-letter-spacing`: .01em _(semantic)_
-- `--typography-microcopy-md-line-height`: 1 _(semantic)_
-- `--typography-microcopy-md-subtle-font-family`: "IBM Plex Sans", sans-serif _(semantic)_
-- `--typography-microcopy-md-subtle-font-size`: clamp(.75rem, .66rem + .44vw, .9375rem) _(semantic)_
-- `--typography-microcopy-md-subtle-font-weight`: 400 _(semantic)_
-- `--typography-microcopy-md-subtle-letter-spacing`: .01em _(semantic)_
-- `--typography-microcopy-md-subtle-line-height`: 1 _(semantic)_
 
-## Behavior
-```ts
-// ── src/components/vendor-invoice/invoice-wizard.client.ts ──
-// invoice-wizard.client.ts — vendor invoice submission wizard.
-// Manages: step navigation + validation, PDF upload zone, line items
-// add/remove/total, review-panel population, and submit confirmation.
-
-export function initInvoiceWizard(): void {
-  const root = document.querySelector<HTMLElement>('[data-invoice-wizard]');
-  if (!root) return;
-  const wizard: HTMLElement = root;
-
-  const stepper = wizard.querySelector<HTMLElement>('[data-stepper]');
-  const stepperItems = Array.from(
-    wizard.querySelectorAll<HTMLElement>('[data-stepper-step]'),
-  );
-  const stepperLines = Array.from(
-    wizard.querySelectorAll<HTMLElement>('.cbf-stepper__line'),
-  );
-
-  let current = 0;
-  const confirmStep = 2;
-
-  const pdfPanel = wizard.querySelector<HTMLElement>('[data-pdf-panel]');
-  const pdfFrame = wizard.querySelector<HTMLIFrameElement>('[data-pdf-frame]');
-  const pdfFilenameEl = wizard.querySelector<HTMLElement>('[data-pdf-filename]');
-  const cardBody = wizard.querySelector<HTMLElement>('.cbf-invoice-workspace');
-
-  function setStepVisibility(step: number, visible: boolean): void {
-    wizard.querySelectorAll<HTMLElement>(`[data-step="${step}"]`).forEach((el) => {
-      if (visible) el.removeAttribute('hidden');
-      else el.setAttribute('hidden', '');
-    });
-  }
-
-  // ---- Step navigation ----
-
-  function goTo(next: number): void {
-    if (next !== confirmStep && !validate(current)) return;
-    // Leaving the details step for review: if the invoice looks like a final one
-    // and the vendor hasn't said either way, ask first — then resume this same
-    // transition once they've answered (shouldPromptFinal is false on re-entry).
-    if (current === 0 && next === 1 && shouldPromptFinal()) {
-      promptFinalInvoice(() => goTo(next));
-      return;
-    }
-    // Modal mode: step 1 opens the modal review page instead of the page step.
-    if (next === 1 && confirmMode() === 'modal') {
-      openModalAtReview();
-      return;
-    }
-    setStepVisibility(current, false);
-    current = next;
-    setStepVisibility(current, true);
-    updateStepper();
-    if (current === 1) populateReview();
-    // Show PDF panel only on step 0 (Invoice Details) when a file is loaded
-    syncPdfPanel();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function openModalAtReview(): void {
-    const modal = wizard.querySelector<any>('[data-confirm-modal]');
-    if (!modal) return;
-    populateModalReview();
-    modal.show();
-  }
-
-  function updateStepper(): void {
-    const onConfirm = current >= stepperItems.length;
-    stepper?.toggleAttribute('hidden', onConfirm);
-    if (onConfirm) return;
-
-    stepperItems.forEach((item, i) => {
-      item.classList.toggle('is-active', i === current);
-      item.classList.toggle('is-done', i < current);
-    });
-    // colour the connector lines between done steps
-    stepperLines.forEach((line, i) => {
-      line.style.background =
-        i < current ? 'var(--color-background-brand)' : 'var(--color-border-default)';
-    });
-  }
-
-  // Dev toggle: switch confirmation mode between "page" and "modal".
-  // Mode is stored in a plain variable so confirmMode() never re-reads the DOM
-  // (avoids fragility around Astro-scoped class selectors on dynamically toggled nodes).
-  let activeConfirmMode: 'page' | 'modal' = 'page';
-  const confirmModeBar = wizard.querySelector<HTMLElement>('[data-confirm-mode-bar]');
-  confirmModeBar?.addEventListener('click', (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-confirm-mode]');
-    if (!btn) return;
-    const mode = btn.dataset.confirmMode as 'page' | 'modal' | undefined;
-    if (!mode) return;
-    activeConfirmMode = mode;
-    confirmModeBar.querySelectorAll<HTMLElement>('[data-confirm-mode]').forEach((b) => {
-      b.classList.toggle('is-active', b.dataset.confirmMode === mode);
-    });
-  });
-
-  function confirmMode(): string {
-    return activeConfirmMode;
-  }
-
-  // ---- Dev: autofill valid demo data and jump straight to the review step. ----
-  // Prototype-only testing helper so the review/confirmation screens can be reached
-  // without hand-filling the form. Wired to the dev-bar "Autofill → Review" button
-  // and exposed on window for console use (vendorInvoiceAutofill()).
-  // A minimal but *valid* one-page PDF (base64). A bare "%PDF-1.4" header with no
-  // objects/xref/trailer is NOT a renderable PDF — Chrome's PDF engine shows a
-  // blank viewer for it — so the demo file must be a real document to preview.
-  const DEMO_PDF_BASE64 =
-    'JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiA+PiA+PiAvQ29udGVudHMgNSAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago1IDAgb2JqCjw8IC9MZW5ndGggNjAgPj4Kc3RyZWFtCkJUIC9GMSAyMiBUZiA3MiA3MDAgVGQgKERlbW8gaW52b2ljZSBcMjI2IGZvciB0ZXN0aW5nKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAwOSAwMDAwMCBuIAowMDAwMDAwMDU4IDAwMDAwIG4gCjAwMDAwMDAxMTUgMDAwMDAgbiAKMDAwMDAwMDI0MSAwMDAwMCBuIAowMDAwMDAwMzExIDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKNDIxCiUlRU9GCg==';
-
-  function makeDemoInvoiceFile(): File {
-    const bytes = Uint8Array.from(atob(DEMO_PDF_BASE64), (c) => c.charCodeAt(0));
-    return new File([bytes], 'demo-invoice.pdf', { type: 'application/pdf' });
-  }
-
-  function devAutofill(): void {
-    // A valid demo PDF unlocks the form (pdfEverLoaded), shows the panel, and
-    // actually renders in the viewer.
-    if (!uploadedFile) {
-      showFile(makeDemoInvoiceFile());
-    }
-    const fill = (selector: string, value: string): void => {
-      const el = wizard.querySelector<any>(selector);
-      if (!el) return;
-      el.value = value;
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-    };
-    // CON-2025-0112 has a large remaining balance, so the total stays well clear of
-    // the over-balance and "final invoice?" prompts. Contract change auto-fills Project.
-    fill('[data-field="contract"]', 'CON-2025-0112');
-    fill('[data-field="invoice-number"]', 'INV-2026-0042');
-    fill('[data-field="invoice-date"]', '2026-06-29');
-    fill('[data-field="perf-start"]', '2026-01-01');
-    fill('[data-field="perf-end"]', '2026-03-31');
-    fill('[data-field="total-amount"]', '4850.00');
-    fill('[data-field="notes"]', 'Autofilled demo invoice (testing).');
-    goTo(1);
-  }
-  (window as unknown as { vendorInvoiceAutofill?: () => void }).vendorInvoiceAutofill = devAutofill;
-
-  wizard.addEventListener('click', (e) => {
-    const t = e.target as HTMLElement;
-    if (t.closest('[data-wizard-next]')) goTo(current + 1);
-    if (t.closest('[data-wizard-back]') && current > 0) {
-      setStepVisibility(current, false);
-      current--;
-      setStepVisibility(current, true);
-      updateStepper();
-      syncPdfPanel();
-    }
-    if (t.closest('[data-wizard-save-draft]')) saveDraft();
-    if (t.closest('[data-wizard-submit]')) submitInvoice();
-    if (t.closest('[data-modal-submit]')) submitInvoice();
-    if (t.closest('[data-modal-back]')) wizard.querySelector<any>('[data-confirm-modal]')?.close();
-    if (t.closest('[data-wizard-cancel]')) {
-      wizard.querySelector<any>('[data-confirm-modal]')?.close();
-      window.location.href = import.meta.env.BASE_URL + 'vendor-dashboard';
-    }
-    if (t.closest('[data-dev-autofill]')) devAutofill();
-  });
-
-  // ---- Combobox initialization ----
-  // esa-combobox takes options as a JS property, not slotted HTML.
-  // We encode the options as JSON on a data attribute at build time and assign here.
-  wizard.querySelectorAll<any>('[data-combobox-options]').forEach((el) => {
-    try { el.options = JSON.parse(el.dataset.comboboxOptions ?? '[]'); } catch {}
-  });
-
-  // ---- PDF panel sync ----
-
-  function syncPdfPanel(): void {
-    // The panel rides alongside BOTH the details form (step 0) and the review
-    // summary (step 1) so the layout stays consistent across the two steps.
-    const onReview = current === 1;
-    const show = current === 0 || onReview;
-    pdfPanel?.toggleAttribute('hidden', !show);
-    cardBody?.classList.toggle('has-pdf', show);
-    // Remove is a step-0 edit action; on review the viewer is a read-only preview
-    // the vendor can switch between the invoice and each supporting document.
-    wizard.querySelector<HTMLElement>('[data-upload-remove]')?.toggleAttribute('hidden', onReview);
-    // Whenever the panel (re)opens, reset the viewer to the main invoice so a
-    // leftover supporting-doc preview doesn't carry across step changes.
-    if (show && uploadedFile) previewMainInvoice();
-  }
-
-  // ---- Validation ----
-
-  function validate(step: number): boolean {
-    if (step === 0) { const a = validateUpload(); const b = validateDetails(); return a && b; }
-    return true;
-  }
-
-  function validateUpload(): boolean {
-    const err = wizard.querySelector<HTMLElement>('[data-step-error="upload"]')!;
-    const hasFile = !!uploadedFile;
-    err?.toggleAttribute('hidden', hasFile);
-    return hasFile;
-  }
-
-  function validateDetails(): boolean {
-    let ok = true;
-    const required = [
-      wizard.querySelector<any>('[data-field="invoice-number"]'),
-      wizard.querySelector<any>('[data-field="invoice-date"]'),
-      wizard.querySelector<any>('[data-field="perf-start"]'),
-      wizard.querySelector<any>('[data-field="perf-end"]'),
-      wizard.querySelector<any>('[data-field="contract"]'),
-    ];
-    required.forEach((el) => {
-      if (!el) return;
-      const val = el.value ?? el.getAttribute('value') ?? '';
-      if (!val.trim()) {
-        el.setAttribute('error-text', 'This field is required.');
-        ok = false;
-      } else {
-        el.removeAttribute('error-text');
-      }
-    });
-    // Performance period cross-check: start must not be after end
-    const perfStartEl = wizard.querySelector<any>('[data-field="perf-start"]');
-    const perfEndEl = wizard.querySelector<any>('[data-field="perf-end"]');
-    const pStart = perfStartEl?.value ?? '';
-    const pEnd = perfEndEl?.value ?? '';
-    if (pStart && pEnd && pStart > pEnd) {
-      perfEndEl?.setAttribute('error-text', 'End date must be on or after start date.');
-      ok = false;
-    }
-    // Invoice total must be a positive amount, and must not exceed the remaining
-    // balance on the selected contract (replaces the old line-item check).
-    const totalErr = wizard.querySelector<HTMLElement>('[data-step-error="total"]');
-    const exceedsErr = wizard.querySelector<HTMLElement>('[data-step-error="total-exceeds"]');
-    if (readInvoiceTotal() <= 0) {
-      ok = false;
-      totalErr?.removeAttribute('hidden');
-      exceedsErr?.setAttribute('hidden', '');
-      totalAmountField?.setAttribute('error-text', 'Enter the invoice total amount.');
-    } else {
-      totalErr?.setAttribute('hidden', '');
-      if (exceedsRemaining()) {
-        ok = false;
-        refreshTotalExceeds(); // shows the over-balance alert + field error
-      } else {
-        exceedsErr?.setAttribute('hidden', '');
-        totalAmountField?.removeAttribute('error-text');
-      }
-    }
-    return ok;
-  }
-
-  // ---- Form lock (disabled until first PDF upload) ----
-
-  let pdfEverLoaded = false;
-
-  function syncFormLock(): void {
-    const locked = !pdfEverLoaded;
-    wizard.querySelector<HTMLElement>('[data-form-lock-notice]')?.toggleAttribute('hidden', !locked);
-
-    // Named form fields (esa-text-field, bcn-date-picker, esa-combobox, esa-textarea).
-    // Skip [data-readonly] fields — they stay disabled regardless of lock state.
-    wizard.querySelectorAll<any>('[data-field]:not([data-readonly])').forEach((el) => {
-      el.toggleAttribute('disabled', locked);
-    });
-
-    // Action buttons
-    wizard.querySelector<HTMLButtonElement>('[data-add-line-item]')?.toggleAttribute('disabled', locked);
-    wizard.querySelector<HTMLButtonElement>('[data-docs-add]')?.toggleAttribute('disabled', locked);
-
-    // Dynamically-rendered line item inputs/remove buttons
-    wizard.querySelectorAll<HTMLInputElement>('.cbf-li-input').forEach((el) => { el.disabled = locked; });
-    wizard.querySelectorAll<HTMLButtonElement>('.cbf-li-remove').forEach((el) => { el.disabled = locked; });
-  }
-
-  // Apply initial locked state
-  syncFormLock();
-
-  // ---- File upload ----
-
-  let uploadedFile: File | null = null;
-
-  const uploadZone = wizard.querySelector<HTMLElement>('[data-upload-zone]')!;
-  const uploadInput = wizard.querySelector<HTMLInputElement>('[data-upload-input]')!;
-  const mobileUploadInput = wizard.querySelector<HTMLInputElement>('[data-mobile-upload-input]');
-  const uploadIdle = wizard.querySelector<HTMLElement>('[data-upload-idle]')!;
-  const pdfViewer = wizard.querySelector<HTMLElement>('[data-pdf-viewer]')!;
-
-  let pdfObjectUrl: string | null = null;
-  // Object URL for a supporting-doc preview (kept separate from pdfObjectUrl so
-  // switching previews never revokes the main invoice's URL).
-  let activePreviewUrl: string | null = null;
-
-  // Highlight whichever review "view" button matches the doc now on screen.
-  function setActiveViewRow(name: string): void {
-    wizard.querySelectorAll<HTMLElement>('[data-view-invoice],[data-view-doc]').forEach((b) => {
-      b.classList.toggle('is-active', b.getAttribute('data-view-name') === name);
-    });
-  }
-
-  // Point the viewer back at the main invoice PDF.
-  function previewMainInvoice(): void {
-    if (activePreviewUrl) { URL.revokeObjectURL(activePreviewUrl); activePreviewUrl = null; }
-    if (pdfFrame && pdfObjectUrl) pdfFrame.src = pdfObjectUrl;
-    if (pdfFilenameEl && uploadedFile) pdfFilenameEl.textContent = uploadedFile.name;
-    setActiveViewRow(uploadedFile?.name ?? '');
-  }
-
-  // Point the viewer at a supporting document (PDF or image renders inline).
-  function previewDoc(file: File): void {
-    if (activePreviewUrl) { URL.revokeObjectURL(activePreviewUrl); activePreviewUrl = null; }
-    activePreviewUrl = URL.createObjectURL(file);
-    if (pdfFrame) pdfFrame.src = activePreviewUrl;
-    if (pdfFilenameEl) pdfFilenameEl.textContent = file.name;
-    setActiveViewRow(file.name);
-  }
-
-  // Only PDFs and images preview inline in the iframe; office docs can't be shown.
-  function isPreviewable(file: File): boolean {
-    return file.type === 'application/pdf'
-      || file.type.startsWith('image/')
-      || /\.(pdf|png|jpe?g)$/i.test(file.name);
-  }
-
-  // Show the panel immediately on load (step 0). Deferred to here so syncPdfPanel's
-  // uploadedFile read runs after that binding is initialized (no TDZ at init).
-  syncPdfPanel();
-
-  // Upload size cap — mirrors the "Max 25 MB" hint shown on the drop zones.
-  const MAX_FILE_BYTES = 25 * 1024 * 1024;
-
-  // Size/type rejections show INLINE in the drop zone (right at the input), not in
-  // the bottom "no file" validation alert which is far from where the user dropped.
-  function setUploadError(msg: string): void {
-    const slot = wizard.querySelector<HTMLElement>('[data-upload-inline-error]');
-    const msgEl = wizard.querySelector<HTMLElement>('[data-upload-inline-error-msg]');
-    if (msgEl) msgEl.textContent = msg;
-    slot?.removeAttribute('hidden');
-  }
-  function clearUploadError(): void {
-    wizard.querySelector<HTMLElement>('[data-upload-inline-error]')?.setAttribute('hidden', '');
-  }
-
-  // Returns an error message if the main invoice file is invalid, else null.
-  function validateMainFile(file: File): string | null {
-    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-    if (!isPdf) return 'That file isn’t a PDF. Please upload a PDF invoice.';
-    if (file.size > MAX_FILE_BYTES) {
-      return `This file is ${formatBytes(file.size)} — the maximum is 25 MB. Please upload a smaller PDF.`;
-    }
-    return null;
-  }
-
-  function showFile(file: File): void {
-    const fileError = validateMainFile(file);
-    if (fileError) { setUploadError(fileError); return; }
-    clearUploadError();
-    uploadedFile = file;
-    uploadIdle?.setAttribute('hidden', '');
-    pdfViewer?.removeAttribute('hidden');
-    wizard.querySelector<HTMLElement>('[data-step-error="upload"]')?.setAttribute('hidden', '');
-    if (!pdfEverLoaded) { pdfEverLoaded = true; syncFormLock(); }
-    if (pdfObjectUrl) URL.revokeObjectURL(pdfObjectUrl);
-    pdfObjectUrl = URL.createObjectURL(file);
-    if (pdfFrame) pdfFrame.src = pdfObjectUrl;
-    if (pdfFilenameEl) pdfFilenameEl.textContent = file.name;
-    if (current === 1) populateReview();
-    syncPdfPanel();
-  }
-
-  function clearFile(): void {
-    uploadedFile = null;
-    uploadInput.value = '';
-    if (mobileUploadInput) mobileUploadInput.value = '';
-    pdfViewer?.setAttribute('hidden', '');
-    uploadIdle?.removeAttribute('hidden');
-    if (pdfObjectUrl) { URL.revokeObjectURL(pdfObjectUrl); pdfObjectUrl = null; }
-    if (pdfFrame) pdfFrame.src = '';
-    syncPdfPanel();
-  }
-
-  // ---- Supporting documents ----
-
-  let supportingDocs: File[] = [];
-  const docsInput = wizard.querySelector<HTMLInputElement>('[data-docs-input]')!;
-  const docsList = wizard.querySelector<HTMLElement>('[data-docs-list]')!;
-
-  function renderDocs(): void {
-    if (!docsList) return;
-    docsList.innerHTML = supportingDocs.map((file, i) => `
-      <div class="cbf-doc-row">
-        <svg class="cbf-doc-row__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-        </svg>
-        <div class="cbf-doc-row__info">
-          <span class="cbf-doc-row__name">${escHtml(file.name)}</span>
-          <span class="cbf-doc-row__size">${formatBytes(file.size)}</span>
-        </div>
-        <button type="button" class="cbf-doc-row__remove" data-doc-remove="${i}" aria-label="Remove ${escHtml(file.name)}">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-    `).join('');
-  }
-
-  wizard.querySelector('[data-docs-add]')?.addEventListener('click', () => docsInput?.click());
-
-  function setDocsError(msg: string): void {
-    const slot = wizard.querySelector<HTMLElement>('[data-docs-error]');
-    const msgEl = wizard.querySelector<HTMLElement>('[data-docs-error-msg]');
-    if (msg) {
-      if (msgEl) msgEl.textContent = msg;
-      slot?.removeAttribute('hidden');
-    } else {
-      slot?.setAttribute('hidden', '');
-    }
-  }
-
-  // Accept a batch of files (from the picker or a drag-drop), skipping oversize
-  // and duplicate-name files and surfacing a single error for any rejected ones.
-  function addDocs(incoming: File[]): void {
-    if (!incoming.length) return;
-    const oversize = incoming.filter((f) => f.size > MAX_FILE_BYTES);
-    const existingNames = new Set(supportingDocs.map((f) => f.name));
-    supportingDocs.push(
-      ...incoming.filter((f) => f.size <= MAX_FILE_BYTES && !existingNames.has(f.name)),
-    );
-    if (oversize.length) {
-      const names = oversize.map((f) => f.name).join(', ');
-      setDocsError(
-        `${names} ${oversize.length > 1 ? 'each exceed' : 'exceeds'} the 25 MB limit and ` +
-        `${oversize.length > 1 ? 'were' : 'was'} not added.`,
-      );
-    } else {
-      setDocsError('');
-    }
-    renderDocs();
-  }
-
-  docsInput?.addEventListener('change', () => {
-    addDocs(Array.from(docsInput.files ?? []));
-    docsInput.value = '';
-  });
-
-  // Drag & drop onto the whole backup-documents surface — multiple files at once.
-  const docsZone = wizard.querySelector<HTMLElement>('[data-docs-zone]');
-  docsZone?.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    docsZone.classList.add('is-over');
-  });
-  docsZone?.addEventListener('dragleave', (e) => {
-    // Only clear when the pointer actually leaves the zone, not its children.
-    if (!docsZone.contains(e.relatedTarget as Node)) docsZone.classList.remove('is-over');
-  });
-  docsZone?.addEventListener('drop', (e) => {
-    e.preventDefault();
-    docsZone.classList.remove('is-over');
-    addDocs(Array.from(e.dataTransfer?.files ?? []));
-  });
-
-  docsList?.addEventListener('click', (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-doc-remove]');
-    if (!btn) return;
-    supportingDocs.splice(Number(btn.dataset.docRemove), 1);
-    renderDocs();
-  });
-
-  // Review step: "view" buttons swap which document the PDF panel is showing.
-  wizard.querySelector<HTMLElement>('[data-review-content]')?.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
-    if (target.closest('[data-view-invoice]')) { previewMainInvoice(); return; }
-    const docBtn = target.closest<HTMLElement>('[data-view-doc]');
-    if (docBtn) {
-      const doc = supportingDocs[Number(docBtn.dataset.viewDoc)];
-      if (doc) previewDoc(doc);
-    }
-  });
-
-  wizard.querySelector('[data-upload-browse]')?.addEventListener('click', () => uploadInput.click());
-  wizard.querySelector('[data-upload-remove]')?.addEventListener('click', clearFile);
-  wizard.querySelector('[data-mobile-upload-btn]')?.addEventListener('click', () => mobileUploadInput?.click());
-
-  uploadInput.addEventListener('change', () => {
-    const file = uploadInput.files?.[0];
-    if (file) showFile(file);
-  });
-
-  mobileUploadInput?.addEventListener('change', () => {
-    const file = mobileUploadInput.files?.[0];
-    if (file) showFile(file);
-  });
-
-  // Drag & drop
-  uploadZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    uploadZone.classList.add('is-over');
-  });
-  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('is-over'));
-  uploadZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    uploadZone.classList.remove('is-over');
-    const file = e.dataTransfer?.files?.[0];
-    // showFile validates type + size and surfaces the error (no silent drop).
-    if (file) showFile(file);
-  });
-
-  function formatBytes(bytes: number): string {
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
-
-  // Render an ISO date (yyyy-mm-dd from the date inputs) as a human, self-evident
-  // date — "June 29, 2026". Parse y/m/d parts to avoid UTC-vs-local off-by-one.
-  function formatDate(value: string): string {
-    if (!value) return '—';
-    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-    const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(value);
-    if (Number.isNaN(d.getTime())) return value;
-    return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  }
-
-  // ---- Line items ----
-
-  interface LineItem {
-    description: string;
-    qty: number;
-    unitPrice: number;
-  }
-
-  let lineItems: LineItem[] = [];
-  const lineItemsBody = wizard.querySelector<HTMLElement>('[data-line-items]')!;
-  const totalEl = wizard.querySelector<HTMLElement>('[data-invoice-total]')!;
-
-  // The invoice total is now entered directly (line items live in the PDF). Parse
-  // the field leniently — strip $, commas, spaces — so "4,850.00" or "$4850" work.
-  const totalAmountField = wizard.querySelector<any>('[data-field="total-amount"]');
-  function readInvoiceTotal(): number {
-    const raw = String(totalAmountField?.value ?? '').replace(/[^0-9.]/g, '');
-    const n = parseFloat(raw);
-    return Number.isFinite(n) && n > 0 ? n : 0;
-  }
-
-  // Remaining (unbilled) balance on the selected contract, from the contract
-  // ledger encoded on the combobox; null when no contract is chosen.
-  function remainingForContract(): number | null {
-    const a = contractAmounts[contractField?.value ?? ''];
-    return a ? a.remaining : null;
-  }
-  // True when the entered total is strictly over the contract's remaining balance.
-  // (Equal is allowed — that's a final invoice, handled separately.)
-  function exceedsRemaining(): boolean {
-    const rem = remainingForContract();
-    return rem != null && readInvoiceTotal() > rem;
-  }
-  // Live toggle for the over-balance alert (run on total/contract change).
-  function refreshTotalExceeds(): void {
-    const exceedsErr = wizard.querySelector<HTMLElement>('[data-step-error="total-exceeds"]');
-    const rem = remainingForContract();
-    if (rem != null && exceedsRemaining()) {
-      const amtEl = exceedsErr?.querySelector<HTMLElement>('[data-remaining-amount]');
-      if (amtEl) amtEl.textContent = fmtCurrency(rem);
-      exceedsErr?.removeAttribute('hidden');
-      totalAmountField?.setAttribute('error-text', 'Exceeds the remaining contract balance.');
-    } else {
-      exceedsErr?.setAttribute('hidden', '');
-      if (totalAmountField?.getAttribute('error-text') === 'Exceeds the remaining contract balance.') {
-        totalAmountField.removeAttribute('error-text');
-      }
-    }
-  }
-
-  function addLineItem(): void {
-    lineItems.push({ description: '', qty: 1, unitPrice: 0 });
-    renderLineItems();
-  }
-
-  function removeLineItem(idx: number): void {
-    lineItems.splice(idx, 1);
-    renderLineItems();
-  }
-
-  function renderLineItems(): void {
-    const dis = pdfEverLoaded ? '' : ' disabled';
-    lineItemsBody.innerHTML = lineItems
-      .map(
-        (item, i) => `
-      <div class="cbf-line-item" data-row="${i}">
-        <input${dis}
-          class="cbf-li-input cbf-li-desc"
-          type="text"
-          placeholder="Description…"
-          value="${escHtml(item.description)}"
-          data-li-field="description"
-          data-li-idx="${i}"
-        />
-        <input${dis}
-          class="cbf-li-input cbf-li-qty"
-          type="number"
-          min="1"
-          value="${item.qty}"
-          data-li-field="qty"
-          data-li-idx="${i}"
-          style="text-align:right"
-        />
-        <input${dis}
-          class="cbf-li-input cbf-li-price"
-          type="number"
-          min="0"
-          step="0.01"
-          placeholder="0.00"
-          value="${item.unitPrice || ''}"
-          data-li-field="unitPrice"
-          data-li-idx="${i}"
-          style="text-align:right"
-        />
-        <span class="cbf-li-total" data-li-total="${i}">${fmtCurrency(item.qty * item.unitPrice)}</span>
-        <button type="button"${dis} class="cbf-li-remove" data-li-remove="${i}" aria-label="Remove line item">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-    `,
-      )
-      .join('');
-    updateTotal();
-  }
-
-  function updateTotal(): void {
-    const sum = lineItems.reduce((acc, li) => acc + li.qty * li.unitPrice, 0);
-    if (totalEl) totalEl.textContent = fmtCurrency(sum);
-  }
-
-  function fmtCurrency(n: number): string {
-    return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-  }
-
-  function escHtml(s: string): string {
-    return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-  }
-
-  // Delegate input + button events inside the line items body
-  lineItemsBody.addEventListener('input', (e) => {
-    const el = e.target as HTMLInputElement;
-    const idx = Number(el.dataset.liIdx);
-    const field = el.dataset.liField as keyof LineItem;
-    if (!field || isNaN(idx)) return;
-    if (field === 'description') lineItems[idx].description = el.value;
-    if (field === 'qty') lineItems[idx].qty = Math.max(1, Number(el.value) || 1);
-    if (field === 'unitPrice') lineItems[idx].unitPrice = Math.max(0, Number(el.value) || 0);
-    const totalCell = lineItemsBody.querySelector<HTMLElement>(`[data-li-total="${idx}"]`);
-    if (totalCell) totalCell.textContent = fmtCurrency(lineItems[idx].qty * lineItems[idx].unitPrice);
-    updateTotal();
-  });
-
-  lineItemsBody.addEventListener('click', (e) => {
-    const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-li-remove]');
-    if (btn) removeLineItem(Number(btn.dataset.liRemove));
-  });
-
-  wizard.querySelector('[data-add-line-item]')?.addEventListener('click', addLineItem);
-
-  // ---- Final-invoice flag + detection ----
-  // The vendor owns this checkbox — the wizard never ticks it for them. Detection
-  // only decides *whether to ask*: if the contract's remaining balance is the same
-  // as, or only slightly more than, this invoice's total ("slightly more" = the gap
-  // is under 5% of the total contract value), we prompt once on Review & submit.
-
-  const finalCheckbox = wizard.querySelector<any>('[data-final-invoice]');
-  const finalCallout = wizard.querySelector<HTMLElement>('[data-final-invoice-callout]');
-  const finalDialog = wizard.querySelector<any>('[data-final-invoice-dialog]');
-  const contractField = wizard.querySelector<any>('[data-field="contract"]');
-
-  let contractAmounts: Record<string, { total: number; remaining: number }> = {};
-  try {
-    contractAmounts = JSON.parse(contractField?.dataset.contractAmounts ?? '{}');
-  } catch { /* leave empty */ }
-
-  // Live over-balance feedback: re-check whenever the total or the chosen
-  // contract changes, so the alert appears/clears without waiting for Next.
-  totalAmountField?.addEventListener('input', refreshTotalExceeds);
-  totalAmountField?.addEventListener('change', refreshTotalExceeds);
-  contractField?.addEventListener('change', refreshTotalExceeds);
-
-  // Contract → project auto-populate (project field is read-only for reference only).
-  const projectDisplayField = wizard.querySelector<any>('[data-field="project"]');
-  let contractProjectMap: Record<string, string> = {};
-  try { contractProjectMap = JSON.parse(contractField?.dataset.contractProjects ?? '{}'); } catch { /* leave empty */ }
-  contractField?.addEventListener('change', () => {
-    if (projectDisplayField) projectDisplayField.value = contractProjectMap[contractField.value ?? ''] ?? '';
-  });
-
-  function syncFinalCallout(): void {
-    finalCallout?.classList.toggle('is-flagged', !!finalCheckbox?.checked);
-  }
-
-  // The vendor has decided once they toggle the box OR answer the prompt — either
-  // way we never auto-prompt again.
-  let finalDecided = false;
-  finalCheckbox?.addEventListener('change', () => {
-    finalDecided = true;
-    syncFinalCallout();
-  });
-
-  function invoiceTotal(): number {
-    return readInvoiceTotal();
-  }
-
-  function seemsFinalInvoice(): boolean {
-    const amounts = contractAmounts[contractField?.value ?? ''];
-    const total = invoiceTotal();
-    if (!amounts || total <= 0) return false;
-    const gap = amounts.remaining - total;
-    // Remaining must cover the invoice (gap ≥ 0) and leave less than 5% of the
-    // total contract unbilled — i.e. this invoice all but closes the contract.
-    return gap >= 0 && gap < 0.05 * amounts.total;
-  }
-
-  // Returns true if we still need the vendor's decision before proceeding.
-  function shouldPromptFinal(): boolean {
-    return !!finalCheckbox && !finalDecided && !finalCheckbox.checked && seemsFinalInvoice();
-  }
-
-  // Opens the confirm modal, then runs onResolved once the vendor answers.
-  function promptFinalInvoice(onResolved: () => void): void {
-    if (!finalDialog) { onResolved(); return; }
-    const contractName = contractField?.value || 'this contract';
-    finalDialog.message =
-      `The remaining balance on ${contractName} is within 5% of this invoice's total, ` +
-      `which usually means it's the last one. Marking it final closes out the contract — ` +
-      `should we flag this as the final invoice?`;
-    const handler = (e: CustomEvent<{ confirmed: boolean; dismissed?: boolean }>): void => {
-      finalDialog.removeEventListener('resolved', handler);
-      // Backdrop/Esc dismiss isn't an answer — it cancels the process. Stay on the
-      // current step and re-prompt next time (don't mark finalDecided).
-      if (e.detail?.dismissed) return;
-      finalDecided = true;
-      if (e.detail?.confirmed) {
-        finalCheckbox.checked = true;
-        syncFinalCallout();
-      }
-      onResolved();
-    };
-    finalDialog.addEventListener('resolved', handler);
-    finalDialog.show();
-  }
-
-  // Seed with one empty row
-  addLineItem();
-
-  // ---- Review panel ----
-
-  function fieldVal(selector: string): string {
-    const el = wizard.querySelector<any>(selector);
-    return el?.value ?? '';
-  }
-
-  function comboboxLabel(selector: string): string {
-    const el = wizard.querySelector<any>(selector);
-    if (!el) return '';
-    const val = el.value ?? '';
-    const match = (el.options as Array<{value: string; label: string}> | undefined)
-      ?.find((o) => o.value === val);
-    return match?.label ?? val;
-  }
-
-  // The summary markup is the CbfInvoiceReviewSummary component (esa-card legos);
-  // here we only fill its [data-review="…"] placeholders from form state. Two
-  // instances exist (page step + modal), so fill is scoped to one root container.
-  const fileRowSvg =
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>';
-  const eyeSvg =
-    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
-
-  // withViewer: only the page-step review sits beside the PDF panel, so only it
-  // renders the "view" buttons. The modal review has no panel to drive.
-  function fillReviewSummary(root: HTMLElement | null, withViewer = false): void {
-    if (!root) return;
-    const set = (key: string, value: string): void => {
-      const el = root.querySelector<HTMLElement>(`[data-review="${key}"]`);
-      if (el) el.textContent = value;
-    };
-
-    set('file-name', uploadedFile?.name ?? '(no file)');
-    set('file-size', uploadedFile ? formatBytes(uploadedFile.size) : '');
-
-    // Main-invoice "view" button — shown only beside the panel; tag it with the
-    // filename so setActiveViewRow can highlight it when it's the one on screen.
-    const invViewBtn = root.querySelector<HTMLElement>('[data-view-invoice]');
-    if (invViewBtn) {
-      invViewBtn.toggleAttribute('hidden', !withViewer || !uploadedFile);
-      invViewBtn.setAttribute('data-view-name', uploadedFile?.name ?? '');
-    }
-
-    set('invoice-number', fieldVal('[data-field="invoice-number"]') || 'No invoice number');
-    // Label-left review layout: show the full contract / project identifiers as values.
-    set('contract', comboboxLabel('[data-field="contract"]') || '—');
-    set('project', fieldVal('[data-field="project"]') || '—');
-
-    const invoiceDate = fieldVal('[data-field="invoice-date"]');
-    set('issued', invoiceDate ? formatDate(invoiceDate) : 'Not set');
-    // Performance period is split into separate start / end rows on the review card.
-    const ps = fieldVal('[data-field="perf-start"]');
-    const pe = fieldVal('[data-field="perf-end"]');
-    set('perf-start', ps ? formatDate(ps) : 'Not set');
-    set('perf-end', pe ? formatDate(pe) : 'Not set');
-
-    set('total', fmtCurrency(invoiceTotal()));
-
-    root.querySelector<HTMLElement>('[data-review="final-flag"]')
-      ?.toggleAttribute('hidden', !finalCheckbox?.checked);
-
-    // Supporting documents — rows are plain data (not legos); toggle the card.
-    const docsList = root.querySelector<HTMLElement>('[data-review="docs-list"]');
-    if (docsList) {
-      docsList.innerHTML = supportingDocs.map((f, i) => `
-        <div class="cbf-review-row">
-          ${fileRowSvg}
-          <span>${escHtml(f.name)}</span>
-          <span class="cbf-review-meta">${formatBytes(f.size)}</span>
-          ${withViewer && isPreviewable(f)
-            ? `<button type="button" class="cbf-doc-view" data-view-doc="${i}" data-view-name="${escHtml(f.name)}" aria-label="Preview ${escHtml(f.name)}">${eyeSvg}</button>`
-            : ''}
-        </div>`).join('');
-    }
-    root.querySelector<HTMLElement>('[data-review="docs-card"]')
-      ?.toggleAttribute('hidden', supportingDocs.length === 0);
-
-    // Notes — toggle the card when empty.
-    const notes = fieldVal('[data-field="notes"]');
-    set('notes', notes);
-    root.querySelector<HTMLElement>('[data-review="notes-card"]')
-      ?.toggleAttribute('hidden', !notes);
-  }
-
-  function populateReview(): void {
-    fillReviewSummary(wizard.querySelector<HTMLElement>('[data-review-content]'), true);
-  }
-
-  function populateModalReview(): void {
-    fillReviewSummary(wizard.querySelector<HTMLElement>('[data-modal-review-content]'));
-  }
-
-  // ---- Save as draft ----
-  // A draft keeps whatever's been entered so far — no validation, no submission.
-  // Prototype: there's no persistence layer, so we confirm with a toast and return
-  // the vendor to the dashboard, where drafts are listed with a "Draft" status.
-  function saveDraft(): void {
-    const snackbar = document.querySelector<any>('[data-snackbar]');
-    snackbar?.success?.('Draft saved.', { duration: 3000 });
-    setTimeout(() => {
-      window.location.href = import.meta.env.BASE_URL + 'vendor-dashboard';
-    }, 700);
-  }
-
-  // ---- Submit ----
-
-  function submitInvoice(): void {
-    const isModal = confirmMode() === 'modal';
-    // Target the submit button in whichever surface is active.
-    const btnWrap = isModal ? '[data-modal-submit]' : '[data-wizard-submit]';
-    const btn = wizard.querySelector<HTMLButtonElement>(`${btnWrap} button.esa-button`);
-    if (btn) {
-      btn.classList.add('esa-button--loading');
-      btn.disabled = true;
-      btn.setAttribute('aria-busy', 'true');
-      if (!btn.querySelector('.esa-button__spinner')) {
-        const spinner = document.createElement('span');
-        spinner.className = 'esa-button__spinner';
-        spinner.setAttribute('aria-hidden', 'true');
-        btn.prepend(spinner);
-      }
-      btn.querySelector('.esa-button__label')?.classList.add('esa-button__label--hidden');
-    }
-
-    setTimeout(() => {
-      const ref = `INV-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 90000) + 10000)}`;
-      // Both modes: the "Invoice submitted" page/success page is replaced by a success
-      // toast. Close the modal if open, reset to a blank form (in place, no reload),
-      // and let the vendor file another invoice.
-      restoreSubmitButton(btn);
-      if (isModal) wizard.querySelector<any>('[data-confirm-modal]')?.close();
-      resetWizard();
-      const snackbar = document.querySelector<any>('[data-snackbar]');
-      snackbar?.success?.(`Invoice ${ref} submitted.`, { duration: 4000 });
-    }, 1500);
-  }
-
-  function restoreSubmitButton(btn: HTMLButtonElement | null): void {
-    if (!btn) return;
-    btn.classList.remove('esa-button--loading');
-    btn.disabled = false;
-    btn.removeAttribute('aria-busy');
-    btn.querySelector('.esa-button__spinner')?.remove();
-    btn.querySelector('.esa-button__label')?.classList.remove('esa-button__label--hidden');
-  }
-
-  // Reset the wizard back to a blank step-0 form (used after a modal-mode submit so
-  // the vendor can file another invoice without a page reload).
-  function resetWizard(): void {
-    clearFile();
-    supportingDocs = [];
-    renderDocs();
-    wizard.querySelectorAll<any>('[data-field]').forEach((el) => {
-      if (typeof el.checked === 'boolean') el.checked = false;
-      el.value = '';
-      el.removeAttribute?.('error-text');
-    });
-    wizard.querySelectorAll<HTMLElement>('[data-step-error]').forEach((el) => el.setAttribute('hidden', ''));
-    finalDecided = false;
-    if (finalCheckbox) finalCheckbox.checked = false;
-    syncFinalCallout();
-    pdfEverLoaded = false;
-    syncFormLock();
-    setStepVisibility(current, false);
-    current = 0;
-    setStepVisibility(0, true);
-    updateStepper();
-    syncPdfPanel();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-}
-```
+| Token | Value | Tier |
+|---|---|---|
+| `--alert-box-text-color` | `#525252` | component |
+| `--border-width-default` | `1px` | semantic |
+| `--button-chrome-bg-hover` | `color-mix(in srgb, currentColor 14%, transparent)` | component |
+| `--button-radius-md` | `.5rem` | component |
+| `--color-background-brand` | `#1e5386` | semantic |
+| `--color-background-brand-hover` | `#1a4570` | semantic |
+| `--color-background-brand-muted` | `#2770b2` | semantic |
+| `--color-background-brand-muted-hover` | `#1e5386` | semantic |
+| `--color-background-brand-subtle` | `#f3f7fc` | semantic |
+| `--color-background-default-knockout` | `#13273e` | semantic |
+| `--color-background-elevation-raised` | `#fcfcfc` | semantic |
+| `--color-background-elevation-sunken` | `#f3f7fc` | semantic |
+| `--color-background-utility-danger` | `#ce2c31` | semantic |
+| `--color-background-utility-danger-hover` | `#641723` | semantic |
+| `--color-background-utility-danger-subtle` | `#fffcfc` | semantic |
+| `--color-background-utility-info-subtle` | `#f3f7fc` | semantic |
+| `--color-border-brand` | `#c6dcf1` | semantic |
+| `--color-border-default` | `#dcdcdc` | semantic |
+| `--color-border-default-strong` | `#bdbdbd` | semantic |
+| `--color-border-utility-danger` | `#fdbdbe` | semantic |
+| `--color-border-utility-info` | `#c6dcf1` | semantic |
+| `--color-content-brand` | `#1e5386` | semantic |
+| `--color-content-default` | `#3d3d3d` | semantic |
+| `--color-content-default-knockout` | `#fcfcfc` | semantic |
+| `--color-content-default-secondary` | `#525252` | semantic |
+| `--color-content-default-tertiary` | `#656565` | semantic |
+| `--color-content-on-brand-muted` | `#203c25` | semantic |
+| `--color-content-utility-danger` | `#ce2c31` | semantic |
+| `--color-content-utility-info` | `#0d74ce` | semantic |
+| `--focus-ring-color` | `#3e9b4f` | component |
+| `--focus-ring-offset` | `2px` | component |
+| `--focus-ring-width` | `2px` | component |
+| `--font-size-200` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | primitive |
+| `--radius-100` | `.25rem` | primitive |
+| `--radius-md` | `.5rem` | semantic |
+| `--spacing-050` | `.125rem` | primitive |
+| `--spacing-150` | `.375rem` | primitive |
+| `--spacing-200` | `.5rem` | primitive |
+| `--spacing-250` | `.625rem` | primitive |
+| `--spacing-300` | `.75rem` | primitive |
+| `--spacing-400` | `1rem` | primitive |
+| `--spacing-500` | `1.5rem` | primitive |
+| `--spacing-700` | `3rem` | primitive |
+| `--transition-fast` | `.15s ease` | semantic |
+| `--typography-body-sm-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-body-sm-font-size` | `clamp(.6875rem, .61rem + .38vw, .875rem)` | semantic |
+| `--typography-body-sm-font-weight` | `400` | semantic |
+| `--typography-body-sm-letter-spacing` | `.01em` | semantic |
+| `--typography-body-sm-line-height` | `1.6` | semantic |
+| `--typography-font-family-display` | `"IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif` | semantic |
+| `--typography-font-family-sans` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-font-weight-medium` | `500` | semantic |
+| `--typography-font-weight-regular` | `400` | semantic |
+| `--typography-font-weight-semibold` | `600` | semantic |
+| `--typography-microcopy-md-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-microcopy-md-font-size` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | semantic |
+| `--typography-microcopy-md-font-weight` | `500` | semantic |
+| `--typography-microcopy-md-letter-spacing` | `.01em` | semantic |
+| `--typography-microcopy-md-line-height` | `1` | semantic |

@@ -3,7 +3,7 @@
 // sections (by selector, at any depth), plus the design guidance and behavior
 // refs a dev/Claude needs to re-implement each one faithfully.
 //
-// Consumed only by the build-time generator (scripts/gen-handoff.mjs), never by
+// Consumed only by the hub handoff CLI (`npx handoff`) at build time, never by
 // the browser — so it's .mjs (native node import, and `drive` states in v2 can be
 // real async functions instead of serialized strings).
 //

@@ -1,6 +1,6 @@
 // Handoff spec for the /vendor-dashboard prototype — curated sections for the
 // vendor's invoices & financial-outlook view. Consumed only by
-// scripts/gen-handoff.mjs at build time.
+// the hub handoff CLI (npx handoff) at build time.
 
 /** @type {{ sections: import('./search.mjs').HandoffSection[] }} */
 export default {
