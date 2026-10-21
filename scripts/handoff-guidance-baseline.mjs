@@ -9,7 +9,6 @@ export default [
   'lib-entry',
   'project-budgets',
   'rme-work-elements',
-  'crs-commitments',
   'legacy-sow',
   'map-sow',
   'home',
