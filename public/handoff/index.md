@@ -81,11 +81,12 @@ Links are relative to https://esassoc.github.io/cb-fish-design/handoff/
 
 ## Global search & command palette
 
-[README](search/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/search/) · 6 sections, 87 KB
+[README](search/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/search/) · 7 sections, 98 KB
 
 - [Admin bar](search/claude/admin-bar.md): The dark system tray. (25 KB)
 - [Omni — recents](search/claude/omni-recents.md): The palette on open with no query — the Recent list (last-viewed records) as the zero-state, so the fast path is useful before you type a thing. (19 KB)
 - [Omni — results](search/claude/omni-results.md): The palette mid-query — grouped results across types with scope pills, matched-text highlighting, and "view all" handing off to the /search page. (24 KB)
+- [Sidebar](search/claude/sidebar.md): The /search facet rail — "Filter by type" (All, Projects, Contracts, People, Publications, Funds). (10 KB)
 - [Results — empty](search/claude/results-empty.md): The default, no-query state — a first-class prompt, not a blank container. (3.1 KB)
 - [Results — people](search/claude/results-people.md): People-scoped results — each row resolves to a person with an Impersonate affordance (the dev/QA team are the impersonation targets in this prototype). (8.5 KB)
 - [Results — projects](search/claude/results-projects.md): Project-scoped results — the same row component carrying a different entity type (project number + fiscal year + status), proving the row generalizes across ty… (8.2 KB)

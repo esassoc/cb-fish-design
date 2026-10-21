@@ -873,6 +873,181 @@
       "collapsed": 18
     },
     {
+      "label": "Sidebar",
+      "tag": "div",
+      "selector": ".cbf-search-facets",
+      "html": "<div class=\"cbf-search-facets cbf-search-surface\">\n  <p class=\"cbf-search-facets__head\">Filter by type</p>\n  <div class=\"cbf-search-facets__list\" data-search-facets=\"\">\n    <button type=\"button\" class=\"cbf-facet is-active\">\n      <span class=\"cbf-icon\"\n        ><svg\n          width=\"16\"\n          height=\"16\"\n          viewBox=\"0 0 24 24\"\n          fill=\"none\"\n          stroke=\"currentColor\"\n          stroke-width=\"2\"\n          stroke-linecap=\"round\"\n          stroke-linejoin=\"round\"\n          aria-hidden=\"true\"\n        >\n          <circle cx=\"11\" cy=\"11\" r=\"8\"></circle>\n          <path d=\"m21 21-4.3-4.3\"></path></svg></span\n      ><span class=\"cbf-facet__label\">All</span></button\n    ><button type=\"button\" class=\"cbf-facet\">\n      <span class=\"cbf-icon\"\n        ><svg\n          width=\"16\"\n          height=\"16\"\n          viewBox=\"0 0 24 24\"\n          fill=\"none\"\n          stroke=\"currentColor\"\n          stroke-width=\"2\"\n          stroke-linecap=\"round\"\n          stroke-linejoin=\"round\"\n          aria-hidden=\"true\"\n        >\n          <path\n            d=\"M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z\"\n          ></path></svg></span\n      ><span class=\"cbf-facet__label\">Projects</span></button\n    ><!-- …and 3 more like this (<button class=\"cbf-facet is-active\">) -->\n  </div>\n</div>",
+      "css": ".cbf-icon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: inherit;\n}\n.cbf-search-surface .cbf-icon {\n  display: inline-flex;\n  align-items: center;\n}\n.cbf-search-surface .cbf-scope-pill {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  padding: 5px var(--spacing-300);\n  border-radius: 999px;\n  border: 1px solid var(--color-border-default);\n  background: var(--color-background-elevation-raised);\n  color: var(--color-background-brand);\n  font-family: var(--typography-font-family-sans);\n  font-size: 13px;\n  font-weight: var(--typography-font-weight-medium);\n  transition:\n    background 0.1s,\n    border-color 0.1s,\n    color 0.1s;\n}\n.cbf-search-surface .cbf-scope-pill:hover {\n  background: var(--color-background-brand-subtle);\n}\n.cbf-search-surface .cbf-scope-pill.is-active {\n  background: var(--color-background-brand);\n  border-color: var(--color-background-brand);\n  color: var(--color-content-default-knockout, #fff);\n}\n.cbf-search-surface .cbf-scope-pill__count {\n  opacity: 0.65;\n  font-weight: var(--typography-font-weight-regular);\n}\n.cbf-search-surface .cbf-result-empty {\n  padding: var(--spacing-600) var(--spacing-500);\n  text-align: center;\n  color: var(--color-content-default-tertiary);\n  font-size: 15px;\n}\n.cbf-search-surface .cbf-result-group {\n  padding-block: 0;\n}\n.cbf-search-surface .cbf-result-group__head {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: var(--spacing-200) var(--spacing-500);\n  background: var(--color-background-elevation-sunken);\n  border-top: 1px solid var(--color-border-default);\n  border-bottom: 1px solid var(--color-border-default);\n}\n.cbf-search-surface .cbf-result-group:first-child .cbf-result-group__head {\n  border-top: 0;\n}\n.cbf-search-surface .cbf-result-group__title {\n  display: inline-flex;\n  align-items: center;\n  gap: 6px;\n  font-size: 13px;\n  font-weight: var(--typography-font-weight-semibold);\n  letter-spacing: 0.03em;\n  text-transform: uppercase;\n  color: var(--color-content-default);\n}\n.cbf-search-surface .cbf-result-group__title .cbf-icon {\n  color: var(--color-content-default-tertiary);\n}\n.cbf-search-surface .cbf-result-group__count {\n  font-size: 13px;\n  color: var(--color-content-default-tertiary);\n}\n.cbf-search-surface .cbf-result {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-300);\n  padding: 8px var(--spacing-500);\n  cursor: pointer;\n}\n.cbf-search-surface .cbf-result__lead {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 30px;\n  height: 30px;\n  border-radius: 6px;\n  flex: none;\n  background: var(--color-background-brand-subtle);\n  color: var(--color-background-brand);\n}\n.cbf-search-surface .cbf-result__body {\n  flex: 1;\n  min-width: 0;\n}\n.cbf-search-surface .cbf-result__title {\n  font-size: 15px;\n  font-weight: var(--typography-font-weight-medium);\n  color: var(--color-content-default);\n}\n.cbf-search-surface .cbf-result__title mark {\n  background: var(--cbf-search-highlight);\n  color: inherit;\n  border-radius: 2px;\n  padding: 0 1px;\n}\n.cbf-search-surface .cbf-result__sub {\n  font-size: 13px;\n  color: var(--color-content-default-tertiary);\n  margin-top: 1px;\n}\n.cbf-search-surface .cbf-result__chevron {\n  color: var(--color-background-brand-muted);\n  opacity: 0;\n  flex: none;\n}\n.cbf-search-surface .cbf-result:hover,\n.cbf-search-surface .cbf-result.is-active {\n  background: var(--color-background-brand-subtle);\n}\n.cbf-search-surface .cbf-result.is-active .cbf-result__chevron {\n  opacity: 1;\n}\n.cbf-person-card .cbf-icon {\n  display: inline-flex;\n  align-items: center;\n}\n.cbf-person-card__label .cbf-icon {\n  color: var(--color-background-brand-muted);\n}\n.cbf-search-surface .cbf-result--person.is-cardopen {\n  background: var(--color-background-brand-subtle);\n}\n.cbf-nav-link .cbf-icon {\n  display: inline-flex;\n  align-items: center;\n}\n.cbf-search-field .cbf-icon {\n  color: var(--color-content-default-tertiary);\n  display: inline-flex;\n}\n.cbf-search-surface .cbf-facet {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-250);\n  width: 100%;\n  padding: var(--spacing-200) var(--spacing-300);\n  border-radius: var(--radius-100);\n  color: var(--color-background-brand);\n  font-family: var(--typography-font-family-sans);\n  font-size: 16px;\n  font-weight: var(--typography-font-weight-regular);\n  text-align: left;\n}\n.cbf-search-surface .cbf-facet:hover {\n  background: var(--color-background-brand-subtle);\n}\n.cbf-search-surface .cbf-facet.is-active {\n  background: var(--color-background-brand-subtle);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-search-surface .cbf-facet .cbf-icon {\n  color: var(--color-background-brand-muted);\n}\n.cbf-search-surface .cbf-facet__label {\n  flex: 1;\n}\n.cbf-search-surface .cbf-facet__count {\n  color: var(--color-content-default-tertiary);\n  font-size: 14px;\n}\n.cbf-search-facets__head {\n  margin: 0 0 var(--spacing-200);\n  font-size: 16px;\n  font-weight: var(--typography-font-weight-semibold);\n  color: var(--cbf-gold-900);\n}\n.cbf-search-facets__list {\n  display: flex;\n  flex-direction: column;\n  gap: 2px;\n}\n.cbf-search-surface .cbf-search-results .cbf-result-group {\n  border: 1px solid var(--color-border-default);\n  border-radius: var(--radius-100);\n  overflow: hidden;\n  background: var(--color-background-elevation-raised);\n}\n.cbf-search-surface .cbf-search-results .cbf-result-group__head {\n  background: var(--cbf-surface-section-head);\n  border-top: 0;\n  border-bottom: 1px solid var(--color-border-default);\n  padding: var(--spacing-300) var(--spacing-400);\n}\n.cbf-search-surface .cbf-search-results .cbf-result-group__title {\n  font-family: var(--typography-font-family-display);\n  font-size: 20px;\n  font-weight: var(--typography-font-weight-medium);\n  letter-spacing: 0;\n  text-transform: none;\n  color: var(--color-content-default);\n}\n.cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon {\n  color: var(--color-background-brand-muted);\n}\n.cbf-search-surface .cbf-search-results .cbf-result-group__title .cbf-icon svg {\n  width: 18px;\n  height: 18px;\n}\n.cbf-search-surface .cbf-search-results .cbf-result-group__count {\n  font-size: 16px;\n}\n.cbf-search-surface .cbf-result--allbtn {\n  width: 100%;\n  text-align: left;\n  padding: var(--spacing-400) var(--spacing-500);\n}\n.cbf-search-surface .cbf-result--allbtn .cbf-result__title {\n  color: var(--color-background-brand-muted);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-search-surface .cbf-result--allbtn .cbf-result__chevron {\n  color: var(--color-background-brand-muted);\n  opacity: 1;\n}\n.cbf-search-surface .cbf-result--allbtn:hover,\n.cbf-search-surface .cbf-result--allbtn.is-active {\n  background: var(--color-background-brand-subtle);\n}",
+      "guide": {
+        "intent": "The /search facet rail — \"Filter by type\" (All, Projects, Contracts, People, Publications, Funds). Scopes the result set to one entity type.",
+        "decisions": [
+          "Facet counts and active state are driven from the same data/render layer as the results, so they never disagree.",
+          "Selecting a facet updates the scope in place (no full navigation)."
+        ],
+        "gotchas": [
+          "Keep the facet list and the omni scope pills in sync — they represent the same scopes."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--cbf-gold-900",
+          "value": "#534c3b",
+          "tier": "brand"
+        },
+        {
+          "name": "--cbf-search-highlight",
+          "value": "#ffe9b0",
+          "tier": "brand"
+        },
+        {
+          "name": "--cbf-surface-section-head",
+          "value": "#f5f5f5",
+          "tier": "brand"
+        },
+        {
+          "name": "--color-background-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-muted",
+          "value": "#2770b2",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-subtle",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-raised",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-sunken",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default",
+          "value": "#dcdcdc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-knockout",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-tertiary",
+          "value": "#656565",
+          "tier": "semantic"
+        },
+        {
+          "name": "--radius-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-250",
+          "value": ".625rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-500",
+          "value": "1.5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-600",
+          "value": "2rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--typography-font-family-display",
+          "value": "\"IBM Plex Sans Condensed\", \"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-family-sans",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-medium",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-regular",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-semibold",
+          "value": "600",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-facet",
+          "origin": "spoke",
+          "source": "src/components/search/cbf-search-facets.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-icon",
+          "origin": "spoke",
+          "source": "src/components/search/cbf-icon.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-search-facets",
+          "origin": "spoke",
+          "source": "src/components/search/cbf-search-facets.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-search-surface",
+          "origin": "spoke",
+          "source": "src/components/search/cbf-omni-search.astro",
+          "target": null
+        }
+      ],
+      "claudePath": "claude/sidebar.md",
+      "repoPath": "public/handoff/search/claude/sidebar.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/sidebar.desktop.png",
+        "phone": "claude/sidebar.phone.png"
+      },
+      "bytes": 10745,
+      "files": 1,
+      "collapsed": 3
+    },
+    {
       "label": "Results — empty",
       "tag": "div",
       "selector": "[data-search-results]",

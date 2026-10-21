@@ -74,7 +74,7 @@ export default {
     },
     {
       label: 'Sidebar',
-      selector: '.cbf-app-sidebar',
+      selector: '.cbf-search-facets',
       intent:
         'The /search facet rail — "Filter by type" (All, Projects, Contracts, People, Publications, Funds). Scopes the result set to one entity type.',
       decisions: [
