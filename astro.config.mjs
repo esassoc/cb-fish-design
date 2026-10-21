@@ -16,6 +16,8 @@ import { defineConfig } from 'astro/config';
 const base = process.env.NODE_ENV === 'production' ? '/cb-fish-design/' : '/';
 
 export default defineConfig({
+  // Off: the design layer and the Handoff pill run without Astro's dev toolbar.
+  devToolbar: { enabled: false },
   site: 'https://esassoc.github.io',
   base,
   vite: {
