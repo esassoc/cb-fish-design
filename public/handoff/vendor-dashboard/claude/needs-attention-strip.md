@@ -1,15 +1,31 @@
 # Needs-attention strip
 
+Vendor dashboard · source prototype: https://esassoc.github.io/cb-fish-design/vendor-dashboard/
+
+![Needs-attention strip, desktop](https://esassoc.github.io/cb-fish-design/handoff/vendor-dashboard/claude/needs-attention-strip.desktop.png)
+
+Phone width: https://esassoc.github.io/cb-fish-design/handoff/vendor-dashboard/claude/needs-attention-strip.phone.png
+
 Hoists invoices blocked ON THE VENDOR (Needs revision) out of the table into one unmissable CTA — the rejection/fix loop discovery flagged as the most painful hand-off. Renders nothing when the count is zero.
 
 ## Key decisions
+
 - esa-alert-box (variant="warning") is the lego — no bespoke banner.
 - The Review CTA drives the table's status chip-group to "Needs revision" and scrolls it into view, decoupled via the chip's public selector + value property.
 
 ## Gotchas
+
 - The whole section is conditional on count > 0 — verify it disappears cleanly when no invoice needs revision.
 
+## Components
+
+- `cbf-vendor-attention` (spoke) · `src/components/vendor-dashboard/cbf-vendor-attention.astro`
+- `esa-alert-box` (hub) · `packages/ecology/src/components/esa-alert-box.astro`
+- `esa-button` (hub) · `packages/ecology/src/components/esa-button.astro`
+- `esa-icon` (hub) · `packages/ecology/src/components/esa-icon.astro`
+
 ## Markup
+
 ```html
 <section class="cbf-vendor-attention" aria-label="Needs your attention">
   <div class="esa-alert-box esa-alert-box--warning typography-body-sm">
@@ -26,22 +42,18 @@ Hoists invoices blocked ON THE VENDOR (Needs revision) out of the table into one
         stroke-linejoin="round"
         aria-hidden="true"
       >
-        <path
-          d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
-        ></path>
+        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path>
         <path d="M12 9v4"></path>
         <path d="M12 17h.01"></path>
       </svg>
     </div>
     <div class="esa-alert-box__body">
-      <strong class="esa-alert-box__title typography-label-sm-strong"
-        >Needs your attention</strong
-      >
+      <strong class="esa-alert-box__title typography-label-sm-strong">Needs your attention</strong>
       <div class="esa-alert-box__message">
         <div class="cbf-vendor-attention__body repel">
           <span class="typography-body-md"
-            >1 invoice needs revision before BPA can continue review. Resubmit to keep
-            payment on track.</span
+            >1 invoice needs revision before BPA can continue review. Resubmit to keep payment on
+            track.</span
           ><span
             class="esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--sm"
             ><button
@@ -72,29 +84,92 @@ Hoists invoices blocked ON THE VENDOR (Needs revision) out of the table into one
       </div>
     </div>
   </div>
-  <script type="module">
-    document.addEventListener("click", (o) => {
-      const n = o.target.closest?.("[data-esa-alert-dismiss]");
-      if (!n) return;
-      const t = n.closest(".esa-alert-box");
-      if (!t) return;
-      const s = Array.from(document.querySelectorAll(FOCUSABLE_SELECTOR)).filter(
-          (e) => !t.contains(e) && e.offsetParent !== null,
-        ),
-        r =
-          s.find(
-            (e) => t.compareDocumentPosition(e) & Node.DOCUMENT_POSITION_FOLLOWING,
-          ) ?? s[s.length - 1];
-      ((t.style.display = "none"),
-        t.dispatchEvent(new CustomEvent("dismissed", { bubbles: !0 })),
-        r?.focus());
-    });
-  </script>
+  <!-- script type="module" removed (455 bytes) -->
 </section>
 ```
 
 ## Styles
+
 ```css
+.typography-body-md {
+  font-family: var(--typography-body-md-font-family);
+  font-size: var(--typography-body-md-font-size);
+  font-weight: var(--typography-body-md-font-weight);
+  line-height: var(--typography-body-md-line-height);
+  letter-spacing: var(--typography-body-md-letter-spacing);
+}
+.typography-body-sm {
+  font-family: var(--typography-body-sm-font-family);
+  font-size: var(--typography-body-sm-font-size);
+  font-weight: var(--typography-body-sm-font-weight);
+  line-height: var(--typography-body-sm-line-height);
+  letter-spacing: var(--typography-body-sm-letter-spacing);
+}
+.typography-label-sm-strong {
+  font-family: var(--typography-label-sm-strong-font-family);
+  font-size: var(--typography-label-sm-strong-font-size);
+  font-weight: var(--typography-label-sm-strong-font-weight);
+  line-height: var(--typography-label-sm-strong-line-height);
+  letter-spacing: var(--typography-label-sm-strong-letter-spacing);
+}
+.typography-microcopy-xs {
+  font-family: var(--typography-microcopy-xs-font-family);
+  font-size: var(--typography-microcopy-xs-font-size);
+  font-weight: var(--typography-microcopy-xs-font-weight);
+  line-height: var(--typography-microcopy-xs-line-height);
+  letter-spacing: var(--typography-microcopy-xs-letter-spacing);
+}
+.typography-body-md {
+  font-family: var(--typography-body-md-font-family);
+  font-size: var(--typography-body-md-font-size);
+  font-weight: var(--typography-body-md-font-weight);
+  line-height: var(--typography-body-md-line-height);
+  letter-spacing: var(--typography-body-md-letter-spacing);
+}
+.typography-body-sm {
+  font-family: var(--typography-body-sm-font-family);
+  font-size: var(--typography-body-sm-font-size);
+  font-weight: var(--typography-body-sm-font-weight);
+  line-height: var(--typography-body-sm-line-height);
+  letter-spacing: var(--typography-body-sm-letter-spacing);
+}
+.typography-label-sm-strong {
+  font-family: var(--typography-label-sm-strong-font-family);
+  font-size: var(--typography-label-sm-strong-font-size);
+  font-weight: var(--typography-label-sm-strong-font-weight);
+  line-height: var(--typography-label-sm-strong-line-height);
+  letter-spacing: var(--typography-label-sm-strong-letter-spacing);
+}
+.typography-microcopy-xs {
+  font-family: var(--typography-microcopy-xs-font-family);
+  font-size: var(--typography-microcopy-xs-font-size);
+  font-weight: var(--typography-microcopy-xs-font-weight);
+  line-height: var(--typography-microcopy-xs-line-height);
+  letter-spacing: var(--typography-microcopy-xs-letter-spacing);
+}
+.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {
+  transition: transform 0.15s ease;
+}
+.esa-nav-dropdown[open] .esa-button__native > .esa-icon:last-child {
+  transform: rotate(180deg);
+}
+.esa-icon {
+  --_icon-size: var(--icon-size-md, 20px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+  color: inherit;
+}
+.esa-icon--sm {
+  --_icon-size: var(--icon-size-sm, 16px);
+}
+.esa-icon svg {
+  display: block;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+}
 .esa-button {
   --_btn-pad-y: var(--spacing-300, 0.75rem);
   --_btn-padding-x: var(--spacing-300, 0.75rem);
@@ -111,6 +186,78 @@ Hoists invoices blocked ON THE VENDOR (Needs revision) out of the table into one
   --_btn-pad-y: var(--spacing-250, 0.625rem);
   --_btn-padding-x: var(--spacing-250, 0.625rem);
   --_btn-radius: var(--button-radius-sm, 4px);
+}
+.esa-button--variant-primary {
+  --_accent-text: var(--color-content-brand);
+}
+.esa-button--appearance-fill .esa-button__native {
+  background: var(--_accent);
+  color: var(--_on);
+  border-color: var(--_accent-border, transparent);
+}
+.esa-button--appearance-fill .esa-button__native:hover:not(:disabled) {
+  background: var(--_accent-hover);
+}
+.esa-button--appearance-fill.esa-button--active .esa-button__native {
+  background: var(--_accent-hover);
+}
+.esa-button--appearance-outline .esa-button__native,
+.esa-button--appearance-dashed .esa-button__native {
+  background: transparent;
+  color: var(--_accent-text);
+  border-color: var(--_accent);
+}
+.esa-button--appearance-dashed .esa-button__native {
+  border-style: dashed;
+}
+.esa-button--appearance-outline .esa-button__native:hover:not(:disabled),
+.esa-button--appearance-dashed .esa-button__native:hover:not(:disabled) {
+  background: var(--_btn-tint-hover);
+}
+.esa-button--appearance-outline.esa-button--active .esa-button__native,
+.esa-button--appearance-dashed.esa-button--active .esa-button__native {
+  background: var(--_btn-tint-active);
+}
+.esa-button--appearance-soft .esa-button__native {
+  background: color-mix(
+    in srgb,
+    var(--color-background-elevation-sunken, #f0f0f0) 45%,
+    var(--color-background-elevation-raised, #fcfcfc)
+  );
+  color: var(--_accent-text);
+  border-color: var(--color-border-default-strong, #bbbbbb);
+}
+.esa-button--appearance-soft .esa-button__native:hover:not(:disabled),
+.esa-button--appearance-soft.esa-button--active .esa-button__native {
+  background: var(--_accent);
+  color: var(--_on);
+  border-color: var(--_accent);
+}
+.esa-button--variant-ghost .esa-button__native {
+  background: transparent;
+  color: var(--color-content-default, #202020);
+  border-color: transparent;
+}
+.esa-button--variant-ghost.esa-button--appearance-outline .esa-button__native,
+.esa-button--variant-ghost.esa-button--appearance-dashed .esa-button__native {
+  border-color: var(--color-border-default, #cecece);
+}
+.esa-button--variant-ghost .esa-button__native:hover:not(:disabled),
+.esa-button--variant-ghost.esa-button--active .esa-button__native {
+  background: var(--color-background-elevation-sunken, #f0f0f0);
+}
+.esa-button--variant-chrome .esa-button__native {
+  background: transparent;
+  color: inherit;
+  border-color: transparent;
+}
+.esa-button--variant-chrome .esa-button__native:hover:not(:disabled),
+.esa-button--variant-chrome.esa-button--active .esa-button__native,
+.esa-button--variant-chrome.esa-button--current .esa-button__native {
+  background: var(--button-chrome-bg-hover, color-mix(in srgb, currentColor 14%, transparent));
+}
+.esa-button--variant-chrome .esa-button__native:focus-visible {
+  outline-color: currentColor;
 }
 .esa-button__native {
   display: inline-flex;
@@ -130,66 +277,33 @@ Hoists invoices blocked ON THE VENDOR (Needs revision) out of the table into one
   -webkit-appearance: none;
   appearance: none;
 }
-.esa-button--appearance-fill .esa-button__native {
-  background: var(--_accent);
-  color: var(--_on);
-  border-color: var(--_accent-border, transparent);
+.esa-button__native:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);
+  outline-offset: var(--focus-ring-offset, 2px);
 }
-.esa-button--variant-chrome .esa-button__native {
-  background: transparent;
-  color: inherit;
-  border-color: transparent;
-}
-.esa-icon {
-  --_icon-size: var(--icon-size-md, 20px);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--_icon-size);
-  height: var(--_icon-size);
-  color: inherit;
-}
-.esa-icon--sm {
-  --_icon-size: var(--icon-size-sm, 16px);
-}
-.esa-icon svg {
-  display: block;
-  width: var(--_icon-size);
-  height: var(--_icon-size);
-}
-.esa-button__label {
-  white-space: nowrap;
+.esa-button--icon-only .esa-button__native {
+  padding-inline: var(--_btn-pad-y);
+  aspect-ratio: 1;
 }
 summary.esa-button {
   list-style: none;
   cursor: pointer;
 }
-.esa-icon--md {
-  --_icon-size: var(--icon-size-md, 20px);
+summary.esa-button::-webkit-details-marker {
+  display: none;
 }
-.esa-button--lg {
-  --_btn-pad-y: var(--spacing-400, 1rem);
-  --_btn-padding-x: var(--spacing-400, 1rem);
-  --_btn-radius: var(--button-radius-lg, 8px);
+summary.esa-button:focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);
+  outline-offset: var(--focus-ring-offset, 2px);
+  border-radius: var(--_btn-radius);
 }
-.esa-button--variant-primary {
-  --_accent-text: var(--color-content-brand);
+.esa-button__label {
+  white-space: nowrap;
 }
-.esa-icon--lg {
-  --_icon-size: var(--icon-size-lg, 24px);
-}
-.esa-button--variant-secondary {
-  --_accent: var(--color-background-brand-muted);
-  --_accent-hover: var(--color-background-brand-muted-hover);
-  --_on: var(--color-content-on-brand-muted, var(--color-content-default));
-  --_accent-text: var(--color-content-brand);
-  --_accent-border: var(--color-border-default-strong, #bbbbbb);
-}
-.esa-button--appearance-outline .esa-button__native,
-.esa-button--appearance-dashed .esa-button__native {
-  background: transparent;
-  color: var(--_accent-text);
-  border-color: var(--_accent);
+.cbf-vendor-attention__body {
+  align-items: center;
+  gap: var(--spacing-400);
+  flex-wrap: wrap;
 }
 .esa-alert-box {
   --_alert-bg: var(--color-background-utility-info-subtle, #fbfdff);
@@ -197,10 +311,7 @@ summary.esa-button {
   --_alert-accent: var(--color-content-utility-info, #0d74ce);
   --_alert-icon-color: var(--_alert-accent);
   --_alert-title-color: var(--_alert-accent);
-  --_alert-text-color: var(
-    --alert-box-text-color,
-    var(--color-content-default-secondary, #646464)
-  );
+  --_alert-text-color: var(--alert-box-text-color, var(--color-content-default-secondary, #646464));
   display: flex;
   align-items: flex-start;
   gap: var(--spacing-300, 0.75rem);
@@ -231,20 +342,6 @@ summary.esa-button {
 .esa-alert-box__message {
   color: var(--_alert-text-color);
 }
-.typography-microcopy-xs-strong {
-  font-family: var(--typography-microcopy-xs-strong-font-family);
-  font-size: var(--typography-microcopy-xs-strong-font-size);
-  font-weight: var(--typography-microcopy-xs-strong-font-weight);
-  line-height: var(--typography-microcopy-xs-strong-line-height);
-  letter-spacing: var(--typography-microcopy-xs-strong-letter-spacing);
-}
-.typography-microcopy-xs {
-  font-family: var(--typography-microcopy-xs-font-family);
-  font-size: var(--typography-microcopy-xs-font-size);
-  font-weight: var(--typography-microcopy-xs-font-weight);
-  line-height: var(--typography-microcopy-xs-line-height);
-  letter-spacing: var(--typography-microcopy-xs-letter-spacing);
-}
 .repel {
   --gap: var(--spacing-400, 1rem);
   --align: center;
@@ -254,98 +351,62 @@ summary.esa-button {
   align-items: var(--align);
   justify-content: space-between;
 }
-.typography-microcopy-xs {
-  font-family: var(--typography-microcopy-xs-font-family);
-  font-size: var(--typography-microcopy-xs-font-size);
-  font-weight: var(--typography-microcopy-xs-font-weight);
-  line-height: var(--typography-microcopy-xs-line-height);
-  letter-spacing: var(--typography-microcopy-xs-letter-spacing);
-}
-.typography-body-sm {
-  font-family: var(--typography-body-sm-font-family);
-  font-size: var(--typography-body-sm-font-size);
-  font-weight: var(--typography-body-sm-font-weight);
-  line-height: var(--typography-body-sm-line-height);
-  letter-spacing: var(--typography-body-sm-letter-spacing);
-}
-.typography-body-md {
-  font-family: var(--typography-body-md-font-family);
-  font-size: var(--typography-body-md-font-size);
-  font-weight: var(--typography-body-md-font-weight);
-  line-height: var(--typography-body-md-line-height);
-  letter-spacing: var(--typography-body-md-letter-spacing);
-}
-.typography-label-sm-strong {
-  font-family: var(--typography-label-sm-strong-font-family);
-  font-size: var(--typography-label-sm-strong-font-size);
-  font-weight: var(--typography-label-sm-strong-font-weight);
-  line-height: var(--typography-label-sm-strong-line-height);
-  letter-spacing: var(--typography-label-sm-strong-letter-spacing);
-}
-.cbf-vendor-attention__body {
-  align-items: center;
-  gap: var(--spacing-400);
-  flex-wrap: wrap;
-}
-.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {
-  transition: transform 0.15s ease;
-}
 ```
 
 ## Tokens
-- `--alert-box-text-color`: #525252 _(component)_
-- `--border-width-default`: 1px _(semantic)_
-- `--button-radius-lg`: .5rem _(component)_
-- `--button-radius-md`: .5rem _(component)_
-- `--button-radius-sm`: .25rem _(component)_
-- `--color-background-brand`: #1e5386 _(semantic)_
-- `--color-background-brand-hover`: #1a4570 _(semantic)_
-- `--color-background-brand-muted`: #2770b2 _(semantic)_
-- `--color-background-brand-muted-hover`: #1e5386 _(semantic)_
-- `--color-background-utility-info-subtle`: #f3f7fc _(semantic)_
-- `--color-background-utility-warning-subtle`: #fefdfb _(semantic)_
-- `--color-border-default-strong`: #bdbdbd _(semantic)_
-- `--color-border-utility-info`: #c6dcf1 _(semantic)_
-- `--color-border-utility-warning`: #f3d673 _(semantic)_
-- `--color-content-brand`: #1e5386 _(semantic)_
-- `--color-content-default`: #3d3d3d _(semantic)_
-- `--color-content-default-knockout`: #fcfcfc _(semantic)_
-- `--color-content-default-secondary`: #525252 _(semantic)_
-- `--color-content-on-brand-muted`: #203c25 _(semantic)_
-- `--color-content-utility-info`: #0d74ce _(semantic)_
-- `--color-content-utility-warning`: #ab6400 _(semantic)_
-- `--icon-size-lg`: 24px _(primitive)_
-- `--icon-size-md`: 20px _(primitive)_
-- `--icon-size-sm`: 16px _(primitive)_
-- `--radius-md`: .5rem _(semantic)_
-- `--spacing-050`: .125rem _(primitive)_
-- `--spacing-200`: .5rem _(primitive)_
-- `--spacing-250`: .625rem _(primitive)_
-- `--spacing-300`: .75rem _(primitive)_
-- `--spacing-400`: 1rem _(primitive)_
-- `--transition-fast`: .15s ease _(semantic)_
-- `--typography-body-md-font-family`: "IBM Plex Sans", sans-serif _(semantic)_
-- `--typography-body-md-font-size`: clamp(.75rem, .66rem + .44vw, .9375rem) _(semantic)_
-- `--typography-body-md-font-weight`: 400 _(semantic)_
-- `--typography-body-md-letter-spacing`: .01em _(semantic)_
-- `--typography-body-md-line-height`: 1.6 _(semantic)_
-- `--typography-body-sm-font-family`: "IBM Plex Sans", sans-serif _(semantic)_
-- `--typography-body-sm-font-size`: clamp(.6875rem, .61rem + .38vw, .875rem) _(semantic)_
-- `--typography-body-sm-font-weight`: 400 _(semantic)_
-- `--typography-body-sm-letter-spacing`: .01em _(semantic)_
-- `--typography-body-sm-line-height`: 1.6 _(semantic)_
-- `--typography-label-sm-strong-font-family`: "IBM Plex Sans", sans-serif _(semantic)_
-- `--typography-label-sm-strong-font-size`: clamp(.6875rem, .61rem + .38vw, .875rem) _(semantic)_
-- `--typography-label-sm-strong-font-weight`: 600 _(semantic)_
-- `--typography-label-sm-strong-letter-spacing`: .01em _(semantic)_
-- `--typography-label-sm-strong-line-height`: 1.6 _(semantic)_
-- `--typography-microcopy-xs-font-family`: "IBM Plex Sans", sans-serif _(semantic)_
-- `--typography-microcopy-xs-font-size`: clamp(.625rem, .56rem + .32vw, .75rem) _(semantic)_
-- `--typography-microcopy-xs-font-weight`: 500 _(semantic)_
-- `--typography-microcopy-xs-letter-spacing`: .01em _(semantic)_
-- `--typography-microcopy-xs-line-height`: 1 _(semantic)_
-- `--typography-microcopy-xs-strong-font-family`: "IBM Plex Sans", sans-serif _(semantic)_
-- `--typography-microcopy-xs-strong-font-size`: clamp(.625rem, .56rem + .32vw, .75rem) _(semantic)_
-- `--typography-microcopy-xs-strong-font-weight`: 600 _(semantic)_
-- `--typography-microcopy-xs-strong-letter-spacing`: .01em _(semantic)_
-- `--typography-microcopy-xs-strong-line-height`: 1 _(semantic)_
+
+| Token | Value | Tier |
+|---|---|---|
+| `--alert-box-text-color` | `#525252` | component |
+| `--border-width-default` | `1px` | semantic |
+| `--button-chrome-bg-hover` | `color-mix(in srgb, currentColor 14%, transparent)` | component |
+| `--button-radius-md` | `.5rem` | component |
+| `--button-radius-sm` | `.25rem` | component |
+| `--color-background-brand` | `#1e5386` | semantic |
+| `--color-background-brand-hover` | `#1a4570` | semantic |
+| `--color-background-elevation-raised` | `#fcfcfc` | semantic |
+| `--color-background-elevation-sunken` | `#f3f7fc` | semantic |
+| `--color-background-utility-info-subtle` | `#f3f7fc` | semantic |
+| `--color-background-utility-warning-subtle` | `#fefdfb` | semantic |
+| `--color-border-default` | `#dcdcdc` | semantic |
+| `--color-border-default-strong` | `#bdbdbd` | semantic |
+| `--color-border-utility-info` | `#c6dcf1` | semantic |
+| `--color-border-utility-warning` | `#f3d673` | semantic |
+| `--color-content-brand` | `#1e5386` | semantic |
+| `--color-content-default` | `#3d3d3d` | semantic |
+| `--color-content-default-knockout` | `#fcfcfc` | semantic |
+| `--color-content-default-secondary` | `#525252` | semantic |
+| `--color-content-utility-info` | `#0d74ce` | semantic |
+| `--color-content-utility-warning` | `#ab6400` | semantic |
+| `--focus-ring-color` | `#3e9b4f` | component |
+| `--focus-ring-offset` | `2px` | component |
+| `--focus-ring-width` | `2px` | component |
+| `--icon-size-md` | `20px` | primitive |
+| `--icon-size-sm` | `16px` | primitive |
+| `--radius-md` | `.5rem` | semantic |
+| `--spacing-050` | `.125rem` | primitive |
+| `--spacing-200` | `.5rem` | primitive |
+| `--spacing-250` | `.625rem` | primitive |
+| `--spacing-300` | `.75rem` | primitive |
+| `--spacing-400` | `1rem` | primitive |
+| `--transition-fast` | `.15s ease` | semantic |
+| `--typography-body-md-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-body-md-font-size` | `clamp(.75rem, .66rem + .44vw, .9375rem)` | semantic |
+| `--typography-body-md-font-weight` | `400` | semantic |
+| `--typography-body-md-letter-spacing` | `.01em` | semantic |
+| `--typography-body-md-line-height` | `1.6` | semantic |
+| `--typography-body-sm-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-body-sm-font-size` | `clamp(.6875rem, .61rem + .38vw, .875rem)` | semantic |
+| `--typography-body-sm-font-weight` | `400` | semantic |
+| `--typography-body-sm-letter-spacing` | `.01em` | semantic |
+| `--typography-body-sm-line-height` | `1.6` | semantic |
+| `--typography-label-sm-strong-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-label-sm-strong-font-size` | `clamp(.6875rem, .61rem + .38vw, .875rem)` | semantic |
+| `--typography-label-sm-strong-font-weight` | `600` | semantic |
+| `--typography-label-sm-strong-letter-spacing` | `.01em` | semantic |
+| `--typography-label-sm-strong-line-height` | `1.6` | semantic |
+| `--typography-microcopy-xs-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
+| `--typography-microcopy-xs-font-size` | `clamp(.625rem, .56rem + .32vw, .75rem)` | semantic |
+| `--typography-microcopy-xs-font-weight` | `500` | semantic |
+| `--typography-microcopy-xs-letter-spacing` | `.01em` | semantic |
+| `--typography-microcopy-xs-line-height` | `1` | semantic |

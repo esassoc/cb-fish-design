@@ -1,5 +1,5 @@
 // Handoff spec for the /vendor-invoice prototype — curated sections for the
-// invoice submission wizard. Consumed only by scripts/gen-handoff.mjs.
+// invoice submission wizard. Consumed only by the hub handoff CLI (npx handoff).
 //
 // Flow today: a PDF-gated, two-step wizard (Details → Review) plus a modal
 // confirmation variant. There is NO post-submit success page — submitting shows a
