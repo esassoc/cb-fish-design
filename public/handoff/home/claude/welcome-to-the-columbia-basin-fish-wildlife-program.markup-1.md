@@ -157,7 +157,7 @@
               preserveAspectRatio="none"
             >
               <defs>
-                <linearGradient id="cbf-cc-7609py" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="cbf-cc-m8d3yr" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" class="cbf-cumulative-chart__stop-top"></stop>
                   <stop offset="100%" class="cbf-cumulative-chart__stop-bottom"></stop>
                 </linearGradient>
@@ -179,7 +179,7 @@
               <!-- …and 2 more like this (<line class="[object SVGAnimatedString]">) -->
               <path
                 d="M8.0,227.6L38.8,221.1L69.6,214.6L100.4,207.6L131.2,198.2L162.0,189.1L192.8,182.6L223.6,173.4L254.4,160.6L285.2,151.8L316.0,145.9L346.8,133.2L377.6,118.3L408.4,112.0L439.2,105.1L470.0,87.8L500.8,73.7L531.6,70.4L562.4,60.0L593.2,38.7L624.0,32.0L624.0,232L8.0,232Z"
-                fill="url(#cbf-cc-7609py)"
+                fill="url(#cbf-cc-m8d3yr)"
               ></path>
               <path
                 d="M8.0,227.6L38.8,221.1L69.6,214.6L100.4,207.6L131.2,198.2L162.0,189.1L192.8,182.6L223.6,173.4L254.4,160.6L285.2,151.8L316.0,145.9L346.8,133.2L377.6,118.3L408.4,112.0L439.2,105.1L470.0,87.8L500.8,73.7L531.6,70.4L562.4,60.0L593.2,38.7L624.0,32.0"
@@ -275,7 +275,7 @@
               preserveAspectRatio="none"
             >
               <defs>
-                <linearGradient id="cbf-cc-rzl8xk" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="cbf-cc-eaxr9b" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" class="cbf-cumulative-chart__stop-top"></stop>
                   <stop offset="100%" class="cbf-cumulative-chart__stop-bottom"></stop>
                 </linearGradient>
@@ -297,7 +297,7 @@
               <!-- …and 2 more like this (<line class="[object SVGAnimatedString]">) -->
               <path
                 d="M8.0,230.5L38.8,227.2L69.6,223.2L100.4,218.4L131.2,211.5L162.0,204.3L192.8,198.4L223.6,190.2L254.4,178.9L285.2,170.1L316.0,163.3L346.8,150.7L377.6,135.9L408.4,127.9L439.2,119.2L470.0,100.9L500.8,85.0L531.6,78.9L562.4,65.9L593.2,42.0L624.0,32.0L624.0,232L8.0,232Z"
-                fill="url(#cbf-cc-rzl8xk)"
+                fill="url(#cbf-cc-eaxr9b)"
               ></path>
               <path
                 d="M8.0,230.5L38.8,227.2L69.6,223.2L100.4,218.4L131.2,211.5L162.0,204.3L192.8,198.4L223.6,190.2L254.4,178.9L285.2,170.1L316.0,163.3L346.8,150.7L377.6,135.9L408.4,127.9L439.2,119.2L470.0,100.9L500.8,85.0L531.6,78.9L562.4,65.9L593.2,42.0L624.0,32.0"

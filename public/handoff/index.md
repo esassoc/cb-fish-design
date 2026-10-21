@@ -7,7 +7,7 @@ Links are relative to https://esassoc.github.io/cb-fish-design/handoff/
 [README](lib-entry/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/lib-entry/) · 2 sections, no authored guidance
 
 - [Prototype controls](lib-entry/claude/prototype-controls.md) (19 KB)
-- [Contract CR-411206: 2019-402-00 Rock Creek Spring Chinook Su](lib-entry/claude/contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.md) (217 KB, 6 parts)
+- [Contract CR-411206: 2019-402-00 Rock Creek Spring Chinook Su](lib-entry/claude/contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.md) (15 KB, 6 parts)
 
 ## Project budgets
 
@@ -33,21 +33,21 @@ Links are relative to https://esassoc.github.io/cb-fish-design/handoff/
 
 [README](legacy-sow/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/legacy/sow/) · 2 sections, no authored guidance
 
-- [h2](legacy-sow/claude/h2.md) (621 B)
-- [div](legacy-sow/claude/div.md) (5.1 KB)
+- [Contract 84051 REL 50: 2023-001-00 EXP CTCR UPPER COLUMBIA H](legacy-sow/claude/contract-84051-rel-50-2023-001-00-exp-ctcr-upper-columbia-h.md) (851 B)
+- [Sort Order WE ID Work Element History Work Element Name Titl](legacy-sow/claude/sort-order-we-id-work-element-history-work-element-name-titl.md) (5.3 KB)
 
 ## Habitat Design Tool
 
 [README](map-sow/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/map-sow/) · 1 section, no authored guidance
 
-- [Habitat Design Tool](map-sow/claude/habitat-design-tool.md) (67 KB, 2 parts)
+- [Habitat Design Tool](map-sow/claude/habitat-design-tool.md) (5.9 KB, 2 parts)
 
 ## CBFish homepage
 
 [README](home/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/home/) · 3 sections, no authored guidance
 
 - [Welcome hero](home/claude/welcome-hero.md) (3.5 KB)
-- [Welcome to the Columbia Basin Fish & Wildlife Program](home/claude/welcome-to-the-columbia-basin-fish-wildlife-program.md) (99 KB, 3 parts)
+- [Welcome to the Columbia Basin Fish & Wildlife Program](home/claude/welcome-to-the-columbia-basin-fish-wildlife-program.md) (10 KB, 3 parts)
 - [Footer](home/claude/footer.md) (6.4 KB)
 
 ## Vendor dashboard
@@ -57,7 +57,7 @@ Links are relative to https://esassoc.github.io/cb-fish-design/handoff/
 - [Dashboard header](vendor-dashboard/claude/dashboard-header.md): Welcome banner on the invoices view. (15 KB)
 - [Financial outlook band](vendor-dashboard/claude/financial-outlook-band.md): The headline money rollup — total contracted, expended-to-date, remaining, awaiting BPA approval, and approved-but-unpaid — so the vendor reads their cross-con… (12 KB)
 - [Needs-attention strip](vendor-dashboard/claude/needs-attention-strip.md): Hoists invoices blocked ON THE VENDOR (Needs revision) out of the table into one unmissable CTA — the rejection/fix loop discovery flagged as the most painful… (16 KB)
-- [Invoices grid (AG Grid)](vendor-dashboard/claude/invoices-grid-ag-grid.md): A searchable, status-filterable, group-able, SORTABLE tracking grid of the vendor's invoices across every pipeline stage (Submitted, In review, Approved, Paid,… (140 KB, 3 parts)
+- [Invoices grid (AG Grid)](vendor-dashboard/claude/invoices-grid-ag-grid.md): A searchable, status-filterable, group-able, SORTABLE tracking grid of the vendor's invoices across every pipeline stage (Submitted, In review, Approved, Paid,… (17 KB, 3 parts)
 
 ## Vendor invoice submission
 
@@ -72,14 +72,14 @@ Links are relative to https://esassoc.github.io/cb-fish-design/handoff/
 
 [README](my-work/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/my-work/) · 1 section, no authored guidance
 
-- [Dashboard](my-work/claude/dashboard.md) (152 KB, 4 parts)
+- [Dashboard](my-work/claude/dashboard.md) (14 KB, 4 parts)
 
 ## LIB & PI document editing
 
 [README](lib-pi-editing/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/lib-pi-editing/) · 2 sections, no authored guidance
 
 - [Prototype settings](lib-pi-editing/claude/prototype-settings.md) (15 KB)
-- [Contract 84055 REL 11: 2002-002-00 EXP ENHANCE WHITE STURGEO](lib-pi-editing/claude/contract-84055-rel-11-2002-002-00-exp-enhance-white-sturgeo.md) (71 KB, 2 parts)
+- [Contract 84055 REL 11: 2002-002-00 EXP ENHANCE WHITE STURGEO](lib-pi-editing/claude/contract-84055-rel-11-2002-002-00-exp-enhance-white-sturgeo.md) (9.4 KB, 2 parts)
 
 ## Global search & command palette
 
@@ -88,7 +88,7 @@ Links are relative to https://esassoc.github.io/cb-fish-design/handoff/
 - [Admin bar](search/claude/admin-bar.md): The dark system tray. (25 KB)
 - [Omni — recents](search/claude/omni-recents.md): The palette on open with no query — the Recent list (last-viewed records) as the zero-state, so the fast path is useful before you type a thing. (19 KB)
 - [Omni — results](search/claude/omni-results.md): The palette mid-query — grouped results across types with scope pills, matched-text highlighting, and "view all" handing off to the /search page. (24 KB)
-- [Sidebar](search/claude/sidebar.md): The /search facet rail — "Filter by type" (All, Projects, Contracts, People, Publications, Funds). (10 KB)
-- [Results — empty](search/claude/results-empty.md): The default, no-query state — a first-class prompt, not a blank container. (3.1 KB)
-- [Results — people](search/claude/results-people.md): People-scoped results — each row resolves to a person with an Impersonate affordance (the dev/QA team are the impersonation targets in this prototype). (8.5 KB)
-- [Results — projects](search/claude/results-projects.md): Project-scoped results — the same row component carrying a different entity type (project number + fiscal year + status), proving the row generalizes across ty… (8.2 KB)
+- [Sidebar](search/claude/sidebar.md): The /search facet rail — "Filter by type" (All, Projects, Contracts, People, Publications, Funds). (11 KB)
+- [Results — empty](search/claude/results-empty.md): The default, no-query state — a first-class prompt, not a blank container. (3.2 KB)
+- [Results — people](search/claude/results-people.md): People-scoped results — each row resolves to a person with an Impersonate affordance (the dev/QA team are the impersonation targets in this prototype). (8.6 KB)
+- [Results — projects](search/claude/results-projects.md): Project-scoped results — the same row component carrying a different entity type (project number + fiscal year + status), proving the row generalizes across ty… (8.3 KB)

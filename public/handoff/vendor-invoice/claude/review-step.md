@@ -32,6 +32,10 @@ Step 1 — a read-only review of everything entered in step 0, plus the Submit a
 - `esa-button` (hub) · `packages/ecology/src/components/esa-button.astro`
 - `esa-card` (hub) · `packages/ecology/src/components/esa-card.astro`
 
+## Behavior
+
+- `src/components/vendor-invoice/invoice-wizard.client.ts`
+
 ## Markup
 
 _3 repeated elements are collapsed in the markup below; the comments say where._

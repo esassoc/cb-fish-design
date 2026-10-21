@@ -291,6 +291,7 @@
         "phone": "claude/dashboard-header.phone.png"
       },
       "bytes": 14956,
+      "specBytes": 14956,
       "files": 1,
       "collapsed": 0
     },
@@ -562,6 +563,7 @@
         "phone": "claude/financial-outlook-band.phone.png"
       },
       "bytes": 11962,
+      "specBytes": 11962,
       "files": 1,
       "collapsed": 0
     },
@@ -882,6 +884,7 @@
         "phone": "claude/needs-attention-strip.phone.png"
       },
       "bytes": 16061,
+      "specBytes": 16061,
       "files": 1,
       "collapsed": 0
     },
@@ -1742,6 +1745,7 @@
         "phone": "claude/invoices-grid-ag-grid.phone.png"
       },
       "bytes": 143562,
+      "specBytes": 17240,
       "files": 4,
       "collapsed": 43
     }

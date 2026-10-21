@@ -25,6 +25,11 @@ The palette on open with no query — the Recent list (last-viewed records) as t
 - `cbf-search-surface` (spoke) · `src/components/search/cbf-omni-search.astro`
 - `esa-kbd` (hub) · `packages/ecology/src/components/esa-kbd.astro`
 
+## Behavior
+
+- `src/components/search/omni-search.client.ts`
+- `src/components/search/omni-render.ts`
+
 ## Markup
 
 _5 repeated elements are collapsed in the markup below; the comments say where._

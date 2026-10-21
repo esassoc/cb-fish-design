@@ -30,6 +30,10 @@ Submission and its confirmation. A dev toggle ([data-confirm-mode]) switches bet
 - `esa-card` (hub) · `packages/ecology/src/components/esa-card.astro`
 - `esa-dialog` (hub) · `packages/ecology/src/components/esa-dialog.ts`
 
+## Behavior
+
+- `src/components/vendor-invoice/invoice-wizard.client.ts`
+
 ## Markup
 
 _3 repeated elements are collapsed in the markup below; the comments say where._

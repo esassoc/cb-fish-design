@@ -8,4 +8,4 @@ No authored guidance yet: these sections were derived from the page structure.
 
 | Section | What it is | Spec | Screenshots |
 |---|---|---|---|
-| Dashboard |  | [dashboard.md](https://esassoc.github.io/cb-fish-design/handoff/my-work/claude/dashboard.md) 152 KB in 5 files | [desktop](https://esassoc.github.io/cb-fish-design/handoff/my-work/claude/dashboard.desktop.png) · [phone](https://esassoc.github.io/cb-fish-design/handoff/my-work/claude/dashboard.phone.png) |
+| Dashboard |  | [dashboard.md](https://esassoc.github.io/cb-fish-design/handoff/my-work/claude/dashboard.md) 14 KB, 4 parts | [desktop](https://esassoc.github.io/cb-fish-design/handoff/my-work/claude/dashboard.desktop.png) · [phone](https://esassoc.github.io/cb-fish-design/handoff/my-work/claude/dashboard.phone.png) |

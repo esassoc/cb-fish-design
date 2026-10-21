@@ -300,6 +300,7 @@
         "phone": "claude/prototype-settings.phone.png"
       },
       "bytes": 14894,
+      "specBytes": 14894,
       "files": 1,
       "collapsed": 0
     },
@@ -984,6 +985,7 @@
         "phone": "claude/contract-84055-rel-11-2002-002-00-exp-enhance-white-sturgeo.phone.png"
       },
       "bytes": 72669,
+      "specBytes": 9621,
       "files": 3,
       "collapsed": 48
     }

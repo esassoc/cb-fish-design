@@ -21,6 +21,10 @@ The default, no-query state — a first-class prompt, not a blank container. Wha
 - `cbf-result-empty` (spoke) · `src/components/search/cbf-omni-search.astro`
 - `cbf-search-results` (spoke) · `src/components/search/cbf-search-results.astro`
 
+## Behavior
+
+- `src/components/search/search-page.client.ts`
+
 ## Markup
 
 ```html

@@ -26,6 +26,10 @@ Two-state PDF panel that gates the whole form. Idle: a drag-and-drop zone with a
 - `cbf-pdf-viewer` (spoke) · `src/components/vendor-invoice/cbf-invoice-pdf-panel.astro`
 - `esa-alert-box` (hub) · `packages/ecology/src/components/esa-alert-box.astro`
 
+## Behavior
+
+- `src/components/vendor-invoice/invoice-wizard.client.ts`
+
 ## Markup
 
 ```html

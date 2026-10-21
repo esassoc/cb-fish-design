@@ -24,6 +24,11 @@ People-scoped results — each row resolves to a person with an Impersonate affo
 - `cbf-result-group` (spoke) · `src/components/search/cbf-omni-search.astro`
 - `cbf-search-results` (spoke) · `src/components/search/cbf-search-results.astro`
 
+## Behavior
+
+- `src/components/search/omni-render.ts`
+- `src/components/search/search-page.client.ts`
+
 ## Markup
 
 _5 repeated elements are collapsed in the markup below; the comments say where._

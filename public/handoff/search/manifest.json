@@ -358,6 +358,9 @@
           "target": null
         }
       ],
+      "js": [
+        "src/components/search/omni-search.client.ts"
+      ],
       "claudePath": "claude/admin-bar.md",
       "repoPath": "public/handoff/search/claude/admin-bar.md",
       "parts": [],
@@ -365,7 +368,8 @@
         "desktop": "claude/admin-bar.desktop.png",
         "phone": "claude/admin-bar.phone.png"
       },
-      "bytes": 25458,
+      "bytes": 25520,
+      "specBytes": 25520,
       "files": 1,
       "collapsed": 3
     },
@@ -599,6 +603,10 @@
           "target": null
         }
       ],
+      "js": [
+        "src/components/search/omni-search.client.ts",
+        "src/components/search/omni-render.ts"
+      ],
       "claudePath": "claude/omni-recents.md",
       "repoPath": "public/handoff/search/claude/omni-recents.md",
       "parts": [],
@@ -606,7 +614,8 @@
         "desktop": "claude/omni-recents.desktop.png",
         "phone": "claude/omni-recents.phone.png"
       },
-      "bytes": 18988,
+      "bytes": 19091,
+      "specBytes": 19091,
       "files": 1,
       "collapsed": 5
     },
@@ -861,6 +870,10 @@
           "target": null
         }
       ],
+      "js": [
+        "src/components/search/omni-search.client.ts",
+        "src/components/search/omni-render.ts"
+      ],
       "claudePath": "claude/omni-results.md",
       "repoPath": "public/handoff/search/claude/omni-results.md",
       "parts": [],
@@ -868,7 +881,8 @@
         "desktop": "claude/omni-results.desktop.png",
         "phone": "claude/omni-results.phone.png"
       },
-      "bytes": 24498,
+      "bytes": 24601,
+      "specBytes": 24601,
       "files": 1,
       "collapsed": 18
     },
@@ -1036,6 +1050,9 @@
           "target": null
         }
       ],
+      "js": [
+        "src/components/search/search-page.client.ts"
+      ],
       "claudePath": "claude/sidebar.md",
       "repoPath": "public/handoff/search/claude/sidebar.md",
       "parts": [],
@@ -1043,7 +1060,8 @@
         "desktop": "claude/sidebar.desktop.png",
         "phone": "claude/sidebar.phone.png"
       },
-      "bytes": 10745,
+      "bytes": 10807,
+      "specBytes": 10807,
       "files": 1,
       "collapsed": 3
     },
@@ -1148,6 +1166,9 @@
           "target": null
         }
       ],
+      "js": [
+        "src/components/search/search-page.client.ts"
+      ],
       "claudePath": "claude/results-empty.md",
       "repoPath": "public/handoff/search/claude/results-empty.md",
       "parts": [],
@@ -1155,7 +1176,8 @@
         "desktop": "claude/results-empty.desktop.png",
         "phone": "claude/results-empty.phone.png"
       },
-      "bytes": 3178,
+      "bytes": 3240,
+      "specBytes": 3240,
       "files": 1,
       "collapsed": 0
     },
@@ -1302,6 +1324,10 @@
           "target": null
         }
       ],
+      "js": [
+        "src/components/search/omni-render.ts",
+        "src/components/search/search-page.client.ts"
+      ],
       "claudePath": "claude/results-people.md",
       "repoPath": "public/handoff/search/claude/results-people.md",
       "parts": [],
@@ -1309,7 +1335,8 @@
         "desktop": "claude/results-people.desktop.png",
         "phone": "claude/results-people.phone.png"
       },
-      "bytes": 8705,
+      "bytes": 8808,
+      "specBytes": 8808,
       "files": 1,
       "collapsed": 5
     },
@@ -1455,6 +1482,10 @@
           "target": null
         }
       ],
+      "js": [
+        "src/components/search/omni-render.ts",
+        "src/components/search/search-page.client.ts"
+      ],
       "claudePath": "claude/results-projects.md",
       "repoPath": "public/handoff/search/claude/results-projects.md",
       "parts": [],
@@ -1462,7 +1493,8 @@
         "desktop": "claude/results-projects.desktop.png",
         "phone": "claude/results-projects.phone.png"
       },
-      "bytes": 8411,
+      "bytes": 8514,
+      "specBytes": 8514,
       "files": 1,
       "collapsed": 3
     }

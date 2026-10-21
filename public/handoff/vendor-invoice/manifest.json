@@ -236,13 +236,17 @@
           "target": null
         }
       ],
+      "js": [
+        "src/components/vendor-invoice/invoice-wizard.client.ts"
+      ],
       "claudePath": "claude/pdf-upload.md",
       "repoPath": "public/handoff/vendor-invoice/claude/pdf-upload.md",
       "parts": [],
       "shots": {
         "desktop": "claude/pdf-upload.desktop.png"
       },
-      "bytes": 13395,
+      "bytes": 13468,
+      "specBytes": 13468,
       "files": 1,
       "collapsed": 0
     },
@@ -713,6 +717,9 @@
           "target": null
         }
       ],
+      "js": [
+        "src/components/vendor-invoice/invoice-wizard.client.ts"
+      ],
       "claudePath": "claude/details-form.md",
       "repoPath": "public/handoff/vendor-invoice/claude/details-form.md",
       "parts": [],
@@ -720,7 +727,8 @@
         "desktop": "claude/details-form.desktop.png",
         "phone": "claude/details-form.phone.png"
       },
-      "bytes": 40130,
+      "bytes": 40203,
+      "specBytes": 40203,
       "files": 1,
       "collapsed": 0
     },
@@ -1165,11 +1173,15 @@
           "target": null
         }
       ],
+      "js": [
+        "src/components/vendor-invoice/invoice-wizard.client.ts"
+      ],
       "claudePath": "claude/review-step.md",
       "repoPath": "public/handoff/vendor-invoice/claude/review-step.md",
       "parts": [],
       "shots": {},
-      "bytes": 29426,
+      "bytes": 29499,
+      "specBytes": 29499,
       "files": 1,
       "collapsed": 3
     },
@@ -1547,11 +1559,15 @@
           "target": null
         }
       ],
+      "js": [
+        "src/components/vendor-invoice/invoice-wizard.client.ts"
+      ],
       "claudePath": "claude/submit-confirmation.md",
       "repoPath": "public/handoff/vendor-invoice/claude/submit-confirmation.md",
       "parts": [],
       "shots": {},
-      "bytes": 25295,
+      "bytes": 25368,
+      "specBytes": 25368,
       "files": 1,
       "collapsed": 3
     }

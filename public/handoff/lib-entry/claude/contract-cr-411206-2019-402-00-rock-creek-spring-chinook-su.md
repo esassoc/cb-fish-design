@@ -41,12 +41,12 @@ Phone width: https://esassoc.github.io/cb-fish-design/handoff/lib-entry/claude/c
 
 ## Markup and styles
 
-_61 repeated elements are collapsed in the markup below; the comments say where._
+_59 repeated elements are collapsed in the markup below; the comments say where._
 
 - [contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.markup-1.md](https://esassoc.github.io/cb-fish-design/handoff/lib-entry/claude/contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.markup-1.md) (47 KB)
 - [contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.markup-2.md](https://esassoc.github.io/cb-fish-design/handoff/lib-entry/claude/contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.markup-2.md) (47 KB)
 - [contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.markup-3.md](https://esassoc.github.io/cb-fish-design/handoff/lib-entry/claude/contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.markup-3.md) (47 KB)
-- [contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.markup-4.md](https://esassoc.github.io/cb-fish-design/handoff/lib-entry/claude/contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.markup-4.md) (12 KB)
+- [contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.markup-4.md](https://esassoc.github.io/cb-fish-design/handoff/lib-entry/claude/contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.markup-4.md) (14 KB)
 - [contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.styles-1.md](https://esassoc.github.io/cb-fish-design/handoff/lib-entry/claude/contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.styles-1.md) (47 KB)
 - [contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.styles-2.md](https://esassoc.github.io/cb-fish-design/handoff/lib-entry/claude/contract-cr-411206-2019-402-00-rock-creek-spring-chinook-su.styles-2.md) (2.7 KB)
 

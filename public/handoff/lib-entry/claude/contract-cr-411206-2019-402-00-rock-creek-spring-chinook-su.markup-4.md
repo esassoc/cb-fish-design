@@ -171,8 +171,32 @@ E. 60 Operate and Maintain Hatchery — 30%"
                     </td>
                     <td class="cbf-lct__cell" colspan="2"></td>
                   </tr>
-                  <!-- …and 2 more like this (<tr>) -->
-                  <tr class="cbf-lct__grand" data-indirect-row="">
+                  <tr data-indirect-row="" class="is-recomputed">
+                    <th scope="row" colspan="4">
+                      Indirect base
+                      <span class="cbf-lct__note" data-indirect-scope=""
+                        >7 of 8 categories in scope — Supplies &amp; Equipment and Subcontracts
+                        excluded</span
+                      >
+                    </th>
+                    <td class="cbf-lct__cell cbf-lct__cell--num">
+                      <span data-total="indirectBase">$201,670</span>
+                    </td>
+                    <td class="cbf-lct__cell" colspan="2"></td>
+                  </tr>
+                  <tr data-indirect-row="" class="is-recomputed">
+                    <th scope="row" colspan="4">
+                      Indirect at <span data-indirect-rate="">26.75%</span>
+                      <span class="cbf-lct__note" data-indirect-ref=""
+                        >NICRA 2026-14, approved 03/11/2026</span
+                      >
+                    </th>
+                    <td class="cbf-lct__cell cbf-lct__cell--num">
+                      <span data-total="indirect">$53,947</span>
+                    </td>
+                    <td class="cbf-lct__cell" colspan="2"></td>
+                  </tr>
+                  <tr class="cbf-lct__grand is-recomputed" data-indirect-row="">
                     <th scope="row" colspan="4">
                       Total this contract period
                       <span class="cbf-lct__note" data-total-note=""

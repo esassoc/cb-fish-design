@@ -24,6 +24,10 @@ The /search facet rail — "Filter by type" (All, Projects, Contracts, People, P
 - `cbf-search-facets` (spoke) · `src/components/search/cbf-search-facets.astro`
 - `cbf-search-surface` (spoke) · `src/components/search/cbf-omni-search.astro`
 
+## Behavior
+
+- `src/components/search/search-page.client.ts`
+
 ## Markup
 
 _3 repeated elements are collapsed in the markup below; the comments say where._

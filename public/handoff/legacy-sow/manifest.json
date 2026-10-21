@@ -9,40 +9,42 @@
   "generatedFrom": "derived",
   "sections": [
     {
-      "label": "h2",
+      "label": "Contract 84051 REL 50: 2023-001-00 EXP CTCR UPPER COLUMBIA H",
       "tag": "h2",
       "selector": "body > main:nth-child(2) > div:nth-child(1) > h2:nth-child(1)",
       "html": "<h2 class=\"legacy-we-grid__title\">\n  Contract 84051 REL 50: 2023-001-00 EXP CTCR UPPER COLUMBIA HABITAT IMPROVEMENT PROJECT\n</h2>",
       "css": ".legacy-we-grid__title {\n  font-family: Montserrat, sans-serif;\n  font-size: 14px;\n  font-weight: 700;\n  color: #333;\n  margin: 0 0 14px;\n}",
       "tokens": [],
       "components": [],
-      "claudePath": "claude/h2.md",
-      "repoPath": "public/handoff/legacy-sow/claude/h2.md",
+      "claudePath": "claude/contract-84051-rel-50-2023-001-00-exp-ctcr-upper-columbia-h.md",
+      "repoPath": "public/handoff/legacy-sow/claude/contract-84051-rel-50-2023-001-00-exp-ctcr-upper-columbia-h.md",
       "parts": [],
       "shots": {
-        "desktop": "claude/h2.desktop.png",
-        "phone": "claude/h2.phone.png"
+        "desktop": "claude/contract-84051-rel-50-2023-001-00-exp-ctcr-upper-columbia-h.desktop.png",
+        "phone": "claude/contract-84051-rel-50-2023-001-00-exp-ctcr-upper-columbia-h.phone.png"
       },
-      "bytes": 621,
+      "bytes": 851,
+      "specBytes": 851,
       "files": 1,
       "collapsed": 0
     },
     {
-      "label": "div",
+      "label": "Sort Order WE ID Work Element History Work Element Name Titl",
       "tag": "div",
       "selector": "body > main:nth-child(2) > div:nth-child(1) > div:nth-child(2)",
       "html": "<div class=\"legacy-panel legacy-we-grid__wrap\">\n  <table class=\"legacy-we-grid\">\n    <thead>\n      <tr>\n        <th>Sort Order</th>\n        <th>WE ID</th>\n        <!-- …and 10 more like this (<th>) -->\n        <th class=\"legacy-we-grid__hdcol\">HD</th>\n        <th>% of Total WSE Effective Budget</th>\n      </tr>\n    </thead>\n    <tbody>\n      <tr>\n        <td>H</td>\n        <td>175</td>\n        <!-- …and 3 more like this (<td>) -->\n        <td class=\"legacy-we-grid__desc\">\n          Design phase for reconnecting the Upper Chewuch River to its historic floodplain — draw\n          the designed channel and floodplain extent, then compute pre- and post-project metrics for\n          the SOW.\n        </td>\n        <td class=\"legacy-we-grid__num\">\n          <a href=\"/cb-fish-design/legacy/we-milestones\" title=\"Open Milestones for WE H\">13</a>\n        </td>\n        <td class=\"legacy-we-grid__dotcell\"><span class=\"legacy-dot legacy-dot--filled\"></span></td>\n        <td class=\"legacy-we-grid__dotcell\"><span class=\"legacy-dot legacy-dot--filled\"></span></td>\n        <td class=\"legacy-we-grid__dotcell legacy-we-grid__hdcol\">\n          <a href=\"/cb-fish-design/legacy/we\" title=\"Open Habitat Design for WE H\">\n            <span class=\"legacy-dot legacy-dot--ring\"></span>\n          </a>\n        </td>\n        <!-- …and 3 more like this (<td class=\"legacy-we-grid__dotcell\">) -->\n        <td class=\"legacy-we-grid__num\">5%</td>\n      </tr>\n      <tr>\n        <td>M</td>\n        <td>175</td>\n        <!-- …and 3 more like this (<td>) -->\n        <td class=\"legacy-we-grid__desc\">\n          Salmon Creek has been identified as a priority reach for floodplain reconnection design\n          work.\n        </td>\n        <td class=\"legacy-we-grid__num\">\n          <a href=\"/cb-fish-design/legacy/we-milestones\" title=\"Open Milestones for WE M\">13</a>\n        </td>\n        <td class=\"legacy-we-grid__dotcell\"><span class=\"legacy-dot legacy-dot--filled\"></span></td>\n        <td class=\"legacy-we-grid__dotcell\"><span class=\"legacy-dot legacy-dot--filled\"></span></td>\n        <td class=\"legacy-we-grid__dotcell legacy-we-grid__hdcol\">\n          <a href=\"/cb-fish-design/legacy/we\" title=\"Open Habitat Design for WE M\">\n            <span class=\"legacy-dot legacy-dot--ring\"></span>\n          </a>\n        </td>\n        <!-- …and 3 more like this (<td class=\"legacy-we-grid__dotcell\">) -->\n        <td class=\"legacy-we-grid__num\">10%</td>\n      </tr>\n      <tr>\n        <td>N</td>\n        <td>175</td>\n        <!-- …and 3 more like this (<td>) -->\n        <td class=\"legacy-we-grid__desc\">\n          Design phase for adding instream structure and channel complexity along a degraded reach\n          of Omak Creek.\n        </td>\n        <td class=\"legacy-we-grid__num\">\n          <a href=\"/cb-fish-design/legacy/we-milestones\" title=\"Open Milestones for WE N\">3</a>\n        </td>\n        <td class=\"legacy-we-grid__dotcell\"><span class=\"legacy-dot legacy-dot--filled\"></span></td>\n        <td class=\"legacy-we-grid__dotcell\"><span class=\"legacy-dot legacy-dot--filled\"></span></td>\n        <td class=\"legacy-we-grid__dotcell legacy-we-grid__hdcol\">\n          <a href=\"/cb-fish-design/legacy/we\" title=\"Open Habitat Design for WE N\">\n            <span class=\"legacy-dot legacy-dot--ring\"></span>\n          </a>\n        </td>\n        <!-- …and 3 more like this (<td class=\"legacy-we-grid__dotcell\">) -->\n        <td class=\"legacy-we-grid__num\">10%</td>\n      </tr>\n    </tbody>\n  </table>\n</div>",
       "css": ".legacy-we-grid__wrap {\n  font-family: Montserrat, sans-serif;\n  overflow-x: auto;\n}\n.legacy-we-grid {\n  border-collapse: collapse;\n  width: 100%;\n  font-size: 13px;\n  background: #fff;\n}\n.legacy-we-grid th {\n  background: transparent;\n  border: 1px solid #ddd;\n  padding: 5px 8px;\n  text-align: left;\n  font-weight: 700;\n  color: #333;\n  white-space: nowrap;\n}\n.legacy-we-grid td {\n  border: 1px solid #ddd;\n  padding: 5px 8px;\n  vertical-align: top;\n  color: #333;\n}\n.legacy-we-grid tbody tr:hover {\n  background: #f5f9fc;\n}\n.legacy-we-grid a {\n  color: #007090;\n  text-decoration: none;\n}\n.legacy-we-grid a:hover {\n  text-decoration: underline;\n}\n.legacy-we-grid__desc {\n  max-width: 320px;\n}\n.legacy-we-grid__num {\n  text-align: right;\n  white-space: nowrap;\n}\n.legacy-we-grid__dotcell {\n  text-align: center;\n}\n.legacy-we-grid__hdcol {\n  background: #eaf6fa;\n}\n.legacy-dot {\n  display: inline-block;\n  width: 10px;\n  height: 10px;\n  border-radius: 50%;\n}\n.legacy-dot--filled {\n  background: #007090;\n}\n.legacy-dot--ring {\n  background: transparent;\n  border: 2px solid #007090;\n}\n.legacy-panel {\n  background: #fff;\n  border: 1px solid transparent;\n  border-radius: 4px;\n  box-shadow: 0 1px 1px #0000000d;\n  margin: 0 0 20px;\n}",
       "tokens": [],
       "components": [],
-      "claudePath": "claude/div.md",
-      "repoPath": "public/handoff/legacy-sow/claude/div.md",
+      "claudePath": "claude/sort-order-we-id-work-element-history-work-element-name-titl.md",
+      "repoPath": "public/handoff/legacy-sow/claude/sort-order-we-id-work-element-history-work-element-name-titl.md",
       "parts": [],
       "shots": {
-        "desktop": "claude/div.desktop.png",
-        "phone": "claude/div.phone.png"
+        "desktop": "claude/sort-order-we-id-work-element-history-work-element-name-titl.desktop.png",
+        "phone": "claude/sort-order-we-id-work-element-history-work-element-name-titl.phone.png"
       },
-      "bytes": 5174,
+      "bytes": 5402,
+      "specBytes": 5402,
       "files": 1,
       "collapsed": 28
     }

@@ -30,6 +30,10 @@ The dark system tray. New in CBF-8117: global search moved OUT of the blue heade
 - `esa-link-column` (hub) · `packages/ecology/src/components/esa-link-column.astro`
 - `esa-nav-dropdown` (hub) · `packages/ecology/src/components/esa-nav-dropdown.astro`
 
+## Behavior
+
+- `src/components/search/omni-search.client.ts`
+
 ## Markup
 
 _3 repeated elements are collapsed in the markup below; the comments say where._

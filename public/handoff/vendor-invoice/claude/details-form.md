@@ -52,6 +52,10 @@ Step 0 — the main data-entry form: contract reference, an auto-populated read-
 - `esa-text-field` (hub) · `packages/ecology/src/components/esa-text-field.ts`
 - `esa-textarea` (hub) · `packages/ecology/src/components/esa-textarea.ts`
 
+## Behavior
+
+- `src/components/vendor-invoice/invoice-wizard.client.ts`
+
 ## Markup
 
 ```html
