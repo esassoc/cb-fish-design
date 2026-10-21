@@ -1,0 +1,12 @@
+# Vendor dashboard
+
+Source prototype: https://esassoc.github.io/cb-fish-design/vendor-dashboard/
+
+Vendor’s invoices & financial-outlook view — cross-contract money position, a needs-attention strip, and a sortable invoices grid with a click-through detail drawer.
+
+| Section | What it is | Spec | Screenshots |
+|---|---|---|---|
+| Dashboard header | Welcome banner on the invoices view. | [dashboard-header.md](https://esassoc.github.io/cb-fish-design/handoff/vendor-dashboard/claude/dashboard-header.md) 15 KB | [desktop](https://esassoc.github.io/cb-fish-design/handoff/vendor-dashboard/claude/dashboard-header.desktop.png) · [phone](https://esassoc.github.io/cb-fish-design/handoff/vendor-dashboard/claude/dashboard-header.phone.png) |
+| Financial outlook band | The headline money rollup — total contracted, expended-to-date, remaining, awaiting BPA approval, and approved-but-unpaid — so the vendor reads their cross-con… | [financial-outlook-band.md](https://esassoc.github.io/cb-fish-design/handoff/vendor-dashboard/claude/financial-outlook-band.md) 12 KB | [desktop](https://esassoc.github.io/cb-fish-design/handoff/vendor-dashboard/claude/financial-outlook-band.desktop.png) · [phone](https://esassoc.github.io/cb-fish-design/handoff/vendor-dashboard/claude/financial-outlook-band.phone.png) |
+| Needs-attention strip | Hoists invoices blocked ON THE VENDOR (Needs revision) out of the table into one unmissable CTA — the rejection/fix loop discovery flagged as the most painful… | [needs-attention-strip.md](https://esassoc.github.io/cb-fish-design/handoff/vendor-dashboard/claude/needs-attention-strip.md) 16 KB | [desktop](https://esassoc.github.io/cb-fish-design/handoff/vendor-dashboard/claude/needs-attention-strip.desktop.png) · [phone](https://esassoc.github.io/cb-fish-design/handoff/vendor-dashboard/claude/needs-attention-strip.phone.png) |
+| Invoices grid (AG Grid) | A searchable, status-filterable, group-able, SORTABLE tracking grid of the vendor's invoices across every pipeline stage (Submitted, In review, Approved, Paid,… | [invoices-grid-ag-grid.md](https://esassoc.github.io/cb-fish-design/handoff/vendor-dashboard/claude/invoices-grid-ag-grid.md) 17 KB, 3 parts | [desktop](https://esassoc.github.io/cb-fish-design/handoff/vendor-dashboard/claude/invoices-grid-ag-grid.desktop.png) · [phone](https://esassoc.github.io/cb-fish-design/handoff/vendor-dashboard/claude/invoices-grid-ag-grid.phone.png) |
