@@ -1,0 +1,91 @@
+---
+// cbf-cap-toolbar — the capital program's header bar (PRD "Screens"): Current FY,
+// envelope source and snapshot selectors that every screen reads, the data-as-of
+// line, and the read-only banner shown while a past snapshot is selected.
+//
+// bcn-lego-checked: the three selectors are esa-select and the banner is
+// esa-alert-box; the only thing this file owns is the row they sit in (the
+// `cluster` primitive) and the meta line. No esa-filter-container: these are not
+// filters on one list, they set the lens for the whole module. Beacon is not
+// cloned on this machine.
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+
+const fyOptions = [2026, 2027, 2028, 2029].map((fy) => ({ label: `FY${String(fy).slice(2)}`, value: String(fy) }));
+const sourceOptions = [
+  { label: 'Asset Plan Expected (SOY)', value: 'apExpected' },
+  { label: 'Asset Plan Optimal', value: 'apOptimal' },
+  { label: 'IPR / rate case (information only)', value: 'ipr' },
+];
+---
+<div class="cbf-cap-toolbar stack" data-gap="sm" data-cap-toolbar>
+  <div class="cbf-cap-toolbar__row cluster" data-gap="md">
+    <esa-select class="cbf-cap-toolbar__fy" size="sm" label="Current FY" options={JSON.stringify(fyOptions)} data-cap-fy></esa-select>
+    <esa-select class="cbf-cap-toolbar__source" size="sm" label="Envelope" options={JSON.stringify(sourceOptions)} data-cap-source></esa-select>
+    <esa-select class="cbf-cap-toolbar__snap" size="sm" label="Snapshot" data-cap-snapshot></esa-select>
+    <p class="cbf-cap-toolbar__meta typography-meta" data-cap-meta></p>
+  </div>
+
+  <div data-cap-banner hidden>
+    <EsaAlertBox variant="info" title="Read-only">
+      <div class="cbf-cap-toolbar__banner cluster" data-gap="md">
+        <span data-cap-banner-text></span>
+        <EsaButton size="sm" variant="secondary" appearance="outline" data-cap-back-current>Back to current</EsaButton>
+      </div>
+    </EsaAlertBox>
+  </div>
+</div>
+
+<script>
+  import '@esa/ecology/esa-select';
+  import { getState, getUi, setUi, subscribe, selectedSnapshot } from '../../lib/capital/store';
+  import { fmtDate, fyLabel } from '../../lib/capital/finance';
+  import { setSelect } from '../../lib/capital/ui';
+  import type { EnvelopeSource } from '../../lib/capital/types';
+
+  const root = document.querySelector<HTMLElement>('[data-cap-toolbar]');
+  if (root) {
+    type Sel = HTMLElement & { value: string };
+    const fy = root.querySelector<Sel>('[data-cap-fy]')!;
+    const source = root.querySelector<Sel>('[data-cap-source]')!;
+    const snap = root.querySelector<Sel>('[data-cap-snapshot]')!;
+    const meta = root.querySelector<HTMLElement>('[data-cap-meta]')!;
+    const banner = root.querySelector<HTMLElement>('[data-cap-banner]')!;
+    const bannerText = root.querySelector<HTMLElement>('[data-cap-banner-text]')!;
+
+    fy.addEventListener('change', () => setUi({ fy: Number(fy.value) }));
+    source.addEventListener('change', () => setUi({ envelopeSource: source.value as EnvelopeSource }));
+    snap.addEventListener('change', () => setUi({ snapshotId: snap.value === 'current' ? null : snap.value }));
+    root.querySelector('[data-cap-back-current]')?.addEventListener('click', () => setUi({ snapshotId: null }));
+
+    subscribe(() => {
+      const s = getState();
+      const ui = getUi();
+      if (fy.value !== String(ui.fy)) fy.value = String(ui.fy);
+      if (source.value !== ui.envelopeSource) source.value = ui.envelopeSource;
+      const snaps = [...s.snapshots].sort((a, b) => b.asOf.localeCompare(a.asOf));
+      setSelect(
+        snap,
+        [{ label: 'Current', value: 'current' }, ...snaps.map((x) => ({ label: `${x.label}${x.baselineFy ? ' ★' : ''}`, value: x.id }))],
+        ui.snapshotId ?? 'current',
+      );
+      const rp = s.settings.ratePeriod;
+      meta.textContent = `$000s · Data as of ${fmtDate(s.settings.dataAsOf)} · Rate period ${rp.label} (${fyLabel(rp.startFy)}–${fyLabel(rp.endFy)}, information only)`;
+      const sel = selectedSnapshot();
+      banner.hidden = !sel;
+      if (sel) bannerText.textContent = `Viewing snapshot ${sel.label} (as of ${fmtDate(sel.asOf)}). Nothing can be edited until you go back to current.`;
+    });
+  }
+</script>
+
+<style>
+  .cbf-cap-toolbar__row { align-items: flex-end; }
+  .cbf-cap-toolbar__fy { inline-size: 7rem; }
+  .cbf-cap-toolbar__source { inline-size: 17rem; }
+  .cbf-cap-toolbar__snap { inline-size: 15rem; }
+  .cbf-cap-toolbar__meta {
+    margin: 0 0 var(--spacing-150) auto;
+    color: var(--color-content-default-tertiary);
+  }
+  .cbf-cap-toolbar__banner { align-items: center; }
+</style>

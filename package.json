@@ -10,7 +10,8 @@
     "preview": "astro preview",
     "deploy": "astro build && gh-pages -d dist --dotfiles",
     "handoff:all": "node scripts/gen-handoff.mjs",
-    "doctor": "node ../ecology/scripts/doctor.mjs"
+    "doctor": "node ../ecology/scripts/doctor.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "@esa/docs": "file:../ecology/packages/docs",
@@ -23,6 +24,7 @@
   "devDependencies": {
     "@esa/handoff": "file:../ecology/packages/handoff",
     "gh-pages": "^6.3.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.7"
   }
 }

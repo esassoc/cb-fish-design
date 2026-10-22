@@ -1,0 +1,22 @@
+---
+// /capital-program — Portfolio, the home of the Capital program module (PRD
+// screen 1): "what are we spending, by FY, by project". The headroom panel is
+// pinned on top (Rodrigo's "simplified table on top, details if you want them")
+// and the grouped grid sits under it, one click from any project's detail.
+//
+// Thin assembler — the frame is cbf-cap-frame; the data, money math and state
+// live in src/lib/capital/ and src/data/capital-program/seed.ts.
+import CbfCapFrame from '../components/capital-program/cbf-cap-frame.astro';
+import CbfCapHeadroom from '../components/capital-program/cbf-cap-headroom.astro';
+import CbfCapPortfolioGrid from '../components/capital-program/cbf-cap-portfolio-grid.astro';
+---
+<!-- manifest:
+  layout: cbf-cap-frame (nav + prototype strip + app panel + tabs + header bar)
+  sections:
+    - headroom panel -> cbf-cap-headroom        (R2 — 3 category tiles + total, Optimal ceiling, what-if, freed this year)
+    - portfolio grid -> cbf-cap-portfolio-grid  (R1, R7 — grouped AG Grid, filters, column picker, CSV)
+-->
+<CbfCapFrame active="portfolio" title="Capital program">
+  <CbfCapHeadroom />
+  <CbfCapPortfolioGrid />
+</CbfCapFrame>

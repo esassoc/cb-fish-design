@@ -1,0 +1,280 @@
+---
+// cbf-cap-settings — Data & settings (PRD screen 6): the admin page.
+//
+//   • Actuals import (R10): upload a Finance-shaped CSV (category_l5,
+//     project_l6, fiscal_year, month, amount — whole dollars). Matching rows
+//     replace that project-month; unmatched project ids are listed. The sample
+//     CSV (Klickitat FY26 through August) ships with the prototype.
+//   • Dates and thresholds: "Data as of" (which quarters are closed), the Asset
+//     Plan turn-in date the Requests page nudges toward, the OMB threshold, the
+//     rate period (information only) — each open question tagged.
+//   • Budget envelopes by FY and source (R2) — Optimal derives from Expected
+//     unless entered.
+//   • The approval gate list (R7) — a settings table so it can change once
+//     Michelle and Rodrigo write the real steps down.
+//   • Reset demo data.
+//
+// bcn-lego-checked: esa-card sections, esa-file-upload, esa-text-field,
+// esa-date-picker, esa-button, esa-alert-box, esa-danger-zone; the envelope and
+// gate tables are AG Grid on the shared token theme (no esa table lego).
+// Beacon is not cloned on this machine.
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaDangerZone from '@esa/ecology/esa-danger-zone.astro';
+import '../shared/cbf-data-grid-chrome.css';
+---
+<section class="cbf-cap-settings" data-cap-settings>
+  <EsaCard title="Actuals import" variant="outlined">
+    <div class="stack" data-gap="sm">
+      <p class="cbf-cap-set-p">Upload a CSV shaped like the Finance export: <code>category_l5, project_l6, fiscal_year, month, amount</code> (whole dollars — converted to $000s). Matching rows replace actuals for that project and month; project ids that match nothing are listed for review.</p>
+      <esa-file-upload label="Actuals CSV" accept=".csv,text/csv" data-set-file></esa-file-upload>
+      <div class="cluster" data-gap="sm">
+        <EsaButton size="sm" variant="primary" icon="upload" data-set-sample>Import the sample CSV</EsaButton>
+        <EsaButton size="sm" variant="secondary" appearance="outline" icon="download" data-set-download>Download the sample CSV</EsaButton>
+      </div>
+      <div data-set-result></div>
+    </div>
+  </EsaCard>
+
+  <EsaCard title="Dates and thresholds" variant="outlined">
+    <div class="stack" data-gap="sm" data-set-form>
+      <esa-date-picker label="Data as of" help-text="Quarters ending on or before this date are closed and show actuals." data-field="dataAsOf"></esa-date-picker>
+      <div class="cluster" data-gap="sm">
+        <esa-date-picker label="Asset Plan turn-in date" data-field="apTurnInDate"></esa-date-picker>
+        <esa-text-field label="Asset Plan cycle" data-field="apTurnInCycle"></esa-text-field>
+      </div>
+      <esa-text-field label="OMB dollar threshold ($000s)" type="number" data-field="ombThreshold"></esa-text-field>
+      <div class="cluster" data-gap="sm">
+        <esa-text-field label="Rate period" data-field="rpLabel"></esa-text-field>
+        <esa-text-field label="Starts (FY)" type="number" data-field="rpStart"></esa-text-field>
+        <esa-text-field label="Ends (FY)" type="number" data-field="rpEnd"></esa-text-field>
+      </div>
+      <p class="typography-meta cbf-cap-muted" data-set-assumptions></p>
+      <div><EsaButton size="sm" variant="primary" icon="save" data-set-save>Save settings</EsaButton></div>
+    </div>
+  </EsaCard>
+
+  <EsaCard title="Budget envelopes" variant="outlined">
+    <div class="stack" data-gap="sm">
+      <p class="cbf-cap-set-p">Approved envelopes by fiscal year and source, $000s. Asset Plan Expected (SOY) is the default the headroom panel measures against; Optimal is Expected ÷ 0.8 unless a figure is entered; IPR is information only. Double-click an amount to change it.</p>
+      <div class="cbf-data-grid__grid" data-set-envelopes></div>
+    </div>
+  </EsaCard>
+
+  <EsaCard title="Approval pathway steps" variant="outlined">
+    <div class="stack" data-gap="sm">
+      <p class="cbf-cap-set-p" data-set-gates-intro></p>
+      <div class="cbf-data-grid__grid" data-set-gates></div>
+    </div>
+  </EsaCard>
+
+  <div class="cbf-cap-settings__wide">
+    <EsaDangerZone heading="Reset demo data" description="Puts every project, request, snapshot, adjustment, note and setting back to the seed. Your edits in this browser are lost.">
+      <EsaButton variant="danger" icon="rotate-ccw" data-set-reset>Reset demo data</EsaButton>
+    </EsaDangerZone>
+  </div>
+</section>
+
+<script>
+  import '@esa/ecology/esa-file-upload';
+  import '@esa/ecology/esa-date-picker';
+  import '@esa/ecology/esa-text-field';
+  import { createGrid, type GridApi } from 'ag-grid-community';
+  import { cbfGridTheme } from '../shared/grid-chrome';
+  import { getState, subscribe, update, can, resetDemo } from '../../lib/capital/store';
+  import { envelopeAmount, fmtK, fyLabel, OPTIMAL_FACTOR } from '../../lib/capital/finance';
+  import { importActuals, setEnvelope } from '../../lib/capital/actions';
+  import { SAMPLE_ACTUALS_CSV } from '../../data/capital-program/seed';
+  import { esc, snackbar, assumption } from '../../lib/capital/ui';
+  import { CATEGORIES, ENVELOPE_SOURCE_LABEL, type Category, type EnvelopeSource, type GateDefinition } from '../../lib/capital/types';
+
+  const root = document.querySelector<HTMLElement>('[data-cap-settings]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const resultEl = root.querySelector<HTMLElement>('[data-set-result]')!;
+    const form = root.querySelector<HTMLElement>('[data-set-form]')!;
+    const fileEl = root.querySelector<HTMLElement>('[data-set-file]')!;
+    type F = HTMLElement & { value: string; disabled: boolean };
+    const field = (n: string) => form.querySelector<F>(`[data-field="${n}"]`)!;
+
+    // ---- import -------------------------------------------------------------
+    function runImport(csv: string, name: string) {
+      if (!can('importActuals')) { snackbar('warning', 'Your role cannot import actuals.'); return; }
+      const r = update((s) => importActuals(s, csv));
+      const touched = Object.entries(r.touched).map(([id, n]) => {
+        const p = getState().projects.find((x) => x.id === id);
+        return `${esc(p?.title ?? id)} (${n} months)`;
+      });
+      resultEl.innerHTML = `
+        <div class="cbf-cap-set-result ${r.errors.length && !r.rowsMatched ? 'is-error' : ''}">
+          <p><strong>${esc(name)}</strong>: ${r.rowsRead} rows read, ${r.rowsMatched} matched.</p>
+          ${touched.length ? `<p>Replaced actuals for ${touched.join(', ')}.</p>` : ''}
+          ${r.unmatched.length ? `<p class="cbf-cap-neg">Unmatched project ids — review: ${r.unmatched.map(esc).join(', ')}</p>` : ''}
+          ${r.errors.length ? `<ul>${r.errors.slice(0, 5).map((e) => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}
+        </div>`;
+      if (r.rowsMatched) snackbar('success', `Imported ${r.rowsMatched} rows of actuals.`);
+    }
+    fileEl.addEventListener('change', async (e) => {
+      const files = (e as CustomEvent).detail?.files as File[] | undefined;
+      const f = files?.[0];
+      if (!f) return;
+      runImport(await f.text(), f.name);
+    });
+    root.querySelector('[data-set-sample]')!.addEventListener('click', () => runImport(SAMPLE_ACTUALS_CSV, 'Sample CSV (Klickitat FY26, Oct–Aug)'));
+    root.querySelector('[data-set-download]')!.addEventListener('click', () => {
+      const url = URL.createObjectURL(new Blob([SAMPLE_ACTUALS_CSV], { type: 'text/csv' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sample-actuals-klickitat-fy26.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // ---- settings form ------------------------------------------------------
+    root.querySelector('[data-set-save]')!.addEventListener('click', () => {
+      const n = (k: string) => Number(field(k).value);
+      update((s) => {
+        s.settings.dataAsOf = field('dataAsOf').value || s.settings.dataAsOf;
+        s.settings.apTurnInDate = field('apTurnInDate').value || s.settings.apTurnInDate;
+        s.settings.apTurnInCycle = field('apTurnInCycle').value || s.settings.apTurnInCycle;
+        if (Number.isFinite(n('ombThreshold'))) s.settings.ombThreshold = n('ombThreshold');
+        s.settings.ratePeriod = {
+          label: field('rpLabel').value || s.settings.ratePeriod.label,
+          startFy: n('rpStart') || s.settings.ratePeriod.startFy,
+          endFy: n('rpEnd') || s.settings.ratePeriod.endFy,
+        };
+      });
+      snackbar('success', 'Settings saved.');
+    });
+
+    // ---- envelopes grid -----------------------------------------------------
+    interface EnvRow { id: string; fy: number; source: EnvelopeSource; label: string; derived: boolean; Hatchery: number | null; Land: number | null; Passage: number | null }
+    const amountCol = (c: Category) => ({
+      field: c, headerName: c, type: 'rightAligned', width: 120,
+      editable: (p: { data?: EnvRow }) => can('editEnvelopes') && !p.data?.derived,
+      valueFormatter: (p: { value: number | null }) => fmtK(p.value),
+      valueParser: (p: { newValue: string }) => (p.newValue === '' ? null : Number(String(p.newValue).replace(/,/g, ''))),
+      valueSetter: (p: { data: EnvRow; newValue: number | null }) => {
+        if (p.newValue != null && !Number.isFinite(p.newValue)) return false;
+        update((s) => setEnvelope(s, p.data.fy, p.data.source, c, p.newValue));
+        return true;
+      },
+      cellClass: (p: { data?: EnvRow }) => ['cbf-cap-num', p.data?.derived ? 'cbf-cap-muted' : ''],
+    });
+    const envApi: GridApi<EnvRow> = createGrid(root.querySelector<HTMLElement>('[data-set-envelopes]')!, {
+      theme: cbfGridTheme,
+      domLayout: 'autoHeight',
+      singleClickEdit: false,
+      stopEditingWhenCellsLoseFocus: true,
+      getRowId: (p) => p.data.id,
+      defaultColDef: { sortable: false, resizable: true, suppressHeaderMenuButton: true },
+      columnDefs: [
+        { field: 'fy', headerName: 'FY', width: 80, valueFormatter: (p) => fyLabel(p.value) },
+        { field: 'source', headerName: 'Envelope', width: 230, valueFormatter: (p) => ENVELOPE_SOURCE_LABEL[p.value as EnvelopeSource] },
+        { field: 'label', headerName: 'Source document', flex: 1, minWidth: 200 },
+        amountCol('Hatchery'), amountCol('Land'), amountCol('Passage'),
+        {
+          headerName: 'Total', type: 'rightAligned', width: 120, cellClass: 'cbf-cap-num',
+          valueGetter: (p) => (CATEGORIES.some((c) => p.data?.[c] == null) ? null : CATEGORIES.reduce((t, c) => t + (p.data![c] ?? 0), 0)),
+          valueFormatter: (p) => fmtK(p.value),
+        },
+      ],
+    });
+
+    // ---- gates grid ---------------------------------------------------------
+    const ROLE_LABEL: Record<string, string> = { cpm: 'Program manager', apl: 'Asset Plan lead', pm: 'Project PM', analyst: 'Analyst' };
+    const gateApi: GridApi<GateDefinition & { n: number }> = createGrid(root.querySelector<HTMLElement>('[data-set-gates]')!, {
+      theme: cbfGridTheme,
+      domLayout: 'autoHeight',
+      stopEditingWhenCellsLoseFocus: true,
+      getRowId: (p) => p.data.key,
+      defaultColDef: { sortable: false, resizable: true, suppressHeaderMenuButton: true },
+      columnDefs: [
+        { field: 'n', headerName: '#', width: 60 },
+        {
+          field: 'label', headerName: 'Step', flex: 1, minWidth: 220, editable: () => can('editSettings'),
+          valueSetter: (p) => { update((s) => { s.settings.gates.find((g) => g.key === p.data.key)!.label = String(p.newValue || p.data.label); }); return true; },
+        },
+        {
+          field: 'owner', headerName: 'Owner', flex: 1, minWidth: 220, editable: () => can('editSettings'),
+          valueSetter: (p) => { update((s) => { s.settings.gates.find((g) => g.key === p.data.key)!.owner = String(p.newValue ?? ''); }); return true; },
+        },
+        { field: 'editableBy', headerName: 'Edited in the prototype by', width: 240, valueFormatter: (p) => (p.value as string[]).map((r) => ROLE_LABEL[r]).join(', ') },
+        { field: 'hatcheryOnly', headerName: 'Applies to', width: 140, valueFormatter: (p) => (p.value ? 'Hatcheries only' : 'All projects') },
+      ],
+    });
+
+    function render() {
+      const s = getState();
+      // form
+      const vals: Record<string, string> = {
+        dataAsOf: s.settings.dataAsOf, apTurnInDate: s.settings.apTurnInDate, apTurnInCycle: s.settings.apTurnInCycle,
+        ombThreshold: String(s.settings.ombThreshold), rpLabel: s.settings.ratePeriod.label,
+        rpStart: String(s.settings.ratePeriod.startFy), rpEnd: String(s.settings.ratePeriod.endFy),
+      };
+      const editable = can('editSettings');
+      for (const [k, v] of Object.entries(vals)) {
+        const el = field(k);
+        if (document.activeElement !== el) el.value = v;
+        el.disabled = !editable;
+      }
+      (root!.querySelector('[data-set-save]') as HTMLElement).hidden = !editable;
+      root!.querySelector<HTMLElement>('[data-set-assumptions]')!.innerHTML =
+        `${assumption('Open question 4: the OMB threshold is a setting until Rodrigo and Legal confirm it.')} OMB threshold · ` +
+        `${assumption('Open question 5: Victoria described the current rate period as FY26–FY28; Finance to confirm. Nothing is blocked at a boundary.')} Rate period · ` +
+        `${assumption('Open question 6: the FY28 Asset Plan turn-in date is a placeholder until Victoria and Rodrigo confirm this year’s calendar.')} Turn-in date`;
+
+      // envelopes, with derived Optimal rows wherever no Optimal was entered
+      const rows: EnvRow[] = [];
+      const fys = [...new Set(s.envelopes.map((e) => e.fy))].sort();
+      for (const fy of fys) {
+        for (const source of ['ipr', 'apExpected', 'apOptimal'] as EnvelopeSource[]) {
+          const e = s.envelopes.find((x) => x.fy === fy && x.source === source);
+          if (e) rows.push({ id: `${fy}-${source}`, fy, source, label: e.sourceLabel, derived: false, ...e.amounts });
+          else if (source === 'apOptimal' && s.envelopes.some((x) => x.fy === fy && x.source === 'apExpected')) {
+            const d = (c: Category) => envelopeAmount(s.envelopes, fy, 'apOptimal', c);
+            rows.push({ id: `${fy}-${source}`, fy, source, label: `Derived: Expected ÷ ${OPTIMAL_FACTOR}`, derived: true, Hatchery: d('Hatchery'), Land: d('Land'), Passage: d('Passage') });
+          }
+        }
+      }
+      envApi.setGridOption('rowData', rows);
+
+      gateApi.setGridOption('rowData', s.settings.gates.map((g, i) => ({ ...g, n: i + 1 })));
+      root!.querySelector<HTMLElement>('[data-set-gates-intro]')!.innerHTML =
+        `${assumption('Open question 1: the working list from the Oct 5 meeting, in the order Rodrigo described; to be confirmed with Michelle and Rodrigo.')} ` +
+        'A project is greenlit when every applicable step is green. OMB and NPCC lights follow their own records; the rest are set on each project.';
+    }
+
+    subscribe(render);
+
+    root.querySelector('[data-set-reset]')!.addEventListener('click', () => {
+      resetDemo();
+      resultEl.innerHTML = '';
+      snackbar('info', 'Demo data reset to the seed.');
+    });
+  }
+</script>
+
+<style>
+  .cbf-cap-settings {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-400);
+    align-items: start;
+  }
+  .cbf-cap-settings > :global(:nth-child(3)),
+  .cbf-cap-settings > :global(:nth-child(4)),
+  .cbf-cap-settings__wide { grid-column: 1 / -1; }
+  @media (max-width: 1000px) {
+    .cbf-cap-settings { grid-template-columns: 1fr; }
+  }
+</style>
+
+<style is:global>
+  .cbf-cap-set-p { margin: 0; font-size: 14px; color: var(--color-content-default-secondary); max-inline-size: 80ch; }
+  .cbf-cap-set-result { font-size: 14px; padding: var(--spacing-200) var(--spacing-300); border-radius: var(--radius-200); background: var(--color-background-utility-success-subtle); }
+  .cbf-cap-set-result.is-error { background: var(--color-background-utility-danger-subtle); }
+  .cbf-cap-set-result p { margin: 0 0 var(--spacing-100); }
+  .cbf-cap-set-result p:last-child { margin: 0; }
+</style>

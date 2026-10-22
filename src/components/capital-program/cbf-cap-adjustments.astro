@@ -1,0 +1,172 @@
+---
+// cbf-cap-adjustments — the audit trail of money moves (PRD R9). Every change to
+// a modified budget and every move of money between FYs writes an Adjustment
+// (type, amount, from → to quarter, reason, document reference, who approved,
+// who logged it), so "what document is that adjustment in?" has an answer.
+// Filterable by type, project and date; exportable to CSV. The "Close FY"
+// wizard (cbf-cap-close-fy) opens from here.
+//
+// bcn-lego-checked: the log is AG Grid (shared/grid-chrome) — ecology has no
+// data-grid lego. Filters are esa-select and esa-date-picker, actions
+// esa-button, the type column a cloned esa-pill. Beacon is not cloned on this
+// machine.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import '../shared/cbf-data-grid-chrome.css';
+---
+<section class="cbf-cap-adjustments stack" data-gap="sm" data-cap-adjustments aria-labelledby="cap-adj-title">
+  <div class="repel">
+    <h2 class="cbf-cap-section-title" id="cap-adj-title">Adjustment log</h2>
+    <div class="cluster" data-gap="xs">
+      <EsaButton size="sm" variant="secondary" appearance="outline" icon="download" data-adj-csv>Export CSV</EsaButton>
+      <EsaButton size="sm" variant="primary" icon="calendar" data-adj-close-open>Close FY</EsaButton>
+    </div>
+  </div>
+
+  <div class="cbf-data-grid__controls">
+    <div class="cbf-data-grid__filters cluster" data-gap="md">
+      <esa-select size="sm" label="Type" class="cbf-cap-adj__f" data-adj-type></esa-select>
+      <esa-select size="sm" label="Project" class="cbf-cap-adj__f cbf-cap-adj__f--wide" data-adj-project></esa-select>
+      <esa-date-picker size="sm" label="From" class="cbf-cap-adj__date" data-adj-from></esa-date-picker>
+      <esa-date-picker size="sm" label="To" class="cbf-cap-adj__date" data-adj-to></esa-date-picker>
+      <EsaButton size="sm" variant="ghost" data-adj-clear>Clear filters</EsaButton>
+    </div>
+  </div>
+
+  <div class="cbf-data-grid__grid" data-adj-grid></div>
+  <footer class="cbf-data-grid__footer repel">
+    <span class="typography-meta" data-adj-count></span>
+    <span class="typography-meta cbf-cap-muted">$000s · newest first</span>
+  </footer>
+</section>
+
+<script>
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-date-picker';
+  import { createGrid, type GridApi } from 'ag-grid-community';
+  import { cbfGridTheme } from '../shared/grid-chrome';
+  import { getState, subscribe, can, currentRole } from '../../lib/capital/store';
+  import { fmtDate, slotLabel } from '../../lib/capital/finance';
+  import { esc, pill, moneyHtml, setSelect, type Variant } from '../../lib/capital/ui';
+  import { ADJUSTMENT_TYPES, type Adjustment, type AdjustmentType } from '../../lib/capital/types';
+  import { withBase } from '../../lib/base';
+
+  type Row = Adjustment & { project: string; move: string };
+  type Field = HTMLElement & { value: string };
+
+  const TYPE_VARIANT: Record<AdjustmentType, Variant> = {
+    'Bid over estimate': 'danger',
+    'Change order': 'warning',
+    'Schedule slip': 'info',
+    'Year-end re-forecast': 'primary',
+    'Transfer between projects': 'default',
+    'Scope change': 'warning',
+    Other: 'default',
+  };
+
+  const root = document.querySelector<HTMLElement>('[data-cap-adjustments]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const fType = root.querySelector<Field>('[data-adj-type]')!;
+    const fProject = root.querySelector<Field>('[data-adj-project]')!;
+    const fFrom = root.querySelector<Field>('[data-adj-from]')!;
+    const fTo = root.querySelector<Field>('[data-adj-to]')!;
+    const count = root.querySelector<HTMLElement>('[data-adj-count]')!;
+    const closeBtn = root.querySelector<HTMLElement>('[data-adj-close-open]')!;
+    const filters = { type: '', project: '', from: '', to: '' };
+
+    setSelect(fType, [{ label: 'All types', value: '' }, ...ADJUSTMENT_TYPES.map((t) => ({ label: t, value: t }))], '');
+    // ?project= deep-links from Project detail.
+    try { filters.project = new URL(location.href).searchParams.get('project') ?? ''; } catch { /* ignore */ }
+
+    const api: GridApi<Row> = createGrid(root.querySelector<HTMLElement>('[data-adj-grid]')!, {
+      theme: cbfGridTheme,
+      rowData: [],
+      domLayout: 'autoHeight',
+      suppressCellFocus: true,
+      tooltipShowDelay: 300,
+      defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true },
+      getRowId: (p) => p.data.id,
+      columnDefs: [
+        { colId: 'date', field: 'date', headerName: 'Date', width: 120, sort: 'desc', valueFormatter: (p) => fmtDate(p.value) },
+        {
+          colId: 'project', field: 'project', headerName: 'Project', minWidth: 300, flex: 2,
+          cellRenderer: (p: { data: Row }) =>
+            `<a class="cbf-grid-link" href="${withBase(`/capital-program/project?id=${encodeURIComponent(p.data.projectId)}`)}">${esc(p.data.project)}</a>`,
+        },
+        {
+          colId: 'type', field: 'type', headerName: 'Type', width: 170,
+          cellRenderer: (p: { value: AdjustmentType }) => pill(p.value, TYPE_VARIANT[p.value] ?? 'default', { size: 'xs' }),
+        },
+        { colId: 'amount', field: 'amount', headerName: 'Amount', width: 110, type: 'rightAligned', cellClass: 'cbf-cap-num', cellRenderer: (p: { value: number }) => moneyHtml(p.value, { zero: '0' }) },
+        { colId: 'move', field: 'move', headerName: 'From → to', width: 160 },
+        { colId: 'reason', field: 'reason', headerName: 'Reason', minWidth: 280, flex: 3, tooltipField: 'reason' },
+        { colId: 'varianceReason', field: 'varianceReason', headerName: 'Variance reason', width: 160, valueFormatter: (p) => p.value ?? '—' },
+        {
+          colId: 'docRef', field: 'docRef', headerName: 'Document', width: 200, tooltipField: 'docRef',
+          cellRenderer: (p: { data: Row }) => {
+            const ref = p.data.docRef ?? '';
+            if (!ref && !p.data.docUrl) return '—';
+            return p.data.docUrl ? `<a class="cbf-grid-link" href="${esc(p.data.docUrl)}" target="_blank" rel="noreferrer">${esc(ref || 'Link')}</a>` : esc(ref);
+          },
+        },
+        { colId: 'approvedBy', field: 'approvedBy', headerName: 'Approved by', width: 150, valueFormatter: (p) => p.value ?? '—' },
+        { colId: 'user', field: 'user', headerName: 'Logged by', width: 150 },
+      ],
+    });
+
+    function render() {
+      const s = getState();
+      const title = new Map(s.projects.map((p) => [p.id, p.title]));
+      const used = [...new Set(s.adjustments.map((a) => a.projectId))].sort((x, y) => (title.get(x) ?? x).localeCompare(title.get(y) ?? y));
+      setSelect(fProject, [{ label: 'All projects', value: '' }, ...used.map((id) => ({ label: title.get(id) ?? id, value: id }))], filters.project);
+
+      const rows: Row[] = s.adjustments
+        .filter((a) => (!filters.type || a.type === filters.type)
+          && (!filters.project || a.projectId === filters.project)
+          && (!filters.from || a.date >= filters.from)
+          && (!filters.to || a.date <= filters.to))
+        .map((a) => ({
+          ...a,
+          project: title.get(a.projectId) ?? a.projectId,
+          move: a.fromSlot != null || a.toSlot != null
+            ? `${a.fromSlot != null ? slotLabel(a.fromSlot) : '—'} → ${a.toSlot != null ? slotLabel(a.toSlot) : '—'}`
+            : 'Budget',
+        }));
+      api.setGridOption('rowData', rows);
+      count.textContent = `Showing ${rows.length} of ${s.adjustments.length} adjustments`;
+
+      const ok = can('closeFy');
+      closeBtn.toggleAttribute('disabled', !ok);
+      closeBtn.title = ok ? '' : `Only the Program manager can close a fiscal year${currentRole().key === 'cpm' ? ' (read-only snapshot selected)' : ''}.`;
+    }
+
+    fType.addEventListener('change', () => { filters.type = fType.value ?? ''; render(); });
+    fProject.addEventListener('change', () => { filters.project = fProject.value ?? ''; render(); });
+    fFrom.addEventListener('change', () => { filters.from = fFrom.value ?? ''; render(); });
+    fTo.addEventListener('change', () => { filters.to = fTo.value ?? ''; render(); });
+    root.querySelector('[data-adj-clear]')!.addEventListener('click', () => {
+      Object.assign(filters, { type: '', project: '', from: '', to: '' });
+      fType.value = ''; fFrom.value = ''; fTo.value = '';
+      render();
+    });
+    closeBtn.addEventListener('click', () => {
+      if (!can('closeFy')) return;
+      document.dispatchEvent(new CustomEvent('cbf-cap:close-fy-open'));
+    });
+    root.querySelector('[data-adj-csv]')!.addEventListener('click', () => {
+      api.exportDataAsCsv({
+        fileName: 'capital-adjustments.csv',
+        processCellCallback: (p) => (p.column.getColId() === 'amount' ? String(Math.round(p.value ?? 0)) : p.value ?? ''),
+      });
+    });
+
+    subscribe(render);
+  }
+</script>
+
+<style>
+  .cbf-cap-adj__f { inline-size: 13rem; }
+  .cbf-cap-adj__f--wide { inline-size: 20rem; }
+  .cbf-cap-adj__date { inline-size: 10rem; }
+</style>

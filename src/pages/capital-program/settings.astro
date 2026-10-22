@@ -1,0 +1,17 @@
+---
+// /capital-program/settings — Data & settings (PRD screen 6): actuals import,
+// the "Data as of" date and other settings, budget envelopes, the approval
+// pathway steps, and the demo reset.
+//
+// Thin assembler — all behavior lives in cbf-cap-settings.
+import CbfCapFrame from '../../components/capital-program/cbf-cap-frame.astro';
+import CbfCapSettings from '../../components/capital-program/cbf-cap-settings.astro';
+---
+<!-- manifest:
+  layout: cbf-cap-frame (nav + prototype strip + app panel + tabs + header bar)
+  sections:
+    - settings -> cbf-cap-settings  (R10 actuals import, R2 envelopes, R7 gate list, dates/thresholds, reset)
+-->
+<CbfCapFrame active="settings" title="Data & settings">
+  <CbfCapSettings />
+</CbfCapFrame>

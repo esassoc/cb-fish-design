@@ -1,0 +1,21 @@
+---
+// cbf-cap-templates — one hidden, server-rendered copy of every esa-pill variant
+// (xs + sm) and every esa-badge dot variant, for the capital program's client
+// renderers to clone (src/lib/capital/ui.ts → pill() / dot()). The screens draw
+// from live, editable state in localStorage, so their pills can't be rendered at
+// build time; cloning the real lego keeps them byte-identical to esa-pill/badge.
+import EsaPill from '@esa/ecology/esa-pill.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+
+const pillVariants = ['default', 'primary', 'success', 'warning', 'danger', 'info'] as const;
+const sizes = ['xs', 'sm'] as const;
+const dotVariants = ['primary', 'secondary', 'success', 'warning', 'danger', 'info'] as const;
+---
+<div data-cap-templates hidden aria-hidden="true">
+  {pillVariants.map((v) => sizes.map((size) => (
+    <span data-tpl={`pill-${v}-${size}`}><EsaPill label="·" variant={v} size={size} removable={false} /></span>
+  )))}
+  {dotVariants.map((v) => (
+    <span data-tpl={`dot-${v}`}><EsaBadge dot variant={v} size="sm" label="·" /></span>
+  ))}
+</div>

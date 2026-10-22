@@ -1,0 +1,435 @@
+---
+// cbf-cap-portfolio-grid — the Portfolio grid (PRD R1): "the Capital Budget
+// spreadsheet with more columns". Every project, grouped Hatchery Expand →
+// Hatchery Sustain → Land → Passage (by CBFish portfolio membership), with a
+// subtotal per group and a pinned grand total.
+//
+// FY columns follow the header's Current FY (FY27 view: FY26 actuals, FY27
+// forecast + YTD, FY28–FY30). Columns can be shown/hidden and sorted (sorting
+// happens WITHIN groups — postSortRows keeps each group's header, rows and
+// subtotal together); rows filter by category, record type, stage, OMB status,
+// PM and "flagged only". Placeholders read muted with a dashed edge and can be
+// left out of the totals with one switch. Row click opens Project detail; the
+// filters live in sessionStorage so the browser's back button returns to them.
+//
+// bcn-lego-checked: ecology has no data-grid lego; the table is AG Grid
+// Community with the spoke's token theme (shared/grid-chrome, same as the CRS
+// and RM&E grids). Every control around it is a lego: esa-chip-group (category),
+// esa-select (filters), esa-switch-toggle, esa-popover + esa-checkbox-group (the
+// column picker), esa-button / esa-icon-button, cbf-search-field. Status cells
+// clone esa-pill / esa-badge markup (cbf-cap-templates). Beacon is not cloned on
+// this machine.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaIconButton from '@esa/ecology/esa-button.astro';
+import CbfSearchField from '../search/cbf-search-field.astro';
+import '../shared/cbf-data-grid-chrome.css';
+
+const categoryFilters = [
+  { value: '', label: 'All' },
+  { value: 'Hatchery', label: 'Hatchery' },
+  { value: 'Land', label: 'Land' },
+  { value: 'Passage', label: 'Passage' },
+];
+---
+<section class="cbf-cap-grid stack" data-gap="sm" data-cap-grid aria-labelledby="cap-grid-title">
+  <div class="repel">
+    <h2 class="cbf-cap-section-title" id="cap-grid-title" data-grid-title>Capital forecast by project</h2>
+    <div class="cluster" data-gap="xs">
+      <esa-popover trigger="click" position="bottom" class="cbf-cap-grid__columns">
+        <EsaButton size="sm" variant="secondary" appearance="outline" icon="layout-dashboard" iconRight="chevron-down">Columns</EsaButton>
+        <div slot="content" class="cbf-cap-grid__columns-panel">
+          <esa-checkbox-group size="sm" label="Show columns" data-grid-columns></esa-checkbox-group>
+        </div>
+      </esa-popover>
+      <EsaButton size="sm" variant="secondary" appearance="outline" icon="download" data-grid-csv>Export CSV</EsaButton>
+    </div>
+  </div>
+
+  <div class="cbf-data-grid__controls repel">
+    <div class="cbf-data-grid__filters cluster" data-gap="md">
+      <label class="cbf-data-grid__filter">
+        <span class="typography-meta">Category</span>
+        <esa-chip-group size="sm" label="Filter by category" value="" options={JSON.stringify(categoryFilters)} data-f-category></esa-chip-group>
+      </label>
+      <esa-select size="sm" label="Record type" class="cbf-cap-grid__f" data-f-record></esa-select>
+      <esa-select size="sm" label="Stage" class="cbf-cap-grid__f" data-f-stage></esa-select>
+      <esa-select size="sm" label="OMB status" class="cbf-cap-grid__f" data-f-omb></esa-select>
+      <esa-select size="sm" label="PM / COR" class="cbf-cap-grid__f" data-f-pm></esa-select>
+      <esa-switch-toggle size="sm" label="Flagged only" data-f-flag></esa-switch-toggle>
+      <esa-switch-toggle size="sm" label="Count placeholders in totals" checked data-f-placeholders></esa-switch-toggle>
+    </div>
+    <div class="cbf-data-grid__search">
+      <CbfSearchField placeholder="Search number, title, sponsor…" iconSize={18} data-f-search aria-label="Search projects" />
+    </div>
+  </div>
+
+  <div class="cbf-data-grid__grid cbf-cap-grid__grid" data-grid-host></div>
+
+  <footer class="cbf-data-grid__footer repel">
+    <span class="typography-meta" data-grid-count></span>
+    <span class="typography-meta cbf-cap-muted">$000s · negatives in parentheses · click a row for detail</span>
+  </footer>
+</section>
+
+<script>
+  import '@esa/ecology/esa-chip-group';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-switch-toggle';
+  import '@esa/ecology/esa-popover';
+  import '@esa/ecology/esa-checkbox-group';
+  import { createGrid, type ColDef, type GridApi, type RowClassParams } from 'ag-grid-community';
+  import { cbfGridTheme } from '../shared/grid-chrome';
+  import { getState, getUi, subscribe, view } from '../../lib/capital/store';
+  import {
+    fyForecast, fyActuals, fyLabel, modifiedBudget, remainingBudget, hasOmbFlag, pathway, isActiveType, isPlaceholderType,
+  } from '../../lib/capital/finance';
+  import { esc, pill, moneyHtml, RECORD_VARIANT, ombPill, flagPill, gateDot, setSelect } from '../../lib/capital/ui';
+  import { GROUPS, OMB_STATUSES, RECORD_TYPES, STAGES, type GroupKey, type Project } from '../../lib/capital/types';
+  import { withBase } from '../../lib/base';
+
+  const FILTER_KEY = 'cbf-capital:grid';
+
+  type Kind = 'group' | 'project' | 'subtotal';
+  interface Row {
+    id: string;
+    kind: Kind;
+    group: GroupKey | 'Total';
+    project?: Project;
+    number?: string;
+    title: string;
+    sponsor?: string;
+    pm?: string;
+    recordType?: string;
+    stage?: string;
+    omb?: string;
+    npcc?: string;
+    design?: string;
+    account?: string;
+    inAp?: string;
+    flag?: boolean;
+    pathwayHtml?: string;
+    greenlit?: boolean;
+    prior: number | null;
+    cur: number | null;
+    ytd: number | null;
+    fy1: number | null;
+    fy2: number | null;
+    fy3: number | null;
+    modified: number | null;
+    remaining: number | null;
+    lastNote?: string;
+    count?: number;
+  }
+
+  interface Filters {
+    category: string;
+    record: string;
+    stage: string;
+    omb: string;
+    pm: string;
+    flagged: boolean;
+    placeholders: boolean;
+    search: string;
+    hidden: string[];
+  }
+  const DEFAULT_HIDDEN = ['account', 'inAp', 'pathway'];
+  let filters: Filters = { category: '', record: '', stage: '', omb: '', pm: '', flagged: false, placeholders: true, search: '', hidden: DEFAULT_HIDDEN };
+  try {
+    const raw = sessionStorage.getItem(FILTER_KEY);
+    if (raw) filters = { ...filters, ...JSON.parse(raw) };
+  } catch { /* ignore */ }
+  const saveFilters = () => { try { sessionStorage.setItem(FILTER_KEY, JSON.stringify(filters)); } catch { /* ignore */ } };
+
+  const groupOf = (p: Project): GroupKey =>
+    p.category === 'Hatchery' ? (p.subcategory === 'Sustain' ? 'Hatchery Sustain' : 'Hatchery Expand') : p.category;
+
+  const root = document.querySelector<HTMLElement>('[data-cap-grid]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const host = root.querySelector<HTMLElement>('[data-grid-host]')!;
+    const count = root.querySelector<HTMLElement>('[data-grid-count]')!;
+    const titleEl = root.querySelector<HTMLElement>('[data-grid-title]')!;
+    type Sel = HTMLElement & { value: string };
+    const fCategory = root.querySelector<Sel>('[data-f-category]')!;
+    const fRecord = root.querySelector<Sel>('[data-f-record]')!;
+    const fStage = root.querySelector<Sel>('[data-f-stage]')!;
+    const fOmb = root.querySelector<Sel>('[data-f-omb]')!;
+    const fPm = root.querySelector<Sel>('[data-f-pm]')!;
+    const fFlag = root.querySelector<HTMLElement & { checked: boolean }>('[data-f-flag]')!;
+    const fPh = root.querySelector<HTMLElement & { checked: boolean }>('[data-f-placeholders]')!;
+    const fSearch = root.querySelector<HTMLInputElement>('[data-f-search]')!;
+    const colPicker = root.querySelector<HTMLElement & { options: unknown; value: string[] }>('[data-grid-columns]')!;
+
+    const all = (label: string, values: readonly string[]) => [{ label: `All ${label}`, value: '' }, ...values.map((v) => ({ label: v, value: v }))];
+    setSelect(fRecord, all('record types', RECORD_TYPES), filters.record);
+    setSelect(fStage, all('stages', STAGES), filters.stage);
+    setSelect(fOmb, all('OMB statuses', OMB_STATUSES), filters.omb);
+    fCategory.value = filters.category;
+    fFlag.checked = filters.flagged;
+    fPh.checked = filters.placeholders;
+    fSearch.value = filters.search;
+
+    const money = (field: keyof Row, headerName: string, extra: Partial<ColDef<Row>> = {}): ColDef<Row> => ({
+      colId: field as string, field, headerName, type: 'rightAligned', minWidth: 104, width: 112,
+      cellClass: 'cbf-cap-num', comparator: (a, b) => (a ?? 0) - (b ?? 0),
+      cellRenderer: (p: { value: number | null; data: Row }) => (p.data?.kind === 'group' ? '' : moneyHtml(p.value)),
+      ...extra,
+    });
+
+    const link = (r: Row, text: string) =>
+      `<a class="cbf-grid-link" href="${withBase(`/capital-program/project?id=${encodeURIComponent(r.id)}`)}">${esc(text)}</a>`;
+
+    const columnDefs: ColDef<Row>[] = [
+      {
+        colId: 'number', field: 'number', headerName: 'Project #', pinned: 'left', width: 132, cellClass: 'cbf-grid-id',
+        cellRenderer: (p: { data: Row; value: string }) => (p.data.kind === 'project' ? esc(p.value || '—') : ''),
+      },
+      {
+        colId: 'title', field: 'title', headerName: 'Title', pinned: 'left', width: 300,
+        cellRenderer: (p: { data: Row }) => {
+          const r = p.data;
+          if (r.kind === 'group') return `<strong>${esc(r.title)}</strong> <span class="cbf-cap-muted">${r.count} projects</span>`;
+          if (r.kind === 'subtotal') return `<span>${esc(r.title)}</span>`;
+          return `${r.flag ? flagPill('xs') + ' ' : ''}${link(r, r.title)}`;
+        },
+      },
+      { colId: 'sponsor', field: 'sponsor', headerName: 'Sponsor', width: 160, tooltipValueGetter: (p) => p.value },
+      { colId: 'pm', field: 'pm', headerName: 'PM / COR', width: 150 },
+      {
+        colId: 'recordType', field: 'recordType', headerName: 'Record type', width: 124,
+        cellRenderer: (p: { data: Row; value: string }) => (p.data.kind === 'project' ? pill(p.value, RECORD_VARIANT[p.value as keyof typeof RECORD_VARIANT], { size: 'xs' }) : ''),
+      },
+      { colId: 'stage', field: 'stage', headerName: 'Lifecycle stage', width: 190, tooltipValueGetter: (p) => p.value },
+      {
+        colId: 'omb', field: 'omb', headerName: 'OMB status', width: 124,
+        cellRenderer: (p: { data: Row }) => (p.data.kind === 'project' ? ombPill(p.data.project!.omb.status, 'xs') : ''),
+      },
+      { colId: 'npcc', field: 'npcc', headerName: 'NPCC step', width: 120, valueFormatter: (p) => (p.value === 'Not required' ? '—' : (p.value ?? '').replace(/ \(.*\)/, '')) },
+      { colId: 'design', field: 'design', headerName: 'Design status', width: 150 },
+      { colId: 'account', field: 'account', headerName: 'Account type', width: 120 },
+      { colId: 'inAp', field: 'inAp', headerName: 'In current Asset Plan', width: 150 },
+      {
+        colId: 'pathway', headerName: 'Pathway', width: 130, sortable: false,
+        cellRenderer: (p: { data: Row }) => (p.data.kind === 'project' ? `<span class="cbf-cap-dots">${p.data.pathwayHtml}</span>` : ''),
+      },
+      money('prior', 'Prior FY actuals'),
+      money('cur', 'Current FY forecast'),
+      money('ytd', 'Current FY YTD actuals'),
+      money('fy1', 'FY+1'),
+      money('fy2', 'FY+2'),
+      money('fy3', 'FY+3'),
+      money('modified', 'Modified budget'),
+      money('remaining', 'Remaining'),
+      { colId: 'lastNote', field: 'lastNote', headerName: 'Last note', width: 320, tooltipValueGetter: (p) => p.value },
+    ];
+
+    const pickable = columnDefs.filter((c) => !['number', 'title'].includes(c.colId!));
+
+    let rows: Row[] = [];
+    let total: Row | null = null;
+    let shownProjects = 0;
+    let allProjects = 0;
+
+    const api: GridApi<Row> = createGrid(host, {
+      theme: cbfGridTheme,
+      rowData: [],
+      columnDefs,
+      domLayout: 'autoHeight',
+      animateRows: false,
+      suppressCellFocus: true,
+      tooltipShowDelay: 400,
+      defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true },
+      getRowId: (p) => p.data.id,
+      getRowClass: (p: RowClassParams<Row>) => {
+        const r = p.data;
+        if (!r) return '';
+        if (r.kind === 'group') return 'cbf-cap-row-group';
+        if (r.kind === 'subtotal') return 'cbf-cap-row-subtotal';
+        if (r.group === 'Total') return 'cbf-cap-row-total';
+        const cls = ['cbf-cap-row-project'];
+        if (r.recordType === 'Placeholder' || r.recordType === 'Request') cls.push('is-placeholder');
+        if (r.recordType === 'Cancelled' || r.recordType === 'Deferred' || r.recordType === 'Complete') cls.push('is-inactive');
+        return cls.join(' ');
+      },
+      postSortRows: ({ nodes }) => {
+        const rank = (n: (typeof nodes)[number]) => {
+          const d = n.data!;
+          return GROUPS.indexOf(d.group as GroupKey) * 3 + (d.kind === 'group' ? 0 : d.kind === 'project' ? 1 : 2);
+        };
+        const order = new Map(nodes.map((n, i) => [n, i]));
+        nodes.sort((a, b) => rank(a) - rank(b) || order.get(a)! - order.get(b)!);
+      },
+      onRowClicked: (e) => {
+        if (e.data?.kind !== 'project') return;
+        if ((e.event?.target as HTMLElement)?.closest('a')) return;
+        location.href = withBase(`/capital-program/project?id=${encodeURIComponent(e.data.id)}`);
+      },
+    });
+
+    // Column picker.
+    colPicker.options = pickable.map((c) => ({ label: c.headerName!, value: c.colId! }));
+    const applyColumns = () => {
+      api.setColumnsVisible(pickable.map((c) => c.colId!), true);
+      api.setColumnsVisible(filters.hidden, false);
+      colPicker.value = pickable.map((c) => c.colId!).filter((id) => !filters.hidden.includes(id));
+    };
+    colPicker.addEventListener('change', () => {
+      const shown = new Set(colPicker.value);
+      filters.hidden = pickable.map((c) => c.colId!).filter((id) => !shown.has(id));
+      saveFilters();
+      api.setColumnsVisible(pickable.map((c) => c.colId!), true);
+      api.setColumnsVisible(filters.hidden, false);
+    });
+
+    function build() {
+      const s = getState();
+      const ui = getUi();
+      const v = view();
+      const fy = ui.fy;
+      const defs = s.settings.gates;
+      const lastNote = new Map<string, string>();
+      for (const n of [...s.notes].sort((a, b) => a.date.localeCompare(b.date))) lastNote.set(n.projectId, `Q${n.q} FY${String(n.fy).slice(2)}: ${n.text}`);
+
+      // PM filter options follow the data.
+      const pms = [...new Set(v.projects.map((p) => p.pm).filter(Boolean))].sort();
+      setSelect(fPm, all('PMs', pms), filters.pm);
+
+      // Header names follow the Current FY.
+      const h: Record<string, string> = {
+        prior: `${fyLabel(fy - 1)} actuals`, cur: `${fyLabel(fy)} forecast`, ytd: `${fyLabel(fy)} YTD actuals`,
+        fy1: fyLabel(fy + 1), fy2: fyLabel(fy + 2), fy3: fyLabel(fy + 3),
+      };
+      api.setGridOption('columnDefs', columnDefs.map((c) => ({ ...c, headerName: h[c.colId!] ?? c.headerName, hide: filters.hidden.includes(c.colId!) })));
+      titleEl.textContent = `Capital forecast by project — ${fyLabel(fy)} view`;
+
+      const q = filters.search.trim().toLowerCase();
+      const projectRows: Row[] = [];
+      allProjects = v.projects.length;
+      for (const p of v.projects) {
+        const plan = v.plans[p.id];
+        const act = v.actuals[p.id];
+        const flag = hasOmbFlag(p, plan, v.asOf);
+        if (filters.category && p.category !== filters.category) continue;
+        if (filters.record && p.recordType !== filters.record) continue;
+        if (filters.stage && p.stage !== filters.stage) continue;
+        if (filters.omb && p.omb.status !== filters.omb) continue;
+        if (filters.pm && p.pm !== filters.pm) continue;
+        if (filters.flagged && !flag) continue;
+        if (q && ![p.number, p.title, p.sponsor, p.pm].some((x) => (x ?? '').toLowerCase().includes(q))) continue;
+        const pw = pathway(p, defs);
+        const ap = pw.lights.find((l) => l.def.key === 'assetPlan')!.status;
+        projectRows.push({
+          id: p.id, kind: 'project', group: groupOf(p), project: p,
+          number: p.number ?? '', title: p.title, sponsor: p.sponsor, pm: p.pm || '—',
+          recordType: p.recordType, stage: `${p.stage}${p.stageNote ? ` (${p.stageNote})` : ''}`,
+          omb: p.omb.status, npcc: p.npcc, design: p.design.status, account: p.accountType,
+          inAp: ap === 'Green' ? 'Yes' : 'No',
+          flag, greenlit: pw.greenlit,
+          pathwayHtml: pw.lights.map((l) => gateDot(l.status, l.def.label)).join(''),
+          prior: fyActuals(act, fy - 1),
+          cur: fyForecast(plan, act, fy, v.asOf),
+          ytd: fyActuals(act, fy),
+          fy1: fyForecast(plan, act, fy + 1, v.asOf),
+          fy2: fyForecast(plan, act, fy + 2, v.asOf),
+          fy3: fyForecast(plan, act, fy + 3, v.asOf),
+          modified: modifiedBudget(p),
+          remaining: remainingBudget(p, act),
+          lastNote: lastNote.get(p.id) ?? '',
+        });
+      }
+      shownProjects = projectRows.length;
+
+      const counts = (r: Row) => {
+        const p = r.project!;
+        if (isActiveType(p)) return true;
+        if (isPlaceholderType(p)) return filters.placeholders;
+        return false;
+      };
+      const sum = (rs: Row[], k: keyof Row) => rs.filter(counts).reduce((t, r) => t + ((r[k] as number | null) ?? 0), 0);
+      const totalsOf = (rs: Row[]) => ({
+        prior: sum(rs, 'prior'), cur: sum(rs, 'cur'), ytd: sum(rs, 'ytd'), fy1: sum(rs, 'fy1'), fy2: sum(rs, 'fy2'), fy3: sum(rs, 'fy3'),
+        modified: sum(rs, 'modified'), remaining: sum(rs, 'remaining'),
+      });
+
+      rows = [];
+      for (const g of GROUPS) {
+        const rs = projectRows.filter((r) => r.group === g);
+        if (!rs.length) continue;
+        rows.push({ id: `g:${g}`, kind: 'group', group: g, title: g, count: rs.length, prior: null, cur: null, ytd: null, fy1: null, fy2: null, fy3: null, modified: null, remaining: null });
+        rows.push(...rs);
+        rows.push({ id: `s:${g}`, kind: 'subtotal', group: g, title: `${g} total`, ...totalsOf(rs) });
+      }
+      total = { id: 'total', kind: 'subtotal', group: 'Total', title: filters.placeholders ? 'Grand total' : 'Grand total (Active only)', ...totalsOf(projectRows) };
+
+      api.setGridOption('rowData', rows);
+      api.setGridOption('pinnedBottomRowData', [total]);
+      // Row ids are stable across rebuilds, so cells whose value didn't change
+      // (a group's title, while its count did) need a forced repaint.
+      api.refreshCells({ force: true });
+      count.textContent = `Showing ${shownProjects} of ${allProjects} projects`;
+    }
+
+    applyColumns();
+
+    const refilter = () => { saveFilters(); build(); };
+    fCategory.addEventListener('change', () => { filters.category = fCategory.value ?? ''; refilter(); });
+    fRecord.addEventListener('change', () => { filters.record = fRecord.value ?? ''; refilter(); });
+    fStage.addEventListener('change', () => { filters.stage = fStage.value ?? ''; refilter(); });
+    fOmb.addEventListener('change', () => { filters.omb = fOmb.value ?? ''; refilter(); });
+    fPm.addEventListener('change', () => { filters.pm = fPm.value ?? ''; refilter(); });
+    fFlag.addEventListener('change', () => { filters.flagged = fFlag.checked; refilter(); });
+    fPh.addEventListener('change', () => { filters.placeholders = fPh.checked; refilter(); });
+    fSearch.addEventListener('input', () => { filters.search = fSearch.value; refilter(); });
+
+    // A headroom tile click filters to its category.
+    document.addEventListener('cbf-cap:filter-category', (e) => {
+      const c = (e as CustomEvent).detail.category as string;
+      filters.category = c === 'Total' ? '' : c;
+      fCategory.value = filters.category;
+      refilter();
+      root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    root.querySelector('[data-grid-csv]')?.addEventListener('click', () => {
+      api.exportDataAsCsv({
+        fileName: `capital-forecast-${fyLabel(getUi().fy)}.csv`,
+        columnKeys: api.getAllDisplayedColumns().filter((c) => c.getColId() !== 'pathway'),
+        processCellCallback: (p) => {
+          const id = p.column.getColId();
+          const r = p.node?.data as Row | undefined;
+          if (['prior', 'cur', 'ytd', 'fy1', 'fy2', 'fy3', 'modified', 'remaining'].includes(id)) return p.value == null ? '' : String(Math.round(p.value));
+          if (id === 'title' && r?.flag) return `${p.value} [OMB not approved]`;
+          return p.value ?? '';
+        },
+      });
+    });
+
+    subscribe(build);
+  }
+</script>
+
+<style>
+  .cbf-cap-grid__f { inline-size: 11rem; }
+  .cbf-cap-grid__columns-panel { padding: var(--spacing-300); min-inline-size: 14rem; max-block-size: 24rem; overflow: auto; }
+</style>
+
+<style is:global>
+  /* Row classes come from AG Grid's getRowClass (no scope hash). */
+  .cbf-cap-grid__grid .cbf-cap-row-group {
+    background: var(--color-background-elevation-sunken);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-background-default-knockout);
+  }
+  .cbf-cap-grid__grid .cbf-cap-row-subtotal,
+  .cbf-cap-grid__grid .ag-row-pinned {
+    font-weight: var(--typography-font-weight-semibold);
+    background: var(--color-background-brand-subtle);
+  }
+  .cbf-cap-grid__grid .ag-row-pinned { border-top: 2px solid var(--color-border-brand); }
+  .cbf-cap-grid__grid .cbf-cap-row-project { cursor: pointer; }
+  .cbf-cap-grid__grid .cbf-cap-row-project.is-placeholder { color: var(--color-content-default-tertiary); }
+  .cbf-cap-grid__grid .cbf-cap-row-project.is-placeholder .ag-cell:first-child { box-shadow: inset 3px 0 0 -1px transparent; border-left: 2px dashed var(--color-border-default-strong); }
+  .cbf-cap-grid__grid .cbf-cap-row-project.is-inactive { color: var(--color-content-default-tertiary); }
+  .cbf-cap-grid__grid .ag-cell .esa-pill { vertical-align: middle; }
+</style>

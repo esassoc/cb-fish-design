@@ -1,0 +1,340 @@
+---
+// cbf-cap-project-overview — the top of Project detail (PRD R3 + R7):
+//
+//   • Header: project #, title, sponsor, PMs, category, record type, stage, link
+//     out to CBFish, and the green-light verdict — "Greenlit", or "Not greenlit —
+//     n of m steps" — plus the red "OMB not approved" flag when R7 fires.
+//   • Budget card: original, modified, pending, contingency, remaining and the
+//     budget history (date, amount, reason, decision). "Change budget" writes
+//     both the history entry and its Adjustment (R9).
+//   • Pathway card: one row per gate from the settings table (Leadership, OMB,
+//     Capitalization, Funding, Asset Plan, CBFish budget, NPCC for hatcheries),
+//     each with its light, date, owner, document and note; editable by the role
+//     that owns it. The OMB row shows months waited while submitted.
+//   • Status card: EC, MOA and design status, each with date and note.
+//
+// One esa-dialog serves every "Edit" — its body is rendered for whatever was
+// clicked (budget, a gate, OMB, NPCC, a status line).
+//
+// bcn-lego-checked: cards are esa-card, lights are cloned esa-pill (ui.ts),
+// edits are esa-dialog + esa-text-field / esa-select / esa-date-picker /
+// esa-checkbox / esa-textarea, actions are esa-button. The rows inside each card
+// are definition lists because the values are client-rendered from live state.
+// Beacon is not cloned on this machine.
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+---
+<section class="cbf-cap-ov stack" data-gap="md" data-cap-overview>
+  <div class="cbf-cap-ov__head" data-ov-head></div>
+
+  <div class="cbf-cap-ov__cards">
+    <EsaCard title="Budget" variant="outlined" padding="compact">
+      <EsaButton slot="actions" size="sm" variant="secondary" appearance="outline" icon="pencil" data-ov-edit-budget>Change budget</EsaButton>
+      <div data-ov-budget></div>
+    </EsaCard>
+    <EsaCard title="Approval pathway" variant="outlined" padding="compact">
+      <div data-ov-pathway></div>
+    </EsaCard>
+    <EsaCard title="Status" variant="outlined" padding="compact">
+      <div data-ov-status></div>
+    </EsaCard>
+  </div>
+
+  <esa-dialog data-ov-dialog size="md">
+    <div data-ov-dialog-body class="stack" data-gap="sm"></div>
+    <div slot="footer" class="cluster" data-gap="sm">
+      <EsaButton variant="secondary" appearance="outline" data-ov-cancel>Cancel</EsaButton>
+      <EsaButton variant="primary" data-ov-save>Save</EsaButton>
+    </div>
+  </esa-dialog>
+</section>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-textarea';
+  import '@esa/ecology/esa-date-picker';
+  import '@esa/ecology/esa-checkbox';
+  import { getState, subscribe, view, update, can, canEditGate, userName, TODAY } from '../../lib/capital/store';
+  import {
+    pathway, hasOmbFlag, modifiedBudget, remainingBudget, allTimeActuals, fmtK, fmtDate, monthsWaited, overage, gateStatus,
+  } from '../../lib/capital/finance';
+  import { changeBudget, setGate, setOmb, setNpcc, findProject } from '../../lib/capital/actions';
+  import { esc, pill, gatePill, RECORD_VARIANT, ombPill, flagPill, assumption, snackbar, moneyHtml } from '../../lib/capital/ui';
+  import {
+    ADJUSTMENT_TYPES, GATE_STATUSES, NPCC_STEPS, OMB_STATUSES, type GateKey, type GateStatus, type OmbStatus, type Project,
+  } from '../../lib/capital/types';
+  import { withBase } from '../../lib/base';
+
+  const root = document.querySelector<HTMLElement>('[data-cap-overview]');
+  const id = new URLSearchParams(location.search).get('id') ?? '';
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const head = root.querySelector<HTMLElement>('[data-ov-head]')!;
+    const budgetEl = root.querySelector<HTMLElement>('[data-ov-budget]')!;
+    const pathEl = root.querySelector<HTMLElement>('[data-ov-pathway]')!;
+    const statusEl = root.querySelector<HTMLElement>('[data-ov-status]')!;
+    const dialog = root.querySelector<HTMLElement & { show(): void; close(): void; heading: string }>('[data-ov-dialog]')!;
+    const dialogBody = root.querySelector<HTMLElement>('[data-ov-dialog-body]')!;
+    const budgetBtn = root.querySelector<HTMLElement>('[data-ov-edit-budget]')!;
+    let onSave: (() => boolean | void) | null = null;
+
+    const field = (name: string) => dialogBody.querySelector<HTMLElement & { value: string; checked?: boolean }>(`[data-field="${name}"]`);
+    const val = (name: string) => (field(name)?.value ?? '').toString().trim();
+    const opts = (values: readonly string[]) => esc(JSON.stringify(values.map((v) => ({ label: v, value: v }))));
+
+    function open(heading: string, html: string, save: () => boolean | void) {
+      dialog.heading = heading;
+      dialogBody.innerHTML = html;
+      onSave = save;
+      dialog.show();
+    }
+    root.querySelector('[data-ov-cancel]')!.addEventListener('click', () => dialog.close());
+    root.querySelector('[data-ov-save]')!.addEventListener('click', () => {
+      if (onSave && onSave() === false) return;
+      dialog.close();
+    });
+
+    const dl = (rows: [string, string][]) =>
+      `<dl class="cbf-cap-ov-dl">${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
+
+    function render() {
+      const s = getState();
+      const v = view();
+      const p = v.projects.find((x) => x.id === id);
+      if (!p) {
+        head.innerHTML = `<p>No project with id “${esc(id)}”. <a href="${withBase('/capital-program')}">Back to the portfolio</a>.</p>`;
+        budgetEl.innerHTML = pathEl.innerHTML = statusEl.innerHTML = '';
+        return;
+      }
+      const plan = v.plans[p.id];
+      const act = v.actuals[p.id];
+      const pw = pathway(p, s.settings.gates);
+      const flag = hasOmbFlag(p, plan, v.asOf);
+      const over = overage(p, plan, act, v.asOf);
+      document.title = `${p.title} — Capital program`;
+      const h1 = document.querySelector<HTMLElement>('[data-cap-title]');
+      if (h1) h1.textContent = p.title;
+
+      const verdict = pw.greenlit
+        ? pill('Greenlit', 'success', { title: 'Every applicable approval step is green.' })
+        : pill(`Not greenlit — ${pw.green} of ${pw.applicable} steps`, 'warning', { title: 'Planned spend in open quarters is outlined in amber until every applicable step is green.' });
+      const cbfishUrl = p.number ? `https://www.cbfish.org/Project.mvc/Display/${encodeURIComponent(p.number)}` : null;
+      head.innerHTML = `
+        <div class="cluster" data-gap="xs">
+          ${verdict}
+          ${flag ? flagPill() : ''}
+          ${over > 0.5 ? pill(`Over budget by ${fmtK(over)}`, 'danger', { title: 'All-time actuals + open forecast exceed the modified budget.' }) : ''}
+          ${pill(p.recordType, RECORD_VARIANT[p.recordType])}
+          ${p.fromRequestId ? pill('From a request', 'info') : ''}
+        </div>
+        ${dl([
+          ['Project #', esc(p.number ?? '—') + (cbfishUrl ? ` · <a href="${cbfishUrl}" target="_blank" rel="noreferrer">Open in CBFish ↗</a>` : '')],
+          ['Category', esc(`${p.category}${p.subcategory ? ` — ${p.subcategory}` : ''}`)],
+          ['Sponsor', esc(p.sponsor || '—')],
+          ['Planning PM / COR', esc(p.pm || '—')],
+          ['Construction COR', esc(p.constructionCor || '—')],
+          ['Lifecycle stage', esc(`${p.stage}${p.stageNote ? ` (${p.stageNote})` : ''}`)],
+          ['Fund source', esc(p.fundSource)],
+          ['Account type', esc(p.accountType) + (p.accountType === 'Mixed' ? ` ${assumption('Account type is not in CBFish today; seeded from the sources.')}` : '')],
+          ['CBFish portfolio', esc(p.portfolio)],
+          ...(p.plannedAcres ? [['FY27 planned acres', fmtK(p.plannedAcres)] as [string, string]] : []),
+        ])}
+        ${p.description ? `<p class="cbf-cap-ov-desc">${esc(p.description)}</p>` : ''}`;
+
+      // Budget card
+      const mod = modifiedBudget(p);
+      budgetBtn.hidden = !can('editBudget', p);
+      budgetEl.innerHTML = `
+        ${dl([
+          ['Original budget', moneyHtml(p.originalBudget, { zero: '0' })],
+          ['Modified budget', `<strong>${moneyHtml(mod, { zero: '0' })}</strong>`],
+          ...(p.pendingBudget ? [['Pending', `${fmtK(p.pendingBudget)} <span class="cbf-cap-muted">awaiting decision</span>`] as [string, string]] : []),
+          ['Contingency', moneyHtml(p.contingency ?? null, { zero: '0' })],
+          ['All-time actuals', moneyHtml(allTimeActuals(act), { zero: '0' })],
+          ['Remaining (modified − actuals)', moneyHtml(remainingBudget(p, act), { zero: '0' })],
+        ])}
+        <h4 class="cbf-cap-ov-sub">Budget history</h4>
+        ${p.budgetHistory.length
+          ? `<ol class="cbf-cap-ov-history">${[...p.budgetHistory].reverse().map((b) => `
+              <li><span class="cbf-cap-num"><strong>${fmtK(b.amount)}</strong></span>
+                <span class="cbf-cap-muted">${fmtDate(b.date)}${b.decisionRef ? ` · ${esc(b.decisionRef)}` : ''}</span><br>${esc(b.reason)}</li>`).join('')}</ol>`
+          : `<p class="cbf-cap-muted cbf-cap-ov-none">No modified budget yet.</p>`}`;
+
+      // Pathway card
+      const editable = (keys: GateKey) => {
+        const def = s.settings.gates.find((g) => g.key === keys)!;
+        return canEditGate(def.editableBy);
+      };
+      pathEl.innerHTML = `
+        <p class="cbf-cap-ov-note">${assumption('Open question 1: the real steps and owners are not written down yet. These come from the settings table so they can change once Michelle and Rodrigo write them.', 'xs')} Gates are edited by the role that owns them.</p>
+        <ul class="cbf-cap-ov-gates">${pw.lights.map(({ def, status }) => {
+          const rec = def.key === 'omb' || def.key === 'npcc' ? undefined : p.gates[def.key];
+          let detail = '';
+          if (def.key === 'omb') {
+            const waited = p.omb.status === 'Submitted' ? monthsWaited(p.omb, TODAY) : null;
+            detail = `${ombPill(p.omb.status, 'xs')} ${p.omb.submittedDate ? `Submitted ${fmtDate(p.omb.submittedDate)}` : ''}${p.omb.approvedDate ? ` · approved ${fmtDate(p.omb.approvedDate)}` : ''}${waited != null ? ` · <strong>waited ${waited} months</strong>` : ''}${p.omb.thresholdMet === false ? ' · below threshold' : ''}`;
+          } else if (def.key === 'npcc') {
+            detail = esc(p.category === 'Hatchery' ? p.npcc : 'Hatcheries only');
+          } else if (rec) {
+            detail = [rec.date ? fmtDate(rec.date) : '', rec.approver ? `Approver: ${esc(rec.approver)}` : '', rec.docRef ? (rec.docUrl ? `<a href="${esc(rec.docUrl)}" target="_blank" rel="noreferrer">${esc(rec.docRef)}</a>` : esc(rec.docRef)) : '', rec.note ? esc(rec.note) : '']
+              .filter(Boolean).join(' · ');
+          }
+          const canEdit = editable(def.key) && !(def.key === 'npcc' && p.category !== 'Hatchery');
+          return `<li class="cbf-cap-ov-gate">
+            <div class="cbf-cap-ov-gate__light">${gatePill(status, 'xs')}</div>
+            <div class="cbf-cap-ov-gate__body">
+              <div class="cbf-cap-ov-gate__title"><strong>${esc(def.label)}</strong> <span class="cbf-cap-muted">· ${esc(def.owner)}</span></div>
+              ${detail ? `<div class="cbf-cap-ov-gate__detail">${detail}</div>` : ''}
+            </div>
+            ${canEdit ? `<button type="button" class="cbf-cap-linkbtn" data-edit-gate="${def.key}">Edit</button>` : ''}
+          </li>`;
+        }).join('')}</ul>`;
+
+      // Status card
+      const statusRow = (key: 'ec' | 'moa' | 'design', label: string) => {
+        const st = p[key];
+        return `<li class="cbf-cap-ov-gate">
+          <div class="cbf-cap-ov-gate__body">
+            <div class="cbf-cap-ov-gate__title"><strong>${label}</strong></div>
+            <div class="cbf-cap-ov-gate__detail">${esc(st.status)}${st.date ? ` · ${fmtDate(st.date)}` : ''}${st.note ? ` · ${esc(st.note)}` : ''}</div>
+          </div>
+          ${can('editProject', p) ? `<button type="button" class="cbf-cap-linkbtn" data-edit-status="${key}" data-label="${label}">Edit</button>` : ''}
+        </li>`;
+      };
+      statusEl.innerHTML = `<ul class="cbf-cap-ov-gates">${statusRow('ec', 'Environmental compliance (EC)')}${statusRow('moa', 'MOA')}${statusRow('design', 'Design status')}</ul>`;
+
+      pathEl.querySelectorAll<HTMLElement>('[data-edit-gate]').forEach((b) => b.addEventListener('click', () => editGate(b.dataset.editGate as GateKey)));
+      statusEl.querySelectorAll<HTMLElement>('[data-edit-status]').forEach((b) =>
+        b.addEventListener('click', () => editStatus(b.dataset.editStatus as 'ec' | 'moa' | 'design', b.dataset.label!)));
+    }
+
+    // ---- Edits -------------------------------------------------------------
+
+    budgetBtn.addEventListener('click', () => {
+      const p = findProject(getState(), id);
+      const types = ADJUSTMENT_TYPES.filter((t) => t !== 'Year-end re-forecast' && t !== 'Schedule slip');
+      open('Change modified budget', `
+        <p class="cbf-cap-muted">Current modified budget: ${fmtK(modifiedBudget(p))}. The change is added to the budget history and the adjustment log.</p>
+        <esa-text-field label="New modified budget ($000s)" type="number" required data-field="amount" value="${p.pendingBudget ?? ''}"></esa-text-field>
+        <esa-select label="Adjustment type" data-field="type" options="${opts(types)}" value="Bid over estimate"></esa-select>
+        <esa-textarea label="Reason" rows="2" required data-field="reason"></esa-textarea>
+        <esa-text-field label="Decision reference" placeholder="e.g. DMF Oct 2026, BCR-27-001" data-field="ref"></esa-text-field>
+        <esa-text-field label="Document link" placeholder="https://…" data-field="url"></esa-text-field>
+        <esa-text-field label="Approved by" placeholder="e.g. DMF, Finance Committee" data-field="approvedBy"></esa-text-field>`,
+      () => {
+        const amount = Number(val('amount'));
+        if (!Number.isFinite(amount) || !val('amount') || !val('reason')) { snackbar('warning', 'Enter an amount and a reason.'); return false; }
+        update((s) => changeBudget(s, {
+          projectId: id, amount, type: val('type') as never, reason: val('reason'), decisionRef: val('ref') || undefined,
+          docUrl: val('url') || undefined, approvedBy: val('approvedBy') || undefined, user: userName(), date: TODAY,
+        }));
+        snackbar('success', 'Budget changed and logged.');
+      });
+    });
+
+    function editGate(key: GateKey) {
+      const s = getState();
+      const p = findProject(s, id);
+      const def = s.settings.gates.find((g) => g.key === key)!;
+      if (key === 'omb') {
+        open(`${def.label}`, `
+          <esa-select label="OMB status" data-field="status" options="${opts(OMB_STATUSES)}" value="${esc(p.omb.status)}"></esa-select>
+          <esa-date-picker label="Submitted" data-field="submitted" value="${esc(p.omb.submittedDate ?? '')}"></esa-date-picker>
+          <esa-date-picker label="Appropriations language approved" data-field="approved" value="${esc(p.omb.approvedDate ?? '')}"></esa-date-picker>
+          <esa-checkbox label="Above the OMB dollar threshold (${fmtK(s.settings.ombThreshold)})" data-field="threshold" ${p.omb.thresholdMet !== false ? 'checked' : ''}></esa-checkbox>
+          <p class="cbf-cap-muted">${assumption('Open question 4: the threshold is a setting until Rodrigo and Legal confirm it.')} Congress may approve 6–18 months after the summer submission.</p>`,
+        () => {
+          update((st) => setOmb(st, 'project', id, {
+            status: val('status') as OmbStatus,
+            submittedDate: val('submitted') || undefined,
+            approvedDate: val('approved') || undefined,
+            thresholdMet: !!field('threshold')?.checked,
+          }));
+        });
+        return;
+      }
+      if (key === 'npcc') {
+        open(def.label, `<esa-select label="NPCC 3-step review" data-field="step" options="${opts(NPCC_STEPS)}" value="${esc(p.npcc)}"></esa-select>`,
+          () => { update((st) => setNpcc(st, id, val('step') as Project['npcc'])); });
+        return;
+      }
+      const rec = p.gates[key] ?? { status: gateStatus(p, def) };
+      open(def.label, `
+        <p class="cbf-cap-muted">Owner: ${esc(def.owner)}</p>
+        <esa-select label="Status" data-field="status" options="${opts(GATE_STATUSES)}" value="${esc(rec.status)}"></esa-select>
+        <esa-date-picker label="Date" data-field="date" value="${esc(rec.date ?? '')}"></esa-date-picker>
+        ${key === 'leadership' ? `<esa-text-field label="Approver" data-field="approver" value="${esc(rec.approver ?? '')}"></esa-text-field>` : ''}
+        <esa-text-field label="Document" placeholder="e.g. DMF Oct 2026" data-field="docRef" value="${esc(rec.docRef ?? '')}"></esa-text-field>
+        <esa-text-field label="Document link" placeholder="https://…" data-field="docUrl" value="${esc(rec.docUrl ?? '')}"></esa-text-field>
+        <esa-textarea label="Note" rows="2" data-field="note" value="${esc(rec.note ?? '')}"></esa-textarea>`,
+      () => {
+        update((st) => setGate(st, 'project', id, key, {
+          status: val('status') as GateStatus, date: val('date') || undefined, docRef: val('docRef') || undefined,
+          docUrl: val('docUrl') || undefined, note: val('note') || undefined,
+          ...(key === 'leadership' ? { approver: val('approver') || undefined } : {}),
+        }));
+      });
+    }
+
+    function editStatus(key: 'ec' | 'moa' | 'design', label: string) {
+      const p = findProject(getState(), id);
+      const st = p[key];
+      open(label, `
+        <esa-text-field label="Status" data-field="status" value="${esc(st.status)}"></esa-text-field>
+        <esa-date-picker label="Date" data-field="date" value="${esc(st.date ?? '')}"></esa-date-picker>
+        <esa-textarea label="Note" rows="2" data-field="note" value="${esc(st.note ?? '')}"></esa-textarea>`,
+      () => {
+        update((s) => { findProject(s, id)[key] = { status: val('status') || st.status, date: val('date') || undefined, note: val('note') || undefined }; });
+      });
+    }
+
+    subscribe(render);
+  }
+</script>
+
+<style>
+  .cbf-cap-ov__cards {
+    display: grid;
+    grid-template-columns: minmax(16rem, 1fr) minmax(22rem, 1.6fr) minmax(16rem, 1fr);
+    gap: var(--spacing-300);
+    align-items: start;
+  }
+  @media (max-width: 1100px) {
+    .cbf-cap-ov__cards { grid-template-columns: 1fr; }
+  }
+</style>
+
+<style is:global>
+  .cbf-cap-ov-dl { margin: var(--spacing-200) 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: var(--spacing-150) var(--spacing-400); font-size: 14px; }
+  .esa-card .cbf-cap-ov-dl { grid-template-columns: 1fr; gap: 2px; }
+  .cbf-cap-ov-dl > div { display: flex; flex-direction: column; }
+  .esa-card .cbf-cap-ov-dl > div { flex-direction: row; justify-content: space-between; gap: var(--spacing-200); }
+  .cbf-cap-ov-dl dt { color: var(--color-content-default-tertiary); font-size: 12px; }
+  .esa-card .cbf-cap-ov-dl dt { font-size: 13px; color: var(--color-content-default-secondary); }
+  .cbf-cap-ov-dl dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .cbf-cap-ov-desc { margin: var(--spacing-300) 0 0; max-inline-size: 70ch; color: var(--color-content-default-secondary); }
+  .cbf-cap-ov-sub { margin: var(--spacing-300) 0 var(--spacing-100); font-size: 13px; color: var(--color-content-default-secondary); }
+  .cbf-cap-ov-history { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--spacing-150); font-size: 13px; }
+  .cbf-cap-ov-none { margin: 0; font-size: 13px; }
+  .cbf-cap-ov-note { margin: 0 0 var(--spacing-200); font-size: 12px; color: var(--color-content-default-tertiary); }
+  .cbf-cap-ov-gates { margin: 0; padding: 0; list-style: none; display: grid; }
+  .cbf-cap-ov-gate {
+    display: flex; gap: var(--spacing-200); align-items: flex-start;
+    padding: var(--spacing-150) 0; border-top: 1px solid var(--color-border-default-subtle); font-size: 13px;
+  }
+  .cbf-cap-ov-gate:first-child { border-top: 0; }
+  .cbf-cap-ov-gate__light { flex: none; inline-size: 6.5rem; }
+  .cbf-cap-ov-gate__body { flex: 1; min-inline-size: 0; }
+  .cbf-cap-ov-gate__detail { color: var(--color-content-default-secondary); margin-top: 2px; }
+  /* bcn-lego-checked: an inline "Edit" text action inside a dense card row;
+     esa-button size sm (smallest) is taller than the row and visually outweighs
+     the light it edits. Styled as a plain link, token colors only. */
+  .cbf-cap-linkbtn {
+    flex: none; padding: 0; font-size: 13px; color: var(--color-content-brand);
+    text-decoration: underline; text-underline-offset: 2px;
+  }
+  [data-cbf-cap-readonly] .cbf-cap-linkbtn { display: none; }
+</style>

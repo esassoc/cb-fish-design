@@ -1,0 +1,109 @@
+---
+// cbf-cap-project-log — the bottom of Project detail: quarterly notes (the
+// execution report's "Q2 FY24: …" narrative, newest first, with an add box),
+// this project's adjustments (R9 — "what document is that adjustment in?"), and
+// linked parcels / contracts (land parcels are P1).
+//
+// bcn-lego-checked: sections are esa-card; the note box is esa-textarea +
+// esa-button; empty states are esa-empty-state. Note and adjustment lists are
+// client-rendered from live state, so they are plain lists inside the cards.
+// Beacon is not cloned on this machine.
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+---
+<section class="cbf-cap-log" data-cap-log>
+  <EsaCard title="Quarterly notes" variant="outlined" padding="compact">
+    <div class="stack" data-gap="sm">
+      <div class="stack" data-gap="xs" data-log-add>
+        <esa-textarea label="Add a note for this quarter" rows="2" data-log-text placeholder="What changed, and why"></esa-textarea>
+        <div><EsaButton size="sm" variant="primary" data-log-save>Add note</EsaButton></div>
+      </div>
+      <ol class="cbf-cap-log__list" data-log-notes></ol>
+    </div>
+  </EsaCard>
+
+  <EsaCard title="Adjustments" variant="outlined" padding="compact">
+    <ol class="cbf-cap-log__list" data-log-adjustments></ol>
+  </EsaCard>
+
+  <EsaCard title="Linked parcels and contracts" variant="outlined" padding="compact">
+    <EsaEmptyState title="No linked parcels or contracts" description="Link land parcels from the Land team tracker." size="sm" />
+    <p class="typography-meta cbf-cap-muted" data-log-parcels></p>
+  </EsaCard>
+</section>
+
+<script>
+  import '@esa/ecology/esa-textarea';
+  import { getState, subscribe, view, update, can, userName, TODAY } from '../../lib/capital/store';
+  import { fmtDate, fmtK, slotLabel } from '../../lib/capital/finance';
+  import { addNote } from '../../lib/capital/actions';
+  import { esc, pill, assumption, snackbar } from '../../lib/capital/ui';
+
+  const root = document.querySelector<HTMLElement>('[data-cap-log]');
+  const id = new URLSearchParams(location.search).get('id') ?? '';
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const notesEl = root.querySelector<HTMLElement>('[data-log-notes]')!;
+    const adjEl = root.querySelector<HTMLElement>('[data-log-adjustments]')!;
+    const addBox = root.querySelector<HTMLElement>('[data-log-add]')!;
+    const text = root.querySelector<HTMLElement & { value: string }>('[data-log-text]')!;
+    const parcels = root.querySelector<HTMLElement>('[data-log-parcels]')!;
+
+    root.querySelector('[data-log-save]')!.addEventListener('click', () => {
+      const t = (text.value ?? '').trim();
+      if (!t) { snackbar('warning', 'Write the note first.'); return; }
+      update((s) => addNote(s, id, t, userName(), TODAY));
+      text.value = '';
+      snackbar('success', 'Note added.');
+    });
+
+    function render() {
+      const s = getState();
+      const p = view().projects.find((x) => x.id === id);
+      if (!p) { root!.hidden = true; return; }
+      addBox.hidden = !can('addNote', p);
+
+      const notes = s.notes.filter((n) => n.projectId === id).sort((a, b) => b.date.localeCompare(a.date));
+      notesEl.innerHTML = notes.length
+        ? notes.map((n) => `<li><strong>Q${n.q} FY${String(n.fy).slice(2)}</strong> ${esc(n.text)}<br><span class="cbf-cap-muted">${esc(n.author)} · ${fmtDate(n.date)}</span></li>`).join('')
+        : `<li class="cbf-cap-muted">No notes yet.</li>`;
+
+      const adjs = s.adjustments.filter((a) => a.projectId === id).sort((a, b) => b.date.localeCompare(a.date));
+      adjEl.innerHTML = adjs.length
+        ? adjs.map((a) => {
+            const move = a.fromSlot != null || a.toSlot != null
+              ? ` <span class="cbf-cap-muted">${a.fromSlot != null ? slotLabel(a.fromSlot) : '—'} → ${a.toSlot != null ? slotLabel(a.toSlot) : '—'}</span>` : '';
+            const doc = a.docRef ? (a.docUrl ? `<a href="${esc(a.docUrl)}" target="_blank" rel="noreferrer">${esc(a.docRef)}</a>` : esc(a.docRef)) : 'No document';
+            return `<li>${pill(a.type, a.type === 'Year-end re-forecast' ? 'info' : 'default', { size: 'xs' })} <strong class="cbf-cap-num">${fmtK(a.amount)}</strong>${move}<br>
+              ${esc(a.reason)}<br><span class="cbf-cap-muted">${doc}${a.approvedBy ? ` · approved by ${esc(a.approvedBy)}` : ''} · ${esc(a.user)} · ${fmtDate(a.date)}</span></li>`;
+          }).join('')
+        : `<li class="cbf-cap-muted">No adjustments recorded.</li>`;
+
+      parcels.innerHTML = p.category === 'Land'
+        ? `${assumption('Land parcels are a P1 fast follow; the Land team tracker is not rebuilt in this prototype.')} Green and yellow parcels with a closing quarter will roll up into a parcel-based forecast here.`
+        : `${assumption('CBFish contract links and reconciliation (P1) are not built yet.')}`;
+    }
+
+    subscribe(render);
+  }
+</script>
+
+<style>
+  .cbf-cap-log {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.2fr) minmax(0, 0.8fr);
+    gap: var(--spacing-300);
+    align-items: start;
+  }
+  @media (max-width: 1100px) {
+    .cbf-cap-log { grid-template-columns: 1fr; }
+  }
+</style>
+
+<style is:global>
+  .cbf-cap-log__list { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--spacing-200); font-size: 13px; max-block-size: 28rem; overflow: auto; }
+  .cbf-cap-log__list > li { padding-top: var(--spacing-200); border-top: 1px solid var(--color-border-default-subtle); }
+  .cbf-cap-log__list > li:first-child { border-top: 0; padding-top: 0; }
+</style>

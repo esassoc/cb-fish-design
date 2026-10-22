@@ -1,0 +1,610 @@
+---
+// cbf-cap-requests — intake and triage of new capital needs (PRD screen 3, R6,
+// plus the R7 request flag). One list of every ask not yet in the plan — from
+// OMB, the Asset Plan, email/partners and PM forecasts — with:
+//
+//   • amounts by FY and a pinned "total open" row (open = New + Under review),
+//     the same figure the Portfolio's headroom panel shows beside headroom;
+//   • the same pathway gate lights a project carries, and the red "OMB not
+//     approved" flag on any request with FY amounts and no appropriations
+//     language — which travels with it when it is added to the plan;
+//   • the Asset Plan turn-in nudge ("Send new needs to the Asset Plan lead by
+//     <date>") and a per-request "Send to Asset Plan lead" (status → Under review);
+//   • an add/edit drawer and an "Add to plan" dialog that converts a request into
+//     a Placeholder or Active project, or attaches it to an existing one, and
+//     keeps the link back.
+//
+// All state is the shared capital store (src/lib/capital/store.ts); edits go
+// through the pure actions in actions.ts.
+//
+// bcn-lego-checked: the list is AG Grid Community in the spoke's token theme
+// (shared/grid-chrome) because ecology has no data-grid lego — same call as the
+// Portfolio grid. Everything else is a lego: esa-side-dialog (the drawer),
+// esa-dialog (add to plan), esa-select / esa-text-field / esa-textarea /
+// esa-date-picker (fields), esa-chip-group (status filter), esa-alert-box
+// (turn-in banner, warnings), esa-button (actions; row buttons are cloned from
+// server-rendered esa-button templates), esa-empty-state. Pills and dots clone
+// esa-pill / esa-badge via cbf-cap-templates. Beacon is not cloned on this machine.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import '../shared/cbf-data-grid-chrome.css';
+import { OMB_STATUSES, REQUEST_STATUSES, REQUEST_SOURCES } from '../../lib/capital/types';
+
+
+const opts = (values: readonly string[]) => values.map((v) => ({ label: v, value: v }));
+const statusFilters = [
+  { value: '', label: 'All' },
+  { value: 'open', label: 'Open' },
+  { value: 'Added to plan', label: 'Added to plan' },
+  { value: 'Deferred to next Asset Plan', label: 'Deferred' },
+  { value: 'Declined', label: 'Declined' },
+];
+const categoryOptions = opts(['Hatchery', 'Land', 'Passage', 'TBD']);
+const cycleOptions = opts(['FY27 Asset Plan', 'FY28 Asset Plan', 'FY29 Asset Plan', 'FY30 Asset Plan']);
+const amountFys = [2027, 2028, 2029, 2030];
+const modeOptions = [
+  { label: 'New placeholder project', value: 'placeholder' },
+  { label: 'New active project', value: 'active' },
+  { label: 'Attach to an existing project', value: 'attach' },
+];
+const planCategoryOptions = opts(['Hatchery', 'Land', 'Passage']);
+---
+<section class="cbf-cap-req stack" data-gap="sm" data-cap-requests aria-labelledby="cap-req-title">
+  <div data-req-turnin hidden>
+    <EsaAlertBox variant="info" title="Asset Plan window open">
+      <span data-req-turnin-text></span>
+    </EsaAlertBox>
+  </div>
+
+  <div class="repel">
+    <h2 class="cbf-cap-section-title" id="cap-req-title">Open and recent requests</h2>
+    <div class="cluster" data-gap="xs">
+      <EsaButton size="sm" variant="secondary" appearance="outline" icon="download" data-req-csv>Export CSV</EsaButton>
+      <EsaButton size="sm" variant="primary" icon="plus" data-req-new>Add request</EsaButton>
+    </div>
+  </div>
+
+  <div class="cbf-data-grid__controls repel">
+    <label class="cbf-data-grid__filter">
+      <span class="typography-meta">Status</span>
+      <esa-chip-group size="sm" label="Filter by status" value="" options={JSON.stringify(statusFilters)} data-req-filter></esa-chip-group>
+    </label>
+    <p class="typography-meta cbf-cap-muted cbf-cap-req__totals" data-req-totals></p>
+  </div>
+
+  <div class="cbf-data-grid__grid cbf-cap-req__grid" data-req-grid></div>
+  <div data-req-empty hidden>
+    <EsaEmptyState title="No requests match" description="Choose All to see every request." size="sm" />
+  </div>
+
+  <footer class="cbf-data-grid__footer repel">
+    <span class="typography-meta" data-req-count></span>
+    <span class="typography-meta cbf-cap-muted">$000s · open = New or Under review · requests never reduce headroom unless "What if" is on</span>
+  </footer>
+
+  <!-- Row action buttons — the real esa-button, server-rendered once and cloned
+       into grid cells by the client script (data-id is set on the clone). -->
+  <div hidden aria-hidden="true" data-req-btn-templates>
+    <span data-btn="edit"><EsaButton size="xs" variant="ghost" data-req-action="edit">Edit</EsaButton></span>
+    <span data-btn="send"><EsaButton size="xs" variant="secondary" appearance="outline" data-req-action="send">Send to Asset Plan lead</EsaButton></span>
+    <span data-btn="plan"><EsaButton size="xs" variant="primary" appearance="soft" data-req-action="plan">Add to plan</EsaButton></span>
+  </div>
+
+  <!-- Add / edit drawer -->
+  <esa-side-dialog size="lg" heading="Request" show-close-button data-req-drawer>
+    <form class="stack" data-gap="sm" data-req-form onsubmit="return false">
+      <esa-text-field size="sm" label="Title" required data-f="title"></esa-text-field>
+      <div class="cbf-cap-req__pair">
+        <esa-text-field size="sm" label="Requester" data-f="requester"></esa-text-field>
+        <esa-text-field size="sm" label="Sponsor of the ask" help-text="Who is behind it — e.g. leadership, DMF." data-f="askSponsor"></esa-text-field>
+      </div>
+      <div class="cbf-cap-req__pair">
+        <esa-select size="sm" label="Category" options={JSON.stringify(categoryOptions)} data-f="category"></esa-select>
+        <esa-select size="sm" label="Source" options={JSON.stringify(opts(REQUEST_SOURCES))} data-f="source"></esa-select>
+      </div>
+      <div class="cbf-cap-req__pair">
+        <esa-select size="sm" label="OMB status" options={JSON.stringify(opts(OMB_STATUSES))} data-f="ombStatus"></esa-select>
+        <esa-date-picker size="sm" label="Submitted to OMB" data-f="ombSubmitted"></esa-date-picker>
+      </div>
+
+      <fieldset class="cbf-cap-req__fieldset">
+        <legend class="typography-meta">Amount by FY ($000s)</legend>
+        <div class="cbf-cap-req__amounts">
+          {amountFys.map((fy) => (
+            <esa-text-field size="sm" type="number" inputmode="numeric" label={`FY${String(fy).slice(2)}`} data-f-amount={fy}></esa-text-field>
+          ))}
+        </div>
+      </fieldset>
+
+      <div class="cbf-cap-req__pair">
+        <esa-select size="sm" label="Status" options={JSON.stringify(opts(REQUEST_STATUSES))} data-f="status"></esa-select>
+        <esa-select size="sm" label="Target Asset Plan cycle" options={JSON.stringify(cycleOptions)} data-f="targetCycle"></esa-select>
+      </div>
+      <esa-text-field size="sm" label="Related CBFish project #" placeholder="e.g. 1992-026-01" data-f="relatedNumber"></esa-text-field>
+      <esa-textarea size="sm" label="Note" rows="3" data-f="note"></esa-textarea>
+
+      <fieldset class="cbf-cap-req__fieldset">
+        <legend class="typography-meta">Approval pathway</legend>
+        <div class="stack" data-gap="xs" data-req-gates></div>
+      </fieldset>
+      <p class="typography-meta cbf-cap-neg" data-req-form-error hidden>Give the request a title.</p>
+    </form>
+    <div slot="footer" class="cluster cbf-cap-req__footer" data-gap="xs">
+      <EsaButton size="sm" variant="secondary" appearance="outline" data-req-cancel>Cancel</EsaButton>
+      <EsaButton size="sm" variant="primary" data-req-save>Save request</EsaButton>
+    </div>
+  </esa-side-dialog>
+
+  <!-- Add to plan -->
+  <esa-dialog size="lg" heading="Add to plan" show-close-button data-plan-dialog>
+    <div class="stack" data-gap="sm">
+      <p class="cbf-cap-req__plan-lede" data-plan-lede></p>
+      <esa-select size="sm" label="Add it as" options={JSON.stringify(modeOptions)} value="placeholder" data-plan-mode></esa-select>
+      <div data-plan-attach-wrap hidden><esa-select size="sm" label="Existing project" data-plan-attach></esa-select></div>
+      <div data-plan-category-wrap hidden><esa-select size="sm" label="Category" help-text="This request has no category yet — pick one for the project." options={JSON.stringify(planCategoryOptions)} value="Passage" data-plan-category></esa-select></div>
+      <div data-plan-warn-ap hidden>
+        <EsaAlertBox variant="warning" title="Not in the Asset Plan">
+          <span data-plan-warn-ap-text></span> <span data-plan-warn-ap-tag></span>
+        </EsaAlertBox>
+      </div>
+      <div data-plan-warn-omb hidden>
+        <EsaAlertBox variant="danger" title="OMB not approved">
+          This request has FY amounts without OMB appropriations language. The flag carries over to the project and shows on the Portfolio until OMB approves it.
+        </EsaAlertBox>
+      </div>
+      <p class="typography-meta cbf-cap-muted" data-plan-spread></p>
+    </div>
+    <div slot="footer" class="cluster cbf-cap-req__footer" data-gap="xs">
+      <EsaButton size="sm" variant="secondary" appearance="outline" data-plan-cancel>Cancel</EsaButton>
+      <EsaButton size="sm" variant="primary" data-plan-confirm>Add to plan</EsaButton>
+    </div>
+  </esa-dialog>
+</section>
+
+
+<script>
+  import '@esa/ecology/esa-chip-group';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-textarea';
+  import '@esa/ecology/esa-date-picker';
+  import '@esa/ecology/esa-side-dialog';
+  import '@esa/ecology/esa-dialog';
+  import { createGrid, type ColDef, type GridApi } from 'ag-grid-community';
+  import { cbfGridTheme } from '../shared/grid-chrome';
+  import { getState, getUi, subscribe, update, can, canEditGate, isReadOnly, userName, TODAY } from '../../lib/capital/store';
+  import { fmtDate, fmtK, fyLabel, isOpenRequest, pathway, requestHasOmbFlag, monthsWaited, firstOpenSlot, slotLabel } from '../../lib/capital/finance';
+  import { newRequest, upsertRequest, addRequestToPlan } from '../../lib/capital/actions';
+  import { esc, pill, moneyHtml, ombPill, flagPill, gateDot, assumption, snackbar, setSelect, REQUEST_VARIANT } from '../../lib/capital/ui';
+  import {
+    GATE_STATUSES,
+    type CapitalRequest, type Category, type GateKey, type GateStatus, type OmbStatus,
+    type RequestCategory, type RequestSource, type RequestStatus,
+  } from '../../lib/capital/types';
+  import { withBase } from '../../lib/base';
+
+  type Field = HTMLElement & { value: string; disabled: boolean; label?: string; options?: unknown; helpText?: string };
+  type Dialog = HTMLElement & { show: () => void; close: () => void; heading: string };
+
+  interface Row {
+    id: string;
+    kind: 'request' | 'total';
+    r?: CapitalRequest;
+    title: string;
+    requester?: string;
+    category?: string;
+    source?: string;
+    omb?: string;
+    status?: string;
+    cycle?: string;
+    linked?: string;
+    amounts: Record<number, number | null>;
+  }
+
+  const projectHref = (id: string) => withBase(`/capital-program/project?id=${encodeURIComponent(id)}`);
+  const hasAmounts = (r: CapitalRequest) => Object.values(r.amounts).some((v) => (v ?? 0) !== 0);
+
+  const root = document.querySelector<HTMLElement>('[data-cap-requests]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const q = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel) as T;
+    const host = q('[data-req-grid]');
+    const empty = q('[data-req-empty]');
+    const count = q('[data-req-count]');
+    const totalsEl = q('[data-req-totals]');
+    const turnin = q('[data-req-turnin]');
+    const turninText = q('[data-req-turnin-text]');
+    const filterEl = q<Field>('[data-req-filter]');
+    const newBtn = q<HTMLButtonElement>('[data-req-new]');
+
+    // Row buttons cloned from the server-rendered esa-button templates.
+    const btnTpl = new Map<string, string>();
+    root.querySelectorAll<HTMLElement>('[data-req-btn-templates] [data-btn]').forEach((el) => btnTpl.set(el.dataset.btn!, el.innerHTML.trim()));
+    const button = (kind: string, id: string) => {
+      const h = document.createElement('div');
+      h.innerHTML = btnTpl.get(kind) ?? '';
+      const b = h.querySelector<HTMLElement>('[data-req-action]');
+      if (b) b.dataset.id = id;
+      return h.innerHTML;
+    };
+
+    let statusFilter = '';
+    filterEl.addEventListener('change', () => { statusFilter = filterEl.value ?? ''; render(); });
+
+    const api: GridApi<Row> = createGrid(host, {
+      theme: cbfGridTheme,
+      rowData: [],
+      columnDefs: [],
+      domLayout: 'autoHeight',
+      animateRows: false,
+      suppressCellFocus: true,
+      tooltipShowDelay: 400,
+      suppressColumnVirtualisation: true,
+      defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true },
+      getRowId: (p) => p.data.id,
+      getRowClass: (p) => {
+        const r = p.data?.r;
+        if (!r) return '';
+        return isOpenRequest(r) ? '' : 'cbf-cap-req-row-closed';
+      },
+    });
+
+    function columns(fys: number[]): ColDef<Row>[] {
+      const readOnly = isReadOnly();
+      return [
+        {
+          colId: 'title', field: 'title', headerName: 'Request', pinned: 'left', width: 380,
+          tooltipValueGetter: (p) => p.data?.r?.note ?? '',
+          cellRenderer: (p: { data: Row }) => {
+            const r = p.data.r;
+            if (!r) return `<strong>${esc(p.data.title)}</strong>`;
+            const flag = requestHasOmbFlag(r) ? `${flagPill('xs')} ` : '';
+            const tag = r.assumption ? ` ${assumption(r.assumption)}` : '';
+            const none = hasAmounts(r) ? '' : ` <span class="cbf-cap-muted">· No amounts yet</span>`;
+            return `${flag}${esc(r.title || 'Untitled request')}${tag}${none}`;
+          },
+        },
+        { colId: 'requester', field: 'requester', headerName: 'Requester', width: 150 },
+        { colId: 'category', field: 'category', headerName: 'Category', width: 104 },
+        ...fys.map((fy): ColDef<Row> => ({
+          colId: `fy${fy}`, headerName: fyLabel(fy), type: 'rightAligned', width: 100, cellClass: 'cbf-cap-num',
+          valueGetter: (p) => p.data?.amounts[fy] ?? null,
+          comparator: (a, b) => (a ?? 0) - (b ?? 0),
+          cellRenderer: (p: { value: number | null; data: Row }) =>
+            p.value == null ? (p.data.kind === 'total' ? '0' : '<span class="cbf-cap-muted">–</span>') : moneyHtml(p.value, { zero: '0' }),
+        })),
+        {
+          colId: 'source', field: 'source', headerName: 'Source', width: 140,
+          tooltipValueGetter: (p) => p.data?.r?.sourceNote ?? '',
+        },
+        {
+          colId: 'omb', field: 'omb', headerName: 'OMB status', width: 128,
+          tooltipValueGetter: (p) => {
+            const r = p.data?.r;
+            if (!r) return '';
+            const m = monthsWaited(r.omb, TODAY);
+            return r.omb.status === 'Submitted' && m != null ? `Submitted ${fmtDate(r.omb.submittedDate)} — waited ${m} months` : r.omb.status;
+          },
+          cellRenderer: (p: { data: Row }) => (p.data.r ? ombPill(p.data.r.omb.status, 'xs') : ''),
+        },
+        {
+          colId: 'status', field: 'status', headerName: 'Status', width: 150,
+          cellRenderer: (p: { data: Row }) => (p.data.r ? pill(p.data.r.status, REQUEST_VARIANT[p.data.r.status], { size: 'xs' }) : ''),
+        },
+        { colId: 'cycle', field: 'cycle', headerName: 'Target cycle', width: 140 },
+        {
+          colId: 'pathway', headerName: 'Pathway', width: 130, sortable: false,
+          cellRenderer: (p: { data: Row }) => {
+            const r = p.data.r;
+            if (!r) return '';
+            const pw = pathway(r, getState().settings.gates);
+            return `<span class="cbf-cap-dots" title="${pw.green} of ${pw.applicable} steps green">${pw.lights.map((l) => gateDot(l.status, l.def.label)).join('')}</span>`;
+          },
+        },
+        {
+          colId: 'linked', field: 'linked', headerName: 'Linked project', width: 220,
+          cellRenderer: (p: { data: Row }) => {
+            const r = p.data.r;
+            if (!r?.linkedProjectId) return r?.relatedNumber ? `<span class="cbf-cap-muted">${esc(r.relatedNumber)}</span>` : '';
+            return `<a class="cbf-grid-link" href="${projectHref(r.linkedProjectId)}">${esc(p.data.linked ?? r.linkedProjectId)}</a>`;
+          },
+        },
+        {
+          colId: 'actions', headerName: 'Actions', pinned: 'right', width: 330, sortable: false,
+          cellRenderer: (p: { data: Row }) => {
+            const r = p.data.r;
+            if (!r || readOnly) return '';
+            const out: string[] = [];
+            if (can('editRequests')) out.push(button('edit', r.id));
+            if (r.status === 'New' && can('editRequests')) out.push(button('send', r.id));
+            if (isOpenRequest(r) && can('addToPlan')) out.push(button('plan', r.id));
+            return `<span class="cbf-cap-req__actions">${out.join('')}</span>`;
+          },
+        },
+      ];
+    }
+
+    function render() {
+      const s = getState();
+      const ui = getUi();
+
+      // Asset Plan turn-in nudge.
+      const open = s.settings.apTurnInDate > TODAY;
+      turnin.hidden = !open;
+      if (open) {
+        turninText.textContent = `Send new needs to the Asset Plan lead (Victoria DuVal) by ${fmtDate(s.settings.apTurnInDate)} — the ${s.settings.apTurnInCycle} can still change until it is turned in.`;
+      }
+
+      newBtn.disabled = !can('editRequests');
+
+      const fySet = new Set<number>([ui.fy, ui.fy + 1, ui.fy + 2]);
+      for (const r of s.requests) for (const [fy, v] of Object.entries(r.amounts)) if (v) fySet.add(Number(fy));
+      const fys = [...fySet].sort((a, b) => a - b);
+
+      const visible = s.requests.filter((r) => {
+        if (!statusFilter) return true;
+        if (statusFilter === 'open') return isOpenRequest(r);
+        return r.status === statusFilter;
+      });
+
+      const rows: Row[] = visible.map((r) => ({
+        id: r.id, kind: 'request', r,
+        title: r.title, requester: r.requester, category: r.category, source: r.source,
+        omb: r.omb.status, status: r.status, cycle: r.targetCycle,
+        linked: r.linkedProjectId ? s.projects.find((p) => p.id === r.linkedProjectId)?.title : undefined,
+        amounts: Object.fromEntries(fys.map((fy) => [fy, r.amounts[fy] ?? null])),
+      }));
+
+      const openTotals: Record<number, number> = Object.fromEntries(fys.map((fy) => [fy, 0]));
+      for (const r of s.requests) if (isOpenRequest(r)) for (const fy of fys) openTotals[fy] += r.amounts[fy] ?? 0;
+
+      api.setGridOption('columnDefs', columns(fys));
+      api.setGridOption('rowData', rows);
+      api.setGridOption('pinnedBottomRowData', [{ id: 'total-open', kind: 'total', title: 'Total open requests', amounts: openTotals }]);
+      // Rows keep their ids across renders, so AG Grid would reuse cells whose
+      // value didn't change — but the actions, pathway and pills also depend on
+      // the role, read-only state and gate settings. Repaint every cell.
+      api.refreshCells({ force: true });
+
+      host.hidden = rows.length === 0;
+      empty.hidden = rows.length > 0;
+      const openCount = s.requests.filter(isOpenRequest).length;
+      count.textContent = `Showing ${rows.length} of ${s.requests.length} requests · ${openCount} open`;
+      totalsEl.textContent = `Open: ${fys.map((fy) => `${fyLabel(fy)} ${fmtK(openTotals[fy])}`).join(' · ')}`;
+    }
+
+    host.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('[data-req-action]');
+      if (!b) return;
+      const r = getState().requests.find((x) => x.id === b.dataset.id);
+      if (!r) return;
+      if (b.dataset.reqAction === 'edit') openDrawer(r);
+      else if (b.dataset.reqAction === 'send') {
+        update((s) => {
+          const x = s.requests.find((y) => y.id === r.id);
+          if (x) x.status = 'Under review';
+        });
+        snackbar('success', `“${r.title}” sent to Victoria DuVal for the ${getState().settings.apTurnInCycle}.`);
+      } else if (b.dataset.reqAction === 'plan') openPlan(r);
+    });
+
+    q('[data-req-csv]').addEventListener('click', () => {
+      api.exportDataAsCsv({
+        fileName: 'capital-requests.csv',
+        columnKeys: api.getAllDisplayedColumns().filter((c) => !['actions', 'pathway'].includes(c.getColId())),
+        processCellCallback: (p) => {
+          const id = p.column.getColId();
+          const row = p.node?.data as Row | undefined;
+          if (id.startsWith('fy')) return p.value == null ? '' : String(Math.round(p.value));
+          if (id === 'title' && row?.r && requestHasOmbFlag(row.r)) return `${p.value} [OMB not approved]`;
+          return p.value ?? '';
+        },
+      });
+    });
+
+    // ---------------------------------------------------------------------
+    // Add / edit drawer
+    // ---------------------------------------------------------------------
+    const drawer = q<Dialog>('[data-req-drawer]');
+    const form = q<HTMLFormElement>('[data-req-form]');
+    const gatesEl = q('[data-req-gates]');
+    const formError = q('[data-req-form-error]');
+    const f = (name: string) => form.querySelector<Field>(`[data-f="${name}"]`)!;
+    const amountFields = () => [...form.querySelectorAll<Field>('[data-f-amount]')];
+    let editing: CapitalRequest | null = null;
+
+    const gateOptions = GATE_STATUSES.filter((x) => x !== 'Not applicable').map((x) => ({ label: x, value: x }));
+
+    function renderGates() {
+      if (!editing) return;
+      const defs = getState().settings.gates;
+      gatesEl.innerHTML = '';
+      for (const def of defs) {
+        if (def.key === 'omb' || def.key === 'npcc') {
+          const p = document.createElement('p');
+          p.className = 'typography-meta cbf-cap-muted cbf-cap-req__gate-note';
+          p.textContent = def.key === 'omb'
+            ? `${def.label} — follows the OMB status above (owner: ${def.owner}).`
+            : `${def.label} — hatcheries only; tracked once the request becomes a project.`;
+          gatesEl.append(p);
+          continue;
+        }
+        const sel = document.createElement('esa-select') as Field;
+        sel.setAttribute('size', 'sm');
+        sel.dataset.gate = def.key;
+        sel.label = def.label;
+        sel.helpText = `Owner: ${def.owner}`;
+        sel.options = gateOptions;
+        sel.value = editing.gates[def.key]?.status ?? 'Not started';
+        sel.disabled = !canEditGate(def.editableBy);
+        gatesEl.append(sel);
+      }
+    }
+
+    function openDrawer(r?: CapitalRequest) {
+      editing = r ? structuredClone(r) : newRequest(TODAY, userName());
+      drawer.heading = r ? 'Edit request' : 'Add request';
+      f('title').value = editing.title;
+      f('requester').value = editing.requester;
+      f('askSponsor').value = editing.askSponsor ?? '';
+      f('category').value = editing.category;
+      f('source').value = editing.source;
+      f('ombStatus').value = editing.omb.status;
+      f('ombSubmitted').value = editing.omb.submittedDate ?? '';
+      for (const el of amountFields()) {
+        const v = editing.amounts[Number(el.dataset.fAmount)];
+        el.value = v == null ? '' : String(v);
+      }
+      f('status').value = editing.status;
+      f('targetCycle').value = editing.targetCycle;
+      f('relatedNumber').value = editing.relatedNumber ?? '';
+      f('note').value = editing.note ?? '';
+      formError.hidden = true;
+      renderGates();
+      drawer.show();
+    }
+
+    q('[data-req-new]').addEventListener('click', () => { if (can('editRequests')) openDrawer(); });
+    q('[data-req-cancel]').addEventListener('click', () => drawer.close());
+
+    q('[data-req-save]').addEventListener('click', () => {
+      if (!editing) return;
+      const title = (f('title').value ?? '').trim();
+      if (!title) { formError.hidden = false; return; }
+      const r = editing;
+      r.title = title;
+      r.requester = (f('requester').value ?? '').trim();
+      r.askSponsor = (f('askSponsor').value ?? '').trim() || undefined;
+      r.category = (f('category').value || 'TBD') as RequestCategory;
+      r.source = (f('source').value || 'Internal') as RequestSource;
+      r.omb = { ...r.omb, status: (f('ombStatus').value || 'Not submitted') as OmbStatus, submittedDate: f('ombSubmitted').value || undefined };
+      for (const el of amountFields()) {
+        const fy = Number(el.dataset.fAmount);
+        const raw = String(el.value ?? '').trim();
+        const v = Number(raw.replace(/,/g, ''));
+        if (raw === '' || !Number.isFinite(v)) delete r.amounts[fy];
+        else r.amounts[fy] = v;
+      }
+      r.status = (f('status').value || 'New') as RequestStatus;
+      r.targetCycle = f('targetCycle').value || r.targetCycle;
+      r.relatedNumber = (f('relatedNumber').value ?? '').trim() || undefined;
+      r.note = (f('note').value ?? '').trim() || undefined;
+      gatesEl.querySelectorAll<Field>('[data-gate]').forEach((sel) => {
+        const key = sel.dataset.gate as GateKey;
+        r.gates[key] = { ...(r.gates[key] ?? { status: 'Not started' }), status: (sel.value || 'Not started') as GateStatus };
+      });
+      const isNew = !getState().requests.some((x) => x.id === r.id);
+      update((s) => upsertRequest(s, structuredClone(r)));
+      drawer.close();
+      snackbar('success', isNew ? `Request “${r.title}” added.` : `Request “${r.title}” saved.`);
+    });
+
+    // ---------------------------------------------------------------------
+    // Add to plan
+    // ---------------------------------------------------------------------
+    const planDialog = q<Dialog>('[data-plan-dialog]');
+    const planMode = q<Field>('[data-plan-mode]');
+    const planAttach = q<Field>('[data-plan-attach]');
+    const planAttachWrap = q('[data-plan-attach-wrap]');
+    const planCategory = q<Field>('[data-plan-category]');
+    const planCategoryWrap = q('[data-plan-category-wrap]');
+    const warnAp = q('[data-plan-warn-ap]');
+    const warnApText = q('[data-plan-warn-ap-text]');
+    const warnApTag = q('[data-plan-warn-ap-tag]');
+    const warnOmb = q('[data-plan-warn-omb]');
+    const spreadEl = q('[data-plan-spread]');
+    const lede = q('[data-plan-lede]');
+    let planning: CapitalRequest | null = null;
+
+    function syncPlanMode() {
+      const mode = planMode.value;
+      planAttachWrap.hidden = mode !== 'attach';
+      planCategoryWrap.hidden = !(planning?.category === 'TBD' && mode !== 'attach');
+    }
+    planMode.addEventListener('change', syncPlanMode);
+
+    function openPlan(r: CapitalRequest) {
+      const s = getState();
+      planning = r;
+      const amounts = Object.entries(r.amounts).filter(([, v]) => v).map(([fy, v]) => `${fyLabel(Number(fy))} ${fmtK(v)}`);
+      lede.textContent = `${r.title} — ${amounts.length ? amounts.join(' · ') : 'no amounts yet'} ($000s).`;
+      planMode.value = r.linkedProjectId ? 'attach' : 'placeholder';
+      const candidates = s.projects
+        .filter((p) => r.category === 'TBD' || p.category === r.category)
+        .sort((a, b) => a.title.localeCompare(b.title));
+      setSelect(planAttach, candidates.map((p) => ({ label: `${p.number ? `${p.number} · ` : ''}${p.title}`, value: p.id })), r.linkedProjectId ?? candidates[0]?.id ?? '');
+      planCategory.value = 'Passage';
+
+      const ap = pathway(r, s.settings.gates).lights.find((l) => l.def.key === 'assetPlan')!.status;
+      warnAp.hidden = ap === 'Green';
+      warnApText.textContent = `Not in the ${fyLabel(s.settings.currentApFy)} Asset Plan — spending this year needs leadership and Finance agreement.`;
+      warnApTag.innerHTML = assumption('Open question 2: whether a project can spend in a FY it is not in that FY’s Asset Plan is unresolved. Allowed here with a warning; record the leadership and Finance agreement as a note.');
+      warnOmb.hidden = !requestHasOmbFlag(r);
+      spreadEl.textContent = `Each FY amount spreads evenly over that FY’s open quarters (open from ${slotLabel(firstOpenSlot(s.settings.dataAsOf))}) as a ${r.category === 'Land' ? 'land purchase' : 'construction contract'} line. The request keeps a link to the project.`;
+      syncPlanMode();
+      planDialog.show();
+    }
+
+    q('[data-plan-cancel]').addEventListener('click', () => planDialog.close());
+    q('[data-plan-confirm]').addEventListener('click', () => {
+      if (!planning || !can('addToPlan')) return;
+      const mode = (planMode.value || 'placeholder') as 'placeholder' | 'active' | 'attach';
+      if (mode === 'attach' && !planAttach.value) return;
+      const title = planning.title;
+      const requestId = planning.id;
+      const projectId = update((s) =>
+        addRequestToPlan(s, {
+          requestId,
+          mode,
+          attachTo: mode === 'attach' ? planAttach.value : undefined,
+          category: (planCategory.value || 'Passage') as Category,
+          asOf: s.settings.dataAsOf,
+        }),
+      );
+      planDialog.close();
+      const p = getState().projects.find((x) => x.id === projectId);
+      snackbar(
+        'success',
+        mode === 'attach'
+          ? `“${title}” attached to ${p?.title ?? 'the project'}. Open it from the Linked project column.`
+          : `“${title}” added to the plan as ${mode === 'active' ? 'an active project' : 'a placeholder'}. Open it from the Linked project column.`,
+      );
+    });
+
+    subscribe(render);
+  }
+</script>
+
+<style>
+  .cbf-cap-req__totals { margin: 0; }
+  .cbf-cap-req__pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+    gap: var(--spacing-300);
+  }
+  .cbf-cap-req__amounts {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--spacing-200);
+  }
+  .cbf-cap-req__fieldset {
+    margin: 0;
+    padding: var(--spacing-300);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-200);
+  }
+  .cbf-cap-req__fieldset legend { padding-inline: var(--spacing-100); color: var(--color-content-default-secondary); }
+  .cbf-cap-req__footer { --justify: flex-end; inline-size: 100%; }
+  .cbf-cap-req__plan-lede { margin: 0; font-weight: var(--typography-font-weight-medium); }
+</style>
+
+<style is:global>
+  /* Client-rendered grid cells and drawer notes (no scope hash). */
+  .cbf-cap-req__grid .cbf-cap-req__actions { display: inline-flex; gap: var(--spacing-150); align-items: center; height: 100%; }
+  .cbf-cap-req__grid .cbf-cap-req-row-closed { color: var(--color-content-default-tertiary); }
+  .cbf-cap-req__grid .ag-row-pinned { font-weight: var(--typography-font-weight-semibold); background: var(--color-background-brand-subtle); }
+  .cbf-cap-req__grid .ag-cell .esa-pill { vertical-align: middle; }
+  .cbf-cap-req__gate-note { margin: 0; }
+</style>

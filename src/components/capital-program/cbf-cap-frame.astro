@@ -1,0 +1,121 @@
+---
+// cbf-cap-frame — the shared spine of the six capital program screens, so each
+// page stays a thin assembler: public nav → prototype strip (role lens + reset)
+// → app panel (breadcrumbs) → title + sub-nav (cbf-report-tabs) → header bar
+// (cbf-cap-toolbar) → the page's own sections in the default slot.
+//
+// It also mounts what every screen's client code needs: the pill/dot templates
+// and the snackbar container.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CbfPublicNav from '../shared/cbf-public-nav.astro';
+import CbfAppPanel from '../shared/cbf-app-panel.astro';
+import CbfPageHeading from '../shared/cbf-page-heading.astro';
+import CbfReportTabs from '../shared/cbf-report-tabs.astro';
+import CbfPrototypeStrip from '../shared/cbf-prototype-strip.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import CbfCapRoleSwitch from './cbf-cap-role-switch.astro';
+import CbfCapToolbar from './cbf-cap-toolbar.astro';
+import CbfCapTemplates from './cbf-cap-templates.astro';
+import { withBase } from '../../lib/base';
+
+export type CapTab = 'portfolio' | 'project' | 'requests' | 'snapshots' | 'adjustments' | 'settings';
+
+interface Props {
+  active: CapTab;
+  title: string;
+  /** Extra crumbs after "Capital program". */
+  crumbs?: { label: string; href?: string }[];
+  /** Hide the FY / envelope / snapshot bar (not used by any screen yet). */
+  toolbar?: boolean;
+}
+const { active, title, crumbs = [], toolbar = true } = Astro.props;
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+
+const allCrumbs = [
+  { label: 'Home', href: withBase('/home'), icon: homeIcon },
+  { label: 'Funding' },
+  { label: 'Capital program', href: crumbs.length ? withBase('/capital-program') : undefined },
+  ...crumbs,
+];
+
+const tabs = [
+  { key: 'portfolio', label: 'Portfolio', href: withBase('/capital-program') },
+  { key: 'requests', label: 'Requests', href: withBase('/capital-program/requests') },
+  { key: 'snapshots', label: 'Snapshots & compare', href: withBase('/capital-program/snapshots') },
+  { key: 'adjustments', label: 'Adjustments', href: withBase('/capital-program/adjustments') },
+  { key: 'settings', label: 'Data & settings', href: withBase('/capital-program/settings') },
+].map((t) => ({ label: t.label, href: t.href, active: t.key === active || (active === 'project' && t.key === 'portfolio') }));
+---
+<BaseLayout title={`${title} — Columbia Basin Fish & Wildlife Program`}>
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <CbfPrototypeStrip note="Capital program prototype — mock data, saved in this browser. Switch roles to see who can edit what.">
+        <EsaButton size="sm" variant="secondary" appearance="outline" icon="rotate-ccw" data-cap-reset>Reset demo data</EsaButton>
+        <CbfCapRoleSwitch />
+      </CbfPrototypeStrip>
+
+      <CbfAppPanel crumbs={allCrumbs}>
+        <div class="cbf-cap-frame__head repel">
+          <CbfPageHeading title={title} data-cap-title />
+          <div class="cluster" data-gap="sm"><slot name="actions" /></div>
+        </div>
+        <CbfReportTabs tabs={tabs} ariaLabel="Capital program sections" />
+        {toolbar && <CbfCapToolbar />}
+        <slot />
+      </CbfAppPanel>
+    </EsaContainer>
+  </main>
+
+  <CbfCapTemplates />
+  <esa-snackbar-container data-snackbar></esa-snackbar-container>
+
+  <script>
+    import '@esa/ecology/esa-snackbar-container';
+    import { resetDemo } from '../../lib/capital/store';
+    import { snackbar } from '../../lib/capital/ui';
+    document.querySelector('[data-cap-reset]')?.addEventListener('click', () => {
+      resetDemo();
+      snackbar('info', 'Demo data reset to the seed.');
+    });
+  </script>
+</BaseLayout>
+
+<style>
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+  .cbf-cap-frame__head { align-items: center; }
+  /* Popovers (column picker, menus) must escape the panel's rounded clip. */
+  .cbf-page :global(.cbf-app-panel) { overflow: visible; }
+</style>
+
+<style is:global>
+  /* Shared by every capital program renderer (classes are emitted from client
+     JS, so they can't carry Astro's scope hash). */
+  /* The renderers hide controls by role with the `hidden` attribute; layout
+     primitives (.cluster) and esa-button set `display`, which would win. */
+  .cbf-page [hidden] { display: none !important; }
+  .cbf-cap-neg { color: var(--color-content-utility-danger, var(--color-background-utility-danger)); }
+  .cbf-cap-num { font-variant-numeric: tabular-nums; text-align: end; }
+  .cbf-cap-muted { color: var(--color-content-default-tertiary); }
+  /* bcn-lego-checked: a not-applicable gate needs an EMPTY ring beside the
+     esa-badge dots; esa-badge dot has no hollow/outline variant. */
+  .cbf-cap-dot-na {
+    display: inline-block;
+    inline-size: 8px;
+    block-size: 8px;
+    border-radius: 50%;
+    border: 1px solid var(--color-border-default-strong);
+  }
+  .cbf-cap-dots { display: inline-flex; align-items: center; gap: 4px; }
+  .cbf-cap-section-title {
+    margin: 0;
+    font-family: var(--typography-font-family-display);
+    font-weight: var(--typography-font-weight-semibold);
+    font-size: var(--font-size-500, 20px);
+    color: var(--color-background-default-knockout);
+  }
+</style>
