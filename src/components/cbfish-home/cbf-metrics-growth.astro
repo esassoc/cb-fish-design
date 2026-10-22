@@ -1,0 +1,105 @@
+---
+// cbf-metrics-growth — homepage "How the results have grown" (CBF-8287): a tab
+// per measure (its total as the tab badge), and each panel plots the measure's
+// cumulative build-up since FY05 with a fiscal-year slider, the latest year's
+// gain, and a link to that measure's /program-results page.
+//
+// bcn-lego-checked: the tabs ARE esa-tab-layout (tabs + per-tab
+// slot="panel-N"; it owns the ARIA tablist, roving keys and panel swap — no
+// script here). Panels compose esa-stat, esa-button and cbf-cumulative-chart
+// (whose year slider is esa-range-slider). Only panel spacing is local.
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import CbfCumulativeChart from './cbf-cumulative-chart.astro';
+import { METRICS, formatCompact, formatFull } from '../../data/cbfish-home-metrics';
+import { withBase } from '../../lib/base';
+import { latestGain } from '../../lib/series';
+
+const perYear = (s: { value: number }[]) => Math.round(s.at(-1)!.value / s.length);
+// esa-tab-layout reads `tabs` as JSON (property type Array). Panels pass their
+// slot="panel-N" by spread: Astro drops a literal slot= on plain elements
+// rendered inside .map().
+const tabs = METRICS.map((m) => ({ label: m.short, badge: formatCompact(m.total) }));
+---
+<section class="cbf-metrics-growth" aria-labelledby="cbf-metrics-growth-h">
+  <div class="cbf-metrics-growth__head">
+    <h2 id="cbf-metrics-growth-h" class="typography-heading-md">How the results have grown</h2>
+    <p class="typography-body-md cbf-metrics-growth__lede">Twenty years of cumulative results. Pick a measure, then move the fiscal-year slider or point at the chart to see any year.</p>
+  </div>
+
+  <div class="cbf-metrics-growth__frame">
+    <esa-tab-layout tabs={JSON.stringify(tabs)} active-index="0" size="md">
+      {METRICS.map((m, i) => (
+        <div class="cbf-metrics-growth__stage" {...{ slot: `panel-${i}` }}>
+          <div class="cbf-metrics-growth__stage-head">
+            <EsaStat value={formatCompact(m.total)} label={m.label} sub="FY05–FY25, cumulative" />
+            <dl class="cbf-metrics-growth__facts">
+              <div><dt class="typography-label-xs">Added in FY25</dt><dd>+{formatFull(latestGain(m.cumulative))}</dd></div>
+              <div><dt class="typography-label-xs">Average per year</dt><dd>{formatFull(perYear(m.cumulative))}</dd></div>
+            </dl>
+          </div>
+          <CbfCumulativeChart series={m.cumulative} unit={m.unit} interactive height={260}
+            label={`Cumulative ${m.short.toLowerCase()}, rising from ${formatFull(m.cumulative[0].value)} in FY05 to ${formatFull(m.total)} ${m.unit} in FY25.`} />
+          <div class="cbf-metrics-growth__actions">
+            <EsaButton variant="primary" appearance="outline" href={withBase(`/program-results/${m.id}`)} iconRight="arrow-right">View contributing contracts</EsaButton>
+          </div>
+        </div>
+      ))}
+    </esa-tab-layout>
+  </div>
+</section>
+
+<style>
+  .cbf-metrics-growth { display: flex; flex-direction: column; gap: var(--spacing-500); }
+  .cbf-metrics-growth__head { display: flex; flex-direction: column; gap: var(--spacing-200); max-width: 70ch; }
+  .cbf-metrics-growth__lede { margin: 0; color: var(--color-content-default-secondary); }
+
+  .cbf-metrics-growth__frame {
+    padding: var(--spacing-400) var(--spacing-600) var(--spacing-600);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-400, 12px);
+    background: var(--color-background-elevation-raised);
+    min-width: 0;
+  }
+  /* esa-tab-layout's tablist is flex/nowrap; on narrow screens let the host
+     scroll sideways instead of widening the page (same as cbf-contract-tabs) */
+  .cbf-metrics-growth__frame > esa-tab-layout {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+  .cbf-metrics-growth__stage {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-400);
+    padding-top: var(--spacing-300);
+    min-width: 0;
+  }
+  .cbf-metrics-growth__stage-head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--spacing-400);
+  }
+  .cbf-metrics-growth__facts { display: flex; gap: var(--spacing-600); margin: 0; }
+  .cbf-metrics-growth__facts div { display: flex; flex-direction: column; gap: 2px; }
+  .cbf-metrics-growth__facts dt { color: var(--color-content-default-tertiary); }
+  .cbf-metrics-growth__facts dd {
+    margin: 0;
+    font-size: var(--typography-body-lg-font-size);
+    font-weight: var(--typography-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-metrics-growth__actions { display: flex; justify-content: flex-end; }
+
+  @media (max-width: 860px) {
+    .cbf-metrics-growth__frame { padding: var(--spacing-300) var(--spacing-400) var(--spacing-500); }
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-tab-layout';
+</script>

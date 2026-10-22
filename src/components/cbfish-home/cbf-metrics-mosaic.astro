@@ -1,0 +1,344 @@
+---
+// cbf-metrics-mosaic — "Where the results come from" (CBF-8287), after the
+// "FY23 expenditures by funding groups" spread in BPA's 2023 Fish & Wildlife
+// Program review (p. 5): a measure's split as a squarified treemap. Every block
+// is sized by its share and carries the share, the program area (or state), a
+// one-line description (for a state, a sentence: "360,400 acres of habitat …
+// in Washington") and the amount, over a soft background symbol (the state's
+// outline, or a motif for the program area) — and the whole block links to that
+// measure's /program-results page, pre-filtered to the contracts behind it
+// (#program-<slug> / #state-<code>, read by cbf-contributing-contracts-grid).
+//
+// Blocks are absolutely positioned HTML (percent geometry from squarify), so
+// text wraps naturally; container queries drop the description, then the
+// amount, as a block gets small. Two geometries — wide for desktop, tall for
+// phones — swapped by CSS. Blocks rest on the neutral card surface and ease
+// into a light CBFish blue on hover/focus.
+//
+// bcn-lego-checked: the pickers ARE esa-button-toggle. esa-chart (AG Charts)
+// has a treemap, but on a canvas — blocks wouldn't be links and the text
+// wouldn't wrap or be selectable. esa-card is a static surface, not a tiled
+// layout. Checked Beacon (no treemap pattern). Each block is a real <a> whose
+// text is its accessible name; the tiling geometry is component-internal.
+import { METRICS, STATES, filterToken, formatCompact, type StateCode } from '../../data/cbfish-home-metrics';
+import { stateSymbolPath } from '../../data/basin-geo';
+import { withBase } from '../../lib/base';
+
+type Part = { label: string; value: number; pct: number; description?: string; token: string; symbol: string };
+
+// Background symbols: soft, large silhouettes in a 100x100 box. A state block
+// gets that state's outline; a program-area block gets a motif for its topic.
+const MOTIFS: Record<string, string> = {
+  river: '<path d="M-6 18 C 22 12, 34 44, 54 48 S 78 82, 106 84" fill="none" stroke="currentColor" stroke-width="15" stroke-linecap="round"/><path d="M30 -4 C 34 14, 30 26, 42 40" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>',
+  // a broad main channel with a current line, vs. the branching tributary stream above
+  mainstem: '<path d="M-8 30 C 20 22, 40 62, 62 58 S 92 40, 108 46" fill="none" stroke="currentColor" stroke-width="34" stroke-linecap="round"/><path d="M4 32 C 24 28, 40 60, 62 56 S 90 42, 104 46" fill="none" stroke="var(--_sym-cut, #fff)" stroke-width="3" stroke-dasharray="8 8" stroke-linecap="round"/>',
+  forest: '<g fill="currentColor"><path d="M32 30 L48 62 H38 L52 82 H12 L26 62 H16 Z"/><rect x="29" y="82" width="6" height="12"/><path d="M68 10 L88 48 H76 L92 74 H44 L60 48 H48 Z"/><rect x="65" y="74" width="7" height="20"/></g>',
+  fish: '<path fill-rule="evenodd" fill="currentColor" d="M6 50 C 22 24, 56 20, 76 44 L 96 28 L 90 50 L 96 72 L 76 56 C 56 80, 22 76, 6 50 Z M24 44 a5 5 0 1 0 0.1 0 Z"/>',
+  waves: '<path d="M2 34 q12 -12 24 0 t24 0 t24 0 t24 0" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/><path d="M2 56 q12 -12 24 0 t24 0 t24 0 t24 0" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/><path d="M2 78 q12 -12 24 0 t24 0 t24 0 t24 0" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>',
+  arch: '<path fill="currentColor" d="M10 90 V48 A40 40 0 0 1 90 48 V90 H72 V52 A22 22 0 0 0 28 52 V90 Z"/><path d="M0 92 q12 -8 25 0 t25 0 t25 0 t25 0" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/>',
+  mountains: '<path fill="currentColor" d="M2 90 L34 30 L50 56 L66 26 L98 90 Z"/>',
+  document: '<rect x="20" y="8" width="60" height="84" rx="6" fill="currentColor"/><path d="M32 30 H68 M32 46 H68 M32 62 H56" stroke="var(--_sym-cut, #fff)" stroke-width="6" stroke-linecap="round"/>',
+};
+const PROGRAM_MOTIF: Record<string, keyof typeof MOTIFS> = {
+  'Tributary habitat': 'river', 'Wildlife mitigation': 'forest', 'Mainstem habitat': 'mainstem', 'Resident fish': 'fish',
+  'Levee breach and setback': 'waves', 'Tide-gate replacement': 'arch', 'Culvert and channel work': 'arch',
+  'Spring Chinook': 'fish', 'Fall Chinook': 'fish', 'Steelhead': 'fish', 'Coho and other': 'fish',
+  'Fee-title acquisitions': 'mountains', 'Conservation easements': 'forest', 'Long-term agreements': 'document',
+};
+// states are drawn as outlines, not fills
+const stateSymbol = (code: StateCode) =>
+  `<path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round" vector-effect="non-scaling-stroke" d="${stateSymbolPath(code, 100)}"/>`;
+type Rect = { x: number; y: number; w: number; h: number };
+
+/** Squarified treemap (Bruls et al.): keeps blocks close to square. */
+function squarify(parts: Part[], box: Rect): (Part & Rect)[] {
+  const total = parts.reduce((n, p) => n + p.value, 0);
+  const scale = (box.w * box.h) / total;
+  const items = parts.map((p) => ({ p, a: p.value * scale }));
+  const out: (Part & Rect)[] = [];
+  let { x, y, w, h } = box;
+  let row: typeof items = [];
+  const worst = (r: typeof items, side: number) => {
+    const sum = r.reduce((n, i) => n + i.a, 0);
+    const mx = Math.max(...r.map((i) => i.a)), mn = Math.min(...r.map((i) => i.a));
+    return Math.max((side * side * mx) / (sum * sum), (sum * sum) / (side * side * mn));
+  };
+  const place = (r: typeof items) => {
+    const sum = r.reduce((n, i) => n + i.a, 0);
+    if (w >= h) {
+      const cw = sum / h; let cy = y;
+      r.forEach((i) => { const ch = i.a / cw; out.push({ ...i.p, x, y: cy, w: cw, h: ch }); cy += ch; });
+      x += cw; w -= cw;
+    } else {
+      const rh = sum / w; let cx = x;
+      r.forEach((i) => { const iw = i.a / rh; out.push({ ...i.p, x: cx, y, w: iw, h: rh }); cx += iw; });
+      y += rh; h -= rh;
+    }
+  };
+  for (const it of items) {
+    const side = Math.min(w, h);
+    if (row.length === 0 || worst([...row, it], side) <= worst(row, side)) row.push(it);
+    else { place(row); row = [it]; }
+  }
+  if (row.length) place(row);
+  return out;
+}
+
+const GEOM = { wide: { w: 1000, h: 330 }, tall: { w: 600, h: 820 } } as const;
+const pct = (n: number, of: number) => `${((n / of) * 100).toFixed(3)}%`;
+/** Tile the parts, growing the box (up to 40% taller) only when a block would
+    otherwise be too thin to read; returns the blocks and the height used. */
+const MIN_SIDE = 120;
+function layout(parts: Part[], g: { w: number; h: number }) {
+  let h = g.h, blocks = squarify(parts, { x: 0, y: 0, w: g.w, h });
+  while (Math.min(...blocks.map((b) => Math.min(b.w, b.h))) < MIN_SIDE && h < g.h * 1.4) {
+    h += 10;
+    blocks = squarify(parts, { x: 0, y: 0, w: g.w, h });
+  }
+  return {
+    h,
+    blocks: blocks.map((b) => ({
+      ...b,
+      style: `left:${pct(b.x, g.w)};top:${pct(b.y, h)};width:${pct(b.w, g.w)};height:${pct(b.h, h)}`,
+    })),
+  };
+}
+
+const toParts = (rows: Omit<Part, 'pct'>[]): Part[] => {
+  const kept = rows.filter((r) => r.value > 0).sort((a, b) => b.value - a.value);
+  const total = kept.reduce((n, r) => n + r.value, 0);
+  return kept.map((r) => ({ ...r, pct: (r.value / total) * 100 }));
+};
+const views = METRICS.flatMap((m) => [
+  {
+    m, split: 'program',
+    parts: toParts(m.byProgram.map((p) => ({
+      label: p.name, value: p.value, description: p.description,
+      token: filterToken('program', p.name), symbol: MOTIFS[PROGRAM_MOTIF[p.name] ?? 'river'],
+    }))),
+  },
+  {
+    m, split: 'state',
+    // state blocks read as a sentence: "360,400 acres of habitat protected or improved in Washington"
+    parts: toParts(STATES.map((s) => ({
+      label: s.name, value: m.byState[s.code],
+      description: `${formatCompact(m.byState[s.code])} ${m.label.charAt(0).toLowerCase()}${m.label.slice(1)} in ${s.name}.`,
+      token: filterToken('state', s.code), symbol: stateSymbol(s.code),
+    }))),
+  },
+]).map((v) => {
+  const top = v.parts[0]?.pct ?? 1;
+  return { ...v, top, wide: layout(v.parts, GEOM.wide), tall: layout(v.parts, GEOM.tall) };
+});
+
+const first = views[0];
+const measures = METRICS.map((m) => ({ label: m.short, value: m.id }));
+const splits = [{ label: 'By program area', value: 'program' }, { label: 'By state', value: 'state' }];
+---
+<section class="cbf-metrics-mosaic" aria-labelledby="cbf-metrics-mosaic-h" data-mosaic
+  data-measures={JSON.stringify(measures)} data-splits={JSON.stringify(splits)}>
+  <div class="cbf-metrics-mosaic__head">
+    <div class="cbf-metrics-mosaic__intro">
+      <h2 id="cbf-metrics-mosaic-h" class="typography-heading-md">Where the results come from</h2>
+      <p class="typography-body-md cbf-metrics-mosaic__lede">Each block is sized by its share of the total since 2005. Select a block to see the contracts behind it.</p>
+    </div>
+    <div class="cbf-metrics-mosaic__pickers">
+      <esa-button-toggle size="sm" label="Measure" data-pick-measure></esa-button-toggle>
+      <esa-button-toggle size="sm" label="Split" data-pick-split></esa-button-toggle>
+    </div>
+  </div>
+
+  {views.map((v) => (
+    <div class="cbf-metrics-mosaic__view" data-view={`${v.m.id}:${v.split}`} hidden={v !== first}>
+      {(['wide', 'tall'] as const).map((shape) => (
+        <ul class={`cbf-metrics-mosaic__map is-${shape}`} style={`aspect-ratio: ${GEOM[shape].w} / ${v[shape].h}`}
+          aria-label={`${v.m.short} ${v.split === 'state' ? 'by state' : 'by program area'}`}>
+          {v[shape].blocks.map((b, i) => {
+            return (
+              <li class="cbf-metrics-mosaic__cell" style={`${b.style}; --i: ${i}`}>
+                <a class="cbf-metrics-mosaic__block"
+                  href={`${withBase(`/program-results/${v.m.id}`)}#${b.token}`}>
+                  <svg class:list={['cbf-metrics-mosaic__symbol', v.split === 'state' && 'is-outline']} viewBox="0 0 100 100" aria-hidden="true" focusable="false" set:html={b.symbol} />
+                  <span class="cbf-metrics-mosaic__pct">{Math.round(b.pct)}%</span>
+                  <span class="cbf-metrics-mosaic__name">{b.label}</span>
+                  {b.description && <span class="cbf-metrics-mosaic__desc">{b.description}</span>}
+                  <span class="cbf-metrics-mosaic__foot">
+                    {v.split === 'program' && <span class="cbf-metrics-mosaic__value">{formatCompact(b.value)} {v.m.unit}</span>}
+                    <span class="cbf-metrics-mosaic__cta" aria-hidden="true">View contracts →</span>
+                  </span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      ))}
+    </div>
+  ))}
+</section>
+
+<style>
+  .cbf-metrics-mosaic { display: flex; flex-direction: column; gap: var(--spacing-500); }
+  .cbf-metrics-mosaic__head {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: var(--spacing-400);
+  }
+  .cbf-metrics-mosaic__intro { display: flex; flex-direction: column; gap: var(--spacing-200); max-width: 60ch; }
+  .cbf-metrics-mosaic__intro h2 { margin: 0; }
+  .cbf-metrics-mosaic__lede { margin: 0; color: var(--color-content-default-secondary); }
+  .cbf-metrics-mosaic__pickers { display: flex; flex-wrap: wrap; gap: var(--spacing-400); max-width: 100%; min-width: 0; }
+  .cbf-metrics-mosaic__pickers > esa-button-toggle { max-width: 100%; overflow-x: auto; }
+
+  .cbf-metrics-mosaic__view[hidden] { display: none; }
+  .cbf-metrics-mosaic__map {
+    position: relative;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cbf-metrics-mosaic__map.is-tall { display: none; }
+  .cbf-metrics-mosaic__cell {
+    position: absolute;
+    padding: 3px;
+    box-sizing: border-box;
+    container-type: size;
+    animation: cbf-mosaic-in 420ms cubic-bezier(.2,.7,.2,1) both;
+    animation-delay: calc(var(--i) * 60ms);
+  }
+  @keyframes cbf-mosaic-in { from { opacity: .001; transform: scale(.97); } }
+
+  .cbf-metrics-mosaic__block {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    padding: var(--spacing-400) var(--spacing-500);
+    border-radius: var(--radius-md, 0.5rem);
+    text-decoration: none;
+    position: relative;
+    isolation: isolate;
+    /* at rest: the page's neutral card surface; on hover/focus: the CBFish
+       header blue with white text */
+    background: var(--color-background-elevation-raised);
+    border: 1px solid var(--color-border-default);
+    color: var(--color-content-default);
+    --_ease: 650ms cubic-bezier(.45,0,.25,1); /* slow start, gentle finish — reads as easing in */
+    transition: background var(--_ease, 650ms ease), border-color var(--_ease, 650ms ease), box-shadow var(--_ease, 650ms ease);
+  }
+  /* the symbol sits behind the text, bottom-right, soft */
+  .cbf-metrics-mosaic__symbol {
+    position: absolute;
+    right: 5%;
+    bottom: 8%;
+    width: min(52cqmin, 11rem);
+    height: min(52cqmin, 11rem);
+    z-index: -1;
+    color: var(--color-background-brand);
+    opacity: .07;
+    --_sym-cut: var(--color-background-elevation-raised, #fcfcfc);
+    transition: opacity var(--_ease, 650ms ease);
+  }
+  /* hover: ease into a light CBFish blue; text stays dark */
+  .cbf-metrics-mosaic__block:hover,
+  .cbf-metrics-mosaic__block:focus-visible {
+    background: color-mix(in srgb, var(--cbf-blue-200) 55%, var(--cbf-blue-50));
+    border-color: var(--cbf-blue-500);
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--cbf-blue-700) 14%, transparent);
+  }
+  .cbf-metrics-mosaic__symbol.is-outline { opacity: .22; }
+  .cbf-metrics-mosaic__block:is(:hover, :focus-visible) .cbf-metrics-mosaic__symbol.is-outline { opacity: .4; }
+  .cbf-metrics-mosaic__block:is(:hover, :focus-visible) .cbf-metrics-mosaic__symbol {
+    opacity: .16;
+    --_sym-cut: color-mix(in srgb, var(--cbf-blue-200) 55%, var(--cbf-blue-50));
+  }
+  .cbf-metrics-mosaic__block:focus-visible { outline: 3px solid var(--cbf-gold-300); outline-offset: 2px; }
+
+  .cbf-metrics-mosaic__pct {
+    font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
+    font-size: var(--typography-display-sm-font-size);
+    font-weight: var(--typography-font-weight-bold, 700);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-background-brand);
+  }
+  .cbf-metrics-mosaic__name {
+    margin-top: 2px;
+    font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
+    font-size: var(--typography-body-lg-font-size);
+    font-weight: var(--typography-font-weight-bold, 700);
+    line-height: 1.2;
+  }
+  .cbf-metrics-mosaic__desc {
+    max-width: 36ch;
+    font-size: var(--typography-body-md-font-size);
+    line-height: 1.4;
+  }
+  .cbf-metrics-mosaic__foot {
+    margin-top: auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 2px var(--spacing-300);
+    font-size: var(--typography-label-sm-font-size);
+  }
+  .cbf-metrics-mosaic__value { font-weight: var(--typography-font-weight-semibold); font-variant-numeric: tabular-nums; }
+  .cbf-metrics-mosaic__cta { font-weight: var(--typography-font-weight-semibold); text-decoration: underline; text-underline-offset: 3px; }
+  .cbf-metrics-mosaic__cta { color: var(--color-content-link, var(--color-background-brand)); }
+  .cbf-metrics-mosaic__desc { color: var(--color-content-default-secondary); }
+
+
+  /* shed detail as a block gets small, most-optional first */
+  @container (max-height: 11rem) { .cbf-metrics-mosaic__desc { display: none; } }
+  @container (max-width: 13rem) { .cbf-metrics-mosaic__desc { display: none; } }
+  @container (max-height: 8rem) { .cbf-metrics-mosaic__cta { display: none; } }
+  @container (max-height: 6.5rem) { .cbf-metrics-mosaic__value { display: none; } }
+  @container (max-height: 8.5rem) {
+    .cbf-metrics-mosaic__block { padding: var(--spacing-300) var(--spacing-400); gap: 2px; }
+    .cbf-metrics-mosaic__pct { font-size: var(--typography-heading-md-font-size); }
+    .cbf-metrics-mosaic__name { font-size: var(--typography-body-md-font-size); margin-top: 0; }
+  }
+  @container (max-height: 4.5rem) { .cbf-metrics-mosaic__name { display: none; } }
+  @container (max-width: 9rem) {
+    .cbf-metrics-mosaic__block { padding: var(--spacing-300); }
+    .cbf-metrics-mosaic__name { font-size: var(--typography-body-md-font-size); }
+    .cbf-metrics-mosaic__cta { display: none; }
+  }
+
+  @media (max-width: 640px) {
+    .cbf-metrics-mosaic__map.is-wide { display: none; }
+    .cbf-metrics-mosaic__map.is-tall { display: block; }
+    .cbf-metrics-mosaic__block { padding: var(--spacing-400); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cbf-metrics-mosaic__cell { animation: none; }
+    .cbf-metrics-mosaic__block, .cbf-metrics-mosaic__symbol { transition: none; }
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-button-toggle';
+
+  const root = document.querySelector<HTMLElement>('[data-mosaic]');
+  if (root) {
+    type Toggle = HTMLElement & { options: unknown[]; value: string };
+    const measures: { label: string; value: string }[] = JSON.parse(root.dataset.measures || '[]');
+    const splits: { label: string; value: string }[] = JSON.parse(root.dataset.splits || '[]');
+    const pickM = root.querySelector<Toggle>('[data-pick-measure]')!;
+    const pickS = root.querySelector<Toggle>('[data-pick-split]')!;
+    let measure = measures[0].value;
+    let split = splits[0].value;
+    pickM.options = measures; pickM.value = measure;
+    pickS.options = splits; pickS.value = split;
+    const show = () =>
+      root.querySelectorAll<HTMLElement>('[data-view]').forEach((v) => (v.hidden = v.dataset.view !== `${measure}:${split}`));
+    pickM.addEventListener('change', (e) => { measure = (e as CustomEvent).detail.value; show(); });
+    pickS.addEventListener('change', (e) => { split = (e as CustomEvent).detail.value; show(); });
+  }
+</script>

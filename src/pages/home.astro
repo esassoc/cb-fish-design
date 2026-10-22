@@ -3,12 +3,25 @@
 // live cbfish.org landing. This is the "home" every prototype returns to via the
 // logo and the Home breadcrumb (NOT the design-system index at /, which is now
 // reachable only by URL/bookmark). Thin assembler: nav + photo hero + program
-// overview + impacts + sitemap footer, all from cbf-*/esa-* parts.
+// overview + program results + sitemap footer, all from cbf-*/esa-* parts.
+//
+// CBF-8287 draft: simplified welcome copy; the stat row drops Funds and Work
+// sites; the funded-by-year histogram gives way to cumulative program results,
+// shown six ways stacked down the page (headline totals, growth over time,
+// by state, and three after BPA's 2023 review: a share mosaic, everyday-scale
+// comparisons, a current-metrics table), each linking to the measure's
+// /program-results page (summary + contributing contracts). Every result figure is a PLACEHOLDER until
+// CBF-8302 settles the CBFish data source (src/data/cbfish-home-metrics.ts).
 import BaseLayout from '../layouts/BaseLayout.astro';
 import CbfPublicNav from '../components/shared/cbf-public-nav.astro';
 import CbfWelcomeHero from '../components/cbfish-home/cbf-welcome-hero.astro';
 import CbfProgramOverview from '../components/cbfish-home/cbf-program-overview.astro';
-import CbfProgramImpacts from '../components/cbfish-home/cbf-program-impacts.astro';
+import CbfMetricsCounters from '../components/cbfish-home/cbf-metrics-counters.astro';
+import CbfMetricsGrowth from '../components/cbfish-home/cbf-metrics-growth.astro';
+import CbfMetricsBasin from '../components/cbfish-home/cbf-metrics-basin.astro';
+import CbfMetricsMosaic from '../components/cbfish-home/cbf-metrics-mosaic.astro';
+import CbfMetricsEquivalents from '../components/cbfish-home/cbf-metrics-equivalents.astro';
+import CbfMetricsTable from '../components/cbfish-home/cbf-metrics-table.astro';
 import CbfAppFooter from '../components/cbfish-home/cbf-app-footer.astro';
 import { withBase } from '../lib/base';
 
@@ -25,14 +38,13 @@ const hero = {
 const overview = {
   heading: 'Welcome to the Columbia Basin Fish & Wildlife Program',
   intro:
-    'The program is Bonneville Power Administration’s effort to protect, mitigate, and enhance the fish and wildlife affected by the hydroelectric dams on the Columbia River and its tributaries. Established under the Northwest Power Act of 1980, it funds work across a four-state region — Idaho, Montana, Oregon, and Washington.',
+    'Bonneville Power Administration funds work to protect and restore the fish and wildlife affected by hydroelectric dams on the Columbia River and its tributaries. CBFish tracks that work — the projects, the contracts, and what they achieve — across Idaho, Montana, Oregon, and Washington.',
   stats: [
-    { value: '41', label: 'Funds' },
-    { value: '301', label: 'Projects' },
-    { value: '633', label: 'Contracts' },
-    { value: '73,521', label: 'Work sites' },
+    { value: '301', label: 'Projects', sub: 'Active this fiscal year' },
+    { value: '633', label: 'Contracts', sub: 'Active this fiscal year' },
   ],
 };
+
 ---
 <!-- manifest:
   layout: stack                                 # nav, full-bleed hero/footer, centered body
@@ -40,7 +52,12 @@ const overview = {
     - top nav        -> cbf-public-nav
     - photo hero     -> cbf-welcome-hero
     - overview+stats -> cbf-program-overview
-    - impacts chart  -> cbf-program-impacts
+    - totals         -> cbf-metrics-counters
+    - growth         -> cbf-metrics-growth
+    - basin map      -> cbf-metrics-basin
+    - mosaic         -> cbf-metrics-mosaic       # after BPA 2023 review p. 5
+    - scale          -> cbf-metrics-equivalents  # after p. 6
+    - table          -> cbf-metrics-table        # after p. 7
     - sitemap footer -> cbf-app-footer
 -->
 <BaseLayout title="CBFish — Columbia Basin Fish & Wildlife Program">
@@ -54,9 +71,15 @@ const overview = {
       credit={hero.credit}
     />
 
-    <div class="cbf-home__body">
+    <div class="cbf-home__body stack">
       <CbfProgramOverview heading={overview.heading} intro={overview.intro} stats={overview.stats} />
-      <CbfProgramImpacts />
+
+      <CbfMetricsCounters />
+      <CbfMetricsGrowth />
+      <CbfMetricsBasin />
+      <CbfMetricsMosaic />
+      <CbfMetricsEquivalents />
+      <CbfMetricsTable />
     </div>
 
     <CbfAppFooter />
@@ -67,11 +90,9 @@ const overview = {
   /* page-level rhythm only — full-bleed hero/footer, centered max-width for the
      body band (every block is a component, see manifest). */
   .cbf-home__body {
+    --gap: var(--spacing-800);
     max-width: 1280px;
     margin: 0 auto;
     padding: var(--spacing-800) var(--spacing-600);
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-800);
   }
 </style>

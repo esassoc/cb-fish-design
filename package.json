@@ -8,9 +8,12 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "predeploy": "handoff check",
     "deploy": "astro build && gh-pages -d dist --dotfiles",
-    "handoff:all": "node scripts/gen-handoff.mjs",
+    "handoff:all": "handoff all",
     "doctor": "node ../ecology/scripts/doctor.mjs",
+    "handoff:changed": "handoff all --changed",
+    "handoff:check": "handoff check",
     "test": "vitest run"
   },
   "dependencies": {
@@ -22,6 +25,7 @@
     "lit": "^3.3.3"
   },
   "devDependencies": {
+    "@esa/design-layer": "file:../ecology/packages/design-layer",
     "@esa/handoff": "file:../ecology/packages/handoff",
     "gh-pages": "^6.3.0",
     "typescript": "^5.9.0",

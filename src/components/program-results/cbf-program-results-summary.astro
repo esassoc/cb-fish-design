@@ -1,0 +1,71 @@
+---
+// cbf-program-results-summary — the top of a /program-results/<measure> page
+// (CBF-8287): the measure's total, definition and latest-year gain beside its
+// cumulative chart, then its splits by state and by program area.
+//
+// bcn-lego-checked: surfaces ARE esa-card, the total esa-stat, the chart
+// cbf-cumulative-chart (year slider = esa-range-slider), the splits
+// cbf-share-bars. The two-column headline and the splits row are the
+// switcher / grid layout primitives; only the inner rhythm is local.
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import CbfCumulativeChart from '../cbfish-home/cbf-cumulative-chart.astro';
+import CbfShareBars from '../cbfish-home/cbf-share-bars.astro';
+import { STATES, formatCompact, formatFull, type Metric } from '../../data/cbfish-home-metrics';
+import { latestGain } from '../../lib/series';
+
+interface Props {
+  metric: Metric;
+  /** How many contracts the grid below lists. */
+  contractCount: number;
+}
+const { metric, contractCount } = Astro.props;
+const s = metric.cumulative;
+const byState = STATES.filter((st) => metric.byState[st.code] > 0)
+  .sort((a, b) => metric.byState[b.code] - metric.byState[a.code])
+  .map((st) => ({ label: st.name, value: metric.byState[st.code], display: formatCompact(metric.byState[st.code]) }));
+const byProgram = metric.byProgram.map((p) => ({ label: p.name, value: p.value, display: formatCompact(p.value) }));
+---
+<div class="cbf-results-summary stack" data-gap="md">
+  <EsaCard padding="spacious">
+    <div class="cbf-results-summary__headline switcher" data-gap="2xl">
+      <div class="cbf-results-summary__total stack" data-gap="md">
+        <EsaStat value={formatCompact(metric.total)} label={metric.label} sub="FY05–FY25, cumulative" />
+        <p class="typography-body-sm cbf-results-summary__def">{metric.definition}</p>
+        <dl class="cbf-results-summary__facts cluster" data-gap="xl">
+          <div><dt class="typography-label-xs">Added in FY25</dt><dd>+{formatFull(latestGain(s))}</dd></div>
+          <div><dt class="typography-label-xs">Contributing contracts</dt><dd>{contractCount}</dd></div>
+        </dl>
+      </div>
+      <div class="cbf-results-summary__chart">
+        <CbfCumulativeChart series={s} unit={metric.unit} interactive height={240}
+          label={`Cumulative ${metric.short.toLowerCase()}, from ${formatFull(s[0].value)} in FY05 to ${formatFull(metric.total)} ${metric.unit} in FY25.`} />
+      </div>
+    </div>
+  </EsaCard>
+
+  <div class="grid" data-gap="md" style="--grid-min: 22rem">
+    <EsaCard title="By state" padding="default">
+      <CbfShareBars label={`${metric.short} by state`} parts={byState} />
+    </EsaCard>
+    <EsaCard title="By program area" padding="default">
+      <CbfShareBars label={`${metric.short} by program area`} parts={byProgram} />
+    </EsaCard>
+  </div>
+</div>
+
+<style>
+  /* chart takes twice the total's share of the row; the switcher stacks them
+     below its threshold */
+  .cbf-results-summary__headline { --switcher-threshold: 48rem; align-items: center; }
+  .cbf-results-summary__chart { flex-grow: 2; min-width: 0; }
+  .cbf-results-summary__def { margin: 0; color: var(--color-content-default-secondary); max-width: 45ch; }
+  .cbf-results-summary__facts { margin: 0; }
+  .cbf-results-summary__facts dt { color: var(--color-content-default-tertiary); }
+  .cbf-results-summary__facts dd {
+    margin: 0;
+    font-size: var(--typography-title-font-size, 1.125rem);
+    font-weight: var(--typography-font-weight-semibold);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

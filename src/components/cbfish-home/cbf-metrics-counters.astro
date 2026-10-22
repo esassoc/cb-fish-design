@@ -1,0 +1,146 @@
+---
+// cbf-metrics-counters — homepage metrics, option "Counters" (CBF-8287): one
+// light panel split into five columns of big, counting-up totals in brand blue.
+// Each column links to that measure's /program-results page, so the strip
+// reads as a headline and works as a menu.
+//
+// The numbers are server-rendered at their final value (complete at rest, and
+// for no-JS readers); the script rolls them up from zero the first time the
+// strip scrolls into view, unless the reader prefers reduced motion.
+//
+// bcn-lego-checked: the panel matches esa-card's surface tokens (raised
+// background, default border, radius) but is one surface split by dividers,
+// which esa-card's single body can't express; esa-stat has no link affordance
+// (wrapping it in an <a> would nest its block markup in a link). No esa- "stat
+// strip" lego exists; checked Beacon (dashboard KPIs are static esa-stat rows).
+import EsaIcon from '@esa/ecology/esa-icon.astro';
+import { METRICS, formatCompact } from '../../data/cbfish-home-metrics';
+import { withBase } from '../../lib/base';
+
+/** Split "2.1 billion" into the number to animate and its word suffix. */
+const parts = (n: number) => {
+  const s = formatCompact(n);
+  const [num, ...word] = s.split(' ');
+  return { num, word: word.join(' '), decimals: (num.split('.')[1] ?? '').length };
+};
+---
+<section class="cbf-metrics-counters" aria-labelledby="cbf-metrics-counters-h" data-counters>
+  <div class="cbf-metrics-counters__head">
+    <h2 id="cbf-metrics-counters-h" class="typography-heading-md">What the program has delivered since 2005</h2>
+    <p class="typography-body-md cbf-metrics-counters__lede">Select any total to see where it happened and the contracts behind it.</p>
+  </div>
+
+  <ul class="cbf-metrics-counters__list">
+    {METRICS.map((m, i) => {
+      const p = parts(m.total);
+      return (
+        <li style={`--i: ${i}`}>
+          <a class="cbf-metrics-counters__item" href={withBase(`/program-results/${m.id}`)}>
+            <span class="cbf-metrics-counters__value">
+              <span data-count={p.num.replace(/,/g, '')} data-decimals={p.decimals}>{p.num}</span>
+              {p.word && <span class="cbf-metrics-counters__word"> {p.word}</span>}
+            </span>
+            <span class="cbf-metrics-counters__label">{m.label}</span>
+            <span class="cbf-metrics-counters__cta" aria-hidden="true">View contracts
+              <EsaIcon name="arrow-right" size="sm" />
+            </span>
+          </a>
+        </li>
+      );
+    })}
+  </ul>
+</section>
+
+<style>
+  .cbf-metrics-counters { display: flex; flex-direction: column; gap: var(--spacing-500); }
+  .cbf-metrics-counters__head { display: flex; flex-direction: column; gap: var(--spacing-200); max-width: 70ch; }
+  .cbf-metrics-counters__head h2 { margin: 0; }
+  .cbf-metrics-counters__lede { margin: 0; color: var(--color-content-default-secondary); }
+
+  .cbf-metrics-counters__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    background: var(--color-background-elevation-raised);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md, 0.5rem);
+    overflow: hidden;
+  }
+  .cbf-metrics-counters__list > li {
+    display: flex;
+    /* dividers: every column draws its own left rule; the panel's overflow
+       clips the first column's, and wrapped rows keep theirs */
+    box-shadow: -1px 0 0 var(--color-border-default-subtle);
+  }
+  .cbf-metrics-counters__item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-200);
+    padding: var(--spacing-600) var(--spacing-500);
+    color: inherit;
+    text-decoration: none;
+    transition: background 160ms ease;
+    animation: cbf-counters-rise 520ms cubic-bezier(.2,.7,.2,1) both;
+    animation-delay: calc(var(--i) * 70ms);
+  }
+  @keyframes cbf-counters-rise { from { transform: translateY(8px); opacity: .001; } }
+  .cbf-metrics-counters__item:hover { background: var(--color-background-brand-subtle); }
+  .cbf-metrics-counters__item:focus-visible { outline: 2px solid var(--color-background-brand); outline-offset: -2px; }
+  .cbf-metrics-counters__value {
+    font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
+    font-size: var(--typography-display-sm-font-size);
+    font-weight: var(--typography-font-weight-bold, 700);
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    color: var(--color-background-brand);
+  }
+  .cbf-metrics-counters__word { font-size: var(--typography-title-font-size); font-weight: var(--typography-font-weight-semibold); }
+  .cbf-metrics-counters__label { font-size: var(--typography-body-md-font-size); line-height: 1.35; color: var(--color-content-default-secondary); }
+  .cbf-metrics-counters__cta {
+    margin-top: auto;
+    padding-top: var(--spacing-300);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-100);
+    font-size: var(--typography-label-sm-font-size);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-link, var(--color-background-brand));
+  }
+  .cbf-metrics-counters__cta :global(.esa-icon) { transition: transform 160ms ease; }
+  .cbf-metrics-counters__item:hover .cbf-metrics-counters__cta :global(.esa-icon) { transform: translateX(3px); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cbf-metrics-counters__item { animation: none; }
+  }
+</style>
+
+<script>
+  const strip = document.querySelector<HTMLElement>('[data-counters]');
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (strip && !calm && 'IntersectionObserver' in window) {
+    const roll = () => {
+      strip.querySelectorAll<HTMLElement>('[data-count]').forEach((el) => {
+        const target = Number(el.dataset.count);
+        const dec = Number(el.dataset.decimals || 0);
+        const t0 = performance.now();
+        const dur = 1400;
+        const tick = (t: number) => {
+          const k = Math.min(1, (t - t0) / dur);
+          const eased = 1 - Math.pow(1 - k, 4);
+          el.textContent = (target * eased).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+          if (k < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+    };
+    // roll once, the first time the strip is mostly on screen
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) { roll(); io.disconnect(); }
+    }, { threshold: 0.35 });
+    io.observe(strip);
+  }
+</script>
