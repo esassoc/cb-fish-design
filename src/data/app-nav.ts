@@ -25,7 +25,8 @@ export const reporting: NavLink[] = [
 
 export const funding: NavLink[] = [
   { label: 'Funds' }, { label: 'Fund budgets summary' }, { label: 'Long-term funding agreements' },
-  { label: 'Project budgets', href: '/project-budgets' }, { label: 'Working budgets' },
+  { label: 'Project budgets', href: '/project-budgets' }, { label: 'Capital program', href: '/capital-program' },
+  { label: 'Working budgets' },
   { label: 'Expenditures' }, { label: 'Accruals' },
 ];
 

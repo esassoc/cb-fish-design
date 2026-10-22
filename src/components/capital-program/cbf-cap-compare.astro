@@ -1,0 +1,281 @@
+---
+// cbf-cap-compare — planned vs. actual over time (PRD R5): pick snapshot A and B
+// (or Current) and see, per project and FY, A, B, the delta and the notes and
+// adjustments logged between the two as-of dates — the "what document is that
+// change in?" answer sitting right next to the number. Largest absolute delta
+// first. A category summary for one FY sits on top, and a short "notable
+// changes" feed (P1) is written from the same diff ("… FY28 6,218 moved to FY29").
+//
+// Current means the LIVE state (getState()), not view(): the header's snapshot
+// selector changes what the other screens show, but must not change what
+// "Current" means here.
+//
+// Other components can open a comparison with the `cbf-cap:compare` event
+// (detail { a, b } — snapshot ids or 'current').
+//
+// bcn-lego-checked: the delta table is AG Grid (shared/grid-chrome) — ecology has
+// no data-grid lego. Pickers are esa-select, the toggle esa-switch-toggle, quick
+// presets esa-button; the summary is a small definition table rendered client-
+// side because it moves with every pick (esa-stat is a static .astro lego).
+// Beacon is not cloned on this machine.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import '../shared/cbf-data-grid-chrome.css';
+---
+<section class="cbf-cap-compare stack" data-gap="sm" data-cap-compare aria-labelledby="cap-compare-title">
+  <h2 class="cbf-cap-section-title" id="cap-compare-title">Compare</h2>
+
+  <div class="cbf-data-grid__controls repel">
+    <div class="cluster cbf-cap-compare__pickers" data-gap="md">
+      <esa-select size="sm" label="A (from)" class="cbf-cap-compare__pick" data-cmp-a></esa-select>
+      <esa-select size="sm" label="B (to)" class="cbf-cap-compare__pick" data-cmp-b></esa-select>
+      <EsaButton size="sm" variant="secondary" appearance="outline" data-cmp-preset="baseline">Baseline vs current</EsaButton>
+      <EsaButton size="sm" variant="secondary" appearance="outline" data-cmp-preset="last">Last snapshot vs current</EsaButton>
+      <esa-switch-toggle size="sm" label="Show unchanged rows" data-cmp-zero></esa-switch-toggle>
+    </div>
+    <EsaButton size="sm" variant="secondary" appearance="outline" icon="download" data-cmp-csv>Export CSV</EsaButton>
+  </div>
+
+  <div class="cbf-cap-compare__top">
+    <div class="cbf-cap-compare__summary stack" data-gap="xs">
+      <div class="repel">
+        <strong data-cmp-summary-title>By category</strong>
+        <esa-select size="sm" label="Fiscal year" class="cbf-cap-compare__fy" data-cmp-fy></esa-select>
+      </div>
+      <div data-cmp-summary></div>
+    </div>
+    <div class="cbf-cap-compare__feed stack" data-gap="xs">
+      <strong>Notable changes</strong>
+      <ul class="cbf-cap-compare__feed-list" data-cmp-feed></ul>
+    </div>
+  </div>
+
+  <div class="cbf-data-grid__grid" data-cmp-grid></div>
+  <footer class="cbf-data-grid__footer repel">
+    <span class="typography-meta" data-cmp-count></span>
+    <span class="typography-meta cbf-cap-muted">$000s · B − A · sorted by largest change</span>
+  </footer>
+</section>
+
+<script>
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-switch-toggle';
+  import { createGrid, type ColDef, type GridApi } from 'ag-grid-community';
+  import { cbfGridTheme } from '../shared/grid-chrome';
+  import { getState, subscribe, TODAY } from '../../lib/capital/store';
+  import { compareSnapshots, projectFyTotals, fmtK, fmtDate, fyLabel, slotLabel, type CompareRow } from '../../lib/capital/finance';
+  import { esc, moneyHtml, setSelect } from '../../lib/capital/ui';
+  import { CATEGORIES, FY_LIST, type FrozenData, type Project } from '../../lib/capital/types';
+  import { withBase } from '../../lib/base';
+
+  type Side = { id: string; label: string; data: FrozenData; asOf: string; windowDate: string };
+  type Row = CompareRow & { title: string; category: string; logged: string; loggedFull: string };
+  type Sel = HTMLElement & { value: string };
+
+  const root = document.querySelector<HTMLElement>('[data-cap-compare]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const selA = root.querySelector<Sel>('[data-cmp-a]')!;
+    const selB = root.querySelector<Sel>('[data-cmp-b]')!;
+    const selFy = root.querySelector<Sel>('[data-cmp-fy]')!;
+    const zero = root.querySelector<HTMLElement & { checked: boolean }>('[data-cmp-zero]')!;
+    const summary = root.querySelector<HTMLElement>('[data-cmp-summary]')!;
+    const summaryTitle = root.querySelector<HTMLElement>('[data-cmp-summary-title]')!;
+    const feed = root.querySelector<HTMLElement>('[data-cmp-feed]')!;
+    const count = root.querySelector<HTMLElement>('[data-cmp-count]')!;
+
+    let a = 'fy26-q3';
+    let b = 'current';
+    let fy = 2027;
+    setSelect(selFy, FY_LIST.filter((f) => f >= 2025).map((f) => ({ label: fyLabel(f), value: String(f) })), String(fy));
+
+    const side = (id: string): Side | null => {
+      const s = getState();
+      if (id === 'current') {
+        return { id, label: 'Current', data: { projects: s.projects, plans: s.plans, actuals: s.actuals }, asOf: s.settings.dataAsOf, windowDate: TODAY };
+      }
+      const snap = s.snapshots.find((x) => x.id === id);
+      return snap ? { id, label: snap.label, data: snap.data, asOf: snap.asOf, windowDate: snap.asOf } : null;
+    };
+
+    const columnDefs: ColDef<Row>[] = [
+        {
+          colId: 'title', field: 'title', headerName: 'Project', minWidth: 260, flex: 2,
+          cellRenderer: (p: { data: Row }) =>
+            `<a class="cbf-grid-link" href="${withBase(`/capital-program/project?id=${encodeURIComponent(p.data.projectId)}`)}">${esc(p.data.title)}</a>`,
+        },
+        { colId: 'category', field: 'category', headerName: 'Category', width: 120 },
+        { colId: 'fy', field: 'fy', headerName: 'FY', width: 90, valueFormatter: (p) => fyLabel(p.value) },
+        { colId: 'a', field: 'a', headerName: 'A', width: 120, type: 'rightAligned', cellClass: 'cbf-cap-num', cellRenderer: (p: { value: number }) => moneyHtml(p.value) },
+        { colId: 'b', field: 'b', headerName: 'B', width: 120, type: 'rightAligned', cellClass: 'cbf-cap-num', cellRenderer: (p: { value: number }) => moneyHtml(p.value) },
+        {
+          colId: 'delta', field: 'delta', headerName: 'Change', width: 120, type: 'rightAligned', cellClass: 'cbf-cap-num',
+          comparator: (x: number, y: number) => Math.abs(x) - Math.abs(y),
+          cellRenderer: (p: { value: number }) => (Math.round(p.value) > 0 ? `+${fmtK(p.value)}` : moneyHtml(p.value)),
+        },
+        { colId: 'logged', field: 'logged', headerName: 'Logged between A and B', minWidth: 320, flex: 3, tooltipField: 'loggedFull' },
+    ];
+    const api: GridApi<Row> = createGrid(root.querySelector<HTMLElement>('[data-cmp-grid]')!, {
+      theme: cbfGridTheme,
+      rowData: [],
+      domLayout: 'autoHeight',
+      suppressCellFocus: true,
+      tooltipShowDelay: 300,
+      defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true },
+      columnDefs,
+    });
+
+    function titleOf(id: string, sides: Side[]): { title: string; category: string } {
+      for (const sd of sides) {
+        const p = sd.data.projects.find((x: Project) => x.id === id);
+        if (p) return { title: p.title, category: p.category };
+      }
+      const live = getState().projects.find((x) => x.id === id);
+      return { title: live?.title ?? id, category: live?.category ?? '' };
+    }
+
+    function render() {
+      const s = getState();
+      const snaps = [...s.snapshots].sort((x, y) => x.asOf.localeCompare(y.asOf));
+      const opts = [...snaps.map((x) => ({ label: `${x.label} (${fmtDate(x.asOf)})${x.baselineFy ? ' ★' : ''}`, value: x.id })), { label: 'Current', value: 'current' }];
+      if (a !== 'current' && !snaps.some((x) => x.id === a)) a = snaps[snaps.length - 1]?.id ?? 'current';
+      if (b !== 'current' && !snaps.some((x) => x.id === b)) b = 'current';
+      setSelect(selA, opts, a);
+      setSelect(selB, opts, b);
+
+      const A = side(a);
+      const B = side(b);
+      if (!A || !B) return;
+      api.setGridOption('columnDefs', columnDefs.map((c) =>
+        c.colId === 'a' ? { ...c, headerName: `A: ${A.label}` } : c.colId === 'b' ? { ...c, headerName: `B: ${B.label}` } : c));
+
+      // What was logged between the two as-of dates, per project.
+      const lo = A.windowDate < B.windowDate ? A.windowDate : B.windowDate;
+      const hi = A.windowDate < B.windowDate ? B.windowDate : A.windowDate;
+      const logged = new Map<string, string[]>();
+      const push = (id: string, line: string) => { const l = logged.get(id) ?? []; l.push(line); logged.set(id, l); };
+      for (const n of s.notes) if (n.date > lo && n.date <= hi) push(n.projectId, `${fmtDate(n.date)} note (${n.author}): ${n.text}`);
+      for (const j of s.adjustments) {
+        if (j.date > lo && j.date <= hi) {
+          const move = j.fromSlot != null || j.toSlot != null ? ` ${j.fromSlot != null ? slotLabel(j.fromSlot) : ''}→${j.toSlot != null ? slotLabel(j.toSlot) : ''}` : '';
+          push(j.projectId, `${fmtDate(j.date)} ${j.type} ${fmtK(j.amount)}${move}${j.docRef ? ` [${j.docRef}]` : ''}: ${j.reason}`);
+        }
+      }
+
+      const sides = [B, A];
+      const rows: Row[] = compareSnapshots(A, B, { includeZero: zero.checked }).map((r) => {
+        const { title, category } = titleOf(r.projectId, sides);
+        const lines = logged.get(r.projectId) ?? [];
+        return { ...r, title, category, logged: lines[0] ? `${lines[0]}${lines.length > 1 ? ` (+${lines.length - 1} more)` : ''}` : '—', loggedFull: lines.join('\n') };
+      });
+      api.setGridOption('rowData', rows);
+      api.applyColumnState({ state: [{ colId: 'delta', sort: 'desc' }], defaultState: { sort: null } });
+      count.textContent = `${rows.length} project-year${rows.length === 1 ? '' : 's'}${zero.checked ? '' : ' changed'} · A as of ${fmtDate(A.asOf)}, B as of ${fmtDate(B.asOf)}`;
+
+      // Category summary for the chosen FY.
+      const ta = projectFyTotals(A.data, A.asOf);
+      const tb = projectFyTotals(B.data, B.asOf);
+      const catSum = (data: FrozenData, totals: Map<string, Record<number, number>>, cat: string) =>
+        data.projects.filter((p) => !cat || p.category === cat).reduce((t, p) => t + (totals.get(p.id)?.[fy] ?? 0), 0);
+      summaryTitle.textContent = `${fyLabel(fy)} by category`;
+      summary.innerHTML = `<table class="cbf-cap-cmp-sum">
+        <thead><tr><th scope="col">Category</th><th scope="col" class="cbf-cap-num">A</th><th scope="col" class="cbf-cap-num">B</th><th scope="col" class="cbf-cap-num">Change</th></tr></thead>
+        <tbody>${[...CATEGORIES, ''].map((c) => {
+          const av = catSum(A.data, ta, c);
+          const bv = catSum(B.data, tb, c);
+          const d = bv - av;
+          return `<tr class="${c ? '' : 'is-total'}"><th scope="row">${c || 'Total'}</th><td class="cbf-cap-num">${moneyHtml(av, { zero: '0' })}</td><td class="cbf-cap-num">${moneyHtml(bv, { zero: '0' })}</td><td class="cbf-cap-num">${Math.round(d) > 0 ? `+${fmtK(d)}` : moneyHtml(d, { zero: '0' })}</td></tr>`;
+        }).join('')}</tbody></table>`;
+
+      // Notable changes: pair a drop in one FY with a matching rise in another.
+      const lines: string[] = [];
+      const byProject = new Map<string, CompareRow[]>();
+      for (const r of compareSnapshots(A, B)) { const l = byProject.get(r.projectId) ?? []; l.push(r); byProject.set(r.projectId, l); }
+      const ranked = [...byProject.entries()].sort((x, y) =>
+        Math.max(...y[1].map((r) => Math.abs(r.delta))) - Math.max(...x[1].map((r) => Math.abs(r.delta))));
+      for (const [id, rs] of ranked) {
+        const { title } = titleOf(id, sides);
+        const short = esc(title.replace(/ \(.*\)$/, ''));
+        const used = new Set<CompareRow>();
+        for (const down of rs.filter((r) => r.delta < 0)) {
+          const up = rs.find((r) => r.delta > 0 && !used.has(r) && Math.abs(r.delta + down.delta) <= Math.max(1, Math.abs(down.delta) * 0.01));
+          if (up) {
+            used.add(up); used.add(down);
+            lines.push(`<strong>${short}</strong> ${fyLabel(down.fy)} ${fmtK(-down.delta)} moved to ${fyLabel(up.fy)}`);
+          }
+        }
+        for (const r of rs.filter((x) => !used.has(x))) {
+          lines.push(`<strong>${short}</strong> ${fyLabel(r.fy)} ${fmtK(r.a, { zero: '0' })} → ${fmtK(r.b, { zero: '0' })}`);
+        }
+        if (lines.length >= 8) break;
+      }
+      feed.innerHTML = lines.length ? lines.slice(0, 8).map((l) => `<li>${l}</li>`).join('') : '<li class="cbf-cap-muted">No differences.</li>';
+    }
+
+    selA.addEventListener('change', () => { a = selA.value; render(); });
+    selB.addEventListener('change', () => { b = selB.value; render(); });
+    selFy.addEventListener('change', () => { fy = Number(selFy.value); render(); });
+    zero.addEventListener('change', render);
+    root.querySelectorAll<HTMLElement>('[data-cmp-preset]').forEach((btn) => btn.addEventListener('click', () => {
+      const snaps = [...getState().snapshots].sort((x, y) => x.asOf.localeCompare(y.asOf));
+      if (btn.dataset.cmpPreset === 'baseline') {
+        const base = [...snaps].reverse().find((x) => x.baselineFy != null);
+        if (base) a = base.id;
+      } else if (snaps.length) {
+        a = snaps[snaps.length - 1].id;
+      }
+      b = 'current';
+      render();
+    }));
+    root.querySelector('[data-cmp-csv]')!.addEventListener('click', () => {
+      api.exportDataAsCsv({
+        fileName: 'capital-snapshot-compare.csv',
+        processCellCallback: (p) => {
+          const id = p.column.getColId();
+          if (['a', 'b', 'delta'].includes(id)) return String(Math.round(p.value ?? 0));
+          if (id === 'fy') return fyLabel(p.value);
+          if (id === 'logged') return (p.node?.data as Row | undefined)?.loggedFull ?? '';
+          return p.value ?? '';
+        },
+      });
+    });
+    document.addEventListener('cbf-cap:compare', (e) => {
+      const d = (e as CustomEvent).detail as { a: string; b: string };
+      a = d.a; b = d.b;
+      render();
+      root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    subscribe(render);
+  }
+</script>
+
+<style>
+  .cbf-cap-compare__pickers { align-items: flex-end; }
+  .cbf-cap-compare__pick { inline-size: 16rem; }
+  .cbf-cap-compare__fy { inline-size: 7rem; }
+  .cbf-cap-compare__top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--spacing-300);
+    align-items: start;
+  }
+  @media (max-width: 900px) { .cbf-cap-compare__top { grid-template-columns: 1fr; } }
+  .cbf-cap-compare__summary, .cbf-cap-compare__feed {
+    padding: var(--spacing-300);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-200);
+    font-size: 14px;
+  }
+  .cbf-cap-compare__feed-list { margin: 0; padding-inline-start: 1.1rem; display: grid; gap: 2px; }
+</style>
+
+<style is:global>
+  /* bcn-lego-checked: a 4-row × 4-column summary rendered client-side as the
+     pickers change; no esa table lego exists and AG Grid is overkill for it. */
+  .cbf-cap-cmp-sum { inline-size: 100%; border-collapse: collapse; font-size: 14px; }
+  .cbf-cap-cmp-sum th, .cbf-cap-cmp-sum td { padding: 4px 8px; border-bottom: 1px solid var(--color-border-default-subtle); text-align: start; }
+  .cbf-cap-cmp-sum thead th { color: var(--color-content-default-secondary); font-weight: var(--typography-font-weight-semibold); }
+  .cbf-cap-cmp-sum .cbf-cap-num { text-align: end; }
+  .cbf-cap-cmp-sum tr.is-total th, .cbf-cap-cmp-sum tr.is-total td { font-weight: var(--typography-font-weight-semibold); border-bottom: 0; border-top: 2px solid var(--color-border-default); }
+</style>

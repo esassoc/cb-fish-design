@@ -1,7 +1,7 @@
 {
   "name": "@cbfish/design",
   "version": "0.0.1",
-  "description": "CBFish (Columbia Basin Fish & Wildlife Program) \u2014 an Astro brand spoke of the ESA Ecology hub (../ecology).",
+  "description": "CBFish (Columbia Basin Fish & Wildlife Program) — an Astro brand spoke of the ESA Ecology hub (../ecology).",
   "type": "module",
   "private": true,
   "scripts": {
@@ -13,7 +13,8 @@
     "handoff:all": "handoff all",
     "doctor": "node ../ecology/scripts/doctor.mjs",
     "handoff:changed": "handoff all --changed",
-    "handoff:check": "handoff check"
+    "handoff:check": "handoff check",
+    "test": "vitest run"
   },
   "dependencies": {
     "@esa/docs": "file:../ecology/packages/docs",
@@ -24,8 +25,10 @@
     "lit": "^3.3.3"
   },
   "devDependencies": {
+    "@esa/design-layer": "file:../ecology/packages/design-layer",
     "@esa/handoff": "file:../ecology/packages/handoff",
     "gh-pages": "^6.3.0",
-    "typescript": "^5.9.0"
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.7"
   }
 }

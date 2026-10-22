@@ -1,0 +1,22 @@
+---
+// /capital-program/snapshots — Snapshots & compare (PRD screen 4, R5): planned
+// vs. actual over time. Freeze a forecast snapshot each quarter, mark one per FY
+// as the Asset Plan baseline, and compare any two (or one against Current)
+// project by project — the history Ben valued in his spreadsheet, kept
+// automatically.
+//
+// Thin assembler — frame from cbf-cap-frame; state and math in src/lib/capital/.
+import CbfCapFrame from '../../components/capital-program/cbf-cap-frame.astro';
+import CbfCapSnapshots from '../../components/capital-program/cbf-cap-snapshots.astro';
+import CbfCapCompare from '../../components/capital-program/cbf-cap-compare.astro';
+---
+<!-- manifest:
+  layout: cbf-cap-frame (nav + prototype strip + app panel + tabs + header bar)
+  sections:
+    - snapshot list -> cbf-cap-snapshots  (R5 — list, save, Asset Plan baseline star, view)
+    - compare       -> cbf-cap-compare    (R5 — A vs B by project and FY, logged notes/adjustments, category summary, notable changes)
+-->
+<CbfCapFrame active="snapshots" title="Snapshots & compare" crumbs={[{ label: 'Snapshots & compare' }]}>
+  <CbfCapSnapshots />
+  <CbfCapCompare />
+</CbfCapFrame>

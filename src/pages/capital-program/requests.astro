@@ -1,0 +1,20 @@
+---
+// /capital-program/requests — Requests (PRD screen 3): intake and triage of new
+// capital needs that are not yet in the plan — Hall Ranch, the DMF items, PM
+// forecasts — with their pathway lights, the OMB flag, the Asset Plan turn-in
+// nudge, and "Add to plan".
+//
+// Thin assembler — the frame is cbf-cap-frame; the list, drawer and dialog are
+// cbf-cap-requests; state lives in src/lib/capital/.
+import CbfCapFrame from '../../components/capital-program/cbf-cap-frame.astro';
+import CbfCapRequests from '../../components/capital-program/cbf-cap-requests.astro';
+---
+<!-- manifest:
+  layout: cbf-cap-frame (nav + prototype strip + app panel + tabs + header bar)
+  sections:
+    - requests -> cbf-cap-requests  (R6, R7 — turn-in banner, AG Grid list with total open by FY,
+                                     add/edit side dialog with pathway lights, "Add to plan" dialog)
+-->
+<CbfCapFrame active="requests" title="Capital requests">
+  <CbfCapRequests />
+</CbfCapFrame>

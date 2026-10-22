@@ -26,6 +26,15 @@ export interface Prototype {
 export const prototypes: Prototype[] = [
   // --- Active prototypes (in progress) ---
   {
+    slug: 'capital-program',
+    title: 'Capital program',
+    description:
+      'One shared record of every BPA F&W capital project — Hatchery, Land and Passage — with headroom against the Asset Plan, each project’s green-light pathway, a multi-year quarterly spending plan, requests, snapshots, and the year-end re-forecast.',
+    route: '/capital-program',
+    createdAt: '2026-10-22',
+    status: 'in-progress',
+  },
+  {
     slug: 'lib-entry',
     title: 'LIB entry & COR review',
     description:

@@ -1,0 +1,300 @@
+---
+// cbf-cap-spend-plan — the multi-year quarterly spending plan (PRD R4):
+// FY24–FY30 × Q1–Q4 + FY total, one row per line type (Construction contract,
+// Support capital, Land purchase, Other), then Actuals and the resolved Total.
+//
+//   • Closed quarters (last day ≤ "Data as of") are read-only: their line-type
+//     cells show what was planned, muted, and the Total row uses actuals.
+//   • Open quarters are editable forecast. An edit writes straight to the store,
+//     so the Portfolio grid and headroom move with it.
+//   • When the project is not greenlit, planned spend in open quarters is
+//     outlined in amber (R7); construction spend without OMB approval is red.
+//   • Plan total (all-time actuals + open forecast) over the modified budget
+//     raises a warning with the overage.
+//   • "Spread evenly" divides an amount across a range of quarters (the team's
+//     "total divided by 8 quarters"); "Move money" shifts an amount between
+//     quarters and writes an Adjustment (R9).
+//
+// bcn-lego-checked: the grid is AG Grid Community on the shared token theme
+// (no esa data-grid lego exists); the helper forms are esa-text-field /
+// esa-select / esa-button in esa-dialog; the warning is esa-alert-box. Beacon is
+// not cloned on this machine.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import '../shared/cbf-data-grid-chrome.css';
+---
+<section class="cbf-cap-plan stack" data-gap="sm" data-cap-plan aria-labelledby="cap-plan-title">
+  <div class="repel">
+    <h2 class="cbf-cap-section-title" id="cap-plan-title">Spending plan</h2>
+    <div class="cluster" data-gap="xs" data-plan-actions>
+      <EsaButton size="sm" variant="secondary" appearance="outline" icon="expand" data-plan-spread>Spread evenly</EsaButton>
+      <EsaButton size="sm" variant="secondary" appearance="outline" icon="arrow-right" data-plan-move>Move money</EsaButton>
+    </div>
+  </div>
+
+  <div data-plan-over hidden>
+    <EsaAlertBox variant="warning" title="Over budget"><span data-plan-over-text></span></EsaAlertBox>
+  </div>
+
+  <p class="typography-meta cbf-cap-muted cbf-cap-plan__summary" data-plan-summary></p>
+
+  <div class="cbf-data-grid__grid cbf-cap-plan__grid" data-plan-host></div>
+
+  <p class="typography-meta cbf-cap-muted cbf-cap-plan__legend">
+    <span class="cbf-cap-plan__key is-closed"></span> Closed quarter — actuals, read-only
+    <span class="cbf-cap-plan__key is-amber"></span> Planned before the pathway is green
+    <span class="cbf-cap-plan__key is-flag"></span> Construction spend without OMB approval
+  </p>
+
+  <esa-dialog data-plan-dialog size="md">
+    <div data-plan-dialog-body class="stack" data-gap="sm"></div>
+    <div slot="footer" class="cluster" data-gap="sm">
+      <EsaButton variant="secondary" appearance="outline" data-plan-cancel>Cancel</EsaButton>
+      <EsaButton variant="primary" data-plan-ok>Apply</EsaButton>
+    </div>
+  </esa-dialog>
+</section>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-textarea';
+  import { createGrid, type ColDef, type ColGroupDef, type GridApi, type CellClassParams } from 'ag-grid-community';
+  import { cbfGridTheme } from '../shared/grid-chrome';
+  import { getState, subscribe, view, update, can, userName, TODAY } from '../../lib/capital/store';
+  import {
+    isClosed, planAt, actualAt, slotOf, slotLabel, fyLabel, firstOpenSlot, pathway, hasOmbFlag, overage, allTimeActuals,
+    openForecast, modifiedBudget, fmtK,
+  } from '../../lib/capital/finance';
+  import { setPlanCell, spreadIntoPlan, moveMoney, findProject } from '../../lib/capital/actions';
+  import { esc, moneyHtml, snackbar } from '../../lib/capital/ui';
+  import { ADJUSTMENT_TYPES, FY_LIST, LINE_TYPES, SLOT_COUNT, VARIANCE_REASONS, type LineType } from '../../lib/capital/types';
+
+  type RowKind = 'line' | 'actual' | 'total';
+  interface Row { id: string; label: string; kind: RowKind; lineType?: LineType; values: number[] }
+
+  const root = document.querySelector<HTMLElement>('[data-cap-plan]');
+  const id = new URLSearchParams(location.search).get('id') ?? '';
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const host = root.querySelector<HTMLElement>('[data-plan-host]')!;
+    const summary = root.querySelector<HTMLElement>('[data-plan-summary]')!;
+    const overBox = root.querySelector<HTMLElement>('[data-plan-over]')!;
+    const overText = root.querySelector<HTMLElement>('[data-plan-over-text]')!;
+    const actions = root.querySelector<HTMLElement>('[data-plan-actions]')!;
+    const dialog = root.querySelector<HTMLElement & { show(): void; close(): void; heading: string }>('[data-plan-dialog]')!;
+    const dialogBody = root.querySelector<HTMLElement>('[data-plan-dialog-body]')!;
+    let onOk: (() => boolean | void) | null = null;
+
+    let ctx = { asOf: '', greenlit: true, flag: false, editable: false };
+
+    const slotCell = (slot: number): ColDef<Row> => ({
+      colId: `s${slot}`,
+      headerName: `Q${(slot % 4) + 1}`,
+      width: 78,
+      type: 'rightAligned',
+      sortable: false,
+      valueGetter: (p) => p.data?.values[slot] ?? 0,
+      valueSetter: (p) => {
+        const n = Number(String(p.newValue ?? '').replace(/[,\s]/g, '').replace(/^\((.*)\)$/, '-$1'));
+        if (!Number.isFinite(n) || !p.data?.lineType) return false;
+        update((s) => setPlanCell(s, id, p.data!.lineType!, slot, n));
+        return true;
+      },
+      editable: (p) => ctx.editable && p.data?.kind === 'line' && !isClosed(slot, ctx.asOf),
+      cellRenderer: (p: { value: number; data: Row }) => moneyHtml(p.value),
+      cellClass: (p: CellClassParams<Row>) => {
+        const cls = ['cbf-cap-num'];
+        const closed = isClosed(slot, ctx.asOf);
+        if (closed) cls.push('is-closed');
+        if (p.data?.kind === 'line' && closed) cls.push('is-planned-closed');
+        if (!closed && p.data?.kind === 'line' && (p.value ?? 0) !== 0) {
+          if (ctx.flag && p.data.lineType === 'Construction contract') cls.push('is-flag');
+          else if (!ctx.greenlit) cls.push('is-amber');
+          cls.push('is-editable');
+        }
+        return cls;
+      },
+    });
+
+    const fyTotalCell = (fy: number): ColDef<Row> => ({
+      colId: `fy${fy}`, headerName: 'Total', width: 88, type: 'rightAligned', sortable: false,
+      valueGetter: (p) => [1, 2, 3, 4].reduce((t, q) => t + (p.data?.values[slotOf(fy, q)] ?? 0), 0),
+      cellRenderer: (p: { value: number }) => `<strong>${moneyHtml(p.value)}</strong>`,
+      cellClass: 'cbf-cap-num cbf-cap-plan__fytotal',
+    });
+
+    const columnDefs: (ColDef<Row> | ColGroupDef<Row>)[] = [
+      { colId: 'label', field: 'label', headerName: 'Line', pinned: 'left', width: 190, sortable: false,
+        cellRenderer: (p: { data: Row }) => p.data.kind === 'line' ? esc(p.data.label) : `<strong>${esc(p.data.label)}</strong>` },
+      ...FY_LIST.map((fy) => ({
+        headerName: fyLabel(fy),
+        headerClass: 'cbf-cap-plan__fyhead',
+        children: [1, 2, 3, 4].map((q) => slotCell(slotOf(fy, q))).concat(fyTotalCell(fy)),
+      })),
+      {
+        colId: 'all', headerName: 'FY24–30', pinned: 'right', width: 100, type: 'rightAligned', sortable: false,
+        valueGetter: (p) => (p.data?.values ?? []).reduce((a, b) => a + b, 0),
+        cellRenderer: (p: { value: number }) => `<strong>${moneyHtml(p.value)}</strong>`,
+        cellClass: 'cbf-cap-num',
+      },
+    ];
+
+    const api: GridApi<Row> = createGrid(host, {
+      theme: cbfGridTheme,
+      rowData: [],
+      columnDefs,
+      domLayout: 'autoHeight',
+      animateRows: false,
+      singleClickEdit: true,
+      stopEditingWhenCellsLoseFocus: true,
+      getRowId: (p) => p.data.id,
+      getRowClass: (p) => (p.data?.kind === 'total' ? 'cbf-cap-plan__total' : p.data?.kind === 'actual' ? 'cbf-cap-plan__actual' : ''),
+      defaultColDef: { resizable: true, suppressHeaderMenuButton: true, suppressMovable: true },
+    });
+
+    // ---- dialogs -----------------------------------------------------------
+
+    const slotOptions = (from: number) => {
+      const out = [];
+      for (let s = from; s < SLOT_COUNT; s++) out.push({ label: slotLabel(s), value: String(s) });
+      return esc(JSON.stringify(out));
+    };
+    const opts = (values: readonly string[]) => esc(JSON.stringify(values.map((v) => ({ label: v, value: v }))));
+    const field = (n: string) => dialogBody.querySelector<HTMLElement & { value: string }>(`[data-field="${n}"]`);
+    const val = (n: string) => String(field(n)?.value ?? '').trim();
+    const num = (n: string) => Number(val(n).replace(/,/g, ''));
+    function open(heading: string, html: string, ok: () => boolean | void) {
+      dialog.heading = heading;
+      dialogBody.innerHTML = html;
+      onOk = ok;
+      dialog.show();
+    }
+    root.querySelector('[data-plan-cancel]')!.addEventListener('click', () => dialog.close());
+    root.querySelector('[data-plan-ok]')!.addEventListener('click', () => { if (onOk && onOk() === false) return; dialog.close(); });
+
+    const defaultLine = (): LineType => (findProject(getState(), id).category === 'Land' ? 'Land purchase' : 'Construction contract');
+
+    root.querySelector('[data-plan-spread]')!.addEventListener('click', () => {
+      const s = getState();
+      const open0 = firstOpenSlot(s.settings.dataAsOf);
+      open('Spread evenly', `
+        <p class="cbf-cap-muted">Replaces the selected quarters of one line with the amount divided evenly. Whole thousands; any remainder lands in the last quarter.</p>
+        <esa-text-field label="Amount ($000s)" type="number" required data-field="amount"></esa-text-field>
+        <esa-select label="Line" data-field="line" options="${opts(LINE_TYPES)}" value="${defaultLine()}"></esa-select>
+        <div class="cluster" data-gap="sm">
+          <esa-select label="From" data-field="from" options="${slotOptions(open0)}" value="${open0}"></esa-select>
+          <esa-select label="Through" data-field="to" options="${slotOptions(open0)}" value="${Math.min(open0 + 7, SLOT_COUNT - 1)}"></esa-select>
+        </div>`,
+      () => {
+        const amount = num('amount');
+        if (!Number.isFinite(amount) || !val('amount')) { snackbar('warning', 'Enter an amount.'); return false; }
+        const from = Number(val('from'));
+        const to = Number(val('to'));
+        update((st) => spreadIntoPlan(st, id, val('line') as LineType, amount, from, to));
+        snackbar('success', `${fmtK(amount)} spread across ${Math.abs(to - from) + 1} quarters.`);
+      });
+    });
+
+    root.querySelector('[data-plan-move]')!.addEventListener('click', () => {
+      const s = getState();
+      const open0 = firstOpenSlot(s.settings.dataAsOf);
+      const types = ADJUSTMENT_TYPES.filter((t) => t !== 'Year-end re-forecast');
+      open('Move money between quarters', `
+        <p class="cbf-cap-muted">Moves an amount from one open quarter to another and records an adjustment with its reason and document.</p>
+        <esa-text-field label="Amount ($000s)" type="number" required data-field="amount"></esa-text-field>
+        <esa-select label="Line" data-field="line" options="${opts(LINE_TYPES)}" value="${defaultLine()}"></esa-select>
+        <div class="cluster" data-gap="sm">
+          <esa-select label="From" data-field="from" options="${slotOptions(open0)}" value="${open0}"></esa-select>
+          <esa-select label="To" data-field="to" options="${slotOptions(open0)}" value="${Math.min(open0 + 4, SLOT_COUNT - 1)}"></esa-select>
+        </div>
+        <esa-select label="Adjustment type" data-field="type" options="${opts(types)}" value="Schedule slip"></esa-select>
+        <esa-select label="Variance reason" data-field="variance" options="${opts(VARIANCE_REASONS)}" value="Schedule slip"></esa-select>
+        <esa-textarea label="Reason" rows="2" required data-field="reason"></esa-textarea>
+        <esa-text-field label="Document reference" placeholder="e.g. FY27 Q1 execution report" data-field="doc"></esa-text-field>`,
+      () => {
+        const amount = num('amount');
+        if (!Number.isFinite(amount) || !val('amount') || !val('reason')) { snackbar('warning', 'Enter an amount and a reason.'); return false; }
+        update((st) => moveMoney(st, {
+          projectId: id, lineType: val('line') as LineType, amount, fromSlot: Number(val('from')), toSlot: Number(val('to')),
+          type: val('type') as never, varianceReason: val('variance') as never, reason: val('reason'), docRef: val('doc') || undefined,
+          user: userName(), date: TODAY,
+        }));
+        snackbar('success', `Moved ${fmtK(amount)} and logged the adjustment.`);
+      });
+    });
+
+    // ---- render ------------------------------------------------------------
+
+    function render() {
+      const s = getState();
+      const v = view();
+      const p = v.projects.find((x) => x.id === id);
+      if (!p) { root!.hidden = true; return; }
+      const plan = v.plans[p.id] ?? {};
+      const act = v.actuals[p.id];
+      ctx = {
+        asOf: v.asOf,
+        greenlit: pathway(p, s.settings.gates).greenlit,
+        flag: hasOmbFlag(p, plan, v.asOf),
+        editable: can('editPlan', p),
+      };
+      actions.hidden = !ctx.editable;
+
+      const rows: Row[] = [];
+      const used = LINE_TYPES.filter((lt) => plan[lt]?.some((x) => x) || lt === (p.category === 'Land' ? 'Land purchase' : 'Construction contract'));
+      const lines = ctx.editable ? LINE_TYPES : used;
+      for (const lt of lines) rows.push({ id: lt, label: lt, kind: 'line', lineType: lt, values: Array.from({ length: SLOT_COUNT }, (_, sl) => planAt(plan, sl, lt)) });
+      const actuals = Array.from({ length: SLOT_COUNT }, (_, sl) => (isClosed(sl, v.asOf) ? actualAt(act, sl) : 0));
+      rows.push({ id: 'actual', label: 'Actuals', kind: 'actual', values: actuals });
+      rows.push({
+        id: 'total', label: 'Total (actuals + forecast)', kind: 'total',
+        values: Array.from({ length: SLOT_COUNT }, (_, sl) => (isClosed(sl, v.asOf) ? actuals[sl] : planAt(plan, sl))),
+      });
+      api.setGridOption('rowData', rows);
+      api.refreshCells({ force: true });
+
+      const mod = modifiedBudget(p);
+      const all = allTimeActuals(act);
+      const openF = openForecast(plan, v.asOf);
+      summary.textContent = `All-time actuals ${fmtK(all)} + open forecast ${fmtK(openF)} = plan total ${fmtK(all + openF)}${mod != null ? ` · modified budget ${fmtK(mod)}` : ' · no modified budget yet'} · data as of ${v.asOf}`;
+      const over = overage(p, plan, act, v.asOf);
+      overBox.hidden = !(over > 0.5);
+      overText.textContent = `The plan total is ${fmtK(over)} over the modified budget of ${fmtK(mod)}${p.pendingBudget ? ` (a ${fmtK(p.pendingBudget)} budget is pending)` : ''}. Hatcheries usually come in 20–40% over plan — record the decision with "Change budget" once it is made.`;
+
+      // Open the grid scrolled to the first open quarter.
+      const first = firstOpenSlot(v.asOf);
+      if (first > 0 && first < SLOT_COUNT && !host.dataset.scrolled) {
+        host.dataset.scrolled = '1';
+        requestAnimationFrame(() => api.ensureColumnVisible(`s${Math.max(0, first - 4)}`, 'start'));
+      }
+    }
+
+    subscribe(render);
+  }
+</script>
+
+<style>
+  .cbf-cap-plan__summary { margin: 0; }
+  .cbf-cap-plan__legend { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: var(--spacing-150) var(--spacing-200); }
+  /* bcn-lego-checked: legend swatches for the grid's cell states — tiny colour
+     keys, not a status (esa-badge/pill would read as a value). */
+  .cbf-cap-plan__key { display: inline-block; inline-size: 14px; block-size: 12px; border-radius: 2px; margin-inline-start: var(--spacing-200); }
+  .cbf-cap-plan__key.is-closed { background: var(--color-background-elevation-sunken); border: 1px solid var(--color-border-default); }
+  .cbf-cap-plan__key.is-amber { border: 2px solid var(--color-border-utility-warning); }
+  .cbf-cap-plan__key.is-flag { border: 2px solid var(--color-border-utility-danger); }
+</style>
+
+<style is:global>
+  .cbf-cap-plan__grid .ag-cell.is-closed { background: var(--color-background-elevation-sunken); }
+  .cbf-cap-plan__grid .ag-cell.is-planned-closed { color: var(--color-content-default-tertiary); }
+  .cbf-cap-plan__grid .ag-cell.is-editable { cursor: text; }
+  .cbf-cap-plan__grid .ag-cell.is-amber { box-shadow: inset 0 0 0 2px var(--color-border-utility-warning); }
+  .cbf-cap-plan__grid .ag-cell.is-flag { box-shadow: inset 0 0 0 2px var(--color-border-utility-danger); }
+  .cbf-cap-plan__grid .cbf-cap-plan__fytotal { background: var(--color-background-brand-subtle); }
+  .cbf-cap-plan__grid .cbf-cap-plan__total { font-weight: var(--typography-font-weight-semibold); border-top: 2px solid var(--color-border-brand); }
+  .cbf-cap-plan__grid .cbf-cap-plan__actual { color: var(--color-content-default-secondary); }
+  .cbf-cap-plan__grid .cbf-cap-plan__fyhead .ag-header-group-cell-label { justify-content: center; }
+</style>

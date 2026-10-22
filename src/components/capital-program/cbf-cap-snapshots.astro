@@ -1,0 +1,196 @@
+---
+// cbf-cap-snapshots — the snapshot list on "Snapshots & compare" (PRD R5): the
+// spreadsheet's "tab per month", made automatic. Each row is a frozen copy of
+// every spend plan, budget and gate, with its label, type, as-of date and who
+// saved it; a star marks the one Asset Plan baseline per FY.
+//
+// Actions: Save snapshot (dialog — label, type, as-of), Set as Asset Plan
+// baseline (Asset Plan lead or Program manager only), and View (switches the
+// header's snapshot selector, which turns every screen read-only).
+//
+// bcn-lego-checked: the list is AG Grid (shared/grid-chrome theme) like every
+// other grid in the spoke — ecology has no data-grid lego. The dialogs are
+// esa-dialog with esa-text-field / esa-select / esa-date-picker fields, the
+// actions esa-button, the type and baseline markers cloned esa-pills. Beacon is
+// not cloned on this machine.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import '../shared/cbf-data-grid-chrome.css';
+---
+<section class="cbf-cap-snapshots stack" data-gap="sm" data-cap-snapshots aria-labelledby="cap-snap-title">
+  <div class="repel">
+    <h2 class="cbf-cap-section-title" id="cap-snap-title">Snapshots</h2>
+    <EsaButton size="sm" variant="primary" icon="save" data-snap-save-open>Save snapshot</EsaButton>
+  </div>
+  <p class="typography-meta cbf-cap-muted cbf-cap-snapshots__lede">
+    A snapshot freezes every spend plan, budget and gate as it stands. Later edits never change it, so planned-vs-actual history keeps itself.
+  </p>
+
+  <div class="cbf-data-grid__grid" data-snap-grid></div>
+
+  <esa-dialog heading="Save snapshot" show-close-button size="md" data-snap-save-dialog>
+    <div class="stack" data-gap="md">
+      <esa-text-field label="Label" placeholder="e.g. FY27 Q1" required data-snap-label></esa-text-field>
+      <esa-select label="Type" data-snap-type></esa-select>
+      <esa-date-picker label="As of" data-snap-asof></esa-date-picker>
+      <p class="typography-meta cbf-cap-muted cbf-cap-snapshots__hint">Quarters that end on or before the as-of date show actuals in this snapshot.</p>
+    </div>
+    <div slot="footer" class="cluster" data-gap="sm">
+      <EsaButton variant="secondary" appearance="outline" data-snap-save-cancel>Cancel</EsaButton>
+      <EsaButton variant="primary" data-snap-save-confirm>Save snapshot</EsaButton>
+    </div>
+  </esa-dialog>
+
+  <esa-dialog heading="Set as Asset Plan baseline" show-close-button size="sm" data-snap-base-dialog>
+    <div class="stack" data-gap="md">
+      <p class="cbf-cap-snapshots__hint" data-snap-base-text></p>
+      <esa-select label="Fiscal year" data-snap-base-fy></esa-select>
+      <p class="typography-meta cbf-cap-muted cbf-cap-snapshots__hint">One snapshot per FY can be the baseline. Setting this one replaces the current baseline for that FY.</p>
+    </div>
+    <div slot="footer" class="cluster" data-gap="sm">
+      <EsaButton variant="secondary" appearance="outline" data-snap-base-cancel>Cancel</EsaButton>
+      <EsaButton variant="primary" data-snap-base-confirm>Set baseline</EsaButton>
+    </div>
+  </esa-dialog>
+</section>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-date-picker';
+  import { createGrid, type GridApi } from 'ag-grid-community';
+  import { cbfGridTheme } from '../shared/grid-chrome';
+  import { getState, getUi, setUi, subscribe, update, can, userName, TODAY, currentRole } from '../../lib/capital/store';
+  import { takeSnapshot, setBaseline } from '../../lib/capital/actions';
+  import { fmtDate, fyLabel, fyOfDate } from '../../lib/capital/finance';
+  import { esc, pill, setSelect, snackbar } from '../../lib/capital/ui';
+  import { SNAPSHOT_TYPES, type Snapshot, type SnapshotType } from '../../lib/capital/types';
+
+  type Dlg = HTMLElement & { show: () => void; close: () => void };
+  type Field = HTMLElement & { value: string; errorText?: string };
+
+  const root = document.querySelector<HTMLElement>('[data-cap-snapshots]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const saveOpen = root.querySelector<HTMLElement>('[data-snap-save-open]')!;
+    const saveDlg = root.querySelector<Dlg>('[data-snap-save-dialog]')!;
+    const fLabel = root.querySelector<Field>('[data-snap-label]')!;
+    const fType = root.querySelector<Field>('[data-snap-type]')!;
+    const fAsOf = root.querySelector<Field>('[data-snap-asof]')!;
+    const baseDlg = root.querySelector<Dlg>('[data-snap-base-dialog]')!;
+    const baseText = root.querySelector<HTMLElement>('[data-snap-base-text]')!;
+    const baseFy = root.querySelector<Field>('[data-snap-base-fy]')!;
+    let baseTarget: Snapshot | null = null;
+
+    setSelect(fType, SNAPSHOT_TYPES.map((t) => ({ label: t, value: t })), 'Quarterly');
+
+    type Row = Snapshot & { current?: boolean };
+    const api: GridApi<Row> = createGrid(root.querySelector<HTMLElement>('[data-snap-grid]')!, {
+      theme: cbfGridTheme,
+      rowData: [],
+      domLayout: 'autoHeight',
+      suppressCellFocus: true,
+      defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true },
+      getRowId: (p) => p.data.id,
+      columnDefs: [
+        {
+          headerName: 'Snapshot', field: 'label', flex: 2, minWidth: 220,
+          cellRenderer: (p: { data: Row }) =>
+            `<strong>${esc(p.data.label)}</strong>${p.data.baselineFy ? ` ${pill(`★ Asset Plan baseline ${fyLabel(p.data.baselineFy)}`, 'primary', { size: 'xs' })}` : ''}${
+              getUi().snapshotId === p.data.id ? ` ${pill('Viewing', 'info', { size: 'xs' })}` : ''}`,
+        },
+        { headerName: 'Type', field: 'type', width: 170, cellRenderer: (p: { value: string }) => pill(p.value, 'default', { size: 'xs' }) },
+        { headerName: 'As of', field: 'asOf', width: 130, sort: 'desc', valueFormatter: (p) => fmtDate(p.value) },
+        { headerName: 'Created by', field: 'createdBy', width: 160 },
+        { headerName: 'Projects', width: 100, type: 'rightAligned', valueGetter: (p) => p.data?.data.projects.length ?? 0 },
+        {
+          headerName: 'Actions', colId: 'actions', minWidth: 440, flex: 1, sortable: false,
+          cellRenderer: (p: { data: Row }) => {
+            const viewing = getUi().snapshotId === p.data.id;
+            const base = can('setBaseline') && !getUi().snapshotId;
+            return `<span class="cbf-cap-snap-actions">
+              <button type="button" class="cbf-cap-snap-link" data-act="view" data-id="${esc(p.data.id)}">${viewing ? 'Back to current' : 'View'}</button>
+              <button type="button" class="cbf-cap-snap-link" data-act="compare" data-id="${esc(p.data.id)}">Compare with current</button>
+              ${base ? `<button type="button" class="cbf-cap-snap-link" data-act="baseline" data-id="${esc(p.data.id)}">Set as Asset Plan baseline</button>` : ''}
+            </span>`;
+          },
+        },
+      ],
+    });
+
+    // Row actions — delegated, since AG Grid re-renders cells.
+    root.querySelector('[data-snap-grid]')!.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-act]');
+      if (!btn) return;
+      const snap = getState().snapshots.find((x) => x.id === btn.dataset.id);
+      if (!snap) return;
+      if (btn.dataset.act === 'view') {
+        setUi({ snapshotId: getUi().snapshotId === snap.id ? null : snap.id });
+      } else if (btn.dataset.act === 'compare') {
+        document.dispatchEvent(new CustomEvent('cbf-cap:compare', { detail: { a: snap.id, b: 'current' } }));
+      } else if (btn.dataset.act === 'baseline') {
+        baseTarget = snap;
+        baseText.textContent = `Make "${snap.label}" (as of ${fmtDate(snap.asOf)}) the Asset Plan baseline that later forecasts are compared against.`;
+        const fys = [2026, 2027, 2028, 2029];
+        setSelect(baseFy, fys.map((f) => ({ label: fyLabel(f), value: String(f) })), String(snap.baselineFy ?? Math.min(2029, Math.max(2026, fyOfDate(snap.asOf)))));
+        baseDlg.show();
+      }
+    });
+
+    saveOpen.addEventListener('click', () => {
+      fLabel.value = '';
+      fLabel.errorText = '';
+      fType.value = 'Quarterly';
+      fAsOf.value = getState().settings.dataAsOf;
+      saveDlg.show();
+    });
+    root.querySelector('[data-snap-save-cancel]')!.addEventListener('click', () => saveDlg.close());
+    root.querySelector('[data-snap-save-confirm]')!.addEventListener('click', () => {
+      const label = (fLabel.value ?? '').trim();
+      if (!label) { fLabel.errorText = 'Enter a label.'; return; }
+      const asOf = fAsOf.value || getState().settings.dataAsOf;
+      update((s) => takeSnapshot(s, { label, type: (fType.value || 'Ad hoc') as SnapshotType, asOf, createdBy: userName(), createdAt: TODAY }));
+      saveDlg.close();
+      snackbar('success', `Snapshot "${label}" saved.`);
+    });
+
+    root.querySelector('[data-snap-base-cancel]')!.addEventListener('click', () => baseDlg.close());
+    root.querySelector('[data-snap-base-confirm]')!.addEventListener('click', () => {
+      if (!baseTarget) return;
+      const fy = Number(baseFy.value);
+      const id = baseTarget.id;
+      update((s) => setBaseline(s, id, fy));
+      baseDlg.close();
+      snackbar('success', `${baseTarget.label} is now the ${fyLabel(fy)} Asset Plan baseline.`);
+    });
+
+    subscribe(() => {
+      const s = getState();
+      saveOpen.toggleAttribute('hidden', !can('saveSnapshot'));
+      saveOpen.title = can('saveSnapshot') ? '' : `${currentRole().label} can't save snapshots`;
+      api.setGridOption('rowData', [...s.snapshots]);
+      api.refreshCells({ force: true });
+    });
+  }
+</script>
+
+<style>
+  .cbf-cap-snapshots__lede, .cbf-cap-snapshots__hint { margin: 0; }
+</style>
+
+<style is:global>
+  /* Rendered by AG Grid cell renderers (no scope hash). */
+  .cbf-cap-snap-actions { display: inline-flex; gap: var(--spacing-300); flex-wrap: wrap; }
+  /* bcn-lego-checked: in-cell text actions inside an AG Grid row — esa-button
+     can't be instantiated from a cellRenderer string (it's an .astro lego), so
+     these are plain buttons styled as the grid's existing link treatment. */
+  .cbf-cap-snap-link {
+    padding: 0;
+    color: var(--color-content-brand);
+    font-weight: var(--typography-font-weight-medium);
+    font-size: 14px;
+  }
+  .cbf-cap-snap-link:hover { text-decoration: underline; }
+  .cbf-cap-snap-link:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; border-radius: 2px; }
+</style>

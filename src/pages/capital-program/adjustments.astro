@@ -1,0 +1,20 @@
+---
+// /capital-program/adjustments — Adjustments (PRD screen 5, R8 + R9): the audit
+// trail of money moves, and the "Close FY" wizard that re-forecasts each
+// project's remaining need at year end.
+//
+// Thin assembler — frame from cbf-cap-frame; state and math in src/lib/capital/.
+import CbfCapFrame from '../../components/capital-program/cbf-cap-frame.astro';
+import CbfCapAdjustments from '../../components/capital-program/cbf-cap-adjustments.astro';
+import CbfCapCloseFy from '../../components/capital-program/cbf-cap-close-fy.astro';
+---
+<!-- manifest:
+  layout: cbf-cap-frame (nav + prototype strip + app panel + tabs + header bar)
+  sections:
+    - adjustment log -> cbf-cap-adjustments  (R9 — filterable log, CSV)
+    - close FY       -> cbf-cap-close-fy     (R8 — year-end re-forecast wizard, Program manager only)
+-->
+<CbfCapFrame active="adjustments" title="Adjustments" crumbs={[{ label: 'Adjustments' }]}>
+  <CbfCapAdjustments />
+  <CbfCapCloseFy />
+</CbfCapFrame>

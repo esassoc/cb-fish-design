@@ -1,0 +1,239 @@
+---
+// cbf-cap-headroom — the budget envelope and headroom panel pinned to the top of
+// the Portfolio (PRD R2). Three category tiles + total, each answering "can we
+// say yes?" for the selected FY and envelope source:
+//
+//   Headroom = envelope − (Active + Placeholder [+ what-if requests])
+//
+// Open requests sit beside it as their own figure and only bite when the "what
+// if" checklist switches them on. Every tile also shows the Optimal ceiling
+// (Expected ÷ 0.8 — "Finance can approve up to Optimal"); the Passage tile is
+// drawn as a placeholder being drawn down, with the competing asks listed under
+// it; and a "freed this year" line lists current-FY reductions since the last
+// snapshot next to the projects that could absorb them.
+//
+// Clicking a tile filters the grid below to that category
+// (event `cbf-cap:filter-category`, detail { category }).
+//
+// bcn-lego-checked: each tile is an esa-card; amounts are client-rendered (the
+// numbers move with every edit, the FY selector and "what if"), so the tile body
+// is a small definition list rather than esa-stat (static .astro, can't be
+// re-rendered in place). The what-if picks are esa-checkbox inside an
+// esa-collapsible. Beacon is not cloned on this machine.
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
+
+const tiles = [
+  { key: 'Hatchery', title: 'Hatchery' },
+  { key: 'Land', title: 'Land' },
+  { key: 'Passage', title: 'Passage' },
+  { key: 'Total', title: 'Total' },
+];
+---
+<section class="cbf-cap-headroom stack" data-gap="sm" data-cap-headroom aria-labelledby="cap-headroom-title">
+  <div class="repel">
+    <h2 class="cbf-cap-section-title" id="cap-headroom-title" data-hr-title>Headroom</h2>
+    <span class="typography-meta cbf-cap-muted" data-hr-source></span>
+  </div>
+
+  <div class="cbf-cap-headroom__tiles">
+    {tiles.map((t) => (
+      <div class="cbf-cap-headroom__tile" data-hr-tile={t.key} role="button" tabindex="0" aria-label={`Show ${t.title} in the grid`}>
+        <EsaCard title={t.title} variant="outlined" padding="compact">
+          <div data-hr-body></div>
+        </EsaCard>
+      </div>
+    ))}
+  </div>
+
+  <div class="cbf-cap-headroom__below">
+    <EsaCollapsible title="What if we say yes?" icon="trending-up">
+      <div class="stack" data-gap="xs">
+        <p class="typography-meta cbf-cap-muted cbf-cap-headroom__hint">Tick open requests to count them against headroom for the selected FY.</p>
+        <div class="stack" data-gap="2xs" data-hr-whatif></div>
+      </div>
+    </EsaCollapsible>
+    <div class="cbf-cap-headroom__freed" data-hr-freed></div>
+  </div>
+</section>
+
+<script>
+  import '@esa/ecology/esa-checkbox';
+  import { getState, getUi, subscribe, view, toggleWhatIf } from '../../lib/capital/store';
+  import {
+    headroom, fmtK, fyLabel, fyForecast, isOpenRequest, envelopeSourceLabel, isActiveType, projectFyTotals, fmtDate,
+  } from '../../lib/capital/finance';
+  import { esc, moneyHtml, assumption, pill } from '../../lib/capital/ui';
+  import { ENVELOPE_SOURCE_LABEL, type Category } from '../../lib/capital/types';
+  import { withBase } from '../../lib/base';
+
+  const root = document.querySelector<HTMLElement>('[data-cap-headroom]');
+  if (root) {
+    const title = root.querySelector<HTMLElement>('[data-hr-title]')!;
+    const sourceEl = root.querySelector<HTMLElement>('[data-hr-source]')!;
+    const whatIfEl = root.querySelector<HTMLElement>('[data-hr-whatif]')!;
+    const freedEl = root.querySelector<HTMLElement>('[data-hr-freed]')!;
+
+    const row = (label: string, value: string, cls = '') =>
+      `<div class="cbf-cap-hr-row ${cls}"><dt>${label}</dt><dd class="cbf-cap-num">${value}</dd></div>`;
+
+    root.querySelectorAll<HTMLElement>('[data-hr-tile]').forEach((tile) => {
+      const fire = () => document.dispatchEvent(new CustomEvent('cbf-cap:filter-category', { detail: { category: tile.dataset.hrTile } }));
+      tile.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('a')) return;
+        fire();
+      });
+      tile.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fire(); }
+      });
+    });
+
+    function render() {
+      const s = getState();
+      const ui = getUi();
+      const v = view();
+      const fy = ui.fy;
+      const rows = headroom({ data: v, requests: s.requests, envelopes: s.envelopes, fy, source: ui.envelopeSource, asOf: v.asOf, whatIf: ui.whatIf });
+      const srcLabel = envelopeSourceLabel(s.envelopes, fy, ui.envelopeSource);
+      const ipr = ui.envelopeSource === 'ipr';
+      title.textContent = `${fyLabel(fy)} headroom`;
+      sourceEl.innerHTML = `Against ${esc(ENVELOPE_SOURCE_LABEL[ui.envelopeSource])}${srcLabel ? ` — ${esc(srcLabel)}` : ''}${
+        ipr ? ` ${pill('Information only', 'warning', { size: 'xs', title: 'The agency budgets capital to the Asset Plan, not the IPR.' })} ${assumption('Open question 3: whether the IPR–Asset Plan gap is money the program can use is unresolved (Ben and Rodrigo disagree). Shown as information only.')}` : ''
+      }`;
+
+      for (const r of rows) {
+        const body = root!.querySelector<HTMLElement>(`[data-hr-tile="${r.key}"] [data-hr-body]`)!;
+        const neg = r.headroom != null && Math.round(r.headroom) < 0;
+        const headline = r.headroom == null
+          ? `<p class="cbf-cap-hr-big cbf-cap-muted">No envelope</p>`
+          : `<p class="cbf-cap-hr-big ${neg ? 'cbf-cap-neg' : ''}">${fmtK(r.headroom)}</p>
+             <p class="cbf-cap-hr-cap">${neg ? `Short by ${fmtK(-r.headroom)}` : 'Headroom'}</p>`;
+        let extra = '';
+        if (r.key === 'Passage' && r.envelope != null) {
+          // The placeholder being drawn down: envelope − named passage projects.
+          const named = v.projects.filter((p) => p.category === 'Passage' && isActiveType(p))
+            .reduce((t, p) => t + fyForecast(v.plans[p.id], v.actuals[p.id], fy, v.asOf), 0);
+          const asks = s.requests.filter((q) => isOpenRequest(q) && q.category === 'Passage' && (q.amounts[fy] ?? 0) > 0);
+          extra = `<div class="cbf-cap-hr-draw">
+            <dl class="cbf-cap-hr-list">
+              ${row('Named passage projects', moneyHtml(named, { zero: '0' }))}
+              ${row('Placeholder remaining', moneyHtml(r.envelope - named, { zero: '0' }), 'is-strong')}
+            </dl>
+            ${asks.length ? `<p class="cbf-cap-hr-asks"><span class="cbf-cap-muted">Competing asks:</span> ${asks.map((q) => `${esc(q.title.replace(/ \(.*\)$/, ''))} ${fmtK(q.amounts[fy])}`).join(' · ')}</p>` : ''}
+          </div>`;
+        }
+        body.innerHTML = `
+          ${headline}
+          <dl class="cbf-cap-hr-list">
+            ${row(ipr ? 'IPR envelope' : 'Envelope', moneyHtml(r.envelope, { zero: '0' }))}
+            ${row('Active forecast', moneyHtml(r.active, { zero: '0' }))}
+            ${row('Placeholder forecast', moneyHtml(r.placeholder, { zero: '0' }))}
+            ${r.whatIf ? row('What-if requests', moneyHtml(r.whatIf), 'is-whatif') : ''}
+            ${row('Open requests', moneyHtml(r.openRequests, { zero: '0' }), 'is-requests')}
+          </dl>
+          <p class="cbf-cap-hr-optimal" title="Finance can approve up to Optimal. Expected is 80% of Optimal in every source table.">
+            <span class="cbf-cap-muted">Up to Optimal</span> ${fmtK(r.optimal)} ·
+            <span class="${r.headroomToOptimal != null && r.headroomToOptimal < -0.5 ? 'cbf-cap-neg' : ''}">${fmtK(r.headroomToOptimal)} room</span>
+          </p>
+          ${extra}`;
+      }
+
+      // What-if checklist: open requests with an amount in the selected FY.
+      const open = s.requests.filter((q) => isOpenRequest(q) && (q.amounts[fy] ?? 0) > 0);
+      whatIfEl.innerHTML = open.length
+        ? open.map((q) => `<esa-checkbox size="sm" data-whatif="${esc(q.id)}" label="${esc(`${q.title} — ${q.category} — ${fmtK(q.amounts[fy])}`)}" ${ui.whatIf.includes(q.id) ? 'checked' : ''}></esa-checkbox>`).join('')
+        : `<p class="typography-meta cbf-cap-muted">No open requests in ${fyLabel(fy)}.</p>`;
+      whatIfEl.querySelectorAll<HTMLElement & { checked: boolean }>('[data-whatif]').forEach((cb) => {
+        cb.addEventListener('change', () => toggleWhatIf(cb.dataset.whatif!, cb.checked));
+      });
+
+      // Freed this year: current-FY reductions since the most recent snapshot.
+      const last = [...s.snapshots].sort((a, b) => b.asOf.localeCompare(a.asOf))[0];
+      if (!last || ui.snapshotId) { freedEl.innerHTML = ''; return; }
+      const then = projectFyTotals(last.data, last.asOf);
+      const now = projectFyTotals(v, v.asOf);
+      const freed = v.projects
+        .map((p) => ({ p, d: (now.get(p.id)?.[fy] ?? 0) - (then.get(p.id)?.[fy] ?? 0) }))
+        .filter((x) => x.d <= -0.5)
+        .sort((a, b) => a.d - b.d);
+      const absorbers = v.projects
+        .filter((p) => p.category === 'Land' && p.recordType === 'Active' && (now.get(p.id)?.[fy] ?? 0) > 0)
+        .sort((a, b) => (now.get(b.id)?.[fy] ?? 0) - (now.get(a.id)?.[fy] ?? 0))
+        .slice(0, 4);
+      const link = (id: string, t: string) => `<a href="${withBase(`/capital-program/project?id=${encodeURIComponent(id)}`)}">${esc(t)}</a>`;
+      freedEl.innerHTML = `
+        <p class="cbf-cap-hr-freed-title"><strong>Freed in ${fyLabel(fy)}</strong> <span class="cbf-cap-muted">since ${esc(last.label)} (${fmtDate(last.asOf)})</span></p>
+        ${freed.length
+          ? `<ul class="cbf-cap-hr-freed-list">${freed.map((x) => `<li>${link(x.p.id, x.p.title)} <span class="cbf-cap-neg">${fmtK(x.d)}</span></li>`).join('')}</ul>
+             <p class="typography-meta"><span class="cbf-cap-muted">Could absorb it:</span> ${absorbers.map((p) => link(p.id, p.title)).join(' · ') || '—'}
+             ${assumption('Land parcels (P1) are not built yet, so ready-to-spend candidates are Active land projects with money in this FY.')}</p>`
+          : `<p class="typography-meta cbf-cap-muted">No ${fyLabel(fy)} forecast has dropped since that snapshot.</p>`}`;
+    }
+
+    subscribe(render);
+  }
+</script>
+
+<style>
+  .cbf-cap-headroom__tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: var(--spacing-300);
+  }
+  .cbf-cap-headroom__tile {
+    cursor: pointer;
+    border-radius: var(--radius-200);
+  }
+  .cbf-cap-headroom__tile:hover :global(.esa-card) { border-color: var(--color-border-brand); }
+  .cbf-cap-headroom__tile:focus-visible {
+    outline: 2px solid var(--color-border-focus);
+    outline-offset: 2px;
+  }
+  .cbf-cap-headroom__tile[data-hr-tile='Total'] :global(.esa-card) {
+    background: var(--color-background-elevation-sunken);
+  }
+  .cbf-cap-headroom__below {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--spacing-300);
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .cbf-cap-headroom__below { grid-template-columns: 1fr; }
+  }
+  .cbf-cap-headroom__hint { margin: 0; }
+  .cbf-cap-headroom__freed {
+    font-size: 14px;
+    padding: var(--spacing-200) var(--spacing-300);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-200);
+  }
+  .cbf-cap-headroom__freed:empty { display: none; }
+</style>
+
+<style is:global>
+  /* Client-rendered tile bodies (no scope hash). */
+  .cbf-cap-hr-big {
+    margin: 0;
+    font-family: var(--typography-font-family-display);
+    font-weight: var(--typography-font-weight-semibold);
+    font-size: 32px;
+    line-height: 1.1;
+    color: var(--color-background-default-knockout);
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-cap-hr-big.cbf-cap-neg { color: var(--color-content-utility-danger); }
+  .cbf-cap-hr-cap { margin: 0 0 var(--spacing-200); font-size: 13px; color: var(--color-content-default-tertiary); }
+  .cbf-cap-hr-list { margin: 0; display: grid; gap: 2px; font-size: 13px; }
+  .cbf-cap-hr-row { display: flex; justify-content: space-between; gap: var(--spacing-200); }
+  .cbf-cap-hr-row dt { color: var(--color-content-default-secondary); }
+  .cbf-cap-hr-row dd { margin: 0; }
+  .cbf-cap-hr-row.is-requests { border-top: 1px dashed var(--color-border-default); padding-top: 2px; margin-top: 2px; }
+  .cbf-cap-hr-row.is-whatif dd { color: var(--color-content-utility-warning); }
+  .cbf-cap-hr-row.is-strong dd { font-weight: var(--typography-font-weight-semibold); }
+  .cbf-cap-hr-optimal { margin: var(--spacing-200) 0 0; font-size: 12px; }
+  .cbf-cap-hr-draw { margin-top: var(--spacing-200); padding-top: var(--spacing-200); border-top: 1px solid var(--color-border-default-subtle); }
+  .cbf-cap-hr-asks { margin: var(--spacing-100) 0 0; font-size: 12px; line-height: 1.4; }
+  .cbf-cap-hr-freed-title { margin: 0 0 var(--spacing-100); }
+  .cbf-cap-hr-freed-list { margin: 0 0 var(--spacing-100); padding-inline-start: 1.1rem; }
+</style>

@@ -1,0 +1,49 @@
+---
+// cbf-cap-role-switch — the capital program's role lens: the four personas the
+// PRD's switcher offers (Program manager, Asset Plan lead, Project PM, Analyst).
+// Lives in cbf-prototype-strip, because nobody signs in to a prototype.
+//
+// Unlike cbf-role-switch (vendor ⇄ COR, two server-rendered halves), this lens
+// changes PERMISSIONS, not layout: the store's can() reads the role and every
+// screen re-renders its edit affordances on `cbf-cap:change`. Persisted with the
+// rest of the UI state so a reload keeps the lens.
+//
+// bcn-lego-checked: the control is esa-button-toggle (the segmented one-of-N
+// lego) for the same reason cbf-role-switch gives — the lens has to advertise
+// that other roles exist; esa-select would hide them behind a click. Beacon is
+// not cloned on this machine.
+---
+<div class="cbf-cap-role stack" data-gap="3xs" data-cap-role>
+  <esa-button-toggle size="sm" label="Viewing as" data-cap-role-control></esa-button-toggle>
+  <p class="cbf-cap-role__who" data-cap-role-who></p>
+</div>
+
+<script>
+  import '@esa/ecology/esa-button-toggle';
+  import { ROLES, getUi, setUi, subscribe, currentRole, userName } from '../../lib/capital/store';
+  import type { Role } from '../../lib/capital/types';
+
+  const root = document.querySelector<HTMLElement>('[data-cap-role]');
+  const control = root?.querySelector<HTMLElement & { options: unknown; value: string }>('[data-cap-role-control]');
+  const who = root?.querySelector<HTMLElement>('[data-cap-role-who]');
+  if (control) {
+    control.options = ROLES.map((r) => ({ label: r.label, value: r.key }));
+    control.value = getUi().role;
+    control.addEventListener('change', () => setUi({ role: control.value as Role }));
+  }
+  subscribe(() => {
+    if (control && control.value !== getUi().role) control.value = getUi().role;
+    if (who) who.textContent = `${userName()} — ${currentRole().can.split(' — ')[1]}`;
+  });
+</script>
+
+<style>
+  .cbf-cap-role { --align: flex-end; flex: none; }
+  .cbf-cap-role__who {
+    margin: 0;
+    font-size: 14px;
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default);
+    text-align: end;
+  }
+</style>

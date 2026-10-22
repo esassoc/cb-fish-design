@@ -2,6 +2,14 @@
 
 Links are relative to https://esassoc.github.io/cb-fish-design/handoff/
 
+## Capital program
+
+[README](capital-program/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/capital-program/) · 3 sections
+
+- [Header bar](capital-program/claude/header-bar.md): The lens every capital program screen reads: Current FY, envelope source (Asset Plan Expected, Asset Plan Optimal, or IPR as information only) and snapshot (Cu… (17 KB)
+- [Headroom panel](capital-program/claude/headroom-panel.md): Answers "can we say yes?" for the selected FY: one tile per category plus total, each showing envelope, Active forecast, Placeholder forecast, open requests an… (23 KB)
+- [Portfolio grid](capital-program/claude/portfolio-grid.md): The capital budget spreadsheet with more columns: every project grouped Hatchery Expand, Hatchery Sustain, Land, Passage with a subtotal per group and a pinned… (9.2 KB, 5 parts)
+
 ## LIB entry & COR review
 
 [README](lib-entry/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/lib-entry/) · 2 sections, no authored guidance

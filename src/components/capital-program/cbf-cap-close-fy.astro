@@ -1,0 +1,265 @@
+---
+// cbf-cap-close-fy — the year-end re-forecast wizard (PRD R8), Program manager
+// only. For the FY being closed it lists every project whose plan and actuals
+// disagree, with the variance in dollars and percent. For each, the user picks
+// the quarters to re-spread the project's REMAINING NEED over (modified budget −
+// all-time actuals — Ben's $20M hatchery that has spent $3M has $17M left, not
+// the FY's unspent $14M) and a variance reason; confirming writes one
+// "Year-end re-forecast" Adjustment per project.
+//
+// Unspent money is not banked into next year's envelope — that comes from the
+// new Asset Plan. The variance-by-category summary is the input to the Asset
+// Plan's planned-vs-completed tables (5.2).
+//
+// Opened by the `cbf-cap:close-fy-open` document event (cbf-cap-adjustments).
+//
+// bcn-lego-checked: the surface is esa-dialog (fullscreen — it is a worksheet);
+// per-row controls are esa-checkbox and esa-select. The worksheet itself is a
+// plain table because every row carries live form controls, which AG Grid
+// cell renderers (HTML strings) would recreate and drop on each refresh; no esa
+// table lego exists. Beacon is not cloned on this machine.
+import EsaButton from '@esa/ecology/esa-button.astro';
+---
+<esa-dialog heading="Close fiscal year" show-close-button size="fullscreen" data-cap-close-fy>
+  <div class="cbf-cap-close stack" data-gap="md">
+    <div class="cluster cbf-cap-close__head" data-gap="md">
+      <esa-select size="sm" label="Fiscal year to close" class="cbf-cap-close__fy" data-close-fy></esa-select>
+      <p class="cbf-cap-close__lede" data-close-lede></p>
+    </div>
+
+    <div class="cbf-cap-close__wrap" data-close-table></div>
+
+    <div class="cbf-cap-close__summary stack" data-gap="xs">
+      <strong data-close-summary-title>Variance by category</strong>
+      <p class="typography-meta cbf-cap-muted cbf-cap-close__note">Input to the Asset Plan's planned-vs-completed tables (5.2). Unspent money is not banked into next year's envelope — next year's envelope comes from the new Asset Plan.</p>
+      <div data-close-summary></div>
+    </div>
+  </div>
+  <div slot="footer" class="cluster" data-gap="sm">
+    <EsaButton variant="secondary" appearance="outline" data-close-cancel>Cancel</EsaButton>
+    <EsaButton variant="primary" data-close-confirm>Re-forecast</EsaButton>
+  </div>
+</esa-dialog>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-checkbox';
+  import { getState, subscribe, update, can, userName, TODAY } from '../../lib/capital/store';
+  import { closeFy, type CloseEntry } from '../../lib/capital/actions';
+  import {
+    fyPlanned, fyActuals, remainingNeed, modifiedBudget, allTimeActuals, isClosed, firstOpenSlot, slotOf, slotLabel,
+    fyLabel, fmtK, fmtPct, planAt, fmtDate,
+  } from '../../lib/capital/finance';
+  import { esc, moneyHtml, setSelect, snackbar, assumption } from '../../lib/capital/ui';
+  import { CATEGORIES, FY_LIST, SLOT_COUNT, VARIANCE_REASONS, type Project, type VarianceReason } from '../../lib/capital/types';
+  import { withBase } from '../../lib/base';
+
+  type Dlg = HTMLElement & { show: () => void; close: () => void; open: boolean };
+  type Sel = HTMLElement & { value: string; options: unknown };
+
+  interface Line {
+    p: Project;
+    planned: number;
+    actual: number;
+    variance: number;
+    need: number;
+    include: boolean;
+    from: number;
+    to: number;
+    reason: VarianceReason;
+  }
+
+  const dlg = document.querySelector<Dlg>('[data-cap-close-fy]');
+  if (dlg) init(dlg);
+
+  function init(dlg: Dlg) {
+    const fySel = dlg.querySelector<Sel>('[data-close-fy]')!;
+    const lede = dlg.querySelector<HTMLElement>('[data-close-lede]')!;
+    const tableEl = dlg.querySelector<HTMLElement>('[data-close-table]')!;
+    const summaryEl = dlg.querySelector<HTMLElement>('[data-close-summary]')!;
+    const summaryTitle = dlg.querySelector<HTMLElement>('[data-close-summary-title]')!;
+    const confirm = dlg.querySelector<HTMLElement>('[data-close-confirm]')!;
+    let fy = 0;
+    let lines: Line[] = [];
+
+    const closedFys = () => {
+      const asOf = getState().settings.dataAsOf;
+      return FY_LIST.filter((f) => isClosed(slotOf(f, 4), asOf));
+    };
+
+    function build() {
+      const s = getState();
+      const asOf = s.settings.dataAsOf;
+      const open = firstOpenSlot(asOf);
+      lines = [];
+      for (const p of s.projects) {
+        const plan = s.plans[p.id];
+        const act = s.actuals[p.id];
+        const planned = fyPlanned(plan, fy);
+        const actual = fyActuals(act, fy);
+        const variance = actual - planned;
+        if (Math.abs(variance) < 0.5) continue;
+        // Default range: next open quarter through the project's last planned quarter (at least 4 quarters).
+        let last = open;
+        for (let sl = open; sl < SLOT_COUNT; sl++) if (planAt(plan, sl) > 0) last = sl;
+        const to = Math.min(SLOT_COUNT - 1, Math.max(last, open + 3));
+        lines.push({
+          p, planned, actual, variance,
+          need: Math.max(0, remainingNeed(p, plan, act, asOf)),
+          include: true, from: open, to,
+          reason: variance < 0 ? 'Schedule slip' : 'Bid over estimate',
+        });
+      }
+      lines.sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance));
+    }
+
+    function renderTable() {
+      const s = getState();
+      const asOf = s.settings.dataAsOf;
+      const open = firstOpenSlot(asOf);
+      const slotOpts = Array.from({ length: SLOT_COUNT - open }, (_, i) => ({ label: slotLabel(open + i), value: String(open + i) }));
+      lede.innerHTML = `Data as of ${fmtDate(asOf)}. ${lines.length} project${lines.length === 1 ? '' : 's'} where ${fyLabel(fy)} actuals differ from what was planned.
+        Each one's <strong>remaining need</strong> (modified budget − all-time actuals) is re-spread over the quarters you pick, replacing its open forecast. ${assumption('Projects with no modified budget re-spread their current open forecast instead.')}`;
+      if (!lines.length) {
+        tableEl.innerHTML = `<p class="cbf-cap-muted">Every project spent exactly what was planned in ${fyLabel(fy)}. Nothing to re-forecast.</p>`;
+        renderSummary();
+        return;
+      }
+      tableEl.innerHTML = `<table class="cbf-cap-close-table">
+        <thead><tr>
+          <th scope="col">Include</th><th scope="col">Project</th><th scope="col">Category</th>
+          <th scope="col" class="cbf-cap-num">${fyLabel(fy)} planned</th><th scope="col" class="cbf-cap-num">${fyLabel(fy)} actual</th>
+          <th scope="col" class="cbf-cap-num">Variance</th><th scope="col" class="cbf-cap-num">%</th>
+          <th scope="col" class="cbf-cap-num">Modified budget</th><th scope="col" class="cbf-cap-num">All-time actuals</th>
+          <th scope="col" class="cbf-cap-num">Remaining need</th>
+          <th scope="col">Re-spread from</th><th scope="col">Through</th><th scope="col">Variance reason</th>
+        </tr></thead>
+        <tbody>${lines.map((l, i) => `<tr data-i="${i}">
+          <td><esa-checkbox size="sm" aria-label="Include ${esc(l.p.title)}" class="cbf-cap-close-cb" data-f="include" ${l.include ? 'checked' : ''}></esa-checkbox></td>
+          <td><a class="cbf-grid-link" href="${withBase(`/capital-program/project?id=${encodeURIComponent(l.p.id)}`)}">${esc(l.p.title)}</a></td>
+          <td>${esc(l.p.category)}</td>
+          <td class="cbf-cap-num">${moneyHtml(l.planned, { zero: '0' })}</td>
+          <td class="cbf-cap-num">${moneyHtml(l.actual, { zero: '0' })}</td>
+          <td class="cbf-cap-num">${l.variance > 0 ? `+${fmtK(l.variance)}` : moneyHtml(l.variance)}</td>
+          <td class="cbf-cap-num">${l.planned ? fmtPct(l.variance / l.planned) : '—'}</td>
+          <td class="cbf-cap-num">${moneyHtml(modifiedBudget(l.p), { zero: '0' })}</td>
+          <td class="cbf-cap-num">${moneyHtml(allTimeActuals(s.actuals[l.p.id]), { zero: '0' })}</td>
+          <td class="cbf-cap-num"><strong>${fmtK(l.need, { zero: '0' })}</strong></td>
+          <td><esa-select size="sm" label="From" class="cbf-cap-close-q" data-f="from"></esa-select></td>
+          <td><esa-select size="sm" label="Through" class="cbf-cap-close-q" data-f="to"></esa-select></td>
+          <td><esa-select size="sm" label="Reason" class="cbf-cap-close-r" data-f="reason"></esa-select></td>
+        </tr>`).join('')}</tbody></table>`;
+
+      tableEl.querySelectorAll<HTMLTableRowElement>('tr[data-i]').forEach((tr) => {
+        const l = lines[Number(tr.dataset.i)];
+        setSelect(tr.querySelector('[data-f="from"]'), slotOpts, String(l.from));
+        setSelect(tr.querySelector('[data-f="to"]'), slotOpts, String(l.to));
+        setSelect(tr.querySelector('[data-f="reason"]'), VARIANCE_REASONS.map((r) => ({ label: r, value: r })), l.reason);
+        tr.addEventListener('change', (e) => {
+          const el = e.target as HTMLElement & { value?: string; checked?: boolean; dataset: DOMStringMap };
+          const f = el.dataset?.f;
+          if (f === 'include') l.include = !!el.checked;
+          else if (f === 'from') l.from = Number(el.value);
+          else if (f === 'to') l.to = Number(el.value);
+          else if (f === 'reason') l.reason = el.value as VarianceReason;
+          renderSummary();
+        });
+      });
+      renderSummary();
+    }
+
+    function renderSummary() {
+      summaryTitle.textContent = `${fyLabel(fy)} variance by category`;
+      const inc = lines.filter((l) => l.include);
+      const rows = [...CATEGORIES, 'Total' as const].map((c) => {
+        const ls = c === 'Total' ? inc : inc.filter((l) => l.p.category === c);
+        const planned = ls.reduce((t, l) => t + l.planned, 0);
+        const actual = ls.reduce((t, l) => t + l.actual, 0);
+        const reasons = new Map<string, number>();
+        for (const l of ls) reasons.set(l.reason, (reasons.get(l.reason) ?? 0) + l.variance);
+        const why = [...reasons.entries()].map(([r, v]) => `${r} ${v > 0 ? `+${fmtK(v)}` : fmtK(v)}`).join(' · ') || '—';
+        return `<tr class="${c === 'Total' ? 'is-total' : ''}"><th scope="row">${c}</th>
+          <td class="cbf-cap-num">${moneyHtml(planned, { zero: '0' })}</td><td class="cbf-cap-num">${moneyHtml(actual, { zero: '0' })}</td>
+          <td class="cbf-cap-num">${actual - planned > 0.5 ? `+${fmtK(actual - planned)}` : moneyHtml(actual - planned, { zero: '0' })}</td>
+          <td>${esc(why)}</td></tr>`;
+      });
+      summaryEl.innerHTML = `<table class="cbf-cap-close-sum"><thead><tr><th scope="col">Category</th><th scope="col" class="cbf-cap-num">Planned (these projects)</th><th scope="col" class="cbf-cap-num">Actual</th><th scope="col" class="cbf-cap-num">Variance</th><th scope="col">Reasons</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+      const n = inc.length;
+      const btnLabel = n ? `Re-forecast ${n} project${n === 1 ? '' : 's'}` : 'Re-forecast';
+      const label = confirm.querySelector('.esa-button__label') ?? confirm;
+      if (label === confirm) confirm.textContent = btnLabel; else label.textContent = btnLabel;
+      confirm.toggleAttribute('disabled', !n);
+    }
+
+    function openFor(target?: number) {
+      const fys = closedFys();
+      fy = target ?? fys[fys.length - 1] ?? 2026;
+      setSelect(fySel, fys.map((f) => ({ label: fyLabel(f), value: String(f) })), String(fy));
+      build();
+      renderTable();
+      dlg.show();
+    }
+
+    fySel.addEventListener('change', () => {
+      fy = Number(fySel.value);
+      build();
+      renderTable();
+    });
+    dlg.querySelector('[data-close-cancel]')!.addEventListener('click', () => dlg.close());
+    confirm.addEventListener('click', () => {
+      if (!can('closeFy')) return;
+      const inc = lines.filter((l) => l.include);
+      if (!inc.length) return;
+      const entries: CloseEntry[] = inc.map((l) => ({
+        projectId: l.p.id, fromSlot: Math.min(l.from, l.to), toSlot: Math.max(l.from, l.to), varianceReason: l.reason,
+      }));
+      const closing = fy;
+      update((s) => closeFy(s, closing, entries, s.settings.dataAsOf, userName(), TODAY));
+      dlg.close();
+      snackbar('success', `${fyLabel(closing)} closed — ${entries.length} project${entries.length === 1 ? '' : 's'} re-forecast and logged.`);
+    });
+
+    document.addEventListener('cbf-cap:close-fy-open', (e) => {
+      if (!can('closeFy')) return;
+      openFor((e as CustomEvent).detail?.fy);
+    });
+    // Closing the dialog from another role's lens or a snapshot shouldn't leave it open.
+    subscribe(() => { if (dlg.open && !can('closeFy')) dlg.close(); });
+  }
+</script>
+
+<style>
+  .cbf-cap-close__head { align-items: flex-end; }
+  .cbf-cap-close__fy { inline-size: 9rem; }
+  .cbf-cap-close__lede { margin: 0; flex: 1 1 30rem; font-size: 14px; }
+  .cbf-cap-close__wrap { overflow-x: auto; }
+  .cbf-cap-close__note { margin: 0; }
+  .cbf-cap-close__summary {
+    padding: var(--spacing-300);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-200);
+  }
+</style>
+
+<style is:global>
+  /* Client-rendered worksheet tables (no scope hash). */
+  .cbf-cap-close-table, .cbf-cap-close-sum { inline-size: 100%; border-collapse: collapse; font-size: 14px; }
+  .cbf-cap-close-table th, .cbf-cap-close-table td,
+  .cbf-cap-close-sum th, .cbf-cap-close-sum td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--color-border-default-subtle);
+    text-align: start;
+    vertical-align: middle;
+  }
+  .cbf-cap-close-table thead th, .cbf-cap-close-sum thead th {
+    color: var(--color-content-default-secondary);
+    font-weight: var(--typography-font-weight-semibold);
+    background: var(--color-background-elevation-sunken);
+    white-space: nowrap;
+  }
+  .cbf-cap-close-table .cbf-cap-num, .cbf-cap-close-sum .cbf-cap-num { text-align: end; white-space: nowrap; }
+  .cbf-cap-close-q { inline-size: 8.5rem; display: block; }
+  .cbf-cap-close-r { inline-size: 11rem; display: block; }
+  .cbf-cap-close-sum tr.is-total th, .cbf-cap-close-sum tr.is-total td { font-weight: var(--typography-font-weight-semibold); border-top: 2px solid var(--color-border-default); }
+</style>

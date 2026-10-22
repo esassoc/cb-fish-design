@@ -1,0 +1,28 @@
+---
+// /capital-program/project?id=<project id> — Project detail (PRD screen 2):
+// everything about one capital project. The id is a query parameter, not a
+// static route, because projects can be created in the browser ("Add to plan"
+// on a request) and a static build can't pre-render those.
+//
+// Thin assembler — every section reads the id from the URL and renders from
+// the capital program store.
+import CbfCapFrame from '../../components/capital-program/cbf-cap-frame.astro';
+import CbfCapProjectOverview from '../../components/capital-program/cbf-cap-project-overview.astro';
+import CbfCapSpendPlan from '../../components/capital-program/cbf-cap-spend-plan.astro';
+import CbfCapScheduleStrip from '../../components/capital-program/cbf-cap-schedule-strip.astro';
+import CbfCapProjectLog from '../../components/capital-program/cbf-cap-project-log.astro';
+---
+<!-- manifest:
+  layout: cbf-cap-frame (nav + prototype strip + app panel + tabs + header bar)
+  sections:
+    - header + cards  -> cbf-cap-project-overview  (R3, R7 — greenlit status, budget card + history, pathway card, EC/MOA/design card)
+    - spending plan   -> cbf-cap-spend-plan        (R4, R9 — FY24–FY30 quarterly grid, spread evenly, move money, overage warning)
+    - schedule strip  -> cbf-cap-schedule-strip    (R3 — phases down, quarters across)
+    - notes + log     -> cbf-cap-project-log       (R3, R9 — quarterly notes, this project's adjustments, linked parcels)
+-->
+<CbfCapFrame active="project" title="Project" crumbs={[{ label: 'Project' }]}>
+  <CbfCapProjectOverview />
+  <CbfCapSpendPlan />
+  <CbfCapScheduleStrip />
+  <CbfCapProjectLog />
+</CbfCapFrame>
