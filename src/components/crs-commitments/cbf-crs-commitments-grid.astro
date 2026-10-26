@@ -113,7 +113,7 @@ const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
         <span class="typography-meta">Category</span>
         <esa-chip-group
           data-crs-category-filter
-          size="sm"
+          size="md"
           label="Filter by category"
           value=""
           options={JSON.stringify(categoryFilters)}
@@ -123,7 +123,7 @@ const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
         <span class="typography-meta">Status</span>
         <esa-chip-group
           data-crs-status-filter
-          size="sm"
+          size="md"
           label="Filter by status"
           value=""
           options={JSON.stringify(statusFilters)}
@@ -134,6 +134,7 @@ const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
       <CbfSearchField
         placeholder="Search number, title or source…"
         iconSize={18}
+        size="md"
         data-crs-search
         aria-label="Search commitments"
       />

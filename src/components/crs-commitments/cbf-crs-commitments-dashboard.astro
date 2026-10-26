@@ -342,7 +342,7 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
                 type="button"
                 role="radio"
                 aria-checked={chip.value === ''}
-                class="cbf-crs-dashboard__status-chip typography-microcopy-md"
+                class="cbf-crs-dashboard__status-chip typography-microcopy-md-strong"
                 data-value={chip.value}
               >
                 {chip.variant && (
@@ -616,15 +616,17 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
      active tokens (same --color-border-default/--color-background-elevation-sunken/etc. chain) so
      it reads as the same "chip" family, just with a swatch slot esa-chip-
      group's markup has no room for. */
-  /* Height and type match the md esa-filter-dropdowns and md search field
-     beside them (40px, microcopy-md) — sibling controls in one row match. */
+  /* Sized exactly like esa-chip-group md (padding, microcopy-md-strong type),
+     so these chips match the chip groups on the other 2020 CRS pages. That
+     makes them shorter than the 40px md dropdowns and search field beside
+     them — esa-chip-group is shorter than inputs by design and has no height
+     hook (requested: esassoc/ecology#54). */
   .cbf-crs-dashboard__status-chip {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-100);
     box-sizing: border-box;
-    height: 40px;
-    padding: 0 var(--spacing-300);
+    padding: var(--spacing-150) var(--spacing-300);
     border-radius: var(--radius-100);
     border: 1px solid var(--color-border-default);
     background: var(--color-background-elevation-raised);
@@ -635,13 +637,18 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
       border-color var(--transition-fast, 150ms ease),
       color var(--transition-fast, 150ms ease);
   }
+  /* A 16px swatch would out-grow the 15px line and make these chips 1px
+     taller than esa-chip-group's; size it to the text instead. */
+  .cbf-crs-dashboard__status-chip .cbf-crs-dashboard__segment--swatch {
+    width: 1em;
+    height: 1em;
+  }
   .cbf-crs-dashboard__status-chip:hover {
     background: var(--color-background-elevation-sunken);
     border-color: var(--color-border-default-strong);
     color: var(--color-content-default);
   }
   .cbf-crs-dashboard__status-chip[aria-checked='true'] {
-    font-weight: var(--typography-microcopy-md-strong-font-weight);
     background: var(--color-background-elevation-sunken);
     border-color: var(--color-border-default-strong);
     color: var(--color-content-default);
