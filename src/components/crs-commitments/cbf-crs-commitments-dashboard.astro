@@ -342,7 +342,7 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
                 type="button"
                 role="radio"
                 aria-checked={chip.value === ''}
-                class="cbf-crs-dashboard__status-chip"
+                class="cbf-crs-dashboard__status-chip typography-microcopy-md"
                 data-value={chip.value}
               >
                 {chip.variant && (
@@ -362,7 +362,6 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
             name="type"
             label="Type"
             multiple
-            size="sm"
             placeholder="Search types…"
             options={JSON.stringify(typeOptions)}
             data-crs-type-filter
@@ -371,7 +370,6 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
             name="source"
             label="Source"
             multiple
-            size="sm"
             placeholder="Search sources…"
             options={JSON.stringify(sourceOptions)}
             data-crs-source-filter
@@ -381,6 +379,7 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
           <CbfSearchField
             placeholder="Search title or number…"
             iconSize={18}
+            size="md"
             data-crs-search
             aria-label="Search commitments"
           />
@@ -617,19 +616,19 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
      active tokens (same --color-border-default/--color-background-elevation-sunken/etc. chain) so
      it reads as the same "chip" family, just with a swatch slot esa-chip-
      group's markup has no room for. */
+  /* Height and type match the md esa-filter-dropdowns and md search field
+     beside them (40px, microcopy-md) — sibling controls in one row match. */
   .cbf-crs-dashboard__status-chip {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-100);
-    padding: var(--spacing-150) var(--spacing-300);
+    box-sizing: border-box;
+    height: 40px;
+    padding: 0 var(--spacing-300);
     border-radius: var(--radius-100);
     border: 1px solid var(--color-border-default);
     background: var(--color-background-elevation-raised);
     color: var(--color-content-default-secondary);
-    font: inherit;
-    font-size: 0.9375rem;
-    font-weight: 600;
-    line-height: 1;
     cursor: pointer;
     transition:
       background-color var(--transition-fast, 150ms ease),
@@ -642,6 +641,7 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
     color: var(--color-content-default);
   }
   .cbf-crs-dashboard__status-chip[aria-checked='true'] {
+    font-weight: var(--typography-microcopy-md-strong-font-weight);
     background: var(--color-background-elevation-sunken);
     border-color: var(--color-border-default-strong);
     color: var(--color-content-default);
