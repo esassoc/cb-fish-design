@@ -787,7 +787,9 @@ const hasDocuments = documents.length > 0;
           headerName: 'Due date', field: 'dueDate', colId: 'dueDate', minWidth: 120,
           cellDataType: 'date',
           valueGetter: (p) => asDate(p.data?.dueDate),
-          valueFormatter: (p) => (p.value instanceof Date ? dateFmt.format(p.value) : ''),
+          // CBF-8591: a document with no due date reads "N/A", not a blank that
+          // looks like missing data (valueFormatter also drives the CSV export).
+          valueFormatter: (p) => (p.value instanceof Date ? dateFmt.format(p.value) : 'N/A'),
         },
         { headerName: 'Category', field: 'category', colId: 'category', minWidth: 200 },
         { headerName: 'Type', field: 'type', colId: 'type', minWidth: 150 },

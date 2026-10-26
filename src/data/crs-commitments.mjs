@@ -37,6 +37,13 @@ export const YEARS = Array.from({ length: 15 }, (_, i) => 2021 + i);
 /** The year the dashboard treats as "current" — years after this default to Future until reached. */
 export const CURRENT_YEAR = 2026;
 
+/**
+ * The prototype's fixed "today" (local midnight, 10/26/2026). Pinned rather than
+ * read from the clock so whether a missing document is overdue or not yet due
+ * (CBF-8590) stays the same every time the page is shown.
+ */
+export const TODAY = new Date(CURRENT_YEAR, 9, 26);
+
 const STATUS_CODES = {
   N: 'Not Started',
   I: 'In Progress',
@@ -115,7 +122,7 @@ export const commitments = [
     partnerPOC: 'Renee Ashford',
     policyLead: 'Marcus Feld',
     biopSME: 'Priya Nair',
-    cor: 'N/A',
+    cor: 'Lena Moravec',
     nmfsPOC: 'Alan Cho',
     associatedProjects: 'PRJ-2016-041, PRJ-2019-018',
     timeline: 'N I I I I I F F F F F F F F F',
@@ -232,7 +239,7 @@ export const commitments = [
     partnerPOC: 'Renee Ashford',
     policyLead: 'Marcus Feld',
     biopSME: 'Priya Nair',
-    cor: 'N/A',
+    cor: 'Owen Petrakis',
     nmfsPOC: 'Alan Cho',
     associatedProjects: 'PRJ-2016-041',
     timeline: 'I I I I I I F F F F F F F F F',
@@ -386,7 +393,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-52',
     title: 'Fund O&M of the Alder Creek Hatchery safety-net program',
-    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
+    source: 'Upper Basin Hatchery Programs Biological Opinion',
     sectionNumber: '2.6.2.1',
     pageNumber: '2-104',
     category: 'Hatchery',
@@ -415,7 +422,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-58',
     title: 'Discuss basin-wide hatchery monitoring needs',
-    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
+    source: 'Upper Basin Hatchery Programs Biological Opinion',
     sectionNumber: '2.6.2.3',
     pageNumber: '2-107',
     category: 'Hatchery',
@@ -523,7 +530,7 @@ export const commitments = [
     partnerPOC: 'N/A',
     policyLead: 'Marcus Feld',
     biopSME: 'N/A',
-    cor: 'N/A',
+    cor: 'Dana Iverson',
     nmfsPOC: 'N/A',
     associatedProjects: 'PRJ-2013-064',
     timeline: 'I I I I I I F F F F F F F F F',
@@ -607,10 +614,22 @@ export const documents = [
     filename: 'talus-ridge-temp-2025.pdf', uploadDate: '11/10/2025', uploadUser: 'Priya Nair',
   },
   {
+    // Due later this year, nothing uploaded yet — missing but not overdue.
+    commitmentNumber: 'CRS-Com-12', dueDate: '11/15/2026', category: 'Commitment Deliverable',
+    type: 'Annual Report', title: 'Talus Ridge Temperature Monitoring — 2026',
+    description: 'Summer index-station temperature records and exceedance summary.',
+  },
+  {
     commitmentNumber: 'CRS-Com-18', category: 'Commitment Supporting Document',
     type: 'Study Plan', title: 'Revised Acoustic Tag Study Design',
     description: 'Updated paired-release study design reviewed after the 2024 delay.',
     filename: 'bypass-screening-study-plan-rev2.pdf', uploadDate: '1/15/2025', uploadUser: 'Dana Iverson',
+  },
+  {
+    // Overdue in the current year: due earlier in 2026, nothing uploaded yet.
+    commitmentNumber: 'CRS-Com-18', dueDate: '2/1/2026', category: 'Commitment Deliverable',
+    type: 'Annual Report', title: 'Screening Efficiency Report — 2025',
+    description: 'Juvenile bypass screening efficiency estimates from the 2025 acoustic tag releases.',
   },
   {
     commitmentNumber: 'CRS-Com-31', dueDate: '2/15/2026', category: 'Commitment Deliverable',
@@ -687,20 +706,47 @@ export function documentsFor(commitmentNumber) {
 }
 
 /**
- * Per-year document tracking for one commitment, derived from `documents`:
- * every entry with a `dueDate` marks that year 'received' (an uploadDate is on
- * file) or 'pending' (the due date has no document attached yet). Years with
- * no tracked due date are absent from the returned map. Powers the dashboard's
- * small per-year document indicator, which sits alongside the status dot.
- * @returns {Record<number, 'received' | 'pending'>}
+ * Per-year document tracking for one commitment, derived from `documents`. Each
+ * year with at least one tracked due date gets one marker:
+ *   - 'overdue'  — a due date in that year has passed with no document on file
+ *   - 'upcoming' — a due date in that year has no document yet, but isn't due
+ *                  until after TODAY (CBF-8590: shown blue, not red, so red
+ *                  marks only what is late)
+ *   - 'received' — every due date in that year has a document
+ * Overdue outranks upcoming, which outranks received. Years with no tracked due
+ * date are absent from the returned map.
+ * @returns {Record<number, 'received' | 'upcoming' | 'overdue'>}
  */
 export function documentYearMarkers(commitmentNumber) {
+  const rank = { received: 0, upcoming: 1, overdue: 2 };
   const markers = {};
   for (const doc of documentsFor(commitmentNumber)) {
     if (!doc.dueDate) continue;
-    const year = new Date(doc.dueDate).getFullYear();
+    const due = new Date(doc.dueDate);
+    const year = due.getFullYear();
     if (Number.isNaN(year)) continue;
-    markers[year] = doc.uploadDate ? 'received' : 'pending';
+    const state = doc.uploadDate ? 'received' : due < TODAY ? 'overdue' : 'upcoming';
+    if (!markers[year] || rank[state] > rank[markers[year]]) markers[year] = state;
   }
   return markers;
 }
+
+/**
+ * CORs per project, from the AgreementContact rows on each project's contracts
+ * (contact type COR is BES-assigned; Backup COR is user-assigned). Fictional
+ * people, keyed by the same invented project numbers the commitments use.
+ * Powers the BPA COR picker (CBF-8593), which offers only the CORs on a
+ * commitment's associated projects.
+ * @type {Record<string, { name: string; role: 'COR' | 'Backup COR' }[]>}
+ */
+export const projectCors = {
+  'PRJ-2013-064': [{ name: 'Lena Moravec', role: 'COR' }],
+  'PRJ-2014-115': [{ name: 'Todd Whitfield', role: 'COR' }, { name: 'Gwen Halvorsen', role: 'Backup COR' }],
+  'PRJ-2015-014': [{ name: 'Rafael Quintero', role: 'COR' }],
+  'PRJ-2015-077': [{ name: 'Gwen Halvorsen', role: 'COR' }],
+  'PRJ-2016-041': [{ name: 'Lena Moravec', role: 'COR' }, { name: 'Owen Petrakis', role: 'Backup COR' }],
+  'PRJ-2017-040': [{ name: 'Rafael Quintero', role: 'COR' }],
+  'PRJ-2019-018': [{ name: 'Todd Whitfield', role: 'COR' }],
+  'PRJ-2020-224': [{ name: 'Owen Petrakis', role: 'COR' }, { name: 'Rafael Quintero', role: 'Backup COR' }],
+  'PRJ-2021-011': [{ name: 'Sasha Lindqvist', role: 'COR' }],
+};

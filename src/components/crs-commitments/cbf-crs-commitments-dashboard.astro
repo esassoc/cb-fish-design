@@ -16,6 +16,12 @@
 // the document-marker row below the bar), so comparing a single year straight
 // down a column still works.
 //
+// Hover: every status segment and document marker carries an esa-tooltip
+// (status + year span, or the year's document state). esa-tooltip wraps its
+// trigger in a shrink-to-fit anchor, and a segment has no intrinsic width, so
+// each segment's tooltip host is a size container (container-type) and the
+// segment sizes itself to it with 100cqw — the lego is untouched.
+//
 // Interaction model (deliberate for this rebuild, documented where it diverges
 // from the ambiguous legacy page):
 //   - The stat row ALWAYS describes what is on screen — it recomputes over the
@@ -23,6 +29,15 @@
 //   - Everything is fixed on CURRENT_YEAR (2026): each commitment's `.status` is
 //     its 2026 status. OUT OF SCOPE for this pass: the legacy year-picker that
 //     re-pointed the stats to a chosen year. Not built.
+//   - CBF-8588: every commitment lands in exactly ONE status total for the
+//     labelled year, so the status totals always add up to Total. That's why
+//     Future and Unset have their own totals (prod counted neither, and counted
+//     a commitment once for every status it had in ANY year).
+//   - CBF-8589: Type and Source are multi-select esa-filter-dropdowns, ANDed
+//     with the active tab, status chip and search (OR within one dropdown).
+//     Source is matched as a list — a commitment can cite more than one.
+//   - CBF-8590: a missing document that isn't due yet is blue (upcoming); only
+//     a passed due date with no file is red (overdue). See documentYearMarkers.
 //   - JUDGMENT CALL 3 (current-year marker): the old per-year-dot version tinted
 //     every row's current-year CELL. A segment can now span straight through
 //     that year, so tinting part of one shape would misread as "this whole
@@ -98,6 +113,7 @@ import EsaIcon from '@esa/ecology/esa-icon.astro';
 import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 import CbfSearchField from '../search/cbf-search-field.astro';
+import CbfCrsDocumentDueDatesDialog from './cbf-crs-document-due-dates-dialog.astro';
 import {
   commitments as defaultCommitments,
   YEARS,
@@ -106,6 +122,7 @@ import {
   documentYearMarkers,
 } from '../../data/crs-commitments.mjs';
 import { withBase } from '../../lib/base';
+import { splitMultiValue } from '../../lib/multi-value';
 
 type BadgeVariant = 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info';
 type CommitmentStatus =
@@ -117,7 +134,8 @@ interface CrsCommitment {
   category: string;
   subcategory: string;
   commitmentType: string;
-  status: CommitmentStatus;
+  source: string;
+  status?: CommitmentStatus;
   statusByYear: Record<number, CommitmentStatus>;
 }
 
@@ -163,6 +181,16 @@ function segmentLabel(seg: Segment): string {
   return seg.span > 1 ? `${startYear}–${endYear}: ${seg.status}` : `${startYear}: ${seg.status}`;
 }
 
+// Hover text for one segment: its status and the years it covers.
+function segmentTooltip(seg: Segment): string {
+  const startYear = YEARS[seg.startIndex];
+  const endYear = YEARS[seg.endIndex];
+  const status = seg.status ?? 'Unset';
+  return seg.span > 1
+    ? `${status}, ${startYear}–${endYear} (${seg.span} years)`
+    : `${status}, ${startYear}`;
+}
+
 function timelineSummary(segments: Segment[]): string {
   return segments.map(segmentLabel).join('; ');
 }
@@ -172,27 +200,34 @@ function timelineSummary(segments: Segment[]): string {
 // Derived from documentYearMarkers() per row (see the row loop below); this is
 // just the shared legend explaining the two tones.
 const docLegend = [
-  { state: 'received' as const, label: 'Document received' },
-  { state: 'pending' as const, label: 'Document due' },
+  { state: 'received' as const, label: 'Received' },
+  { state: 'upcoming' as const, label: 'Not due yet' },
+  { state: 'overdue' as const, label: 'Overdue' },
 ];
+const docStateLabel = {
+  received: 'document received',
+  upcoming: 'document not due yet',
+  overdue: 'document overdue',
+} as const;
 
-// The six-stat summary. JUDGMENT CALL 1 (Future / Not Started): the requested row
-// is fixed at six entries and lists "Not Started" but not "Future", so Future's
-// count is FOLDED into the Not started bucket (both are "no active work yet" and
-// both are near-zero at CURRENT_YEAR anyway). Total gets no dot — it is the
-// aggregate, not a status. Counts are computed by each commitment's CURRENT_YEAR
-// `.status`.
-type StatEntry = { key: string; label: string; variant: BadgeVariant; dot: boolean; statuses: CommitmentStatus[] | null };
+// Status totals for CURRENT_YEAR (CBF-8588). Each commitment has exactly one
+// status in a given year, so each lands in exactly one total and the status
+// totals add up to Total. Prod's order first, then the two prod never showed:
+// Future and Unset (no status set for the year — no swatch, it isn't a
+// status). Total gets no dot — it is the aggregate, not a status.
+type StatEntry = { key: string; label: string; variant: BadgeVariant; dot: boolean; statuses: string[] | null };
 const statEntries: StatEntry[] = [
-  { key: 'total',       label: 'Total commitments', variant: 'primary',   dot: false, statuses: null },
-  { key: 'in-progress', label: 'In progress',       variant: 'info',      dot: true,  statuses: ['In Progress'] },
-  { key: 'not-started', label: 'Not started',       variant: 'secondary', dot: true,  statuses: ['Not Started', 'Future'] },
-  { key: 'delayed',     label: 'Delayed',           variant: 'warning',   dot: true,  statuses: ['Delayed'] },
-  { key: 'complete',    label: 'Complete',          variant: 'success',   dot: true,  statuses: ['Complete'] },
-  { key: 'closed',      label: 'Closed',            variant: 'secondary', dot: true,  statuses: ['Closed'] },
+  { key: 'total',       label: 'Total',       variant: 'primary',   dot: false, statuses: null },
+  { key: 'in-progress', label: 'In progress', variant: 'info',      dot: true,  statuses: ['In Progress'] },
+  { key: 'not-started', label: 'Not started', variant: 'secondary', dot: true,  statuses: ['Not Started'] },
+  { key: 'delayed',     label: 'Delayed',     variant: 'warning',   dot: true,  statuses: ['Delayed'] },
+  { key: 'complete',    label: 'Complete',    variant: 'success',   dot: true,  statuses: ['Complete'] },
+  { key: 'closed',      label: 'Closed',      variant: 'secondary', dot: true,  statuses: ['Closed'] },
+  { key: 'future',      label: 'Future',      variant: 'secondary', dot: true,  statuses: ['Future'] },
+  { key: 'unset',       label: 'Unset',       variant: 'secondary', dot: false, statuses: [''] },
 ];
-const countFor = (list: CrsCommitment[], statuses: CommitmentStatus[] | null) =>
-  statuses === null ? list.length : list.filter((c) => statuses.includes(c.status)).length;
+const countFor = (list: CrsCommitment[], statuses: string[] | null) =>
+  statuses === null ? list.length : list.filter((c) => statuses.includes(c.status ?? '')).length;
 const initialCounts = statEntries.map((s) => countFor(commitments, s.statuses));
 
 // Tab → filter predicate. Declared here to compute each tab's bucket badge; the
@@ -232,6 +267,14 @@ const statusFilterChips: Array<{ value: string; label: string; variant: BadgeVar
   ),
 ];
 
+// Type / Source filter options (CBF-8589), derived from the data so neither
+// dropdown lists an empty bucket. Source is split as a list (many-to-many).
+const asFilterOptions = (values: string[]) => values.map((v) => ({ label: v, value: v }));
+const typeOptions = asFilterOptions(Array.from(new Set(commitments.map((c) => c.commitmentType))).sort());
+const sourceOptions = asFilterOptions(
+  Array.from(new Set(commitments.flatMap((c) => splitMultiValue(c.source)))).sort()
+);
+
 const year2 = (year: number) => String(year).slice(2);
 
 // Horizontal position (as a % of the 15-column bar track) of the CURRENT_YEAR
@@ -257,15 +300,15 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
            all-years count now that the bar below shows the full timeline.
            The edit-mode toggle sits alongside it, matching prod's placement. -->
       <div class="cbf-crs-dashboard__stats-header repel">
-        <p class="typography-meta cbf-crs-dashboard__stats-caption">{CURRENT_YEAR} CRS Commitments Status</p>
+        <p class="typography-meta cbf-crs-dashboard__stats-caption">Commitment status in {CURRENT_YEAR}</p>
         <EsaButton
           variant="ghost"
           appearance="outline"
           size="sm"
           data-crs-edit-toggle
-          data-label-enter="Enter Edit Status Mode"
-          data-label-leave="Leave Edit Status Mode"
-        >Enter Edit Status Mode</EsaButton>
+          data-label-enter="Edit statuses"
+          data-label-leave="Done editing statuses"
+        >Edit statuses</EsaButton>
       </div>
       <div class="cbf-crs-dashboard__stats grid" role="group" aria-label={`${CURRENT_YEAR} status summary for the current view`}>
         {statEntries.map((s, i) => (
@@ -299,7 +342,7 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
                 type="button"
                 role="radio"
                 aria-checked={chip.value === ''}
-                class="cbf-crs-dashboard__status-chip"
+                class="cbf-crs-dashboard__status-chip typography-microcopy-md-strong"
                 data-value={chip.value}
               >
                 {chip.variant && (
@@ -314,10 +357,29 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
             ))}
           </div>
         </div>
+        <div class="cbf-crs-dashboard__dropdowns cluster" data-gap="sm">
+          <esa-filter-dropdown
+            name="type"
+            label="Type"
+            multiple
+            placeholder="Search types…"
+            options={JSON.stringify(typeOptions)}
+            data-crs-type-filter
+          ></esa-filter-dropdown>
+          <esa-filter-dropdown
+            name="source"
+            label="Source"
+            multiple
+            placeholder="Search sources…"
+            options={JSON.stringify(sourceOptions)}
+            data-crs-source-filter
+          ></esa-filter-dropdown>
+        </div>
         <div class="cbf-crs-dashboard__search">
           <CbfSearchField
             placeholder="Search title or number…"
             iconSize={18}
+            size="md"
             data-crs-search
             aria-label="Search commitments"
           />
@@ -365,7 +427,8 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
               data-category={c.category}
               data-subcategory={c.subcategory}
               data-type={c.commitmentType}
-              data-status={c.status}
+              data-source={JSON.stringify(splitMultiValue(c.source))}
+              data-status={c.status ?? ''}
               data-status-by-year={JSON.stringify(c.statusByYear)}
               data-search={`${c.number} ${c.title}`.toLowerCase()}
             >
@@ -390,12 +453,16 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
                   aria-label={`Status timeline for ${c.number}: ${timelineSummary(segments)}`}
                 >
                   {segments.map((seg) => (
-                    <span
-                      class="cbf-crs-dashboard__segment"
-                      data-variant={statusDot[seg.status] ?? 'secondary'}
+                    <esa-tooltip
+                      class="cbf-crs-dashboard__segment-tip"
+                      text={segmentTooltip(seg)}
                       style={`grid-column: ${seg.startIndex + 1} / ${seg.endIndex + 2};`}
-                      title={segmentLabel(seg)}
-                    />
+                    >
+                      <span
+                        class="cbf-crs-dashboard__segment"
+                        data-variant={statusDot[seg.status] ?? 'secondary'}
+                      />
+                    </esa-tooltip>
                   ))}
                   <!-- "Today" reference line — scoped to the bar only (not the
                        document row below), so it can never sit over a document
@@ -419,6 +486,8 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
                         style={`grid-column: ${i + 1};`}
                         data-year={year}
                         tabindex="-1"
+                        aria-label={`Edit ${year} status`}
+                        title={`Edit ${year} status`}
                       ></button>
                     ))}
                   </div>
@@ -427,15 +496,23 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
                   {YEARS.map((year, i) => {
                     const docState = docMarkers[year];
                     if (!docState) return null;
-                    const docLabel = docState === 'received' ? 'document received' : 'document due, not yet received';
+                    const docLabel = docStateLabel[docState];
                     return (
-                      <span
-                        class:list={['cbf-crs-dashboard__docmark', `cbf-crs-dashboard__docmark--${docState}`]}
+                      <esa-tooltip
+                        class="cbf-crs-dashboard__docmark-tip"
+                        text={`${year}: ${docLabel}`}
                         style={`grid-column: ${i + 1};`}
-                        title={`${year}: ${docLabel}`}
                       >
-                        <EsaIcon name="file-text" size="xs" label={`${year}: ${docLabel}`} />
-                      </span>
+                        <button
+                          type="button"
+                          class:list={['cbf-crs-dashboard__docmark', `cbf-crs-dashboard__docmark--${docState}`]}
+                          aria-label={`Documents due in ${year} (${docLabel})`}
+                          data-crs-docmark
+                          data-year={year}
+                        >
+                          <EsaIcon name="file-text" size="xs" />
+                        </button>
+                      </esa-tooltip>
                     );
                   })}
                 </div>
@@ -455,6 +532,10 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
       </div>
     </div>
   </esa-tab-layout>
+
+  <!-- Clicking a document marker opens prod's "document due dates" pop-up
+       for that commitment and year. -->
+  <CbfCrsDocumentDueDatesDialog />
 
   <!-- Shared status-edit dialog — one instance for the whole grid, re-targeted
        per click (see the client script) rather than one dialog per cell. -->
@@ -535,24 +616,32 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
      active tokens (same --color-border-default/--color-background-elevation-sunken/etc. chain) so
      it reads as the same "chip" family, just with a swatch slot esa-chip-
      group's markup has no room for. */
+  /* Sized exactly like esa-chip-group md (padding, microcopy-md-strong type),
+     so these chips match the chip groups on the other 2020 CRS pages. That
+     makes them shorter than the 40px md dropdowns and search field beside
+     them — esa-chip-group is shorter than inputs by design and has no height
+     hook (requested: esassoc/ecology#54). */
   .cbf-crs-dashboard__status-chip {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-100);
+    box-sizing: border-box;
     padding: var(--spacing-150) var(--spacing-300);
     border-radius: var(--radius-100);
     border: 1px solid var(--color-border-default);
     background: var(--color-background-elevation-raised);
     color: var(--color-content-default-secondary);
-    font: inherit;
-    font-size: 0.9375rem;
-    font-weight: 600;
-    line-height: 1;
     cursor: pointer;
     transition:
       background-color var(--transition-fast, 150ms ease),
       border-color var(--transition-fast, 150ms ease),
       color var(--transition-fast, 150ms ease);
+  }
+  /* A 16px swatch would out-grow the 15px line and make these chips 1px
+     taller than esa-chip-group's; size it to the text instead. */
+  .cbf-crs-dashboard__status-chip .cbf-crs-dashboard__segment--swatch {
+    width: 1em;
+    height: 1em;
   }
   .cbf-crs-dashboard__status-chip:hover {
     background: var(--color-background-elevation-sunken);
@@ -567,6 +656,10 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
   .cbf-crs-dashboard__status-chip:focus-visible {
     outline: none;
     box-shadow: 0 0 0 var(--focus-ring-width, 2px) var(--focus-ring-color, var(--color-background-brand));
+  }
+
+  .cbf-crs-dashboard__dropdowns {
+    align-items: flex-end;
   }
 
   .cbf-crs-dashboard__search {
@@ -690,15 +783,30 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
        the bar instead of competing with a white gap at every transition. */
     height: 22px;
   }
+  /* Each segment's esa-tooltip host is the grid item spanning its years. As
+     a size container it lets the segment inside take its full width (100cqw)
+     through the tooltip's shrink-to-fit anchor. display:flex keeps a line
+     box (and its strut) from padding the 16px segment. */
+  .cbf-crs-dashboard__segment-tip {
+    display: flex;
+    align-self: center;
+    container-type: inline-size;
+  }
+  .cbf-crs-dashboard__segment-tip > .cbf-crs-dashboard__segment {
+    display: block;
+    width: 100cqw;
+  }
   .cbf-crs-dashboard__segment {
     align-self: center;
     height: 16px;
   }
-  .cbf-crs-dashboard__segment:first-child {
+  /* Only the bar's outer ends round. :*-of-type, not :*-child — the "today"
+     line and edit overlay follow the segments inside the bar. */
+  .cbf-crs-dashboard__segment-tip:first-of-type > .cbf-crs-dashboard__segment {
     border-top-left-radius: var(--radius-100);
     border-bottom-left-radius: var(--radius-100);
   }
-  .cbf-crs-dashboard__segment:last-child {
+  .cbf-crs-dashboard__segment-tip:last-of-type > .cbf-crs-dashboard__segment {
     border-top-right-radius: var(--radius-100);
     border-bottom-right-radius: var(--radius-100);
   }
@@ -780,6 +888,9 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
     inset: 0;
     display: grid;
     grid-template-columns: repeat(15, minmax(1.1rem, 1fr));
+    /* Let hover reach the segment tooltips underneath; edit-mode cells opt
+       back in below. */
+    pointer-events: none;
   }
   .cbf-crs-dashboard__edit-cell {
     pointer-events: none;
@@ -800,9 +911,10 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
   }
 
   /* Per-year document indicator — a small outlined file icon, independent of
-     the status bar above it: whether a due-date deliverable for that year has
-     a document on file. Color is the only signal (success = received, danger =
-     due/not received), matching this repo's "color conveys state" rule. */
+     the status bar above it: whether that year's due-date deliverables have a
+     document on file. Color is the only signal, matching this repo's "color
+     conveys state" rule: green = received, blue = missing but not due yet,
+     red = overdue (CBF-8590 — red marks only what is late). */
   .cbf-crs-dashboard__docmark {
     display: inline-flex;
     align-items: center;
@@ -813,12 +925,37 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
     border-radius: var(--radius-050, 2px);
     border: 1px solid currentColor;
   }
+  .cbf-crs-dashboard__docmark-tip {
+    display: flex;
+    justify-self: center;
+  }
+
+  /* Row markers are buttons that open the document due-dates dialog; the
+     legend's are plain spans sharing the look. Reset the button chrome so
+     both read the same. bcn-lego-checked: esa-icon-button has no
+     state-colored outlined-square variant — this is the marker itself. */
+  button.cbf-crs-dashboard__docmark {
+    padding: 0;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+  }
+  button.cbf-crs-dashboard__docmark:hover {
+    background: var(--color-background-brand-subtle);
+  }
+  button.cbf-crs-dashboard__docmark:focus-visible {
+    outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, var(--color-background-brand));
+    outline-offset: 2px;
+  }
   .cbf-crs-dashboard__docmark--received {
     /* --color-background-utility-success resolves to a pale yellow-green here (#bdee63) that's
        hard to see at icon size — same fix as the Complete segment above. */
     color: var(--color-green-11);
   }
-  .cbf-crs-dashboard__docmark--pending {
+  .cbf-crs-dashboard__docmark--upcoming {
+    color: var(--color-background-utility-info);
+  }
+  .cbf-crs-dashboard__docmark--overdue {
     color: var(--color-background-utility-danger);
   }
 
@@ -834,6 +971,8 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
   import '@esa/ecology/esa-tab-layout';
   import '@esa/ecology/esa-dialog';
   import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-filter-dropdown';
+  import '@esa/ecology/esa-tooltip';
   import { YEARS, CURRENT_YEAR, STATUS_DOT } from '../../data/crs-commitments.mjs';
 
   type CommitmentFields = { category: string; subcategory: string; commitmentType: string };
@@ -862,11 +1001,20 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
     return seg.span > 1 ? `${startYear}–${endYear}: ${label}` : `${startYear}: ${label}`;
   }
 
+  function segmentTooltipClient(seg: ClientSegment): string {
+    const startYear = YEARS[seg.startIndex];
+    const endYear = YEARS[seg.endIndex];
+    const status = seg.status || 'Unset';
+    return seg.span > 1
+      ? `${status}, ${startYear}–${endYear} (${seg.span} years)`
+      : `${status}, ${startYear}`;
+  }
+
   // Rebuild one row's segment spans after its statusByYear changes — same
   // markup shape the frontmatter renders, minus the now-line/edit-overlay
   // (kept in place, never removed).
   function rebuildBar(bar: HTMLElement, statusByYear: Record<string, string>): void {
-    bar.querySelectorAll(':scope > .cbf-crs-dashboard__segment').forEach((el) => el.remove());
+    bar.querySelectorAll(':scope > .cbf-crs-dashboard__segment-tip').forEach((el) => el.remove());
     const nowLine = bar.querySelector('.cbf-crs-dashboard__now-line');
     // Astro's scoped <style> only matches elements carrying its per-component
     // data-astro-cid-* attribute — a span built via createElement doesn't get
@@ -876,14 +1024,20 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
     const scopeAttr = bar.getAttributeNames().find((n) => n.startsWith('data-astro-cid-'));
     const segments = computeSegmentsClient(statusByYear);
     segments.forEach((seg) => {
+      const tip = document.createElement('esa-tooltip');
+      tip.className = 'cbf-crs-dashboard__segment-tip';
+      tip.setAttribute('text', segmentTooltipClient(seg));
+      tip.style.gridColumn = `${seg.startIndex + 1} / ${seg.endIndex + 2}`;
       const span = document.createElement('span');
       span.className = 'cbf-crs-dashboard__segment';
       span.dataset.variant = (STATUS_DOT as Record<string, string>)[seg.status] ?? 'secondary';
-      span.style.gridColumn = `${seg.startIndex + 1} / ${seg.endIndex + 2}`;
-      span.title = segmentLabelClient(seg);
-      if (scopeAttr) span.setAttribute(scopeAttr, '');
-      if (nowLine) bar.insertBefore(span, nowLine);
-      else bar.appendChild(span);
+      if (scopeAttr) {
+        tip.setAttribute(scopeAttr, '');
+        span.setAttribute(scopeAttr, '');
+      }
+      tip.appendChild(span);
+      if (nowLine) bar.insertBefore(tip, nowLine);
+      else bar.appendChild(tip);
     });
     const number = bar.closest<HTMLElement>('[data-crs-row]')?.dataset.number ?? '';
     bar.setAttribute(
@@ -906,20 +1060,25 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
     (d) => d.subcategory === 'RM&E',
   ];
 
-  // Stat bucket → the statuses it tallies. Future folds into Not started; Total = all.
+  // Stat bucket → the statuses it tallies, one bucket per status ('' = Unset)
+  // so the buckets always add up to Total (CBF-8588).
   const STAT_BUCKETS: Record<string, string[] | null> = {
     'total': null,
     'in-progress': ['In Progress'],
-    'not-started': ['Not Started', 'Future'],
+    'not-started': ['Not Started'],
     'delayed': ['Delayed'],
     'complete': ['Complete'],
     'closed': ['Closed'],
+    'future': ['Future'],
+    'unset': [''],
   };
 
   function initDashboard(root: HTMLElement): void {
     const tabEl = root.querySelector<HTMLElement>('[data-crs-tabs]');
     const statusChips = Array.from(root.querySelectorAll<HTMLButtonElement>('.cbf-crs-dashboard__status-chip'));
     const search = root.querySelector<HTMLInputElement>('[data-crs-search]');
+    const typeFilter = root.querySelector<HTMLElement>('[data-crs-type-filter]');
+    const sourceFilter = root.querySelector<HTMLElement>('[data-crs-source-filter]');
     const rows = Array.from(root.querySelectorAll<HTMLElement>('[data-crs-row]'));
     const scroll = root.querySelector<HTMLElement>('.cbf-crs-dashboard__scroll');
     const empty = root.querySelector<HTMLElement>('[data-crs-empty]');
@@ -934,6 +1093,8 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
     let tabIndex = 0;
     let statusValue = '';
     let query = '';
+    let typeValues: string[] = [];
+    let sourceValues: string[] = [];
 
     function recompute(): void {
       const pred = TAB_PREDICATES[tabIndex] ?? (() => true);
@@ -947,8 +1108,11 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
           commitmentType: row.dataset.type ?? '',
         };
         const status = row.dataset.status ?? '';
+        const sources: string[] = JSON.parse(row.dataset.source || '[]');
         const pass =
           pred(fields) &&
+          (typeValues.length === 0 || typeValues.includes(fields.commitmentType)) &&
+          (sourceValues.length === 0 || sources.some((src) => sourceValues.includes(src))) &&
           (statusValue === '' || status === statusValue) &&
           (q === '' || (row.dataset.search ?? '').includes(q));
         row.hidden = !pass;
@@ -988,6 +1152,19 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
         statusChips.forEach((c) => c.setAttribute('aria-checked', String(c === chip)));
         recompute();
       });
+    });
+    // Multi-select: detail.value is the full string[] selection ([] when cleared).
+    const selectionOf = (e: Event) => {
+      const v = (e as CustomEvent<{ value?: string[] }>).detail?.value;
+      return Array.isArray(v) ? v : [];
+    };
+    typeFilter?.addEventListener('selection-change', (e) => {
+      typeValues = selectionOf(e);
+      recompute();
+    });
+    sourceFilter?.addEventListener('selection-change', (e) => {
+      sourceValues = selectionOf(e);
+      recompute();
     });
     search?.addEventListener('input', () => {
       query = search.value ?? '';
@@ -1061,6 +1238,17 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
 
       editDialog?.close();
       editTarget = null;
+    });
+
+    // Document markers → the due-dates dialog for that commitment + year.
+    root.querySelectorAll<HTMLButtonElement>('[data-crs-docmark]').forEach((mark) => {
+      mark.addEventListener('click', () => {
+        const row = mark.closest<HTMLElement>('[data-crs-row]');
+        if (!row) return;
+        document.dispatchEvent(new CustomEvent('crs-doc-due-dates:open', {
+          detail: { number: row.dataset.number ?? '', title: row.dataset.title ?? '', year: Number(mark.dataset.year) },
+        }));
+      });
     });
 
     recompute();

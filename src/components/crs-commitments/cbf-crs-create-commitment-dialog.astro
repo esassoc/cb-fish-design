@@ -50,14 +50,13 @@ interface Props {
   partnerPOCs: string[];
   policyLeads: string[];
   biopSMEs: string[];
-  cors: string[];
   nmfsPOCs: string[];
   associatedProjectsOptions: string[];
 }
 
 const {
   categories, subcategories, types, frequencies, deliverableFrequencies,
-  leadAgencies, partnerAgencies, partnerPOCs, policyLeads, biopSMEs, cors, nmfsPOCs,
+  leadAgencies, partnerAgencies, partnerPOCs, policyLeads, biopSMEs, nmfsPOCs,
   associatedProjectsOptions,
 } = Astro.props;
 
@@ -185,12 +184,14 @@ const asOptions = (values: string[]) => values.map((v) => ({ label: v, value: v 
 
       <div class="cbf-crs-create-form__row">
         <esa-select label="BiOp SME" multiple chip-mode placeholder="Select…" options={JSON.stringify(asOptions(biopSMEs))} data-field="biopSME"></esa-select>
-        <esa-select label="COR" multiple chip-mode placeholder="Select…" options={JSON.stringify(asOptions(cors))} data-field="cor"></esa-select>
+        <esa-select label="NMFS POC" multiple chip-mode placeholder="Select…" options={JSON.stringify(asOptions(nmfsPOCs))} data-field="nmfsPOC"></esa-select>
       </div>
 
       <div class="cbf-crs-create-form__row">
-        <esa-select label="NMFS POC" multiple chip-mode placeholder="Select…" options={JSON.stringify(asOptions(nmfsPOCs))} data-field="nmfsPOC"></esa-select>
         <esa-select label="Associated projects" multiple chip-mode placeholder="Select…" options={JSON.stringify(asOptions(associatedProjectsOptions))} data-field="associatedProjects"></esa-select>
+        <!-- CBF-8593: COR comes after Associated projects because its options are
+             the CORs on those projects (cor-picker.ts fills them in). -->
+        <esa-select label="COR" multiple chip-mode placeholder="Select…" help-text="CORs and backup CORs on the associated projects." disabled data-field="cor"></esa-select>
       </div>
     </section>
 

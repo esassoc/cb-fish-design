@@ -8,6 +8,10 @@
 // covers) — this is the same wide, horizontally-scrolling table pattern prod
 // uses, not a narrowed scan view.
 //
+// CBF-8592: prod filters Commitment title with a long checkbox list; here the
+// title is matched by typing into the search box (with number and source), which
+// is the behavior that story asks for. There is no per-column checkbox filter.
+//
 // bcn-lego-checked: ecology has NO table/grid/data-grid lego (checked the full
 // node_modules/@esa/ecology/src/components catalog — esa-card/esa-pill/esa-badge
 // are atoms, none render a sortable, filterable tabular data surface) and Beacon
@@ -79,7 +83,6 @@ const partnerAgencies = uniqueSplitValues('partnerAgency');
 const partnerPOCs = uniqueSplitValues('partnerPOC');
 const policyLeads = uniqueSplitValues('policyLead');
 const biopSMEs = uniqueSplitValues('biopSME');
-const cors = uniqueSplitValues('cor');
 const nmfsPOCs = uniqueSplitValues('nmfsPOC');
 const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
 ---
@@ -100,7 +103,6 @@ const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
     partnerPOCs={partnerPOCs}
     policyLeads={policyLeads}
     biopSMEs={biopSMEs}
-    cors={cors}
     nmfsPOCs={nmfsPOCs}
     associatedProjectsOptions={associatedProjectsOptions}
   />
@@ -111,7 +113,7 @@ const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
         <span class="typography-meta">Category</span>
         <esa-chip-group
           data-crs-category-filter
-          size="sm"
+          size="md"
           label="Filter by category"
           value=""
           options={JSON.stringify(categoryFilters)}
@@ -121,7 +123,7 @@ const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
         <span class="typography-meta">Status</span>
         <esa-chip-group
           data-crs-status-filter
-          size="sm"
+          size="md"
           label="Filter by status"
           value=""
           options={JSON.stringify(statusFilters)}
@@ -132,6 +134,7 @@ const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
       <CbfSearchField
         placeholder="Search number, title or source…"
         iconSize={18}
+        size="md"
         data-crs-search
         aria-label="Search commitments"
       />
@@ -174,6 +177,7 @@ const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
   import { withBase } from '../../lib/base';
   import { gridDateFormatter as dateFmt, asGridDate as asDate, escGridHtml as esc, wireDataGrid } from '../shared/grid-chrome';
   import { joinMultiValue } from '../../lib/multi-value';
+  import { wireCorPicker } from './cor-picker';
 
   // Responsible-parties fields are esa-select multiple (chip-mode) — their
   // `.value` is a string[], not a string, and clearing one needs `[]`, not
@@ -278,7 +282,11 @@ const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
         },
         { headerName: 'Deliverable', field: 'deliverable', colId: 'deliverable', minWidth: 180 },
         { headerName: 'Deliverable frequency', field: 'deliverableFrequency', colId: 'deliverableFrequency', minWidth: 160 },
-        { headerName: 'Document due', field: 'documentDueDate', colId: 'documentDueDate', minWidth: 120 },
+        {
+          headerName: 'Document due', field: 'documentDueDate', colId: 'documentDueDate', minWidth: 120,
+          // CBF-8591: no dated document → "N/A", never a blank cell (or CSV field).
+          valueFormatter: (p) => p.value || 'N/A',
+        },
         { headerName: 'Lead agency', field: 'leadAgency', colId: 'leadAgency', minWidth: 130 },
         { headerName: 'Partner agency', field: 'partnerAgency', colId: 'partnerAgency', minWidth: 140 },
         { headerName: 'Partner POC', field: 'partnerPOC', colId: 'partnerPOC', minWidth: 150 },
@@ -323,6 +331,8 @@ const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
     const createCancelBtn = root.querySelector<HTMLElement>('[data-crs-create-cancel]');
     const createSubmitBtn = root.querySelector<HTMLElement>('[data-crs-create-submit]');
     const createError = root.querySelector<HTMLElement & { hidden: boolean }>('[data-crs-create-error]');
+    // COR options follow the chosen Associated projects (CBF-8593).
+    const corPicker = createForm ? wireCorPicker(createForm) : null;
 
     const createField = (name: string): (HTMLElement & { value?: string | string[] }) | null =>
       createForm?.querySelector<HTMLElement & { value?: string | string[] }>(`[data-field="${name}"]`) ?? null;
@@ -342,6 +352,7 @@ const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
         el.value = MULTI_FIELDS.has(name) ? [] : '';
       });
       if (createError) createError.hidden = true;
+      corPicker?.refresh();
     }
 
     createOpenBtn?.addEventListener('click', () => createDialog?.show());
