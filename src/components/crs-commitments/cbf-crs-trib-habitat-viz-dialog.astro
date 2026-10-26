@@ -1,0 +1,171 @@
+---
+// cbf-crs-trib-habitat-viz-dialog — "Tributary habitat metrics": the charts
+// prod draws at the bottom of the 2020 CRS dashboard's Tributary Habitat tab
+// (qa.cbfish.org BiologicalOpinionCommitmentDashboard/TributaryHabitat), moved
+// behind an "Open visualization" button so they no longer push the commitment
+// list down. One chart per measure: planned, actual to date and target per
+// population. Data is mock (see crs-trib-habitat-metrics.mjs).
+//
+// Open it by dispatching
+//   document.dispatchEvent(new CustomEvent('crs-trib-viz:open'))
+//
+// Divergences from prod, both deliberate:
+//   - Horizontal bars, not vertical. Prod's nine population names are long
+//     and run diagonally under the axis; on the left axis they read straight.
+//   - Planned is ONE bar (the 2026–2029 total), not a bar stacked by year with
+//     the year written on each slice. The per-year split is in each chart's
+//     "View as data" grid, alongside actual and target.
+//
+// Lazy on purpose: esa-chart dynamically imports AG Charts (~2.8MB) the moment
+// a chart first renders, so the charts and their data grids are only built on
+// the first open — the dashboard itself never pays for them.
+//
+// bcn-lego-checked: esa-dialog (fullscreen surface), esa-chart (the hub's
+// charting lego), esa-collapsible ("View as data", the table alternative
+// esa-chart's own docs require). The data view is AG Grid via the shared
+// wireDataGrid, because ecology has no table lego (see cbf-crs-commitments-grid).
+import '@esa/tokens/layouts.css';
+import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
+import '../shared/cbf-data-grid-chrome.css';
+import { TRIB_HABITAT_METRICS, tribHabitatRows } from '../../data/crs-trib-habitat-metrics.mjs';
+---
+<esa-dialog
+  class="cbf-crs-trib-viz"
+  size="fullscreen"
+  show-close-button
+  heading="Tributary habitat metrics"
+  data-crs-trib-viz
+>
+  <div class="stack" data-gap="lg">
+    <p class="typography-body-md cbf-crs-trib-viz__lede">
+      Planned (2026–2029 total), actual to date, and BiOp target for each population.
+    </p>
+    <div class="cbf-crs-trib-viz__charts grid">
+      {TRIB_HABITAT_METRICS.map((m) => (
+        <section class="cbf-crs-trib-viz__metric stack" data-gap="sm" data-crs-trib-metric>
+          <div class="stack" data-gap="2xs">
+            <h3 class="typography-heading-md">{m.title} (measure {m.measure})</h3>
+            <p class="typography-body-md cbf-crs-trib-viz__desc">{m.description}</p>
+          </div>
+          <div
+            class="cbf-crs-trib-viz__chart"
+            data-crs-trib-chart
+            data-label={`${m.title} by population: planned, actual and target, in ${m.unit}`}
+          ></div>
+          <EsaCollapsible title="View as data">
+            <div class="cbf-data-grid__grid" data-crs-trib-grid></div>
+          </EsaCollapsible>
+          <script type="application/json" data-crs-trib-data set:html={JSON.stringify(tribHabitatRows(m))}></script>
+        </section>
+      ))}
+    </div>
+  </div>
+</esa-dialog>
+
+<style>
+  /* Two charts side by side on a wide screen, one per row below ~90rem. */
+  .cbf-crs-trib-viz__charts {
+    --grid-min: 40rem;
+    gap: var(--spacing-800);
+  }
+  .cbf-crs-trib-viz__lede,
+  .cbf-crs-trib-viz__desc {
+    margin: 0;
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-crs-trib-viz__metric h3 {
+    margin: 0;
+  }
+  /* Reserves the chart's height before the lazy build so the dialog body
+     doesn't jump when the charts land. Matches CHART_HEIGHT below. */
+  .cbf-crs-trib-viz__chart {
+    min-height: 480px;
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import { TRIB_HABITAT_PLANNED_YEARS } from '../../data/crs-trib-habitat-metrics.mjs';
+  import { wireDataGrid } from '../shared/grid-chrome';
+  import type { ColDef, ColGroupDef } from 'ag-grid-community';
+
+  const CHART_HEIGHT = '480px';
+  const num = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+  const numCol = (headerName: string, field: string): ColDef => ({
+    headerName, field, colId: field, type: 'numericColumn', flex: 0, width: 88,
+    valueFormatter: (p) => num.format(p.value ?? 0),
+  });
+  // Planned years sit under one "Planned" group header, so each column only
+  // needs the year and the headers don't truncate.
+  const columnDefs: (ColDef | ColGroupDef)[] = [
+    { headerName: 'Population', field: 'population', colId: 'population', flex: 1, minWidth: 240, wrapText: true, autoHeight: true },
+    {
+      headerName: 'Planned',
+      children: [
+        ...TRIB_HABITAT_PLANNED_YEARS.map((y: number) => numCol(String(y), `planned${y}`)),
+        numCol('Total', 'plannedTotal'),
+      ],
+    },
+    numCol('Actual', 'actual'),
+    numCol('Target', 'target'),
+  ];
+
+  const root = document.querySelector<HTMLElement & { show: () => void }>('[data-crs-trib-viz]');
+  if (root) {
+    let built = false;
+
+    async function build(): Promise<void> {
+      built = true;
+      await import('@esa/ecology/esa-chart');
+      root!.querySelectorAll<HTMLElement>('[data-crs-trib-metric]').forEach((section) => {
+        const host = section.querySelector<HTMLElement>('[data-crs-trib-chart]');
+        const dataEl = section.querySelector<HTMLScriptElement>('[data-crs-trib-data]');
+        if (!host || !dataEl) return;
+
+        const chart = document.createElement('esa-chart') as HTMLElement & {
+          label: string; data: unknown[]; series: unknown[]; options: Record<string, unknown>; height: string;
+        };
+        chart.label = host.dataset.label ?? '';
+        chart.height = CHART_HEIGHT;
+        chart.data = JSON.parse(dataEl.textContent ?? '[]');
+        chart.series = [
+          { key: 'plannedTotal', name: 'Planned (2026–2029)' },
+          { key: 'actual', name: 'Actual to date' },
+          { key: 'target', name: 'Target' },
+        ].map((s) => ({
+          type: 'bar', direction: 'horizontal', xKey: 'population', yKey: s.key, yName: s.name,
+        }));
+        chart.options = {
+          legend: { enabled: true, position: 'top' },
+          axes: {
+            // Population names are long ("… ESU - Grande Ronde/Imnaha") and AG
+            // Charts clips their start off the canvas edge — its `wrapping`
+            // didn't break them. Put the ESU/DPS and the MPG on separate lines.
+            x: {
+              type: 'category',
+              position: 'left',
+              label: { formatter: ({ value }: { value: string }) => String(value).replace(' - ', '\n') },
+            },
+            y: { type: 'number', position: 'bottom' },
+          },
+        };
+        host.appendChild(chart);
+
+        wireDataGrid({
+          root: section,
+          gridSelector: '[data-crs-trib-grid]',
+          dataSelector: '[data-crs-trib-data]',
+          countNoun: 'populations',
+          csvFileName: 'crs-tributary-habitat-metrics.csv',
+          suppressCellFocus: true,
+          columnDefs,
+        });
+      });
+    }
+
+    document.addEventListener('crs-trib-viz:open', () => {
+      root.show();
+      if (!built) void build();
+    });
+  }
+</script>
