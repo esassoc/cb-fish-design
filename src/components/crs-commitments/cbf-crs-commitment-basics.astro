@@ -64,7 +64,6 @@ const partnerAgencies = uniqueSplitValues('partnerAgency');
 const partnerPOCs = uniqueSplitValues('partnerPOC');
 const policyLeads = uniqueSplitValues('policyLead');
 const biopSMEs = uniqueSplitValues('biopSME');
-const cors = uniqueSplitValues('cor');
 const nmfsPOCs = uniqueSplitValues('nmfsPOC');
 const associatedProjectsOptions = uniqueSplitValues('associatedProjects');
 
@@ -169,7 +168,6 @@ const notesEmpty = (commitment.notes ?? '') === '';
     partnerPOCs={partnerPOCs}
     policyLeads={policyLeads}
     biopSMEs={biopSMEs}
-    cors={cors}
     nmfsPOCs={nmfsPOCs}
     associatedProjectsOptions={associatedProjectsOptions}
   />
@@ -240,6 +238,7 @@ const notesEmpty = (commitment.notes ?? '') === '';
   import '@esa/ecology/esa-dialog';
   import { toISODate, isoToUSDate } from '../../lib/dates';
   import { splitMultiValue, joinMultiValue } from '../../lib/multi-value';
+  import { wireCorPicker } from './cor-picker';
   import { YEARS, CURRENT_YEAR, STATUS_TONE } from '../../data/crs-commitments.mjs';
 
   type BasicsField = HTMLElement & { value?: string | string[] };
@@ -276,6 +275,8 @@ const notesEmpty = (commitment.notes ?? '') === '';
     const error = root.querySelector<HTMLElement & { hidden: boolean }>('[data-crs-edit-commitment-error]');
     const cancel = root.querySelector<HTMLElement>('[data-crs-edit-commitment-cancel]');
     const save = root.querySelector<HTMLElement>('[data-crs-edit-commitment-save]');
+    // COR options follow the chosen Associated projects (CBF-8593).
+    const corPicker = form ? wireCorPicker(form) : null;
 
     const field = (name: string): BasicsField | null =>
       form?.querySelector<BasicsField>(`[data-field="${name}"]`) ?? null;
@@ -304,6 +305,7 @@ const notesEmpty = (commitment.notes ?? '') === '';
         const el = yearField(year);
         if (el) el.value = data.statusByYear[String(year)] ?? '';
       });
+      corPicker?.refresh();
       dialog?.show();
     });
 

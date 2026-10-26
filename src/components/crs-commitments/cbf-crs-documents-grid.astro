@@ -119,7 +119,7 @@ const categoryFilters = [
     uploadUser: string; commitment?: Commitment;
   };
 
-  // Missing dates (one-off uploads with no due date) sort/render blank via asDate.
+  // Missing due dates (one-off uploads) sort as blank via asDate and render "N/A".
 
   function initDocuments(root: HTMLElement) {
     const categoryFilter = root.querySelector<HTMLElement & { value: string }>('[data-crs-category-filter]');
@@ -146,7 +146,9 @@ const categoryFilters = [
           headerName: 'Due date', field: 'dueDate', colId: 'dueDate', minWidth: 120,
           cellDataType: 'date',
           valueGetter: (p) => asDate(p.data?.dueDate),
-          valueFormatter: (p) => (p.value instanceof Date ? dateFmt.format(p.value) : ''),
+          // CBF-8591: a document with no due date reads "N/A", not a blank that
+          // looks like missing data (valueFormatter also drives the CSV export).
+          valueFormatter: (p) => (p.value instanceof Date ? dateFmt.format(p.value) : 'N/A'),
         },
         { headerName: 'Document category', field: 'category', colId: 'category', minWidth: 200 },
         { headerName: 'Document type', field: 'type', colId: 'type', minWidth: 150 },
