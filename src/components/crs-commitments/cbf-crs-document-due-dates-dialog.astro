@@ -44,12 +44,11 @@ const docStates = [
     <div class="cbf-data-grid__grid" data-crs-doc-due-dates-grid></div>
   </div>
 
+  <!-- No footer Close: the header's close button is the one close affordance
+       (design-principles: no duplicate closes), unlike prod's modal. -->
   <div slot="footer">
     <span data-crs-doc-due-dates-all>
       <EsaButton variant="ghost" appearance="outline" href="#">All documents for this commitment</EsaButton>
-    </span>
-    <span data-crs-doc-due-dates-close>
-      <EsaButton variant="primary">Close</EsaButton>
     </span>
   </div>
 
@@ -137,7 +136,5 @@ const docStates = [
       if (allLink) allLink.href = withBase(`/crs-commitments/${number}`);
       root.show();
     });
-
-    root.querySelector('[data-crs-doc-due-dates-close]')?.addEventListener('click', () => root.close());
   }
 </script>
