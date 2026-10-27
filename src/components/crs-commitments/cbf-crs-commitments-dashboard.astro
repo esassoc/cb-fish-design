@@ -62,6 +62,8 @@
 //   - esa-button            → the Document Library link out to the sibling page,
 //     the "Enter/Leave Edit Status Mode" toggle, and the edit dialog's footer.
 //   - esa-dialog            → the status-edit dialog (see below).
+//   - cbf-crs-trib-habitat-viz-dialog → the Tributary Habitat tab's metric
+//     charts, behind an "Open visualization" button shown on that tab only.
 //
 // The status filter is NOT esa-chip-group (see bcn-lego-checked below) — it's a
 // custom radiogroup of <button>s carrying the same swatch used by the timeline
@@ -114,6 +116,7 @@ import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 import CbfSearchField from '../search/cbf-search-field.astro';
 import CbfCrsDocumentDueDatesDialog from './cbf-crs-document-due-dates-dialog.astro';
+import CbfCrsTribHabitatVizDialog from './cbf-crs-trib-habitat-viz-dialog.astro';
 import {
   commitments as defaultCommitments,
   YEARS,
@@ -301,14 +304,21 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
            The edit-mode toggle sits alongside it, matching prod's placement. -->
       <div class="cbf-crs-dashboard__stats-header repel">
         <p class="typography-meta cbf-crs-dashboard__stats-caption">Commitment status in {CURRENT_YEAR}</p>
-        <EsaButton
-          variant="ghost"
-          appearance="outline"
-          size="sm"
-          data-crs-edit-toggle
-          data-label-enter="Edit statuses"
-          data-label-leave="Done editing statuses"
-        >Edit statuses</EsaButton>
+        <div class="cluster" data-gap="sm">
+          <!-- Tributary Habitat tab only: prod draws this tab's metric charts
+               under the list; here they open on demand in a dialog. -->
+          <span data-crs-trib-viz-open hidden>
+            <EsaButton variant="ghost" appearance="outline" size="sm">Open visualization</EsaButton>
+          </span>
+          <EsaButton
+            variant="ghost"
+            appearance="outline"
+            size="sm"
+            data-crs-edit-toggle
+            data-label-enter="Edit statuses"
+            data-label-leave="Done editing statuses"
+          >Edit statuses</EsaButton>
+        </div>
       </div>
       <div class="cbf-crs-dashboard__stats grid" role="group" aria-label={`${CURRENT_YEAR} status summary for the current view`}>
         {statEntries.map((s, i) => (
@@ -536,6 +546,9 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
   <!-- Clicking a document marker opens prod's "document due dates" pop-up
        for that commitment and year. -->
   <CbfCrsDocumentDueDatesDialog />
+
+  <!-- Opened by the Tributary Habitat tab's "Open visualization" button. -->
+  <CbfCrsTribHabitatVizDialog />
 
   <!-- Shared status-edit dialog — one instance for the whole grid, re-targeted
        per click (see the client script) rather than one dialog per cell. -->
@@ -1134,10 +1147,18 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
       if (scroll) scroll.hidden = !anyVisible;
     }
 
+    // "Open visualization" exists only on the Tributary Habitat tab.
+    const TRIB_HABITAT_TAB = 2;
+    const vizOpen = root.querySelector<HTMLElement>('[data-crs-trib-viz-open]');
+    vizOpen?.addEventListener('click', () => {
+      document.dispatchEvent(new CustomEvent('crs-trib-viz:open'));
+    });
+
     tabEl?.addEventListener('tabchange', (e) => {
       const index = (e as CustomEvent<{ index: number }>).detail?.index;
       if (typeof index === 'number') {
         tabIndex = index;
+        if (vizOpen) vizOpen.hidden = index !== TRIB_HABITAT_TAB;
         recompute();
       }
     });
