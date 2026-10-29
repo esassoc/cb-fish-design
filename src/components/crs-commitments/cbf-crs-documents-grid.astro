@@ -1,7 +1,9 @@
 ---
 // cbf-crs-documents-grid — the "2020 CRS Commitments Document Library": a
-// scannable, searchable, filterable table of every document/due-date attached to
+// scannable, searchable, filterable table of every document uploaded against
 // any tracked CRS commitment, cross-referenced back to its parent commitment.
+// Only actually-uploaded documents are listed — a pending due date (a dueDate
+// with no file yet) is tracked on its commitment's page, not here.
 // A cross-commitment, read-only companion to cbf-crs-commitments-grid (its
 // closest reference): same AG Grid + search + chip-filter + CSV-export +
 // record-count-footer conventions — minus the "Create new" CTA (this is a
@@ -19,7 +21,9 @@
 // chose for sort/quick-search/CSV export over a hand-rolled <table>; this bcn-
 // component is its reusable home. Every other control is a lego: the search input
 // reuses cbf-search-field, the Category filter uses esa-chip-group, the CSV
-// download uses esa-icon-button.
+// download and each row's document download use esa-icon-button (the row one
+// server-rendered once in a hidden template and cloned into the cell — same
+// technique as cbf-crs-commitment-documents.astro's row actions).
 import CbfSearchField from '../search/cbf-search-field.astro';
 import EsaIconButton from '@esa/ecology/esa-button.astro';
 import '../shared/cbf-data-grid-chrome.css';
@@ -32,16 +36,19 @@ interface CrsDocument {
   type: string;
   title: string;
   description: string;
-  filename: string;
-  uploadDate: string;
-  uploadUser: string;
+  filename?: string;
+  uploadDate?: string;
+  uploadUser?: string;
 }
 
 interface Props {
   documents?: CrsDocument[];
 }
 
-const { documents = defaultDocuments } = Astro.props;
+const { documents: allDocuments = defaultDocuments } = Astro.props;
+// Uploaded documents only — the source data also carries pending due dates
+// (no filename yet), which aren't documents in the library sense.
+const documents = allDocuments.filter((doc) => doc.filename);
 
 // Denormalize the parent commitment onto each row at build time — the join lives
 // here, not in the data module, so the documents array stays lean and the two
@@ -99,6 +106,10 @@ const categoryFilters = [
     <EsaIconButton variant="chrome" iconOnly icon="download" label="Download CSV" size="sm" data-crs-csv />
   </footer>
 
+  <template data-crs-docs-action-templates hidden aria-hidden="true">
+    <span data-action-template="download"><EsaIconButton variant="chrome" iconOnly icon="download" label="Download document" size="sm" /></span>
+  </template>
+
   <!-- Row data for the grid (documents joined to their parent commitment),
        serialized so the client module (which imports ag-grid-community) hydrates
        without a second fetch. -->
@@ -109,6 +120,8 @@ const categoryFilters = [
   import '@esa/ecology/esa-chip-group';
   import { withBase } from '../../lib/base';
   import { gridDateFormatter as dateFmt, asGridDate as asDate, escGridHtml as esc, wireDataGrid } from '../shared/grid-chrome';
+  import { saveBlob } from '../../lib/placeholder-pdf';
+  import { placeholderFor } from '../../lib/placeholder-file';
 
   type Commitment = {
     number: string; title: string; source: string;
@@ -129,6 +142,12 @@ const categoryFilters = [
     // esa-chip-group stays the single control surface.
     let categoryValue = '';
 
+    // Seeded documents have no real file behind them (static prototype), so a
+    // download is a placeholder of the right kind — see placeholder-file.ts.
+    const downloadButtonHTML = root
+      .querySelector<HTMLTemplateElement>('[data-crs-docs-action-templates]')
+      ?.content.querySelector('[data-action-template="download"]')?.outerHTML ?? '';
+
     // Only title/filename/commitment-title feed quick search (Document category
     // has its own chip filter) — defaultColDef opts every column out, the three
     // opt back in.
@@ -143,6 +162,14 @@ const categoryFilters = [
       csvFileName: '2020-crs-commitment-documents.csv',
       suppressCellFocus: true,
       columnDefs: [
+        {
+          // Every row is an uploaded document (pending due dates are filtered
+          // out server-side); the filename guard is just defensive. Sized for
+          // the one icon button plus the cell's side padding.
+          headerName: 'Actions', colId: 'actions', minWidth: 90, width: 90, flex: 0,
+          sortable: false, resizable: false,
+          cellRenderer: (p: { data: DocRow }) => (p.data?.filename ? downloadButtonHTML : ''),
+        },
         {
           headerName: 'Due date', field: 'dueDate', colId: 'dueDate', minWidth: 120,
           cellDataType: 'date',
@@ -199,6 +226,13 @@ const categoryFilters = [
         },
       ],
       gridOptions: {
+        onCellClicked: (event) => {
+          if (event.column.getColId() !== 'actions') return;
+          const target = (event.event as MouseEvent | null)?.target as HTMLElement | null;
+          const doc = event.data as DocRow | undefined;
+          if (!doc?.filename || !target?.closest('[data-action-template="download"]')) return;
+          saveBlob(placeholderFor(doc.filename, `${doc.title} — ${doc.commitmentNumber}`), doc.filename);
+        },
         isExternalFilterPresent: () => categoryValue !== '',
         doesExternalFilterPass: (node) => categoryValue === '' || node.data?.category === categoryValue,
       },

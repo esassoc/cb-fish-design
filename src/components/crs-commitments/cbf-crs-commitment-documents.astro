@@ -268,8 +268,8 @@ const hasDocuments = documents.length > 0;
     wireDataGrid,
   } from '../shared/grid-chrome';
   import { toISODate, isoToUSDate } from '../../lib/dates';
-  import { makePlaceholderPdf, saveBlob } from '../../lib/placeholder-pdf';
-  import { makePlaceholderXlsx } from '../../lib/placeholder-xlsx';
+  import { saveBlob } from '../../lib/placeholder-pdf';
+  import { placeholderFor } from '../../lib/placeholder-file';
 
   interface DocRow {
     commitmentNumber: string; dueDate?: string; category: string; type: string;
@@ -330,11 +330,7 @@ const hasDocuments = documents.length > 0;
       if (!doc.filename) return;
       const uploaded = uploadedFiles.get(doc);
       if (uploaded) { saveBlob(uploaded, doc.filename); return; }
-      const subtitle = `${doc.title} — ${commitmentNumber}`;
-      const blob = /\.xlsx?$/i.test(doc.filename)
-        ? makePlaceholderXlsx(doc.filename.replace(/\.[^.]+$/, '').slice(0, 31), [[doc.filename], [subtitle]])
-        : makePlaceholderPdf(doc.filename, subtitle);
-      saveBlob(blob, doc.filename);
+      saveBlob(placeholderFor(doc.filename, `${doc.title} — ${commitmentNumber}`), doc.filename);
     }
 
     function actionButtonHTML(action: 'download' | 'edit' | 'upload' | 'delete'): string {
