@@ -1,0 +1,1 @@
+import{m as e}from"./placeholder-pdf.DwGcxgg4.js";import{m as a}from"./placeholder-xlsx.AvEC7LZz.js";function p(r,o){return/\.xlsx?$/i.test(r)?a(r.replace(/\.[^.]+$/,"").slice(0,31),[[r],[o]]):e(r,o)}export{p};
