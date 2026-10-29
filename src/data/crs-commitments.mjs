@@ -576,7 +576,13 @@ export function findCommitment(number) {
  *   commitmentNumber: string; dueDate?: string;
  *   category: 'Commitment Deliverable' | 'BiOp Reporting Requirement' | 'Commitment Supporting Document';
  *   type: string; title: string; description: string; filename?: string; uploadDate?: string; uploadUser?: string;
+ *   isRecurring?: true;
  * }} CrsDocument
+ *
+ * @typedef {{
+ *   commitmentNumber: string; title: string; firstDueDate: string; repeatYears: number;
+ *   description: string; type: string; category: CrsDocument['category'];
+ * }} CrsRecurringRule
  */
 
 // Documents reference their parent commitment by number rather than duplicating
@@ -587,16 +593,22 @@ export function findCommitment(number) {
 // tracked due date nothing has been submitted against yet (mirrors the live
 // CBFish model, where a due date and an uploaded document are related but
 // distinct records) — used by the dashboard's per-year document indicator.
+// A dated document on a "Recurring - …" commitment carries `isRecurring: true`:
+// it's an occurrence of that commitment's one recurring due date (see
+// `recurringRules` below), so the summary page manages it as part of the series
+// rather than as a discrete due date. Undated standalone uploads never are.
 /** @type {CrsDocument[]} */
 export const documents = [
   {
     commitmentNumber: 'CRS-Com-4', dueDate: '3/1/2025', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Adult Count Summary — 2024 Migration Season',
     description: 'Ladder count totals and methodology notes for the 2024 spring and fall runs.',
     filename: 'adult-count-summary-2024.pdf', uploadDate: '2/26/2025', uploadUser: 'Renee Ashford',
   },
   {
     commitmentNumber: 'CRS-Com-4', dueDate: '3/1/2026', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Adult Count Summary — 2025 Migration Season',
     description: 'Ladder count totals and methodology notes for the 2025 spring and fall runs.',
     filename: 'adult-count-summary-2025.pdf', uploadDate: '2/24/2026', uploadUser: 'Renee Ashford',
@@ -609,6 +621,7 @@ export const documents = [
   },
   {
     commitmentNumber: 'CRS-Com-12', dueDate: '11/15/2025', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Talus Ridge Temperature Monitoring — 2025',
     description: 'Summer index-station temperature records and exceedance summary.',
     filename: 'talus-ridge-temp-2025.pdf', uploadDate: '11/10/2025', uploadUser: 'Priya Nair',
@@ -616,6 +629,7 @@ export const documents = [
   {
     // Due later this year, nothing uploaded yet — missing but not overdue.
     commitmentNumber: 'CRS-Com-12', dueDate: '11/15/2026', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Talus Ridge Temperature Monitoring — 2026',
     description: 'Summer index-station temperature records and exceedance summary.',
   },
@@ -628,11 +642,13 @@ export const documents = [
   {
     // Overdue in the current year: due earlier in 2026, nothing uploaded yet.
     commitmentNumber: 'CRS-Com-18', dueDate: '2/1/2026', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Screening Efficiency Report — 2025',
     description: 'Juvenile bypass screening efficiency estimates from the 2025 acoustic tag releases.',
   },
   {
     commitmentNumber: 'CRS-Com-31', dueDate: '2/15/2026', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Tributary Habitat Implementation — 2025',
     description: 'Project-by-project status for the Wolverine River and upper Cascade Basin habitat pipeline.',
     filename: 'tributary-habitat-2025.pdf', uploadDate: '2/10/2026', uploadUser: 'Sean Ostrander',
@@ -642,11 +658,13 @@ export const documents = [
     // yet. No filename/uploadDate/uploadUser: this due date has no document
     // attached to it yet.
     commitmentNumber: 'CRS-Com-31', dueDate: '2/15/2027', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Tributary Habitat Implementation — 2026',
     description: 'Project-by-project status for the Wolverine River and upper Cascade Basin habitat pipeline.',
   },
   {
     commitmentNumber: 'CRS-Com-33', dueDate: '2/15/2025', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Tributary Habitat Implementation Progress Report — 2024',
     description: 'Annual summary of completed and underway tributary projects.',
     filename: 'tributary-implementation-progress-2024.pdf', uploadDate: '2/12/2025', uploadUser: 'Sean Ostrander',
@@ -659,6 +677,7 @@ export const documents = [
   },
   {
     commitmentNumber: 'CRS-Com-41', dueDate: '2/1/2026', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'EHRP Implementation Plan — 2026',
     description: 'Construction and monitoring plan for the coming water year.',
     filename: 'ehrp-implementation-plan-2026.pdf', uploadDate: '1/28/2026', uploadUser: 'Dana Iverson',
@@ -678,6 +697,7 @@ export const documents = [
   {
     // Overdue: due date has passed with nothing uploaded against it.
     commitmentNumber: 'CRS-Com-52', dueDate: '9/30/2025', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Alder Creek Hatchery O&M Summary — FY2025',
     description: 'Fiscal-year O&M summary and production totals for the Alder Creek safety-net program.',
   },
@@ -689,6 +709,7 @@ export const documents = [
   },
   {
     commitmentNumber: 'CRS-Com-67', dueDate: '3/31/2026', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Avian Predation Monitoring Report — 2025',
     description: 'Colony deterrence outcomes and tagged-fish loss estimates for 2025.',
     filename: 'avian-predation-report-2025.pdf', uploadDate: '4/21/2026', uploadUser: 'Dana Iverson',
@@ -703,6 +724,59 @@ export const documents = [
 
 export function documentsFor(commitmentNumber) {
   return documents.filter((d) => d.commitmentNumber === commitmentNumber);
+}
+
+// The one recurring due date behind each commitment's `isRecurring` documents —
+// stored explicitly rather than reverse-engineered from the occurrences, since
+// seed titles don't share one pattern ("— 2024 Migration Season", "— FY2025")
+// and a single occurrence can't reveal a multi-year step. `firstDueDate` is the
+// earliest seeded occurrence (M/D/YYYY, like every other date here).
+/** @type {CrsRecurringRule[]} */
+export const recurringRules = [
+  {
+    commitmentNumber: 'CRS-Com-4', title: 'Adult Count Summary', firstDueDate: '3/1/2025', repeatYears: 1,
+    description: 'Ladder count totals and methodology notes for the spring and fall runs.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+  {
+    commitmentNumber: 'CRS-Com-12', title: 'Talus Ridge Temperature Monitoring', firstDueDate: '11/15/2025', repeatYears: 1,
+    description: 'Summer index-station temperature records and exceedance summary.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+  {
+    commitmentNumber: 'CRS-Com-18', title: 'Screening Efficiency Report', firstDueDate: '2/1/2026', repeatYears: 3,
+    description: 'Juvenile bypass screening efficiency estimates from the acoustic tag releases.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+  {
+    commitmentNumber: 'CRS-Com-31', title: 'Tributary Habitat Implementation', firstDueDate: '2/15/2026', repeatYears: 1,
+    description: 'Project-by-project status for the Wolverine River and upper Cascade Basin habitat pipeline.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+  {
+    commitmentNumber: 'CRS-Com-33', title: 'Tributary Habitat Implementation Progress Report', firstDueDate: '2/15/2025', repeatYears: 1,
+    description: 'Annual summary of completed and underway tributary projects.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+  {
+    commitmentNumber: 'CRS-Com-41', title: 'EHRP Implementation Plan', firstDueDate: '2/1/2026', repeatYears: 1,
+    description: 'Construction and monitoring plan for the coming water year.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+  {
+    commitmentNumber: 'CRS-Com-52', title: 'Alder Creek Hatchery O&M Summary', firstDueDate: '9/30/2025', repeatYears: 1,
+    description: 'Fiscal-year O&M summary and production totals for the Alder Creek safety-net program.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+  {
+    commitmentNumber: 'CRS-Com-67', title: 'Avian Predation Monitoring Report', firstDueDate: '3/31/2026', repeatYears: 1,
+    description: 'Colony deterrence outcomes and tagged-fish loss estimates.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+];
+
+export function recurringRuleFor(commitmentNumber) {
+  return recurringRules.find((r) => r.commitmentNumber === commitmentNumber) ?? null;
 }
 
 /**
