@@ -30,10 +30,15 @@ export function makePlaceholderPdf(filename: string, subtitle: string): Blob {
   return new Blob([pdf], { type: 'application/pdf' });
 }
 
-export function downloadPlaceholderPdf(filename: string, subtitle: string): void {
-  const url = URL.createObjectURL(makePlaceholderPdf(filename, subtitle));
+/** Triggers a browser download of any blob — a placeholder or a real in-session upload. */
+export function saveBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export function downloadPlaceholderPdf(filename: string, subtitle: string): void {
+  saveBlob(makePlaceholderPdf(filename, subtitle), filename);
 }
