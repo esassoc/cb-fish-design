@@ -130,25 +130,6 @@ export const METRICS: Metric[] = [
       { name: 'Northeast Oregon hatchery program', state: 'OR', value: 11600000 },
     ],
   }),
-  metric({
-    id: 'wildlife',
-    label: 'Acres of land protected for wildlife',
-    short: 'Wildlife lands',
-    unit: 'acres',
-    definition: 'Acres acquired or placed under easement to mitigate wildlife habitat lost to hydroelectric construction and inundation.',
-    total: 565000,
-    weights: { WA: 30, OR: 24, ID: 26, MT: 20 },
-    byProgram: [
-      { name: 'Fee-title acquisitions', value: 318000, description: 'Land bought outright and managed as wildlife habitat.' },
-      { name: 'Conservation easements', value: 172000, description: 'Private land kept as habitat through permanent easements.' },
-      { name: 'Long-term agreements', value: 75000, description: 'Land protected through long-term management agreements.' },
-    ],
-    projects: [
-      { name: 'North Idaho wildlife mitigation lands', state: 'ID', value: 21400 },
-      { name: 'Willamette valley wildlife lands', state: 'OR', value: 18700 },
-      { name: 'Northwest Montana mitigation lands', state: 'MT', value: 16300 },
-    ],
-  }),
 ];
 
 /** "2.1 billion", "1.06 million", "565,000", "14" — compact where it helps. */
@@ -194,7 +175,6 @@ const WORK: Record<string, string[]> = {
   habitat: ['tributary habitat restoration', 'riparian planting and fencing', 'instream structure placement', 'side-channel reconnection'],
   estuary: ['levee breach and floodplain reconnection', 'tide-gate replacement', 'tidal marsh restoration', 'culvert removal'],
   fish: ['spring Chinook hatchery operations', 'steelhead acclimation and release', 'resident trout production', 'coho reintroduction'],
-  wildlife: ['wildlife area acquisition', 'conservation easement', 'shrub-steppe habitat protection', 'wetland mitigation lands'],
 };
 
 /** Small seeded PRNG so every build produces the same sample. */
@@ -237,50 +217,12 @@ export const CONTRACTS: Record<string, ContributingContract[]> = Object.fromEntr
   METRICS.map((m, i) => [m.id, sampleContracts(m, 4211 + i * 97)]),
 );
 
-// ── Everyday-scale comparisons ──────────────────────────────────────────────
-// "An area equivalent to more than 9 times the size of Seattle" — the device
-// BPA's 2023 Fish & Wildlife Program review uses (p. 6), here computed from the
-// measure's total so it stays true when the placeholder figures are replaced.
-// Reference sizes are approximate public figures.
-export interface Equivalent {
-  /** The thing measured against, as it reads after "the size of". */
-  reference: string;
-  /** Size of one reference in the measure's unit. */
-  size: number;
-  /** Plural noun for the unit strip: "Seattles". */
-  plural: string;
-  /** How the multiple reads: "area" → "N times the size of", "per" → "N for every". */
-  kind: 'area' | 'per';
-}
-export const EQUIVALENTS: Record<string, Equivalent> = {
-  habitat: { reference: 'the city of Seattle', size: 53600, plural: 'Seattles', kind: 'area' },           // ~83.8 sq mi land area
-  estuary: { reference: 'Ann Morrison Park in Boise', size: 153, plural: 'Ann Morrison Parks', kind: 'area' }, // ~153 acres
-  fish: { reference: 'person living in the four program states', size: 15400000, plural: 'residents', kind: 'per' }, // ~15.4M people, WA+OR+ID+MT
-  wildlife: { reference: 'Siuslaw National Forest', size: 630000, plural: 'Siuslaw National Forests', kind: 'area' }, // ~630,000 acres
-};
-
-/** "about 20 times the size of the city of Seattle" / "about 136 for every person…" */
-export function equivalentPhrase(m: Metric): { multiple: number; text: string } | null {
-  const e = EQUIVALENTS[m.id];
-  if (!e) return null;
-  const x = m.total / e.size;
-  const shown = x >= 10 ? Math.round(x).toLocaleString('en-US') : x >= 1 ? x.toFixed(1).replace(/\.0$/, '') : null;
-  if (e.kind === 'per') {
-    // below one per person, keep two decimals rather than rounding to nothing
-    if (!shown) return { multiple: x, text: `about ${x.toFixed(2)} for every ${e.reference}` };
-    return { multiple: x, text: `about ${shown} for every ${e.reference}` };
-  }
-  if (!shown) return { multiple: x, text: `about ${Math.round(x * 100)}% of the size of ${e.reference}` };
-  return { multiple: x, text: `about ${shown} times the size of ${e.reference}` };
-}
-
 /** Program area each measure reports under — the "Area" column of BPA's
     "Current metrics" table (p. 7). */
 export const AREA: Record<string, string> = {
   habitat: 'Tributary habitat restoration',
   estuary: 'Estuary habitat restoration',
   fish: 'Hatchery production',
-  wildlife: 'Wildlife mitigation',
 };
 
 /** URL-hash token for a program area or state filter on /program-results:
