@@ -1,23 +1,31 @@
 ---
-// cbf-metrics-basin — homepage metrics, option "Basin map" (CBF-8287): the four
-// program states as a schematic map, shaded by the selected measure, with the
-// Columbia and Snake drawn through them. Hover or select a state to read all
-// five measures for it; the panel links to the selected measure's
-// /program-results page.
+// cbf-metrics-basin — homepage "What the program has delivered since 2005"
+// (CBF-8287): ONE card. On the right, a vertical tab list of the three
+// cumulative totals (each tab: total, label, FY25 gain). The tab panel on the
+// left is a schematic map of the four program states shaded by the selected
+// measure, with the Columbia and Snake drawn through them.
+//
+// Accessibility: the tabs follow the ARIA tabs pattern (roving tabindex,
+// Arrow Up/Down, Home/End, aria-selected, one tabpanel). The map is a visual
+// summary only (aria-hidden); a visually hidden "<measure> by state" table
+// carries every number as text, so nothing depends on colour or the picture.
+// State shades step evenly by rank, and labels flip dark on the pale states.
 //
 // The outlines are deliberately SCHEMATIC (a dozen points per state, simple
 // equirectangular projection): recognisable at a glance, light enough to inline,
 // and no tile server — so it also renders inside locked-down preview frames.
-// A real build would swap in the subbasin geometry CBFish already maps.
 //
-// bcn-lego-checked: the measure picker IS esa-button-toggle; the panel uses
-// esa-stat and esa-button. No esa- map lego exists, and the map-sow prototype's
-// map stack (live basemap tiles) is the wrong weight for a homepage summary.
-// Checked Beacon (maps there are full GIS views). States are real <button>-like
-// SVG links with keyboard focus; every value is also in the panel as text.
+// bcn-lego-checked: esa-tab-layout is the tabs lego, but its tabs are one-line
+// text labels in a horizontal strip, and these tabs carry a big total, a label
+// and a sub-line, stacked beside the panel; so this is the same ARIA tabs
+// pattern hand-wired (no tile-tab lego exists; candidate for /request-lego).
+// The screen-reader by-state list is a real <table> (caption, scoped headers) as in
+// cbf-metrics-table: ecology has no table lego. "View … data" is esa-button.
+// No esa- map lego exists; checked Beacon (maps there are full GIS views).
 import EsaButton from '@esa/ecology/esa-button.astro';
 import { METRICS, STATES, formatCompact, type StateCode } from '../../data/cbfish-home-metrics';
-import { withBase } from '../../lib/base';
+import { contractLink } from '../../lib/contract-links';
+import { latestGain } from '../../lib/series';
 import { OUTLINES, RIVERS } from '../../data/basin-geo';
 
 const S = 40, COS = Math.cos((46 * Math.PI) / 180);
@@ -28,113 +36,200 @@ const W = Math.round((125 - 103.8) * COS * S), H = Math.round((49.4 - 41.8) * S)
 const LABEL_AT: Record<StateCode, [number, number]> = { WA: [-120.4, 47.4], OR: [-120.5, 43.9], ID: [-114.6, 43.6], MT: [-109.6, 47.0] };
 
 const first = METRICS[0];
-const shareOf = (m: (typeof METRICS)[number], s: StateCode) => m.byState[s] / Math.max(...Object.values(m.byState));
-const data = METRICS.map((m) => ({ id: m.id, short: m.short, unit: m.unit, byState: m.byState }));
+// shade by rank, not raw share: four evenly spaced steps keep the states
+// distinct even when two values are close (0 = least … 1 = most)
+const shareOf = (m: (typeof METRICS)[number], s: StateCode) => {
+  const vals = Object.values(m.byState);
+  return vals.filter((v) => v < m.byState[s]).length / Math.max(vals.length - 1, 1);
+};
+const split = (n: number) => { const [value, ...word] = formatCompact(n).split(' '); return { value, word: word.join(' ') }; };
+// everything the script needs to re-label the tiles for a state
+const data = METRICS.map((m) => ({
+  id: m.id, short: m.short, unit: m.unit, label: m.label, total: m.total, byState: m.byState,
+  gain: `+${latestGain(m.cumulative).toLocaleString('en-US')} added in FY25`,
+}));
+const stateNames = Object.fromEntries(STATES.map((s) => [s.code, s.name]));
+const pct = (m: (typeof METRICS)[number], s: StateCode) => Math.round((m.byState[s] / Object.values(m.byState).reduce((x, y) => x + y, 0)) * 100);
+const unitWord = (u: string) => u.charAt(0).toUpperCase() + u.slice(1);
 ---
-<section class="cbf-metrics-basin" aria-labelledby="cbf-metrics-basin-h" data-basin data-metrics={JSON.stringify(data)}>
-  <div class="cbf-metrics-basin__head">
-    <div class="cbf-metrics-basin__intro">
-      <h2 id="cbf-metrics-basin-h" class="typography-heading-md">Results across the basin</h2>
-      <p class="typography-body-md cbf-metrics-basin__lede">Since 2005, in Idaho, Montana, Oregon, and Washington. Choose a measure, then select a state.</p>
-    </div>
-    <esa-button-toggle size="sm" label="Measure" data-basin-measure></esa-button-toggle>
-  </div>
+<section class="cbf-metrics-basin stack" data-gap="lg" aria-labelledby="cbf-metrics-basin-h" data-basin
+  data-metrics={JSON.stringify(data)} data-states={JSON.stringify(stateNames)}>
+  <h2 id="cbf-metrics-basin-h" class="typography-heading-md">What the program has delivered since 2005</h2>
 
-  <div class="cbf-metrics-basin__frame">
-    <div class="cbf-metrics-basin__map">
-      <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label="Program states">
-        {STATES.map((s) => (
-          <a href="#" class="cbf-metrics-basin__state" data-state={s.code} aria-label={s.name}
-            style={`--share: ${shareOf(first, s.code)}`}>
-            <path d={ring(OUTLINES[s.code])} />
-          </a>
-        ))}
-        <path class="cbf-metrics-basin__highlight" d={ring(OUTLINES.WA)} data-highlight aria-hidden="true" />
-        {RIVERS.map((r) => <path d={path(r)} class="cbf-metrics-basin__river" />)}
-        {STATES.map((s) => {
-          const [x, y] = px(LABEL_AT[s.code]).split(',');
-          return (
-            <g class="cbf-metrics-basin__label" transform={`translate(${x} ${y})`} data-label={s.code} aria-hidden="true">
-              <text class="cbf-metrics-basin__label-code" text-anchor="middle" y="-6">{s.code}</text>
-              <text class="cbf-metrics-basin__label-value" text-anchor="middle" y="14" data-label-value>{formatCompact(first.byState[s.code])}</text>
+  <div class="cbf-metrics-basin__card">
+    <div class="cbf-metrics-basin__tabs" role="tablist" aria-label="Measure" aria-orientation="vertical">
+      {data.map((d, i) => {
+        const t = split(d.total);
+        return (
+          <button type="button" role="tab" class="cbf-metrics-basin__tab" id={`cbf-basin-tab-${d.id}`} data-measure={d.id}
+            aria-controls="cbf-basin-panel" aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? '0' : '-1'}>
+            <span class="cbf-metrics-basin__tab-value">{t.value}<span class="cbf-metrics-basin__tab-word">{t.word ? ` ${t.word}` : ''}</span></span>
+            <span class="cbf-metrics-basin__tab-label">{d.label}</span>
+            <span class="cbf-metrics-basin__tab-sub">{d.gain}</span>
+          </button>
+        );
+      })}
+    </div>
+
+    <div class="cbf-metrics-basin__panel" id="cbf-basin-panel" role="tabpanel" aria-labelledby={`cbf-basin-tab-${first.id}`}>
+      <div class="cbf-metrics-basin__map" aria-hidden="true">
+        <svg viewBox={`0 0 ${W} ${H}`} focusable="false">
+          {STATES.map((s) => (
+            <g class="cbf-metrics-basin__state" data-state={s.code} style={`--share: ${shareOf(first, s.code)}`}>
+              <path d={ring(OUTLINES[s.code])} />
             </g>
-          );
-        })}
-      </svg>
-      <div class="cbf-metrics-basin__legend typography-body-xs" aria-hidden="true">
-        <span>Less</span><span class="cbf-metrics-basin__ramp"></span><span>More</span>
-        <span class="cbf-metrics-basin__legend-rivers"><span class="cbf-metrics-basin__river-key"></span>Columbia and Snake rivers</span>
+          ))}
+          <path class="cbf-metrics-basin__highlight" d="" data-highlight />
+          {RIVERS.map((r) => <path d={path(r.points)} class="cbf-metrics-basin__river-casing" />)}
+          {RIVERS.map((r) => <path d={path(r.points)} class={`cbf-metrics-basin__river is-${r.id}`} />)}
+          {STATES.map((s) => {
+            const [x, y] = px(LABEL_AT[s.code]).split(',');
+            return (
+              <g class="cbf-metrics-basin__label" transform={`translate(${x} ${y})`} data-label={s.code} data-tone={shareOf(first, s.code) < 0.5 ? '' : undefined}>
+                <text class="cbf-metrics-basin__label-code" text-anchor="middle" y="-6">{s.code}</text>
+                <text class="cbf-metrics-basin__label-value" text-anchor="middle" y="14" data-label-value>{formatCompact(first.byState[s.code])}</text>
+              </g>
+            );
+          })}
+        </svg>
+      </div>
+
+      <table class="cbf-metrics-basin__table visually-hidden">
+        <caption class="typography-label-md" data-caption>{first.short} by state</caption>
+        <thead>
+          <tr>
+            <th scope="col">State</th>
+            <th scope="col" class="is-num" data-unit-head>{unitWord(first.unit)}</th>
+            <th scope="col" class="is-num">Share of total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {STATES.map((s) => (
+            <tr data-row={s.code}>
+              <th scope="row">{s.name}</th>
+              <td class="is-num" data-cell-value>{first.byState[s.code].toLocaleString('en-US')}</td>
+              <td class="is-num">
+                <span data-cell-pct>{pct(first, s.code)}%</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <div class="cbf-metrics-basin__footer">
+        <div class="cbf-metrics-basin__legend typography-body-xs" aria-hidden="true">
+          <span>Less</span><span class="cbf-metrics-basin__ramp"></span><span>More</span>
+          {RIVERS.map((r) => (
+            <span class="cbf-metrics-basin__legend-river"><span class={`cbf-metrics-basin__river-key is-${r.id}`}></span>{r.name}</span>
+          ))}
+        </div>
+        <EsaButton variant="primary" appearance="outline" size="sm" {...contractLink(first.id)} iconRight="arrow-right" data-basin-open>View {first.short.toLowerCase()} data</EsaButton>
       </div>
     </div>
-
-    {STATES.map((s, i) => (
-      <aside class="cbf-metrics-basin__panel" data-panel={s.code} hidden={i !== 0} aria-live="polite">
-        <p class="cbf-metrics-basin__panel-eyebrow typography-label-xs">State results since 2005</p>
-        <h3 class="cbf-metrics-basin__panel-title">{s.name}</h3>
-        <dl class="cbf-metrics-basin__rows">
-          {METRICS.map((m) => (
-            <div class="cbf-metrics-basin__row" data-row={m.id}>
-              <dt class="typography-body-sm">{m.short}</dt>
-              <dd>
-                <span class="cbf-metrics-basin__row-value">{m.byState[s.code] ? formatCompact(m.byState[s.code]) : '—'}</span>
-              </dd>
-            </div>
-          ))}
-        </dl>
-        <EsaButton variant="primary" appearance="outline" href={withBase(`/program-results/${first.id}`)} iconRight="arrow-right" data-basin-open>View {first.short.toLowerCase()} contracts</EsaButton>
-      </aside>
-    ))}
   </div>
 </section>
 
 <style>
-  .cbf-metrics-basin { display: flex; flex-direction: column; gap: var(--spacing-500); }
-  .cbf-metrics-basin__head {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: var(--spacing-400);
+  /* land runs from a near-white sage to a deep forest sage, so shares read apart */
+  .cbf-metrics-basin {
+    --_land-light: var(--color-olive-2, #f8faf8);
+    --_land-deep: color-mix(in srgb, var(--color-grass-11, #2a7e3b) 55%, var(--color-olive-12, #1d211c));
   }
-  /* five measures don't fit a phone row: let the picker scroll on its own */
-  .cbf-metrics-basin__head > esa-button-toggle { max-width: 100%; overflow-x: auto; }
-  .cbf-metrics-basin__intro { display: flex; flex-direction: column; gap: var(--spacing-200); max-width: 60ch; }
-  .cbf-metrics-basin__lede { margin: 0; color: var(--color-content-default-secondary); }
 
-  .cbf-metrics-basin__frame {
+  /* one card: the map (tab panel) on the left, the tab list on the right.
+     DOM order stays tabs → panel, as the ARIA tabs pattern expects. */
+  .cbf-metrics-basin__card {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(16rem, 21rem);
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, 17rem);
     border: 1px solid var(--color-border-default);
-    border-radius: var(--radius-400, 12px);
+    border-radius: var(--radius-md, 0.5rem);
     overflow: hidden;
     background: var(--color-background-elevation-raised);
   }
-  .cbf-metrics-basin__map {
+  .cbf-metrics-basin__tabs {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-300);
-    padding: var(--spacing-600);
-    background:
-      radial-gradient(120% 90% at 0% 0%, var(--color-background-brand-subtle), transparent 60%),
-      var(--color-background-elevation-raised);
-    min-width: 0;
+    grid-column: 2;
+    grid-row: 1;
+    background: var(--color-background-elevation-sunken);
+    border-inline-start: 1px solid var(--color-border-default-subtle);
   }
-  .cbf-metrics-basin__map svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .cbf-metrics-basin__tab {
+    /* the three tabs share the column's height evenly */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    gap: var(--spacing-100);
+    padding: var(--spacing-500);
+    text-align: left;
+    color: inherit;
+    border-bottom: 1px solid var(--color-border-default-subtle);
+    transition: background 200ms ease;
+  }
+  .cbf-metrics-basin__tab:hover { background: var(--color-background-default-hover); }
+  .cbf-metrics-basin__tab:focus-visible { outline: 2px solid var(--color-background-brand); outline-offset: -3px; }
+  /* the selected tab opens into the panel: it takes the panel's surface and
+     covers the divider between them (no coloured stripe) */
+  .cbf-metrics-basin__tab[aria-selected='true'] {
+    background: var(--color-background-elevation-raised);
+    margin-inline-start: -1px;
+    box-shadow: 0 1px 0 var(--color-border-default-subtle), 0 -1px 0 var(--color-border-default-subtle);
+  }
+  .cbf-metrics-basin__tab-value {
+    font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
+    font-size: var(--typography-heading-lg-font-size);
+    font-weight: var(--typography-font-weight-bold, 700);
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-metrics-basin__tab[aria-selected='true'] .cbf-metrics-basin__tab-value { color: var(--color-background-brand); }
+  .cbf-metrics-basin__tab-word { font-size: var(--typography-body-lg-font-size); font-weight: var(--typography-font-weight-semibold); }
+  .cbf-metrics-basin__tab-label { font-size: var(--typography-body-sm-font-size); color: var(--color-content-default); }
+  .cbf-metrics-basin__tab[aria-selected='true'] .cbf-metrics-basin__tab-label { font-weight: var(--typography-font-weight-semibold); }
+  .cbf-metrics-basin__tab-sub { font-size: var(--typography-body-sm-font-size); color: var(--color-content-default-secondary); }
+
+  /* panel: the map with its legend and link underneath */
+  .cbf-metrics-basin__panel {
+    grid-column: 1;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--spacing-400);
+    padding: var(--spacing-500) var(--spacing-600) var(--spacing-400);
+    min-width: 0;
+    background:
+      radial-gradient(120% 90% at 0% 0%, var(--color-background-brand-subtle), transparent 55%),
+      var(--color-background-elevation-raised);
+  }
+  .cbf-metrics-basin__map { min-width: 0; }
+  /* the by-state table is for screen readers only (same pattern as cbf-metrics-table) */
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .cbf-metrics-basin__footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-300) var(--spacing-500);
+    padding-top: var(--spacing-300);
+    border-top: 1px solid var(--color-border-default-subtle);
+  }
+  .cbf-metrics-basin__map svg { width: 100%; max-width: 40rem; height: auto; display: block; overflow: visible; margin-inline: auto; }
   .cbf-metrics-basin__state path {
-    /* choropleth: mix from the palest to the deepest brand blue by share */
-    fill: color-mix(in srgb, var(--cbf-blue-700) calc(var(--share) * 85% + 12%), var(--cbf-blue-50));
+    /* land: muted sage greens (grass toned down with olive), lightest for the
+       smallest share */
+    fill: color-mix(in srgb, var(--_land-deep) calc(var(--share) * 82% + 10%), var(--_land-light));
     stroke: var(--color-background-elevation-raised);
     stroke-width: 2.5;
     stroke-linejoin: round;
-    transition: fill 420ms ease, transform 200ms ease, filter 200ms ease;
-    transform-box: fill-box;
-    transform-origin: center;
+    transition: fill 420ms ease, filter 200ms ease;
   }
-  .cbf-metrics-basin__state:hover path,
-  .cbf-metrics-basin__state:focus-visible path { filter: brightness(1.12); }
-  .cbf-metrics-basin__state:focus-visible { outline: none; }
-  /* the selected state's gold outline is a separate overlay path (see script),
-     so state links keep their DOM and tab order */
+  .cbf-metrics-basin__state:hover path { filter: brightness(1.08); }
+  /* the hovered state's gold outline is a separate overlay path (see script),
+     drawn above its neighbours */
   .cbf-metrics-basin__highlight {
     fill: none;
     stroke: var(--cbf-gold-300);
@@ -142,19 +237,32 @@ const data = METRICS.map((m) => ({ id: m.id, short: m.short, unit: m.unit, bySta
     stroke-linejoin: round;
     pointer-events: none;
   }
-  .cbf-metrics-basin__river {
+  /* water: two blues, so the Columbia and the Snake read as separate rivers */
+  .cbf-metrics-basin__river.is-columbia { --_river: var(--color-blue-12, #113264); }
+  .cbf-metrics-basin__river.is-snake { --_river: var(--color-cyan-9, #00a2c7); }
+  /* a light casing under each river lifts it off the green */
+  .cbf-metrics-basin__river-casing {
     fill: none;
-    stroke: var(--cbf-blue-200);
-    stroke-width: 3;
+    stroke: var(--color-background-elevation-raised, #fcfcfc);
+    stroke-width: 7;
     stroke-linecap: round;
     stroke-linejoin: round;
     pointer-events: none;
-    opacity: .9;
+  }
+  .cbf-metrics-basin__river {
+    fill: none;
+    stroke: var(--_river, var(--color-blue-12, #113264));
+    stroke-width: 3.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: none;
   }
   .cbf-metrics-basin__label { pointer-events: none; }
   .cbf-metrics-basin__label text { font-family: var(--typography-font-family-display, var(--typography-font-family-sans)); paint-order: stroke; stroke-width: 3px; stroke-linejoin: round; }
-  .cbf-metrics-basin__label-code { font-size: var(--typography-label-sm-font-size); font-weight: var(--typography-font-weight-semibold); letter-spacing: .08em; fill: var(--color-content-default-knockout); stroke: color-mix(in srgb, var(--cbf-blue-950) 55%, transparent); }
-  .cbf-metrics-basin__label-value { font-size: var(--typography-title-font-size); font-weight: var(--typography-font-weight-bold); fill: var(--color-content-default-knockout); stroke: color-mix(in srgb, var(--cbf-blue-950) 55%, transparent); }
+  .cbf-metrics-basin__label-code { font-size: var(--typography-label-sm-font-size); font-weight: var(--typography-font-weight-semibold); letter-spacing: .08em; fill: var(--color-content-default-knockout); stroke: color-mix(in srgb, var(--color-olive-12, #1d211c) 60%, transparent); }
+  .cbf-metrics-basin__label-value { font-size: var(--typography-title-font-size); font-weight: var(--typography-font-weight-bold); fill: var(--color-content-default-knockout); stroke: color-mix(in srgb, var(--color-olive-12, #1d211c) 60%, transparent); }
+  /* pale states take dark labels with a light halo */
+  .cbf-metrics-basin__label[data-tone] text { fill: var(--color-content-default); stroke: color-mix(in srgb, var(--color-olive-1, #fbfdfb) 80%, transparent); }
   .cbf-metrics-basin__legend {
     display: flex;
     flex-wrap: wrap;
@@ -166,104 +274,104 @@ const data = METRICS.map((m) => ({ id: m.id, short: m.short, unit: m.unit, bySta
     width: 7rem;
     height: 8px;
     border-radius: var(--radius-full);
-    background: linear-gradient(to right, color-mix(in srgb, var(--cbf-blue-700) 12%, var(--cbf-blue-50)), var(--cbf-blue-700));
+    background: linear-gradient(to right, color-mix(in srgb, var(--_land-deep) 10%, var(--_land-light)), color-mix(in srgb, var(--_land-deep) 92%, var(--_land-light)));
   }
-  .cbf-metrics-basin__legend-rivers { display: inline-flex; align-items: center; gap: var(--spacing-100); margin-left: var(--spacing-400); }
-  .cbf-metrics-basin__river-key { width: 1.5rem; height: 3px; border-radius: 2px; background: var(--cbf-blue-200); }
+  .cbf-metrics-basin__legend-river { display: inline-flex; align-items: center; gap: var(--spacing-100); margin-left: var(--spacing-300); }
+  .cbf-metrics-basin__river-key { width: 1.5rem; height: 4px; border-radius: 2px; background: var(--color-blue-12, #113264); }
+  .cbf-metrics-basin__river-key.is-snake { background: var(--color-cyan-9, #00a2c7); }
 
-  .cbf-metrics-basin__panel {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-300);
-    padding: var(--spacing-600) var(--spacing-500);
-    /* neutral divider between map and panel (not a status stripe) */
-    border-inline-start: 1px solid var(--color-border-default-subtle);
-  }
-  .cbf-metrics-basin__panel[hidden] { display: none; }
-  .cbf-metrics-basin__panel-eyebrow { margin: 0; color: var(--color-content-default-tertiary); }
-  .cbf-metrics-basin__panel-title {
-    margin: 0;
-    font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
-    font-size: var(--typography-heading-lg-font-size);
-    font-weight: var(--typography-font-weight-bold, 700);
-  }
-  .cbf-metrics-basin__rows { margin: 0 0 var(--spacing-200); display: flex; flex-direction: column; }
-  .cbf-metrics-basin__row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: baseline;
-    gap: var(--spacing-300);
-    padding: var(--spacing-300) var(--spacing-200);
-    border-bottom: 1px solid var(--color-border-default-subtle);
-    border-radius: var(--radius-200, 4px);
-    transition: background 200ms ease;
-  }
-  .cbf-metrics-basin__row dt { color: var(--color-content-default-secondary); }
-  .cbf-metrics-basin__row dd { margin: 0; text-align: right; }
-  .cbf-metrics-basin__row-value { font-size: var(--typography-body-lg-font-size); font-weight: var(--typography-font-weight-semibold); font-variant-numeric: tabular-nums; }
-  .cbf-metrics-basin__row.is-current { background: var(--color-background-brand-subtle); }
-  .cbf-metrics-basin__row.is-current dt { color: var(--color-content-default); font-weight: var(--typography-font-weight-semibold); }
-
-  @media (max-width: 860px) {
-    .cbf-metrics-basin__frame { grid-template-columns: minmax(0, 1fr); }
-    .cbf-metrics-basin__panel { border-inline-start: 0; border-top: 1px solid var(--color-border-default-subtle); }
-    .cbf-metrics-basin__map { padding: var(--spacing-400); }
+  /* narrow: the tabs sit above the panel as a compact list */
+  @media (max-width: 720px) {
+    .cbf-metrics-basin__card { grid-template-columns: minmax(0, 1fr); }
+    .cbf-metrics-basin__tabs, .cbf-metrics-basin__panel { grid-column: 1; grid-row: auto; }
+    .cbf-metrics-basin__tabs { border-inline-start: 0; border-bottom: 1px solid var(--color-border-default-subtle); }
+    .cbf-metrics-basin__tab { flex: none; justify-content: flex-start; flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: var(--spacing-300); padding: var(--spacing-300) var(--spacing-400); }
+    .cbf-metrics-basin__tab[aria-selected='true'] { margin-inline-start: 0; }
+    .cbf-metrics-basin__tab-sub { flex-basis: 100%; }
+    .cbf-metrics-basin__panel { padding: var(--spacing-400); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .cbf-metrics-basin__state path { transition: none; }
+    .cbf-metrics-basin__state path, .cbf-metrics-basin__tab { transition: none; }
   }
 </style>
 
 <script>
-  import '@esa/ecology/esa-button-toggle';
   import { formatCompact } from '../../data/cbfish-home-metrics';
 
+  type M = { id: string; short: string; unit: string; label: string; total: number; byState: Record<string, number>; gain: string };
   const root = document.querySelector<HTMLElement>('[data-basin]');
   if (root) {
-    const metrics: { id: string; short: string; unit: string; byState: Record<string, number> }[] = JSON.parse(root.dataset.metrics || '[]');
-    const toggle = root.querySelector<HTMLElement & { options: unknown[]; value: string }>('[data-basin-measure]')!;
-    const states = [...root.querySelectorAll<SVGAElement>('[data-state]')];
+    const metrics: M[] = JSON.parse(root.dataset.metrics || '[]');
+    const tabs = [...root.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+    const panel = root.querySelector<HTMLElement>('[role="tabpanel"]')!;
+    const states = [...root.querySelectorAll<SVGGElement>('[data-state]')];
+    const rows = [...root.querySelectorAll<HTMLTableRowElement>('[data-row]')]; // screen-reader table
+    const highlight = root.querySelector('[data-highlight]')!;
     let current = metrics[0];
-    let active = 'WA';
 
-    toggle.options = metrics.map((m) => ({ label: m.short, value: m.id }));
-    toggle.value = current.id;
+    // outline the hovered state on the map
+    const emphasise = (code: string | null) => {
+      const on = code ? states.find((g) => g.dataset.state === code) : null;
+      highlight.setAttribute('d', on?.querySelector('path')?.getAttribute('d') ?? '');
+    };
 
+    // shade the map and fill the table for the selected measure
     const paint = () => {
-      const max = Math.max(...Object.values(current.byState));
-      states.forEach((a) => {
-        const v = current.byState[a.dataset.state!] ?? 0;
-        a.style.setProperty('--share', String(v / max));
-        a.setAttribute('aria-label', `${a.getAttribute('aria-label')!.split(':')[0]}: ${v.toLocaleString('en-US')} ${current.unit}`);
-        const label = root.querySelector(`[data-label="${a.dataset.state}"] [data-label-value]`);
-        if (label) label.textContent = v ? formatCompact(v) : '—';
+      const vals = Object.values(current.byState);
+      const sum = vals.reduce((a, b) => a + b, 0) || 1;
+      const unit = current.unit.charAt(0).toUpperCase() + current.unit.slice(1);
+      root.querySelector('[data-caption]')!.textContent = `${current.short} by state`;
+      root.querySelector('[data-unit-head]')!.textContent = unit;
+      states.forEach((g) => {
+        const code = g.dataset.state!;
+        const v = current.byState[code] ?? 0;
+        const share = vals.filter((x) => x < v).length / Math.max(vals.length - 1, 1);
+        g.style.setProperty('--share', String(share));
+        const label = root.querySelector<SVGGElement>(`[data-label="${code}"]`);
+        if (label) {
+          label.querySelector('[data-label-value]')!.textContent = v ? formatCompact(v) : '—';
+          label.toggleAttribute('data-tone', share < 0.5);
+        }
+        const row = rows.find((r) => r.dataset.row === code);
+        if (row) {
+          const p = Math.round((v / sum) * 100);
+          row.querySelector('[data-cell-value]')!.textContent = v.toLocaleString('en-US');
+          row.querySelector('[data-cell-pct]')!.textContent = `${p}%`;
+        }
       });
-      root.querySelectorAll<HTMLElement>('[data-row]').forEach((r) => r.classList.toggle('is-current', r.dataset.row === current.id));
       root.querySelectorAll<HTMLElement>('[data-basin-open]').forEach((b) => {
-        if (b instanceof HTMLAnchorElement) b.href = b.href.replace(/program-results([\/-])[a-z]+/, `program-results$1${current.id}`);
-        (b.querySelector('.esa-button__label') ?? b).textContent = `View ${current.short.toLowerCase()} contracts`;
+        // out-of-scope links (href="#") have no measure in them to swap
+        if (b instanceof HTMLAnchorElement && !b.dataset.outOfScope) b.href = b.href.replace(/program-results([\/-])[a-z]+/, `program-results$1${current.id}`);
+        (b.querySelector('.esa-button__label') ?? b).textContent = `View ${current.short.toLowerCase()} data`;
       });
-    };
-    const activate = (code: string) => {
-      active = code;
-      states.forEach((a) => a.classList.toggle('is-active', a.dataset.state === code));
-      // trace the active state with the overlay; never move the focusable link itself
-      const on = states.find((a) => a.dataset.state === code);
-      const shape = on?.querySelector('path')?.getAttribute('d');
-      if (shape) root.querySelector('[data-highlight]')!.setAttribute('d', shape);
-      root.querySelectorAll<HTMLElement>('[data-panel]').forEach((p) => (p.hidden = p.dataset.panel !== code));
     };
 
-    toggle.addEventListener('change', (e) => {
-      current = metrics.find((m) => m.id === (e as CustomEvent).detail.value) ?? current;
+    // ARIA tabs: click or arrow keys select; roving tabindex
+    const select = (t: HTMLButtonElement, focus = false) => {
+      current = metrics.find((m) => m.id === t.dataset.measure) ?? current;
+      tabs.forEach((x) => {
+        const on = x === t;
+        x.setAttribute('aria-selected', String(on));
+        x.tabIndex = on ? 0 : -1;
+      });
+      panel.setAttribute('aria-labelledby', t.id);
+      if (focus) t.focus();
       paint();
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener('click', () => select(t));
+      t.addEventListener('keydown', (e) => {
+        const n = tabs.length;
+        const to = ({ ArrowDown: (i + 1) % n, ArrowRight: (i + 1) % n, ArrowUp: (i - 1 + n) % n, ArrowLeft: (i - 1 + n) % n, Home: 0, End: n - 1 } as Record<string, number>)[e.key];
+        if (to === undefined) return;
+        e.preventDefault();
+        select(tabs[to], true);
+      });
     });
-    states.forEach((a) => {
-      a.addEventListener('click', (e) => { e.preventDefault(); activate(a.dataset.state!); });
-      a.addEventListener('mouseenter', () => activate(a.dataset.state!));
-      a.addEventListener('focus', () => activate(a.dataset.state!));
+    states.forEach((g) => {
+      g.addEventListener('mouseenter', () => emphasise(g.dataset.state!));
+      g.addEventListener('mouseleave', () => emphasise(null));
     });
     paint();
-    activate(active);
   }
 </script>

@@ -1,0 +1,149 @@
+---
+// cbf-stat-links — a row of big, linked totals in one light panel split by
+// dividers: value in brand blue, label, optional sub-line, and a call to
+// action. Each tile is a link, so the row reads as a headline and works as a
+// menu. Used by the homepage welcome band (projects, contracts) and the
+// "What the program has delivered" band (cbf-metrics-counters).
+//
+// Values marked `count` are server-rendered at their final value (complete at
+// rest, and for no-JS readers); the script rolls them up from zero the first
+// time the row scrolls into view, unless the reader prefers reduced motion.
+//
+// bcn-lego-checked: the panel matches esa-card's surface tokens (raised
+// background, default border, radius) but is one surface split by dividers,
+// which esa-card's single body can't express; esa-stat has no link affordance
+// (wrapping it in an <a> would nest its block markup in a link). No esa- "stat
+// strip" lego exists; checked Beacon (dashboard KPIs are static esa-stat rows).
+import EsaIcon from '@esa/ecology/esa-icon.astro';
+
+export interface StatLink {
+  /** The number as displayed: "301", "1.06", "9,800". */
+  value: string;
+  /** A word after the number, set smaller: "million", "billion". */
+  word?: string;
+  label: string;
+  sub?: string;
+  /** Link attributes, spread onto the tile's <a>: at least `href` (see
+      src/lib/contract-links for out-of-scope links). */
+  link: Record<string, string>;
+  /** Visible call to action, e.g. "View data". */
+  cta: string;
+  /** Roll the value up from zero when the row first scrolls into view. */
+  count?: boolean;
+}
+interface Props {
+  items: StatLink[];
+  /** Narrowest a tile may get before the row wraps. */
+  minTile?: string;
+}
+const { items, minTile = '11rem' } = Astro.props;
+const decimals = (v: string) => (v.split('.')[1] ?? '').length;
+---
+<ul class="cbf-stat-links" style={`--tile-min: ${minTile}`} data-stat-links>
+  {items.map((s, i) => (
+    <li style={`--i: ${i}`}>
+      <a class="cbf-stat-links__item" {...s.link}>
+        <span class="cbf-stat-links__value">
+          {s.count
+            ? <span data-count={s.value.replace(/,/g, '')} data-decimals={decimals(s.value)}>{s.value}</span>
+            : <span>{s.value}</span>}
+          {s.word && <span class="cbf-stat-links__word"> {s.word}</span>}
+        </span>
+        <span class="cbf-stat-links__label">{s.label}</span>
+        {s.sub && <span class="cbf-stat-links__sub">{s.sub}</span>}
+        <span class="cbf-stat-links__cta" aria-hidden="true">{s.cta}
+          <EsaIcon name="arrow-right" size="sm" />
+        </span>
+      </a>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .cbf-stat-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(var(--tile-min), 100%), 1fr));
+    background: var(--color-background-elevation-raised);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md, 0.5rem);
+    overflow: hidden;
+  }
+  .cbf-stat-links > li {
+    display: flex;
+    /* dividers: every tile draws its own left rule; the panel's overflow
+       clips the first tile's, and wrapped rows keep theirs */
+    box-shadow: -1px 0 0 var(--color-border-default-subtle);
+  }
+  .cbf-stat-links__item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-100);
+    padding: var(--spacing-400) var(--spacing-500);
+    color: inherit;
+    text-decoration: none;
+    transition: background 160ms ease;
+    animation: cbf-stat-links-rise 520ms cubic-bezier(.2,.7,.2,1) both;
+    animation-delay: calc(var(--i) * 70ms);
+  }
+  @keyframes cbf-stat-links-rise { from { transform: translateY(8px); opacity: .001; } }
+  .cbf-stat-links__item:hover { background: var(--color-background-brand-subtle); }
+  .cbf-stat-links__item:focus-visible { outline: 2px solid var(--color-background-brand); outline-offset: -2px; }
+  .cbf-stat-links__value {
+    font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
+    font-size: var(--typography-heading-lg-font-size);
+    font-weight: var(--typography-font-weight-bold, 700);
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+    color: var(--color-background-brand);
+  }
+  .cbf-stat-links__word { font-size: var(--typography-body-lg-font-size); font-weight: var(--typography-font-weight-semibold); }
+  .cbf-stat-links__label { font-size: var(--typography-body-sm-font-size); line-height: 1.35; color: var(--color-content-default-secondary); }
+  .cbf-stat-links__sub { font-size: var(--typography-body-sm-font-size); color: var(--color-content-default-tertiary); }
+  .cbf-stat-links__cta {
+    margin-top: auto;
+    padding-top: var(--spacing-200);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-100);
+    font-size: var(--typography-label-sm-font-size);
+    font-weight: var(--typography-font-weight-semibold);
+    color: var(--color-content-link, var(--color-background-brand));
+  }
+  .cbf-stat-links__cta :global(.esa-icon) { transition: transform 160ms ease; }
+  .cbf-stat-links__item:hover .cbf-stat-links__cta :global(.esa-icon) { transform: translateX(3px); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cbf-stat-links__item { animation: none; }
+  }
+</style>
+
+<script>
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.querySelectorAll<HTMLElement>('[data-stat-links]').forEach((row) => {
+    if (calm || !('IntersectionObserver' in window) || !row.querySelector('[data-count]')) return;
+    const roll = () => {
+      row.querySelectorAll<HTMLElement>('[data-count]').forEach((el) => {
+        const target = Number(el.dataset.count);
+        const dec = Number(el.dataset.decimals || 0);
+        const t0 = performance.now();
+        const tick = (t: number) => {
+          const k = Math.min(1, (t - t0) / 1400);
+          const eased = 1 - Math.pow(1 - k, 4);
+          el.textContent = (target * eased).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+          if (k < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+    };
+    // roll once, the first time the row is mostly on screen
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some((e) => e.isIntersecting)) { roll(); io.disconnect(); }
+    }, { threshold: 0.35 });
+    io.observe(row);
+  });
+</script>

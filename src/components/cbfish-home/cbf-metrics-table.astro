@@ -14,6 +14,7 @@
 // every value is in a cell as text.
 import { METRICS, AREA, LAST_FY, formatFull } from '../../data/cbfish-home-metrics';
 import { withBase } from '../../lib/base';
+import { contractLink } from '../../lib/contract-links';
 import { sparkPath } from '../../lib/series';
 
 const YEARS = [LAST_FY, LAST_FY - 1, LAST_FY - 2, LAST_FY - 3, LAST_FY - 4];
@@ -33,7 +34,7 @@ const rows = METRICS.map((m) => ({
   <div class="cbf-metrics-table__head">
     <div class="cbf-metrics-table__intro">
       <h2 id="cbf-metrics-table-h" class="typography-heading-md">Current metrics</h2>
-      <p class="typography-body-md cbf-metrics-table__lede">One year's results next to the running total since 2005. Choose a fiscal year; select a row for its contracts.</p>
+      <p class="typography-body-md cbf-metrics-table__lede">One year's results next to the running total since 2005. Choose a fiscal year; select a row for its data.</p>
     </div>
     <esa-button-toggle size="sm" label="Fiscal year" data-year-pick></esa-button-toggle>
   </div>
@@ -55,7 +56,7 @@ const rows = METRICS.map((m) => ({
           <tr data-row data-by-year={JSON.stringify(byYear)} data-total={m.total} data-unit={m.unit}>
             <th scope="row" class="cbf-metrics-table__area">{area}</th>
             <td>
-              <a class="cbf-metrics-table__link" href={withBase(`/program-results/${m.id}`)}>{m.label}</a>
+              <a class="cbf-metrics-table__link" {...contractLink(m.id)}>{m.label}</a>
             </td>
             <td class="is-num">
               <span class="cbf-metrics-table__year" data-year-value>{formatFull(byYear[LAST_FY])}</span>

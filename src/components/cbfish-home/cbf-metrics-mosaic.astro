@@ -23,6 +23,7 @@
 import { METRICS, STATES, filterToken, formatCompact, type StateCode } from '../../data/cbfish-home-metrics';
 import { stateSymbolPath } from '../../data/basin-geo';
 import { withBase } from '../../lib/base';
+import { contractLink } from '../../lib/contract-links';
 
 type Part = { label: string; value: number; pct: number; description?: string; token: string; symbol: string };
 
@@ -140,7 +141,7 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
   <div class="cbf-metrics-mosaic__head">
     <div class="cbf-metrics-mosaic__intro">
       <h2 id="cbf-metrics-mosaic-h" class="typography-heading-md">Where the results come from</h2>
-      <p class="typography-body-md cbf-metrics-mosaic__lede">Each block is sized by its share of the total since 2005. Select a block to see the contracts behind it.</p>
+      <p class="typography-body-md cbf-metrics-mosaic__lede">Each block is sized by its share of the total since 2005. Select a block to see the data behind it.</p>
     </div>
     <div class="cbf-metrics-mosaic__pickers">
       <esa-button-toggle size="sm" label="Measure" data-pick-measure></esa-button-toggle>
@@ -157,14 +158,14 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
             return (
               <li class="cbf-metrics-mosaic__cell" style={`${b.style}; --i: ${i}`}>
                 <a class="cbf-metrics-mosaic__block"
-                  href={`${withBase(`/program-results/${v.m.id}`)}#${b.token}`}>
+                  {...contractLink(v.m.id, b.token)}>
                   <svg class:list={['cbf-metrics-mosaic__symbol', v.split === 'state' && 'is-outline']} viewBox="0 0 100 100" aria-hidden="true" focusable="false" set:html={b.symbol} />
                   <span class="cbf-metrics-mosaic__pct">{Math.round(b.pct)}%</span>
                   <span class="cbf-metrics-mosaic__name">{b.label}</span>
                   {b.description && <span class="cbf-metrics-mosaic__desc">{b.description}</span>}
                   <span class="cbf-metrics-mosaic__foot">
                     {v.split === 'program' && <span class="cbf-metrics-mosaic__value">{formatCompact(b.value)} {v.m.unit}</span>}
-                    <span class="cbf-metrics-mosaic__cta" aria-hidden="true">View contracts →</span>
+                    <span class="cbf-metrics-mosaic__cta" aria-hidden="true">View data →</span>
                   </span>
                 </a>
               </li>

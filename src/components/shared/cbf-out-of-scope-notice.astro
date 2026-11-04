@@ -1,0 +1,24 @@
+---
+// cbf-out-of-scope-notice — turns a click on any `[data-out-of-scope]` link on
+// the page into a short "…is outside this prototype" notice, instead of
+// navigating. Mount once per page that has such links (src/lib/contract-links
+// builds them). Same notice and wording the contract tabs use for tabs this
+// prototype doesn't build (cbf-contract-tabs), so a reviewer reads it as
+// prototype scope, not a broken link.
+//
+// bcn-lego-checked: the notice IS esa-snackbar-container (info). The only
+// script is the delegated click handler.
+---
+<esa-snackbar-container data-snackbar data-out-of-scope-notice></esa-snackbar-container>
+
+<script>
+  import '@esa/ecology/esa-snackbar-container';
+
+  document.addEventListener('click', (e) => {
+    const link = (e.target as Element).closest<HTMLElement>('[data-out-of-scope]');
+    if (!link) return;
+    e.preventDefault();
+    const sb = document.querySelector('[data-snackbar]') as (HTMLElement & { info?: (m: string, o?: unknown) => void }) | null;
+    sb?.info?.(link.dataset.outOfScope || 'This is outside this prototype.', { duration: 4000 });
+  });
+</script>
