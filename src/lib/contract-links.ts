@@ -1,5 +1,6 @@
 /**
- * Where the homepage's "View contracts" links go.
+ * Where the homepage's "View data" links go, and how out-of-scope
+ * destinations (projects, contracts) render.
  *
  * The /program-results/<measure> contract pages are a saved DRAFT: built and
  * deployed, reachable by URL, but out of scope for the homepage prototype for
@@ -14,8 +15,13 @@ export const CONTRACT_PAGES_LIVE = false;
 
 export const OUT_OF_SCOPE_CONTRACTS = 'The data behind this result is outside this prototype.';
 
-/** Attributes for a link to an out-of-scope destination. */
-export const outOfScope = (message: string) => ({ href: '#', 'data-out-of-scope': message });
+/**
+ * Attributes for an out-of-scope destination. No href, so there is nothing to
+ * navigate to or open in a new tab: on esa-button that renders a native
+ * <button>; on a custom <a> the role/tabindex make it a keyboard-operable
+ * button. cbf-out-of-scope-notice handles the click / Enter / Space.
+ */
+export const outOfScope = (message: string): Record<string, string> => ({ role: 'button', tabindex: '0', 'data-out-of-scope': message });
 
 /**
  * Link attributes for a measure's contracts page, optionally pre-filtered by a

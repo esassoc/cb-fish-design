@@ -1,7 +1,7 @@
 ---
 // cbf-out-of-scope-notice — turns a click on any `[data-out-of-scope]` link on
 // the page into a short "…is outside this prototype" notice, instead of
-// navigating. Mount once per page that has such links (src/lib/contract-links
+// navigating (the elements carry no href — see src/lib/contract-links). Mount once per page that has such links (src/lib/contract-links
 // builds them). Same notice and wording the contract tabs use for tabs this
 // prototype doesn't build (cbf-contract-tabs), so a reviewer reads it as
 // prototype scope, not a broken link.
@@ -14,11 +14,28 @@
 <script>
   import '@esa/ecology/esa-snackbar-container';
 
-  document.addEventListener('click', (e) => {
-    const link = (e.target as Element).closest<HTMLElement>('[data-out-of-scope]');
-    if (!link) return;
-    e.preventDefault();
+  const notify = (el: HTMLElement) => {
     const sb = document.querySelector('[data-snackbar]') as (HTMLElement & { info?: (m: string, o?: unknown) => void }) | null;
-    sb?.info?.(link.dataset.outOfScope || 'This is outside this prototype.', { duration: 4000 });
+    sb?.info?.(el.dataset.outOfScope || 'This is outside this prototype.', { duration: 4000 });
+  };
+  const target = (e: Event) => (e.target as Element | null)?.closest?.<HTMLElement>('[data-out-of-scope]') ?? null;
+
+  document.addEventListener('click', (e) => {
+    const el = target(e);
+    if (!el) return;
+    e.preventDefault();
+    notify(el);
+  });
+  // native <button>s already fire click on Enter/Space; role="button" anchors don't
+  document.addEventListener('keydown', (e) => {
+    const el = target(e);
+    if (!el || el instanceof HTMLButtonElement || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault();
+    notify(el);
   });
 </script>
+
+<style>
+  /* href-less anchors lose the pointer cursor; keep the affordance */
+  :global([data-out-of-scope]) { cursor: pointer; }
+</style>

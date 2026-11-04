@@ -2,12 +2,7 @@
 // cbf-stat-links — a row of big, linked totals in one light panel split by
 // dividers: value in brand blue, label, optional sub-line, and a call to
 // action. Each tile is a link, so the row reads as a headline and works as a
-// menu. Used by the homepage welcome band (projects, contracts) and the
-// "What the program has delivered" band (cbf-metrics-counters).
-//
-// Values marked `count` are server-rendered at their final value (complete at
-// rest, and for no-JS readers); the script rolls them up from zero the first
-// time the row scrolls into view, unless the reader prefers reduced motion.
+// menu. Used by the homepage welcome band (projects, contracts).
 //
 // bcn-lego-checked: the panel matches esa-card's surface tokens (raised
 // background, default border, radius) but is one surface split by dividers,
@@ -28,8 +23,6 @@ export interface StatLink {
   link: Record<string, string>;
   /** Visible call to action, e.g. "View data". */
   cta: string;
-  /** Roll the value up from zero when the row first scrolls into view. */
-  count?: boolean;
 }
 interface Props {
   items: StatLink[];
@@ -37,16 +30,13 @@ interface Props {
   minTile?: string;
 }
 const { items, minTile = '11rem' } = Astro.props;
-const decimals = (v: string) => (v.split('.')[1] ?? '').length;
 ---
-<ul class="cbf-stat-links" style={`--tile-min: ${minTile}`} data-stat-links>
+<ul class="cbf-stat-links" style={`--tile-min: ${minTile}`}>
   {items.map((s, i) => (
     <li style={`--i: ${i}`}>
       <a class="cbf-stat-links__item" {...s.link}>
         <span class="cbf-stat-links__value">
-          {s.count
-            ? <span data-count={s.value.replace(/,/g, '')} data-decimals={decimals(s.value)}>{s.value}</span>
-            : <span>{s.value}</span>}
+          <span>{s.value}</span>
           {s.word && <span class="cbf-stat-links__word"> {s.word}</span>}
         </span>
         <span class="cbf-stat-links__label">{s.label}</span>
@@ -122,28 +112,3 @@ const decimals = (v: string) => (v.split('.')[1] ?? '').length;
   }
 </style>
 
-<script>
-  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  document.querySelectorAll<HTMLElement>('[data-stat-links]').forEach((row) => {
-    if (calm || !('IntersectionObserver' in window) || !row.querySelector('[data-count]')) return;
-    const roll = () => {
-      row.querySelectorAll<HTMLElement>('[data-count]').forEach((el) => {
-        const target = Number(el.dataset.count);
-        const dec = Number(el.dataset.decimals || 0);
-        const t0 = performance.now();
-        const tick = (t: number) => {
-          const k = Math.min(1, (t - t0) / 1400);
-          const eased = 1 - Math.pow(1 - k, 4);
-          el.textContent = (target * eased).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
-          if (k < 1) requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
-      });
-    };
-    // roll once, the first time the row is mostly on screen
-    const io = new IntersectionObserver((entries) => {
-      if (entries.some((e) => e.isIntersecting)) { roll(); io.disconnect(); }
-    }, { threshold: 0.35 });
-    io.observe(row);
-  });
-</script>

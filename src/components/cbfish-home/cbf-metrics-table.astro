@@ -13,7 +13,6 @@
 // plain tables). Sparklines are decorative and aria-hidden;
 // every value is in a cell as text.
 import { METRICS, AREA, LAST_FY, formatFull } from '../../data/cbfish-home-metrics';
-import { withBase } from '../../lib/base';
 import { contractLink } from '../../lib/contract-links';
 import { sparkPath } from '../../lib/series';
 
@@ -146,7 +145,6 @@ const rows = METRICS.map((m) => ({
   .cbf-metrics-table__spark-cell { width: 9rem; }
   .cbf-metrics-table__spark { display: block; width: 8rem; height: 28px; overflow: visible; }
   .cbf-metrics-table__spark path { fill: none; stroke: var(--color-background-brand); stroke-width: 2; vector-effect: non-scaling-stroke; }
-  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 </style>
 
 <script>

@@ -1,13 +1,13 @@
 ---
 // cbf-metrics-basin — homepage "What the program has delivered since 2005"
 // (CBF-8287): ONE card. On the right, a vertical tab list of the three
-// cumulative totals (each tab: total, label, FY25 gain). The tab panel on the
+// cumulative totals (each tab: total, label, latest fiscal year's gain). The tab panel on the
 // left is a schematic map of the four program states shaded by the selected
 // measure, with the Columbia and Snake drawn through them.
 //
 // Accessibility: the tabs follow the ARIA tabs pattern (roving tabindex,
 // Arrow Up/Down, Home/End, aria-selected, one tabpanel). The map is a visual
-// summary only (aria-hidden); a visually hidden "<measure> by state" table
+// summary only (aria-hidden); a visually hidden (hub .visually-hidden) "<measure> by state" table
 // carries every number as text, so nothing depends on colour or the picture.
 // State shades step evenly by rank, and labels flip dark on the pale states.
 //
@@ -23,7 +23,7 @@
 // cbf-metrics-table: ecology has no table lego. "View … data" is esa-button.
 // No esa- map lego exists; checked Beacon (maps there are full GIS views).
 import EsaButton from '@esa/ecology/esa-button.astro';
-import { METRICS, STATES, formatCompact, type StateCode } from '../../data/cbfish-home-metrics';
+import { METRICS, STATES, LAST_FY, formatCompact, type StateCode } from '../../data/cbfish-home-metrics';
 import { contractLink } from '../../lib/contract-links';
 import { latestGain } from '../../lib/series';
 import { OUTLINES, RIVERS } from '../../data/basin-geo';
@@ -46,14 +46,13 @@ const split = (n: number) => { const [value, ...word] = formatCompact(n).split('
 // everything the script needs to re-label the tiles for a state
 const data = METRICS.map((m) => ({
   id: m.id, short: m.short, unit: m.unit, label: m.label, total: m.total, byState: m.byState,
-  gain: `+${latestGain(m.cumulative).toLocaleString('en-US')} added in FY25`,
+  gain: `+${latestGain(m.cumulative).toLocaleString('en-US')} added in FY${String(LAST_FY).slice(-2)}`,
 }));
-const stateNames = Object.fromEntries(STATES.map((s) => [s.code, s.name]));
 const pct = (m: (typeof METRICS)[number], s: StateCode) => Math.round((m.byState[s] / Object.values(m.byState).reduce((x, y) => x + y, 0)) * 100);
 const unitWord = (u: string) => u.charAt(0).toUpperCase() + u.slice(1);
 ---
 <section class="cbf-metrics-basin stack" data-gap="lg" aria-labelledby="cbf-metrics-basin-h" data-basin
-  data-metrics={JSON.stringify(data)} data-states={JSON.stringify(stateNames)}>
+  data-metrics={JSON.stringify(data)}>
   <h2 id="cbf-metrics-basin-h" class="typography-heading-md">What the program has delivered since 2005</h2>
 
   <div class="cbf-metrics-basin__card">
@@ -206,8 +205,6 @@ const unitWord = (u: string) => u.charAt(0).toUpperCase() + u.slice(1);
       var(--color-background-elevation-raised);
   }
   .cbf-metrics-basin__map { min-width: 0; }
-  /* the by-state table is for screen readers only (same pattern as cbf-metrics-table) */
-  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .cbf-metrics-basin__footer {
     display: flex;
     flex-wrap: wrap;
