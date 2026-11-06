@@ -3,18 +3,19 @@
 // after the table on p. 7 of BPA's 2023 Fish & Wildlife Program review (Area ·
 // Description · FY 2023 · Since 2005). Fresher than the print version: pick the
 // fiscal year for the single-year column, each row carries that year's share
-// of the running total (as text) and a 20-year trend line, and the whole row links to the
+// of the running total (as text) and five small bars for the last five fiscal
+// years (oldest → newest, the selected year in brand blue, so you can see how
+// it compares with its neighbours), and the whole row links to the
 // measure's /program-results page.
 //
 // bcn-lego-checked: a real <table> (caption, scoped headers) — ecology has no
 // table lego, and AG Grid is for browsing records, not four summary rows. The
 // year picker IS esa-button-toggle; links are plain anchors in the description
 // cell, stretched over the whole row (::before), so any cell opens it. Checked Beacon (summary tables are
-// plain tables). Sparklines are decorative and aria-hidden;
-// every value is in a cell as text.
+// plain tables). The bars are aria-hidden; each bar cell carries the same five
+// years as visually hidden text, so every value is in a cell as text.
 import { METRICS, AREA, LAST_FY, formatFull } from '../../data/cbfish-home-metrics';
 import { contractLink } from '../../lib/contract-links';
-import { sparkPath } from '../../lib/series';
 
 const YEARS = [LAST_FY, LAST_FY - 1, LAST_FY - 2, LAST_FY - 3, LAST_FY - 4];
 const fy = (y: number) => `FY${String(y).slice(2)}`;
@@ -27,9 +28,14 @@ const rows = METRICS.map((m) => ({
   area: AREA[m.id],
   byYear: Object.fromEntries(YEARS.map((y) => [y, gainIn(m.cumulative, y)])),
 }));
+// bars (and the year picker) run oldest → newest, each bar scaled to the
+// row's best of the five years
+const BAR_YEARS = [...YEARS].reverse();
+const barHeight = (byYear: Record<number, number>, y: number) =>
+  Math.round((byYear[y] / Math.max(...BAR_YEARS.map((x) => byYear[x]), 1)) * 100);
 ---
 <section class="cbf-metrics-table" aria-labelledby="cbf-metrics-table-h" data-metrics-table
-  data-years={JSON.stringify(YEARS.map((y) => ({ label: fy(y), value: String(y) })))}>
+  data-years={JSON.stringify(BAR_YEARS.map((y) => ({ label: fy(y), value: String(y) })))}>
   <div class="cbf-metrics-table__head">
     <div class="cbf-metrics-table__intro">
       <h2 id="cbf-metrics-table-h" class="typography-heading-md">Current metrics</h2>
@@ -47,7 +53,7 @@ const rows = METRICS.map((m) => ({
           <th scope="col">Description</th>
           <th scope="col" class="is-num"><span data-year-head>{fy(LAST_FY)}</span></th>
           <th scope="col" class="is-num">Since 2005</th>
-          <th scope="col"><span class="visually-hidden">Trend, FY05 to FY25</span></th>
+          <th scope="col" class="cbf-metrics-table__bars-head">Last 5 years</th>
         </tr>
       </thead>
       <tbody>
@@ -64,10 +70,13 @@ const rows = METRICS.map((m) => ({
               </span>
             </td>
             <td class="is-num cbf-metrics-table__total">{formatFull(m.total)}</td>
-            <td class="cbf-metrics-table__spark-cell">
-              <svg class="cbf-metrics-table__spark" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true">
-                <path d={sparkPath(m.cumulative, 100, 24)} />
-              </svg>
+            <td class="cbf-metrics-table__bars-cell">
+              <span class="visually-hidden">{BAR_YEARS.map((y) => `${fy(y)}: ${formatFull(byYear[y])}`).join(', ')}</span>
+              <span class="cbf-metrics-table__bars" aria-hidden="true">
+                {BAR_YEARS.map((y) => (
+                  <span class="cbf-metrics-table__bar" data-bar={y} data-on={y === LAST_FY ? '' : undefined} style={`--h: ${barHeight(byYear, y)}%`}></span>
+                ))}
+              </span>
             </td>
           </tr>
         ))}
@@ -142,9 +151,23 @@ const rows = METRICS.map((m) => ({
     font-weight: var(--typography-font-weight-bold, 700);
     color: var(--color-background-brand);
   }
-  .cbf-metrics-table__spark-cell { width: 9rem; }
-  .cbf-metrics-table__spark { display: block; width: 8rem; height: 28px; overflow: visible; }
-  .cbf-metrics-table__spark path { fill: none; stroke: var(--color-background-brand); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  .cbf-metrics-table__bars-cell { width: 8rem; }
+  .cbf-metrics-table__bars-head { white-space: nowrap; }
+  /* five bars, bottom-aligned; the selected year is brand, the rest neutral */
+  .cbf-metrics-table__bars { display: flex; align-items: flex-end; gap: 4px; height: 32px; }
+  .cbf-metrics-table__bar {
+    flex: 1;
+    height: max(var(--h), 3px);
+    border-radius: 2px 2px 0 0;
+    /* gray-9 is 3.2:1 on the raised row, so the unselected bars clear the
+       3:1 non-text contrast minimum (WCAG 1.4.11) */
+    background: var(--color-gray-9);
+    transition: background 200ms ease;
+  }
+  .cbf-metrics-table__bar[data-on] { background: var(--color-background-brand); }
+  @media (prefers-reduced-motion: reduce) {
+    .cbf-metrics-table__bar { transition: none; }
+  }
 </style>
 
 <script>
@@ -155,7 +178,8 @@ const rows = METRICS.map((m) => ({
     const pick = root.querySelector<HTMLElement & { options: unknown[]; value: string }>('[data-year-pick]')!;
     const years: { label: string; value: string }[] = JSON.parse(root.dataset.years || '[]');
     pick.options = years;
-    pick.value = years[0].value;
+    // oldest → newest, like the bars; the latest year starts selected
+    pick.value = years[years.length - 1].value;
     pick.addEventListener('change', (e) => {
       const y = (e as CustomEvent).detail.value as string;
       root.querySelector('[data-year-head]')!.textContent = years.find((o) => o.value === y)!.label;
@@ -164,6 +188,7 @@ const rows = METRICS.map((m) => ({
         const total = Number(row.dataset.total);
         row.querySelector('[data-year-value]')!.textContent = v.toLocaleString('en-US');
         row.querySelector('[data-year-share]')!.textContent = `${((v / total) * 100).toFixed(1)}% of total`;
+        row.querySelectorAll<HTMLElement>('[data-bar]').forEach((b) => b.toggleAttribute('data-on', b.dataset.bar === y));
       });
     });
   }

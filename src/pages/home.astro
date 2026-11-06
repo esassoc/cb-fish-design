@@ -20,7 +20,6 @@ import CbfMetricsMosaic from '../components/cbfish-home/cbf-metrics-mosaic.astro
 import CbfMetricsTable from '../components/cbfish-home/cbf-metrics-table.astro';
 import CbfAppFooter from '../components/cbfish-home/cbf-app-footer.astro';
 import { withBase } from '../lib/base';
-import { outOfScope } from '../lib/contract-links';
 import CbfOutOfScopeNotice from '../components/shared/cbf-out-of-scope-notice.astro';
 
 const hero = {
@@ -38,9 +37,9 @@ const overview = {
   intro:
     'Bonneville Power Administration funds work to protect and restore the fish and wildlife affected by hydroelectric dams on the Columbia River and its tributaries. CBFish tracks that work — the projects, the contracts, and what they achieve — across Idaho, Montana, Oregon, and Washington.',
   stats: [
-    // project and contract lists are outside this prototype (see contract-links)
-    { value: '301', label: 'Projects', sub: 'Active this fiscal year', cta: 'View data', link: outOfScope('Project data is outside this prototype.') },
-    { value: '633', label: 'Contracts', sub: 'Active this fiscal year', cta: 'View data', link: outOfScope('Contract data is outside this prototype.') },
+    // the same lists the live cbfish.org homepage opens
+    { value: '301', label: 'Projects', sub: 'Active this fiscal year', cta: 'View data', link: { href: 'https://www.cbfish.org/Project.mvc/Index' } },
+    { value: '633', label: 'Contracts', sub: 'Active this fiscal year', cta: 'View data', link: { href: 'https://www.cbfish.org/Contract.mvc/Index' } },
   ],
 };
 
