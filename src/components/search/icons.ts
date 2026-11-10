@@ -10,7 +10,7 @@ export type IconName =
   | 'search' | 'x' | 'chevron-right' | 'chevron-down'
   | 'folder' | 'file-text' | 'users' | 'book'
   | 'history' | 'hat-glasses' | 'rotate-ccw'
-  | 'circle-user' | 'layout-dashboard' | 'circle-gauge'
+  | 'circle-user' | 'layout-dashboard'
   | 'circle-check' | 'circle-half' | 'circle-dashed'
   | 'building-2' | 'mail' | 'phone' | 'smartphone' | 'map-pin' | 'download';
 
@@ -29,7 +29,6 @@ const ICONS: Record<IconName, string> = {
   'circle-user': '<circle cx="12" cy="12" r="10"/><path d="M18 20a6 6 0 0 0-12 0"/><circle cx="12" cy="10" r="4"/>',
   'layout-dashboard': '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
   // QA's Dashboard glyph (2026-11-10): a round gauge with its needle.
-  'circle-gauge': '<path d="M15.6 2.7a10 10 0 1 0 5.7 5.7"/><circle cx="12" cy="12" r="2"/><path d="M13.4 10.6 19 5"/>',
   // Phase status on the contract lifecycle track: finished, in progress, not started.
   'circle-check': '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
   // Lucide "contrast": a circle half filled (the fill is set where it is used).
