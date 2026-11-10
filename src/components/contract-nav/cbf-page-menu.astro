@@ -3,12 +3,14 @@
  * cbf-page-menu — the list of a tab's pages inside its menu panel (contract header
  * nav, directions A and B). Each page is a real link, so it opens in a new tab and
  * reads as navigation to a screen reader; the page you are on carries aria-current.
- * Pages a role cannot see carry data-hide-for, which cbf-role-gate hides.
+ * Pages a role cannot see carry data-hide-for, and pages a stage lacks carry
+ * data-hide-stages; cbf-role-gate hides both.
  */
 interface Page {
   slug: string;
   label: string;
   hideFor?: string[];
+  hideStages?: string[];
 }
 interface Props {
   pages: Page[];
@@ -24,7 +26,7 @@ const { pages, current, base, layout = 'list' } = Astro.props;
 
 <ul class:list={['cbf-page-menu', 'typography-body-md', `cbf-page-menu--${layout}`]}>
   {pages.map((p) => (
-    <li data-hide-for={(p.hideFor ?? []).join(' ') || undefined}>
+    <li data-hide-for={(p.hideFor ?? []).join(' ') || undefined} data-hide-stages={(p.hideStages ?? []).join(' ') || undefined}>
       <a href={`${base}/${p.slug}`} aria-current={p.slug === current ? 'page' : undefined}>{p.label}</a>
     </li>
   ))}

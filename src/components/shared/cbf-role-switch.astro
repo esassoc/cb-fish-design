@@ -1,41 +1,18 @@
 ---
 /*
- * cbf-role-switch — the prototype's role lens.
+ * cbf-role-switch — the prototype's role lens: who is reading this screen.
  *
- * WHY IT EXISTS: some screens in cbfish are ONE document read by two people with
- * different powers — a vendor who enters a Line Item Budget, and the BPA COR who
- * reviews it and sends it back. In production the role comes from who you signed
- * in as; in a prototype nobody signs in, so the role has to be switchable, and it
- * has to be OBVIOUSLY a prototype device rather than app chrome someone might
- * mistake for a real cbfish control. The dashed frame that says so is
- * cbf-prototype-strip, which this is slotted into — it stopped living here the
- * moment a second device needed the same frame on a screen with no lens at all.
+ * Some cbfish screens are ONE document read by people with different powers (a vendor
+ * who enters a Line Item Budget and the BPA COR who reviews it; a system admin, a COR
+ * and a contractor on a contract). In production the role comes from who signed in;
+ * here it is switchable. Sets <html data-cbf-role="…">; components reveal their own
+ * half with `html[data-cbf-role='…']` selectors. Fires `cbf-role:change` with
+ * { role, switched } on document.
  *
- * HOW IT WORKS: the role is a single attribute on the document element —
- * `<html data-cbf-role="<role key>">` (vendor|cor on the LIB pages). Both roles are SERVER-RENDERED into the
- * page; components reveal their own half with `:global(html[data-cbf-role='cor'])`
- * selectors. That means switching is instant and lossless: the budget the vendor
- * just typed is still there when you come back from the COR's side, which is the
- * whole point of watching a round trip.
- *
- * An `is:inline` script sets the attribute at parse time, BEFORE the page paints,
- * so a reload in the COR lens never flashes the vendor screen first.
- *
- * EVENT CONTRACT (on `document`)
- *   dispatch  cbf-role:change   detail: { role }   // one of the `roles` keys
- *   Fired after the attribute is set, on mount and on every switch, so components
- *   that need to do more than swap CSS (repaint a read-only mirror, re-run a
- *   gate) can react without reading this component's DOM.
- *
- * bcn-lego-checked: the control itself IS esa-button-toggle — the segmented
- * one-of-N lego, which is exactly a role lens (checked the full catalog: no
- * esa-role-switch / esa-impersonate / esa-view-as exists; esa-radio-group is the
- * same choice worn as a form field, and this is a view control, not a form value;
- * esa-select hides the alternative behind a click, which defeats a device whose
- * job is to advertise that a second view exists). Everything else — the frame,
- * the caption — belongs to cbf-prototype-strip. Beacon is not cloned on this
- * machine.
+ * The control is the shared cbf-lens-switch; this file only supplies the role
+ * defaults (the Line Item Budget pair) and the `role` URL parameter.
  */
+import CbfLensSwitch from './cbf-lens-switch.astro';
 import { ROLES, ROLE_KEY } from '../../data/lib-review.mjs';
 
 interface Role {
@@ -61,134 +38,16 @@ const {
     who: r.key === 'cor' ? `${r.who} — reviewing this budget for BPA` : `${r.who} — entering this budget`,
   })),
   storageKey = ROLE_KEY,
+  initial,
 } = Astro.props;
-const initial = Astro.props.initial ?? roles[0].key;
-const keys = roles.map((r) => r.key);
 ---
 
-<!-- Set the lens before first paint, so a reload in the COR view never flashes
-     the vendor screen. Inline on purpose: a module script is deferred. -->
-<script is:inline define:vars={{ initial, storageKey, keys }}>
-  (() => {
-    let role = initial;
-    try {
-      const url = new URL(window.location.href);
-      const q = url.searchParams.get('role');
-      const stored = window.sessionStorage?.getItem(storageKey);
-      role = keys.includes(q) ? q : keys.includes(stored) ? stored : initial;
-    } catch {
-      /* private mode / no storage — the default lens still works */
-    }
-    document.documentElement.dataset.cbfRole = role;
-  })();
-</script>
-
-<!-- The control and, under it, WHO the reader currently is — the lens says which
-     side of the document you are on, and the name says who that is on this
-     contract. Both belong to the lens, so both travel with it into whatever
-     frame the page slots it into. -->
-<div
-  class="cbf-role-switch stack"
-  data-gap="3xs"
-  data-role-switch
-  data-roles={JSON.stringify(roles)}
-  data-storage-key={storageKey}
->
-  <esa-button-toggle
-    class="cbf-role-switch__control"
-    size="sm"
-    label="Viewing as"
-    data-role-control
-  ></esa-button-toggle>
-  <p class="cbf-role-switch__who" data-role-who></p>
-</div>
-
-<script>
-  import '@esa/ecology/esa-button-toggle';
-
-  type Role = { key: string; label: string; who: string; name?: string };
-
-  const root = document.querySelector<HTMLElement>('[data-role-switch]');
-  if (root) {
-    const roles: Role[] = JSON.parse(root.dataset.roles || '[]');
-    const storageKey = root.dataset.storageKey || '';
-    const control = root.querySelector<HTMLElement & { options: any[]; value: string }>(
-      '[data-role-control]',
-    );
-    const who = root.querySelector<HTMLElement>('[data-role-who]');
-
-    const current = () => {
-      const r = document.documentElement.dataset.cbfRole;
-      return roles.some((x) => x.key === r) ? (r as string) : roles[0]?.key;
-    };
-
-    if (control) {
-      control.options = roles.map((r) => ({ label: r.label, value: r.key }));
-      control.value = current();
-    }
-
-    const apply = (role: string, switched = false) => {
-      document.documentElement.dataset.cbfRole = role;
-      // A ?role= in the URL wins on load; once the reader switches, keep the URL in
-      // step so a reload stays on the lens they chose.
-      if (switched) {
-        const url = new URL(window.location.href);
-        if (url.searchParams.has('role')) {
-          url.searchParams.set('role', role);
-          history.replaceState(history.state, '', url);
-        }
-      }
-      const name = roles.find((r) => r.key === role)?.name;
-      if (name) {
-        document.querySelectorAll<HTMLElement>('[data-cbf-user-name]').forEach((el) => {
-          el.textContent = name;
-        });
-      }
-      try {
-        window.sessionStorage?.setItem(storageKey, role);
-      } catch {
-        /* ignore */
-      }
-      if (who) who.textContent = roles.find((r) => r.key === role)?.who ?? '';
-      document.dispatchEvent(new CustomEvent('cbf-role:change', { detail: { role, switched } }));
-    };
-
-    root.addEventListener('change', (e: Event) => {
-      const el = e.target as HTMLElement & { value?: string };
-      if (!el?.dataset || !('roleControl' in el.dataset)) return;
-      if (el.value && roles.some((r) => r.key === el.value)) apply(el.value, true);
-    });
-
-    // Announce the lens the inline script already set, so every listener starts
-    // from the same state whichever order the scripts happen to run in.
-    apply(current());
-  }
-</script>
-
-<style>
-  /* No frame of its own — cbf-prototype-strip is the frame. This only lines the
-     control up with the name underneath it, at the end of the strip's row. */
-  .cbf-role-switch {
-    --align: flex-end;
-    flex: none;
-  }
-  .cbf-role-switch__who {
-    margin: 0;
-    font-size: 14px;
-    font-weight: var(--typography-font-weight-medium);
-    color: var(--color-content-default);
-    text-align: end;
-  }
-  /* Phones: the strip stacks its devices, so the lens may shrink and its name line
-     wrap instead of pushing the page wider than the screen. */
-  @media (max-width: 47.99rem) {
-    .cbf-role-switch {
-      flex: 1 1 auto;
-      min-inline-size: 0;
-      --align: flex-start;
-    }
-    .cbf-role-switch__who {
-      text-align: start;
-    }
-  }
-</style>
+<CbfLensSwitch
+  options={roles}
+  label="Viewing as"
+  attr="cbf-role"
+  param="role"
+  storageKey={storageKey}
+  event="cbf-role:change"
+  initial={initial}
+/>

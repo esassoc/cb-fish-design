@@ -1,26 +1,40 @@
 ---
 /*
  * cbf-record-header — the identity block at the top of a contract (later, project)
- * page: the record's number, its title as the page H1, and its status. The way to
- * move between the record's pages is slotted underneath, so both nav directions
- * share one identity block.
+ * page: the record's number, its title as the page H1 in the spoke's page-title navy,
+ * and its status inline right of the title (Andy's round 2 calls 5 and 6, logged in
+ * docs/private/briefs/cbfish-nav-header/rounds.md). Record-level menus go
+ * in the `actions` slot at the end of the title row; the way through the record's
+ * pages is slotted underneath.
+ *
+ * The `status` slot takes the badge(s), so a page can render one per stage lens.
+ *
+ * bcn-lego-checked: not esa-page-header. It takes the title as a string prop and
+ * renders the H1 alone, with no slot beside it, so a status badge cannot sit inline
+ * after the title; its actions slot is right-aligned, a screen-width away from the
+ * name it describes. Checked Beacon (record pages put status in the right rail).
+ * Typography is the heading-lg and label-md composites, layout is the cluster and
+ * repel primitives; the only CSS here is the navy title color and the spacing.
  */
-import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
-import EsaBadge from '@esa/ecology/esa-badge.astro';
-
 interface Props {
   /** "Contract CR-387553" */
   eyebrow: string;
   title: string;
-  status: string;
 }
-const { eyebrow, title, status } = Astro.props;
+const { eyebrow, title } = Astro.props;
 ---
 
-<div class="cbf-record-header stack" data-gap="md">
-  <EsaPageHeader eyebrow={eyebrow} title={title} as="div">
-    <EsaBadge slot="actions" value={status} variant="success" size="md" />
-  </EsaPageHeader>
+<div class="cbf-record-header stack" data-gap="lg">
+  <div class="repel" data-gap="md">
+    <div class="stack" data-gap="2xs">
+      <p class="cbf-record-header__eyebrow typography-label-md">{eyebrow}</p>
+      <div class="cluster" data-gap="sm">
+        <h1 class="cbf-record-header__title typography-heading-lg">{title}</h1>
+        <slot name="status" />
+      </div>
+    </div>
+    <slot name="actions" />
+  </div>
   <slot />
 </div>
 
@@ -28,5 +42,15 @@ const { eyebrow, title, status } = Astro.props;
   /* Room between the nav's rule and the page it leads to. */
   .cbf-record-header {
     padding-block-end: var(--spacing-400);
+  }
+  .cbf-record-header__eyebrow {
+    margin: 0;
+    color: var(--color-content-default-secondary);
+  }
+  /* The spoke's page-title navy, the same token cbf-page-heading uses on /search and
+     /publications. */
+  .cbf-record-header__title {
+    margin: 0;
+    color: var(--color-background-default-knockout);
   }
 </style>

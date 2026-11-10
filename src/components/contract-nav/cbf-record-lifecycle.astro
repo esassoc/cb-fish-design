@@ -1,104 +1,127 @@
 ---
 /*
- * cbf-record-lifecycle — contract header nav, direction B: lifecycle and timeline.
+ * cbf-record-lifecycle — record header nav, direction B: lifecycle and timeline.
  *
- * Overview and Files are always there, so they sit at the two ends as plain menus.
- * Between them, the four phases a contract moves through (Setup, Review and approve,
- * Report and invoice, Closeout) run as a track that shows where this contract is
- * now. The phase it is in is open: its pages sit in a row under the track, one click
- * each. Every other phase is a menu, so any page is still two clicks away.
+ * The phases a record moves through run as a full-width track that shows where it
+ * is now. Every phase, the current one included, is a menu of its pages, so any page
+ * is two clicks away (Andy, 2026-11-10, on the round 2 page row: "I don't think I want
+ * that in particular. I think it's fine to not have that."). Each phase's status
+ * icon says finished, in progress or not started. The always-there menus (Overview,
+ * Files) sit on the title row (cbf-record-ends).
+ *
+ * Which phase is current comes from the stage lens (<html data-cbf-stage>). The
+ * server renders the default stage; the script below re-applies the track when the
+ * stage or role lens moves.
+ *
+ * Data comes in as props (tabs, lifecycle, stages), so a project page can pass its own.
  */
-import EsaNavDropdown from '@esa/ecology/esa-nav-dropdown.astro';
-import CbfPageMenu from './cbf-page-menu.astro';
 import CbfLifecycleTrack from './cbf-lifecycle-track.astro';
-import CbfRoleGate from './cbf-role-gate.astro';
-import { CONTRACT_TABS, LIFECYCLE, findPage, tabHiddenFor } from '../../data/contract-nav.mjs';
 
+interface Page {
+  slug: string;
+  label: string;
+  hideFor?: string[];
+  hideStages?: string[];
+}
+interface Tab {
+  key: string;
+  label: string;
+  pages: Page[];
+}
+interface Phase {
+  tab: string;
+  state: 'done' | 'current' | 'next';
+  when: string;
+  progress?: number;
+}
+interface Stage {
+  key: string;
+  /** tab key → [state, percent elapsed or null, date range] */
+  phases: Record<string, [string, number | null, string]>;
+}
 interface Props {
+  tabs: Tab[];
+  lifecycle: Phase[];
+  stages: Stage[];
+  /** Roles that see no page in a tab. */
+  hiddenFor: (tab: Tab) => string[];
+  /** Stages in which a tab has no page. */
+  hiddenStages: (tab: Tab) => string[];
+  /** The role the server renders for. */
+  role: string;
   current: string;
   base: string;
+  /** "Contract lifecycle" */
+  label: string;
 }
-const { current, base } = Astro.props;
+const { tabs, lifecycle, stages, hiddenFor, hiddenStages, role, current, base, label } = Astro.props;
 
-const tab = (key: string) => CONTRACT_TABS.find((t) => t.key === key)!;
-const overview = tab('overview');
-const files = tab('files');
-const phases = LIFECYCLE.map((ph) => {
-  const t = tab(ph.tab);
-  return { ...ph, key: t.key, label: t.label, pages: t.pages, hiddenFor: tabHiddenFor(t) };
+const phases = lifecycle.map((ph) => {
+  const t = tabs.find((x) => x.key === ph.tab)!;
+  const hf = hiddenFor(t);
+  return {
+    ...ph,
+    key: t.key,
+    label: t.label,
+    pages: t.pages,
+    hiddenFor: hf,
+    hiddenStages: hiddenStages(t),
+    name: (hf.includes(role) ? 'text' : 'menu') as 'menu' | 'text',
+  };
 });
-const now = phases.find((ph) => ph.state === 'current')!;
-const here = (t: { pages: { slug: string }[] }) => t.pages.some((p) => p.slug === current);
 ---
 
-<nav class="cbf-record-lifecycle" aria-label="Contract pages" data-record-nav>
-  <div class="cbf-record-lifecycle__end" data-here={here(overview) ? '' : undefined}>
-    <EsaNavDropdown label={overview.label}>
-      <CbfPageMenu pages={overview.pages} current={current} base={base} />
-    </EsaNavDropdown>
-  </div>
-
-  <CbfLifecycleTrack phases={phases} current={current} base={base} label="Contract lifecycle" />
-
-  <div class="cbf-record-lifecycle__end" data-here={here(files) ? '' : undefined}>
-    <EsaNavDropdown label={files.label} align="end">
-      <CbfPageMenu pages={files.pages} current={current} base={base} />
-    </EsaNavDropdown>
-  </div>
-
-  <div class="cbf-record-lifecycle__open" aria-label={now.label} role="group">
-    <CbfPageMenu pages={now.pages} current={current} base={base} layout="row" />
-  </div>
+<nav
+  class="cbf-record-lifecycle stack"
+  data-gap="md"
+  aria-label={label}
+  data-record-nav
+  data-lifecycle
+  data-stages={JSON.stringify(stages)}
+>
+  <CbfLifecycleTrack phases={phases} current={current} base={base} label={label} />
 </nav>
 
-<CbfRoleGate pageHideFor={findPage(current)?.hideFor} fallback={`${base}/summary`} />
+<script>
+  type Stage = { key: string; phases: Record<string, [string, number | null, string]> };
+  const STATE_LABEL: Record<string, string> = { done: 'Finished', current: 'Current phase', next: 'Not started' };
+
+  document.querySelectorAll<HTMLElement>('[data-lifecycle]').forEach((root) => {
+    const stages: Stage[] = JSON.parse(root.dataset.stages || '[]');
+    const html = document.documentElement;
+
+    const apply = () => {
+      const stage = stages.find((s) => s.key === html.dataset.cbfStage);
+      const role = html.dataset.cbfRole ?? '';
+      root.querySelectorAll<HTMLElement>('[data-phase]').forEach((li) => {
+        const key = li.dataset.phase ?? '';
+        if (stage) {
+          const [state, progress, when] = stage.phases[key] ?? ['next', null, ''];
+          li.dataset.state = state;
+          const whenEl = li.querySelector('[data-when-text]');
+          if (whenEl && when) whenEl.textContent = when;
+          if (progress != null) li.style.setProperty('--phase-progress', `${progress}%`);
+          else li.style.removeProperty('--phase-progress');
+          if (state === 'current') li.setAttribute('aria-current', 'step');
+          else li.removeAttribute('aria-current');
+          const sr = li.querySelector('[data-state-label]');
+          if (sr) sr.textContent = `${STATE_LABEL[state] ?? ''}, `;
+        }
+        const noPages =
+          (li.dataset.hiddenFor ?? '').split(' ').includes(role) ||
+          (li.dataset.hiddenStages ?? '').split(' ').includes(html.dataset.cbfStage ?? '');
+        li.dataset.name = noPages ? 'text' : 'menu';
+      });
+    };
+
+    apply();
+    document.addEventListener('cbf-stage:change', apply);
+    document.addEventListener('cbf-role:change', apply);
+  });
+</script>
 
 <style>
   .cbf-record-lifecycle {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    column-gap: var(--spacing-600);
     border-bottom: 1px solid var(--color-border-default);
-  }
-  /* Overview and Files line up with the phase names, not the bar above them. */
-  .cbf-record-lifecycle__end {
-    align-self: start;
-    padding-block-start: calc(4px + var(--spacing-200));
-    color: var(--color-content-default-secondary);
-  }
-  .cbf-record-lifecycle__end:first-child {
-    margin-inline-start: calc(-1 * var(--spacing-300));
-  }
-  .cbf-record-lifecycle__end[data-here] {
-    color: var(--color-content-default);
-  }
-  .cbf-record-lifecycle__end[data-here] :global(summary) {
-    box-shadow: inset 0 -2px 0 var(--color-background-brand);
-    border-radius: 0;
-  }
-  /* The open phase's pages: a sunken band under the track, the drawer the current
-     phase has pulled open. Starts where the track starts. */
-  .cbf-record-lifecycle__open {
-    grid-column: 2 / -1;
-    margin-block-start: var(--spacing-300);
-    margin-inline-start: calc(-1 * var(--spacing-300));
-    padding-inline: var(--spacing-100);
-    background: var(--color-background-elevation-sunken);
-    border-radius: var(--radius-100) var(--radius-100) 0 0;
-  }
-  @media (max-width: 63.99rem) {
-    .cbf-record-lifecycle {
-      grid-template-columns: auto auto;
-      justify-content: space-between;
-    }
-    .cbf-record-lifecycle > :global(.cbf-lifecycle-track) {
-      grid-column: 1 / -1;
-      grid-row: 2;
-      margin-block-start: var(--spacing-300);
-    }
-    .cbf-record-lifecycle__open {
-      grid-column: 1 / -1;
-      margin-inline-start: 0;
-    }
   }
 </style>

@@ -11,8 +11,7 @@
 import EsaNavDropdown from '@esa/ecology/esa-nav-dropdown.astro';
 import EsaButton from '@esa/ecology/esa-button.astro';
 import CbfPageMenu from './cbf-page-menu.astro';
-import CbfRoleGate from './cbf-role-gate.astro';
-import { CONTRACT_TABS, findPage, tabHiddenFor } from '../../data/contract-nav.mjs';
+import { CONTRACT_TABS, tabHiddenFor, tabHiddenStages } from '../../data/contract-nav.mjs';
 
 interface Props {
   /** Slug of the page being viewed. */
@@ -29,7 +28,12 @@ const { current, base } = Astro.props;
       const here = tab.pages.some((p) => p.slug === current);
       const hideFor = tabHiddenFor(tab).join(' ') || undefined;
       return (
-        <li class="cbf-record-menus__tab" data-here={here ? '' : undefined} data-hide-for={hideFor}>
+        <li
+          class="cbf-record-menus__tab"
+          data-here={here ? '' : undefined}
+          data-hide-for={hideFor}
+          data-hide-stages={tabHiddenStages(tab).join(' ') || undefined}
+        >
           {tab.pages.length === 1 ? (
             <EsaButton variant="chrome" href={`${base}/${tab.pages[0].slug}`} current={here}>
               {tab.label}
@@ -45,7 +49,6 @@ const { current, base } = Astro.props;
   </ul>
 </nav>
 
-<CbfRoleGate pageHideFor={findPage(current)?.hideFor} fallback={`${base}/summary`} />
 
 <style>
   .cbf-record-menus {
@@ -82,7 +85,7 @@ const { current, base } = Astro.props;
   }
   /* Narrow screens wrap the tabs instead of scrolling them: a scrolling row would
      clip the menus that open from it. */
-  @media (max-width: 47.99rem) {
+  @media (max-width: 63.99rem) {
     .cbf-record-menus__tabs {
       flex-wrap: wrap;
       row-gap: 0;

@@ -1,6 +1,6 @@
 ---
 // /contract-nav/{a|b}/{page} — the contract header nav prototype (brief: cbfish-nav-header).
-// One route per contract page per direction: 27 pages × 2. Only the header differs
+// One route per contract page per direction (25 on this record). Only the header differs
 // between A and B; the body below it is a placeholder, because the pages themselves
 // do not change.
 import BaseLayout from '../../../layouts/BaseLayout.astro';
@@ -13,9 +13,31 @@ import CbfRecordHeader from '../../../components/contract-nav/cbf-record-header.
 import CbfRecordMenus from '../../../components/contract-nav/cbf-record-menus.astro';
 import CbfRecordLifecycle from '../../../components/contract-nav/cbf-record-lifecycle.astro';
 import CbfRecordPageTitle from '../../../components/contract-nav/cbf-record-page-title.astro';
+import CbfRecordEnds from '../../../components/contract-nav/cbf-record-ends.astro';
+import CbfRoleGate from '../../../components/contract-nav/cbf-role-gate.astro';
+import CbfPortfolioReturn from '../../../components/contract-nav/cbf-portfolio-return.astro';
+import CbfLensSwitch from '../../../components/shared/cbf-lens-switch.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import { withBase } from '../../../lib/base';
-import { ALL_PAGES, DIRECTIONS, NAV_ROLES, NAV_ROLE_KEY, contract, findPage } from '../../../data/contract-nav.mjs';
+import {
+  ALL_PAGES,
+  ARRIVALS,
+  CONTRACT_TABS,
+  DEFAULT_STAGE,
+  DIRECTIONS,
+  LIFECYCLE,
+  NAV_ARRIVAL_KEY,
+  NAV_ROLES,
+  NAV_ROLE_KEY,
+  NAV_STAGE_KEY,
+  PORTFOLIO,
+  STAGES,
+  contract,
+  findPage,
+  tabHiddenFor,
+  tabHiddenStages,
+} from '../../../data/contract-nav.mjs';
 
 export function getStaticPaths() {
   return DIRECTIONS.flatMap((d) => ALL_PAGES.map((p) => ({ params: { direction: d.key, page: p.slug } })));
@@ -36,38 +58,88 @@ const crumbs = [
   { label: contract.number, href: `${base}/summary` },
   { label: page.label },
 ];
+const ends = CONTRACT_TABS.filter((t) => t.key === 'overview' || t.key === 'files');
+const stageKeys = STAGES.map((st) => st.key);
 const views = DIRECTIONS.map((d) => ({ key: d.key, label: d.label, href: withBase(`/contract-nav/${d.key}/${slug}`) }));
 ---
 <!-- manifest:
   layout: esa-container > cbf-prototype-strip + cbf-app-panel
   sections:
-    - nav              -> cbf-public-nav          (shared)
-    - page frame       -> esa-container           (1920px max, holds the strip and the panel)
-    - prototype strip  -> cbf-prototype-strip     (shared; direction switch + role lens)
-    - direction switch -> cbf-route-switch        (shared; A menus ⇄ B lifecycle, same page)
-    - role lens        -> cbf-role-switch         (shared; system admin, BPA COR, contractor)
-    - contract frame   -> cbf-app-panel           (shared; breadcrumb strip)
-    - record header    -> cbf-record-header       (number, title, status; nav slotted under)
-    - nav, A           -> cbf-record-menus        (one menu per tab)
-    - nav, B           -> cbf-record-lifecycle    (Overview · phase track · Files)
-    - page body        -> cbf-record-page-title   (placeholder: the page's name only)
+    - site nav            -> cbf-public-nav          (shared)
+    - page frame          -> esa-container           (1920px max)
+    - prototype controls  -> cbf-prototype-strip     (shared; floats bottom right, holds:)
+        - direction switch  -> cbf-route-switch      (shared; A menus | B lifecycle, same page)
+        - role lens         -> cbf-role-switch       (shared; admin, BPA COR, contractor)
+        - stage lens        -> cbf-lens-switch       (shared; setup, in review, issued, closed)
+        - arrival lens      -> cbf-lens-switch       (shared; direct or from a portfolio)
+    - contract frame      -> cbf-app-panel           (shared; breadcrumb strip; holds:)
+    - portfolio return    -> cbf-portfolio-return    (temporary back link under the breadcrumbs, arrival from a portfolio only)
+    - record header       -> cbf-record-header       (number, navy H1, status badge per stage; holds:)
+        - always-there (B)  -> cbf-record-ends       (Overview, Files on the title row)
+        - record nav (A)    -> cbf-record-menus      (one menu per tab)
+        - record nav (B)    -> cbf-record-lifecycle  (phase track + the open phase's pages)
+    - role gate           -> cbf-role-gate           (hides what the lens can't see)
+    - page title          -> cbf-record-page-title   (body placeholder)
 -->
 <BaseLayout title={`${contract.number}: ${page.label} — Columbia Basin Fish & Wildlife Program`}>
   <CbfPublicNav />
 
   <main class="cbf-page">
     <EsaContainer maxWidth="1920px">
-      <CbfPrototypeStrip note="One contract, two header directions. Contract dates and status are mock.">
-        <CbfRouteSwitch views={views} active={direction} label="Header" />
-        <CbfRoleSwitch roles={NAV_ROLES} storageKey={NAV_ROLE_KEY} />
-      </CbfPrototypeStrip>
-
       <CbfAppPanel crumbs={crumbs} overflow="visible">
-        <CbfRecordHeader eyebrow={`Contract ${contract.number}`} title={contract.title} status={contract.status}>
-          {direction === 'a' ? <CbfRecordMenus current={slug} base={base} /> : <CbfRecordLifecycle current={slug} base={base} />}
+        <CbfPortfolioReturn name={PORTFOLIO.name} href={withBase('/home')} />
+        <CbfRecordHeader eyebrow={`Contract ${contract.number}`} title={contract.title}>
+          {STAGES.map((st) => (
+            <span slot="status" data-hide-stages={stageKeys.filter((k) => k !== st.key).join(' ')}>
+              <EsaBadge value={st.status} variant={st.variant} size="md" />
+            </span>
+          ))}
+          {direction === 'b' && (
+            <CbfRecordEnds slot="actions" tabs={ends} current={slug} base={base} label="Contract overview and files" />
+          )}
+          {direction === 'a' ? (
+            <CbfRecordMenus current={slug} base={base} />
+          ) : (
+            <CbfRecordLifecycle
+              tabs={CONTRACT_TABS}
+              lifecycle={LIFECYCLE}
+              stages={STAGES}
+              hiddenFor={tabHiddenFor}
+              hiddenStages={tabHiddenStages}
+              role={NAV_ROLES[0].key}
+              current={slug}
+              base={base}
+              label="Contract lifecycle"
+            />
+          )}
         </CbfRecordHeader>
+        <CbfRoleGate pageHideFor={page.hideFor} pageHideStages={page.hideStages} fallback={`${base}/summary`} />
         <CbfRecordPageTitle title={page.label} />
       </CbfAppPanel>
+
+      {/* Last in the source, so the prototype controls come after the page in tab order;
+          the panel floats bottom right. */}
+      <CbfPrototypeStrip placement="float" note="Contract dates and status are mock.">
+        <CbfRouteSwitch views={views} active={direction} label="Header" />
+        <CbfRoleSwitch roles={NAV_ROLES} storageKey={NAV_ROLE_KEY} />
+        <CbfLensSwitch
+          options={STAGES.map((st) => ({ key: st.key, label: st.label }))}
+          label="Contract stage"
+          attr="cbf-stage"
+          param="stage"
+          storageKey={NAV_STAGE_KEY}
+          event="cbf-stage:change"
+          initial={DEFAULT_STAGE}
+        />
+        <CbfLensSwitch
+          options={ARRIVALS}
+          label="Arrived from"
+          attr="cbf-arrival"
+          param="from"
+          storageKey={NAV_ARRIVAL_KEY}
+          event="cbf-arrival:change"
+        />
+      </CbfPrototypeStrip>
     </EsaContainer>
   </main>
 </BaseLayout>

@@ -1,51 +1,72 @@
 ---
 /*
- * cbf-role-gate — hides what the current role lens cannot see.
+ * cbf-role-gate — hides what the current lenses rule out.
  *
- * cbf-role-switch sets <html data-cbf-role="…">. Any element carrying
- * data-hide-for="cor contractor" disappears for those roles. Server-rendered for
- * every role, so switching lenses is instant. Rendered once per page, by the nav
- * component that owns gated items.
+ * The lenses (cbf-lens-switch) set attributes on <html>:
+ *   data-cbf-role     admin | cor | contractor   → hides [data-hide-for~=role]
+ *   data-cbf-stage    setup | review | issued | closed → hides [data-hide-stages~=stage]
+ *   data-cbf-arrival  direct | portfolio         → [data-only-arrival=portfolio] shows
+ *                                                    only on arrival from a portfolio
+ * Everything is server-rendered for every lens, so switching is instant.
  *
- * If the lens switches to a role that cannot see the page itself, the page goes to
- * `fallback` (the record's summary), as production would refuse it.
+ * If a lens switches to a role or stage that cannot see the page itself, the page
+ * goes to `fallback` (the record's summary), as production would refuse it.
  *
  * Also closes a menu when another opens, on Esc, on a click outside, and when focus
- * leaves it: the esa-nav-dropdown lego is a native <details> and leaves those to the
- * page.
+ * leaves it, and nudges an opening menu's panel back inside the viewport when its
+ * aligned edge would put it off screen (narrow widths, long page names): the
+ * esa-nav-dropdown lego is a native <details> and leaves those to the page.
  */
 interface Props {
   /** Roles that cannot see the page being viewed. */
   pageHideFor?: string[];
-  /** Where to send a role that cannot see this page. */
+  /** Stages in which the page being viewed does not exist. */
+  pageHideStages?: string[];
+  /** Where to send a lens that cannot see this page. */
   fallback: string;
 }
-const { pageHideFor = [], fallback } = Astro.props;
+const { pageHideFor = [], pageHideStages = [], fallback } = Astro.props;
 ---
 
-<span hidden data-role-gate data-page-hide-for={pageHideFor.join(' ')} data-fallback={fallback}></span>
+<span
+  hidden
+  data-role-gate
+  data-page-hide-for={pageHideFor.join(' ')}
+  data-page-hide-stages={pageHideStages.join(' ')}
+  data-fallback={fallback}
+></span>
 
 <style is:global>
   html[data-cbf-role='admin'] [data-hide-for~='admin'],
   html[data-cbf-role='cor'] [data-hide-for~='cor'],
-  html[data-cbf-role='contractor'] [data-hide-for~='contractor'] {
+  html[data-cbf-role='contractor'] [data-hide-for~='contractor'],
+  html[data-cbf-stage='setup'] [data-hide-stages~='setup'],
+  html[data-cbf-stage='review'] [data-hide-stages~='review'],
+  html[data-cbf-stage='issued'] [data-hide-stages~='issued'],
+  html[data-cbf-stage='closed'] [data-hide-stages~='closed'],
+  html:not([data-cbf-arrival='portfolio']) [data-only-arrival='portfolio'] {
     display: none !important;
   }
 </style>
 
 <script>
   const gate = document.querySelector<HTMLElement>('[data-role-gate]');
-  const blocked = (gate?.dataset.pageHideFor ?? '').split(' ').filter(Boolean);
-  const leaveIfBlocked = (role?: string) => {
-    if (gate && role && blocked.includes(role)) {
-      const url = new URL(gate.dataset.fallback ?? '/', window.location.href);
-      const q = new URL(window.location.href).searchParams.get('role');
-      if (q) url.searchParams.set('role', q);
-      window.location.replace(url);
-    }
+  const list = (s?: string) => (s ?? '').split(' ').filter(Boolean);
+  const blockedRoles = list(gate?.dataset.pageHideFor);
+  const blockedStages = list(gate?.dataset.pageHideStages);
+  const html = document.documentElement;
+
+  const leaveIfBlocked = () => {
+    if (!gate) return;
+    if (!blockedRoles.includes(html.dataset.cbfRole ?? '') && !blockedStages.includes(html.dataset.cbfStage ?? '')) return;
+    const here = new URL(window.location.href);
+    const url = new URL(gate.dataset.fallback ?? '/', here);
+    here.searchParams.forEach((v, k) => url.searchParams.set(k, v));
+    window.location.replace(url);
   };
-  leaveIfBlocked(document.documentElement.dataset.cbfRole);
-  document.addEventListener('cbf-role:change', (e) => leaveIfBlocked((e as CustomEvent<{ role: string }>).detail?.role));
+  leaveIfBlocked();
+  document.addEventListener('cbf-role:change', leaveIfBlocked);
+  document.addEventListener('cbf-stage:change', leaveIfBlocked);
 
   const menus = () => Array.from(document.querySelectorAll<HTMLDetailsElement>('[data-record-nav] details'));
 
@@ -57,9 +78,25 @@ const { pageHideFor = [], fallback } = Astro.props;
       menus().forEach((d) => {
         if (d !== opened) d.open = false;
       });
+      fit(opened);
     },
     true,
   );
+
+  // Keep an open panel on screen: shift it by however far it overflows either edge.
+  const GUTTER = 8;
+  function fit(d: HTMLDetailsElement) {
+    const panel = d.querySelector<HTMLElement>('.esa-nav-dropdown__panel');
+    if (!panel) return;
+    panel.style.translate = '';
+    panel.style.maxWidth = `${window.innerWidth - 2 * GUTTER}px`;
+    const r = panel.getBoundingClientRect();
+    let dx = 0;
+    if (r.right > window.innerWidth - GUTTER) dx = window.innerWidth - GUTTER - r.right;
+    if (r.left + dx < GUTTER) dx = GUTTER - r.left;
+    if (dx) panel.style.translate = `${Math.round(dx)}px 0`;
+  }
+  window.addEventListener('resize', () => menus().filter((d) => d.open).forEach(fit));
 
   document.addEventListener('click', (e) => {
     const inside = (e.target as Element).closest?.('[data-record-nav] details');

@@ -1,0 +1,168 @@
+---
+/*
+ * cbf-lens-switch — a prototype lens: one segmented control that sets one attribute
+ * on <html>, so server-rendered alternatives can show or hide by CSS.
+ *
+ * Used for who you are (role), where a record is in its life (stage), and how you got
+ * here (arrival). In production each of these comes from the session or the data; in
+ * a prototype nobody signs in, so each has to be switchable, inside the prototype
+ * controls frame (cbf-prototype-strip), never loose on the page.
+ *
+ * HOW IT WORKS: `<html data-{key}="value">`, set by an inline script at parse time, so a
+ * reload never flashes the default first. A `?{param}=` in the URL wins on load;
+ * switching rewrites it, so a reload keeps the lens. The choice is remembered in
+ * sessionStorage under `storageKey`.
+ *
+ * EVENT (on `document`): `event`, detail { value, switched }. Fired on mount and on
+ * every switch.
+ *
+ * bcn-lego-checked: the control IS esa-button-toggle, the segmented one-of-N lego; every
+ * option has to stay on screen, since advertising the alternatives is the device's job
+ * (esa-select hides them behind a click). Generalized from cbf-role-switch, which now
+ * wraps it.
+ */
+interface Option {
+  key: string;
+  label: string;
+  /** Optional line under the control naming who or what the lens shows. */
+  who?: string;
+  /** For a role lens: the person shown as signed in, in the top bar. */
+  name?: string;
+}
+interface Props {
+  options: Option[];
+  /** The control's label. */
+  label: string;
+  /** Attribute on <html>, without "data-": `cbf-role` sets data-cbf-role. */
+  attr: string;
+  /** URL query parameter that can set the lens: `role`. */
+  param: string;
+  storageKey: string;
+  /** Event fired on document. */
+  event: string;
+  initial?: string;
+}
+const { options, label, attr, param, storageKey, event } = Astro.props;
+const initial = Astro.props.initial ?? options[0].key;
+const keys = options.map((o) => o.key);
+const hasWho = options.some((o) => o.who);
+---
+
+<script is:inline define:vars={{ initial, storageKey, keys, attr, param }}>
+  (() => {
+    let value = initial;
+    try {
+      const q = new URL(window.location.href).searchParams.get(param);
+      const stored = window.sessionStorage?.getItem(storageKey);
+      value = keys.includes(q) ? q : keys.includes(stored) ? stored : initial;
+    } catch {
+      /* private mode / no storage — the default lens still works */
+    }
+    document.documentElement.setAttribute(`data-${attr}`, value);
+  })();
+</script>
+
+<div
+  class="cbf-lens-switch stack"
+  data-gap="3xs"
+  data-lens-switch
+  data-options={JSON.stringify(options)}
+  data-attr={attr}
+  data-param={param}
+  data-storage-key={storageKey}
+  data-event={event}
+>
+  <esa-button-toggle class="cbf-lens-switch__control" size="sm" label={label} data-lens-control></esa-button-toggle>
+  {hasWho && <p class="cbf-lens-switch__who" data-lens-who></p>}
+</div>
+
+<script>
+  import '@esa/ecology/esa-button-toggle';
+
+  type Option = { key: string; label: string; who?: string; name?: string };
+
+  document.querySelectorAll<HTMLElement>('[data-lens-switch]').forEach((root) => {
+    const options: Option[] = JSON.parse(root.dataset.options || '[]');
+    const attr = `data-${root.dataset.attr}`;
+    const param = root.dataset.param || '';
+    const storageKey = root.dataset.storageKey || '';
+    const eventName = root.dataset.event || 'cbf-lens:change';
+    const control = root.querySelector<HTMLElement & { options: any[]; value: string }>('[data-lens-control]');
+    const who = root.querySelector<HTMLElement>('[data-lens-who]');
+
+    const current = () => {
+      const v = document.documentElement.getAttribute(attr);
+      return options.some((o) => o.key === v) ? (v as string) : options[0]?.key;
+    };
+
+    if (control) {
+      control.options = options.map((o) => ({ label: o.label, value: o.key }));
+      control.value = current();
+    }
+
+    const apply = (value: string, switched = false) => {
+      document.documentElement.setAttribute(attr, value);
+      try {
+        window.sessionStorage?.setItem(storageKey, value);
+      } catch {
+        /* ignore */
+      }
+      if (switched) {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has(param)) {
+          url.searchParams.set(param, value);
+          history.replaceState(history.state, '', url);
+        }
+      }
+      const opt = options.find((o) => o.key === value);
+      if (who) who.textContent = opt?.who ?? '';
+      if (opt?.name) {
+        document.querySelectorAll<HTMLElement>('[data-cbf-user-name]').forEach((el) => {
+          el.textContent = opt.name as string;
+        });
+        const parts = (opt.name as string).trim().split(/\s+/);
+        const initials = (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+        document.querySelectorAll<HTMLElement>('[data-cbf-user-initials] .esa-avatar__initials').forEach((el) => {
+          el.textContent = initials;
+        });
+      }
+      document.dispatchEvent(new CustomEvent(eventName, { detail: { value, role: value, switched } }));
+    };
+
+    root.addEventListener('change', (e: Event) => {
+      const el = e.target as HTMLElement & { value?: string };
+      if (!el?.dataset || !('lensControl' in el.dataset)) return;
+      if (el.value && options.some((o) => o.key === el.value)) apply(el.value, true);
+    });
+
+    // Announce the lens the inline script already set, so every listener starts from
+    // the same state whichever order the scripts happen to run in.
+    apply(current());
+  });
+</script>
+
+<style>
+  .cbf-lens-switch {
+    --align: flex-end;
+    flex: none;
+  }
+  .cbf-lens-switch__who {
+    margin: 0;
+    font-size: 14px;
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default);
+    text-align: end;
+  }
+  /* Phones: the strip stacks its devices, so the lens may shrink and its line wrap
+     instead of pushing the page wider than the screen. */
+  @media (max-width: 47.99rem) {
+    .cbf-lens-switch {
+      flex: 1 1 auto;
+      min-inline-size: 0;
+      --align: flex-start;
+    }
+    .cbf-lens-switch__who {
+      text-align: start;
+    }
+  }
+</style>
