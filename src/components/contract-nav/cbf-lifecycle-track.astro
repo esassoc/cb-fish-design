@@ -234,17 +234,14 @@ const stateLabel = { done: 'Finished', current: 'Current phase', next: 'Not star
   .cbf-lifecycle-track__status :global(.cbf-lifecycle-track__icon--current path) {
     fill: currentColor;
   }
-  /* The current phase's name carries the weight; the others stay at the trigger's. */
-  .cbf-lifecycle-track__phase[data-state='current'] .cbf-lifecycle-track__text,
-  .cbf-lifecycle-track__phase[data-state='current'] .cbf-lifecycle-track__menu :global(.esa-button__native) {
+  /* You are here: the phase holding the page you are on shows its name in bold. The
+     phase the contract is in needs no weight; its blue status icon marks it (Andy,
+     round 3: "Remove the active border her for setup. Make it bold instead. Remove
+     bold on the 'active phase'"). */
+  .cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__text,
+  .cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__menu :global(.esa-button__native) {
     font-weight: var(--typography-font-weight-semibold);
-  }
-
-  /* The finished or future phase holding the page you are on: brand underline under
-     its name, the mark every "you are here" in the header uses. */
-  .cbf-lifecycle-track__phase[data-here][data-name='menu'] .cbf-lifecycle-track__menu :global(.esa-button__native) {
-    box-shadow: inset 0 -2px 0 var(--color-background-brand);
-    border-radius: 0;
+    color: var(--color-content-default);
   }
 
   /* Mid widths: two phases per row, so names and dates never collide. */

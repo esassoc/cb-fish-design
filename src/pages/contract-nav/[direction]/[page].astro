@@ -13,6 +13,7 @@ import CbfRecordHeader from '../../../components/contract-nav/cbf-record-header.
 import CbfRecordMenus from '../../../components/contract-nav/cbf-record-menus.astro';
 import CbfRecordLifecycle from '../../../components/contract-nav/cbf-record-lifecycle.astro';
 import CbfRecordPageTitle from '../../../components/contract-nav/cbf-record-page-title.astro';
+import CbfSkeletonBody from '../../../components/shared/cbf-skeleton-body.astro';
 import CbfRecordEnds from '../../../components/contract-nav/cbf-record-ends.astro';
 import CbfRoleGate from '../../../components/contract-nav/cbf-role-gate.astro';
 import CbfPortfolioReturn from '../../../components/contract-nav/cbf-portfolio-return.astro';
@@ -58,6 +59,8 @@ const crumbs = [
   { label: contract.number, href: `${base}/summary` },
   { label: page.label },
 ];
+const section = CONTRACT_TABS.find((t) => t.key === page.tab)!.label;
+const seed = ALL_PAGES.findIndex((p) => p.slug === slug);
 const ends = CONTRACT_TABS.filter((t) => t.key === 'overview' || t.key === 'files');
 const stageKeys = STAGES.map((st) => st.key);
 const views = DIRECTIONS.map((d) => ({ key: d.key, label: d.label, href: withBase(`/contract-nav/${d.key}/${slug}`) }));
@@ -79,7 +82,8 @@ const views = DIRECTIONS.map((d) => ({ key: d.key, label: d.label, href: withBas
         - record nav (A)    -> cbf-record-menus      (one menu per tab)
         - record nav (B)    -> cbf-record-lifecycle  (phase track + the open phase's pages)
     - role gate           -> cbf-role-gate           (hides what the lens can't see)
-    - page title          -> cbf-record-page-title   (body placeholder)
+    - page title          -> cbf-record-page-title   (section / page name)
+    - page body           -> cbf-skeleton-body       (static gray placeholder; body not in scope)
 -->
 <BaseLayout title={`${contract.number}: ${page.label} — Columbia Basin Fish & Wildlife Program`}>
   <CbfPublicNav />
@@ -114,7 +118,8 @@ const views = DIRECTIONS.map((d) => ({ key: d.key, label: d.label, href: withBas
           )}
         </CbfRecordHeader>
         <CbfRoleGate pageHideFor={page.hideFor} pageHideStages={page.hideStages} fallback={`${base}/summary`} />
-        <CbfRecordPageTitle title={page.label} />
+        <CbfRecordPageTitle section={section} title={page.label} />
+        <CbfSkeletonBody seed={seed} />
       </CbfAppPanel>
 
       {/* Last in the source, so the prototype controls come after the page in tab order;

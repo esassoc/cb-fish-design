@@ -1,0 +1,93 @@
+---
+/*
+ * cbf-skeleton-body — a static stand-in for a page body the prototype does not
+ * design: gray blocks shaped like a loading state (a few text lines, two cards, a
+ * table). Andy, round 3: "can you add some default looking gray boxes for content?
+ * Things that look like loading states other apps use sometime?"
+ *
+ * Decorative only: hidden from assistive tech, no motion.
+ *
+ * bcn-lego-checked: no esa- skeleton exists (catalog has esa-loading-overlay and
+ * esa-loading-spinner, both "busy" indicators, not content shapes); Beacon not on
+ * this machine; no cbf- skeleton in the spoke. Layout is the stack, grid and cluster
+ * primitives; this file owns only the gray block and its sizes.
+ */
+interface Props {
+  /** Varies the line widths so neighbouring pages don't look identical. */
+  seed?: number;
+}
+const { seed = 0 } = Astro.props;
+const widths = [92, 78, 85, 64, 88, 71];
+const w = (i: number) => `${widths[(i + seed) % widths.length]}%`;
+---
+
+<div class="cbf-skeleton-body stack" data-gap="lg" aria-hidden="true">
+  <div class="stack" data-gap="sm">
+    <span class="cbf-skeleton-body__bar" style={`inline-size: ${w(0)}`}></span>
+    <span class="cbf-skeleton-body__bar" style={`inline-size: ${w(1)}`}></span>
+    <span class="cbf-skeleton-body__bar" style={`inline-size: ${w(2)}`}></span>
+    <span class="cbf-skeleton-body__bar" style="inline-size: 40%"></span>
+  </div>
+
+  <div class="grid" data-gap="md" style="--grid-min: 16rem">
+    {[0, 1].map((i) => (
+      <div class="cbf-skeleton-body__card stack" data-gap="sm">
+        <span class="cbf-skeleton-body__bar cbf-skeleton-body__bar--strong" style="inline-size: 45%"></span>
+        <span class="cbf-skeleton-body__bar" style={`inline-size: ${w(i + 3)}`}></span>
+        <span class="cbf-skeleton-body__bar" style={`inline-size: ${w(i + 4)}`}></span>
+        <span class="cbf-skeleton-body__bar" style="inline-size: 30%"></span>
+      </div>
+    ))}
+  </div>
+
+  <div class="cbf-skeleton-body__table stack" data-gap="none">
+    {[0, 1, 2, 3, 4].map((r) => (
+      <div class:list={['cbf-skeleton-body__row', 'cluster', r === 0 && 'cbf-skeleton-body__row--head']} data-gap="lg">
+        <span class="cbf-skeleton-body__bar" style="inline-size: 18%"></span>
+        <span class="cbf-skeleton-body__bar" style={`inline-size: ${r === 0 ? 22 : 30}%`}></span>
+        <span class="cbf-skeleton-body__bar" style="inline-size: 12%"></span>
+        <span class="cbf-skeleton-body__bar" style="inline-size: 14%"></span>
+      </div>
+    ))}
+  </div>
+</div>
+
+<style>
+  .cbf-skeleton-body {
+    padding-block: var(--spacing-600);
+  }
+  .cbf-skeleton-body__bar {
+    display: block;
+    block-size: 0.75rem;
+    border-radius: var(--radius-100);
+    background: var(--color-border-default-subtle);
+  }
+  .cbf-skeleton-body__bar--strong {
+    block-size: 1rem;
+    background: var(--color-border-default);
+  }
+  .cbf-skeleton-body__card {
+    padding: var(--spacing-500);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-200);
+  }
+  .cbf-skeleton-body__table {
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-200);
+    overflow: hidden;
+  }
+  .cbf-skeleton-body__row {
+    flex-wrap: nowrap;
+    padding: var(--spacing-400) var(--spacing-500);
+    border-block-start: 1px solid var(--color-border-default);
+  }
+  .cbf-skeleton-body__row:first-child {
+    border-block-start: 0;
+  }
+  .cbf-skeleton-body__row--head {
+    background: var(--color-background-elevation-sunken);
+  }
+  .cbf-skeleton-body__row--head .cbf-skeleton-body__bar {
+    background: var(--color-border-default-strong);
+  }
+</style>

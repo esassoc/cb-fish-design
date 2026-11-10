@@ -5,8 +5,8 @@
  * They belong to the whole contract, not to a phase, so they sit on the title row
  * beside the record's name instead of at the ends of the phase track, where, without
  * a date or a meter, they read as leftovers (Andy, 2026-11-10: "they look like
- * stepchildren there"). The menu holding the page you are on is underlined, the
- * header's one "you are here" mark.
+ * stepchildren there"). The menu holding the page you are on is bold, the header's
+ * one "you are here" mark (round 3).
  */
 import EsaNavDropdown from '@esa/ecology/esa-nav-dropdown.astro';
 import CbfPageMenu from './cbf-page-menu.astro';
@@ -48,8 +48,8 @@ const { tabs, current, base, label } = Astro.props;
   .cbf-record-ends__menu[data-here] {
     color: var(--color-content-default);
   }
-  .cbf-record-ends__menu[data-here] :global(summary) {
-    box-shadow: inset 0 -2px 0 var(--color-background-brand);
-    border-radius: 0;
+  /* You are here: bold, the same mark the phase track uses. */
+  .cbf-record-ends__menu[data-here] :global(.esa-button__native) {
+    font-weight: var(--typography-font-weight-semibold);
   }
 </style>

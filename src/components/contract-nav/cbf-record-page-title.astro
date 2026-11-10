@@ -1,19 +1,29 @@
 ---
 /*
  * cbf-record-page-title — the name of the page being viewed, under the record
- * header. In the nav prototype it stands in for the unchanged page body.
+ * header, led by the menu it lives under: "Setup / Pre-award", "Overview / Contract
+ * summary" (Andy, round 3: "Add a 'Setup' prefix ahead of 'Pre-award'? Something like
+ * 'Setup / Pre-Award'"). The section and slash are quiet so the page name reads first.
  */
 interface Props {
+  /** The menu the page lives under: "Setup", "Overview". */
+  section: string;
   title: string;
 }
-const { title } = Astro.props;
+const { section, title } = Astro.props;
 ---
 
-<h2 class="cbf-record-page-title typography-heading-md">{title}</h2>
+<h2 class="cbf-record-page-title typography-heading-md">
+  <span class="cbf-record-page-title__section">{section} / </span>{title}
+</h2>
 
 <style>
   .cbf-record-page-title {
     margin: 0;
     color: var(--color-content-default);
+  }
+  .cbf-record-page-title__section {
+    color: var(--color-content-default-tertiary);
+    font-weight: var(--typography-font-weight-regular);
   }
 </style>
