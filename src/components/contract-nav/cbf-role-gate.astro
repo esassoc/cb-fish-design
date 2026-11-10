@@ -4,7 +4,7 @@
  *
  * The lenses (cbf-lens-switch) set attributes on <html>:
  *   data-cbf-role     admin | cor | contractor   → hides [data-hide-for~=role]
- *   data-cbf-stage    setup | review | issued | closed → hides [data-hide-stages~=stage]
+ *   data-cbf-stage    setup | review | issued | change | closed → hides [data-hide-stages~=stage]
  *   data-cbf-arrival  direct | portfolio         → [data-only-arrival=portfolio] shows
  *                                                    only on arrival from a portfolio
  * Everything is server-rendered for every lens, so switching is instant.
@@ -43,6 +43,7 @@ const { pageHideFor = [], pageHideStages = [], fallback } = Astro.props;
   html[data-cbf-stage='setup'] [data-hide-stages~='setup'],
   html[data-cbf-stage='review'] [data-hide-stages~='review'],
   html[data-cbf-stage='issued'] [data-hide-stages~='issued'],
+  html[data-cbf-stage='change'] [data-hide-stages~='change'],
   html[data-cbf-stage='closed'] [data-hide-stages~='closed'],
   html:not([data-cbf-arrival='portfolio']) [data-only-arrival='portfolio'] {
     display: none !important;

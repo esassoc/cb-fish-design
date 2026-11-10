@@ -44,7 +44,7 @@ export const PORTFOLIO = { name: 'Grande Ronde subbasin habitat portfolio' };
 // current phase: phases map to [state, percent elapsed or null, date range]), and
 // which status-gated pages exist: Review SOW needs a SOW
 // revision (none in Setup); Closeout exists once the contract is issued with a SOW.
-/** @typedef {'setup' | 'review' | 'issued' | 'closed'} StageKey */
+/** @typedef {'setup' | 'review' | 'issued' | 'change' | 'closed'} StageKey */
 export const STAGES = [
   {
     key: 'setup',
@@ -82,6 +82,22 @@ export const STAGES = [
       setup: ['done', null, 'Jun 2 – Aug 14, 2026'],
       review: ['done', null, 'Aug 14 – Sep 22, 2026'],
       report: ['current', 11, 'Oct 1, 2026 – Sep 30, 2027'],
+      closeout: ['next', null, 'Oct 1 – Dec 31, 2027'],
+    },
+  },
+  {
+    // An issued contract with a change request open: the revision goes back through
+    // review, so the track returns to Review and Approve until it is approved (Andy,
+    // round 3: "if a change request happens, return it back to review and approve").
+    key: 'change',
+    label: 'Change request',
+    status: 'Change request pending',
+    variant: 'info',
+    // Revision review elapsed: 8 of 32 days.
+    phases: {
+      setup: ['done', null, 'Jun 2 – Aug 14, 2026'],
+      review: ['current', 25, 'Nov 2 – Dec 4, 2026'],
+      report: ['next', null, 'Oct 1, 2026 – Sep 30, 2027'],
       closeout: ['next', null, 'Oct 1 – Dec 31, 2027'],
     },
   },
