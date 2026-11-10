@@ -1,9 +1,10 @@
 ---
 /*
  * cbf-record-page-title — the name of the page being viewed, under the record
- * header, led by the menu it lives under: "Setup / Pre-award", "Overview / Contract
- * summary" (Andy, round 3: "Add a 'Setup' prefix ahead of 'Pre-award'? Something like
- * 'Setup / Pre-Award'"). The section and slash are quiet so the page name reads first.
+ * header, led by the menu it lives under: "Setup / Pre-Award", "Overview / Contract
+ * Summary" (Andy, round 3: "Add a 'Setup' prefix ahead of 'Pre-award'? Something like
+ * 'Setup / Pre-Award'"). The section and slash are a quieter colour so the page name
+ * reads first.
  * A page that shares its section's name (Closeout) shows the name once.
  *
  * Set in `title` (IBM Plex Sans), not the condensed display face of the headings
@@ -27,8 +28,9 @@ const { section, title } = Astro.props;
     margin: 0;
     color: var(--color-content-default);
   }
+  /* Same weight as the page name (the title composite's medium); only the colour
+     steps back (Andy, round 3: the regular-weight prefix was "too thin"). */
   .cbf-record-page-title__section {
-    color: var(--color-content-default-tertiary);
-    font-weight: var(--typography-font-weight-regular);
+    color: var(--color-content-default-secondary);
   }
 </style>

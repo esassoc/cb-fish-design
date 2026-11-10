@@ -4,8 +4,11 @@
 // Round 2 (Andy, 2026-11-10): Back To Portfolio left the nav for a temporary back link
 // above the header (PORTFOLIO below), and Edit / Delete BPA Internal Work shows only on
 // internal-work records, so this contract's nav carries 25 of the original 27.
-// Labels are sentence-cased per docs/copy-style.md; `prod` keeps today's menu label so
-// the January build can map one onto the other (ContractFilletMenu.cs).
+// Labels are Title Case, matching today's menus (Andy, round 3: "everything needs to be
+// title cased, everything in these dropdowns and then the secondary ... breadcrumb").
+// That overrides docs/copy-style.md's sentence case for this prototype only. `prod`
+// keeps today's menu label so the January build can map one onto the other
+// (ContractFilletMenu.cs).
 //
 // Visibility follows every-link-and-tab.md, reduced to three roles:
 //   admin       System admin (Gloria Scott) — sees all 25.
@@ -117,30 +120,30 @@ const ALL_TABS = [
     key: 'overview',
     label: 'Overview',
     pages: [
-      { slug: 'summary', label: 'Contract summary', prod: 'Contract Summary' },
-      { slug: 'contacts', label: 'Contract contacts', prod: 'Contract Contacts' },
-      { slug: 'metrics-implementation', label: 'Metrics summary (implementation)', prod: 'Metrics Summary (Implementation)' },
-      { slug: 'metrics-environmental', label: 'Metrics summary (environmental)', prod: 'Metrics Summary (Environmental)' },
-      { slug: 'milestones', label: 'Milestones summary', prod: 'Milestones Summary' },
-      { slug: 'location', label: 'Location summary', prod: 'Location Summary' },
-      { slug: 'focal-species', label: 'Focal species summary', prod: 'Focal Species Summary' },
-      { slug: 'environmental-compliance', label: 'Environmental compliance summary', prod: 'Environmental Compliance Summary' },
-      { slug: 'bpa-internal-work', label: 'Edit / delete BPA internal work', prod: 'Edit / Delete BPA Internal Work', hideFor: BACK_OFFICE, internalOnly: true },
+      { slug: 'summary', label: 'Contract Summary', prod: 'Contract Summary' },
+      { slug: 'contacts', label: 'Contract Contacts', prod: 'Contract Contacts' },
+      { slug: 'metrics-implementation', label: 'Metrics Summary (Implementation)', prod: 'Metrics Summary (Implementation)' },
+      { slug: 'metrics-environmental', label: 'Metrics Summary (Environmental)', prod: 'Metrics Summary (Environmental)' },
+      { slug: 'milestones', label: 'Milestones Summary', prod: 'Milestones Summary' },
+      { slug: 'location', label: 'Location Summary', prod: 'Location Summary' },
+      { slug: 'focal-species', label: 'Focal Species Summary', prod: 'Focal Species Summary' },
+      { slug: 'environmental-compliance', label: 'Environmental Compliance Summary', prod: 'Environmental Compliance Summary' },
+      { slug: 'bpa-internal-work', label: 'Edit / Delete BPA Internal Work', prod: 'Edit / Delete BPA Internal Work', hideFor: BACK_OFFICE, internalOnly: true },
     ],
   },
   {
     key: 'setup',
     label: 'Setup',
     pages: [
-      { slug: 'pre-award', label: 'Pre-award', prod: 'Pre-Award' },
+      { slug: 'pre-award', label: 'Pre-Award', prod: 'Pre-Award' },
       { slug: 'initialize-sow', label: 'Initialize SOW', prod: 'Initialize SOW', hideFor: ['contractor'] },
       { slug: 'sow', label: 'SOW', prod: 'SOW' },
-      { slug: 'work-element-budgets', label: 'Work element budgets', prod: 'Work Element Budgets' },
+      { slug: 'work-element-budgets', label: 'Work Element Budgets', prod: 'Work Element Budgets' },
     ],
   },
   {
     key: 'review',
-    label: 'Review and approve',
+    label: 'Review and Approve',
     pages: [
       { slug: 'review-sow', label: 'Review SOW', prod: 'Review SOW', hideStages: ['setup'] },
       { slug: 'workflow', label: 'Workflow', prod: 'Workflow' },
@@ -148,14 +151,14 @@ const ALL_TABS = [
   },
   {
     key: 'report',
-    label: 'Report and invoice',
+    label: 'Report and Invoice',
     pages: [
-      { slug: 'status-reports', label: 'Status reports', prod: 'Status Reports' },
+      { slug: 'status-reports', label: 'Status Reports', prod: 'Status Reports' },
       { slug: 'invoices', label: 'Invoices', prod: 'Invoices' },
       { slug: 'expenditures-by-fy', label: 'Expenditures by FY', prod: 'Expenditures by FY' },
-      { slug: 'expenditures-raw', label: 'Expenditures raw', prod: 'Expenditures Raw', hideFor: BACK_OFFICE },
-      { slug: 'payment-authorizations-raw', label: 'Contract payment authorizations raw', prod: 'Contract Payment Authorizations Raw', hideFor: BACK_OFFICE },
-      { slug: 'running-balance', label: 'Contract running balance report', prod: 'Contract Running Balance Report' },
+      { slug: 'expenditures-raw', label: 'Expenditures Raw', prod: 'Expenditures Raw', hideFor: BACK_OFFICE },
+      { slug: 'payment-authorizations-raw', label: 'Contract Payment Authorizations Raw', prod: 'Contract Payment Authorizations Raw', hideFor: BACK_OFFICE },
+      { slug: 'running-balance', label: 'Contract Running Balance Report', prod: 'Contract Running Balance Report' },
     ],
   },
   {
@@ -168,9 +171,9 @@ const ALL_TABS = [
     label: 'Files',
     pages: [
       { slug: 'documents', label: 'Documents', prod: 'Documents' },
-      { slug: 'cor-file', label: 'COR file', prod: 'COR File', hideFor: ['contractor'] },
-      { slug: 'email-archive', label: 'Email archive', prod: 'Email Archive', hideFor: ['contractor'] },
-      { slug: 'internal-notes', label: 'Internal notes', prod: 'Internal Notes', hideFor: ['contractor'] },
+      { slug: 'cor-file', label: 'COR File', prod: 'COR File', hideFor: ['contractor'] },
+      { slug: 'email-archive', label: 'Email Archive', prod: 'Email Archive', hideFor: ['contractor'] },
+      { slug: 'internal-notes', label: 'Internal Notes', prod: 'Internal Notes', hideFor: ['contractor'] },
     ],
   },
 ];
