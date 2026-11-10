@@ -82,4 +82,11 @@ const { note = '', label = 'Prototype controls' } = Astro.props;
     --justify: flex-end;
     flex: none;
   }
+  @media (max-width: 47.99rem) {
+    .cbf-proto-strip__actions {
+      flex: 1 1 100%;
+      min-inline-size: 0;
+      --justify: flex-start;
+    }
+  }
 </style>

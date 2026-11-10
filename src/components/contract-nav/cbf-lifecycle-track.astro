@@ -1,0 +1,185 @@
+---
+/*
+ * cbf-lifecycle-track — a record's phases in order.
+ *
+ * A segmented bar runs across the top: finished phases solid, the current phase
+ * filled as far as its period has run, the next one ghosted. Under each segment sits
+ * the phase's name and one quiet date line. Finished and future phases are menus of
+ * their pages (a phase with one page is a plain link). The current phase is not a
+ * menu: its pages are laid out inline under the track by the parent, so the work
+ * the contract is in right now is one click away.
+ *
+ * A phase whose pages are all hidden for the current role keeps only its bar
+ * segment: the lifecycle stays whole without showing a name that leads nowhere.
+ *
+ * bcn-lego-checked: no esa- stepper or timeline exists (catalog checked: esa-tab-layout
+ * switches panels, esa-progress-bar is one bar for one operation, esa-sidebar-nav is
+ * vertical). Beacon's ui-* has none either (ui-viz-gantt plots dates, not phases);
+ * beacon-design's setup-wizard stepper is that spoke's own frame. The menus inside are
+ * esa-nav-dropdown and the links esa-button; this file owns only the segmented bar
+ * and the column layout.
+ */
+import EsaNavDropdown from '@esa/ecology/esa-nav-dropdown.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import CbfPageMenu from './cbf-page-menu.astro';
+
+interface Page {
+  slug: string;
+  label: string;
+  hideFor?: string[];
+}
+interface Phase {
+  key: string;
+  label: string;
+  pages: Page[];
+  state: 'done' | 'current' | 'next';
+  /** The phase's dates: "Jun 2 – Aug 14, 2026". */
+  when: string;
+  /** SOW revision the phase ended on, when there were change requests: "Revision 2". */
+  revision?: string;
+  /** Percent of the current phase's period elapsed. */
+  progress?: number;
+  /** Roles that see none of this phase's pages. */
+  hiddenFor: string[];
+}
+interface Props {
+  phases: Phase[];
+  current: string;
+  base: string;
+  /** "Contract lifecycle" */
+  label: string;
+}
+const { phases, current, base, label } = Astro.props;
+const stateLabel = { done: 'Finished', current: 'Current phase', next: 'Not started' };
+---
+
+<ol class="cbf-lifecycle-track" aria-label={label}>
+  {phases.map((ph) => {
+    const here = ph.pages.some((p) => p.slug === current);
+    const hideFor = ph.hiddenFor.join(' ') || undefined;
+    return (
+      <li
+        class="cbf-lifecycle-track__phase"
+        data-state={ph.state}
+        data-here={here ? '' : undefined}
+        aria-current={ph.state === 'current' ? 'step' : undefined}
+        style={ph.progress !== undefined ? `--phase-progress: ${ph.progress}%` : undefined}
+      >
+        <span class="cbf-lifecycle-track__bar" aria-hidden="true"></span>
+        <div class="cbf-lifecycle-track__body" data-hide-for={hideFor}>
+          <span class="visually-hidden">{stateLabel[ph.state]}:</span>
+          <div class="cbf-lifecycle-track__name">
+            {ph.state === 'current' ? (
+              <span class="cbf-lifecycle-track__current typography-label-md">{ph.label}</span>
+            ) : ph.pages.length === 1 ? (
+              <EsaButton variant="chrome" href={`${base}/${ph.pages[0].slug}`} current={here}>
+                {ph.label}
+              </EsaButton>
+            ) : (
+              <EsaNavDropdown label={ph.label} icon={ph.state === 'done' ? 'circle-check' : undefined}>
+                <CbfPageMenu pages={ph.pages} current={current} base={base} />
+              </EsaNavDropdown>
+            )}
+          </div>
+          <span class="cbf-lifecycle-track__when typography-body-sm">
+            {ph.when}{ph.revision && <> · {ph.revision}</>}
+          </span>
+        </div>
+      </li>
+    );
+  })}
+</ol>
+
+<style>
+  .cbf-lifecycle-track {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: var(--spacing-200);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    min-width: 0;
+  }
+  .cbf-lifecycle-track__phase {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-100);
+    min-width: 0;
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-lifecycle-track__phase[data-state='current'] {
+    color: var(--color-content-default);
+  }
+  .cbf-lifecycle-track__phase[data-state='next'] {
+    color: var(--color-content-default-tertiary);
+  }
+  .cbf-lifecycle-track__body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-100);
+    min-width: 0;
+  }
+
+  /* The segmented bar. Finished: solid neutral. Current: brand fill to the elapsed
+     share of its period, over the empty track. Next: the empty track only. */
+  .cbf-lifecycle-track__bar {
+    block-size: 4px;
+    border-radius: var(--radius-full, 999px);
+    background: var(--color-border-default);
+    margin-block-end: var(--spacing-100);
+  }
+  .cbf-lifecycle-track__phase[data-state='done'] .cbf-lifecycle-track__bar {
+    background: var(--color-content-default-tertiary);
+  }
+  .cbf-lifecycle-track__phase[data-state='current'] .cbf-lifecycle-track__bar {
+    block-size: 6px;
+    margin-block: -1px calc(var(--spacing-100) - 1px);
+    background: linear-gradient(
+      to right,
+      var(--color-background-brand) var(--phase-progress, 0%),
+      color-mix(in srgb, var(--color-background-brand) 22%, transparent) var(--phase-progress, 0%)
+    );
+  }
+
+  /* Triggers sit flush with the bar's left edge. */
+  /* Every name row is as tall as the esa-nav-dropdown md trigger (46px, measured),
+     so a plain label or a single link lines up with the menus beside it. */
+  .cbf-lifecycle-track__name {
+    display: flex;
+    align-items: center;
+    min-block-size: 2.875rem;
+    margin-inline-start: calc(-1 * var(--spacing-300));
+  }
+  .cbf-lifecycle-track__current {
+    display: inline-block;
+    padding: var(--spacing-200) var(--spacing-300);
+    font-weight: var(--typography-font-weight-bold);
+  }
+  /* The finished or future phase holding the page you are on keeps an underline
+     under its name, the mark the tab rows use. */
+  .cbf-lifecycle-track__phase[data-here]:not([data-state='current']) .cbf-lifecycle-track__name :global(:is(summary, a)) {
+    box-shadow: inset 0 -2px 0 var(--color-background-brand);
+    border-radius: 0;
+  }
+  .cbf-lifecycle-track__when {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-inline-size: 100%;
+  }
+
+  /* Phones: the phases stack, one per row, each keeping its bar on top. */
+  @media (max-width: 47.99rem) {
+    .cbf-lifecycle-track {
+      grid-auto-flow: row;
+      grid-auto-columns: auto;
+      gap: var(--spacing-400);
+    }
+    .cbf-lifecycle-track__when {
+      white-space: normal;
+    }
+  }
+</style>

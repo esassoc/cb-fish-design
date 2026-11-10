@@ -1,0 +1,32 @@
+---
+/*
+ * cbf-record-header — the identity block at the top of a contract (later, project)
+ * page: the record's number, its title as the page H1, and its status. The way to
+ * move between the record's pages is slotted underneath, so both nav directions
+ * share one identity block.
+ */
+import EsaPageHeader from '@esa/ecology/esa-page-header.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+
+interface Props {
+  /** "Contract CR-387553" */
+  eyebrow: string;
+  title: string;
+  status: string;
+}
+const { eyebrow, title, status } = Astro.props;
+---
+
+<div class="cbf-record-header stack" data-gap="md">
+  <EsaPageHeader eyebrow={eyebrow} title={title} as="div">
+    <EsaBadge slot="actions" value={status} variant="success" size="md" />
+  </EsaPageHeader>
+  <slot />
+</div>
+
+<style>
+  /* Room between the nav's rule and the page it leads to. */
+  .cbf-record-header {
+    padding-block-end: var(--spacing-400);
+  }
+</style>

@@ -1,0 +1,84 @@
+---
+/*
+ * cbf-role-gate — hides what the current role lens cannot see.
+ *
+ * cbf-role-switch sets <html data-cbf-role="…">. Any element carrying
+ * data-hide-for="cor contractor" disappears for those roles. Server-rendered for
+ * every role, so switching lenses is instant. Rendered once per page, by the nav
+ * component that owns gated items.
+ *
+ * If the lens switches to a role that cannot see the page itself, the page goes to
+ * `fallback` (the record's summary), as production would refuse it.
+ *
+ * Also closes a menu when another opens, on Esc, on a click outside, and when focus
+ * leaves it: the esa-nav-dropdown lego is a native <details> and leaves those to the
+ * page.
+ */
+interface Props {
+  /** Roles that cannot see the page being viewed. */
+  pageHideFor?: string[];
+  /** Where to send a role that cannot see this page. */
+  fallback: string;
+}
+const { pageHideFor = [], fallback } = Astro.props;
+---
+
+<span hidden data-role-gate data-page-hide-for={pageHideFor.join(' ')} data-fallback={fallback}></span>
+
+<style is:global>
+  html[data-cbf-role='admin'] [data-hide-for~='admin'],
+  html[data-cbf-role='cor'] [data-hide-for~='cor'],
+  html[data-cbf-role='contractor'] [data-hide-for~='contractor'] {
+    display: none !important;
+  }
+</style>
+
+<script>
+  const gate = document.querySelector<HTMLElement>('[data-role-gate]');
+  const blocked = (gate?.dataset.pageHideFor ?? '').split(' ').filter(Boolean);
+  const leaveIfBlocked = (role?: string) => {
+    if (gate && role && blocked.includes(role)) {
+      const url = new URL(gate.dataset.fallback ?? '/', window.location.href);
+      const q = new URL(window.location.href).searchParams.get('role');
+      if (q) url.searchParams.set('role', q);
+      window.location.replace(url);
+    }
+  };
+  leaveIfBlocked(document.documentElement.dataset.cbfRole);
+  document.addEventListener('cbf-role:change', (e) => leaveIfBlocked((e as CustomEvent<{ role: string }>).detail?.role));
+
+  const menus = () => Array.from(document.querySelectorAll<HTMLDetailsElement>('[data-record-nav] details'));
+
+  document.addEventListener(
+    'toggle',
+    (e) => {
+      const opened = e.target as HTMLDetailsElement;
+      if (!(opened instanceof HTMLDetailsElement) || !opened.open || !opened.closest('[data-record-nav]')) return;
+      menus().forEach((d) => {
+        if (d !== opened) d.open = false;
+      });
+    },
+    true,
+  );
+
+  document.addEventListener('click', (e) => {
+    const inside = (e.target as Element).closest?.('[data-record-nav] details');
+    menus().forEach((d) => {
+      if (d !== inside) d.open = false;
+    });
+  });
+
+  document.addEventListener('focusout', (e) => {
+    const from = (e.target as Element).closest?.('[data-record-nav] details') as HTMLDetailsElement | null;
+    const to = e.relatedTarget as Node | null;
+    if (from?.open && to && !from.contains(to)) from.open = false;
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const open = menus().find((d) => d.open);
+    if (!open) return;
+    open.open = false;
+    open.querySelector<HTMLElement>('summary')?.focus();
+  });
+</script>

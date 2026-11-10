@@ -1,0 +1,19 @@
+---
+/*
+ * cbf-record-page-title — the name of the page being viewed, under the record
+ * header. In the nav prototype it stands in for the unchanged page body.
+ */
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+
+<h2 class="cbf-record-page-title typography-heading-md">{title}</h2>
+
+<style>
+  .cbf-record-page-title {
+    margin: 0;
+    color: var(--color-content-default);
+  }
+</style>

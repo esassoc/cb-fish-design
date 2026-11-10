@@ -12,7 +12,7 @@
  * moment a second device needed the same frame on a screen with no lens at all.
  *
  * HOW IT WORKS: the role is a single attribute on the document element —
- * `<html data-cbf-role="vendor|cor">`. Both roles are SERVER-RENDERED into the
+ * `<html data-cbf-role="<role key>">` (vendor|cor on the LIB pages). Both roles are SERVER-RENDERED into the
  * page; components reveal their own half with `:global(html[data-cbf-role='cor'])`
  * selectors. That means switching is instant and lossless: the budget the vendor
  * just typed is still there when you come back from the COR's side, which is the
@@ -22,7 +22,7 @@
  * so a reload in the COR lens never flashes the vendor screen first.
  *
  * EVENT CONTRACT (on `document`)
- *   dispatch  cbf-role:change   detail: { role }   // 'vendor' | 'cor'
+ *   dispatch  cbf-role:change   detail: { role }   // one of the `roles` keys
  *   Fired after the attribute is set, on mount and on every switch, so components
  *   that need to do more than swap CSS (repaint a read-only mirror, re-run a
  *   gate) can react without reading this component's DOM.
@@ -36,25 +36,46 @@
  * the caption — belongs to cbf-prototype-strip. Beacon is not cloned on this
  * machine.
  */
-import { ROLE_KEY } from '../../data/lib-review.mjs';
+import { ROLES, ROLE_KEY } from '../../data/lib-review.mjs';
 
+interface Role {
+  key: string;
+  label: string;
+  /** The line under the control: who the reader currently is. */
+  who: string;
+  /** The person shown as signed in, in the top bar's account menu. */
+  name?: string;
+}
 interface Props {
   /** The role the page renders as when nothing is stored yet. */
-  initial?: 'vendor' | 'cor';
+  initial?: string;
+  /** The lenses on offer. Defaults to the Line Item Budget pair (vendor, BPA COR). */
+  roles?: Role[];
+  /** sessionStorage key, so each prototype remembers its own lens. */
+  storageKey?: string;
 }
-const { initial = 'vendor' } = Astro.props;
+const {
+  roles = ROLES.map((r) => ({
+    key: r.key,
+    label: r.label,
+    who: r.key === 'cor' ? `${r.who} — reviewing this budget for BPA` : `${r.who} — entering this budget`,
+  })),
+  storageKey = ROLE_KEY,
+} = Astro.props;
+const initial = Astro.props.initial ?? roles[0].key;
+const keys = roles.map((r) => r.key);
 ---
 
 <!-- Set the lens before first paint, so a reload in the COR view never flashes
      the vendor screen. Inline on purpose: a module script is deferred. -->
-<script is:inline define:vars={{ initial, ROLE_KEY }}>
+<script is:inline define:vars={{ initial, storageKey, keys }}>
   (() => {
     let role = initial;
     try {
       const url = new URL(window.location.href);
       const q = url.searchParams.get('role');
-      const stored = window.sessionStorage?.getItem(ROLE_KEY);
-      role = q === 'cor' || q === 'vendor' ? q : stored === 'cor' || stored === 'vendor' ? stored : initial;
+      const stored = window.sessionStorage?.getItem(storageKey);
+      role = keys.includes(q) ? q : keys.includes(stored) ? stored : initial;
     } catch {
       /* private mode / no storage — the default lens still works */
     }
@@ -66,7 +87,13 @@ const { initial = 'vendor' } = Astro.props;
      side of the document you are on, and the name says who that is on this
      contract. Both belong to the lens, so both travel with it into whatever
      frame the page slots it into. -->
-<div class="cbf-role-switch stack" data-gap="3xs" data-role-switch>
+<div
+  class="cbf-role-switch stack"
+  data-gap="3xs"
+  data-role-switch
+  data-roles={JSON.stringify(roles)}
+  data-storage-key={storageKey}
+>
   <esa-button-toggle
     class="cbf-role-switch__control"
     size="sm"
@@ -78,48 +105,58 @@ const { initial = 'vendor' } = Astro.props;
 
 <script>
   import '@esa/ecology/esa-button-toggle';
-  import { ROLES, ROLE_KEY, roleMeta } from '../../data/lib-review.mjs';
+
+  type Role = { key: string; label: string; who: string; name?: string };
 
   const root = document.querySelector<HTMLElement>('[data-role-switch]');
   if (root) {
+    const roles: Role[] = JSON.parse(root.dataset.roles || '[]');
+    const storageKey = root.dataset.storageKey || '';
     const control = root.querySelector<HTMLElement & { options: any[]; value: string }>(
       '[data-role-control]',
     );
     const who = root.querySelector<HTMLElement>('[data-role-who]');
 
-    const current = () =>
-      document.documentElement.dataset.cbfRole === 'cor' ? 'cor' : 'vendor';
+    const current = () => {
+      const r = document.documentElement.dataset.cbfRole;
+      return roles.some((x) => x.key === r) ? (r as string) : roles[0]?.key;
+    };
 
     if (control) {
-      control.options = ROLES.map((r: any) => ({ label: r.label, value: r.key }));
+      control.options = roles.map((r) => ({ label: r.label, value: r.key }));
       control.value = current();
     }
 
-    const paintWho = (role: string) => {
-      const meta = roleMeta(role);
-      if (who) {
-        who.textContent =
-          role === 'cor'
-            ? `${meta.who} — reviewing this budget for BPA`
-            : `${meta.who} — entering this budget`;
-      }
-    };
-
-    const apply = (role: string) => {
+    const apply = (role: string, switched = false) => {
       document.documentElement.dataset.cbfRole = role;
+      // A ?role= in the URL wins on load; once the reader switches, keep the URL in
+      // step so a reload stays on the lens they chose.
+      if (switched) {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('role')) {
+          url.searchParams.set('role', role);
+          history.replaceState(history.state, '', url);
+        }
+      }
+      const name = roles.find((r) => r.key === role)?.name;
+      if (name) {
+        document.querySelectorAll<HTMLElement>('[data-cbf-user-name]').forEach((el) => {
+          el.textContent = name;
+        });
+      }
       try {
-        window.sessionStorage?.setItem(ROLE_KEY, role);
+        window.sessionStorage?.setItem(storageKey, role);
       } catch {
         /* ignore */
       }
-      paintWho(role);
-      document.dispatchEvent(new CustomEvent('cbf-role:change', { detail: { role } }));
+      if (who) who.textContent = roles.find((r) => r.key === role)?.who ?? '';
+      document.dispatchEvent(new CustomEvent('cbf-role:change', { detail: { role, switched } }));
     };
 
     root.addEventListener('change', (e: Event) => {
       const el = e.target as HTMLElement & { value?: string };
       if (!el?.dataset || !('roleControl' in el.dataset)) return;
-      apply(el.value === 'cor' ? 'cor' : 'vendor');
+      if (el.value && roles.some((r) => r.key === el.value)) apply(el.value, true);
     });
 
     // Announce the lens the inline script already set, so every listener starts
@@ -141,5 +178,17 @@ const { initial = 'vendor' } = Astro.props;
     font-weight: var(--typography-font-weight-medium);
     color: var(--color-content-default);
     text-align: end;
+  }
+  /* Phones: the strip stacks its devices, so the lens may shrink and its name line
+     wrap instead of pushing the page wider than the screen. */
+  @media (max-width: 47.99rem) {
+    .cbf-role-switch {
+      flex: 1 1 auto;
+      min-inline-size: 0;
+      --align: flex-start;
+    }
+    .cbf-role-switch__who {
+      text-align: start;
+    }
   }
 </style>

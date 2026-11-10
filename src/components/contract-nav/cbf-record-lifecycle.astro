@@ -1,0 +1,104 @@
+---
+/*
+ * cbf-record-lifecycle — contract header nav, direction B: lifecycle and timeline.
+ *
+ * Overview and Files are always there, so they sit at the two ends as plain menus.
+ * Between them, the four phases a contract moves through (Setup, Review and approve,
+ * Report and invoice, Closeout) run as a track that shows where this contract is
+ * now. The phase it is in is open: its pages sit in a row under the track, one click
+ * each. Every other phase is a menu, so any page is still two clicks away.
+ */
+import EsaNavDropdown from '@esa/ecology/esa-nav-dropdown.astro';
+import CbfPageMenu from './cbf-page-menu.astro';
+import CbfLifecycleTrack from './cbf-lifecycle-track.astro';
+import CbfRoleGate from './cbf-role-gate.astro';
+import { CONTRACT_TABS, LIFECYCLE, findPage, tabHiddenFor } from '../../data/contract-nav.mjs';
+
+interface Props {
+  current: string;
+  base: string;
+}
+const { current, base } = Astro.props;
+
+const tab = (key: string) => CONTRACT_TABS.find((t) => t.key === key)!;
+const overview = tab('overview');
+const files = tab('files');
+const phases = LIFECYCLE.map((ph) => {
+  const t = tab(ph.tab);
+  return { ...ph, key: t.key, label: t.label, pages: t.pages, hiddenFor: tabHiddenFor(t) };
+});
+const now = phases.find((ph) => ph.state === 'current')!;
+const here = (t: { pages: { slug: string }[] }) => t.pages.some((p) => p.slug === current);
+---
+
+<nav class="cbf-record-lifecycle" aria-label="Contract pages" data-record-nav>
+  <div class="cbf-record-lifecycle__end" data-here={here(overview) ? '' : undefined}>
+    <EsaNavDropdown label={overview.label}>
+      <CbfPageMenu pages={overview.pages} current={current} base={base} />
+    </EsaNavDropdown>
+  </div>
+
+  <CbfLifecycleTrack phases={phases} current={current} base={base} label="Contract lifecycle" />
+
+  <div class="cbf-record-lifecycle__end" data-here={here(files) ? '' : undefined}>
+    <EsaNavDropdown label={files.label} align="end">
+      <CbfPageMenu pages={files.pages} current={current} base={base} />
+    </EsaNavDropdown>
+  </div>
+
+  <div class="cbf-record-lifecycle__open" aria-label={now.label} role="group">
+    <CbfPageMenu pages={now.pages} current={current} base={base} layout="row" />
+  </div>
+</nav>
+
+<CbfRoleGate pageHideFor={findPage(current)?.hideFor} fallback={`${base}/summary`} />
+
+<style>
+  .cbf-record-lifecycle {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: var(--spacing-600);
+    border-bottom: 1px solid var(--color-border-default);
+  }
+  /* Overview and Files line up with the phase names, not the bar above them. */
+  .cbf-record-lifecycle__end {
+    align-self: start;
+    padding-block-start: calc(4px + var(--spacing-200));
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-record-lifecycle__end:first-child {
+    margin-inline-start: calc(-1 * var(--spacing-300));
+  }
+  .cbf-record-lifecycle__end[data-here] {
+    color: var(--color-content-default);
+  }
+  .cbf-record-lifecycle__end[data-here] :global(summary) {
+    box-shadow: inset 0 -2px 0 var(--color-background-brand);
+    border-radius: 0;
+  }
+  /* The open phase's pages: a sunken band under the track, the drawer the current
+     phase has pulled open. Starts where the track starts. */
+  .cbf-record-lifecycle__open {
+    grid-column: 2 / -1;
+    margin-block-start: var(--spacing-300);
+    margin-inline-start: calc(-1 * var(--spacing-300));
+    padding-inline: var(--spacing-100);
+    background: var(--color-background-elevation-sunken);
+    border-radius: var(--radius-100) var(--radius-100) 0 0;
+  }
+  @media (max-width: 63.99rem) {
+    .cbf-record-lifecycle {
+      grid-template-columns: auto auto;
+      justify-content: space-between;
+    }
+    .cbf-record-lifecycle > :global(.cbf-lifecycle-track) {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      margin-block-start: var(--spacing-300);
+    }
+    .cbf-record-lifecycle__open {
+      grid-column: 1 / -1;
+      margin-inline-start: 0;
+    }
+  }
+</style>

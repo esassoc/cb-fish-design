@@ -1,0 +1,91 @@
+---
+/*
+ * cbf-record-menus — contract header nav, direction A: one menu per tab.
+ *
+ * Six tabs in lifecycle order. A tab with several pages is an esa-nav-dropdown whose
+ * panel lists them (cbf-page-menu); a tab with one page (Closeout) is a plain link,
+ * since a menu of one is a wasted click. The tab holding the current page is
+ * underlined. A tab whose pages are all hidden for the current role is hidden with
+ * them, so no role ever meets an empty menu.
+ */
+import EsaNavDropdown from '@esa/ecology/esa-nav-dropdown.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import CbfPageMenu from './cbf-page-menu.astro';
+import CbfRoleGate from './cbf-role-gate.astro';
+import { CONTRACT_TABS, findPage, tabHiddenFor } from '../../data/contract-nav.mjs';
+
+interface Props {
+  /** Slug of the page being viewed. */
+  current: string;
+  /** Route prefix for page links. */
+  base: string;
+}
+const { current, base } = Astro.props;
+---
+
+<nav class="cbf-record-menus" aria-label="Contract pages" data-record-nav>
+  <ul class="cbf-record-menus__tabs">
+    {CONTRACT_TABS.map((tab) => {
+      const here = tab.pages.some((p) => p.slug === current);
+      const hideFor = tabHiddenFor(tab).join(' ') || undefined;
+      return (
+        <li class="cbf-record-menus__tab" data-here={here ? '' : undefined} data-hide-for={hideFor}>
+          {tab.pages.length === 1 ? (
+            <EsaButton variant="chrome" href={`${base}/${tab.pages[0].slug}`} current={here}>
+              {tab.label}
+            </EsaButton>
+          ) : (
+            <EsaNavDropdown label={tab.label}>
+              <CbfPageMenu pages={tab.pages} current={current} base={base} />
+            </EsaNavDropdown>
+          )}
+        </li>
+      );
+    })}
+  </ul>
+</nav>
+
+<CbfRoleGate pageHideFor={findPage(current)?.hideFor} fallback={`${base}/summary`} />
+
+<style>
+  .cbf-record-menus {
+    border-bottom: 1px solid var(--color-border-default);
+  }
+  .cbf-record-menus__tabs {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-200);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cbf-record-menus__tab {
+    position: relative;
+    padding-block-end: var(--spacing-200);
+    color: var(--color-content-default-secondary);
+  }
+  /* The tab that holds the page you are on: darker label, brand underline on the
+     shared rule. Same signal today's strip gives with its filled tab, quieter. */
+  .cbf-record-menus__tab[data-here] {
+    color: var(--color-content-default);
+  }
+  .cbf-record-menus__tab[data-here]::after {
+    content: '';
+    position: absolute;
+    inset-inline: var(--spacing-200);
+    inset-block-end: -1px;
+    block-size: 2px;
+    background: var(--color-background-brand);
+  }
+  .cbf-record-menus__tab[data-here] :global(.esa-button--current .esa-button__native) {
+    background: transparent;
+  }
+  /* Narrow screens wrap the tabs instead of scrolling them: a scrolling row would
+     clip the menus that open from it. */
+  @media (max-width: 47.99rem) {
+    .cbf-record-menus__tabs {
+      flex-wrap: wrap;
+      row-gap: 0;
+    }
+  }
+</style>
