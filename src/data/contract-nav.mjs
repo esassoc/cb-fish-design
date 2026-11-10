@@ -233,7 +233,3 @@ export const LIFECYCLE = Object.entries(defaultStage.phases).map(([tab, [state, 
   progress: progress ?? undefined,
 }));
 
-export const DIRECTIONS = [
-  { key: 'a', label: 'A. Menus' },
-  { key: 'b', label: 'B. Lifecycle' },
-];
