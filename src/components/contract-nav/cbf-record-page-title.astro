@@ -25,16 +25,23 @@ const { section, title } = Astro.props;
 </div>
 
 <style>
+  /* One unit, a step heavier than their composites (Andy, round 3: "Tighten up the
+     setup and work element budgets ... They need to be pushed together. I think they
+     can both go up a step in font weight"). Tight line boxes leave the 3xs gap as the
+     only space between them. */
   .cbf-record-page-title__section,
   .cbf-record-page-title__name {
     margin: 0;
+    line-height: var(--line-height-tight);
   }
   .cbf-record-page-title__section {
     color: var(--color-content-default-secondary);
+    font-weight: var(--typography-font-weight-medium);
   }
   /* The spoke's brand navy, the same token as the contract H1 above it (Andy, round
      3: "make that the brand blue"). */
   .cbf-record-page-title__name {
     color: var(--color-background-default-knockout);
+    font-weight: var(--typography-font-weight-semibold);
   }
 </style>
