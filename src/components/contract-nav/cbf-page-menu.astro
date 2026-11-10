@@ -1,0 +1,79 @@
+---
+/*
+ * cbf-page-menu — the list of a tab's pages inside its menu panel (contract header
+ * nav). Each page is a real link, so it opens in a new tab and
+ * reads as navigation to a screen reader; the page you are on carries aria-current.
+ * Pages a role cannot see carry data-hide-for, and pages a stage lacks carry
+ * data-hide-stages; cbf-role-gate hides both.
+ */
+interface Page {
+  slug: string;
+  label: string;
+  hideFor?: string[];
+  hideStages?: string[];
+}
+interface Props {
+  pages: Page[];
+  /** Slug of the page being viewed. */
+  current: string;
+  /** Route prefix the slug is appended to. */
+  base: string;
+  /** `list` inside a menu panel; `row` laid out inline as a sub-nav. */
+  layout?: 'list' | 'row';
+}
+const { pages, current, base, layout = 'list' } = Astro.props;
+---
+
+<ul class:list={['cbf-page-menu', 'typography-body-md', `cbf-page-menu--${layout}`]}>
+  {pages.map((p) => (
+    <li data-hide-for={(p.hideFor ?? []).join(' ') || undefined} data-hide-stages={(p.hideStages ?? []).join(' ') || undefined}>
+      <a href={`${base}/${p.slug}`} aria-current={p.slug === current ? 'page' : undefined}>{p.label}</a>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .cbf-page-menu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    min-width: 15rem;
+  }
+  .cbf-page-menu a {
+    display: block;
+    padding: var(--spacing-150, 6px) var(--spacing-300);
+    border-radius: var(--radius-100);
+    color: var(--color-content-default);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .cbf-page-menu a:hover {
+    background: var(--color-background-elevation-sunken);
+  }
+  .cbf-page-menu a[aria-current='page'] {
+    background: var(--color-background-elevation-sunken);
+    font-weight: var(--typography-font-weight-semibold);
+  }
+
+  /* Row: the pages sit inline as a sub-nav; the page you are on is underlined,
+     the same mark the tab row uses, instead of tinted. */
+  .cbf-page-menu--row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--spacing-100);
+    min-width: 0;
+  }
+  .cbf-page-menu--row a {
+    padding: var(--spacing-200) var(--spacing-300);
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-page-menu--row a:hover {
+    color: var(--color-content-default);
+  }
+  .cbf-page-menu--row a[aria-current='page'] {
+    background: transparent;
+    color: var(--color-content-default);
+    border-radius: 0;
+    box-shadow: inset 0 -2px 0 var(--color-background-brand);
+  }
+</style>

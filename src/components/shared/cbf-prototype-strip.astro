@@ -32,26 +32,169 @@
  * machine.
  */
 import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
 
 interface Props {
   /** One line saying what these devices change on THIS screen. */
   note?: string;
   /** The caption on the badge. Plural by default — most screens carry several. */
   label?: string;
+  /**
+   * `inline` (default) sits in the page flow above the work. `float` is a dark panel
+   * fixed to the bottom-right corner, for screens where the thing under review is the
+   * top of the page itself (a header), so the devices stay out of it. Andy,
+   * 2026-11-10: "can we make that like some sort of dark mode floating panel on the
+   * bottom right?"
+   */
+  placement?: 'inline' | 'float';
 }
-const { note = '', label = 'Prototype controls' } = Astro.props;
+const { note = '', label = 'Prototype controls', placement = 'inline' } = Astro.props;
 ---
 
-<aside class="cbf-proto-strip" aria-label="Prototype controls">
-  <div class="cbf-proto-strip__ident cluster" data-gap="2xs">
-    <EsaBadge value={label} variant="secondary" size="sm" />
-    {note && <span class="cbf-proto-strip__note">{note}</span>}
-  </div>
+{placement === 'float' ? (
+  <aside class="cbf-proto-strip cbf-proto-strip--float" aria-label="Prototype controls" data-proto-float>
+    <EsaCollapsible title={label} flush open>
+      <div class="stack" data-gap="sm">
+        {note && <span class="cbf-proto-strip__note">{note}</span>}
+        <div class="cbf-proto-strip__actions cluster" data-gap="md">
+          <slot />
+        </div>
+      </div>
+    </EsaCollapsible>
+  </aside>
+) : (
+  <aside class="cbf-proto-strip" aria-label="Prototype controls">
+    <div class="cbf-proto-strip__ident cluster" data-gap="2xs">
+      <EsaBadge value={label} variant="secondary" size="sm" />
+      {note && <span class="cbf-proto-strip__note">{note}</span>}
+    </div>
 
-  <div class="cbf-proto-strip__actions cluster" data-gap="md">
-    <slot />
-  </div>
-</aside>
+    <div class="cbf-proto-strip__actions cluster" data-gap="md">
+      <slot />
+    </div>
+  </aside>
+)}
+
+<script>
+  /* The floating panel: pinned low in the bottom-right corner, draggable by its
+     title bar, collapsible to a pill. Position and open state are remembered in
+     localStorage. It starts open (or as remembered), except under 64rem with nothing
+     stored, and never open over the page's header nav ([data-record-nav]). */
+  const OPEN_KEY = 'cbf-proto-float-open';
+  const POS_KEY = 'cbf-proto-float-pos';
+  const read = (k: string): string | null => {
+    try {
+      return localStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  };
+  const write = (k: string, v: string): void => {
+    try {
+      localStorage.setItem(k, v);
+    } catch {
+      /* no storage: the panel still works, it just forgets */
+    }
+  };
+
+  document.querySelectorAll<HTMLElement>('[data-proto-float]').forEach((root) => {
+    const details = root.querySelector('details');
+    const handle = root.querySelector<HTMLElement>('summary');
+    if (!details || !handle) return;
+
+    const storedOpen = read(OPEN_KEY);
+    const covers = (): boolean => {
+      const top = root.getBoundingClientRect().top;
+      return [...document.querySelectorAll<HTMLElement>('[data-record-nav]')].some(
+        (nav) => nav.getClientRects().length > 0 && nav.getBoundingClientRect().bottom > top,
+      );
+    };
+    if (storedOpen) details.open = storedOpen === '1';
+    else details.open = !window.matchMedia('(max-width: 63.99rem)').matches;
+    // Only the person's own toggles are remembered, not the default chosen here: the
+    // first toggle event that lands on the default state is the default's own echo.
+    let echo: boolean | null = storedOpen ? null : details.open;
+    details.addEventListener('toggle', () => {
+      if (echo !== null && details.open === echo) {
+        echo = null;
+        return;
+      }
+      echo = null;
+      write(OPEN_KEY, details.open ? '1' : '0');
+    });
+
+    const place = (x: number, y: number) => {
+      const r = root.getBoundingClientRect();
+      const left = Math.min(Math.max(8, x), window.innerWidth - r.width - 8);
+      const top = Math.min(Math.max(8, y), window.innerHeight - r.height - 8);
+      root.style.left = `${left}px`;
+      root.style.top = `${top}px`;
+      root.style.right = 'auto';
+      root.style.bottom = 'auto';
+      return { x: left, y: top };
+    };
+
+    try {
+      const pos = JSON.parse(read(POS_KEY) ?? 'null');
+      if (pos && typeof pos.x === 'number') place(pos.x, pos.y);
+    } catch {
+      /* bad value: stay pinned */
+    }
+    // Never cover the header, whatever is remembered: an open panel that would
+    // overlap it starts as the pill (without changing what is stored), on every load
+    // and when the window is resized.
+    const yieldToHeader = () => {
+      if (details.open && covers()) {
+        echo = false;
+        details.open = false;
+      }
+    };
+    yieldToHeader();
+    window.addEventListener('resize', yieldToHeader);
+
+    // Drag by the title bar. A press that moves more than 4px is a drag and does not
+    // toggle the panel; a still press is an ordinary click.
+    let start: { px: number; py: number; x: number; y: number } | null = null;
+    let dragged = false;
+    handle.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      const r = root.getBoundingClientRect();
+      start = { px: e.clientX, py: e.clientY, x: r.left, y: r.top };
+      dragged = false;
+      handle.setPointerCapture(e.pointerId);
+    });
+    handle.addEventListener('pointermove', (e) => {
+      if (!start) return;
+      const dx = e.clientX - start.px;
+      const dy = e.clientY - start.py;
+      if (!dragged && Math.hypot(dx, dy) < 4) return;
+      dragged = true;
+      root.dataset.dragging = '';
+      place(start.x + dx, start.y + dy);
+    });
+    handle.addEventListener('pointerup', () => {
+      if (dragged) {
+        const r = root.getBoundingClientRect();
+        write(POS_KEY, JSON.stringify({ x: r.left, y: r.top }));
+      }
+      delete root.dataset.dragging;
+      start = null;
+    });
+    handle.addEventListener('click', (e) => {
+      if (dragged) {
+        e.preventDefault();
+        dragged = false;
+      }
+    });
+
+    // Keep a moved panel on screen when the window shrinks or the panel opens.
+    const keepOnScreen = () => {
+      if (root.style.left) place(parseFloat(root.style.left), parseFloat(root.style.top));
+    };
+    window.addEventListener('resize', keepOnScreen);
+    details.addEventListener('toggle', keepOnScreen);
+  });
+</script>
 
 <style>
   /* Scaffolding, not product: a dashed neutral frame that could never be mistaken
@@ -81,5 +224,75 @@ const { note = '', label = 'Prototype controls' } = Astro.props;
   .cbf-proto-strip__actions {
     --justify: flex-end;
     flex: none;
+  }
+
+  /* Float: a dark panel in the bottom-right corner, above the handoff pill. The
+     semantic tokens are re-pointed inside it, onto the brand's deepest navy, so the
+     slotted legos (esa-button-toggle, esa-badge) render dark without knowing. */
+  .cbf-proto-strip--float {
+    --color-background-elevation-sunken: var(--color-background-default-knockout);
+    --color-background-elevation-raised: color-mix(in srgb, var(--color-content-default-knockout) 12%, var(--color-background-default-knockout));
+    --color-background-overlay-hover: color-mix(in srgb, var(--color-content-default-knockout) 10%, transparent);
+    --color-content-default: var(--color-content-default-knockout);
+    --color-content-default-secondary: color-mix(in srgb, var(--color-content-default-knockout) 72%, transparent);
+    --color-content-default-tertiary: color-mix(in srgb, var(--color-content-default-knockout) 72%, transparent);
+    --color-content-brand: var(--color-content-default-knockout);
+    --color-border-default: color-mix(in srgb, var(--color-content-default-knockout) 22%, transparent);
+    --color-border-default-strong: color-mix(in srgb, var(--color-content-default-knockout) 22%, transparent);
+    --form-label-color: var(--color-content-default-secondary);
+
+    position: fixed;
+    /* Pinned low in the corner, just clear of the handoff pill under it. */
+    inset-block-end: 3.5rem;
+    inset-inline-end: var(--spacing-400);
+    z-index: 60;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-300);
+    inline-size: min(26rem, calc(100vw - 2 * var(--spacing-500)));
+    padding-block: var(--spacing-100);
+    margin: 0;
+    border-style: solid;
+    color: var(--color-content-default);
+    box-shadow: 0 8px 28px color-mix(in srgb, var(--color-background-default-knockout) 35%, transparent);
+  }
+  /* The title bar is the drag handle. */
+  .cbf-proto-strip--float :global(summary) {
+    cursor: grab;
+    touch-action: none;
+  }
+  .cbf-proto-strip--float[data-dragging] :global(summary) {
+    cursor: grabbing;
+  }
+  /* Closed, the panel shrinks to its title: a pill. */
+  .cbf-proto-strip--float:has(details:not([open])) {
+    inline-size: auto;
+    border-radius: var(--radius-full, 999px);
+    padding-inline: var(--spacing-200);
+    /* The closed body still lays out; clip it so it never widens the page. */
+    overflow: clip;
+  }
+  .cbf-proto-strip--float .cbf-proto-strip__ident {
+    flex: none;
+    min-inline-size: 0;
+  }
+  .cbf-proto-strip--float .cbf-proto-strip__actions {
+    --justify: flex-start;
+    flex: none;
+  }
+  .cbf-proto-strip--float :global(.cbf-route-switch),
+  .cbf-proto-strip--float :global(.cbf-lens-switch) {
+    --align: flex-start;
+  }
+  .cbf-proto-strip--float :global(:is(.cbf-route-switch__note, .cbf-lens-switch__who)) {
+    text-align: start;
+  }
+
+  @media (max-width: 47.99rem) {
+    .cbf-proto-strip__actions {
+      flex: 1 1 100%;
+      min-inline-size: 0;
+      --justify: flex-start;
+    }
   }
 </style>

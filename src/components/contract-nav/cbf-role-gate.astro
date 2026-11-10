@@ -1,0 +1,122 @@
+---
+/*
+ * cbf-role-gate — hides what the current lenses rule out.
+ *
+ * The lenses (cbf-lens-switch) set attributes on <html>:
+ *   data-cbf-role     admin | cor | contractor   → hides [data-hide-for~=role]
+ *   data-cbf-stage    setup | review | issued | change | closed → hides [data-hide-stages~=stage]
+ *   data-cbf-arrival  direct | portfolio         → [data-only-arrival=portfolio] shows
+ *                                                    only on arrival from a portfolio
+ * Everything is server-rendered for every lens, so switching is instant.
+ *
+ * If a lens switches to a role or stage that cannot see the page itself, the page
+ * goes to `fallback` (the record's summary), as production would refuse it.
+ *
+ * Also closes a menu when another opens, on Esc, on a click outside, and when focus
+ * leaves it, and nudges an opening menu's panel back inside the viewport when its
+ * aligned edge would put it off screen (narrow widths, long page names): the
+ * esa-nav-dropdown lego is a native <details> and leaves those to the page.
+ */
+interface Props {
+  /** Roles that cannot see the page being viewed. */
+  pageHideFor?: string[];
+  /** Stages in which the page being viewed does not exist. */
+  pageHideStages?: string[];
+  /** Where to send a lens that cannot see this page. */
+  fallback: string;
+}
+const { pageHideFor = [], pageHideStages = [], fallback } = Astro.props;
+---
+
+<span
+  hidden
+  data-role-gate
+  data-page-hide-for={pageHideFor.join(' ')}
+  data-page-hide-stages={pageHideStages.join(' ')}
+  data-fallback={fallback}
+></span>
+
+<style is:global>
+  html[data-cbf-role='admin'] [data-hide-for~='admin'],
+  html[data-cbf-role='cor'] [data-hide-for~='cor'],
+  html[data-cbf-role='contractor'] [data-hide-for~='contractor'],
+  html[data-cbf-stage='setup'] [data-hide-stages~='setup'],
+  html[data-cbf-stage='review'] [data-hide-stages~='review'],
+  html[data-cbf-stage='issued'] [data-hide-stages~='issued'],
+  html[data-cbf-stage='change'] [data-hide-stages~='change'],
+  html[data-cbf-stage='closed'] [data-hide-stages~='closed'],
+  html:not([data-cbf-arrival='portfolio']) [data-only-arrival='portfolio'] {
+    display: none !important;
+  }
+</style>
+
+<script>
+  const gate = document.querySelector<HTMLElement>('[data-role-gate]');
+  const list = (s?: string) => (s ?? '').split(' ').filter(Boolean);
+  const blockedRoles = list(gate?.dataset.pageHideFor);
+  const blockedStages = list(gate?.dataset.pageHideStages);
+  const html = document.documentElement;
+
+  const leaveIfBlocked = () => {
+    if (!gate) return;
+    if (!blockedRoles.includes(html.dataset.cbfRole ?? '') && !blockedStages.includes(html.dataset.cbfStage ?? '')) return;
+    const here = new URL(window.location.href);
+    const url = new URL(gate.dataset.fallback ?? '/', here);
+    here.searchParams.forEach((v, k) => url.searchParams.set(k, v));
+    window.location.replace(url);
+  };
+  leaveIfBlocked();
+  document.addEventListener('cbf-role:change', leaveIfBlocked);
+  document.addEventListener('cbf-stage:change', leaveIfBlocked);
+
+  const menus = () => Array.from(document.querySelectorAll<HTMLDetailsElement>('[data-record-nav] details'));
+
+  document.addEventListener(
+    'toggle',
+    (e) => {
+      const opened = e.target as HTMLDetailsElement;
+      if (!(opened instanceof HTMLDetailsElement) || !opened.open || !opened.closest('[data-record-nav]')) return;
+      menus().forEach((d) => {
+        if (d !== opened) d.open = false;
+      });
+      fit(opened);
+    },
+    true,
+  );
+
+  // Keep an open panel on screen: shift it by however far it overflows either edge.
+  const GUTTER = 8;
+  function fit(d: HTMLDetailsElement) {
+    const panel = d.querySelector<HTMLElement>('.esa-nav-dropdown__panel');
+    if (!panel) return;
+    panel.style.translate = '';
+    panel.style.maxWidth = `${window.innerWidth - 2 * GUTTER}px`;
+    const r = panel.getBoundingClientRect();
+    let dx = 0;
+    if (r.right > window.innerWidth - GUTTER) dx = window.innerWidth - GUTTER - r.right;
+    if (r.left + dx < GUTTER) dx = GUTTER - r.left;
+    if (dx) panel.style.translate = `${Math.round(dx)}px 0`;
+  }
+  window.addEventListener('resize', () => menus().filter((d) => d.open).forEach(fit));
+
+  document.addEventListener('click', (e) => {
+    const inside = (e.target as Element).closest?.('[data-record-nav] details');
+    menus().forEach((d) => {
+      if (d !== inside) d.open = false;
+    });
+  });
+
+  document.addEventListener('focusout', (e) => {
+    const from = (e.target as Element).closest?.('[data-record-nav] details') as HTMLDetailsElement | null;
+    const to = e.relatedTarget as Node | null;
+    if (from?.open && to && !from.contains(to)) from.open = false;
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    const open = menus().find((d) => d.open);
+    if (!open) return;
+    open.open = false;
+    open.querySelector<HTMLElement>('summary')?.focus();
+  });
+</script>

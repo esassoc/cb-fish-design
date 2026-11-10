@@ -1,0 +1,127 @@
+---
+/*
+ * cbf-record-lifecycle — record header nav: lifecycle and timeline.
+ *
+ * The phases a record moves through run as a full-width track that shows where it
+ * is now. Every phase, the current one included, is a menu of its pages, so any page
+ * is two clicks away (Andy, 2026-11-10, on the round 2 page row: "I don't think I want
+ * that in particular. I think it's fine to not have that."). Each phase's status
+ * icon says finished, in progress or not started. The always-there menus (Overview,
+ * Files) sit on the title row (cbf-record-ends).
+ *
+ * Which phase is current comes from the stage lens (<html data-cbf-stage>). The
+ * server renders the default stage; the script below re-applies the track when the
+ * stage or role lens moves.
+ *
+ * Data comes in as props (tabs, lifecycle, stages), so a project page can pass its own.
+ */
+import CbfLifecycleTrack from './cbf-lifecycle-track.astro';
+
+interface Page {
+  slug: string;
+  label: string;
+  hideFor?: string[];
+  hideStages?: string[];
+}
+interface Tab {
+  key: string;
+  label: string;
+  pages: Page[];
+}
+interface Phase {
+  tab: string;
+  state: 'done' | 'current' | 'next';
+  when: string;
+  progress?: number;
+}
+interface Stage {
+  key: string;
+  /** tab key → [state, percent elapsed or null, date range] */
+  phases: Record<string, [string, number | null, string]>;
+}
+interface Props {
+  tabs: Tab[];
+  lifecycle: Phase[];
+  stages: Stage[];
+  /** Roles that see no page in a tab. */
+  hiddenFor: (tab: Tab) => string[];
+  /** Stages in which a tab has no page. */
+  hiddenStages: (tab: Tab) => string[];
+  /** The role the server renders for. */
+  role: string;
+  current: string;
+  base: string;
+  /** "Contract lifecycle" */
+  label: string;
+}
+const { tabs, lifecycle, stages, hiddenFor, hiddenStages, role, current, base, label } = Astro.props;
+
+const phases = lifecycle.map((ph) => {
+  const t = tabs.find((x) => x.key === ph.tab)!;
+  const hf = hiddenFor(t);
+  return {
+    ...ph,
+    key: t.key,
+    label: t.label,
+    pages: t.pages,
+    hiddenFor: hf,
+    hiddenStages: hiddenStages(t),
+    name: (hf.includes(role) ? 'text' : 'menu') as 'menu' | 'text',
+  };
+});
+---
+
+<nav
+  class="cbf-record-lifecycle stack"
+  data-gap="md"
+  aria-label={label}
+  data-record-nav
+  data-lifecycle
+  data-stages={JSON.stringify(stages)}
+>
+  <CbfLifecycleTrack phases={phases} current={current} base={base} label={label} />
+</nav>
+
+<script>
+  type Stage = { key: string; phases: Record<string, [string, number | null, string]> };
+  const STATE_LABEL: Record<string, string> = { done: 'Finished', current: 'Current phase', next: 'Not started' };
+
+  document.querySelectorAll<HTMLElement>('[data-lifecycle]').forEach((root) => {
+    const stages: Stage[] = JSON.parse(root.dataset.stages || '[]');
+    const html = document.documentElement;
+
+    const apply = () => {
+      const stage = stages.find((s) => s.key === html.dataset.cbfStage);
+      const role = html.dataset.cbfRole ?? '';
+      root.querySelectorAll<HTMLElement>('[data-phase]').forEach((li) => {
+        const key = li.dataset.phase ?? '';
+        if (stage) {
+          const [state, progress, when] = stage.phases[key] ?? ['next', null, ''];
+          li.dataset.state = state;
+          const whenEl = li.querySelector('[data-when-text]');
+          if (whenEl && when) whenEl.textContent = when;
+          if (progress != null) li.style.setProperty('--phase-progress', `${progress}%`);
+          else li.style.removeProperty('--phase-progress');
+          if (state === 'current') li.setAttribute('aria-current', 'step');
+          else li.removeAttribute('aria-current');
+          const sr = li.querySelector('[data-state-label]');
+          if (sr) sr.textContent = `${STATE_LABEL[state] ?? ''}, `;
+        }
+        const noPages =
+          (li.dataset.hiddenFor ?? '').split(' ').includes(role) ||
+          (li.dataset.hiddenStages ?? '').split(' ').includes(html.dataset.cbfStage ?? '');
+        li.dataset.name = noPages ? 'text' : 'menu';
+      });
+    };
+
+    apply();
+    document.addEventListener('cbf-stage:change', apply);
+    document.addEventListener('cbf-role:change', apply);
+  });
+</script>
+
+<style>
+  .cbf-record-lifecycle {
+    border-bottom: 1px solid var(--color-border-default);
+  }
+</style>
