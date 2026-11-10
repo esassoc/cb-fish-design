@@ -4,6 +4,11 @@
  * header, led by the menu it lives under: "Setup / Pre-award", "Overview / Contract
  * summary" (Andy, round 3: "Add a 'Setup' prefix ahead of 'Pre-award'? Something like
  * 'Setup / Pre-Award'"). The section and slash are quiet so the page name reads first.
+ * A page that shares its section's name (Closeout) shows the name once.
+ *
+ * Set in `title` (IBM Plex Sans), not the condensed display face of the headings
+ * above it (Andy, round 3: "are we using like a narrow version of it? Do we have a
+ * non-narrow version that we could use there?").
  */
 interface Props {
   /** The menu the page lives under: "Setup", "Overview". */
@@ -13,8 +18,8 @@ interface Props {
 const { section, title } = Astro.props;
 ---
 
-<h2 class="cbf-record-page-title typography-heading-md">
-  <span class="cbf-record-page-title__section">{section} / </span>{title}
+<h2 class="cbf-record-page-title typography-title">
+  {section !== title && <span class="cbf-record-page-title__section">{section} / </span>}{title}
 </h2>
 
 <style>
