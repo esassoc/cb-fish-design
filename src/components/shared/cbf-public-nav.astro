@@ -34,6 +34,27 @@ import CbfOmniSearch from '../search/cbf-omni-search.astro';
 import { help, mitigation, reporting, funding, system, quick, type NavLink } from '../../data/app-nav';
 import { withBase } from '../../lib/base';
 // app-nav hrefs are root-relative and base-less — prefix internal ones here.
+// QA's own nav glyphs, copied one file at a time from esassoc/sitkatech-monorepo
+// (Gemini/Source/Taurus.WebCore/wwwroot/Content/img/GeminiNav/, as referenced by
+// Views/Shared/NavigationMenu.cshtml and NavigationMenuTreeMaker.cs) into
+// public/images/qa-nav/. Each is its own size, as QA draws them. They paint through a
+// CSS mask in currentColor, because the hub's button and dropdown take only a
+// registry icon name, not an SVG.
+const QA_ICONS = {
+  datamanagement: ['Nav-white-Datamanagement', 11, 12],
+  systemstatus: ['Nav-white-Systemstatus', 14, 14],
+  systemconfiguration: ['Nav-white-Systemconfiguration', 13, 12],
+  help: ['Nav-white-Help', 15, 14],
+  mitigation: ['Nav-Mitigationwork', 23, 16],
+  reporting: ['Nav-Reporting', 21, 10],
+  funding: ['Nav-Funding', 24, 14],
+  dashboard: ['Nav-Dashboard', 16, 14],
+  recent: ['Nav-Recent', 14, 14],
+} as const;
+const qa = (key: keyof typeof QA_ICONS): string => {
+  const [file, w, h] = QA_ICONS[key];
+  return `--qa-icon: url(${withBase(`/images/qa-nav/${file}.svg`)}); --qa-w: ${w}px; --qa-h: ${h}px`;
+};
 const based = (links: NavLink[]): NavLink[] =>
   links.map((l) => (l.href?.startsWith('/') ? { ...l, href: withBase(l.href) } : l));
 ---
@@ -41,15 +62,17 @@ const based = (links: NavLink[]): NavLink[] =>
   {/* System menus are admin tools (assumed, not confirmed): the contract pages'
       role lens hides them for COR and contractor via data-hide-for. */}
   <div class="cbf-nav-collapsible" slot="start" data-hide-for="cor contractor">
-    <EsaIconLink variant="chrome" size="sm" icon="database" iconRight="chevron-down">Data management</EsaIconLink>
-    <EsaIconLink variant="chrome" size="sm" icon="menu" iconRight="chevron-down">System status</EsaIconLink>
-    <EsaIconLink variant="chrome" size="sm" icon="settings" iconRight="chevron-down">System configuration</EsaIconLink>
+    <span class="cbf-qa-icon" style={qa('datamanagement')}><EsaIconLink variant="chrome" size="sm" iconRight="chevron-down">Data management</EsaIconLink></span>
+    <span class="cbf-qa-icon" style={qa('systemstatus')}><EsaIconLink variant="chrome" size="sm" iconRight="chevron-down">System status</EsaIconLink></span>
+    <span class="cbf-qa-icon" style={qa('systemconfiguration')}><EsaIconLink variant="chrome" size="sm" iconRight="chevron-down">System configuration</EsaIconLink></span>
   </div>
   <CbfOmniTrigger />
   <div class="cbf-nav-collapsible" slot="end">
-    <EsaNavDropdown size="sm" align="end" icon="circle-question-mark" label="Help">
-      <EsaLinkColumn heading="Help" links={based(help)} />
-    </EsaNavDropdown>
+    <span class="cbf-qa-icon" style={qa('help')}>
+      <EsaNavDropdown size="sm" align="end" label="Help">
+        <EsaLinkColumn heading="Help" links={based(help)} />
+      </EsaNavDropdown>
+    </span>
   </div>
 </EsaAppBar>
 
@@ -61,15 +84,21 @@ const based = (links: NavLink[]): NavLink[] =>
     <CbfLogo />
   </Fragment>
   <div class="cbf-nav-collapsible cbf-nav-collapsible--inline">
-    <EsaNavDropdown icon="trees" label="Mitigation work">
-      <EsaLinkColumn heading="Mitigation work" links={based(mitigation)} />
-    </EsaNavDropdown>
-    <EsaNavDropdown icon="activity" label="Reporting">
-      <EsaLinkColumn heading="Reporting" links={based(reporting)} />
-    </EsaNavDropdown>
-    <EsaNavDropdown icon="credit-card" label="Funding">
-      <EsaLinkColumn heading="Funding" links={based(funding)} />
-    </EsaNavDropdown>
+    <span class="cbf-qa-icon" style={qa('mitigation')}>
+      <EsaNavDropdown label="Mitigation work">
+        <EsaLinkColumn heading="Mitigation work" links={based(mitigation)} />
+      </EsaNavDropdown>
+    </span>
+    <span class="cbf-qa-icon" style={qa('reporting')}>
+      <EsaNavDropdown label="Reporting">
+        <EsaLinkColumn heading="Reporting" links={based(reporting)} />
+      </EsaNavDropdown>
+    </span>
+    <span class="cbf-qa-icon" style={qa('funding')}>
+      <EsaNavDropdown label="Funding">
+        <EsaLinkColumn heading="Funding" links={based(funding)} />
+      </EsaNavDropdown>
+    </span>
   </div>
 
   <div class="cbf-nav-actions" slot="end">
@@ -82,10 +111,10 @@ const based = (links: NavLink[]): NavLink[] =>
     {/* Order and glyphs follow QA (2026-11-10): Dashboard, Recent, then the user with
         an initials avatar. */}
     <a class="cbf-nav-link cbf-nav-link--collapse" href={withBase('/my-work')}>
-      <CbfIcon name="circle-gauge" size={16} /> Dashboard
+      <span class="cbf-qa-icon__glyph" style={qa('dashboard')}></span> Dashboard
     </a>
     <button class="cbf-nav-link cbf-nav-link--collapse" type="button">
-      <CbfIcon name="history" size={16} /> Recent <CbfIcon name="chevron-down" size={14} />
+      <span class="cbf-qa-icon__glyph" style={qa('recent')}></span> Recent <CbfIcon name="chevron-down" size={14} />
     </button>
     <button class="cbf-nav-link cbf-nav-link--user" type="button" data-omni-user>
       <span class="cbf-nav-link__avatar" data-cbf-user-initials><EsaAvatar name="Angela Zhao" size="sm" /></span>
@@ -158,6 +187,21 @@ const based = (links: NavLink[]): NavLink[] =>
     width: 1px;
     height: 1.1em;
     background: rgba(255, 255, 255, 0.25);
+  }
+  /* QA's glyphs (see QA_ICONS): a mask over currentColor, ahead of the label in a
+     lego trigger, or as its own span in the local links. */
+  .cbf-qa-icon {
+    display: contents;
+  }
+  .cbf-qa-icon :global(.esa-button__native)::before,
+  .cbf-qa-icon__glyph {
+    content: '';
+    display: inline-block;
+    flex: none;
+    inline-size: var(--qa-w);
+    block-size: var(--qa-h);
+    background: currentColor;
+    mask: var(--qa-icon) center / contain no-repeat;
   }
   /* QA's avatar: white initials disc on the brand bar. */
   .cbf-nav-link__avatar {

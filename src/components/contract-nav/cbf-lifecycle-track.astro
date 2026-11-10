@@ -234,14 +234,39 @@ const stateLabel = { done: 'Finished', current: 'Current phase', next: 'Not star
   .cbf-lifecycle-track__status :global(.cbf-lifecycle-track__icon--current path) {
     fill: currentColor;
   }
-  /* You are here: the phase holding the page you are on shows its name in bold. The
-     phase the contract is in needs no weight; its blue status icon marks it (Andy,
-     round 3: "Remove the active border her for setup. Make it bold instead. Remove
-     bold on the 'active phase'"). */
+  /* You are here: the phase holding the page you are on is filled brand blue, and
+     everything in it turns white (Andy, round 3: "Maybe the active phase or menu
+     needs like a dark, like a blue fill and everything, and it turns to white ... I'm
+     losing my sense of where I am within the contract"). The phase the contract is
+     in is not weighted; its status icon marks it. */
+  .cbf-lifecycle-track__phase[data-here],
+  .cbf-lifecycle-track__phase[data-here][data-name='menu']:has(.cbf-lifecycle-track__menu :is(summary, a):hover),
+  .cbf-lifecycle-track__phase[data-here][data-name='menu']:has(details[open]) {
+    background: var(--color-background-brand);
+    color: var(--color-content-on-brand);
+  }
+  .cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__status,
+  .cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__when,
+  .cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__text,
+  .cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__menu :global(.esa-button__native) {
+    color: var(--color-content-on-brand);
+  }
   .cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__text,
   .cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__menu :global(.esa-button__native) {
     font-weight: var(--typography-font-weight-semibold);
-    color: var(--color-content-default);
+  }
+  .cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__meter {
+    background: color-mix(in srgb, var(--color-content-on-brand) 30%, transparent);
+  }
+  .cbf-lifecycle-track__phase[data-here][data-state='done'] .cbf-lifecycle-track__meter {
+    background: color-mix(in srgb, var(--color-content-on-brand) 70%, transparent);
+  }
+  .cbf-lifecycle-track__phase[data-here][data-state='current'] .cbf-lifecycle-track__meter {
+    background: linear-gradient(
+      to right,
+      var(--color-content-on-brand) var(--phase-progress, 0%),
+      color-mix(in srgb, var(--color-content-on-brand) 30%, transparent) var(--phase-progress, 0%)
+    );
   }
 
   /* Mid widths: two phases per row, so names and dates never collide. */
