@@ -1,11 +1,11 @@
 ---
 /*
  * cbf-record-page-title — the name of the page being viewed, under the record
- * header, led by the menu it lives under: "Setup / Pre-Award", "Overview / Contract
- * Summary" (Andy, round 3: "Add a 'Setup' prefix ahead of 'Pre-award'? Something like
- * 'Setup / Pre-Award'"). The section and slash are a quieter colour so the page name
- * reads first.
- * A page that shares its section's name (Closeout) shows the name once.
+ * header, with the menu it lives under as a quiet line above it: "Setup" over
+ * "Work Element Budgets", "Overview" over "Contract Summary" (Andy, round 3: "Go
+ * with Quiet eyebrow, but don't include page 4 of 4"). No slash, no page count.
+ * A page that shares its section's name (Closeout) shows the name once (Andy, round
+ * 3: "I don't think we need the closeout/closeout").
  *
  * Set in `title` (IBM Plex Sans), not the condensed display face of the headings
  * above it (Andy, round 3: "are we using like a narrow version of it? Do we have a
@@ -19,18 +19,20 @@ interface Props {
 const { section, title } = Astro.props;
 ---
 
-<h2 class="cbf-record-page-title typography-title">
-  {section !== title && <span class="cbf-record-page-title__section">{section} / </span>}{title}
-</h2>
+<div class="cbf-record-page-title stack" data-gap="3xs">
+  {section !== title && <p class="cbf-record-page-title__section typography-body-sm">{section}</p>}
+  <h2 class="cbf-record-page-title__name typography-title">{title}</h2>
+</div>
 
 <style>
-  .cbf-record-page-title {
+  .cbf-record-page-title__section,
+  .cbf-record-page-title__name {
     margin: 0;
-    color: var(--color-content-default);
   }
-  /* Same weight as the page name (the title composite's medium); only the colour
-     steps back (Andy, round 3: the regular-weight prefix was "too thin"). */
   .cbf-record-page-title__section {
     color: var(--color-content-default-secondary);
+  }
+  .cbf-record-page-title__name {
+    color: var(--color-content-default);
   }
 </style>
