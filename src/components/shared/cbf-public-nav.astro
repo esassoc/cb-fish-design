@@ -25,7 +25,6 @@ import EsaNavDropdown from '@esa/ecology/esa-nav-dropdown.astro';
 import EsaLinkColumn from '@esa/ecology/esa-link-column.astro';
 import EsaAvatar from '@esa/ecology/esa-avatar.astro';
 import CbfLogo from './cbf-logo.astro';
-import CbfIcon from '../search/cbf-icon.astro';
 import CbfOmniTrigger from '../search/cbf-omni-trigger.astro';
 import CbfOmniSearch from '../search/cbf-omni-search.astro';
 // Menu data is shared with the homepage footer (cbf-app-footer) via app-nav.ts so
@@ -50,10 +49,12 @@ const QA_ICONS = {
   funding: ['Nav-Funding', 24, 14],
   dashboard: ['Nav-Dashboard', 16, 14],
   recent: ['Nav-Recent', 14, 14],
+  down: ['Nav-Down-arrow', 9, 5],
 } as const;
 const qa = (key: keyof typeof QA_ICONS): string => {
   const [file, w, h] = QA_ICONS[key];
-  return `--qa-icon: url(${withBase(`/images/qa-nav/${file}.svg`)}); --qa-w: ${w}px; --qa-h: ${h}px`;
+  const down = withBase('/images/qa-nav/Nav-Down-arrow.svg');
+  return `--qa-icon: url(${withBase(`/images/qa-nav/${file}.svg`)}); --qa-w: ${w}px; --qa-h: ${h}px; --qa-down: url(${down})`;
 };
 const based = (links: NavLink[]): NavLink[] =>
   links.map((l) => (l.href?.startsWith('/') ? { ...l, href: withBase(l.href) } : l));
@@ -114,11 +115,11 @@ const based = (links: NavLink[]): NavLink[] =>
       <span class="cbf-qa-icon__glyph" style={qa('dashboard')}></span> Dashboard
     </a>
     <button class="cbf-nav-link cbf-nav-link--collapse" type="button">
-      <span class="cbf-qa-icon__glyph" style={qa('recent')}></span> Recent <CbfIcon name="chevron-down" size={14} />
+      <span class="cbf-qa-icon__glyph" style={qa('recent')}></span> Recent <span class="cbf-qa-icon__glyph" style={qa('down')}></span>
     </button>
     <button class="cbf-nav-link cbf-nav-link--user" type="button" data-omni-user>
       <span class="cbf-nav-link__avatar" data-cbf-user-initials><EsaAvatar name="Angela Zhao" size="sm" /></span>
-      <span data-cbf-user-name>Angela Zhao</span> <CbfIcon name="chevron-down" size={14} />
+      <span data-cbf-user-name>Angela Zhao</span> <span class="cbf-qa-icon__glyph" style={qa('down')}></span>
     </button>
   </div>
 </EsaAppBar>
@@ -192,6 +193,22 @@ const based = (links: NavLink[]): NavLink[] =>
      lego trigger, or as its own span in the local links. */
   .cbf-qa-icon {
     display: contents;
+  }
+  /* QA's down arrow in place of the hub chevron; it turns over when the menu opens. */
+  .cbf-qa-icon :global(.esa-button__native > .esa-icon:last-child) {
+    display: none;
+  }
+  .cbf-qa-icon :global(.esa-button__native)::after {
+    content: '';
+    flex: none;
+    inline-size: 9px;
+    block-size: 5px;
+    background: currentColor;
+    mask: var(--qa-down) center / contain no-repeat;
+    transition: transform 150ms ease;
+  }
+  .cbf-qa-icon :global(details[open] > summary .esa-button__native)::after {
+    transform: rotate(180deg);
   }
   .cbf-qa-icon :global(.esa-button__native)::before,
   .cbf-qa-icon__glyph {
