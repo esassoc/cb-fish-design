@@ -12,7 +12,7 @@
 // (NAV_ROLES): admin sees everything; the BPA COR loses the system-admin and budgeter
 // pages; a contractor contact also loses BPA-only and editor-only pages. `hideFor`
 // lists the roles that do NOT see the page.
-import { NAV_ROLES } from './contract-nav.mjs';
+import { NAV_ROLES, contract } from './contract-nav.mjs';
 
 const BACK_OFFICE = ['cor', 'contractor'];
 const CONTRACTOR = ['contractor'];
@@ -24,6 +24,14 @@ export const project = {
   status: 'Ongoing',
   sponsor: 'Grande Ronde Model Watershed',
 };
+
+/**
+ * The fiscal year the project is in and its contract for that year, for the status
+ * line under the title (project round 2). A project spans many years and runs a new
+ * contract each fiscal year, so the year is its date, not a phase. Mock: the contract
+ * is the one the contract-nav prototype shows, at its default stage (Issued).
+ */
+export const currentYear = { fy: 'FY2027', contract: contract.number, status: 'Issued' };
 
 export const PROJECT_TABS = [
   {

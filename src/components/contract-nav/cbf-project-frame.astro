@@ -5,6 +5,8 @@
  * portfolio back link, the record header with its status badge and one row of area
  * menus), the role gate, and the floating prototype controls. The page slots the page
  * title and body. No lifecycle line: a project's pages don't move through phases.
+ * Under the title, cbf-project-year names the fiscal year and links that year's
+ * contract (project round 2).
  */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CbfPublicNav from '../shared/cbf-public-nav.astro';
@@ -14,13 +16,14 @@ import CbfRoleSwitch from '../shared/cbf-role-switch.astro';
 import CbfLensSwitch from '../shared/cbf-lens-switch.astro';
 import CbfRecordHeader from './cbf-record-header.astro';
 import CbfRecordEnds from './cbf-record-ends.astro';
+import CbfProjectYear from './cbf-project-year.astro';
 import CbfRoleGate from './cbf-role-gate.astro';
 import CbfPortfolioReturn from './cbf-portfolio-return.astro';
 import EsaBadge from '@esa/ecology/esa-badge.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import { withBase } from '../../lib/base';
 import { ARRIVALS, NAV_ARRIVAL_KEY, NAV_ROLES, NAV_ROLE_KEY, PORTFOLIO } from '../../data/contract-nav.mjs';
-import { PROJECT_TABS, project, projectTabHiddenFor } from '../../data/project-nav.mjs';
+import { PROJECT_TABS, currentYear, project, projectTabHiddenFor } from '../../data/project-nav.mjs';
 
 interface Props {
   /** The page slug that marks "you are here". */
@@ -51,13 +54,14 @@ const crumbs = [
         <CbfPortfolioReturn name={PORTFOLIO.name} href={withBase('/home')} />
         <CbfRecordHeader eyebrow={`Project ${project.number}`} title={project.title}>
           <EsaBadge slot="status" value={project.status} variant="success" size="md" />
+          <CbfProjectYear {...currentYear} contractHref={withBase('/contract-nav/v3/summary')} />
           <CbfRecordEnds tabs={PROJECT_TABS} current={current} base={base} label="Project" layout="row" hiddenFor={projectTabHiddenFor} />
         </CbfRecordHeader>
         <CbfRoleGate pageHideFor={pageHideFor} fallback={`${base}/summary`} />
         <slot />
       </CbfAppPanel>
 
-      <CbfPrototypeStrip placement="float" note="Project status is mock.">
+      <CbfPrototypeStrip placement="float" note="Project status and fiscal year are mock.">
         <CbfRoleSwitch roles={NAV_ROLES} storageKey={NAV_ROLE_KEY} />
         <CbfLensSwitch
           options={ARRIVALS}
