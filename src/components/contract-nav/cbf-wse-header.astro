@@ -30,18 +30,22 @@ interface WseTab {
   label: string;
 }
 interface Props {
-  wse: Wse;
-  wses: Wse[];
+  we: Wse;
+  /** The revision's WEs, for the switcher. */
+  wes: Wse[];
   tabs: WseTab[];
   /** The tab being viewed. */
   tab: string;
-  /** "SOW Rev 1, Contract Requisition" */
+  /** "SOW Rev 2, Contract Change Request (CCR-61204)" */
   revision: string;
+  /** The SOW page, opened on this revision. */
   sowHref: string;
-  /** Route prefix for a WSE's tab: `${wseBase}/${letter}/${tab}`. */
-  wseBase: string;
+  /** Route prefix for a WE's tab in this revision: `${weBase}/${letter}/${tab}`. */
+  weBase: string;
+  /** Stages in which the revision is locked, so its needs-input flags hide. */
+  flagHideStages: string;
 }
-const { wse, wses, tabs, tab, revision, sowHref, wseBase } = Astro.props;
+const { we: wse, wes: wses, tabs, tab, revision, sowHref, weBase: wseBase, flagHideStages } = Astro.props;
 const href = (letter: string, key: string) => `${wseBase}/${letter.toLowerCase()}/${key}`;
 const options = wses.map((w) => ({ value: w.letter, label: `${w.letter}: ${w.template}. ${w.name}, ${w.title}` }));
 ---
@@ -71,6 +75,7 @@ const options = wses.map((w) => ({ value: w.letter, label: `${w.letter}: ${w.tem
       href: href(wse.letter, t.key),
       active: t.key === tab,
       flag: wse.needs.includes(t.key) ? 'Needs input' : undefined,
+      flagHideStages,
     }))}
   />
 </div>
@@ -118,6 +123,12 @@ const options = wses.map((w) => ({ value: w.letter, label: `${w.letter}: ${w.tem
   }
   .cbf-wse-header__sub {
     color: var(--color-content-default-secondary);
+  }
+  /* The tabs stay on one row and scroll sideways rather than wrap one tab onto a
+     second row at mid widths. */
+  .cbf-wse-header :global(.cbf-report-tabs) {
+    flex-wrap: nowrap;
+    overflow-x: auto;
   }
   .cbf-wse-header__switch {
     flex: 0 1 22rem;

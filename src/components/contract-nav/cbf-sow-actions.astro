@@ -37,36 +37,49 @@ interface Action {
   value: string;
   onlyStages: string[];
 }
-interface Wse {
+interface We {
   letter: string;
   template: number;
   name: string;
   title: string;
   needs: string[];
 }
-interface WseTab {
+interface Revision {
+  rev: number;
+  type: string;
+  request: string;
+  /** Stages in which the revision exists. */
+  stages: string[];
+  /** Stages in which it is open for edits: its needs-input marks show only then. */
+  unlocked: string[];
+  /** Stages in which the SOW page opens on it. */
+  current: string[];
+  wes: We[];
+}
+interface WeTab {
   key: string;
   label: string;
 }
 interface Props {
   actions: Action[];
-  /** Every stage key, to turn an action's onlyStages into data-hide-stages. */
+  /** Every stage key, to turn a stage list into data-hide-stages. */
   stageKeys: string[];
-  wses: Wse[];
-  /** The facet columns: every WSE tab but Summary. */
-  facets: WseTab[];
-  /** "Rev 1, Contract Requisition" */
-  revision: string;
-  /** Route prefix for a WSE's tab: `${wseBase}/${letter}/${tab}`. */
-  wseBase: string;
+  revisions: Revision[];
+  /** The facet columns: every WE tab but Summary. */
+  facets: WeTab[];
+  /** The SOW page's own URL, which `?rev=N` selects a revision on. */
+  sowHref: string;
+  /** Route prefix for a WE's tab: `${weBase}/rev-${n}/${letter}/${tab}`. */
+  weBase: string;
   initializeHref: string;
 }
-const { actions, stageKeys, wses, facets, revision, wseBase, initializeHref } = Astro.props;
+const { actions, stageKeys, revisions, facets, sowHref, weBase, initializeHref } = Astro.props;
 const hide = (only: string[]) => stageKeys.filter((k) => !only.includes(k)).join(' ');
 const badge = (s: string) => (s === 'Issued' ? 'success' : s === 'In review' ? 'info' : 'neutral') as 'success' | 'info' | 'neutral';
+const weHref = (r: Revision, w: We, tab: string) => `${weBase}/rev-${r.rev}/${w.letter.toLowerCase()}/${tab}`;
 ---
 
-<div class="cbf-sow-actions">
+<div class="cbf-sow-actions" data-sow-actions data-revisions={JSON.stringify(revisions.map((r) => ({ rev: r.rev, stages: r.stages, current: r.current })))}>
   <div data-hide-stages={hide(['setup'])}>
     <EsaEmptyState title="No SOW yet">
       <span data-hide-for="contractor">
@@ -76,85 +89,127 @@ const badge = (s: string) => (s === 'Issued' ? 'success' : s === 'In review' ? '
   </div>
 
   <div class="stack" data-gap="xl" data-hide-stages="setup">
-  <section class="stack" data-gap="sm" aria-labelledby="sow-actions-h">
-    <h3 id="sow-actions-h" class="typography-label-lg">Contract actions</h3>
-    <div class="cbf-sow-actions__scroll">
-      <table class="cbf-sow-actions__table typography-body-sm">
-        <thead>
-          <tr>
-            <th scope="col">Rev</th>
-            <th scope="col">Type</th>
-            <th scope="col">Status</th>
-            <th scope="col">Request number</th>
-            <th scope="col" class="is-num">WE count</th>
-            <th scope="col">Change type</th>
-            <th scope="col">SOW status</th>
-            <th scope="col">Start</th>
-            <th scope="col">End</th>
-            <th scope="col" class="is-num">Value</th>
-          </tr>
-        </thead>
-        <tbody>
-          {actions.map((a) => (
-            <tr data-hide-stages={hide(a.onlyStages) || undefined}>
-              <td>{a.rev}</td>
-              <td>{a.type}</td>
-              <td><EsaBadge value={a.status} variant={badge(a.status)} size="sm" /></td>
-              <td>{a.request}</td>
-              <td class="is-num">{a.weCount}</td>
-              <td>{a.changeType}</td>
-              <td>{a.sowStatus}</td>
-              <td>{a.start}</td>
-              <td>{a.end}</td>
-              <td class="is-num">{a.value}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="stack" data-gap="sm" aria-labelledby="sow-wse-h">
-    <h3 id="sow-wse-h" class="typography-label-lg">{revision} work statement elements</h3>
-    <div class="cbf-sow-actions__scroll">
-      <table class="cbf-sow-actions__table typography-body-sm">
-        <thead>
-          <tr>
-            <th scope="col">WE</th>
-            <th scope="col">Work element</th>
-            <th scope="col">Title</th>
-            {facets.map((f) => <th scope="col">{f.label}</th>)}
-          </tr>
-        </thead>
-        <tbody>
-          {wses.map((w) => (
+    <section class="stack" data-gap="sm" aria-labelledby="sow-actions-h">
+      <h3 id="sow-actions-h" class="typography-label-lg">Contract actions</h3>
+      <div class="cbf-sow-actions__scroll">
+        <table class="cbf-sow-actions__table typography-body-sm">
+          <thead>
             <tr>
-              <td>{w.letter}</td>
-              <td><a href={`${wseBase}/${w.letter.toLowerCase()}/summary`}>{w.template}. {w.name}</a></td>
-              <td>{w.title}</td>
-              {facets.map((f) => (
-                <td>
-                  {w.needs.includes(f.key) ? (
-                    <a href={`${wseBase}/${w.letter.toLowerCase()}/${f.key}`} class="cbf-sow-actions__cell is-needs">Needs input</a>
-                  ) : (
-                    <a href={`${wseBase}/${w.letter.toLowerCase()}/${f.key}`} class="cbf-sow-actions__cell" aria-label={`${f.label}, done`}>
-                      <CbfIcon name="circle-check" />
-                    </a>
-                  )}
-                </td>
-              ))}
+              <th scope="col">Rev</th>
+              <th scope="col">Type</th>
+              <th scope="col">Status</th>
+              <th scope="col">Request number</th>
+              <th scope="col" class="is-num">WE count</th>
+              <th scope="col">Change type</th>
+              <th scope="col">SOW status</th>
+              <th scope="col">Start</th>
+              <th scope="col">End</th>
+              <th scope="col" class="is-num">Value</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </section>
+          </thead>
+          <tbody>
+            {actions.map((a) => (
+              <tr data-hide-stages={hide(a.onlyStages) || undefined} data-action-rev={a.rev}>
+                <td><a href={`${sowHref}?rev=${a.rev}`} aria-label={`Rev ${a.rev}, show its work elements`}>Rev {a.rev}</a></td>
+                <td>{a.type}</td>
+                <td><EsaBadge value={a.status} variant={badge(a.status)} size="sm" /></td>
+                <td>{a.request}</td>
+                <td class="is-num">{a.weCount}</td>
+                <td>{a.changeType}</td>
+                <td>{a.sowStatus}</td>
+                <td>{a.start}</td>
+                <td>{a.end}</td>
+                <td class="is-num">{a.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    {revisions.map((r) => (
+      <section class="stack" data-gap="sm" aria-labelledby={`sow-we-h-${r.rev}`} data-rev-panel={r.rev} data-hide-stages={hide(r.stages) || undefined}>
+        <h3 id={`sow-we-h-${r.rev}`} class="typography-label-lg">Rev {r.rev} work elements</h3>
+        <div class="cbf-sow-actions__scroll">
+          <table class="cbf-sow-actions__table typography-body-sm">
+            <thead>
+              <tr>
+                <th scope="col">WE</th>
+                <th scope="col">Work element</th>
+                <th scope="col">Title</th>
+                {facets.map((f) => <th scope="col">{f.label}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {r.wes.map((w) => (
+                <tr>
+                  <td>{w.letter}</td>
+                  <td><a href={weHref(r, w, 'summary')}>{w.template}. {w.name}</a></td>
+                  <td>{w.title}</td>
+                  {facets.map((f) => {
+                    const done = (
+                      <a href={weHref(r, w, f.key)} class="cbf-sow-actions__cell" aria-label={`WE ${w.letter}, ${f.label}: done`}>
+                        <CbfIcon name="circle-check" />
+                      </a>
+                    );
+                    return (
+                      <td>
+                        {w.needs.includes(f.key) ? (
+                          <>
+                            <span data-hide-stages={r.unlocked.join(' ')}>{done}</span>
+                            <a
+                              href={weHref(r, w, f.key)}
+                              class="cbf-sow-actions__cell is-needs"
+                              aria-label={`WE ${w.letter}, ${f.label}: needs input`}
+                              data-hide-stages={hide(r.unlocked) || undefined}
+                            >Needs input</a>
+                          </>
+                        ) : done}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    ))}
   </div>
 </div>
+
+<script>
+  // Which revision's work elements show: ?rev=N when that revision exists at the
+  // current stage, else the revision the SOW opens on at that stage (Rev 2 during a
+  // change request). Re-applied when the stage lens moves.
+  document.querySelectorAll<HTMLElement>('[data-sow-actions]').forEach((root) => {
+    const revs: { rev: number; stages: string[]; current: string[] }[] = JSON.parse(root.dataset.revisions || '[]');
+    const apply = () => {
+      const stage = document.documentElement.dataset.cbfStage ?? '';
+      const asked = Number(new URLSearchParams(location.search).get('rev'));
+      const pick =
+        revs.find((r) => r.rev === asked && r.stages.includes(stage)) ?? revs.find((r) => r.current.includes(stage));
+      root.querySelectorAll<HTMLElement>('[data-rev-panel]').forEach((p) => {
+        p.hidden = !!pick && Number(p.dataset.revPanel) !== pick.rev;
+      });
+      root.querySelectorAll<HTMLElement>('[data-action-rev]').forEach((row) => {
+        const a = row.querySelector('a');
+        if (a) a.toggleAttribute('aria-current', !!pick && Number(row.dataset.actionRev) === pick.rev);
+        row.classList.toggle('is-selected', !!pick && Number(row.dataset.actionRev) === pick.rev);
+      });
+    };
+    apply();
+    document.addEventListener('cbf-stage:change', apply);
+  });
+</script>
 
 <style>
   .cbf-sow-actions {
     padding-block: var(--spacing-500) var(--spacing-600);
+  }
+  /* The stack primitive sets display, which would beat the hidden attribute. */
+  .cbf-sow-actions [data-rev-panel][hidden] {
+    display: none;
   }
   .cbf-sow-actions h3 {
     margin: 0;
@@ -189,6 +244,13 @@ const badge = (s: string) => (s === 'Issued' ? 'success' : s === 'In review' ? '
   }
   .cbf-sow-actions__table a {
     color: var(--color-content-brand);
+  }
+  /* The revision whose work elements show below: the row is marked, quietly. */
+  .cbf-sow-actions__table tr.is-selected td {
+    background: var(--color-background-brand-subtle);
+  }
+  .cbf-sow-actions__table tr.is-selected a {
+    font-weight: var(--typography-font-weight-semibold);
   }
   .cbf-sow-actions__cell {
     display: inline-flex;

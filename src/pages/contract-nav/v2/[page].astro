@@ -6,18 +6,19 @@
 import CbfContractFrame from '../../../components/contract-nav/cbf-contract-frame.astro';
 import CbfRecordPageTitle from '../../../components/contract-nav/cbf-record-page-title.astro';
 import CbfSowActions from '../../../components/contract-nav/cbf-sow-actions.astro';
+import CbfInitializeSow from '../../../components/contract-nav/cbf-initialize-sow.astro';
 import CbfSkeletonBody from '../../../components/shared/cbf-skeleton-body.astro';
 import { withBase } from '../../../lib/base';
 import {
   ALL_PAGES_V2,
   CONTRACT_ACTIONS,
   CONTRACT_TABS_V2,
+  REVISIONS,
   STAGES_V2,
-  WSES,
-  WSE_REVISION,
   WSE_TABS,
   findPageV2,
   headerViews,
+  revisionLine,
 } from '../../../data/contract-nav-v2.mjs';
 
 export function getStaticPaths() {
@@ -30,13 +31,23 @@ const base = withBase('/contract-nav/v2');
 const section = CONTRACT_TABS_V2.find((t) => t.key === page.tab)!.label;
 const seed = ALL_PAGES_V2.findIndex((p) => p.slug === slug);
 const views = headerViews(slug).map((v) => ({ ...v, href: withBase(v.path) }));
+const stageKeys = STAGES_V2.map((s) => s.key);
+// Initialize SOW is in no menu: it sits under SOW, which stays marked.
+const isInit = slug === 'initialize-sow';
+const crumbs = isInit ? [{ label: 'SOW', href: `${base}/sow` }, { label: page.label }] : [{ label: page.label }];
+// Review and Approve pages act on one revision: name it, per stage.
+const revisionLines =
+  page.tab === 'review'
+    ? REVISIONS.map((r) => ({ text: revisionLine(r), hideStages: stageKeys.filter((k) => !r.current.includes(k)).join(' ') }))
+    : [];
 ---
 <!-- manifest:
   layout: cbf-contract-frame > page title + body
   sections:
     - contract frame      -> cbf-contract-frame      (site nav, record card with header, Overview/SOW/Files and lifecycle track, role gate, prototype controls)
     - page title          -> cbf-record-page-title   (quiet menu line over the page name, an H2 in brand navy)
-    - SOW body            -> cbf-sow-actions         (SOW page only: Initialize SOW button, contract actions, work elements matrix)
+    - SOW body            -> cbf-sow-actions         (SOW page only: Initialize SOW button, contract actions, a work element matrix per revision)
+    - Initialize SOW body -> cbf-initialize-sow      (Initialize SOW only: placeholder form with Create SOW and Cancel)
     - page body           -> cbf-skeleton-body       (every other page: static gray placeholder)
 -->
 <CbfContractFrame
@@ -44,25 +55,27 @@ const views = headerViews(slug).map((v) => ({ ...v, href: withBase(v.path) }));
   ends={['overview', 'sow', 'files']}
   stages={STAGES_V2}
   base={base}
-  current={slug}
-  crumbs={[{ label: page.label }]}
+  current={isInit ? 'sow' : slug}
+  crumbs={crumbs}
   title={page.label}
   pageHideFor={page.hideFor}
   pageHideStages={page.hideStages}
   views={views}
   activeView="sow-hub"
 >
-  <CbfRecordPageTitle section={section} title={page.label} />
+  <CbfRecordPageTitle section={section} title={page.label} revisionLines={revisionLines} />
   {slug === 'sow' ? (
     <CbfSowActions
       actions={CONTRACT_ACTIONS}
       stageKeys={STAGES_V2.map((s) => s.key)}
-      wses={WSES}
+      revisions={REVISIONS}
       facets={WSE_TABS.filter((t) => t.key !== 'summary')}
-      revision={`Rev ${WSE_REVISION.rev}`}
-      wseBase={`${base}/wse`}
+      sowHref={`${base}/sow`}
+      weBase={`${base}/sow`}
       initializeHref={`${base}/initialize-sow`}
     />
+  ) : isInit ? (
+    <CbfInitializeSow createHref={`${base}/sow?stage=review`} cancelHref={`${base}/sow`} seed={seed} />
   ) : (
     <CbfSkeletonBody seed={seed} />
   )}

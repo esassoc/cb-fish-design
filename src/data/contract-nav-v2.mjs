@@ -27,14 +27,15 @@ export const UNLISTED_PAGES_V2 = [{ ...page('initialize-sow'), tab: 'sow', hideS
 
 export const CONTRACT_TABS_V2 = [
   tab('overview'),
-  { key: 'sow', label: 'SOW', pages: [page('sow'), page('work-element-budgets')] },
+  // Work Element Budgets and Workflow need a SOW revision, as in prod: none in Setup.
+  { key: 'sow', label: 'SOW', pages: [page('sow'), { ...page('work-element-budgets'), hideStages: ['setup'] }] },
   { key: 'setup', label: 'Setup', pages: [page('pre-award')] },
   {
     key: 'review',
     label: 'Review and Approve',
     pages: [
       page('review-sow'),
-      page('workflow'),
+      { ...page('workflow'), hideStages: ['setup'] },
       // Pick 3: the memo is its own page, once a revision is in review.
       { slug: 'transmittal-memo', label: 'Transmittal Memo', prod: 'Workflow (transmittal memos)', hideStages: ['setup'] },
     ],
@@ -106,8 +107,6 @@ export const CONTRACT_ACTIONS = [
   },
 ];
 
-// The revision the WSE pages show (pick 5: a WSE page belongs to one revision).
-export const WSE_REVISION = { rev: 1, type: 'Contract Requisition' };
 
 // The WSE sub-tabs, in prod's order (qa.cbfish.org, 2026-11-11 capture).
 export const WSE_TABS = [
@@ -120,10 +119,11 @@ export const WSE_TABS = [
   { key: 'rme-metadata', label: 'RM&E Metadata' },
 ];
 
-// Mock work statement elements for CR-387553: letter (sort order), the work element
+// Mock work elements (WEs) for CR-387553's Rev 1: letter (sort order), the work element
 // template (number and name, from the CBFish work element list), and a title. `needs`
-// lists the tabs still missing required input (pick 6: prod's asterisk).
-export const WSES = [
+// lists the tabs still missing required input (pick 6: prod's asterisk), which only
+// shows while the revision is unlocked.
+const REV1_WES = [
   { letter: 'A', template: 165, name: 'Produce Environmental Compliance Documentation', title: 'Environmental compliance for instream work, Upper Grande Ronde', needs: ['milestones'] },
   { letter: 'B', template: 119, name: 'Manage and Administer Projects', title: 'Project management and contract administration', needs: [] },
   { letter: 'C', template: 132, name: 'Produce Progress (Annual) Report', title: 'Annual progress report to BPA', needs: [] },
@@ -134,17 +134,56 @@ export const WSES = [
   { letter: 'H', template: 157, name: 'Collect/Generate/Validate Field and Lab Data', title: 'Pre- and post-project habitat monitoring', needs: ['rme-metadata'] },
 ];
 
-export const wseLabel = (w) => `${w.letter}: ${w.template}. ${w.name}`;
+// Rev 2 (the change request) adds a WE and reopens two for edits.
+const REV2_WES = [
+  ...REV1_WES.map((w) =>
+    w.letter === 'E' ? { ...w, needs: ['location'] } : w.letter === 'F' ? { ...w, needs: ['metrics'] } : { ...w, needs: [] },
+  ),
+  { letter: 'I', template: 29, name: 'Increase Aquatic and/or Floodplain Complexity', title: 'Added large wood, river miles 15 to 16', needs: ['metrics', 'location', 'focal-species'] },
+];
+
+/**
+ * The SOW revisions and their WEs (pick 5: a WE page belongs to one revision).
+ * `stages` are the stage-lens values in which the revision exists; `unlocked` those in
+ * which it is open for edits, the only time its needs-input flags show; `current` those
+ * in which it is the revision the SOW page opens on.
+ */
+export const REVISIONS = [
+  {
+    rev: 1,
+    type: 'Contract Requisition',
+    request: 'CR-387553',
+    stages: ['review', 'issued', 'change', 'closed'],
+    unlocked: ['review'],
+    current: ['review', 'issued', 'closed'],
+    wes: REV1_WES,
+  },
+  {
+    rev: 2,
+    type: 'Contract Change Request',
+    request: 'CCR-61204',
+    stages: ['change'],
+    unlocked: ['change'],
+    current: ['change'],
+    wes: REV2_WES,
+  },
+];
+
+/** "SOW Rev 2, Contract Change Request (CCR-61204)" */
+export const revisionLine = (r) => `SOW Rev ${r.rev}, ${r.type} (${r.request})`;
 
 /**
  * The prototype's Header switch: both variations, each landing on the same page when
  * it exists there, else on Contract Summary. Paths are base-less; wrap with withBase().
  */
+// Round 4 pages round 3 lacks, and where round 3 keeps the same thing.
+const V1_FALLBACK = { 'transmittal-memo': 'workflow' };
+
 export function headerViews(slug) {
   const inV1 = !!findPage(slug);
   const inV2 = !!findPageV2(slug);
   return [
-    { key: 'lifecycle', label: 'Lifecycle', path: `/contract-nav/${inV1 ? slug : 'summary'}` },
+    { key: 'lifecycle', label: 'Lifecycle', path: `/contract-nav/${inV1 ? slug : V1_FALLBACK[slug] ?? 'summary'}` },
     { key: 'sow-hub', label: 'SOW hub', path: `/contract-nav/v2/${inV2 ? slug : 'summary'}` },
   ];
 }

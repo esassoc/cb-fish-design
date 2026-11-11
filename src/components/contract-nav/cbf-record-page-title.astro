@@ -15,13 +15,19 @@ interface Props {
   /** The menu the page lives under: "Setup", "Overview". */
   section: string;
   title: string;
+  /** The SOW revision the page acts on, one line per stage: Review and Approve pages
+      belong to a revision, so the change-request stage names Rev 2, not Rev 1. */
+  revisionLines?: { text: string; hideStages: string }[];
 }
-const { section, title } = Astro.props;
+const { section, title, revisionLines = [] } = Astro.props;
 ---
 
 <div class="cbf-record-page-title stack" data-gap="3xs">
   {section !== title && <p class="cbf-record-page-title__section typography-body-sm">{section}</p>}
   <h2 class="cbf-record-page-title__name typography-title">{title}</h2>
+  {revisionLines.map((l) => (
+    <p class="cbf-record-page-title__section typography-body-sm" data-hide-stages={l.hideStages || undefined}>{l.text}</p>
+  ))}
 </div>
 
 <style>
