@@ -4,13 +4,16 @@
  * nav). Each page is a real link, so it opens in a new tab and
  * reads as navigation to a screen reader; the page you are on carries aria-current.
  * Pages a role cannot see carry data-hide-for, and pages a stage lacks carry
- * data-hide-stages; cbf-role-gate hides both.
+ * data-hide-stages; cbf-role-gate hides both. A page may name a `group`: the first
+ * page of each group gets the group's name above it (round 5's SOW menu holds the
+ * Setup and Review and Approve pages that way).
  */
 interface Page {
   slug: string;
   label: string;
   hideFor?: string[];
   hideStages?: string[];
+  group?: string;
 }
 interface Props {
   pages: Page[];
@@ -25,10 +28,15 @@ const { pages, current, base, layout = 'list' } = Astro.props;
 ---
 
 <ul class:list={['cbf-page-menu', 'typography-body-md', `cbf-page-menu--${layout}`]}>
-  {pages.map((p) => (
-    <li data-hide-for={(p.hideFor ?? []).join(' ') || undefined} data-hide-stages={(p.hideStages ?? []).join(' ') || undefined}>
-      <a href={`${base}/${p.slug}`} aria-current={p.slug === current ? 'page' : undefined}>{p.label}</a>
-    </li>
+  {pages.map((p, i) => (
+    <>
+      {p.group && p.group !== pages[i - 1]?.group && (
+        <li class="cbf-page-menu__group typography-eyebrow-sm" role="presentation">{p.group}</li>
+      )}
+      <li data-hide-for={(p.hideFor ?? []).join(' ') || undefined} data-hide-stages={(p.hideStages ?? []).join(' ') || undefined}>
+        <a href={`${base}/${p.slug}`} aria-current={p.slug === current ? 'page' : undefined}>{p.label}</a>
+      </li>
+    </>
   ))}
 </ul>
 
@@ -46,6 +54,13 @@ const { pages, current, base, layout = 'list' } = Astro.props;
     color: var(--color-content-default);
     text-decoration: none;
     white-space: nowrap;
+  }
+  /* A group's name: quiet, with a rule above it to part it from the pages before. */
+  .cbf-page-menu__group {
+    margin-block-start: var(--spacing-150);
+    padding: var(--spacing-200) var(--spacing-300) var(--spacing-100);
+    border-block-start: 1px solid var(--color-border-default);
+    color: var(--color-content-default-secondary);
   }
   .cbf-page-menu a:hover {
     background: var(--color-background-elevation-sunken);

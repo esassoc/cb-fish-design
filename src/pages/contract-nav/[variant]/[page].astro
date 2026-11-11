@@ -1,8 +1,9 @@
 ---
-// /contract-nav/v2/{page} — round 4's "SOW hub" variation of the contract header, beside
-// round 3's at /contract-nav/{page} (plan: docs/private/briefs/cbfish-nav-header/
-// plan-round4.md). SOW joins Overview and Files on the title row; the SOW page shows
-// the contract actions and the work elements; other bodies are placeholders.
+// /contract-nav/{v2,v3}/{page} — round 4's "SOW hub" (v2) and round 5's "Areas" (v3)
+// variations of the contract header, beside round 3's at /contract-nav/{page} (plan:
+// docs/private/briefs/cbfish-nav-header/plan-round4.md). VARIANTS says how they differ;
+// the bodies are the same. The SOW page shows the contract actions and the work
+// elements; other bodies are placeholders.
 import CbfContractFrame from '../../../components/contract-nav/cbf-contract-frame.astro';
 import CbfRecordPageTitle from '../../../components/contract-nav/cbf-record-page-title.astro';
 import CbfSowActions from '../../../components/contract-nav/cbf-sow-actions.astro';
@@ -10,26 +11,26 @@ import CbfInitializeSow from '../../../components/contract-nav/cbf-initialize-so
 import CbfSkeletonBody from '../../../components/shared/cbf-skeleton-body.astro';
 import { withBase } from '../../../lib/base';
 import {
-  ALL_PAGES_V2,
   CONTRACT_ACTIONS,
-  CONTRACT_TABS_V2,
   REVISIONS,
   STAGES_V2,
+  VARIANTS,
   WSE_TABS,
-  findPageV2,
   headerViews,
   revisionLine,
 } from '../../../data/contract-nav-v2.mjs';
 
 export function getStaticPaths() {
-  return ALL_PAGES_V2.map((p) => ({ params: { page: p.slug } }));
+  return Object.entries(VARIANTS).flatMap(([variant, v]) => v.pages.map((p) => ({ params: { variant, page: p.slug } })));
 }
 
-const { page: slug } = Astro.params as { page: string };
-const page = findPageV2(slug)!;
-const base = withBase('/contract-nav/v2');
-const section = CONTRACT_TABS_V2.find((t) => t.key === page.tab)!.label;
-const seed = ALL_PAGES_V2.findIndex((p) => p.slug === slug);
+const { variant: vKey, page: slug } = Astro.params as { variant: keyof typeof VARIANTS; page: string };
+const variant = VARIANTS[vKey];
+const page = variant.pages.find((p) => p.slug === slug)!;
+const base = withBase(`/contract-nav/${vKey}`);
+// A page in a group (round 5's SOW menu) names its group over its title.
+const section = (page as { group?: string }).group ?? variant.tabs.find((t) => t.key === page.tab)!.label;
+const seed = variant.pages.findIndex((p) => p.slug === slug);
 const views = headerViews(slug).map((v) => ({ ...v, href: withBase(v.path) }));
 const stageKeys = STAGES_V2.map((s) => s.key);
 // Initialize SOW is in no menu: it sits under SOW, which stays marked.
@@ -37,7 +38,7 @@ const isInit = slug === 'initialize-sow';
 const crumbs = isInit ? [{ label: 'SOW', href: `${base}/sow` }, { label: page.label }] : [{ label: page.label }];
 // Review and Approve pages act on one revision: name it, per stage.
 const revisionLines =
-  page.tab === 'review'
+  page.tab === 'review' || (page as { group?: string }).group === 'Review and Approve'
     ? REVISIONS.map((r) => ({ text: revisionLine(r), hideStages: stageKeys.filter((k) => !r.current.includes(k)).join(' ') }))
     : [];
 ---
@@ -51,8 +52,9 @@ const revisionLines =
     - page body           -> cbf-skeleton-body       (every other page: static gray placeholder)
 -->
 <CbfContractFrame
-  tabs={CONTRACT_TABS_V2}
-  ends={['overview', 'sow', 'files']}
+  tabs={variant.tabs}
+  ends={variant.ends}
+  header={variant.header as 'lifecycle' | 'areas'}
   stages={STAGES_V2}
   base={base}
   current={isInit ? 'sow' : slug}
@@ -61,7 +63,7 @@ const revisionLines =
   pageHideFor={page.hideFor}
   pageHideStages={page.hideStages}
   views={views}
-  activeView="sow-hub"
+  activeView={variant.view}
 >
   <CbfRecordPageTitle section={section} title={page.label} revisionLines={revisionLines} />
   {slug === 'sow' ? (

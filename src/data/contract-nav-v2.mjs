@@ -45,6 +45,35 @@ export const CONTRACT_TABS_V2 = [
   tab('files'),
 ];
 
+// Variant C ("Areas", round 5): navigation and status come apart. Every menu is an
+// area of the record at equal weight, in one row; the lifecycle moves to a status
+// strip that is not navigation. SOW absorbs Setup and Review and Approve as groups
+// (Gloria, 2026-11-10: SOW is the hub people go back to in every phase), so the row
+// holds five areas, the same count as round 3's track plus its two ends, minus two.
+const sowTab = CONTRACT_TABS_V2.find((t) => t.key === 'sow');
+const setupTab = CONTRACT_TABS_V2.find((t) => t.key === 'setup');
+const reviewTab = CONTRACT_TABS_V2.find((t) => t.key === 'review');
+export const CONTRACT_TABS_V3 = [
+  tab('overview'),
+  {
+    key: 'sow',
+    label: 'SOW',
+    pages: [
+      ...sowTab.pages,
+      ...setupTab.pages.map((p) => ({ ...p, group: 'Setup' })),
+      ...reviewTab.pages.map((p) => ({ ...p, group: 'Review and Approve' })),
+    ],
+  },
+  tab('report'),
+  tab('closeout'),
+  tab('files'),
+];
+
+export const ALL_PAGES_V3 = [
+  ...CONTRACT_TABS_V3.flatMap((t) => t.pages.map((p) => ({ ...p, tab: t.key }))),
+  ...UNLISTED_PAGES_V2,
+];
+
 export const ALL_PAGES_V2 = [
   ...CONTRACT_TABS_V2.flatMap((t) => t.pages.map((p) => ({ ...p, tab: t.key }))),
   ...UNLISTED_PAGES_V2,
@@ -53,6 +82,17 @@ export const ALL_PAGES_V2 = [
 export function findPageV2(slug) {
   return ALL_PAGES_V2.find((p) => p.slug === slug);
 }
+
+/**
+ * The round 4 and 5 variations share their routes (/contract-nav/{variant}/…) and
+ * differ in this: which menus, which sit on the title row (`ends`), and whether the
+ * phases are a navigable track ('lifecycle') or a status strip under a row of area
+ * menus ('areas').
+ */
+export const VARIANTS = {
+  v2: { tabs: CONTRACT_TABS_V2, pages: ALL_PAGES_V2, ends: ['overview', 'sow', 'files'], header: 'lifecycle', view: 'sow-hub' },
+  v3: { tabs: CONTRACT_TABS_V3, pages: ALL_PAGES_V3, ends: CONTRACT_TABS_V3.map((t) => t.key), header: 'areas', view: 'areas' },
+};
 
 // Pick 1: in the change-request stage the contract keeps reporting and invoicing on its
 // current SOW while the revision is reviewed, so both phases are in progress.
@@ -182,8 +222,10 @@ const V1_FALLBACK = { 'transmittal-memo': 'workflow' };
 export function headerViews(slug) {
   const inV1 = !!findPage(slug);
   const inV2 = !!findPageV2(slug);
+  const inV3 = ALL_PAGES_V3.some((p) => p.slug === slug);
   return [
     { key: 'lifecycle', label: 'Lifecycle', path: `/contract-nav/${inV1 ? slug : V1_FALLBACK[slug] ?? 'summary'}` },
     { key: 'sow-hub', label: 'SOW hub', path: `/contract-nav/v2/${inV2 ? slug : 'summary'}` },
+    { key: 'areas', label: 'Areas', path: `/contract-nav/v3/${inV3 ? slug : 'summary'}` },
   ];
 }
