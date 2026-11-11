@@ -1,0 +1,69 @@
+---
+// /contract-nav/v2/{page} — round 4's "SOW hub" variation of the contract header, beside
+// round 3's at /contract-nav/{page} (plan: docs/private/briefs/cbfish-nav-header/
+// plan-round4.md). SOW joins Overview and Files on the title row; the SOW page shows
+// the contract actions and the work elements; other bodies are placeholders.
+import CbfContractFrame from '../../../components/contract-nav/cbf-contract-frame.astro';
+import CbfRecordPageTitle from '../../../components/contract-nav/cbf-record-page-title.astro';
+import CbfSowActions from '../../../components/contract-nav/cbf-sow-actions.astro';
+import CbfSkeletonBody from '../../../components/shared/cbf-skeleton-body.astro';
+import { withBase } from '../../../lib/base';
+import {
+  ALL_PAGES_V2,
+  CONTRACT_ACTIONS,
+  CONTRACT_TABS_V2,
+  STAGES_V2,
+  WSES,
+  WSE_REVISION,
+  WSE_TABS,
+  findPageV2,
+  headerViews,
+} from '../../../data/contract-nav-v2.mjs';
+
+export function getStaticPaths() {
+  return ALL_PAGES_V2.map((p) => ({ params: { page: p.slug } }));
+}
+
+const { page: slug } = Astro.params as { page: string };
+const page = findPageV2(slug)!;
+const base = withBase('/contract-nav/v2');
+const section = CONTRACT_TABS_V2.find((t) => t.key === page.tab)!.label;
+const seed = ALL_PAGES_V2.findIndex((p) => p.slug === slug);
+const views = headerViews(slug).map((v) => ({ ...v, href: withBase(v.path) }));
+---
+<!-- manifest:
+  layout: cbf-contract-frame > page title + body
+  sections:
+    - contract frame      -> cbf-contract-frame      (site nav, record card with header, Overview/SOW/Files and lifecycle track, role gate, prototype controls)
+    - page title          -> cbf-record-page-title   (quiet menu line over the page name, an H2 in brand navy)
+    - SOW body            -> cbf-sow-actions         (SOW page only: Initialize SOW button, contract actions, work elements matrix)
+    - page body           -> cbf-skeleton-body       (every other page: static gray placeholder)
+-->
+<CbfContractFrame
+  tabs={CONTRACT_TABS_V2}
+  ends={['overview', 'sow', 'files']}
+  stages={STAGES_V2}
+  base={base}
+  current={slug}
+  crumbs={[{ label: page.label }]}
+  title={page.label}
+  pageHideFor={page.hideFor}
+  pageHideStages={page.hideStages}
+  views={views}
+  activeView="sow-hub"
+>
+  <CbfRecordPageTitle section={section} title={page.label} />
+  {slug === 'sow' ? (
+    <CbfSowActions
+      actions={CONTRACT_ACTIONS}
+      stageKeys={STAGES_V2.map((s) => s.key)}
+      wses={WSES}
+      facets={WSE_TABS.filter((t) => t.key !== 'summary')}
+      revision={`Rev ${WSE_REVISION.rev}`}
+      wseBase={`${base}/wse`}
+      initializeHref={`${base}/initialize-sow`}
+    />
+  ) : (
+    <CbfSkeletonBody seed={seed} />
+  )}
+</CbfContractFrame>

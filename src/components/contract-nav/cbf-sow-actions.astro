@@ -1,0 +1,210 @@
+---
+/*
+ * cbf-sow-actions — the SOW page body in the round 4 "SOW hub" variation: the
+ * contract's actions (each a SOW revision) and the selected revision's work statement
+ * elements, laid out as prod's matrix: a row per WSE, a column per facet, each cell a
+ * link into that WSE's tab (qa.cbfish.org capture, 2026-11-11).
+ *
+ * Initialize SOW is a button here rather than a menu item (Gloria, 2026-11-10: "that's
+ * a button that only shows up under certain conditions"). Pick 2: it shows only before
+ * the contract has a SOW revision, which the prototype's Setup stage stands for, and
+ * only for roles that edit the SOW, not contractors. In that stage the page is an empty
+ * state with the button as its action.
+ *
+ * Which action rows show depends on the stage lens (data-hide-stages, cbf-role-gate).
+ *
+ * bcn-lego-checked: no esa- table lego exists (catalog: esa-* has no table or grid);
+ * the spoke's AG Grid chrome (shared/grid-chrome.ts) is for interactive data grids,
+ * and this is a static mock of two small tables, so it follows cbf-baselines-table's
+ * semantic <table>. Every control inside is a lego: esa-button, esa-badge,
+ * esa-empty-state; the done mark is the spoke's CbfIcon.
+ */
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import CbfIcon from '../search/cbf-icon.astro';
+
+interface Action {
+  rev: number;
+  type: string;
+  status: string;
+  request: string;
+  weCount: number;
+  changeType: string;
+  sowStatus: string;
+  start: string;
+  end: string;
+  value: string;
+  onlyStages: string[];
+}
+interface Wse {
+  letter: string;
+  template: number;
+  name: string;
+  title: string;
+  needs: string[];
+}
+interface WseTab {
+  key: string;
+  label: string;
+}
+interface Props {
+  actions: Action[];
+  /** Every stage key, to turn an action's onlyStages into data-hide-stages. */
+  stageKeys: string[];
+  wses: Wse[];
+  /** The facet columns: every WSE tab but Summary. */
+  facets: WseTab[];
+  /** "Rev 1, Contract Requisition" */
+  revision: string;
+  /** Route prefix for a WSE's tab: `${wseBase}/${letter}/${tab}`. */
+  wseBase: string;
+  initializeHref: string;
+}
+const { actions, stageKeys, wses, facets, revision, wseBase, initializeHref } = Astro.props;
+const hide = (only: string[]) => stageKeys.filter((k) => !only.includes(k)).join(' ');
+const badge = (s: string) => (s === 'Issued' ? 'success' : s === 'In review' ? 'info' : 'neutral') as 'success' | 'info' | 'neutral';
+---
+
+<div class="cbf-sow-actions">
+  <div data-hide-stages={hide(['setup'])}>
+    <EsaEmptyState title="No SOW yet">
+      <span data-hide-for="contractor">
+        <EsaButton variant="primary" href={initializeHref}>Initialize SOW</EsaButton>
+      </span>
+    </EsaEmptyState>
+  </div>
+
+  <div class="stack" data-gap="xl" data-hide-stages="setup">
+  <section class="stack" data-gap="sm" aria-labelledby="sow-actions-h">
+    <h3 id="sow-actions-h" class="typography-label-lg">Contract actions</h3>
+    <div class="cbf-sow-actions__scroll">
+      <table class="cbf-sow-actions__table typography-body-sm">
+        <thead>
+          <tr>
+            <th scope="col">Rev</th>
+            <th scope="col">Type</th>
+            <th scope="col">Status</th>
+            <th scope="col">Request number</th>
+            <th scope="col" class="is-num">WE count</th>
+            <th scope="col">Change type</th>
+            <th scope="col">SOW status</th>
+            <th scope="col">Start</th>
+            <th scope="col">End</th>
+            <th scope="col" class="is-num">Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          {actions.map((a) => (
+            <tr data-hide-stages={hide(a.onlyStages) || undefined}>
+              <td>{a.rev}</td>
+              <td>{a.type}</td>
+              <td><EsaBadge value={a.status} variant={badge(a.status)} size="sm" /></td>
+              <td>{a.request}</td>
+              <td class="is-num">{a.weCount}</td>
+              <td>{a.changeType}</td>
+              <td>{a.sowStatus}</td>
+              <td>{a.start}</td>
+              <td>{a.end}</td>
+              <td class="is-num">{a.value}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="stack" data-gap="sm" aria-labelledby="sow-wse-h">
+    <h3 id="sow-wse-h" class="typography-label-lg">{revision} work statement elements</h3>
+    <div class="cbf-sow-actions__scroll">
+      <table class="cbf-sow-actions__table typography-body-sm">
+        <thead>
+          <tr>
+            <th scope="col">WE</th>
+            <th scope="col">Work element</th>
+            <th scope="col">Title</th>
+            {facets.map((f) => <th scope="col">{f.label}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {wses.map((w) => (
+            <tr>
+              <td>{w.letter}</td>
+              <td><a href={`${wseBase}/${w.letter.toLowerCase()}/summary`}>{w.template}. {w.name}</a></td>
+              <td>{w.title}</td>
+              {facets.map((f) => (
+                <td>
+                  {w.needs.includes(f.key) ? (
+                    <a href={`${wseBase}/${w.letter.toLowerCase()}/${f.key}`} class="cbf-sow-actions__cell is-needs">Needs input</a>
+                  ) : (
+                    <a href={`${wseBase}/${w.letter.toLowerCase()}/${f.key}`} class="cbf-sow-actions__cell" aria-label={`${f.label}, done`}>
+                      <CbfIcon name="circle-check" />
+                    </a>
+                  )}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+</div>
+
+<style>
+  .cbf-sow-actions {
+    padding-block: var(--spacing-500) var(--spacing-600);
+  }
+  .cbf-sow-actions h3 {
+    margin: 0;
+    color: var(--color-content-default);
+  }
+  .cbf-sow-actions__scroll {
+    overflow-x: auto;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-200);
+  }
+  .cbf-sow-actions__table {
+    inline-size: 100%;
+    border-collapse: collapse;
+  }
+  .cbf-sow-actions__table th,
+  .cbf-sow-actions__table td {
+    padding: var(--spacing-200) var(--spacing-300);
+    text-align: start;
+    vertical-align: top;
+    border-block-start: 1px solid var(--color-border-default);
+  }
+  .cbf-sow-actions__table thead th {
+    border-block-start: 0;
+    background: var(--color-background-elevation-sunken);
+    color: var(--color-content-default-secondary);
+    font-weight: var(--typography-font-weight-semibold);
+    white-space: nowrap;
+  }
+  .cbf-sow-actions__table .is-num {
+    text-align: end;
+    font-variant-numeric: tabular-nums;
+  }
+  .cbf-sow-actions__table a {
+    color: var(--color-content-brand);
+  }
+  .cbf-sow-actions__cell {
+    display: inline-flex;
+    white-space: nowrap;
+    color: var(--color-content-success);
+  }
+  .cbf-sow-actions__cell.is-needs {
+    color: var(--color-content-brand);
+  }
+  .cbf-sow-actions__cell.is-needs::before {
+    content: '';
+    align-self: center;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    margin-inline-end: var(--spacing-150);
+    border-radius: 50%;
+    background: var(--color-content-warning);
+  }
+</style>
