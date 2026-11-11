@@ -1,0 +1,137 @@
+---
+/*
+ * cbf-wse-header — the top of a work statement element (WSE) page, under the contract
+ * header, in the round 4 "SOW hub" variation (docs/private/briefs/cbfish-nav-header/
+ * research-wse.md, option A).
+ *
+ * One mark per level of "where am I": the SOW menu above is filled navy; the quiet
+ * line here names the revision and links back to the SOW page; the title is the WSE;
+ * the sub-tab you are on is raised. Pick 5: a WSE page belongs to one revision, so the
+ * switcher lists only that revision's WSEs. Pick 4: no previous/next, the switcher is
+ * searchable (prod's native select of 37 truncated options cut off the titles that
+ * tell WSEs apart). Pick 6: prod's tab asterisk becomes a "Needs input" flag.
+ *
+ * Composes cbf-report-tabs (link strip: the WSE tabs are separate pages, so not
+ * esa-tab-layout, which swaps panels) and esa-combobox (type to filter by letter,
+ * template number or title). Layout is the stack and repel primitives; typography is
+ * the page title block's (cbf-record-page-title).
+ */
+import CbfReportTabs from '../shared/cbf-report-tabs.astro';
+
+interface Wse {
+  letter: string;
+  template: number;
+  name: string;
+  title: string;
+  needs: string[];
+}
+interface WseTab {
+  key: string;
+  label: string;
+}
+interface Props {
+  we: Wse;
+  /** The revision's WEs, for the switcher. */
+  wes: Wse[];
+  tabs: WseTab[];
+  /** The tab being viewed. */
+  tab: string;
+  /** "SOW Rev 2, Contract Change Request (CCR-61204)" */
+  revision: string;
+  /** The SOW page, opened on this revision. */
+  sowHref: string;
+  /** Route prefix for a WE's tab in this revision: `${weBase}/${letter}/${tab}`. */
+  weBase: string;
+  /** Stages in which the revision is locked, so its needs-input flags hide. */
+  flagHideStages: string;
+}
+const { we: wse, wes: wses, tabs, tab, revision, sowHref, weBase: wseBase, flagHideStages } = Astro.props;
+const href = (letter: string, key: string) => `${wseBase}/${letter.toLowerCase()}/${key}`;
+const options = wses.map((w) => ({ value: w.letter, label: `${w.letter}: ${w.template}. ${w.name}, ${w.title}` }));
+---
+
+<div class="cbf-wse-header stack" data-gap="md">
+  <div class="repel" data-gap="md">
+    <div class="cbf-wse-header__title stack" data-gap="3xs">
+      <a class="cbf-wse-header__revision typography-body-sm" href={sowHref}>{revision}</a>
+      <h2 class="cbf-wse-header__name typography-title">{wse.letter}: {wse.template}. {wse.name}</h2>
+      <p class="cbf-wse-header__sub typography-body-md">{wse.title}</p>
+    </div>
+    <esa-combobox
+      class="cbf-wse-header__switch"
+      size="sm"
+      label="Work element"
+      placeholder="Find a work element"
+      data-wse-switch
+      data-options={JSON.stringify(options)}
+      data-current={wse.letter}
+      data-hrefs={JSON.stringify(Object.fromEntries(wses.map((w) => [w.letter, href(w.letter, tab)])))}
+    ></esa-combobox>
+  </div>
+  <CbfReportTabs
+    ariaLabel={`Work element ${wse.letter}`}
+    tabs={tabs.map((t) => ({
+      label: t.label,
+      href: href(wse.letter, t.key),
+      active: t.key === tab,
+      flag: wse.needs.includes(t.key) ? 'Needs input' : undefined,
+      flagHideStages,
+    }))}
+  />
+</div>
+
+<script>
+  import '@esa/ecology/esa-combobox';
+
+  // Choosing another WSE keeps you on the same tab (as prod's dropdown does).
+  document.querySelectorAll<HTMLElement & { options: unknown[]; value: string }>('[data-wse-switch]').forEach((el) => {
+    const hrefs: Record<string, string> = JSON.parse(el.dataset.hrefs || '{}');
+    el.options = JSON.parse(el.dataset.options || '[]');
+    // Starts empty: the title above already names the current WSE, and a filled field
+    // makes typing append to it.
+    el.addEventListener('change', (e) => {
+      const raw = (e as CustomEvent<{ value: string | string[] }>).detail?.value;
+      const v = Array.isArray(raw) ? raw[0] : raw;
+      if (v && v !== el.dataset.current && hrefs[v]) window.location.assign(hrefs[v]);
+    });
+  });
+</script>
+
+<style>
+  .cbf-wse-header {
+    padding-block-start: var(--spacing-100);
+  }
+  .cbf-wse-header__title {
+    min-inline-size: 0;
+    flex: 1 1 24rem;
+  }
+  /* Same quiet line and navy title as cbf-record-page-title, so the two read as one
+     system; the revision line is a link back to the SOW page. */
+  .cbf-wse-header__revision {
+    color: var(--color-content-default-secondary);
+    font-weight: var(--typography-font-weight-medium);
+    line-height: var(--line-height-tight);
+  }
+  .cbf-wse-header__name,
+  .cbf-wse-header__sub {
+    margin: 0;
+  }
+  .cbf-wse-header__name {
+    color: var(--color-background-default-knockout);
+    font-weight: var(--typography-font-weight-semibold);
+    line-height: var(--line-height-tight);
+  }
+  .cbf-wse-header__sub {
+    color: var(--color-content-default-secondary);
+  }
+  /* The tabs stay on one row and scroll sideways rather than wrap one tab onto a
+     second row at mid widths. */
+  .cbf-wse-header :global(.cbf-report-tabs) {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .cbf-wse-header__switch {
+    flex: 0 1 22rem;
+    min-inline-size: 16rem;
+  }
+</style>

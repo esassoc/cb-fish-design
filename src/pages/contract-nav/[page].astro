@@ -1,41 +1,15 @@
 ---
-// /contract-nav/{page} — the contract header nav prototype (brief: cbfish-nav-header).
-// One route per contract page. The header is the lifecycle track (Andy, round 3: "Let's
-// just do lifecycle"); the body below it is a placeholder, because the pages themselves
-// do not change. The old /contract-nav/{a|b}/{page} URLs redirect here (astro.config).
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import CbfPublicNav from '../../components/shared/cbf-public-nav.astro';
-import CbfAppPanel from '../../components/shared/cbf-app-panel.astro';
-import CbfPrototypeStrip from '../../components/shared/cbf-prototype-strip.astro';
-import CbfRoleSwitch from '../../components/shared/cbf-role-switch.astro';
-import CbfRecordHeader from '../../components/contract-nav/cbf-record-header.astro';
-import CbfRecordLifecycle from '../../components/contract-nav/cbf-record-lifecycle.astro';
+// /contract-nav/{page} — the contract header nav prototype, round 3 "Lifecycle" header
+// (brief: cbfish-nav-header). One route per contract page; the body is a placeholder,
+// because the pages themselves do not change. Round 4's "SOW hub" variation sits
+// beside it at /contract-nav/v2/{page}. The old /contract-nav/{a|b}/{page} URLs
+// redirect here.
+import CbfContractFrame from '../../components/contract-nav/cbf-contract-frame.astro';
 import CbfRecordPageTitle from '../../components/contract-nav/cbf-record-page-title.astro';
 import CbfSkeletonBody from '../../components/shared/cbf-skeleton-body.astro';
-import CbfRecordEnds from '../../components/contract-nav/cbf-record-ends.astro';
-import CbfRoleGate from '../../components/contract-nav/cbf-role-gate.astro';
-import CbfPortfolioReturn from '../../components/contract-nav/cbf-portfolio-return.astro';
-import CbfLensSwitch from '../../components/shared/cbf-lens-switch.astro';
-import EsaBadge from '@esa/ecology/esa-badge.astro';
-import EsaContainer from '@esa/ecology/esa-container.astro';
 import { withBase } from '../../lib/base';
-import {
-  ALL_PAGES,
-  ARRIVALS,
-  CONTRACT_TABS,
-  DEFAULT_STAGE,
-  LIFECYCLE,
-  NAV_ARRIVAL_KEY,
-  NAV_ROLES,
-  NAV_ROLE_KEY,
-  NAV_STAGE_KEY,
-  PORTFOLIO,
-  STAGES,
-  contract,
-  findPage,
-  tabHiddenFor,
-  tabHiddenStages,
-} from '../../data/contract-nav.mjs';
+import { ALL_PAGES, CONTRACT_TABS, STAGES, findPage } from '../../data/contract-nav.mjs';
+import { headerViews } from '../../data/contract-nav-v2.mjs';
 
 export function getStaticPaths() {
   return ALL_PAGES.map((p) => ({ params: { page: p.slug } }));
@@ -44,98 +18,30 @@ export function getStaticPaths() {
 const { page: slug } = Astro.params as { page: string };
 const page = findPage(slug)!;
 const base = withBase('/contract-nav');
-
-const homeIcon =
-  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
-const crumbs = [
-  { label: 'Home', href: withBase('/home'), icon: homeIcon },
-  // Links above the contract leave this prototype; they go to Home as stand-ins.
-  { label: 'Projects', href: withBase('/home') },
-  { label: contract.project, href: withBase('/home') },
-  { label: 'Contracts', href: withBase('/home') },
-  { label: contract.number, href: `${base}/summary` },
-  { label: page.label },
-];
 const section = CONTRACT_TABS.find((t) => t.key === page.tab)!.label;
 const seed = ALL_PAGES.findIndex((p) => p.slug === slug);
-const ends = CONTRACT_TABS.filter((t) => t.key === 'overview' || t.key === 'files');
-const stageKeys = STAGES.map((st) => st.key);
+const views = headerViews(slug).map((v) => ({ ...v, href: withBase(v.path) }));
 ---
 <!-- manifest:
-  layout: esa-container > cbf-prototype-strip + cbf-app-panel
+  layout: cbf-contract-frame > page title + body
   sections:
-    - site nav            -> cbf-public-nav          (shared)
-    - page frame          -> esa-container           (1920px max)
-    - prototype controls  -> cbf-prototype-strip     (shared; floats bottom right, holds:)
-        - role lens         -> cbf-role-switch       (shared; admin, BPA COR, contractor)
-        - stage lens        -> cbf-lens-switch       (shared; setup, in review, issued, change request pending, closed)
-        - arrival lens      -> cbf-lens-switch       (shared; direct or from a portfolio)
-    - contract frame      -> cbf-app-panel           (shared; breadcrumb strip; holds:)
-    - portfolio return    -> cbf-portfolio-return    (temporary back link under the breadcrumbs, arrival from a portfolio only)
-    - record header       -> cbf-record-header       (number, navy H1, status badge per stage; holds:)
-        - always-there      -> cbf-record-ends       (Overview, Files on the title row)
-        - record nav        -> cbf-record-lifecycle  (phase track, each phase's pages in its menu)
-    - role gate           -> cbf-role-gate           (hides what the lens can't see)
+    - contract frame      -> cbf-contract-frame      (site nav, record card with header and lifecycle track, role gate, prototype controls)
     - page title          -> cbf-record-page-title   (quiet phase line over the page name, an H2 in brand navy)
     - page body           -> cbf-skeleton-body       (static gray placeholder; body not in scope)
 -->
-<BaseLayout title={`${contract.number}: ${page.label} — Columbia Basin Fish & Wildlife Program`}>
-  <CbfPublicNav />
-
-  <main class="cbf-page">
-    <EsaContainer maxWidth="1920px">
-      <CbfAppPanel crumbs={crumbs} overflow="visible">
-        <CbfPortfolioReturn name={PORTFOLIO.name} href={withBase('/home')} />
-        <CbfRecordHeader eyebrow={`Contract ${contract.number}`} title={contract.title}>
-          {STAGES.map((st) => (
-            <span slot="status" data-hide-stages={stageKeys.filter((k) => k !== st.key).join(' ')}>
-              <EsaBadge value={st.status} variant={st.variant} size="md" />
-            </span>
-          ))}
-          <CbfRecordEnds slot="actions" tabs={ends} current={slug} base={base} label="Contract overview and files" />
-          <CbfRecordLifecycle
-            tabs={CONTRACT_TABS}
-            lifecycle={LIFECYCLE}
-            stages={STAGES}
-            hiddenFor={tabHiddenFor}
-            hiddenStages={tabHiddenStages}
-            role={NAV_ROLES[0].key}
-            current={slug}
-            base={base}
-            label="Contract lifecycle"
-          />
-        </CbfRecordHeader>
-        <CbfRoleGate pageHideFor={page.hideFor} pageHideStages={page.hideStages} fallback={`${base}/summary`} />
-        <CbfRecordPageTitle section={section} title={page.label} />
-        <CbfSkeletonBody seed={seed} />
-      </CbfAppPanel>
-
-      {/* Last in the source, so the prototype controls come after the page in tab order;
-          the panel floats bottom right. */}
-      <CbfPrototypeStrip placement="float" note="Contract dates and status are mock.">
-        <CbfRoleSwitch roles={NAV_ROLES} storageKey={NAV_ROLE_KEY} />
-        <CbfLensSwitch
-          options={STAGES.map((st) => ({ key: st.key, label: st.label }))}
-          label="Contract stage"
-          attr="cbf-stage"
-          param="stage"
-          storageKey={NAV_STAGE_KEY}
-          event="cbf-stage:change"
-          initial={DEFAULT_STAGE}
-        />
-        <CbfLensSwitch
-          options={ARRIVALS}
-          label="Arrived from"
-          attr="cbf-arrival"
-          param="from"
-          storageKey={NAV_ARRIVAL_KEY}
-          event="cbf-arrival:change"
-        />
-      </CbfPrototypeStrip>
-    </EsaContainer>
-  </main>
-</BaseLayout>
-
-<style>
-  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
-</style>
+<CbfContractFrame
+  tabs={CONTRACT_TABS}
+  ends={['overview', 'files']}
+  stages={STAGES}
+  base={base}
+  current={slug}
+  crumbs={[{ label: page.label }]}
+  title={page.label}
+  pageHideFor={page.hideFor}
+  pageHideStages={page.hideStages}
+  views={views}
+  activeView="lifecycle"
+>
+  <CbfRecordPageTitle section={section} title={page.label} />
+  <CbfSkeletonBody seed={seed} />
+</CbfContractFrame>

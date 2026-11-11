@@ -26,6 +26,15 @@ export interface Prototype {
 export const prototypes: Prototype[] = [
   // --- Active prototypes (in progress) ---
   {
+    slug: 'project-nav',
+    title: 'Project header navigation',
+    description:
+      'A project record’s header: its status and one row of menus, Overview, Proposals and Reviews, Budget, Contracts and Work, Spending, Results and Files, holding every page of today’s Go to menu. Switch role and arrival in the prototype controls.',
+    route: '/project-nav/summary',
+    createdAt: '2026-11-11',
+    status: 'in-progress',
+  },
+  {
     slug: 'contract-nav',
     title: 'Contract header navigation',
     description:

@@ -1,0 +1,125 @@
+---
+/*
+ * cbf-record-status — where a record is in its lifecycle, as one line under its title
+ * (round 5, "Areas"). Status only, not navigation: the pages live in the area menus,
+ * so this line carries no links (round 4 analysis: the track was both a "where am I"
+ * and a "where is the contract", and the two competed with the title-row menus).
+ *
+ * Each phase reads finished, in progress or not started by the same icons as round 3's
+ * track; a phase in progress also gives its dates. Which phases are in progress comes
+ * from the stage lens (<html data-cbf-stage>): the server renders the default stage,
+ * and the script re-applies it when the lens moves.
+ *
+ * bcn-lego-checked: no esa- stepper or status line exists (catalog: esa-progress-bar
+ * is one operation's bar, esa-breadcrumbs is navigation); Beacon's ui-* has none. The
+ * icons are the spoke's CbfIcon; layout is the cluster primitive.
+ */
+import CbfIcon from '../search/cbf-icon.astro';
+
+interface Phase {
+  key: string;
+  label: string;
+  state: 'done' | 'current' | 'next';
+  when: string;
+}
+interface Stage {
+  key: string;
+  /** phase key → [state, percent elapsed or null, date range] */
+  phases: Record<string, [string, number | null, string]>;
+}
+interface Props {
+  phases: Phase[];
+  stages: Stage[];
+  /** "Contract lifecycle" */
+  label: string;
+}
+const { phases, stages, label } = Astro.props;
+const stateLabel = { done: 'Finished', current: 'In progress', next: 'Not started' };
+---
+
+<ol class="cbf-record-status cluster typography-body-sm" data-gap="md" aria-label={label} data-record-status data-stages={JSON.stringify(stages)}>
+  {phases.map((ph) => (
+    <li class="cbf-record-status__phase" data-phase={ph.key} data-state={ph.state}>
+      <span class="cbf-record-status__icon" aria-hidden="true">
+        <CbfIcon name="circle-check" class="cbf-record-status__icon--done" />
+        <CbfIcon name="circle-half" class="cbf-record-status__icon--current" />
+        <CbfIcon name="circle-dashed" class="cbf-record-status__icon--next" />
+      </span>
+      <span class="visually-hidden" data-state-label>{stateLabel[ph.state]}: </span>
+      <span class="cbf-record-status__label">{ph.label}</span>
+      <span class="cbf-record-status__when" data-when-text>{ph.when}</span>
+    </li>
+  ))}
+</ol>
+
+<script>
+  const STATE_LABEL: Record<string, string> = { done: 'Finished', current: 'In progress', next: 'Not started' };
+  document.querySelectorAll<HTMLElement>('[data-record-status]').forEach((root) => {
+    const stages: { key: string; phases: Record<string, [string, number | null, string]> }[] = JSON.parse(root.dataset.stages || '[]');
+    const apply = () => {
+      const stage = stages.find((s) => s.key === document.documentElement.dataset.cbfStage);
+      if (!stage) return;
+      root.querySelectorAll<HTMLElement>('[data-phase]').forEach((li) => {
+        const [state, , when] = stage.phases[li.dataset.phase ?? ''] ?? ['next', null, ''];
+        li.dataset.state = state;
+        const w = li.querySelector('[data-when-text]');
+        if (w) w.textContent = when;
+        const sr = li.querySelector('[data-state-label]');
+        if (sr) sr.textContent = `${STATE_LABEL[state] ?? ''}: `;
+      });
+    };
+    apply();
+    document.addEventListener('cbf-stage:change', apply);
+  });
+</script>
+
+<style>
+  .cbf-record-status {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cbf-record-status {
+    row-gap: var(--spacing-100);
+  }
+  .cbf-record-status__phase {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 var(--spacing-100);
+    color: var(--color-content-default-tertiary);
+  }
+  .cbf-record-status__phase[data-state='done'] {
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-record-status__phase[data-state='current'] {
+    color: var(--color-content-default);
+  }
+  .cbf-record-status__phase[data-state='current'] .cbf-record-status__label {
+    font-weight: var(--typography-font-weight-semibold);
+  }
+  /* Only a phase in progress gives its dates. */
+  .cbf-record-status__when {
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-record-status__phase:not([data-state='current']) .cbf-record-status__when {
+    display: none;
+  }
+  .cbf-record-status__icon {
+    display: inline-flex;
+  }
+  .cbf-record-status__phase:not([data-state='done']) :global(.cbf-record-status__icon--done),
+  .cbf-record-status__phase:not([data-state='current']) :global(.cbf-record-status__icon--current),
+  .cbf-record-status__phase:not([data-state='next']) :global(.cbf-record-status__icon--next) {
+    display: none;
+  }
+  .cbf-record-status__phase[data-state='done'] .cbf-record-status__icon {
+    color: var(--color-content-success);
+  }
+  .cbf-record-status__phase[data-state='current'] .cbf-record-status__icon {
+    color: var(--color-background-brand);
+  }
+  .cbf-record-status__icon :global(.cbf-record-status__icon--current path) {
+    fill: currentColor;
+  }
+</style>

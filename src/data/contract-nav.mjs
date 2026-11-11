@@ -11,7 +11,7 @@
 // (ContractFilletMenu.cs).
 //
 // Visibility follows every-link-and-tab.md, reduced to three roles:
-//   admin       System admin (Gloria Scott) — sees all 25.
+//   admin       System admin (Marcus Hale) — sees all 25.
 //   cor         BPA COR on this contract (Tori Bolin).
 //   contractor  A contact at the contracting organization.
 // `hideFor` lists the roles that do NOT see the page.
@@ -19,7 +19,7 @@
 /** @typedef {'admin' | 'cor' | 'contractor'} RoleKey */
 
 export const NAV_ROLES = [
-  { key: 'admin', label: 'Admin', who: 'Gloria Scott, system admin', name: 'Gloria Scott' },
+  { key: 'admin', label: 'Admin', who: 'Marcus Hale, system admin', name: 'Marcus Hale' },
   { key: 'cor', label: 'COR', who: 'Tori Bolin, BPA COR on this contract', name: 'Tori Bolin' },
   { key: 'contractor', label: 'Contractor', who: 'Dana Whitlock, contractor contact', name: 'Dana Whitlock' },
 ];

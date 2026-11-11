@@ -35,6 +35,11 @@ interface Tab {
   active?: boolean;
   /** When set, this tab renders as a dropdown of sub-pages instead of a plain link. */
   items?: TabItem[];
+  /** A state the tab's page is in, shown as a small dot after the label and read out
+      as these words: "Needs input" (prod CBFish marks these tabs with an asterisk). */
+  flag?: string;
+  /** Stages (space-separated) in which the flag hides, via the contract nav's role gate. */
+  flagHideStages?: string;
 }
 interface RelatedItem {
   title: string;
@@ -74,7 +79,7 @@ const chevron =
         class:list={['cbf-report-tabs__tab', t.active && 'is-active']}
         href={t.href ?? '#'}
         aria-current={t.active ? 'page' : undefined}
-      >{t.label}</a>
+      >{t.label}{t.flag && <span data-hide-stages={t.flagHideStages || undefined}><span class="visually-hidden">, {t.flag}</span><span class="cbf-report-tabs__flag" aria-hidden="true" /></span>}</a>
     )
   ))}
 
@@ -127,6 +132,16 @@ const chevron =
   }
   .cbf-report-tabs__tab.is-active:hover {
     background: var(--color-background-elevation-raised, #fff);
+  }
+  /* The flag dot: the warning colour, sized to read as a mark beside the label. */
+  .cbf-report-tabs__flag {
+    display: inline-block;
+    inline-size: 0.5rem;
+    block-size: 0.5rem;
+    margin-inline-start: var(--spacing-150);
+    vertical-align: 0.15em;
+    border-radius: 50%;
+    background: var(--color-content-warning);
   }
 
   /* A per-tab dropdown (e.g. "2020 CRS commitments ▾") — same tab look as a

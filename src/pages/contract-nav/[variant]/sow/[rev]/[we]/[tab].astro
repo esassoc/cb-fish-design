@@ -1,0 +1,74 @@
+---
+// /contract-nav/{v2,v3}/sow/rev-{n}/{we}/{tab} — a work element's page in round 4's
+// "SOW hub" and round 5's "Areas" variations (research: docs/private/briefs/cbfish-nav-header/research-wse.md). A WE
+// belongs to one SOW revision (pick 5), so the URL, breadcrumb and switcher carry it.
+// The contract header stays above with the SOW menu filled; the body is a placeholder.
+import CbfContractFrame from '../../../../../../components/contract-nav/cbf-contract-frame.astro';
+import CbfWseHeader from '../../../../../../components/contract-nav/cbf-wse-header.astro';
+import CbfSkeletonBody from '../../../../../../components/shared/cbf-skeleton-body.astro';
+import { withBase } from '../../../../../../lib/base';
+import {
+  REVISIONS,
+  VARIANTS,
+  STAGES_V2,
+  WSE_TABS,
+  headerViews,
+  revisionLine,
+} from '../../../../../../data/contract-nav-v2.mjs';
+
+export function getStaticPaths() {
+  return Object.keys(VARIANTS).flatMap((variant) =>
+    REVISIONS.flatMap((r) =>
+      r.wes.flatMap((w) => WSE_TABS.map((t) => ({ params: { variant, rev: `rev-${r.rev}`, we: w.letter.toLowerCase(), tab: t.key } }))),
+    ),
+  );
+}
+
+const { variant: vKey, rev: revParam, we: letter, tab } = Astro.params as { variant: keyof typeof VARIANTS; rev: string; we: string; tab: string };
+const variant = VARIANTS[vKey];
+const revision = REVISIONS.find((r) => `rev-${r.rev}` === revParam)!;
+const we = revision.wes.find((w) => w.letter.toLowerCase() === letter)!;
+const tabLabel = WSE_TABS.find((t) => t.key === tab)!.label;
+const base = withBase(`/contract-nav/${vKey}`);
+const stageKeys = STAGES_V2.map((s) => s.key);
+const seed = revision.wes.indexOf(we) + WSE_TABS.findIndex((t) => t.key === tab);
+const views = headerViews('sow').map((v) => ({ ...v, href: withBase(v.path) }));
+const sowHref = `${base}/sow?rev=${revision.rev}`;
+---
+<!-- manifest:
+  layout: cbf-contract-frame > WE header + body
+  sections:
+    - contract frame      -> cbf-contract-frame      (site nav, record card with header, Overview/SOW/Files and lifecycle track, role gate, prototype controls)
+    - WE header           -> cbf-wse-header          (revision line back to SOW, WE title, searchable switcher, sub-tabs with needs-input flags)
+    - page body           -> cbf-skeleton-body       (static gray placeholder; WE page bodies not in scope)
+-->
+<CbfContractFrame
+  tabs={variant.tabs}
+  ends={variant.ends}
+  header={variant.header as 'lifecycle' | 'areas'}
+  stages={STAGES_V2}
+  base={base}
+  current="sow"
+  crumbs={[
+    { label: 'SOW', href: `${base}/sow` },
+    { label: `Rev ${revision.rev}`, href: sowHref },
+    { label: `WE ${we.letter}`, href: `${base}/sow/${revParam}/${letter}/summary` },
+    { label: tabLabel },
+  ]}
+  title={`Rev ${revision.rev}: WE ${we.letter}: ${tabLabel}`}
+  pageHideStages={stageKeys.filter((k) => !revision.stages.includes(k))}
+  views={views}
+  activeView={variant.view}
+>
+  <CbfWseHeader
+    we={we}
+    wes={revision.wes}
+    tabs={WSE_TABS}
+    tab={tab}
+    revision={revisionLine(revision)}
+    sowHref={sowHref}
+    weBase={`${base}/sow/${revParam}`}
+    flagHideStages={stageKeys.filter((k) => !revision.unlocked.includes(k)).join(' ')}
+  />
+  <CbfSkeletonBody seed={seed} />
+</CbfContractFrame>
