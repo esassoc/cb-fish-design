@@ -227,5 +227,7 @@ export function headerViews(slug) {
     { key: 'lifecycle', label: 'Lifecycle', path: `/contract-nav/${inV1 ? slug : V1_FALLBACK[slug] ?? 'summary'}` },
     { key: 'sow-hub', label: 'SOW hub', path: `/contract-nav/v2/${inV2 ? slug : 'summary'}` },
     { key: 'areas', label: 'Areas', path: `/contract-nav/v3/${inV3 ? slug : 'summary'}` },
+    // Round 6 has round 5's pages.
+    { key: 'phases', label: 'Phases', path: `/contract-nav/v4/${inV3 ? slug : 'summary'}` },
   ];
 }

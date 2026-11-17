@@ -31,7 +31,7 @@ const { pages, current, base, layout = 'list' } = Astro.props;
   {pages.map((p, i) => (
     <>
       {p.group && p.group !== pages[i - 1]?.group && (
-        <li class="cbf-page-menu__group typography-eyebrow-sm" role="presentation">{p.group}</li>
+        <li class="cbf-page-menu__group typography-label-sm" role="presentation">{p.group}</li>
       )}
       <li data-hide-for={(p.hideFor ?? []).join(' ') || undefined} data-hide-stages={(p.hideStages ?? []).join(' ') || undefined}>
         <a href={`${base}/${p.slug}`} aria-current={p.slug === current ? 'page' : undefined}>{p.label}</a>

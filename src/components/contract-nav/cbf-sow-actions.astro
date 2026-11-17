@@ -67,13 +67,15 @@ interface Props {
   revisions: Revision[];
   /** The facet columns: every WE tab but Summary. */
   facets: WeTab[];
+  /** Round 6: the tabs that apply to a work element's template; other cells stay empty. */
+  appliesFor?: (template: number) => string[];
   /** The SOW page's own URL, which `?rev=N` selects a revision on. */
   sowHref: string;
   /** Route prefix for a WE's tab: `${weBase}/rev-${n}/${letter}/${tab}`. */
   weBase: string;
   initializeHref: string;
 }
-const { actions, stageKeys, revisions, facets, sowHref, weBase, initializeHref } = Astro.props;
+const { actions, stageKeys, revisions, facets, sowHref, weBase, initializeHref, appliesFor } = Astro.props;
 const hide = (only: string[]) => stageKeys.filter((k) => !only.includes(k)).join(' ');
 const badge = (s: string) => (s === 'Issued' ? 'success' : s === 'In review' ? 'info' : 'neutral') as 'success' | 'info' | 'neutral';
 const weHref = (r: Revision, w: We, tab: string) => `${weBase}/rev-${r.rev}/${w.letter.toLowerCase()}/${tab}`;
@@ -152,6 +154,7 @@ const weHref = (r: Revision, w: We, tab: string) => `${weBase}/rev-${r.rev}/${w.
                         <CbfIcon name="circle-check" />
                       </a>
                     );
+                    if (appliesFor && !appliesFor(w.template).includes(f.key)) return <td />;
                     return (
                       <td>
                         {w.needs.includes(f.key) ? (

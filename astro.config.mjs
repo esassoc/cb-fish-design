@@ -31,8 +31,14 @@ export default defineConfig({
       // are found correctly.
       preserveSymlinks: true,
     },
+    // Lit's reactive properties need TS class fields compiled as assignments, not
+    // native fields: hub components that declare a reactive state AND initialise it as
+    // a class field (esa-entity-search, esa-command-palette: query, activeId) throw
+    // "set using class fields" on first update otherwise and never render.
+    esbuild: { tsconfigRaw: { compilerOptions: { useDefineForClassFields: false } } },
     optimizeDeps: {
       include: ['lit'],
+      esbuildOptions: { tsconfigRaw: { compilerOptions: { useDefineForClassFields: false } } },
     },
   },
 });

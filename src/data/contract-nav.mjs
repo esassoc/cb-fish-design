@@ -208,8 +208,8 @@ export function tabHiddenFor(tab) {
 }
 
 /** Stages in which a tab has no page at all. */
-export function tabHiddenStages(tab) {
-  return STAGES.map((s) => s.key).filter((stage) =>
+export function tabHiddenStages(tab, stageKeys = STAGES.map((s) => s.key)) {
+  return stageKeys.filter((stage) =>
     tab.pages.every((p) => (p.hideStages ?? []).includes(stage)),
   );
 }
