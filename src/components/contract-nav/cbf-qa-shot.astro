@@ -37,12 +37,11 @@ const { shot, label, seed = 0 } = Astro.props;
     overflow: hidden;
     background: var(--color-background-default);
   }
-  /* The captures are 800px wide with QA's scrollbar in the last 10px: draw them a
-     touch wider so the frame clips it. */
+  /* Captures are 2x (a 1200px-wide QA viewport saved at 2400px), so they stay sharp
+     at the content width on high-density screens. */
   .cbf-qa-shot img {
     display: block;
-    inline-size: calc(100% * 800 / 790);
-    max-inline-size: none;
+    inline-size: 100%;
     block-size: auto;
   }
 </style>
