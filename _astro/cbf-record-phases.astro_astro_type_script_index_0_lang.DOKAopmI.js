@@ -1,0 +1,1 @@
+import"./esa-side-dialog.BlO95eM3.js";import"./typography.C7xuE2z_.js";import"./boolish.DOQu-9JQ.js";const e=document.querySelector("[data-steps-dialog]");document.querySelectorAll("[data-steps-open]").forEach(t=>t.addEventListener("click",()=>{e&&(e.open=!0)}));e?.addEventListener("close",()=>{e.open=!1});
