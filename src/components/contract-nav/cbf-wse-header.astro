@@ -44,8 +44,10 @@ interface Props {
   weBase: string;
   /** Stages in which the revision is locked, so its needs-input flags hide. */
   flagHideStages: string;
+  /** Round 6: a work element rail sits beside, so no switcher and no revision line. */
+  compact?: boolean;
 }
-const { we: wse, wes: wses, tabs, tab, revision, sowHref, weBase: wseBase, flagHideStages } = Astro.props;
+const { we: wse, wes: wses, tabs, tab, revision, sowHref, weBase: wseBase, flagHideStages, compact = false } = Astro.props;
 const href = (letter: string, key: string) => `${wseBase}/${letter.toLowerCase()}/${key}`;
 const options = wses.map((w) => ({ value: w.letter, label: `${w.letter}: ${w.template}. ${w.name}, ${w.title}` }));
 ---
@@ -53,11 +55,11 @@ const options = wses.map((w) => ({ value: w.letter, label: `${w.letter}: ${w.tem
 <div class="cbf-wse-header stack" data-gap="md">
   <div class="repel" data-gap="md">
     <div class="cbf-wse-header__title stack" data-gap="3xs">
-      <a class="cbf-wse-header__revision typography-body-sm" href={sowHref}>{revision}</a>
+      {!compact && <a class="cbf-wse-header__revision typography-body-sm" href={sowHref}>{revision}</a>}
       <h2 class="cbf-wse-header__name typography-title">{wse.letter}: {wse.template}. {wse.name}</h2>
       <p class="cbf-wse-header__sub typography-body-md">{wse.title}</p>
     </div>
-    <esa-combobox
+    {!compact && <esa-combobox
       class="cbf-wse-header__switch"
       size="sm"
       label="Work element"
@@ -66,7 +68,7 @@ const options = wses.map((w) => ({ value: w.letter, label: `${w.letter}: ${w.tem
       data-options={JSON.stringify(options)}
       data-current={wse.letter}
       data-hrefs={JSON.stringify(Object.fromEntries(wses.map((w) => [w.letter, href(w.letter, tab)])))}
-    ></esa-combobox>
+    ></esa-combobox>}
   </div>
   <CbfReportTabs
     ariaLabel={`Work element ${wse.letter}`}

@@ -6,47 +6,65 @@
 import CbfContractFrame from '../../../../../../components/contract-nav/cbf-contract-frame.astro';
 import CbfWseHeader from '../../../../../../components/contract-nav/cbf-wse-header.astro';
 import CbfSkeletonBody from '../../../../../../components/shared/cbf-skeleton-body.astro';
+import CbfWeRail from '../../../../../../components/contract-nav/cbf-we-rail.astro';
+import CbfQaShot from '../../../../../../components/contract-nav/cbf-qa-shot.astro';
 import { withBase } from '../../../../../../lib/base';
+import { QA_WSE_SHOTS, REVISIONS_V4, STAGES_V4, VARIANTS, tabsThatApply } from '../../../../../../data/contract-nav-v4.mjs';
 import {
   REVISIONS,
-  VARIANTS,
   STAGES_V2,
   WSE_TABS,
   headerViews,
   revisionLine,
 } from '../../../../../../data/contract-nav-v2.mjs';
 
+// Round 6 (v4) builds only the tabs that apply to each work element.
 export function getStaticPaths() {
   return Object.keys(VARIANTS).flatMap((variant) =>
     REVISIONS.flatMap((r) =>
-      r.wes.flatMap((w) => WSE_TABS.map((t) => ({ params: { variant, rev: `rev-${r.rev}`, we: w.letter.toLowerCase(), tab: t.key } }))),
+      r.wes.flatMap((w) =>
+        WSE_TABS.filter((t) => variant !== 'v4' || tabsThatApply(w.template).includes(t.key)).map((t) => ({
+          params: { variant, rev: `rev-${r.rev}`, we: w.letter.toLowerCase(), tab: t.key },
+        })),
+      ),
     ),
   );
 }
 
 const { variant: vKey, rev: revParam, we: letter, tab } = Astro.params as { variant: keyof typeof VARIANTS; rev: string; we: string; tab: string };
 const variant = VARIANTS[vKey];
-const revision = REVISIONS.find((r) => `rev-${r.rev}` === revParam)!;
+const isV4 = vKey === 'v4';
+const revision = (isV4 ? REVISIONS_V4 : REVISIONS).find((r) => `rev-${r.rev}` === revParam)!;
+const stages = isV4 ? STAGES_V4 : STAGES_V2;
 const we = revision.wes.find((w) => w.letter.toLowerCase() === letter)!;
 const tabLabel = WSE_TABS.find((t) => t.key === tab)!.label;
 const base = withBase(`/contract-nav/${vKey}`);
-const stageKeys = STAGES_V2.map((s) => s.key);
+const stageKeys = stages.map((s) => s.key);
 const seed = revision.wes.indexOf(we) + WSE_TABS.findIndex((t) => t.key === tab);
 const views = headerViews('sow').map((v) => ({ ...v, href: withBase(v.path) }));
 const sowHref = `${base}/sow?rev=${revision.rev}`;
+const flagHideStages = stageKeys.filter((k) => !revision.unlocked.includes(k)).join(' ');
+const applies = isV4 ? tabsThatApply(we.template) : WSE_TABS.map((t) => t.key);
+const railItems = revision.wes.map((w) => ({
+  ...w,
+  needs: w.needs.filter((n) => !isV4 || tabsThatApply(w.template).includes(n)),
+  href: `${base}/sow/${revParam}/${w.letter.toLowerCase()}/${!isV4 || tabsThatApply(w.template).includes(tab) ? tab : 'summary'}`,
+}));
 ---
 <!-- manifest:
   layout: cbf-contract-frame > WE header + body
   sections:
     - contract frame      -> cbf-contract-frame      (site nav, record card with header, Overview/SOW/Files and lifecycle track, role gate, prototype controls)
     - WE header           -> cbf-wse-header          (revision line back to SOW, WE title, searchable switcher, sub-tabs with needs-input flags)
+    - WE rail             -> cbf-we-rail             (round 6: the revision's work elements down the left, filter on top)
+    - page body           -> cbf-qa-shot             (round 6: today's WE tab on QA)
     - page body           -> cbf-skeleton-body       (static gray placeholder; WE page bodies not in scope)
 -->
 <CbfContractFrame
   tabs={variant.tabs}
   ends={variant.ends}
-  header={variant.header as 'lifecycle' | 'areas'}
-  stages={STAGES_V2}
+  header={variant.header as 'lifecycle' | 'areas' | 'phases'}
+  stages={stages}
   base={base}
   current="sow"
   crumbs={[
@@ -60,15 +78,37 @@ const sowHref = `${base}/sow?rev=${revision.rev}`;
   views={views}
   activeView={variant.view}
 >
-  <CbfWseHeader
-    we={we}
-    wes={revision.wes}
-    tabs={WSE_TABS}
-    tab={tab}
-    revision={revisionLine(revision)}
-    sowHref={sowHref}
-    weBase={`${base}/sow/${revParam}`}
-    flagHideStages={stageKeys.filter((k) => !revision.unlocked.includes(k)).join(' ')}
-  />
-  <CbfSkeletonBody seed={seed} />
+  {isV4 ? (
+    <div class="sidebar" data-gap="xl">
+      <CbfWeRail items={railItems} current={we.letter} revision={revisionLine(revision)} sowHref={sowHref} flagHideStages={flagHideStages} />
+      <div class="stack" data-gap="lg">
+        <CbfWseHeader
+          we={we}
+          wes={revision.wes}
+          tabs={WSE_TABS.filter((t) => applies.includes(t.key))}
+          tab={tab}
+          revision={revisionLine(revision)}
+          sowHref={sowHref}
+          weBase={`${base}/sow/${revParam}`}
+          flagHideStages={flagHideStages}
+          compact
+        />
+        <CbfQaShot shot={(QA_WSE_SHOTS as string[]).includes(tab) ? `wse-${tab}` : undefined} label={tabLabel} seed={seed} />
+      </div>
+    </div>
+  ) : (
+    <>
+      <CbfWseHeader
+        we={we}
+        wes={revision.wes}
+        tabs={WSE_TABS}
+        tab={tab}
+        revision={revisionLine(revision)}
+        sowHref={sowHref}
+        weBase={`${base}/sow/${revParam}`}
+        flagHideStages={flagHideStages}
+      />
+      <CbfSkeletonBody seed={seed} />
+    </>
+  )}
 </CbfContractFrame>

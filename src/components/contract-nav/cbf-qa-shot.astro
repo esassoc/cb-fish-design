@@ -1,0 +1,47 @@
+---
+/*
+ * cbf-qa-shot — a page body in round 6: a screenshot of today's page on qa.cbfish.org,
+ * cropped below today's header, so reviewers can click through the new nav and judge
+ * whether they land where they meant to (Gloria, 2026-11-12: "I kind of do want to see
+ * screenshots of the current garbage because otherwise it's hard to evaluate").
+ *
+ * A page with no capture (QA couldn't show it for this contract) gets the plain gray
+ * skeleton under its title instead, which already names the page.
+ */
+import CbfSkeletonBody from '../shared/cbf-skeleton-body.astro';
+import { withBase } from '../../lib/base';
+
+interface Props {
+  /** File name under public/contract-nav/qa/, without .jpg; omit for no capture. */
+  shot?: string;
+  /** The page's name, for the image's alt text. */
+  label: string;
+  seed?: number;
+}
+const { shot, label, seed = 0 } = Astro.props;
+---
+
+{shot ? (
+  <figure class="cbf-qa-shot">
+    <img src={withBase(`/contract-nav/qa/${shot}.jpg`)} alt={`Today's ${label} page on CBFish`} loading="lazy" decoding="async" />
+  </figure>
+) : (
+  <CbfSkeletonBody seed={seed} />
+)}
+
+<style>
+  .cbf-qa-shot {
+    margin: 0;
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-surface);
+    overflow: hidden;
+    background: var(--color-background-default);
+  }
+  /* Captures are 2x (a 1200px-wide QA viewport saved at 2400px), so they stay sharp
+     at the content width on high-density screens. */
+  .cbf-qa-shot img {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+  }
+</style>

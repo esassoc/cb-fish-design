@@ -20,11 +20,13 @@ interface Props {
   /** "Contract CR-387553" */
   eyebrow: string;
   title: string;
+  /** Space between the title block and what follows (round 6 sits tighter). */
+  gap?: 'md' | 'lg';
 }
-const { eyebrow, title } = Astro.props;
+const { eyebrow, title, gap = 'lg' } = Astro.props;
 ---
 
-<div class="cbf-record-header stack" data-gap="lg">
+<div class="cbf-record-header stack" data-gap={gap}>
   <div class="repel" data-gap="md">
     <div class="stack" data-gap="2xs">
       <p class="cbf-record-header__eyebrow typography-label-md">{eyebrow}</p>

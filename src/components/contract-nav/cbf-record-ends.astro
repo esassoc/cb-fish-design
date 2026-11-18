@@ -52,6 +52,8 @@ const { tabs, current, base, label, layout = 'title', hiddenFor, hiddenStages } 
       )}
     </div>
   ))}
+  {/* Round 6: find page, at the row's end beside Files. */}
+  <slot name="end" />
 </nav>
 
 <style>

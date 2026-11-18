@@ -96,7 +96,7 @@ export const PROJECT_TABS = [
       { slug: 'expenditures-by-fy', label: 'Project Exp. by FY' },
       { slug: 'expenditures-by-month', label: 'Project Exp. by Month' },
       { slug: 'expenditures-raw', label: 'Project Exp. Raw', hideFor: BACK_OFFICE },
-      { slug: 'payment-authorizations-raw', label: 'Project Contract Payment Authorizations Raw', hideFor: BACK_OFFICE },
+      { slug: 'payment-authorizations-raw', label: 'Project Contract Payment Authorizations Raw', hideFor: ['contractor'] },
     ],
   },
   {
