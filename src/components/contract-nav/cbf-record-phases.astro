@@ -61,16 +61,15 @@ const stepState = (stage: string, key: string): State =>
   {stages.map((st) => (
     <ol class="cbf-record-phases__line cluster typography-body-sm" data-gap="lg" aria-label="Contract phases" data-hide-stages={others(st.key)}>
       {phases.map((ph) => {
-        const [state, when, note, pastDue] = st.phases[ph.key];
+        const [state, when, note] = st.phases[ph.key];
         return (
-          <li class="cbf-record-phases__phase" data-state={state} data-past-due={pastDue ? '' : undefined}>
+          <li class="cbf-record-phases__phase" data-state={state}>
             <span class="cbf-record-phases__icon" aria-hidden="true">
               <CbfIcon name={state === 'done' ? 'circle-check' : state === 'current' ? 'circle-half' : 'circle-dashed'} />
             </span>
             <span class="visually-hidden">{stateLabel[state]}: </span>
             <span class="cbf-record-phases__label">{ph.label}</span>
             <span class="cbf-record-phases__when">{when}</span>
-            {pastDue && <span class="visually-hidden">, past due</span>}
             {note &&
               (note[2] ? (
                 <a class="cbf-record-phases__note" href={`${base}/${note[2]}`}>
@@ -177,11 +176,6 @@ const stepState = (stage: string, key: string): State =>
   }
   .cbf-record-phases__when {
     color: var(--color-content-default-secondary);
-  }
-  /* Setup past its due date (150 days before the start) and not finished. */
-  .cbf-record-phases__phase[data-past-due] .cbf-record-phases__when {
-    color: var(--color-content-warning);
-    font-weight: var(--typography-font-weight-medium);
   }
   .cbf-record-phases__note {
     display: inline-flex;

@@ -43,7 +43,7 @@ const isInit = slug === 'initialize-sow';
 const crumbs = isInit ? [{ label: 'SOW', href: `${base}/sow` }, { label: page.label }] : [{ label: page.label }];
 // Review and Approve pages act on one revision: name it, per stage.
 const revisionLines =
-  page.tab === 'review' || (page as { group?: string }).group === 'Review and Approve'
+  page.tab === 'review' || (page as { group?: string }).group === 'Review and approve'
     ? revisions.map((r) => ({ text: revisionLine(r), hideStages: stageKeys.filter((k) => !r.current.includes(k)).join(' ') }))
     : [];
 ---

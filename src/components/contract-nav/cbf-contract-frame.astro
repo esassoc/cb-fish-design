@@ -108,7 +108,7 @@ const endTabs = ends.map((k) => tabs.find((t) => t.key === k)!);
 const phaseTabs = tabs.filter((t) => !ends.includes(t.key));
 const lifecycle = LIFECYCLE.filter((ph) => phaseTabs.some((t) => t.key === ph.tab));
 // The status line names every phase, from round 3's tabs, whatever menus hold the pages.
-const PHASE_LABELS: Record<string, string> = { setup: 'Setup', review: 'Review and Approve', report: 'Report and Invoice', closeout: 'Closeout' };
+const PHASE_LABELS: Record<string, string> = { setup: 'Setup', review: 'Review and approve', report: 'Report and invoice', closeout: 'Closeout' };
 const statusPhases = LIFECYCLE.map((ph) => ({ key: ph.tab, label: PHASE_LABELS[ph.tab] ?? ph.tab, state: ph.state as 'done' | 'current' | 'next', when: ph.when }));
 const stageKeys = stages.map((st) => st.key);
 const stagesHiddenFor = (t: Tab) => tabHiddenStages(t, stageKeys);
