@@ -304,18 +304,52 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
     .cbf-metrics-mosaic__pct { font-size: var(--typography-heading-md-font-size); }
     .cbf-metrics-mosaic__name { font-size: var(--typography-body-md-font-size); margin-top: 0; }
   }
-  @container (max-height: 4.5rem) { .cbf-metrics-mosaic__name { display: none; } }
   @container (max-width: 9rem) {
     .cbf-metrics-mosaic__block { padding: var(--spacing-300); }
     .cbf-metrics-mosaic__name { font-size: var(--typography-body-md-font-size); }
     .cbf-metrics-mosaic__cta { display: none; }
   }
 
+  /* phones get the tall geometry. Placed after the shed-detail rules (so its
+     padding wins over them, as before) and before the compact rules below
+     (so the smallest blocks keep their tighter padding) */
   @media (max-width: 640px) {
     .cbf-metrics-mosaic__map.is-wide { display: none; }
     .cbf-metrics-mosaic__map.is-tall { display: block; }
     .cbf-metrics-mosaic__block { padding: var(--spacing-400); }
   }
+
+  /* compact blocks never drop the name: it becomes a small label that wraps
+     to two lines, then truncates (a script adds the full name as a tooltip
+     only where it is cut short) */
+  @container (max-height: 4.5rem) or (max-width: 6.5rem) {
+    .cbf-metrics-mosaic__pct { flex: none; font-size: var(--typography-heading-md-font-size); }
+    .cbf-metrics-mosaic__name {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+      margin-top: 0;
+      font-family: var(--typography-font-family-sans);
+      font-size: var(--typography-label-sm-font-size);
+      font-weight: var(--typography-font-weight-semibold);
+      line-height: 1.2;
+    }
+  }
+  /* short: the label sits beside the share, one line, no amount line */
+  @container (max-height: 4.5rem) {
+    .cbf-metrics-mosaic__block { flex-direction: row; align-items: center; gap: var(--spacing-200); padding-block: var(--spacing-200); }
+    .cbf-metrics-mosaic__name { -webkit-line-clamp: 1; }
+    .cbf-metrics-mosaic__foot { display: none; }
+  }
+  /* narrow: the label sits under the share; the amount line goes first when
+     the block is also short */
+  @container (max-width: 6.5rem) {
+    .cbf-metrics-mosaic__block { flex-direction: column; align-items: flex-start; gap: 2px; padding: var(--spacing-200); }
+  }
+  @container (max-width: 6.5rem) and (max-height: 8rem) { .cbf-metrics-mosaic__foot { display: none; } }
   @media (prefers-reduced-motion: reduce) {
     .cbf-metrics-mosaic__cell { animation: none; }
     .cbf-metrics-mosaic__block, .cbf-metrics-mosaic__symbol { transition: none; }
@@ -340,5 +374,20 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
       root.querySelectorAll<HTMLElement>('[data-view]').forEach((v) => (v.hidden = v.dataset.view !== `${measure}:${split}`));
     pickM.addEventListener('change', (e) => { measure = (e as CustomEvent).detail.value; show(); });
     pickS.addEventListener('change', (e) => { split = (e as CustomEvent).detail.value; show(); });
+
+    // full name as a tooltip, only on blocks where the compact label is cut
+    // short (elsewhere the visible name already says it; a title there would
+    // just repeat the link's accessible name)
+    const names = [...root.querySelectorAll<HTMLElement>('.cbf-metrics-mosaic__name')];
+    const markTruncated = () => names.forEach((n) => {
+      const cut = n.offsetParent !== null && (n.scrollWidth > n.clientWidth + 1 || n.scrollHeight > n.clientHeight + 1);
+      const block = n.closest('a, [role="button"]');
+      if (block) cut ? block.setAttribute('title', n.textContent ?? '') : block.removeAttribute('title');
+    });
+    new ResizeObserver(markTruncated).observe(root);
+    // the web font changes text widths once it loads
+    document.fonts?.ready.then(markTruncated);
+    pickM.addEventListener('change', markTruncated);
+    pickS.addEventListener('change', markTruncated);
   }
 </script>
