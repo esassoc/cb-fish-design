@@ -32,12 +32,12 @@ export const CONTRACT_TABS_V2 = [
   { key: 'setup', label: 'Setup', pages: [page('pre-award')] },
   {
     key: 'review',
-    label: 'Review and Approve',
+    label: 'Review and approve',
     pages: [
       page('review-sow'),
       { ...page('workflow'), hideStages: ['setup'] },
       // Pick 3: the memo is its own page, once a revision is in review.
-      { slug: 'transmittal-memo', label: 'Transmittal Memo', prod: 'Workflow (transmittal memos)', hideStages: ['setup'] },
+      { slug: 'transmittal-memo', label: 'Transmittal memo', prod: 'Workflow (transmittal memos)', hideStages: ['setup'] },
     ],
   },
   tab('report'),
@@ -61,7 +61,7 @@ export const CONTRACT_TABS_V3 = [
     pages: [
       ...sowTab.pages,
       ...setupTab.pages.map((p) => ({ ...p, group: 'Setup' })),
-      ...reviewTab.pages.map((p) => ({ ...p, group: 'Review and Approve' })),
+      ...reviewTab.pages.map((p) => ({ ...p, group: 'Review and approve' })),
     ],
   },
   tab('report'),
@@ -154,9 +154,9 @@ export const WSE_TABS = [
   { key: 'milestones', label: 'Milestones' },
   { key: 'metrics', label: 'Metrics' },
   { key: 'location', label: 'Location' },
-  { key: 'focal-species', label: 'Focal Species' },
-  { key: 'environmental-compliance', label: 'Environmental Compliance' },
-  { key: 'rme-metadata', label: 'RM&E Metadata' },
+  { key: 'focal-species', label: 'Focal species' },
+  { key: 'environmental-compliance', label: 'Environmental compliance' },
+  { key: 'rme-metadata', label: 'RM&E metadata' },
 ];
 
 // Mock work elements (WEs) for CR-387553's Rev 1: letter (sort order), the work element
@@ -227,5 +227,7 @@ export function headerViews(slug) {
     { key: 'lifecycle', label: 'Lifecycle', path: `/contract-nav/${inV1 ? slug : V1_FALLBACK[slug] ?? 'summary'}` },
     { key: 'sow-hub', label: 'SOW hub', path: `/contract-nav/v2/${inV2 ? slug : 'summary'}` },
     { key: 'areas', label: 'Areas', path: `/contract-nav/v3/${inV3 ? slug : 'summary'}` },
+    // Round 6 has round 5's pages.
+    { key: 'phases', label: 'Phases', path: `/contract-nav/v4/${inV3 ? slug : 'summary'}` },
   ];
 }

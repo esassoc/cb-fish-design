@@ -23,6 +23,8 @@ import CbfRecordEnds from './cbf-record-ends.astro';
 import CbfRecordStatus from './cbf-record-status.astro';
 import CbfRoleGate from './cbf-role-gate.astro';
 import CbfPortfolioReturn from './cbf-portfolio-return.astro';
+import CbfRecordPhases from './cbf-record-phases.astro';
+import CbfFindPage from './cbf-find-page.astro';
 import EsaBadge from '@esa/ecology/esa-badge.astro';
 import EsaContainer from '@esa/ecology/esa-container.astro';
 import { withBase } from '../../lib/base';
@@ -39,6 +41,7 @@ import {
   tabHiddenFor,
   tabHiddenStages,
 } from '../../data/contract-nav.mjs';
+import { QA_CONTRACT_TITLE, ALL_PAGES_V4, CONTRACT_TABS_V4, PAGE_KEYWORDS_V4, PHASES_V4, STEPS_V4, STEP_STATES_V4 } from '../../data/contract-nav-v4.mjs';
 
 interface Page {
   slug: string;
@@ -56,7 +59,7 @@ interface Stage {
   label: string;
   status: string;
   variant: string;
-  phases: Record<string, [string, number | null, string]>;
+  phases: Record<string, any>;
 }
 interface Crumb {
   label: string;
@@ -86,7 +89,7 @@ interface Props {
   /** The header variations, for the prototype's Header switch. */
   views: View[];
   activeView: string;
-  header?: 'lifecycle' | 'areas';
+  header?: 'lifecycle' | 'areas' | 'phases';
 }
 const { tabs, ends, stages, base, current, crumbs, title, pageHideFor, pageHideStages, views, activeView, header = 'lifecycle' } = Astro.props;
 
@@ -105,9 +108,16 @@ const endTabs = ends.map((k) => tabs.find((t) => t.key === k)!);
 const phaseTabs = tabs.filter((t) => !ends.includes(t.key));
 const lifecycle = LIFECYCLE.filter((ph) => phaseTabs.some((t) => t.key === ph.tab));
 // The status line names every phase, from round 3's tabs, whatever menus hold the pages.
-const PHASE_LABELS: Record<string, string> = { setup: 'Setup', review: 'Review and Approve', report: 'Report and Invoice', closeout: 'Closeout' };
+const PHASE_LABELS: Record<string, string> = { setup: 'Setup', review: 'Review and approve', report: 'Report and invoice', closeout: 'Closeout' };
 const statusPhases = LIFECYCLE.map((ph) => ({ key: ph.tab, label: PHASE_LABELS[ph.tab] ?? ph.tab, state: ph.state as 'done' | 'current' | 'next', when: ph.when }));
 const stageKeys = stages.map((st) => st.key);
+const stagesHiddenFor = (t: Tab) => tabHiddenStages(t, stageKeys);
+// Round 6: find page lists every page under its menu; the steps drawer hides a step's
+// link from roles that can't open its page.
+const findPages = CONTRACT_TABS_V4.flatMap((t) =>
+  t.pages.map((p: any) => ({ slug: p.slug, label: p.label, group: t.label, prod: p.prod, hideFor: p.hideFor, hideStages: p.hideStages, keywords: (PAGE_KEYWORDS_V4 as Record<string, string[]>)[p.slug] })),
+);
+const pageHideForV4 = Object.fromEntries(ALL_PAGES_V4.map((p: any) => [p.slug, p.hideFor ?? []]));
 const endsLabel = `Contract ${endTabs.map((t) => t.label).join(', ').replace(/, ([^,]*)$/, ' and $1')}`;
 ---
 
@@ -118,14 +128,38 @@ const endsLabel = `Contract ${endTabs.map((t) => t.label).join(', ').replace(/, 
     <EsaContainer maxWidth="1920px">
       <CbfAppPanel crumbs={allCrumbs} overflow="visible">
         <CbfPortfolioReturn name={PORTFOLIO.name} href={withBase('/home')} />
-        <CbfRecordHeader eyebrow={`Contract ${contract.number}`} title={contract.title}>
+        {/* Round 6 shows today's pages, so its header names the real CR-387553 as QA does. */}
+        <CbfRecordHeader eyebrow={`Contract ${contract.number}`} title={header === 'phases' ? QA_CONTRACT_TITLE : contract.title} gap={header === 'phases' ? 'md' : 'lg'}>
           {stages.map((st) => (
             <span slot="status" data-hide-stages={stageKeys.filter((k) => k !== st.key).join(' ')}>
               <EsaBadge value={st.status} variant={st.variant as any} size="md" />
             </span>
           ))}
-          {header !== 'areas' && <CbfRecordEnds slot="actions" tabs={endTabs} current={current} base={base} label={endsLabel} />}
-          {header === 'areas' && <CbfRecordStatus phases={statusPhases} stages={stages} label="Contract lifecycle" />}
+          {header === 'lifecycle' && <CbfRecordEnds slot="actions" tabs={endTabs} current={current} base={base} label={endsLabel} />}
+          {header === 'areas' && <CbfRecordStatus phases={statusPhases} stages={stages as any} label="Contract lifecycle" />}
+          {header === 'phases' && (
+            <CbfRecordPhases
+              stages={stages as any}
+              phases={PHASES_V4}
+              steps={STEPS_V4}
+              stepStates={STEP_STATES_V4}
+              base={base}
+              pageHideFor={pageHideForV4}
+            />
+          )}
+          {header === 'phases' && (
+            <CbfRecordEnds
+              tabs={endTabs}
+              current={current}
+              base={base}
+              label="Contract"
+              layout="row"
+              hiddenFor={tabHiddenFor}
+              hiddenStages={stagesHiddenFor}
+            >
+              <CbfFindPage slot="end" pages={findPages} base={base} />
+            </CbfRecordEnds>
+          )}
           {header === 'areas' && (
             <CbfRecordEnds
               tabs={endTabs}
@@ -134,10 +168,10 @@ const endsLabel = `Contract ${endTabs.map((t) => t.label).join(', ').replace(/, 
               label="Contract"
               layout="row"
               hiddenFor={tabHiddenFor}
-              hiddenStages={tabHiddenStages}
+              hiddenStages={stagesHiddenFor}
             />
           )}
-          {header !== 'areas' && (
+          {header === 'lifecycle' && (
             <CbfRecordLifecycle
               tabs={phaseTabs}
               lifecycle={lifecycle}
@@ -157,7 +191,10 @@ const endsLabel = `Contract ${endTabs.map((t) => t.label).join(', ').replace(/, 
 
       {/* Last in the source, so the prototype controls come after the page in tab order;
           the panel floats bottom right. */}
-      <CbfPrototypeStrip placement="float" note="Contract dates and status are mock.">
+      <CbfPrototypeStrip
+        placement="float"
+        note={header === 'phases' ? 'Contract dates and status are mock. Page bodies are screenshots of today’s pages on QA.' : 'Contract dates and status are mock.'}
+      >
         <CbfRouteSwitch views={views} active={activeView} label="Header" />
         <CbfRoleSwitch roles={NAV_ROLES} storageKey={NAV_ROLE_KEY} />
         <CbfLensSwitch

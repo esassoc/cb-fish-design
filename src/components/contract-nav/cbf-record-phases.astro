@@ -1,0 +1,270 @@
+---
+/*
+ * cbf-record-phases — where a contract is in its life, as one line under its title
+ * (round 6, "Phases"; round 5's cbf-record-status grown to the team's three phases).
+ *
+ * Setup, Implementation, Closeout, each with its date range (every phase the same
+ * shape, Andy 2026-11-10: "give me a date range, give me before date range, after").
+ * Setup carries its approval state as a quiet badge (Andy: a contractor needs to know
+ * "if it's been approved or not"); a change request reopens Setup while Implementation
+ * stays in progress. Status only: the pages live in the area menus.
+ *
+ * "All steps" opens a drawer listing every step on this contract's path, done and to
+ * come (Andy's permit-portal idea), each linked to the page where it happens.
+ *
+ * Every stage is server-rendered and hidden by the stage lens (cbf-role-gate's
+ * data-hide-stages), so switching is instant. Composes esa-badge, esa-button and
+ * esa-side-dialog; icons are the spoke's CbfIcon, as in cbf-record-status.
+ */
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import CbfIcon from '../search/cbf-icon.astro';
+
+type State = 'done' | 'current' | 'next';
+interface Stage {
+  key: string;
+  /** phase → [state, date range, note: [text, badge variant, page slug?] | null, past due?] */
+  phases: Record<string, [State, string, ([string, string, string?] | null)?, boolean?]>;
+}
+interface Phase {
+  key: string;
+  label: string;
+}
+interface Step {
+  phase: string;
+  key: string;
+  label: string;
+  who: string;
+  page?: string;
+  pageWhen?: string[];
+  onlyStages?: string[];
+}
+interface Props {
+  stages: Stage[];
+  phases: Phase[];
+  steps: Step[];
+  stepStates: Record<string, { done: string[]; current: string[] }>;
+  /** Route prefix for step links, base included. */
+  base: string;
+  /** slug → roles that can't open it, so a step's link hides for them. */
+  pageHideFor: Record<string, string[]>;
+}
+const { stages, phases, steps, stepStates, base, pageHideFor } = Astro.props;
+const keys = stages.map((s) => s.key);
+const others = (k: string) => keys.filter((o) => o !== k).join(' ');
+const stateLabel: Record<State, string> = { done: 'Finished', current: 'In progress', next: 'Not started' };
+const stepState = (stage: string, key: string): State =>
+  stepStates[stage]?.done.includes(key) ? 'done' : stepStates[stage]?.current.includes(key) ? 'current' : 'next';
+---
+
+<div class="cbf-record-phases cluster" data-gap="md">
+  {stages.map((st) => (
+    <ol class="cbf-record-phases__line cluster typography-body-sm" data-gap="lg" aria-label="Contract phases" data-hide-stages={others(st.key)}>
+      {phases.map((ph) => {
+        const [state, when, note] = st.phases[ph.key];
+        return (
+          <li class="cbf-record-phases__phase" data-state={state}>
+            <span class="cbf-record-phases__icon" aria-hidden="true">
+              <CbfIcon name={state === 'done' ? 'circle-check' : state === 'current' ? 'circle-half' : 'circle-dashed'} />
+            </span>
+            <span class="visually-hidden">{stateLabel[state]}: </span>
+            <span class="cbf-record-phases__label">{ph.label}</span>
+            <span class="cbf-record-phases__when">{when}</span>
+            {note &&
+              (note[2] ? (
+                <a class="cbf-record-phases__note" href={`${base}/${note[2]}`}>
+                  <EsaBadge value={note[0]} variant={note[1] as any} size="sm" />
+                </a>
+              ) : (
+                <EsaBadge value={note[0]} variant={note[1] as any} size="sm" />
+              ))}
+          </li>
+        );
+      })}
+    </ol>
+  ))}
+  <span class="cbf-record-phases__steps">
+    <EsaButton variant="ghost" size="sm" data-steps-open aria-haspopup="dialog">
+      <span class="cbf-record-phases__steps-label">All steps <CbfIcon name="chevron-right" /></span>
+    </EsaButton>
+  </span>
+</div>
+
+<esa-side-dialog size="md" position="right" heading="Contract steps" data-steps-dialog>
+  {stages.map((st) => (
+    <div class="stack" data-gap="lg" data-hide-stages={others(st.key)}>
+      {phases.map((ph) => (
+        <section class="stack" data-gap="xs" aria-labelledby={`steps-${st.key}-${ph.key}`}>
+          <h3 id={`steps-${st.key}-${ph.key}`} class="cbf-record-phases__group typography-label-lg">
+            {ph.label}
+            <span class="cbf-record-phases__group-when typography-body-sm">{st.phases[ph.key][1]}</span>
+          </h3>
+          <ol class="cbf-record-phases__list stack" data-gap="2xs">
+            {steps
+              .filter((s) => s.phase === ph.key && (!s.onlyStages || s.onlyStages.includes(st.key)))
+              .map((s) => {
+                const state = stepState(st.key, s.key);
+                const linked = s.page && (!s.pageWhen || s.pageWhen.includes(st.key));
+                return (
+                  <li class="cbf-record-phases__step" data-state={state}>
+                    <span class="cbf-record-phases__icon" aria-hidden="true">
+                      <CbfIcon name={state === 'done' ? 'circle-check' : state === 'current' ? 'circle-half' : 'circle-dashed'} />
+                    </span>
+                    <span class="visually-hidden">{stateLabel[state]}: </span>
+                    <span class="stack" data-gap="3xs">
+                      {linked ? (
+                        <>
+                          <a class="cbf-record-phases__step-name typography-body-md" href={`${base}/${s.page}`} data-hide-for={pageHideFor[s.page!]?.join(' ') || undefined}>{s.label}</a>
+                          {pageHideFor[s.page!]?.length ? (
+                            <span class="cbf-record-phases__step-name typography-body-md" data-show-for={pageHideFor[s.page!].join(' ')}>{s.label}</span>
+                          ) : null}
+                        </>
+                      ) : (
+                        <span class="cbf-record-phases__step-name typography-body-md">{s.label}</span>
+                      )}
+                      <span class="cbf-record-phases__who typography-body-sm">{s.who}</span>
+                    </span>
+                  </li>
+                );
+              })}
+          </ol>
+        </section>
+      ))}
+    </div>
+  ))}
+</esa-side-dialog>
+
+<script>
+  import '@esa/ecology/esa-side-dialog';
+
+  const dialog = document.querySelector<HTMLElement & { open: boolean }>('[data-steps-dialog]');
+  document.querySelectorAll('[data-steps-open]').forEach((b) =>
+    b.addEventListener('click', () => {
+      if (dialog) dialog.open = true;
+    }),
+  );
+  dialog?.addEventListener('close', () => {
+    dialog.open = false;
+  });
+</script>
+
+<style>
+  .cbf-record-phases {
+    row-gap: var(--spacing-100);
+  }
+  .cbf-record-phases__line {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    row-gap: var(--spacing-100);
+  }
+  .cbf-record-phases__phase,
+  .cbf-record-phases__step {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-100);
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-record-phases__phase[data-state='next'] {
+    color: var(--color-content-default-tertiary);
+  }
+  .cbf-record-phases__phase[data-state='current'] {
+    color: var(--color-content-default);
+  }
+  .cbf-record-phases__phase[data-state='current'] .cbf-record-phases__label {
+    font-weight: var(--typography-font-weight-semibold);
+  }
+  .cbf-record-phases__when {
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-record-phases__note {
+    display: inline-flex;
+    text-decoration: none;
+  }
+  .cbf-record-phases__note:hover {
+    text-decoration: underline;
+  }
+  .cbf-record-phases__steps-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-050);
+  }
+  .cbf-record-phases__steps :global(.cbf-icon) {
+    display: inline-flex;
+  }
+  /* Phones: only the phase in progress, then All steps for the rest. */
+  @media (max-width: 47.99rem) {
+    .cbf-record-phases__phase:not([data-state='current']) {
+      display: none;
+    }
+  }
+  .cbf-record-phases__phase[data-state='next'] .cbf-record-phases__when {
+    color: var(--color-content-default-tertiary);
+  }
+  .cbf-record-phases__icon {
+    display: inline-flex;
+  }
+  [data-state='done'] > .cbf-record-phases__icon {
+    color: var(--color-content-success);
+  }
+  [data-state='current'] > .cbf-record-phases__icon {
+    color: var(--color-background-brand);
+  }
+  [data-state='current'] > .cbf-record-phases__icon :global(path) {
+    fill: currentColor;
+  }
+  [data-state='next'] > .cbf-record-phases__icon {
+    color: var(--color-content-default-tertiary);
+  }
+
+  /* The drawer: one group per phase, its steps in order. */
+  .cbf-record-phases__group {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--spacing-200);
+    margin: 0;
+    padding-block-end: var(--spacing-100);
+    border-block-end: 1px solid var(--color-border-default);
+    color: var(--color-content-default);
+  }
+  .cbf-record-phases__group-when {
+    color: var(--color-content-default-secondary);
+    font-weight: var(--typography-font-weight-regular);
+  }
+  .cbf-record-phases__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .cbf-record-phases__step {
+    align-items: flex-start;
+    padding-block: var(--spacing-100);
+  }
+  .cbf-record-phases__step > .cbf-record-phases__icon {
+    padding-block-start: 3px;
+  }
+  .cbf-record-phases__step-name {
+    color: var(--color-content-default);
+  }
+  .cbf-record-phases__step[data-state='current'] .cbf-record-phases__step-name {
+    font-weight: var(--typography-font-weight-semibold);
+  }
+  .cbf-record-phases__step[data-state='next'] .cbf-record-phases__step-name {
+    color: var(--color-content-default-secondary);
+  }
+  a.cbf-record-phases__step-name {
+    color: var(--color-content-link);
+  }
+  .cbf-record-phases__who {
+    color: var(--color-content-default-secondary);
+  }
+  /* A step's link shows only for roles that can open its page. */
+  [data-show-for] {
+    display: none;
+  }
+  :global(html[data-cbf-role='contractor']) [data-show-for~='contractor'],
+  :global(html[data-cbf-role='cor']) [data-show-for~='cor'] {
+    display: inline;
+  }
+</style>

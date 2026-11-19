@@ -1,0 +1,142 @@
+---
+/*
+ * cbf-we-rail — the work elements of one SOW revision, as a list down the left of a
+ * work element page (round 6; Gloria, 2026-11-12: "maybe we need a work element ...
+ * left-hand nav. And tabs across the top"). Choosing the element comes first, before
+ * its tabs, where today's dropdown sits after them.
+ *
+ * Each row: the letter and template ("E: 29. Increase Aquatic and/or Floodplain
+ * Complexity") and the title that tells two elements of one template apart. A row
+ * whose tabs still need input carries a quiet count, only while the revision is
+ * unlocked (prod's asterisk). Opening another element keeps the tab you are on when
+ * it applies there, else lands on Summary. A filter narrows long lists (prod has 37).
+ *
+ * Ways out: the breadcrumb's SOW and revision crumbs and the SOW menu (today "Back to
+ * SOW" is the only one). The selected row is filled brand blue, this level's one
+ * "you are here" mark, as the SOW menu is above.
+ */
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+
+interface Rail {
+  letter: string;
+  template: number;
+  name: string;
+  title: string;
+  needs: string[];
+  href: string;
+}
+interface Props {
+  items: Rail[];
+  current: string;
+  /** "SOW Rev 1, Contract Requisition (CR-387553)" */
+  revision?: string;
+  sowHref?: string;
+  /** Stages in which the revision is locked, so needs-input counts hide. */
+  flagHideStages: string;
+}
+const { items, current, flagHideStages } = Astro.props;
+---
+
+<nav class="cbf-we-rail stack" data-gap="sm" aria-label="Work elements" data-we-rail>
+  <esa-text-field size="sm" label="Filter work elements" placeholder="Letter, number or title" data-we-filter></esa-text-field>
+  <ol class="cbf-we-rail__list">
+    {items.map((w) => (
+      <li data-we-text={`${w.letter} ${w.template} ${w.name} ${w.title}`.toLowerCase()}>
+        <a class="cbf-we-rail__item" href={w.href} aria-current={w.letter === current ? 'page' : undefined} title={`${w.letter}: ${w.template}. ${w.name}, ${w.title}`}>
+          <span class="cbf-we-rail__name typography-body-sm">{w.letter}: {w.template}. {w.name}</span>
+          <span class="cbf-we-rail__title typography-body-sm">{w.title}</span>
+          {w.needs.length > 0 && (
+            <span class="cbf-we-rail__needs" data-hide-stages={flagHideStages || undefined}>
+              <EsaBadge value={`${w.needs.length} need input`} variant="warning" size="sm" />
+            </span>
+          )}
+        </a>
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<script>
+  import '@esa/ecology/esa-text-field';
+
+  document.querySelectorAll<HTMLElement>('[data-we-rail]').forEach((rail) => {
+    const field = rail.querySelector<HTMLElement & { value: string }>('[data-we-filter]');
+    const rows = Array.from(rail.querySelectorAll<HTMLElement>('[data-we-text]'));
+    field?.addEventListener('input', () => {
+      const q = (field.value || '').trim().toLowerCase();
+      rows.forEach((r) => (r.hidden = !!q && !(r.dataset.weText ?? '').includes(q)));
+    });
+    // Long lists: bring the selected element into the list's view.
+    rail.querySelector<HTMLElement>('[aria-current="page"]')?.scrollIntoView({ block: 'nearest' });
+  });
+</script>
+
+<style>
+  /* The list stays in view while the page scrolls and scrolls inside itself, so a
+     37-element SOW keeps the selection and the tabs together. */
+  .cbf-we-rail {
+    position: sticky;
+    inset-block-start: var(--spacing-400);
+    align-self: start;
+  }
+  .cbf-we-rail__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-block-start: 1px solid var(--color-border-default);
+    max-block-size: calc(100vh - 10rem);
+    overflow-y: auto;
+  }
+  .cbf-we-rail__item {
+    display: grid;
+    gap: 0;
+    padding: var(--spacing-100) var(--spacing-200);
+    border-block-end: 1px solid var(--color-border-default);
+    color: var(--color-content-default);
+    text-decoration: none;
+  }
+  .cbf-we-rail__item:hover {
+    background: var(--color-background-default-hover);
+  }
+  /* Selected: a tint and a heavier name, quieter than the navy menu above, which is
+     the header's one "you are here" mark. */
+  .cbf-we-rail__item[aria-current='page'] {
+    background: var(--color-background-brand);
+    color: var(--color-content-on-brand);
+  }
+  .cbf-we-rail__item[aria-current='page'] .cbf-we-rail__name {
+    font-weight: var(--typography-font-weight-semibold);
+  }
+  .cbf-we-rail__item[aria-current='page'] .cbf-we-rail__title {
+    color: var(--color-content-on-brand);
+  }
+  /* One line each, like prod's dropdown options; the full text is the row's title. */
+  .cbf-we-rail__name,
+  .cbf-we-rail__title {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .cbf-we-rail__name {
+    font-weight: var(--typography-font-weight-medium);
+  }
+  .cbf-we-rail__title {
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-we-rail__needs {
+    justify-self: start;
+    margin-block-start: var(--spacing-050);
+  }
+  /* Narrow screens stack the list above the page: cap it so a 37-element SOW doesn't
+     push the tabs off the first screen. */
+  @media (max-width: 47.99rem) {
+    .cbf-we-rail {
+      position: static;
+    }
+    .cbf-we-rail__list {
+      max-block-size: 16rem;
+      overflow-y: auto;
+      border-block-end: 1px solid var(--color-border-default);
+    }
+  }
+</style>
