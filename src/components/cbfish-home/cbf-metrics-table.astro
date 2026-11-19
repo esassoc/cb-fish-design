@@ -14,7 +14,7 @@
 // cell, stretched over the whole row (::before), so any cell opens it. Checked Beacon (summary tables are
 // plain tables). The bars are aria-hidden; each bar cell carries the same five
 // years as visually hidden text, so every value is in a cell as text.
-import { METRICS, AREA, LAST_FY, formatFull } from '../../data/cbfish-home-metrics';
+import { METRICS, AREA, LAST_FY, formatFull, qualify } from '../../data/cbfish-home-metrics';
 import { contractLink } from '../../lib/contract-links';
 
 const YEARS = [LAST_FY, LAST_FY - 1, LAST_FY - 2, LAST_FY - 3, LAST_FY - 4];
@@ -31,6 +31,12 @@ const rows = METRICS.map((m) => ({
 // bars (and the year picker) run oldest → newest, each bar scaled to the
 // row's best of the five years
 const BAR_YEARS = [...YEARS].reverse();
+// years with no reported figure in any row are placeholders: say so under the
+// table, and draw those bars as outlines so they don't read as results
+const isReported = (m: (typeof METRICS)[number], y: number) => m.reportedFys.includes(y);
+const placeholderYears = BAR_YEARS.filter((y) => METRICS.some((m) => !isReported(m, y)));
+const reportedYears = BAR_YEARS.filter((y) => !placeholderYears.includes(y));
+const yearRange = (ys: number[]) => (ys.length > 1 ? `${fy(ys[0])}–${fy(ys[ys.length - 1])}` : fy(ys[0]));
 const barHeight = (byYear: Record<number, number>, y: number) =>
   Math.round((byYear[y] / Math.max(...BAR_YEARS.map((x) => byYear[x]), 1)) * 100);
 ---
@@ -58,7 +64,8 @@ const barHeight = (byYear: Record<number, number>, y: number) =>
       </thead>
       <tbody>
         {rows.map(({ m, area, byYear }) => (
-          <tr data-row data-by-year={JSON.stringify(byYear)} data-total={m.total} data-unit={m.unit}>
+          <tr data-row data-by-year={JSON.stringify(byYear)} data-total={m.total} data-unit={m.unit}
+            data-reported={JSON.stringify(m.reportedFys.map(String))}>
             <th scope="row" class="cbf-metrics-table__area">{area}</th>
             <td>
               <a class="cbf-metrics-table__link" {...contractLink(m.id)}>{m.label}</a>
@@ -69,12 +76,13 @@ const barHeight = (byYear: Record<number, number>, y: number) =>
                 {((byYear[LAST_FY] / m.total) * 100).toFixed(1)}% of total
               </span>
             </td>
-            <td class="is-num cbf-metrics-table__total">{formatFull(m.total)}</td>
+            <td class="is-num cbf-metrics-table__total">{qualify(m, formatFull(m.total))}</td>
             <td class="cbf-metrics-table__bars-cell">
-              <span class="visually-hidden">{BAR_YEARS.map((y) => `${fy(y)}: ${formatFull(byYear[y])}`).join(', ')}</span>
+              <span class="visually-hidden">{BAR_YEARS.map((y) => `${fy(y)}: ${formatFull(byYear[y])}${isReported(m, y) ? '' : ' (placeholder)'}`).join(', ')}</span>
               <span class="cbf-metrics-table__bars" aria-hidden="true">
                 {BAR_YEARS.map((y) => (
-                  <span class="cbf-metrics-table__bar" data-bar={y} data-on={y === LAST_FY ? '' : undefined} style={`--h: ${barHeight(byYear, y)}%`}></span>
+                  <span class="cbf-metrics-table__bar" data-bar={y} data-on={y === LAST_FY ? '' : undefined}
+                    data-placeholder={isReported(m, y) ? undefined : ''} style={`--h: ${barHeight(byYear, y)}%`}></span>
                 ))}
               </span>
             </td>
@@ -83,6 +91,11 @@ const barHeight = (byYear: Record<number, number>, y: number) =>
       </tbody>
     </table>
   </div>
+  {placeholderYears.length > 0 && (
+    <p class="typography-body-sm cbf-metrics-table__note">
+      {yearRange(placeholderYears)} are placeholder values until the yearly figures are available. Only the totals{reportedYears.length > 0 && ` and ${yearRange(reportedYears)}`} are reported results.
+    </p>
+  )}
 </section>
 
 <style>
@@ -165,6 +178,11 @@ const barHeight = (byYear: Record<number, number>, y: number) =>
     transition: background 200ms ease;
   }
   .cbf-metrics-table__bar[data-on] { background: var(--color-background-brand); }
+  /* placeholder years: an outline, not a filled bar, so they don't read as results
+     (the gray-9 outline keeps the same 3:1 non-text contrast) */
+  .cbf-metrics-table__bar[data-placeholder] { background: transparent; box-shadow: inset 0 0 0 1.5px var(--color-gray-9); }
+  .cbf-metrics-table__bar[data-placeholder][data-on] { box-shadow: inset 0 0 0 1.5px var(--color-background-brand); }
+  .cbf-metrics-table__note { margin: 0; color: var(--color-content-default-secondary); }
   @media (prefers-reduced-motion: reduce) {
     .cbf-metrics-table__bar { transition: none; }
   }
@@ -187,7 +205,10 @@ const barHeight = (byYear: Record<number, number>, y: number) =>
         const v = JSON.parse(row.dataset.byYear || '{}')[y] ?? 0;
         const total = Number(row.dataset.total);
         row.querySelector('[data-year-value]')!.textContent = v.toLocaleString('en-US');
-        row.querySelector('[data-year-share]')!.textContent = `${((v / total) * 100).toFixed(1)}% of total`;
+        const reported: string[] = JSON.parse(row.dataset.reported || '[]');
+        row.querySelector('[data-year-share]')!.textContent = reported.includes(y)
+          ? `${((v / total) * 100).toFixed(1)}% of total`
+          : 'Placeholder value';
         row.querySelectorAll<HTMLElement>('[data-bar]').forEach((b) => b.toggleAttribute('data-on', b.dataset.bar === y));
       });
     });

@@ -11,7 +11,7 @@ import EsaCard from '@esa/ecology/esa-card.astro';
 import EsaStat from '@esa/ecology/esa-stat.astro';
 import CbfCumulativeChart from '../cbfish-home/cbf-cumulative-chart.astro';
 import CbfShareBars from '../cbfish-home/cbf-share-bars.astro';
-import { STATES, formatCompact, formatFull, type Metric } from '../../data/cbfish-home-metrics';
+import { STATES, formatCompact, formatFull, qualify, type Metric } from '../../data/cbfish-home-metrics';
 import { latestGain } from '../../lib/series';
 
 interface Props {
@@ -30,7 +30,7 @@ const byProgram = metric.byProgram.map((p) => ({ label: p.name, value: p.value, 
   <EsaCard padding="spacious">
     <div class="cbf-results-summary__headline switcher" data-gap="2xl">
       <div class="cbf-results-summary__total stack" data-gap="md">
-        <EsaStat value={formatCompact(metric.total)} label={metric.label} sub="FY05–FY25, cumulative" />
+        <EsaStat value={qualify(metric, formatCompact(metric.total))} label={metric.label} sub="FY05–FY25, cumulative" />
         <p class="typography-body-sm cbf-results-summary__def">{metric.definition}</p>
         <dl class="cbf-results-summary__facts cluster" data-gap="xl">
           <div><dt class="typography-label-xs">Added in FY25</dt><dd>+{formatFull(latestGain(s))}</dd></div>
@@ -39,7 +39,7 @@ const byProgram = metric.byProgram.map((p) => ({ label: p.name, value: p.value, 
       </div>
       <div class="cbf-results-summary__chart">
         <CbfCumulativeChart series={s} unit={metric.unit} interactive height={240}
-          label={`Cumulative ${metric.short.toLowerCase()}, from ${formatFull(s[0].value)} in FY05 to ${formatFull(metric.total)} ${metric.unit} in FY25.`} />
+          label={`Cumulative ${metric.short.toLowerCase()}, from ${formatFull(s[0].value)} in FY05 to ${qualify(metric, formatFull(metric.total))} ${metric.unit} in FY25.`} />
       </div>
     </div>
   </EsaCard>

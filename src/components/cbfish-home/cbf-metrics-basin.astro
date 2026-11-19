@@ -42,10 +42,16 @@ const shareOf = (m: (typeof METRICS)[number], s: StateCode) => {
   const vals = Object.values(m.byState);
   return vals.filter((v) => v < m.byState[s]).length / Math.max(vals.length - 1, 1);
 };
-const split = (n: number) => { const [value, ...word] = formatCompact(n).split(' '); return { value, word: word.join(' ') }; };
+// "1.53" + "million", with BPA's qualifier: "~" before the number, "+" after
+// the whole figure ("1.53 million+", "~17,000")
+const split = (n: number, q?: '+' | '~') => {
+  const [num, ...rest] = formatCompact(n).split(' ');
+  const word = rest.join(' ');
+  return { value: `${q === '~' ? '~' : ''}${num}${q === '+' && !word ? '+' : ''}`, word: `${word}${q === '+' && word ? '+' : ''}` };
+};
 // everything the script needs to re-label the tiles for a state
 const data = METRICS.map((m) => ({
-  id: m.id, short: m.short, unit: m.unit, label: m.label, total: m.total, byState: m.byState,
+  id: m.id, short: m.short, unit: m.unit, label: m.label, total: m.total, qualifier: m.qualifier, byState: m.byState,
   gain: `+${latestGain(m.cumulative).toLocaleString('en-US')} added in FY${String(LAST_FY).slice(-2)}`,
 }));
 const pct = (m: (typeof METRICS)[number], s: StateCode) => Math.round((m.byState[s] / Object.values(m.byState).reduce((x, y) => x + y, 0)) * 100);
@@ -58,7 +64,7 @@ const unitWord = (u: string) => u.charAt(0).toUpperCase() + u.slice(1);
   <div class="cbf-metrics-basin__card">
     <div class="cbf-metrics-basin__tabs" role="tablist" aria-label="Measure" aria-orientation="vertical">
       {data.map((d, i) => {
-        const t = split(d.total);
+        const t = split(d.total, d.qualifier);
         return (
           <button type="button" role="tab" class="cbf-metrics-basin__tab" id={`cbf-basin-tab-${d.id}`} data-measure={d.id}
             aria-controls="cbf-basin-panel" aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? '0' : '-1'}>
@@ -186,8 +192,10 @@ const unitWord = (u: string) => u.charAt(0).toUpperCase() + u.slice(1);
   }
   .cbf-metrics-basin__tab[aria-selected='true'] .cbf-metrics-basin__tab-value { color: var(--color-background-brand); }
   .cbf-metrics-basin__tab-word { font-size: var(--typography-body-lg-font-size); font-weight: var(--typography-font-weight-semibold); }
+  /* the label looks the same on every tab: a bolder selected label is wider
+     and would rewrap, so the tabs would jump in height on every switch. The
+     selected tab is marked by its blue number and the panel surface. */
   .cbf-metrics-basin__tab-label { font-size: var(--typography-body-sm-font-size); color: var(--color-content-default); }
-  .cbf-metrics-basin__tab[aria-selected='true'] .cbf-metrics-basin__tab-label { font-weight: var(--typography-font-weight-semibold); }
   .cbf-metrics-basin__tab-sub { font-size: var(--typography-body-sm-font-size); color: var(--color-content-default-secondary); }
 
   /* panel: the map with its legend and link underneath */
