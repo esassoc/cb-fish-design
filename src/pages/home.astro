@@ -6,9 +6,10 @@
 // overview + program results + sitemap footer, all from cbf-*/esa-* parts.
 //
 // CBF-8287 draft: welcome copy beside linked project/contract tiles; then the
-// program's three cumulative results since 2005 as headline totals (with the
-// latest year's gain) that drive a basin map, a share mosaic (after p. 5 of
-// BPA's 2023 review) and a current-metrics table (after p. 7). Links to the data behind a result
+// program's cumulative results since 2005 as headline totals (with the latest
+// year's gain, plus an RM&E tab still to come) that drive a basin map, then a
+// spending mosaic (after p. 5 of BPA's 2023 review). The current-metrics table
+// (cbf-metrics-table) is off the page for now. Links to the data behind a result
 // are out of scope for now (src/lib/contract-links). Every result figure is a
 // PLACEHOLDER until CBF-8302 settles the data source (src/data/cbfish-home-metrics.ts).
 import BaseLayout from '../layouts/BaseLayout.astro';
@@ -17,7 +18,6 @@ import CbfWelcomeHero from '../components/cbfish-home/cbf-welcome-hero.astro';
 import CbfProgramOverview from '../components/cbfish-home/cbf-program-overview.astro';
 import CbfMetricsBasin from '../components/cbfish-home/cbf-metrics-basin.astro';
 import CbfMetricsMosaic from '../components/cbfish-home/cbf-metrics-mosaic.astro';
-import CbfMetricsTable from '../components/cbfish-home/cbf-metrics-table.astro';
 import CbfAppFooter from '../components/cbfish-home/cbf-app-footer.astro';
 import { withBase } from '../lib/base';
 import CbfOutOfScopeNotice from '../components/shared/cbf-out-of-scope-notice.astro';
@@ -51,8 +51,7 @@ const overview = {
     - photo hero     -> cbf-welcome-hero
     - overview+stats -> cbf-program-overview
     - totals + map   -> cbf-metrics-basin        # totals tiles pick the mapped measure
-    - mosaic         -> cbf-metrics-mosaic       # after BPA 2023 review p. 5
-    - table          -> cbf-metrics-table        # after p. 7
+    - mosaic         -> cbf-metrics-mosaic       # spending; after BPA 2023 review p. 5
     - scope notice   -> cbf-out-of-scope-notice  # "…outside this prototype" for unbuilt links
     - sitemap footer -> cbf-app-footer
 -->
@@ -72,7 +71,6 @@ const overview = {
 
       <CbfMetricsBasin />
       <CbfMetricsMosaic />
-      <CbfMetricsTable />
     </div>
 
     <CbfOutOfScopeNotice />

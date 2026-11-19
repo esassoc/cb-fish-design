@@ -155,8 +155,8 @@ export const METRICS: Metric[] = [
   }),
   metric({
     id: 'fish',
-    label: 'Fish produced by program hatcheries',
-    short: 'Fish produced',
+    label: 'Fish released from hatcheries',
+    short: 'Fish released',
     unit: 'fish',
     definition: 'Juvenile salmon, steelhead, sturgeon and resident fish released from program-funded hatchery facilities.',
     // BPA FY25 results: 419 million fish released since 2005; 19.8 million in FY25
