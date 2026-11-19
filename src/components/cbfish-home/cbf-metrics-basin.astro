@@ -23,6 +23,7 @@
 // cbf-metrics-table: ecology has no table lego. "View … data" is esa-button.
 // No esa- map lego exists; checked Beacon (maps there are full GIS views).
 import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaIcon from '@esa/ecology/esa-icon.astro';
 import { METRICS, STATES, LAST_FY, formatCompact, type StateCode } from '../../data/cbfish-home-metrics';
 import { contractLink } from '../../lib/contract-links';
 import { latestGain } from '../../lib/series';
@@ -49,11 +50,28 @@ const split = (n: number, q?: '+' | '~') => {
   const word = rest.join(' ');
   return { value: `${q === '~' ? '~' : ''}${num}${q === '+' && !word ? '+' : ''}`, word: `${word}${q === '+' && word ? '+' : ''}` };
 };
+// measures whose tab shows no "View … data" button (estuary, per review)
+const NO_DATA_BUTTON = new Set(['estuary']);
+// a caveat shown as a question-mark tooltip beside a measure's number
+// lead = the point, in bold; rest = the reason
+const NOTES: Record<string, { lead: string; rest: string }> = {
+  estuary: { lead: 'We are unable to reproduce this number in CBFish.', rest: 'We need more information from the estuary team.' },
+};
 // everything the script needs to re-label the tiles for a state
 const data = METRICS.map((m) => ({
   id: m.id, short: m.short, unit: m.unit, label: m.label, total: m.total, qualifier: m.qualifier, byState: m.byState,
+  dataButton: !NO_DATA_BUTTON.has(m.id),
+  unknown: false,
   gain: `+${latestGain(m.cumulative).toLocaleString('en-US')} added in FY${String(LAST_FY).slice(-2)}`,
 }));
+// RM&E has no figure yet: a fourth tab with "?" for the number and, in the
+// sub-line, what RM&E covers plus the open question to BPA (what to measure);
+// no data button, and selecting it shows the map with no values
+data.push({
+  id: 'rme', short: 'RM&E', unit: 'projects', label: 'RM&E', total: 0, qualifier: undefined,
+  byState: { WA: 0, OR: 0, ID: 0, MT: 0 }, dataButton: false, unknown: true,
+  gain: 'Monitoring and research is some of the most important work in CBFish. What should we measure here?',
+});
 const pct = (m: (typeof METRICS)[number], s: StateCode) => Math.round((m.byState[s] / Object.values(m.byState).reduce((x, y) => x + y, 0)) * 100);
 const unitWord = (u: string) => u.charAt(0).toUpperCase() + u.slice(1);
 ---
@@ -64,17 +82,28 @@ const unitWord = (u: string) => u.charAt(0).toUpperCase() + u.slice(1);
   <div class="cbf-metrics-basin__card">
     <div class="cbf-metrics-basin__tabs" role="tablist" aria-label="Measure" aria-orientation="vertical">
       {data.map((d, i) => {
-        const t = split(d.total, d.qualifier);
+        const t = d.unknown ? { value: '?', word: '' } : split(d.total, d.qualifier);
         return (
           <button type="button" role="tab" class="cbf-metrics-basin__tab" id={`cbf-basin-tab-${d.id}`} data-measure={d.id}
-            aria-controls="cbf-basin-panel" aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? '0' : '-1'}>
-            <span class="cbf-metrics-basin__tab-value">{t.value}<span class="cbf-metrics-basin__tab-word">{t.word ? ` ${t.word}` : ''}</span></span>
+            aria-controls="cbf-basin-panel" aria-selected={i === 0 ? 'true' : 'false'} tabindex={i === 0 ? '0' : '-1'}
+            aria-describedby={NOTES[d.id] ? `cbf-basin-note-${d.id}` : undefined}>
+            <span class="cbf-metrics-basin__tab-value">{t.value}<span class="cbf-metrics-basin__tab-word">{t.word ? ` ${t.word}` : ''}</span>{NOTES[d.id] && (
+              <esa-popover class="cbf-metrics-basin__note" trigger="hover" position="top" appearance="inverse" has-arrow data-note>
+                <span class="cbf-metrics-basin__note-icon" aria-hidden="true"><EsaIcon name="circle-question-mark" size="lg" /></span>
+                <span slot="content" class="cbf-metrics-basin__note-text" aria-hidden="true"><strong>{NOTES[d.id].lead}</strong> {NOTES[d.id].rest}</span>
+              </esa-popover>
+            )}</span>
             <span class="cbf-metrics-basin__tab-label">{d.label}</span>
-            <span class="cbf-metrics-basin__tab-sub">{d.gain}</span>
+            {d.gain && <span class="cbf-metrics-basin__tab-sub">{d.gain}</span>}
           </button>
         );
       })}
     </div>
+    {/* caveat text for screen readers, outside the tabs so it is read once, as
+        the tab's description (aria-describedby), not also as part of its name */}
+    {data.filter((d) => NOTES[d.id]).map((d) => (
+      <span class="visually-hidden" id={`cbf-basin-note-${d.id}`}>{NOTES[d.id].lead} {NOTES[d.id].rest}</span>
+    ))}
 
     <div class="cbf-metrics-basin__panel" id="cbf-basin-panel" role="tabpanel" aria-labelledby={`cbf-basin-tab-${first.id}`}>
       <div class="cbf-metrics-basin__map" aria-hidden="true">
@@ -192,6 +221,18 @@ const unitWord = (u: string) => u.charAt(0).toUpperCase() + u.slice(1);
   }
   .cbf-metrics-basin__tab[aria-selected='true'] .cbf-metrics-basin__tab-value { color: var(--color-background-brand); }
   .cbf-metrics-basin__tab-word { font-size: var(--typography-body-lg-font-size); font-weight: var(--typography-font-weight-semibold); }
+  /* question-mark caveat beside a number; the tooltip text is also the tab's
+     description for screen readers (aria-describedby) */
+  .cbf-metrics-basin__note { display: inline-block; margin-inline-start: var(--spacing-200); vertical-align: middle; font-family: var(--typography-font-family-sans); font-weight: var(--typography-font-weight-regular); }
+  /* large and in brand blue, so the caveat is noticed next to the big number */
+  .cbf-metrics-basin__note-icon { display: inline-flex; color: var(--color-background-brand); cursor: help; }
+  /* esa-tooltip is single-line by design, so the caveat uses esa-popover (hover,
+     inverse) whose slotted content can wrap to a readable width */
+  .cbf-metrics-basin__note-text { display: block; width: max-content; max-width: 18rem; white-space: normal; font-size: var(--typography-body-sm-font-size); line-height: 1.4; text-align: left; }
+  /* stacked tabs: the bubble opens below an icon ~9rem from the card's left
+     edge, so keep it narrow enough to stay inside the card */
+  @media (max-width: 720px) { .cbf-metrics-basin__note-text { max-width: 13rem; } }
+  .cbf-metrics-basin__note-text strong { font-weight: var(--typography-font-weight-semibold); }
   /* the label looks the same on every tab: a bolder selected label is wider
      and would rewrap, so the tabs would jump in height on every switch. The
      selected tab is marked by its blue number and the panel surface. */
@@ -213,6 +254,8 @@ const unitWord = (u: string) => u.charAt(0).toUpperCase() + u.slice(1);
       var(--color-background-elevation-raised);
   }
   .cbf-metrics-basin__map { min-width: 0; }
+  /* the data button is hidden for some measures; its own display rule would win otherwise */
+  .cbf-metrics-basin__footer :global([hidden]) { display: none; }
   .cbf-metrics-basin__footer {
     display: flex;
     flex-wrap: wrap;
@@ -301,9 +344,10 @@ const unitWord = (u: string) => u.charAt(0).toUpperCase() + u.slice(1);
 </style>
 
 <script>
+  import '@esa/ecology/esa-popover';
   import { formatCompact } from '../../data/cbfish-home-metrics';
 
-  type M = { id: string; short: string; unit: string; label: string; total: number; byState: Record<string, number>; gain: string };
+  type M = { id: string; short: string; unit: string; label: string; total: number; byState: Record<string, number>; gain: string; dataButton: boolean; unknown: boolean };
   const root = document.querySelector<HTMLElement>('[data-basin]');
   if (root) {
     const metrics: M[] = JSON.parse(root.dataset.metrics || '[]');
@@ -326,7 +370,7 @@ const unitWord = (u: string) => u.charAt(0).toUpperCase() + u.slice(1);
       const sum = vals.reduce((a, b) => a + b, 0) || 1;
       const unit = current.unit.charAt(0).toUpperCase() + current.unit.slice(1);
       root.querySelector('[data-caption]')!.textContent = `${current.short} by state`;
-      root.querySelector('[data-unit-head]')!.textContent = unit;
+      root.querySelector('[data-unit-head]')!.textContent = current.unknown ? 'Value' : unit;
       states.forEach((g) => {
         const code = g.dataset.state!;
         const v = current.byState[code] ?? 0;
@@ -340,14 +384,16 @@ const unitWord = (u: string) => u.charAt(0).toUpperCase() + u.slice(1);
         const row = rows.find((r) => r.dataset.row === code);
         if (row) {
           const p = Math.round((v / sum) * 100);
-          row.querySelector('[data-cell-value]')!.textContent = v.toLocaleString('en-US');
-          row.querySelector('[data-cell-pct]')!.textContent = `${p}%`;
+          row.querySelector('[data-cell-value]')!.textContent = current.unknown ? 'Not known yet' : v.toLocaleString('en-US');
+          row.querySelector('[data-cell-pct]')!.textContent = current.unknown ? '—' : `${p}%`;
         }
       });
       root.querySelectorAll<HTMLElement>('[data-basin-open]').forEach((b) => {
         // out-of-scope links (href="#") have no measure in them to swap
         if (b instanceof HTMLAnchorElement && !b.dataset.outOfScope) b.href = b.href.replace(/program-results([\/-])[a-z]+/, `program-results$1${current.id}`);
         (b.querySelector('.esa-button__label') ?? b).textContent = `View ${current.short.toLowerCase()} data`;
+        // some measures have no data button: hide the whole button, not just its label
+        (b.closest<HTMLElement>('.esa-button') ?? b).hidden = !current.dataButton;
       });
     };
 
@@ -363,6 +409,24 @@ const unitWord = (u: string) => u.charAt(0).toUpperCase() + u.slice(1);
       if (focus) t.focus();
       paint();
     };
+    // keyboard users: show a tab's caveat tooltip while the tab has focus.
+    // The card clips overflow and the popover centres on its icon, so it opens
+    // to the left (over the map) when the tabs sit at the card's right edge,
+    // and below when the tabs stack over the map (same 720px breakpoint)
+    const stacked = window.matchMedia('(max-width: 720px)');
+    tabs.forEach((t) => {
+      const tip = t.querySelector<HTMLElement & { open: boolean; position: string }>('[data-note]');
+      if (!tip) return;
+      const place = () => { tip.position = stacked.matches ? 'bottom' : 'left'; };
+      place();
+      stacked.addEventListener('change', place);
+      // only keyboard focus opens it: a mouse click also focuses the tab, and
+      // must not leave the bubble covering the map
+      t.addEventListener('focus', () => { if (t.matches(':focus-visible')) tip.open = true; });
+      t.addEventListener('blur', () => { tip.open = false; });
+      // Esc dismisses it without moving focus (WCAG 1.4.13)
+      t.addEventListener('keydown', (e) => { if (e.key === 'Escape' && tip.open) { e.preventDefault(); tip.open = false; } });
+    });
     tabs.forEach((t, i) => {
       t.addEventListener('click', () => select(t));
       t.addEventListener('keydown', (e) => {

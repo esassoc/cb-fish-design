@@ -126,21 +126,29 @@ const views = METRICS.flatMap((m) => [
       token: filterToken('state', s.code), symbol: stateSymbol(s.code),
     }))),
   },
-]).map((v) => {
-  const top = v.parts[0]?.pct ?? 1;
-  return { ...v, top, wide: layout(v.parts, GEOM.wide), tall: layout(v.parts, GEOM.tall) };
-});
+]).map((v) => ({ ...v, unknown: false }));
 
-const first = views[0];
-const measures = METRICS.map((m) => ({ label: m.short, value: m.id }));
+// RM&E has no spending split yet: four equal blocks that show "?" instead of a
+// share, with no link, amount or description, until the figures are known
+const RME = { id: 'rme', short: 'RM&E', unit: '', label: 'RM&E' };
+const unknownParts = (labels: string[]): Part[] =>
+  labels.map((label) => ({ label, value: 1, pct: 100 / labels.length, token: '', symbol: '' }));
+views.push(
+  { m: RME as (typeof views)[number]['m'], split: 'program', parts: unknownParts(['', '', '', '']), unknown: true },
+  { m: RME as (typeof views)[number]['m'], split: 'state', parts: unknownParts(STATES.map((st) => st.name)), unknown: true },
+);
+const laidOut = views.map((v) => ({ ...v, wide: layout(v.parts, GEOM.wide), tall: layout(v.parts, GEOM.tall) }));
+
+const first = laidOut[0];
+const measures = [...METRICS.map((m) => ({ label: m.short, value: m.id })), { label: RME.short, value: RME.id }];
 const splits = [{ label: 'By program area', value: 'program' }, { label: 'By state', value: 'state' }];
 ---
 <section class="cbf-metrics-mosaic" aria-labelledby="cbf-metrics-mosaic-h" data-mosaic
   data-measures={JSON.stringify(measures)} data-splits={JSON.stringify(splits)}>
   <div class="cbf-metrics-mosaic__head">
     <div class="cbf-metrics-mosaic__intro">
-      <h2 id="cbf-metrics-mosaic-h" class="typography-heading-md">Where the results come from</h2>
-      <p class="typography-body-md cbf-metrics-mosaic__lede">Each block is sized by its share of the total since 2005. Select a block to see the data behind it.</p>
+      <h2 id="cbf-metrics-mosaic-h" class="typography-heading-md">Spending</h2>
+      <p class="typography-body-md cbf-metrics-mosaic__lede">Each block is sized by its percentage of spending by accrual category. Select a block to see the data behind it.</p>
     </div>
     <div class="cbf-metrics-mosaic__pickers">
       <esa-button-toggle size="sm" label="Measure" data-pick-measure></esa-button-toggle>
@@ -148,14 +156,23 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
     </div>
   </div>
 
-  {views.map((v) => (
+  {laidOut.map((v) => (
     <div class="cbf-metrics-mosaic__view" data-view={`${v.m.id}:${v.split}`} hidden={v !== first}>
       {(['wide', 'tall'] as const).map((shape) => (
         <ul class={`cbf-metrics-mosaic__map is-${shape}`} style={`aspect-ratio: ${GEOM[shape].w} / ${v[shape].h}`}
-          aria-label={`${v.m.short} ${v.split === 'state' ? 'by state' : 'by program area'}`}>
+          role={v.unknown ? 'img' : undefined}
+          aria-label={v.unknown
+            ? `${v.m.short} ${v.split === 'state' ? 'by state' : 'by program area'}: shares not known yet`
+            : `${v.m.short} ${v.split === 'state' ? 'by state' : 'by program area'}`}>
           {v[shape].blocks.map((b, i) => {
             return (
-              <li class="cbf-metrics-mosaic__cell" style={`${b.style}; --i: ${i}`}>
+              <li class="cbf-metrics-mosaic__cell" style={`${b.style}; --i: ${i}`} aria-hidden={v.unknown ? 'true' : undefined}>
+                {v.unknown ? (
+                  <div class="cbf-metrics-mosaic__block is-unknown" aria-hidden="true">
+                    <span class="cbf-metrics-mosaic__pct">?</span>
+                    {b.label && <span class="cbf-metrics-mosaic__name">{b.label}</span>}
+                  </div>
+                ) : (
                 <a class="cbf-metrics-mosaic__block"
                   {...contractLink(v.m.id, b.token)}>
                   <svg class:list={['cbf-metrics-mosaic__symbol', v.split === 'state' && 'is-outline']} viewBox="0 0 100 100" aria-hidden="true" focusable="false" set:html={b.symbol} />
@@ -167,6 +184,7 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
                     <span class="cbf-metrics-mosaic__cta" aria-hidden="true">View data →</span>
                   </span>
                 </a>
+                )}
               </li>
             );
           })}
@@ -258,6 +276,9 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
     --_sym-cut: color-mix(in srgb, var(--cbf-blue-200) 55%, var(--cbf-blue-50));
   }
   .cbf-metrics-mosaic__block:focus-visible { outline: 3px solid var(--cbf-gold-300); outline-offset: 2px; }
+  /* RM&E: not known yet. A dashed, static block (no link, no hover). */
+  .cbf-metrics-mosaic__block.is-unknown { border-style: dashed; cursor: default; }
+  .cbf-metrics-mosaic__block.is-unknown:hover { background: var(--color-background-elevation-raised); border-color: var(--color-border-default); box-shadow: none; }
 
   .cbf-metrics-mosaic__pct {
     font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
