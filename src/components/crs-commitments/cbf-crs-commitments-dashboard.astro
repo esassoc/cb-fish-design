@@ -64,6 +64,8 @@
 //   - esa-dialog            → the status-edit dialog (see below).
 //   - cbf-crs-trib-habitat-viz-dialog → the Tributary Habitat tab's metric
 //     charts, behind an "Open visualization" button shown on that tab only.
+//   - cbf-crs-estuary-habitat-viz-dialog → the Estuary Habitat tab's acres
+//     chart, behind that tab's own "Open visualization" button.
 //
 // The status filter is NOT esa-chip-group (see bcn-lego-checked below) — it's a
 // custom radiogroup of <button>s carrying the same swatch used by the timeline
@@ -117,6 +119,7 @@ import EsaButton from '@esa/ecology/esa-button.astro';
 import CbfSearchField from '../search/cbf-search-field.astro';
 import CbfCrsDocumentDueDatesDialog from './cbf-crs-document-due-dates-dialog.astro';
 import CbfCrsTribHabitatVizDialog from './cbf-crs-trib-habitat-viz-dialog.astro';
+import CbfCrsEstuaryHabitatVizDialog from './cbf-crs-estuary-habitat-viz-dialog.astro';
 import {
   commitments as defaultCommitments,
   YEARS,
@@ -308,6 +311,11 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
           <!-- Tributary Habitat tab only: prod draws this tab's metric charts
                under the list; here they open on demand in a dialog. -->
           <span data-crs-trib-viz-open hidden>
+            <EsaButton variant="ghost" appearance="outline" size="sm">Open visualization</EsaButton>
+          </span>
+          <!-- Estuary Habitat tab only: estuary acres restored against the
+               300-acre annual target. Prod has no estuary chart yet. -->
+          <span data-crs-estuary-viz-open hidden>
             <EsaButton variant="ghost" appearance="outline" size="sm">Open visualization</EsaButton>
           </span>
           <EsaButton
@@ -549,6 +557,9 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
 
   <!-- Opened by the Tributary Habitat tab's "Open visualization" button. -->
   <CbfCrsTribHabitatVizDialog />
+
+  <!-- Opened by the Estuary Habitat tab's "Open visualization" button. -->
+  <CbfCrsEstuaryHabitatVizDialog />
 
   <!-- Shared status-edit dialog — one instance for the whole grid, re-targeted
        per click (see the client script) rather than one dialog per cell. -->
@@ -1147,11 +1158,17 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
       if (scroll) scroll.hidden = !anyVisible;
     }
 
-    // "Open visualization" exists only on the Tributary Habitat tab.
+    // "Open visualization" exists only on the Tributary and Estuary Habitat tabs,
+    // each opening its own dialog.
     const TRIB_HABITAT_TAB = 2;
+    const ESTUARY_HABITAT_TAB = 3;
     const vizOpen = root.querySelector<HTMLElement>('[data-crs-trib-viz-open]');
     vizOpen?.addEventListener('click', () => {
       document.dispatchEvent(new CustomEvent('crs-trib-viz:open'));
+    });
+    const estuaryVizOpen = root.querySelector<HTMLElement>('[data-crs-estuary-viz-open]');
+    estuaryVizOpen?.addEventListener('click', () => {
+      document.dispatchEvent(new CustomEvent('crs-estuary-viz:open'));
     });
 
     tabEl?.addEventListener('tabchange', (e) => {
@@ -1159,6 +1176,7 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
       if (typeof index === 'number') {
         tabIndex = index;
         if (vizOpen) vizOpen.hidden = index !== TRIB_HABITAT_TAB;
+        if (estuaryVizOpen) estuaryVizOpen.hidden = index !== ESTUARY_HABITAT_TAB;
         recompute();
       }
     });

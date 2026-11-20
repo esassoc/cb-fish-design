@@ -1,0 +1,380 @@
+---
+// cbf-crs-estuary-habitat-viz-dialog — "Estuary habitat metrics": estuary habitat
+// acres restored against the 2020 CRS target (CRS_Com-195: an annual average of
+// 300 acres over the first 10 years), opened from the Estuary Habitat tab's
+// "Open visualization" button. The sibling of cbf-crs-trib-habitat-viz-dialog;
+// prod has no estuary chart yet, so this is new rather than a lift-and-shift.
+//
+// Open it by dispatching
+//   document.dispatchEvent(new CustomEvent('crs-estuary-viz:open'))
+//
+// What it shows (data: crs-estuary-habitat-acres.mjs, a local CBFish snapshot):
+//   - Stats: restored acres since FY 2021 against the 3,000-acre 10-year target,
+//     the annual average, and planned acres.
+//   - Annual chart: planned (ERTG Preliminary) and restored (ERTG Final) acres
+//     side by side per fiscal year, the running average restored, and the
+//     300-acre target as a line. The year in progress is charted but has no
+//     running-average point, so the average never divides by a part year.
+//   - Cumulative chart: restored acres against the target pace to FY 2030.
+//   - "View as data": one grid of the by-year figures. Each year row expands to
+//     the subactions summed into it, so each total can be traced to the Estuary
+//     Program's Subactions page.
+//
+// Lazy on purpose, like the tributary dialog: esa-chart dynamically imports AG
+// Charts (~2.8MB) on first render, so nothing is built until the first open.
+//
+// bcn-lego-checked: esa-dialog (fullscreen surface), esa-stat (headline figures),
+// esa-chart (the hub's charting lego), esa-collapsible ("View as data", the table
+// alternative esa-chart's docs require). The data view is AG Grid via the shared
+// wireDataGrid, because ecology has no table lego (see cbf-crs-commitments-grid).
+// Its year rows expand using AG Grid Community features only (external filter +
+// postSortRows, the way cbf-cap-portfolio-grid groups its rows): master/detail
+// and row grouping are Enterprise, and the production app ships Community. The
+// expand control is a native <button> built in a cell renderer, because the
+// esa-* button legos are compile-time .astro components a renderer can't create.
+import '@esa/tokens/layouts.css';
+import EsaCollapsible from '@esa/ecology/esa-collapsible.astro';
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import '../shared/cbf-data-grid-chrome.css';
+import {
+  ESTUARY_FIRST_FY,
+  ESTUARY_ANNUAL_TARGET,
+  estuaryYearRows,
+  estuaryCumulativeRows,
+  estuarySubactionRows,
+  estuarySummary,
+} from '../../data/crs-estuary-habitat-acres.mjs';
+
+const yearRows = estuaryYearRows();
+// One grid holds both levels: each fiscal year, then the subactions summed into it.
+const subactions = estuarySubactionRows();
+const dataRows = yearRows.flatMap((y) => [
+  { id: `fy:${y.fiscalYear}`, kind: 'year', ...y },
+  ...subactions
+    .filter((s) => s.fiscalYear === y.fiscalYear)
+    .map((s) => ({
+      id: `sub:${s.subactionId}`,
+      kind: 'subaction',
+      ...s,
+      label: s.subactionName ? `${s.actionName} – ${s.subactionName}` : s.actionName,
+    })),
+]);
+
+const summary = estuarySummary();
+const acres = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 });
+const yearRange = `FY ${ESTUARY_FIRST_FY}–${summary.lastCompletedFy}`;
+---
+<esa-dialog
+  class="cbf-crs-estuary-viz"
+  size="fullscreen"
+  show-close-button
+  heading="Estuary habitat metrics"
+  data-crs-estuary-viz
+>
+  <div class="stack" data-gap="lg">
+    <p class="typography-body-md cbf-crs-estuary-viz__lede">
+      Estuary habitat acres planned and restored by fiscal year, against the 2020 CRS
+      target of an annual average of {ESTUARY_ANNUAL_TARGET} acres over the first 10 years.
+    </p>
+
+    <div class="cbf-crs-estuary-viz__stats grid">
+      <EsaStat
+        value={`${acres.format(summary.restored)} ac`}
+        label={`Restored since FY ${ESTUARY_FIRST_FY}`}
+        sub={`Of the ${acres.format(summary.tenYearTarget)}-acre 10-year target`}
+      />
+      <EsaStat
+        value={`${acres.format(summary.annualAverage)} ac/yr`}
+        label="Annual average restored"
+        sub={`${yearRange}; target ${ESTUARY_ANNUAL_TARGET} ac/yr`}
+      />
+      <EsaStat
+        value={`${acres.format(summary.planned)} ac`}
+        label={`Planned since FY ${ESTUARY_FIRST_FY}`}
+        sub="ERTG preliminary subaction goals"
+      />
+    </div>
+
+    <section class="stack" data-gap="sm">
+      <div class="stack" data-gap="2xs">
+        <h3 class="typography-heading-md cbf-crs-estuary-viz__heading">Acres planned and restored by fiscal year</h3>
+        <p class="typography-body-md cbf-crs-estuary-viz__desc">
+          Planned is each subaction's ERTG preliminary subaction goal; restored is its ERTG
+          final subaction goal. The running average counts completed fiscal years only.
+        </p>
+      </div>
+      <div
+        class="cbf-crs-estuary-viz__chart"
+        data-crs-estuary-chart="annual"
+        data-label="Estuary habitat acres planned and restored by fiscal year, with the running average restored and the 300-acre annual target"
+      ></div>
+    </section>
+
+    <section class="stack" data-gap="sm">
+      <h3 class="typography-heading-md cbf-crs-estuary-viz__heading">Cumulative acres against the 10-year target</h3>
+      <div
+        class="cbf-crs-estuary-viz__chart cbf-crs-estuary-viz__chart--short"
+        data-crs-estuary-chart="cumulative"
+        data-label="Cumulative estuary habitat acres restored against the target pace of 300 acres a year"
+      ></div>
+    </section>
+
+    <EsaCollapsible title="View as data">
+      <section class="stack" data-gap="sm" data-crs-estuary-data>
+        <p class="typography-body-md cbf-crs-estuary-viz__desc">
+          Expand a fiscal year to see the subactions summed into it. A blank acreage means
+          the subaction has no score of that type yet.
+        </p>
+        <div class="cbf-data-grid__grid" data-crs-estuary-data-grid></div>
+        <script type="application/json" data-crs-estuary-rows set:html={JSON.stringify(dataRows)}></script>
+        <script type="application/json" data-crs-estuary-year-data set:html={JSON.stringify(yearRows)}></script>
+      </section>
+    </EsaCollapsible>
+
+    <script type="application/json" data-crs-estuary-cumulative-data set:html={JSON.stringify(estuaryCumulativeRows())}></script>
+  </div>
+</esa-dialog>
+
+<style>
+  .cbf-crs-estuary-viz__lede,
+  .cbf-crs-estuary-viz__desc {
+    margin: 0;
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-crs-estuary-viz__heading {
+    margin: 0;
+  }
+  .cbf-crs-estuary-viz__stats {
+    --grid-min: 14rem;
+    gap: var(--spacing-600);
+  }
+  /* Reserve each chart's height before the lazy build so the dialog body doesn't
+     jump when the charts land. Matches the heights set in the script below. */
+  .cbf-crs-estuary-viz__chart {
+    min-height: 420px;
+  }
+  .cbf-crs-estuary-viz__chart--short {
+    min-height: 320px;
+  }
+</style>
+
+<style is:global>
+  /* Row classes and the expand button come from AG Grid's getRowClass and a cell
+     renderer, so they carry no scope hash. */
+  .cbf-crs-estuary-viz .cbf-crs-estuary-row-year {
+    font-weight: var(--typography-font-weight-semibold);
+  }
+  .cbf-crs-estuary-viz .cbf-crs-estuary-row-sub {
+    background: var(--color-background-elevation-sunken);
+    color: var(--color-content-default-secondary);
+  }
+  /* Lines a subaction's name up under its year's label, past the chevron. */
+  .cbf-crs-estuary-viz .cbf-crs-estuary-sub-label {
+    padding-inline-start: calc(var(--spacing-600) + 14px + var(--spacing-200));
+  }
+  .cbf-crs-estuary-viz .cbf-crs-estuary-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-200);
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+  .cbf-crs-estuary-viz .cbf-crs-estuary-toggle:focus-visible {
+    outline: 2px solid var(--color-border-brand);
+    outline-offset: 2px;
+    border-radius: var(--radius-100, 4px);
+  }
+  .cbf-crs-estuary-viz .cbf-crs-estuary-toggle svg {
+    flex: none;
+    transition: transform 150ms ease;
+  }
+  .cbf-crs-estuary-viz .cbf-crs-estuary-toggle[aria-expanded='true'] svg {
+    transform: rotate(90deg);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cbf-crs-estuary-viz .cbf-crs-estuary-toggle svg {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import { wireDataGrid } from '../shared/grid-chrome';
+  import type { ColDef, GridApi, ICellRendererParams, IRowNode } from 'ag-grid-community';
+
+  type EsaChart = HTMLElement & {
+    label: string; data: unknown[]; series: unknown[]; options: Record<string, unknown>; height: string;
+  };
+
+  const acres = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
+  /** Blank for a missing score, so "not scored yet" doesn't read as zero acres. */
+  const acresOrBlank = (v: number | null | undefined) => (v == null ? '' : acres.format(v));
+  const numCol = (headerName: string, field: string, width = 150): ColDef => ({
+    headerName, field, colId: field, type: 'numericColumn', flex: 0, width,
+    valueFormatter: (p) => acresOrBlank(p.value),
+  });
+
+  /** A fiscal-year row, or one of the subactions summed into it. */
+  type DataRow = {
+    id: string; kind: 'year' | 'subaction'; fiscalYear: number; label: string;
+    planned: number | null; restored: number | null;
+    cumulative?: number; runningAverage?: number | null; subactionCount?: number;
+    subactionType?: string; actionId?: number; subactionId?: number;
+  };
+
+  /** Fiscal years whose subaction rows are showing. */
+  const expanded = new Set<number>();
+  let dataGrid: GridApi<DataRow> | undefined;
+
+  const CHEVRON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>';
+
+  /** Year rows get the expand button; subaction rows show their action and subaction. */
+  function labelCell(p: ICellRendererParams<DataRow>): HTMLElement | string {
+    const r = p.data;
+    if (!r) return '';
+    if (r.kind === 'subaction') return r.label;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cbf-crs-estuary-toggle';
+    btn.setAttribute('aria-expanded', String(expanded.has(r.fiscalYear)));
+    btn.title = `${r.subactionCount} subactions`;
+    btn.innerHTML = CHEVRON;
+    btn.append(r.label);
+    btn.addEventListener('click', () => toggleYear(r.fiscalYear));
+    return btn;
+  }
+
+  function toggleYear(fy: number): void {
+    if (expanded.has(fy)) expanded.delete(fy);
+    else expanded.add(fy);
+    if (!dataGrid) return;
+    dataGrid.onFilterChanged();
+    const node = dataGrid.getRowNode(`fy:${fy}`);
+    if (node) dataGrid.refreshCells({ rowNodes: [node], columns: ['label'], force: true });
+  }
+
+  /** Columns that only mean something on one level read blank on the other. */
+  const only = (kind: DataRow['kind'], c: ColDef<DataRow>): ColDef<DataRow> => ({
+    ...c,
+    valueGetter: (p) => (p.data?.kind === kind ? p.data[c.field as keyof DataRow] : null),
+  });
+
+  const dataColumns: ColDef<DataRow>[] = [
+    {
+      headerName: 'Fiscal year / action', field: 'label', colId: 'label', flex: 1, minWidth: 320,
+      cellRenderer: labelCell,
+      cellClass: (p) => (p.data?.kind === 'subaction' ? 'cbf-crs-estuary-sub-label' : ''),
+    },
+    only('subaction', { headerName: 'Subaction type', field: 'subactionType', colId: 'subactionType', flex: 1, minWidth: 240 }),
+    only('subaction', { headerName: 'Action ID', field: 'actionId', colId: 'actionId', type: 'numericColumn', flex: 0, width: 110 }),
+    only('subaction', { headerName: 'Subaction ID', field: 'subactionId', colId: 'subactionId', type: 'numericColumn', flex: 0, width: 130 }),
+    numCol('Planned (ac)', 'planned'),
+    numCol('Restored (ac)', 'restored'),
+    only('year', numCol('Cumulative restored (ac)', 'cumulative', 230)),
+    only('year', numCol('Running average (ac/yr)', 'runningAverage', 220)),
+  ];
+
+  const root = document.querySelector<HTMLElement & { show: () => void }>('[data-crs-estuary-viz]');
+  if (root) {
+    let built = false;
+
+    function makeChart(host: HTMLElement, height: string, data: unknown[], series: unknown[], options: Record<string, unknown>): void {
+      const chart = document.createElement('esa-chart') as EsaChart;
+      chart.label = host.dataset.label ?? '';
+      chart.height = height;
+      chart.data = data;
+      chart.series = series;
+      chart.options = options;
+      host.appendChild(chart);
+    }
+
+    async function build(): Promise<void> {
+      built = true;
+      await import('@esa/ecology/esa-chart');
+
+      const yearData = JSON.parse(root!.querySelector('[data-crs-estuary-year-data]')?.textContent ?? '[]');
+      const cumulativeData = JSON.parse(root!.querySelector('[data-crs-estuary-cumulative-data]')?.textContent ?? '[]');
+      const axes = {
+        x: { type: 'category', position: 'bottom' },
+        y: { type: 'number', position: 'left', title: { text: 'Acres' } },
+      };
+      const targetLine = { lineDash: [6, 4], marker: { enabled: false } };
+
+      const annualHost = root!.querySelector<HTMLElement>('[data-crs-estuary-chart="annual"]');
+      if (annualHost) {
+        makeChart(annualHost, '420px', yearData, [
+          { type: 'bar', xKey: 'label', yKey: 'planned', yName: 'Planned (ERTG preliminary)' },
+          { type: 'bar', xKey: 'label', yKey: 'restored', yName: 'Restored (ERTG final)' },
+          { type: 'line', xKey: 'label', yKey: 'runningAverage', yName: 'Running average restored' },
+          { type: 'line', xKey: 'label', yKey: 'target', yName: 'Annual target (300 ac)', ...targetLine },
+        ], { legend: { enabled: true, position: 'top' }, axes });
+      }
+
+      // esa-chart colours series by position, so the cumulative chart's first
+      // series would take slot 1 — the annual chart's PLANNED colour. Give it the
+      // colours its meaning has in the annual chart instead: restored is slot 2,
+      // the target line slot 4. Read from the same dataviz tokens esa-chart uses;
+      // left unset (esa-chart's own pick) if the theme doesn't declare them.
+      const slot = (i: number): string | undefined =>
+        getComputedStyle(root!).getPropertyValue(`--color-background-dataviz-categorical-${i}`).trim() || undefined;
+      const restoredColor = slot(2);
+      const targetColor = slot(4);
+
+      const cumulativeHost = root!.querySelector<HTMLElement>('[data-crs-estuary-chart="cumulative"]');
+      if (cumulativeHost) {
+        makeChart(cumulativeHost, '320px', cumulativeData, [
+          {
+            type: 'line', xKey: 'label', yKey: 'cumulative', yName: 'Cumulative restored',
+            ...(restoredColor && {
+              stroke: restoredColor,
+              marker: { enabled: true, shape: 'square', size: 8, fill: restoredColor, stroke: restoredColor },
+            }),
+          },
+          {
+            type: 'line', xKey: 'label', yKey: 'targetPace', yName: 'Target pace (3,000 ac by FY 2030)', ...targetLine,
+            ...(targetColor && { stroke: targetColor }),
+          },
+        ], { legend: { enabled: true, position: 'top' }, axes });
+      }
+
+      const handle = wireDataGrid<DataRow>({
+        root: root!.querySelector<HTMLElement>('[data-crs-estuary-data]')!,
+        gridSelector: '[data-crs-estuary-data-grid]',
+        dataSelector: '[data-crs-estuary-rows]',
+        countNoun: 'rows',
+        csvFileName: 'crs-estuary-habitat-acres.csv',
+        suppressCellFocus: true,
+        columnDefs: dataColumns,
+        gridOptions: {
+          getRowId: (p) => p.data.id,
+          getRowClass: (p) => (p.data?.kind === 'subaction' ? 'cbf-crs-estuary-row-sub' : 'cbf-crs-estuary-row-year'),
+          // A collapsed year hides its subactions.
+          isExternalFilterPresent: () => true,
+          doesExternalFilterPass: (node) => node.data?.kind === 'year' || expanded.has(node.data!.fiscalYear),
+          // A sort reorders the years, and the subactions within each year, but
+          // keeps every subaction under its own year.
+          postSortRows: ({ nodes }) => {
+            const yearOrder = new Map<number, number>();
+            nodes.forEach((n) => {
+              if (n.data?.kind === 'year') yearOrder.set(n.data.fiscalYear, yearOrder.size);
+            });
+            const order = new Map<IRowNode<DataRow>, number>(nodes.map((n, i) => [n, i]));
+            const rank = (n: IRowNode<DataRow>) => (yearOrder.get(n.data!.fiscalYear) ?? 0) * 2 + (n.data!.kind === 'year' ? 0 : 1);
+            nodes.sort((a, b) => rank(a) - rank(b) || order.get(a)! - order.get(b)!);
+          },
+        },
+      });
+      dataGrid = handle?.gridApi;
+    }
+
+    document.addEventListener('crs-estuary-viz:open', () => {
+      root.show();
+      if (!built) void build();
+    });
+  }
+</script>
