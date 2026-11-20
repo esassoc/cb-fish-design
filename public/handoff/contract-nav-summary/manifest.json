@@ -1,0 +1,1083 @@
+{
+  "name": "contract-nav",
+  "title": "Contract header navigation",
+  "description": "A contract record’s header: its status, a lifecycle track of Setup, Review and Approve, Report and Invoice and Closeout with each phase’s pages in its menu, and Overview and Files always at hand. Switch role, stage and arrival in the prototype controls.",
+  "dir": "contract-nav-summary",
+  "url": "https://esassoc.github.io/cb-fish-design/contract-nav/summary/",
+  "baseUrl": "https://esassoc.github.io/cb-fish-design/handoff/contract-nav-summary/",
+  "theme": "cb-fish",
+  "generatedFrom": "spec",
+  "sections": [
+    {
+      "label": "Portfolio return",
+      "tag": "div",
+      "selector": ".cbf-portfolio-return",
+      "html": "<div class=\"cbf-portfolio-return\" data-only-arrival=\"portfolio\">\n  <div class=\"esa-alert-box esa-alert-box--info typography-body-sm\">\n    <div class=\"esa-alert-box__icon\">\n      <svg\n        xmlns=\"http://www.w3.org/2000/svg\"\n        width=\"20\"\n        height=\"20\"\n        viewBox=\"0 0 24 24\"\n        fill=\"none\"\n        stroke=\"currentColor\"\n        stroke-width=\"2\"\n        stroke-linecap=\"round\"\n        stroke-linejoin=\"round\"\n        aria-hidden=\"true\"\n      >\n        <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n        <path d=\"M12 16v-4\"></path>\n        <path d=\"M12 8h.01\"></path>\n      </svg>\n    </div>\n    <div class=\"esa-alert-box__body\">\n      <div class=\"esa-alert-box__message\">\n        <a class=\"cbf-portfolio-return__link\" href=\"/cb-fish-design/home\">\n          <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n            <svg\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path d=\"m12 19-7-7 7-7\"></path>\n              <path d=\"M19 12H5\"></path>\n            </svg>\n          </span>\n          <span>Back to Grande Ronde subbasin habitat portfolio</span>\n        </a>\n      </div>\n    </div>\n    <button\n      class=\"esa-alert-box__dismiss\"\n      type=\"button\"\n      aria-label=\"Dismiss\"\n      data-esa-alert-dismiss=\"\"\n    >\n      <svg\n        xmlns=\"http://www.w3.org/2000/svg\"\n        width=\"16\"\n        height=\"16\"\n        viewBox=\"0 0 24 24\"\n        fill=\"none\"\n        stroke=\"currentColor\"\n        stroke-width=\"2\"\n        stroke-linecap=\"round\"\n        stroke-linejoin=\"round\"\n        aria-hidden=\"true\"\n      >\n        <path d=\"M18 6 6 18\"></path>\n        <path d=\"m6 6 12 12\"></path>\n      </svg>\n    </button>\n  </div>\n  <!-- script type=\"module\" removed (455 bytes) -->\n</div>",
+      "css": ".typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, 20px);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  color: inherit;\n}\n.esa-icon--sm {\n  --_icon-size: var(--icon-size-sm, 16px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.cbf-qa-icon .esa-button__native > .esa-icon:last-child {\n  display: none;\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.cbf-portfolio-return {\n  padding-block-end: var(--spacing-400);\n}\n.cbf-portfolio-return .esa-alert-box {\n  align-items: center;\n}\n.cbf-portfolio-return .esa-alert-box__icon {\n  display: flex;\n  padding: 0;\n}\n.cbf-portfolio-return .esa-alert-box__icon svg {\n  display: block;\n}\n.cbf-portfolio-return .esa-alert-box__message {\n  display: flex;\n}\n.cbf-portfolio-return__link > :first-child {\n  margin-block-start: calc((1lh - 16px) / 2);\n  flex: none;\n}\n.cbf-portfolio-return__link {\n  display: inline-flex;\n  align-items: flex-start;\n  gap: var(--spacing-100);\n  color: var(--color-content-brand);\n  font-weight: var(--typography-font-weight-medium);\n}\n.esa-collapsible__summary .esa-icon {\n  flex-shrink: 0;\n  color: var(--color-content-default-secondary, #646464);\n}\n.esa-alert-box {\n  --_alert-bg: var(--color-background-utility-info-subtle, #fbfdff);\n  --_alert-border: var(--color-border-utility-info, #acd8fc);\n  --_alert-accent: var(--color-content-utility-info, #0d74ce);\n  --_alert-icon-color: var(--_alert-accent);\n  --_alert-title-color: var(--_alert-accent);\n  --_alert-text-color: var(--alert-box-text-color, var(--color-content-default-secondary, #646464));\n  display: flex;\n  align-items: flex-start;\n  gap: var(--spacing-300, 0.75rem);\n  padding: var(--spacing-300, 0.75rem) var(--spacing-400, 1rem);\n  border: var(--border-width-default, 1px) solid var(--_alert-border);\n  border-radius: var(--radius-md, 0.5rem);\n  background: var(--_alert-bg);\n}\n.esa-alert-box__icon {\n  flex-shrink: 0;\n  color: var(--_alert-icon-color);\n  padding-top: 1px;\n}\n.esa-alert-box__body {\n  flex: 1;\n  min-width: 0;\n}\n.esa-alert-box__message {\n  color: var(--_alert-text-color);\n}\n.esa-alert-box__dismiss {\n  flex-shrink: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  padding: 0;\n  border: none;\n  border-radius: var(--radius-sm, 0.25rem);\n  background: transparent;\n  color: var(--color-content-default-secondary, #646464);\n  cursor: pointer;\n  transition:\n    color var(--transition-fast, 0.15s ease),\n    background var(--transition-fast, 0.15s ease);\n}\n.esa-alert-box__dismiss:hover {\n  color: var(--color-content-default, #202020);\n  background: var(--color-background-overlay-strong-hover, rgba(0, 0, 0, 0.06));\n}\n.esa-alert-box__dismiss:focus-visible {\n  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);\n  outline-offset: var(--focus-ring-offset, 2px);\n}\n.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.esa-nav-dropdown[open] .esa-button__native > .esa-icon:last-child {\n  transform: rotate(180deg);\n}",
+      "guide": {
+        "intent": "A temporary way back to the portfolio the contract was opened from. It sits inside the record card, under the breadcrumbs and above the contract eyebrow, outside the navigation itself.",
+        "decisions": [
+          "Shown only when the record was opened from a portfolio ([data-only-arrival=\"portfolio\"]); a direct arrival never sees it.",
+          "An info esa-alert-box, dismissable. Dismissal lasts for the browser session (sessionStorage)."
+        ],
+        "gotchas": [
+          "The hub esa-alert-box dismiss throws (FOCUSABLE_SELECTOR is not defined); the component hides itself on the dismiss click instead."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--alert-box-text-color",
+          "value": "#525252",
+          "tier": "component"
+        },
+        {
+          "name": "--border-width-default",
+          "value": "1px",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-overlay-strong-hover",
+          "value": "rgba(0, 0, 0, .05)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-utility-info-subtle",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-utility-info",
+          "value": "#c6dcf1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-utility-info",
+          "value": "#0d74ce",
+          "tier": "semantic"
+        },
+        {
+          "name": "--focus-ring-color",
+          "value": "#3e9b4f",
+          "tier": "component"
+        },
+        {
+          "name": "--focus-ring-offset",
+          "value": "2px",
+          "tier": "component"
+        },
+        {
+          "name": "--focus-ring-width",
+          "value": "2px",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-md",
+          "value": "20px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-sm",
+          "value": "16px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-md",
+          "value": ".5rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--radius-sm",
+          "value": ".25rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--transition-fast",
+          "value": ".15s ease",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-medium",
+          "value": "500",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-portfolio-return",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-portfolio-return.astro",
+          "target": null
+        },
+        {
+          "name": "esa-alert-box",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-alert-box.astro",
+          "target": null
+        },
+        {
+          "name": "esa-icon",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-icon.astro",
+          "target": null
+        }
+      ],
+      "js": [
+        "src/components/contract-nav/cbf-portfolio-return.astro"
+      ],
+      "claudePath": "claude/portfolio-return.md",
+      "repoPath": "public/handoff/contract-nav-summary/claude/portfolio-return.md",
+      "parts": [],
+      "shots": {},
+      "bytes": 8215,
+      "specBytes": 8215,
+      "files": 1,
+      "collapsed": 0
+    },
+    {
+      "label": "Record header",
+      "tag": "div",
+      "selector": ".cbf-record-header",
+      "html": "<div class=\"cbf-record-header stack\" data-gap=\"lg\">\n  <div class=\"repel\" data-gap=\"md\">\n    <div class=\"stack\" data-gap=\"2xs\">\n      <p class=\"cbf-record-header__eyebrow typography-label-md\">Contract CR-387553</p>\n      <div class=\"cluster\" data-gap=\"sm\">\n        <h1 class=\"cbf-record-header__title typography-heading-lg\">\n          Upper Grande Ronde instream habitat restoration FY2027\n        </h1>\n        <span data-hide-stages=\"review issued change closed\">\n          <span class=\"esa-badge esa-badge--neutral esa-badge--md typography-microcopy-sm-strong\">\n            <span class=\"esa-badge__text\">Draft</span>\n          </span> </span\n        ><span data-hide-stages=\"setup issued change closed\">\n          <span class=\"esa-badge esa-badge--info esa-badge--md typography-microcopy-sm-strong\">\n            <span class=\"esa-badge__text\">In review</span>\n          </span> </span\n        ><!-- …and 3 more like this (<span>) -->\n      </div>\n    </div>\n    <nav\n      class=\"cbf-record-ends cluster cbf-record-ends--title\"\n      data-gap=\"2xs\"\n      aria-label=\"Contract Overview and Files\"\n      data-record-nav=\"\"\n    >\n      <div class=\"cbf-record-ends__menu\" data-here=\"\">\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--end\">\n          <summary\n            class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n          >\n            <span class=\"esa-button__native typography-microcopy-md\"\n              ><span class=\"esa-button__label\">Overview</span\n              ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                <svg\n                  width=\"20\"\n                  height=\"20\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <path d=\"m6 9 6 6 6-6\"></path>\n                </svg>\n              </span>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel typography-body-md\">\n            <ul class=\"cbf-page-menu typography-body-md cbf-page-menu--list\">\n              <li>\n                <a href=\"/cb-fish-design/contract-nav/summary\" aria-current=\"page\"\n                  >Contract summary</a\n                >\n              </li>\n              <li><a href=\"/cb-fish-design/contract-nav/contacts\">Contract contacts</a></li>\n              <!-- …and 6 more like this (<li>) -->\n            </ul>\n          </div>\n        </details>\n      </div>\n      <div class=\"cbf-record-ends__menu\">\n        <details class=\"esa-nav-dropdown esa-nav-dropdown--end\">\n          <summary\n            class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n          >\n            <span class=\"esa-button__native typography-microcopy-md\"\n              ><span class=\"esa-button__label\">Files</span\n              ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                <svg\n                  width=\"20\"\n                  height=\"20\"\n                  viewBox=\"0 0 24 24\"\n                  fill=\"none\"\n                  stroke=\"currentColor\"\n                  stroke-width=\"2\"\n                  stroke-linecap=\"round\"\n                  stroke-linejoin=\"round\"\n                  focusable=\"false\"\n                >\n                  <path d=\"m6 9 6 6 6-6\"></path>\n                </svg>\n              </span>\n            </span>\n          </summary>\n          <div class=\"esa-nav-dropdown__panel typography-body-md\">\n            <ul class=\"cbf-page-menu typography-body-md cbf-page-menu--list\">\n              <li><a href=\"/cb-fish-design/contract-nav/documents\">Documents</a></li>\n              <li data-hide-for=\"contractor\">\n                <a href=\"/cb-fish-design/contract-nav/cor-file\">COR file</a>\n              </li>\n              <!-- …and 2 more like this (<li>) -->\n            </ul>\n          </div>\n        </details>\n      </div>\n    </nav>\n  </div>\n  <nav\n    class=\"cbf-record-lifecycle stack\"\n    data-gap=\"md\"\n    aria-label=\"Contract lifecycle\"\n    data-record-nav=\"\"\n    data-lifecycle=\"\"\n    data-stages='[{\"key\":\"setup\",\"label\":\"Setup\",\"status\":\"Draft\",\"variant\":\"neutral\",\"phases\":{\"setup\":[\"current\",49,\"Oct 5 – Dec 18, 20… [1411 characters]'\n  >\n    <ol class=\"cbf-lifecycle-track\" aria-label=\"Contract lifecycle\">\n      <li\n        class=\"cbf-lifecycle-track__phase\"\n        data-phase=\"setup\"\n        data-state=\"done\"\n        data-name=\"menu\"\n        data-hidden-for=\"\"\n        data-hidden-stages=\"\"\n      >\n        <span class=\"cbf-lifecycle-track__when typography-eyebrow-sm\">\n          <span class=\"visually-hidden\" data-state-label=\"\">Finished, </span\n          ><span data-when-text=\"\">Jun 2 – Aug 14, 2026</span>\n        </span>\n        <span class=\"cbf-lifecycle-track__meter\" aria-hidden=\"true\"></span>\n        <div class=\"cbf-lifecycle-track__name\">\n          <span class=\"cbf-lifecycle-track__status\" aria-hidden=\"true\">\n            <span class=\"cbf-icon cbf-lifecycle-track__icon--done\"\n              ><svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                aria-hidden=\"true\"\n              >\n                <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n                <path d=\"m9 12 2 2 4-4\"></path></svg\n            ></span>\n            <span class=\"cbf-icon cbf-lifecycle-track__icon--current\"\n              ><svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                aria-hidden=\"true\"\n              >\n                <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n                <path d=\"M12 18a6 6 0 0 0 0-12v12z\"></path></svg\n            ></span>\n            <span class=\"cbf-icon cbf-lifecycle-track__icon--next\"\n              ><svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                aria-hidden=\"true\"\n              >\n                <path d=\"M10.1 2.182a10 10 0 0 1 3.8 0\"></path>\n                <path d=\"M13.9 21.818a10 10 0 0 1-3.8 0\"></path>\n                <!-- …and 6 more like this (<path>) -->\n              </svg></span\n            >\n          </span>\n          <span class=\"cbf-lifecycle-track__text typography-label-md\">Setup</span>\n          <div class=\"cbf-lifecycle-track__menu\">\n            <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n              <summary\n                class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n              >\n                <span class=\"esa-button__native typography-microcopy-md\"\n                  ><span class=\"esa-button__label\">Setup</span\n                  ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                    <svg\n                      width=\"20\"\n                      height=\"20\"\n                      viewBox=\"0 0 24 24\"\n                      fill=\"none\"\n                      stroke=\"currentColor\"\n                      stroke-width=\"2\"\n                      stroke-linecap=\"round\"\n                      stroke-linejoin=\"round\"\n                      focusable=\"false\"\n                    >\n                      <path d=\"m6 9 6 6 6-6\"></path>\n                    </svg>\n                  </span>\n                </span>\n              </summary>\n              <div class=\"esa-nav-dropdown__panel typography-body-md\">\n                <ul class=\"cbf-page-menu typography-body-md cbf-page-menu--list\">\n                  <li><a href=\"/cb-fish-design/contract-nav/pre-award\">Pre-award</a></li>\n                  <li data-hide-for=\"contractor\">\n                    <a href=\"/cb-fish-design/contract-nav/initialize-sow\">Initialize SOW</a>\n                  </li>\n                  <!-- …and 2 more like this (<li>) -->\n                </ul>\n              </div>\n            </details>\n          </div>\n        </div>\n      </li>\n      <li\n        class=\"cbf-lifecycle-track__phase\"\n        data-phase=\"review\"\n        data-state=\"done\"\n        data-name=\"menu\"\n        data-hidden-for=\"\"\n        data-hidden-stages=\"\"\n      >\n        <span class=\"cbf-lifecycle-track__when typography-eyebrow-sm\">\n          <span class=\"visually-hidden\" data-state-label=\"\">Finished, </span\n          ><span data-when-text=\"\">Aug 14 – Sep 22, 2026</span>\n        </span>\n        <span class=\"cbf-lifecycle-track__meter\" aria-hidden=\"true\"></span>\n        <div class=\"cbf-lifecycle-track__name\">\n          <span class=\"cbf-lifecycle-track__status\" aria-hidden=\"true\">\n            <span class=\"cbf-icon cbf-lifecycle-track__icon--done\"\n              ><svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                aria-hidden=\"true\"\n              >\n                <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n                <path d=\"m9 12 2 2 4-4\"></path></svg\n            ></span>\n            <span class=\"cbf-icon cbf-lifecycle-track__icon--current\"\n              ><svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                aria-hidden=\"true\"\n              >\n                <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n                <path d=\"M12 18a6 6 0 0 0 0-12v12z\"></path></svg\n            ></span>\n            <span class=\"cbf-icon cbf-lifecycle-track__icon--next\"\n              ><svg\n                width=\"16\"\n                height=\"16\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                aria-hidden=\"true\"\n              >\n                <path d=\"M10.1 2.182a10 10 0 0 1 3.8 0\"></path>\n                <path d=\"M13.9 21.818a10 10 0 0 1-3.8 0\"></path>\n                <!-- …and 6 more like this (<path>) -->\n              </svg></span\n            >\n          </span>\n          <span class=\"cbf-lifecycle-track__text typography-label-md\">Review and approve</span>\n          <div class=\"cbf-lifecycle-track__menu\">\n            <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n              <summary\n                class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n              >\n                <span class=\"esa-button__native typography-microcopy-md\"\n                  ><span class=\"esa-button__label\">Review and approve</span\n                  ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n                    <svg\n                      width=\"20\"\n                      height=\"20\"\n                      viewBox=\"0 0 24 24\"\n                      fill=\"none\"\n                      stroke=\"currentColor\"\n                      stroke-width=\"2\"\n                      stroke-linecap=\"round\"\n                      stroke-linejoin=\"round\"\n                      focusable=\"false\"\n                    >\n                      <path d=\"m6 9 6 6 6-6\"></path>\n                    </svg>\n                  </span>\n                </span>\n              </summary>\n              <div class=\"esa-nav-dropdown__panel typography-body-md\">\n                <ul class=\"cbf-page-menu typography-body-md cbf-page-menu--list\">\n                  <li data-hide-stages=\"setup\">\n                    <a href=\"/cb-fish-design/contract-nav/review-sow\">Review SOW</a>\n                  </li>\n                  <li><a href=\"/cb-fish-design/contract-nav/workflow\">Workflow</a></li>\n                </ul>\n              </div>\n            </details>\n          </div>\n        </div>\n      </li>\n      <!-- …and 2 more like this (<li class=\"cbf-lifecycle-track__phase\">) -->\n    </ol>\n  </nav>\n  <!-- script type=\"module\" removed (1016 bytes) -->\n</div>",
+      "css": ".typography-heading-lg {\n  font-family: var(--typography-heading-lg-font-family);\n  font-size: var(--typography-heading-lg-font-size);\n  font-weight: var(--typography-heading-lg-font-weight);\n  line-height: var(--typography-heading-lg-line-height);\n  letter-spacing: var(--typography-heading-lg-letter-spacing);\n}\n.typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-microcopy-md {\n  font-family: var(--typography-microcopy-md-font-family);\n  font-size: var(--typography-microcopy-md-font-size);\n  font-weight: var(--typography-microcopy-md-font-weight);\n  line-height: var(--typography-microcopy-md-line-height);\n  letter-spacing: var(--typography-microcopy-md-letter-spacing);\n}\n.typography-microcopy-sm-strong {\n  font-family: var(--typography-microcopy-sm-strong-font-family);\n  font-size: var(--typography-microcopy-sm-strong-font-size);\n  font-weight: var(--typography-microcopy-sm-strong-font-weight);\n  line-height: var(--typography-microcopy-sm-strong-line-height);\n  letter-spacing: var(--typography-microcopy-sm-strong-letter-spacing);\n}\n.typography-eyebrow-sm {\n  font-family: var(--typography-eyebrow-sm-font-family);\n  font-size: var(--typography-eyebrow-sm-font-size);\n  font-weight: var(--typography-eyebrow-sm-font-weight);\n  line-height: var(--typography-eyebrow-sm-line-height);\n  letter-spacing: var(--typography-eyebrow-sm-letter-spacing);\n  text-transform: var(--typography-eyebrow-sm-text-transform);\n}\n.visually-hidden {\n  position: absolute;\n  width: 1px;\n  height: 1px;\n  margin: -1px;\n  padding: 0;\n  border: 0;\n  overflow: hidden;\n  white-space: nowrap;\n  clip: rect(0 0 0 0);\n  clip-path: inset(50%);\n}\n.cbf-lifecycle-track {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));\n  gap: var(--spacing-200) var(--spacing-100);\n  margin: 0;\n  padding: 0;\n  list-style: none;\n  min-width: 0;\n}\n.cbf-lifecycle-track__phase {\n  display: flex;\n  flex-direction: column;\n  align-items: stretch;\n  gap: var(--spacing-200);\n  min-width: 0;\n  color: var(--color-content-default-secondary);\n}\n.cbf-lifecycle-track__phase[data-state=\"current\"] {\n  color: var(--color-content-default);\n}\n.cbf-lifecycle-track__phase[data-state=\"next\"] {\n  color: var(--color-content-default-tertiary);\n}\n.cbf-lifecycle-track__meter {\n  block-size: 6px;\n  border-radius: var(--radius-full, 999px);\n  background: var(--color-border-default);\n}\n.cbf-lifecycle-track__phase[data-state=\"done\"] .cbf-lifecycle-track__meter {\n  background: color-mix(in srgb, var(--color-content-default-tertiary) 45%, transparent);\n}\n.cbf-lifecycle-track__phase[data-state=\"current\"] .cbf-lifecycle-track__meter {\n  background: linear-gradient(\n    to right,\n    var(--color-background-brand) var(--phase-progress, 0%),\n    color-mix(in srgb, var(--color-background-brand) 22%, transparent) var(--phase-progress, 0%)\n  );\n}\n.cbf-lifecycle-track {\n  margin-inline: calc(-1 * var(--spacing-300));\n}\n.cbf-lifecycle-track__phase {\n  position: relative;\n  padding: var(--spacing-200) var(--spacing-300) var(--spacing-100);\n  border-radius: var(--radius-100);\n}\n.cbf-lifecycle-track__phase[data-name=\"menu\"]:has(.cbf-lifecycle-track__menu :is(summary, a):hover),\n.cbf-lifecycle-track__phase[data-name=\"menu\"]:has(details[open]) {\n  background: var(--color-background-elevation-sunken);\n}\n.cbf-lifecycle-track__phase:has(.cbf-lifecycle-track__menu :is(summary, a):focus-visible) {\n  outline: 2px solid var(--color-background-brand);\n  outline-offset: -2px;\n}\n.cbf-lifecycle-track__menu :is(summary, a).esa-button:focus-visible {\n  outline: none;\n}\n.cbf-lifecycle-track__name {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-100);\n  min-block-size: 2.875rem;\n  margin-block-start: calc(-1 * var(--spacing-100));\n  min-width: 0;\n}\n.cbf-lifecycle-track__menu {\n  min-width: 0;\n}\n.cbf-lifecycle-track__menu .esa-nav-dropdown {\n  position: static;\n}\n.cbf-lifecycle-track__phase .cbf-lifecycle-track__menu .esa-button.esa-button .esa-button__native {\n  padding-inline: 0;\n  background: transparent;\n}\n.cbf-lifecycle-track__menu :is(summary, a).esa-button:after {\n  content: \"\";\n  position: absolute;\n  inset: 0;\n  border-radius: inherit;\n}\n.cbf-lifecycle-track__menu .esa-nav-dropdown__panel {\n  inset-inline-start: 0;\n}\n.cbf-lifecycle-track__status {\n  display: inline-flex;\n  flex: none;\n}\n.cbf-lifecycle-track__phase:not([data-state=\"done\"]) .cbf-lifecycle-track__icon--done,\n.cbf-lifecycle-track__phase:not([data-state=\"current\"]) .cbf-lifecycle-track__icon--current,\n.cbf-lifecycle-track__phase:not([data-state=\"next\"]) .cbf-lifecycle-track__icon--next,\n.cbf-lifecycle-track__phase[data-name=\"text\"] .cbf-lifecycle-track__menu,\n.cbf-lifecycle-track__phase[data-name=\"menu\"] .cbf-lifecycle-track__text {\n  display: none;\n}\n.cbf-lifecycle-track__phase[data-state=\"done\"] .cbf-lifecycle-track__status {\n  color: var(--color-content-success);\n}\n.cbf-lifecycle-track__phase[data-state=\"current\"] .cbf-lifecycle-track__status {\n  color: var(--color-background-brand);\n}\n.cbf-lifecycle-track__phase[data-state=\"next\"] .cbf-lifecycle-track__status {\n  color: var(--color-content-default-tertiary);\n}\n.cbf-lifecycle-track__status .cbf-lifecycle-track__icon--current path {\n  fill: currentColor;\n}\n.cbf-lifecycle-track__phase[data-here],\n.cbf-lifecycle-track__phase[data-here][data-name=\"menu\"]:has(\n    .cbf-lifecycle-track__menu :is(summary, a):hover\n  ),\n.cbf-lifecycle-track__phase[data-here][data-name=\"menu\"]:has(details[open]) {\n  background: var(--color-background-brand);\n  color: var(--color-content-on-brand);\n}\n.cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__status,\n.cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__when,\n.cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__text,\n.cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__menu .esa-button__native {\n  color: var(--color-content-on-brand);\n}\n.cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__text,\n.cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__menu .esa-button__native {\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__meter {\n  background: color-mix(in srgb, var(--color-content-on-brand) 30%, transparent);\n}\n.cbf-lifecycle-track__phase[data-here][data-state=\"done\"] .cbf-lifecycle-track__meter {\n  background: color-mix(in srgb, var(--color-content-on-brand) 70%, transparent);\n}\n.cbf-lifecycle-track__phase[data-here][data-state=\"current\"] .cbf-lifecycle-track__meter {\n  background: linear-gradient(\n    to right,\n    var(--color-content-on-brand) var(--phase-progress, 0%),\n    color-mix(in srgb, var(--color-content-on-brand) 30%, transparent) var(--phase-progress, 0%)\n  );\n}\n@media (max-width: 63.99rem) {\n  .cbf-lifecycle-track {\n    grid-template-columns: repeat(2, minmax(0, 1fr));\n  }\n}\n@media (max-width: 29.99rem) {\n  .cbf-lifecycle-track {\n    grid-template-columns: minmax(0, 1fr);\n  }\n}\n.cbf-record-lifecycle {\n  border-bottom: 1px solid var(--color-border-default);\n}\n.cbf-record-phases__steps .cbf-icon {\n  display: inline-flex;\n}\n.cbf-find-page .cbf-icon {\n  display: inline-flex;\n  color: var(--color-content-default-secondary);\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, 20px);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  color: inherit;\n}\n.esa-icon--md {\n  --_icon-size: var(--icon-size-md, 20px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-button {\n  --_btn-pad-y: var(--spacing-300, 0.75rem);\n  --_btn-padding-x: var(--spacing-300, 0.75rem);\n  --_btn-radius: var(--button-radius-md, 0.5rem);\n  --_accent: var(--color-background-brand, #46a758);\n  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);\n  --_on: var(--color-content-default-knockout, #fcfcfc);\n  --_accent-text: var(--_accent);\n  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);\n  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);\n  display: inline-block;\n}\n.esa-button--appearance-fill .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent-border, transparent);\n}\n.esa-button--appearance-fill .esa-button__native:hover:not(:disabled) {\n  background: var(--_accent-hover);\n}\n.esa-button--appearance-fill.esa-button--active .esa-button__native {\n  background: var(--_accent-hover);\n}\n.esa-button--appearance-outline .esa-button__native,\n.esa-button--appearance-dashed .esa-button__native {\n  background: transparent;\n  color: var(--_accent-text);\n  border-color: var(--_accent);\n}\n.esa-button--appearance-dashed .esa-button__native {\n  border-style: dashed;\n}\n.esa-button--appearance-outline .esa-button__native:hover:not(:disabled),\n.esa-button--appearance-dashed .esa-button__native:hover:not(:disabled) {\n  background: var(--_btn-tint-hover);\n}\n.esa-button--appearance-outline.esa-button--active .esa-button__native,\n.esa-button--appearance-dashed.esa-button--active .esa-button__native {\n  background: var(--_btn-tint-active);\n}\n.esa-button--appearance-soft .esa-button__native {\n  background: color-mix(\n    in srgb,\n    var(--color-background-elevation-sunken, #f0f0f0) 45%,\n    var(--color-background-elevation-raised, #fcfcfc)\n  );\n  color: var(--_accent-text);\n  border-color: var(--color-border-default-strong, #bbbbbb);\n}\n.esa-button--appearance-soft .esa-button__native:hover:not(:disabled),\n.esa-button--appearance-soft.esa-button--active .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent);\n}\n.esa-button--variant-ghost .esa-button__native {\n  background: transparent;\n  color: var(--color-content-default, #202020);\n  border-color: transparent;\n}\n.esa-button--variant-ghost.esa-button--appearance-outline .esa-button__native,\n.esa-button--variant-ghost.esa-button--appearance-dashed .esa-button__native {\n  border-color: var(--color-border-default, #cecece);\n}\n.esa-button--variant-ghost .esa-button__native:hover:not(:disabled),\n.esa-button--variant-ghost.esa-button--active .esa-button__native {\n  background: var(--color-background-elevation-sunken, #f0f0f0);\n}\n.esa-button--variant-chrome .esa-button__native {\n  background: transparent;\n  color: inherit;\n  border-color: transparent;\n}\n.esa-button--variant-chrome .esa-button__native:hover:not(:disabled),\n.esa-button--variant-chrome.esa-button--active .esa-button__native,\n.esa-button--variant-chrome.esa-button--current .esa-button__native {\n  background: var(--button-chrome-bg-hover, color-mix(in srgb, currentColor 14%, transparent));\n}\n.esa-button--variant-chrome .esa-button__native:focus-visible {\n  outline-color: currentColor;\n}\n.esa-button__native {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: var(--spacing-200, 8px);\n  width: 100%;\n  padding-block: var(--_btn-pad-y);\n  padding-inline: var(--_btn-padding-x);\n  border: var(--border-width-default, 1px) solid transparent;\n  border-radius: var(--_btn-radius);\n  text-decoration: none;\n  cursor: pointer;\n  transition:\n    background var(--transition-fast, 0.15s ease),\n    border-color var(--transition-fast, 0.15s ease);\n  -webkit-appearance: none;\n  appearance: none;\n}\n.esa-button__native:focus-visible {\n  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);\n  outline-offset: var(--focus-ring-offset, 2px);\n}\n.esa-button--icon-only .esa-button__native {\n  padding-inline: var(--_btn-pad-y);\n  aspect-ratio: 1;\n}\nsummary.esa-button {\n  list-style: none;\n  cursor: pointer;\n}\nsummary.esa-button::-webkit-details-marker {\n  display: none;\n}\nsummary.esa-button:focus-visible {\n  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);\n  outline-offset: var(--focus-ring-offset, 2px);\n  border-radius: var(--_btn-radius);\n}\nsummary.esa-button--variant-chrome:focus-visible {\n  outline-color: currentColor;\n}\n.esa-button__label {\n  white-space: nowrap;\n}\n.cbf-search-surface .cbf-icon {\n  display: inline-flex;\n  align-items: center;\n}\n.cbf-search-surface .cbf-result-group__title .cbf-icon {\n  color: var(--color-content-default-tertiary);\n}\n.cbf-person-card .cbf-icon {\n  display: inline-flex;\n  align-items: center;\n}\n.cbf-person-card__label .cbf-icon {\n  color: var(--color-background-brand-muted);\n}\n.cbf-nav-link .cbf-icon {\n  display: inline-flex;\n  align-items: center;\n}\n.cbf-qa-icon .esa-button__native > .esa-icon:last-child {\n  display: none;\n}\n.cbf-qa-icon .esa-button__native:after {\n  content: \"\";\n  flex: none;\n  inline-size: 9px;\n  block-size: 5px;\n  background: currentColor;\n  mask: var(--qa-down) center / contain no-repeat;\n  transition: transform 0.15s ease;\n}\n.cbf-qa-icon details[open] > summary .esa-button__native:after {\n  transform: rotate(180deg);\n}\n.cbf-qa-icon .esa-button__native:before,\n.cbf-qa-icon__glyph {\n  content: \"\";\n  display: inline-block;\n  flex: none;\n  inline-size: var(--qa-w);\n  block-size: var(--qa-h);\n  background: currentColor;\n  mask: var(--qa-icon) center / contain no-repeat;\n}\n.typography-heading-lg {\n  font-family: var(--typography-heading-lg-font-family);\n  font-size: var(--typography-heading-lg-font-size);\n  font-weight: var(--typography-heading-lg-font-weight);\n  line-height: var(--typography-heading-lg-line-height);\n  letter-spacing: var(--typography-heading-lg-letter-spacing);\n}\n.typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-microcopy-md {\n  font-family: var(--typography-microcopy-md-font-family);\n  font-size: var(--typography-microcopy-md-font-size);\n  font-weight: var(--typography-microcopy-md-font-weight);\n  line-height: var(--typography-microcopy-md-line-height);\n  letter-spacing: var(--typography-microcopy-md-letter-spacing);\n}\n.typography-microcopy-sm-strong {\n  font-family: var(--typography-microcopy-sm-strong-font-family);\n  font-size: var(--typography-microcopy-sm-strong-font-size);\n  font-weight: var(--typography-microcopy-sm-strong-font-weight);\n  line-height: var(--typography-microcopy-sm-strong-line-height);\n  letter-spacing: var(--typography-microcopy-sm-strong-letter-spacing);\n}\n.typography-eyebrow-sm {\n  font-family: var(--typography-eyebrow-sm-font-family);\n  font-size: var(--typography-eyebrow-sm-font-size);\n  font-weight: var(--typography-eyebrow-sm-font-weight);\n  line-height: var(--typography-eyebrow-sm-line-height);\n  letter-spacing: var(--typography-eyebrow-sm-letter-spacing);\n  text-transform: var(--typography-eyebrow-sm-text-transform);\n}\n.cbf-record-header {\n  padding-block-end: var(--spacing-400);\n}\n.cbf-record-header__eyebrow {\n  margin: 0;\n  color: var(--color-content-default-secondary);\n}\n.cbf-record-header__title {\n  margin: 0;\n  color: var(--color-background-default-knockout);\n}\n.cbf-page-menu {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  min-width: 15rem;\n}\n.cbf-page-menu a {\n  display: block;\n  padding: var(--spacing-150, 6px) var(--spacing-300);\n  border-radius: var(--radius-100);\n  color: var(--color-content-default);\n  text-decoration: none;\n  white-space: nowrap;\n}\n.cbf-page-menu a:hover {\n  background: var(--color-background-elevation-sunken);\n}\n.cbf-page-menu a[aria-current=\"page\"] {\n  background: var(--color-background-elevation-sunken);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-record-ends__menu {\n  color: var(--color-content-default-secondary);\n}\n.cbf-record-ends__menu[data-here] {\n  color: var(--color-content-default);\n}\n.cbf-record-ends__menu[data-here] .esa-button.esa-button .esa-button__native {\n  background: var(--color-background-brand);\n  color: var(--color-content-on-brand);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-record-ends--row .cbf-record-ends__menu {\n  color: var(--color-content-default);\n}\n.stack {\n  --gap: var(--spacing-400, 1rem);\n  display: flex;\n  flex-direction: column;\n  gap: var(--gap);\n}\n.stack[data-split] > [data-split] {\n  margin-block-end: auto;\n}\n.cluster {\n  --gap: var(--spacing-300, 0.75rem);\n  --align: center;\n  --justify: flex-start;\n  display: flex;\n  flex-wrap: wrap;\n  gap: var(--gap);\n  align-items: var(--align);\n  justify-content: var(--justify);\n}\n.repel {\n  --gap: var(--spacing-400, 1rem);\n  --align: center;\n  display: flex;\n  flex-wrap: wrap;\n  gap: var(--gap);\n  align-items: var(--align);\n  justify-content: space-between;\n}\n.esa-collapsible__summary .esa-icon {\n  flex-shrink: 0;\n  color: var(--color-content-default-secondary, #646464);\n}\n.visually-hidden {\n  position: absolute;\n  width: 1px;\n  height: 1px;\n  margin: -1px;\n  padding: 0;\n  border: 0;\n  overflow: hidden;\n  white-space: nowrap;\n  clip: rect(0 0 0 0);\n  clip-path: inset(50%);\n}\n.cbf-icon {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  flex: none;\n  color: inherit;\n}\n.esa-badge {\n  --_badge-bg: var(--badge-bg, var(--color-background-elevation-raised, #fcfcfc));\n  --_badge-text: var(--badge-text-color, var(--color-content-default-secondary, #646464));\n  --_badge-border: var(--badge-border-color, var(--color-border-default, #cecece));\n  --_badge-padding-y: var(--spacing-150, 0.375rem);\n  --_badge-padding-x: var(--spacing-200, 0.5rem);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: calc(1lh + 2 * var(--_badge-padding-y));\n  padding-block: var(--_badge-padding-y);\n  padding-inline: var(--_badge-padding-x);\n  border-radius: var(--radius-chip, var(--radius-sm, 0.25rem));\n  background: var(--_badge-bg);\n  color: var(--_badge-text);\n  white-space: nowrap;\n  box-sizing: border-box;\n}\n.esa-badge--success {\n  --_badge-bg: var(--color-background-utility-success-muted, #e6f6eb);\n  --_badge-text: var(--color-content-utility-success, #218358);\n  --_badge-border: var(--color-border-utility-success, #adddc0);\n}\n.esa-badge--info {\n  --_badge-bg: var(--color-background-utility-info-muted, #e6f4fe);\n  --_badge-text: var(--color-content-utility-info, #0d74ce);\n  --_badge-border: var(--color-border-utility-info, #acd8fc);\n}\n.esa-badge--neutral:not(.esa-badge--dot),\n.esa-badge--success:not(.esa-badge--dot),\n.esa-badge--warning:not(.esa-badge--dot),\n.esa-badge--danger:not(.esa-badge--dot),\n.esa-badge--info:not(.esa-badge--dot) {\n  border: 1px solid var(--_badge-border, transparent);\n}\n.esa-badge--dot.esa-badge--neutral {\n  --_badge-bg: var(--color-content-default-secondary, #646464);\n}\n.esa-badge--dot.esa-badge--success {\n  --_badge-bg: var(--color-background-utility-success-hover, #2b9a66);\n}\n.esa-badge--dot.esa-badge--info {\n  --_badge-bg: var(--color-background-utility-info-hover, #0588f0);\n}\n@media (forced-colors: active) {\n  .esa-badge {\n    border: 1px solid CanvasText;\n  }\n}\n.esa-nav-dropdown {\n  position: relative;\n}\n.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.esa-nav-dropdown[open] .esa-button__native > .esa-icon:last-child {\n  transform: rotate(180deg);\n}\n.esa-nav-dropdown__panel {\n  position: absolute;\n  top: calc(100% + var(--spacing-200, 8px));\n  left: 0;\n  z-index: var(--z-dropdown, 50);\n  min-width: var(--nav-dropdown-panel-min-width, 240px);\n  padding: var(--spacing-300, 12px);\n  background: var(--color-background-elevation-raised, #fcfcfc);\n  color: var(--color-content-default, #202020);\n  border: var(--border-width-default, 1px) solid var(--color-border-default, #cecece);\n  border-radius: var(--radius-md, 0.5rem);\n  box-shadow: var(--elevation-4, 0 6px 24px -6px rgba(0, 0, 0, 0.07));\n}\n.esa-nav-dropdown--end .esa-nav-dropdown__panel {\n  left: auto;\n  right: 0;\n}",
+      "guide": {
+        "intent": "The contract identity: number as eyebrow, title as the page H1 in brand navy, the status badge inline after the title, and Overview and Files menus at the end of the title row. The lifecycle track sits underneath.",
+        "decisions": [
+          "Overview and Files are always available, whatever the phase; they are not phases.",
+          "Status badge per stage: Draft (neutral), In review (info), Issued (success), Change request pending (info), Closed (neutral).",
+          "The menu holding the page you are on gets a filled brand trigger.",
+          "Labels are Title Case, matching prod (Andy's call for this prototype; it overrides docs/copy-style.md here)."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--badge-bg",
+          "value": "#fcfcfc",
+          "tier": "component"
+        },
+        {
+          "name": "--badge-border-color",
+          "value": "#dcdcdc",
+          "tier": "component"
+        },
+        {
+          "name": "--badge-text-color",
+          "value": "#525252",
+          "tier": "component"
+        },
+        {
+          "name": "--border-width-default",
+          "value": "1px",
+          "tier": "semantic"
+        },
+        {
+          "name": "--button-chrome-bg-hover",
+          "value": "color-mix(in srgb, currentColor 14%, transparent)",
+          "tier": "component"
+        },
+        {
+          "name": "--button-radius-md",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--color-background-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-hover",
+          "value": "#1a4570",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-muted",
+          "value": "#2770b2",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-default-knockout",
+          "value": "#13273e",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-raised",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-sunken",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-utility-info-hover",
+          "value": "#113264",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-utility-info-muted",
+          "value": "#e6f4fe",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-utility-success-hover",
+          "value": "#193b2d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-utility-success-muted",
+          "value": "#e6f6eb",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default",
+          "value": "#dcdcdc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default-strong",
+          "value": "#bdbdbd",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-utility-info",
+          "value": "#c6dcf1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-utility-success",
+          "value": "#adddc0",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-knockout",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-tertiary",
+          "value": "#656565",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-on-brand",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-success",
+          "value": "#218358",
+          "tier": "component"
+        },
+        {
+          "name": "--color-content-utility-info",
+          "value": "#0d74ce",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-utility-success",
+          "value": "#218358",
+          "tier": "semantic"
+        },
+        {
+          "name": "--elevation-4",
+          "value": "0 6px 24px -6px rgba(0, 0, 0, .07)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--focus-ring-color",
+          "value": "#3e9b4f",
+          "tier": "component"
+        },
+        {
+          "name": "--focus-ring-offset",
+          "value": "2px",
+          "tier": "component"
+        },
+        {
+          "name": "--focus-ring-width",
+          "value": "2px",
+          "tier": "component"
+        },
+        {
+          "name": "--gap",
+          "value": "1.5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-md",
+          "value": "20px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--nav-dropdown-panel-min-width",
+          "value": "240px",
+          "tier": "component"
+        },
+        {
+          "name": "--radius-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-chip",
+          "value": ".25rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--radius-full",
+          "value": "9999px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-md",
+          "value": ".5rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--radius-sm",
+          "value": ".25rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-150",
+          "value": ".375rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--transition-fast",
+          "value": ".15s ease",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-eyebrow-sm-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-eyebrow-sm-font-size",
+          "value": "clamp(.5rem, .44rem + .3vw, .625rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-eyebrow-sm-font-weight",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-eyebrow-sm-letter-spacing",
+          "value": ".06em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-eyebrow-sm-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-eyebrow-sm-text-transform",
+          "value": "uppercase",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-semibold",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-heading-lg-font-family",
+          "value": "\"IBM Plex Sans Condensed\", \"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-heading-lg-font-size",
+          "value": "clamp(1.375rem, 1.2rem + .88vw, 1.875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-heading-lg-font-weight",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-heading-lg-letter-spacing",
+          "value": "-.01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-heading-lg-line-height",
+          "value": "1.3",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-line-height",
+          "value": "1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-sm-strong-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-sm-strong-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-sm-strong-font-weight",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-sm-strong-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-sm-strong-line-height",
+          "value": "1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--z-dropdown",
+          "value": "50",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-icon",
+          "origin": "spoke",
+          "source": "src/components/search/cbf-icon.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-lifecycle-track",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-lifecycle-track.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-page-menu",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-page-menu.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-record-ends",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-record-ends.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-record-header",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-record-header.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-record-lifecycle",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-record-lifecycle.astro",
+          "target": null
+        },
+        {
+          "name": "esa-badge",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-badge.astro",
+          "target": null
+        },
+        {
+          "name": "esa-button",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-button.astro",
+          "target": null
+        },
+        {
+          "name": "esa-icon",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-icon.astro",
+          "target": null
+        },
+        {
+          "name": "esa-nav-dropdown",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-nav-dropdown.astro",
+          "target": null
+        }
+      ],
+      "js": [
+        "src/components/contract-nav/cbf-record-header.astro",
+        "src/components/contract-nav/cbf-record-ends.astro"
+      ],
+      "claudePath": "claude/record-header.md",
+      "repoPath": "public/handoff/contract-nav-summary/claude/record-header.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/record-header.desktop.png",
+        "phone": "claude/record-header.phone.png"
+      },
+      "bytes": 40310,
+      "specBytes": 40310,
+      "files": 1,
+      "collapsed": 27
+    },
+    {
+      "label": "Lifecycle track",
+      "tag": "nav",
+      "selector": "[data-record-nav]",
+      "html": "<nav\n  class=\"cbf-record-ends cluster cbf-record-ends--title\"\n  data-gap=\"2xs\"\n  aria-label=\"Contract Overview and Files\"\n  data-record-nav=\"\"\n>\n  <div class=\"cbf-record-ends__menu\" data-here=\"\">\n    <details class=\"esa-nav-dropdown esa-nav-dropdown--end\">\n      <summary\n        class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n      >\n        <span class=\"esa-button__native typography-microcopy-md\"\n          ><span class=\"esa-button__label\">Overview</span\n          ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n            <svg\n              width=\"20\"\n              height=\"20\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path>\n            </svg>\n          </span>\n        </span>\n      </summary>\n      <div class=\"esa-nav-dropdown__panel typography-body-md\">\n        <ul class=\"cbf-page-menu typography-body-md cbf-page-menu--list\">\n          <li>\n            <a href=\"/cb-fish-design/contract-nav/summary\" aria-current=\"page\">Contract summary</a>\n          </li>\n          <li><a href=\"/cb-fish-design/contract-nav/contacts\">Contract contacts</a></li>\n          <!-- …and 6 more like this (<li>) -->\n        </ul>\n      </div>\n    </details>\n  </div>\n  <div class=\"cbf-record-ends__menu\">\n    <details class=\"esa-nav-dropdown esa-nav-dropdown--end\">\n      <summary\n        class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n      >\n        <span class=\"esa-button__native typography-microcopy-md\"\n          ><span class=\"esa-button__label\">Files</span\n          ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n            <svg\n              width=\"20\"\n              height=\"20\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path>\n            </svg>\n          </span>\n        </span>\n      </summary>\n      <div class=\"esa-nav-dropdown__panel typography-body-md\">\n        <ul class=\"cbf-page-menu typography-body-md cbf-page-menu--list\">\n          <li><a href=\"/cb-fish-design/contract-nav/documents\">Documents</a></li>\n          <li data-hide-for=\"contractor\">\n            <a href=\"/cb-fish-design/contract-nav/cor-file\">COR file</a>\n          </li>\n          <!-- …and 2 more like this (<li>) -->\n        </ul>\n      </div>\n    </details>\n  </div>\n</nav>",
+      "css": ".typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.typography-microcopy-md {\n  font-family: var(--typography-microcopy-md-font-family);\n  font-size: var(--typography-microcopy-md-font-size);\n  font-weight: var(--typography-microcopy-md-font-weight);\n  line-height: var(--typography-microcopy-md-line-height);\n  letter-spacing: var(--typography-microcopy-md-letter-spacing);\n}\n.cbf-lifecycle-track__menu :is(summary, a).esa-button:focus-visible {\n  outline: none;\n}\n.cbf-lifecycle-track__menu .esa-nav-dropdown {\n  position: static;\n}\n.cbf-lifecycle-track__phase .cbf-lifecycle-track__menu .esa-button.esa-button .esa-button__native {\n  padding-inline: 0;\n  background: transparent;\n}\n.cbf-lifecycle-track__menu :is(summary, a).esa-button:after {\n  content: \"\";\n  position: absolute;\n  inset: 0;\n  border-radius: inherit;\n}\n.cbf-lifecycle-track__menu .esa-nav-dropdown__panel {\n  inset-inline-start: 0;\n}\n.cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__status,\n.cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__when,\n.cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__text,\n.cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__menu .esa-button__native {\n  color: var(--color-content-on-brand);\n}\n.cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__text,\n.cbf-lifecycle-track__phase[data-here] .cbf-lifecycle-track__menu .esa-button__native {\n  font-weight: var(--typography-font-weight-semibold);\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, 20px);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  color: inherit;\n}\n.esa-icon--md {\n  --_icon-size: var(--icon-size-md, 20px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-button {\n  --_btn-pad-y: var(--spacing-300, 0.75rem);\n  --_btn-padding-x: var(--spacing-300, 0.75rem);\n  --_btn-radius: var(--button-radius-md, 0.5rem);\n  --_accent: var(--color-background-brand, #46a758);\n  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);\n  --_on: var(--color-content-default-knockout, #fcfcfc);\n  --_accent-text: var(--_accent);\n  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);\n  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);\n  display: inline-block;\n}\n.esa-button--appearance-fill .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent-border, transparent);\n}\n.esa-button--appearance-fill .esa-button__native:hover:not(:disabled) {\n  background: var(--_accent-hover);\n}\n.esa-button--appearance-fill.esa-button--active .esa-button__native {\n  background: var(--_accent-hover);\n}\n.esa-button--appearance-outline .esa-button__native,\n.esa-button--appearance-dashed .esa-button__native {\n  background: transparent;\n  color: var(--_accent-text);\n  border-color: var(--_accent);\n}\n.esa-button--appearance-dashed .esa-button__native {\n  border-style: dashed;\n}\n.esa-button--appearance-outline .esa-button__native:hover:not(:disabled),\n.esa-button--appearance-dashed .esa-button__native:hover:not(:disabled) {\n  background: var(--_btn-tint-hover);\n}\n.esa-button--appearance-outline.esa-button--active .esa-button__native,\n.esa-button--appearance-dashed.esa-button--active .esa-button__native {\n  background: var(--_btn-tint-active);\n}\n.esa-button--appearance-soft .esa-button__native {\n  background: color-mix(\n    in srgb,\n    var(--color-background-elevation-sunken, #f0f0f0) 45%,\n    var(--color-background-elevation-raised, #fcfcfc)\n  );\n  color: var(--_accent-text);\n  border-color: var(--color-border-default-strong, #bbbbbb);\n}\n.esa-button--appearance-soft .esa-button__native:hover:not(:disabled),\n.esa-button--appearance-soft.esa-button--active .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent);\n}\n.esa-button--variant-ghost .esa-button__native {\n  background: transparent;\n  color: var(--color-content-default, #202020);\n  border-color: transparent;\n}\n.esa-button--variant-ghost.esa-button--appearance-outline .esa-button__native,\n.esa-button--variant-ghost.esa-button--appearance-dashed .esa-button__native {\n  border-color: var(--color-border-default, #cecece);\n}\n.esa-button--variant-ghost .esa-button__native:hover:not(:disabled),\n.esa-button--variant-ghost.esa-button--active .esa-button__native {\n  background: var(--color-background-elevation-sunken, #f0f0f0);\n}\n.esa-button--variant-chrome .esa-button__native {\n  background: transparent;\n  color: inherit;\n  border-color: transparent;\n}\n.esa-button--variant-chrome .esa-button__native:hover:not(:disabled),\n.esa-button--variant-chrome.esa-button--active .esa-button__native,\n.esa-button--variant-chrome.esa-button--current .esa-button__native {\n  background: var(--button-chrome-bg-hover, color-mix(in srgb, currentColor 14%, transparent));\n}\n.esa-button--variant-chrome .esa-button__native:focus-visible {\n  outline-color: currentColor;\n}\n.esa-button__native {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: var(--spacing-200, 8px);\n  width: 100%;\n  padding-block: var(--_btn-pad-y);\n  padding-inline: var(--_btn-padding-x);\n  border: var(--border-width-default, 1px) solid transparent;\n  border-radius: var(--_btn-radius);\n  text-decoration: none;\n  cursor: pointer;\n  transition:\n    background var(--transition-fast, 0.15s ease),\n    border-color var(--transition-fast, 0.15s ease);\n  -webkit-appearance: none;\n  appearance: none;\n}\n.esa-button__native:focus-visible {\n  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);\n  outline-offset: var(--focus-ring-offset, 2px);\n}\n.esa-button--icon-only .esa-button__native {\n  padding-inline: var(--_btn-pad-y);\n  aspect-ratio: 1;\n}\nsummary.esa-button {\n  list-style: none;\n  cursor: pointer;\n}\nsummary.esa-button::-webkit-details-marker {\n  display: none;\n}\nsummary.esa-button:focus-visible {\n  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);\n  outline-offset: var(--focus-ring-offset, 2px);\n  border-radius: var(--_btn-radius);\n}\nsummary.esa-button--variant-chrome:focus-visible {\n  outline-color: currentColor;\n}\n.esa-button__label {\n  white-space: nowrap;\n}\n.cbf-qa-icon .esa-button__native > .esa-icon:last-child {\n  display: none;\n}\n.cbf-qa-icon .esa-button__native:after {\n  content: \"\";\n  flex: none;\n  inline-size: 9px;\n  block-size: 5px;\n  background: currentColor;\n  mask: var(--qa-down) center / contain no-repeat;\n  transition: transform 0.15s ease;\n}\n.cbf-qa-icon details[open] > summary .esa-button__native:after {\n  transform: rotate(180deg);\n}\n.cbf-qa-icon .esa-button__native:before,\n.cbf-qa-icon__glyph {\n  content: \"\";\n  display: inline-block;\n  flex: none;\n  inline-size: var(--qa-w);\n  block-size: var(--qa-h);\n  background: currentColor;\n  mask: var(--qa-icon) center / contain no-repeat;\n}\n.typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.typography-microcopy-md {\n  font-family: var(--typography-microcopy-md-font-family);\n  font-size: var(--typography-microcopy-md-font-size);\n  font-weight: var(--typography-microcopy-md-font-weight);\n  line-height: var(--typography-microcopy-md-line-height);\n  letter-spacing: var(--typography-microcopy-md-letter-spacing);\n}\n.cbf-page-menu {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  min-width: 15rem;\n}\n.cbf-page-menu a {\n  display: block;\n  padding: var(--spacing-150, 6px) var(--spacing-300);\n  border-radius: var(--radius-100);\n  color: var(--color-content-default);\n  text-decoration: none;\n  white-space: nowrap;\n}\n.cbf-page-menu a:hover {\n  background: var(--color-background-elevation-sunken);\n}\n.cbf-page-menu a[aria-current=\"page\"] {\n  background: var(--color-background-elevation-sunken);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-record-ends__menu {\n  color: var(--color-content-default-secondary);\n}\n.cbf-record-ends__menu[data-here] {\n  color: var(--color-content-default);\n}\n.cbf-record-ends__menu[data-here] .esa-button.esa-button .esa-button__native {\n  background: var(--color-background-brand);\n  color: var(--color-content-on-brand);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-record-ends--row .cbf-record-ends__menu {\n  color: var(--color-content-default);\n}\n.cluster {\n  --gap: var(--spacing-300, 0.75rem);\n  --align: center;\n  --justify: flex-start;\n  display: flex;\n  flex-wrap: wrap;\n  gap: var(--gap);\n  align-items: var(--align);\n  justify-content: var(--justify);\n}\n.esa-collapsible__summary .esa-icon {\n  flex-shrink: 0;\n  color: var(--color-content-default-secondary, #646464);\n}\n.esa-nav-dropdown {\n  position: relative;\n}\n.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.esa-nav-dropdown[open] .esa-button__native > .esa-icon:last-child {\n  transform: rotate(180deg);\n}\n.esa-nav-dropdown__panel {\n  position: absolute;\n  top: calc(100% + var(--spacing-200, 8px));\n  left: 0;\n  z-index: var(--z-dropdown, 50);\n  min-width: var(--nav-dropdown-panel-min-width, 240px);\n  padding: var(--spacing-300, 12px);\n  background: var(--color-background-elevation-raised, #fcfcfc);\n  color: var(--color-content-default, #202020);\n  border: var(--border-width-default, 1px) solid var(--color-border-default, #cecece);\n  border-radius: var(--radius-md, 0.5rem);\n  box-shadow: var(--elevation-4, 0 6px 24px -6px rgba(0, 0, 0, 0.07));\n}\n.esa-nav-dropdown--end .esa-nav-dropdown__panel {\n  left: auto;\n  right: 0;\n}",
+      "guide": {
+        "intent": "The contract's phases in order (Setup, Review and Approve, Report and Invoice, Closeout), each with its date range, a meter for how far its period has run, and a status icon. Each phase opens a menu of its pages; a phase with one page links straight to it.",
+        "decisions": [
+          "The phase holding the current page is a filled brand-navy block with white text, icon and meter (approved: \"I like the use of blue\").",
+          "States: done (green check, gray meter), current (half circle, brand meter at percent elapsed), next (dashed circle, empty meter).",
+          "A change request on an issued contract sends the track back: Review and Approve is current again and Report and Invoice returns to upcoming until the revision is approved.",
+          "Pages a role cannot see are hidden (data-hide-for); a phase with no pages for the role shows its name as plain text with its status icon (contractors and Closeout).",
+          "One menu open at a time; menus close on outside click, focus leaving and Esc, and stay inside the viewport.",
+          "Four columns; two under 64rem, one under 30rem."
+        ],
+        "gotchas": [
+          "Every lens state is server-rendered; the role, stage and arrival lenses only toggle attributes on <html> and the CSS in cbf-role-gate hides what they rule out. Switching to a lens that cannot see the current page redirects to Contract Summary.",
+          "Phase dates and percentages are mock, chosen so today (2026-11-10) falls in the current phase. The real date fields are still to be confirmed."
+        ],
+        "acceptance": [
+          "You can tell which phase you are in, and which page within it, without opening a menu.",
+          "Every contract page is reachable in two clicks or fewer from any other."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--align",
+          "value": "center",
+          "tier": "component"
+        },
+        {
+          "name": "--border-width-default",
+          "value": "1px",
+          "tier": "semantic"
+        },
+        {
+          "name": "--button-chrome-bg-hover",
+          "value": "color-mix(in srgb, currentColor 14%, transparent)",
+          "tier": "component"
+        },
+        {
+          "name": "--button-radius-md",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--color-background-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-hover",
+          "value": "#1a4570",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-raised",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-sunken",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default",
+          "value": "#dcdcdc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default-strong",
+          "value": "#bdbdbd",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-knockout",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-on-brand",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--elevation-4",
+          "value": "0 6px 24px -6px rgba(0, 0, 0, .07)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--focus-ring-color",
+          "value": "#3e9b4f",
+          "tier": "component"
+        },
+        {
+          "name": "--focus-ring-offset",
+          "value": "2px",
+          "tier": "component"
+        },
+        {
+          "name": "--focus-ring-width",
+          "value": "2px",
+          "tier": "component"
+        },
+        {
+          "name": "--gap",
+          "value": ".25rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-md",
+          "value": "20px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--justify",
+          "value": "flex-start",
+          "tier": "component"
+        },
+        {
+          "name": "--nav-dropdown-panel-min-width",
+          "value": "240px",
+          "tier": "component"
+        },
+        {
+          "name": "--radius-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-md",
+          "value": ".5rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--spacing-150",
+          "value": ".375rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--transition-fast",
+          "value": ".15s ease",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-semibold",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-line-height",
+          "value": "1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--z-dropdown",
+          "value": "50",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-page-menu",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-page-menu.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-record-ends",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-record-ends.astro",
+          "target": null
+        },
+        {
+          "name": "esa-button",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-button.astro",
+          "target": null
+        },
+        {
+          "name": "esa-icon",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-icon.astro",
+          "target": null
+        },
+        {
+          "name": "esa-nav-dropdown",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-nav-dropdown.astro",
+          "target": null
+        }
+      ],
+      "js": [
+        "src/components/contract-nav/cbf-record-lifecycle.astro",
+        "src/components/contract-nav/cbf-lifecycle-track.astro",
+        "src/components/contract-nav/cbf-role-gate.astro",
+        "src/data/contract-nav.mjs"
+      ],
+      "claudePath": "claude/lifecycle-track.md",
+      "repoPath": "public/handoff/contract-nav-summary/claude/lifecycle-track.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/lifecycle-track.desktop.png",
+        "phone": "claude/lifecycle-track.phone.png"
+      },
+      "bytes": 17839,
+      "specBytes": 17839,
+      "files": 1,
+      "collapsed": 8
+    },
+    {
+      "label": "Page title",
+      "tag": "div",
+      "selector": ".cbf-record-page-title",
+      "html": "<div class=\"cbf-record-page-title stack\" data-gap=\"3xs\">\n  <p class=\"cbf-record-page-title__section typography-body-sm\">Overview</p>\n  <h2 class=\"cbf-record-page-title__name typography-title\">Contract summary</h2>\n</div>",
+      "css": ".typography-title {\n  font-family: var(--typography-title-font-family);\n  font-size: var(--typography-title-font-size);\n  font-weight: var(--typography-title-font-weight);\n  line-height: var(--typography-title-line-height);\n  letter-spacing: var(--typography-title-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.typography-title {\n  font-family: var(--typography-title-font-family);\n  font-size: var(--typography-title-font-size);\n  font-weight: var(--typography-title-font-weight);\n  line-height: var(--typography-title-line-height);\n  letter-spacing: var(--typography-title-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.cbf-record-page-title__section,\n.cbf-record-page-title__name {\n  margin: 0;\n  line-height: var(--line-height-tight);\n}\n.cbf-record-page-title__section {\n  color: var(--color-content-default-secondary);\n  font-weight: var(--typography-font-weight-medium);\n}\n.cbf-record-page-title__name {\n  color: var(--color-background-default-knockout);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.stack {\n  --gap: var(--spacing-400, 1rem);\n  display: flex;\n  flex-direction: column;\n  gap: var(--gap);\n}\n.stack[data-split] > [data-split] {\n  margin-block-end: auto;\n}",
+      "guide": {
+        "intent": "The page being viewed: its phase or menu on a quiet line (\"Setup\"), directly over the page name as an H2 in brand navy (\"Work Element Budgets\").",
+        "decisions": [
+          "No slash, no page count. Tight line height with a 2px gap so the two lines read as one unit.",
+          "Phase line body-sm medium in secondary text; page name in the title composite at semibold.",
+          "Where page and phase share a name (Closeout), the name shows once."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--color-background-default-knockout",
+          "value": "#13273e",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--gap",
+          "value": ".125rem",
+          "tier": "component"
+        },
+        {
+          "name": "--line-height-tight",
+          "value": "1.3",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--typography-body-sm-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-medium",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-semibold",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-font-size",
+          "value": "clamp(1rem, .88rem + .6vw, 1.25rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-record-page-title",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-record-page-title.astro",
+          "target": null
+        }
+      ],
+      "js": [
+        "src/components/contract-nav/cbf-record-page-title.astro"
+      ],
+      "claudePath": "claude/page-title.md",
+      "repoPath": "public/handoff/contract-nav-summary/claude/page-title.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/page-title.desktop.png",
+        "phone": "claude/page-title.phone.png"
+      },
+      "bytes": 4077,
+      "specBytes": 4077,
+      "files": 1,
+      "collapsed": 0
+    }
+  ]
+}
