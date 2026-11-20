@@ -250,8 +250,8 @@ const tabPredicates: ((c: CrsCommitment) => boolean)[] = [
   (c) => c.subcategory === 'RM&E',
 ];
 const tabLabels = [
-  'Overall Progress', 'BiOp Reporting', 'Tributary Habitat', 'Estuary Habitat',
-  'Above Anadromy', 'Hatchery', 'Predation', 'Hydro', 'RM&E',
+  'Overall progress', 'BiOp reporting', 'Tributary habitat', 'Estuary habitat',
+  'Above anadromy', 'Hatchery', 'Predation', 'Hydro', 'RM&E',
 ];
 const tabs = tabLabels.map((label, i) => ({
   label,
@@ -294,6 +294,7 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
   <esa-tab-layout
     class="cbf-crs-dashboard__tabs"
     data-crs-tabs
+    size="sm"
     active-index="0"
     tabs={JSON.stringify(tabs)}
   >
@@ -593,9 +594,10 @@ const nowLinePct = ((currentYearIndex + 0.5) / YEARS.length) * 100;
 <style>
   /* Pre-upgrade: keep the body visible (progressive enhancement) — only the tab
      strip is missing until esa-tab-layout defines. */
-  /* Confine any tab-strip overflow to the strip itself (9 tabs), never the panel. */
+  /* 9 category tabs don't fit one row at desktop widths — wrap them onto a
+     second row rather than hiding the tail behind a horizontal scrollbar. */
   .cbf-crs-dashboard__tabs::part(tabs) {
-    overflow-x: auto;
+    flex-wrap: wrap;
   }
 
   .cbf-crs-dashboard__stats-header {
