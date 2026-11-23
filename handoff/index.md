@@ -2,6 +2,15 @@
 
 Links are relative to https://esassoc.github.io/cb-fish-design/handoff/
 
+## Start-of-year (SOY) budgets — future state
+
+[README](soy-walkthrough/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/soy/walkthrough/) · 4 sections
+
+- [How to use it](soy-walkthrough/claude/how-to-use-it.md): Orients a client reviewer: what the prototype is, that it changes nothing in CBFish, and the four prototype devices — step links, the role lens, the “Show what… (8.4 KB)
+- [Step cards](soy-walkthrough/claude/step-cards.md): The FY2028 cycle as seven steps, each linking to the screen and loading the demo state for that moment (?step=N&role=…), so a reviewer can start anywhere. (24 KB)
+- [Decisions table](soy-walkthrough/claude/decisions-table.md): The eight decisions BPA needs to make, with the option the prototype shows and the alternative, each linked to where it can be seen. (8.5 KB)
+- [Problem map](soy-walkthrough/claude/problem-map.md): Each of today’s ten problems (P1–P10) with the screens and changes that answer it, plus counts of UI, BE and DEC changes so engineering can see the weight. (5.4 KB)
+
 ## Project header navigation
 
 [README](project-nav-summary/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/project-nav/summary/) · 4 sections
