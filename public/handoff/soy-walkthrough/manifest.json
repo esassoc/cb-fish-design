@@ -1,0 +1,1034 @@
+{
+  "name": "soy",
+  "title": "Start-of-year (SOY) budgets — future state",
+  "description": "The recommended future state of SOY for client sign-off: a cycle overview with next actions by role, a setup wizard, an items workspace with a side panel, final decisions, transfers with reconciliation, close-out, and activity — played through one FY2028 cycle, with a “Show what’s changing” layer on every screen.",
+  "dir": "soy-walkthrough",
+  "url": "https://esassoc.github.io/cb-fish-design/soy/walkthrough/",
+  "baseUrl": "https://esassoc.github.io/cb-fish-design/handoff/soy-walkthrough/",
+  "theme": "cb-fish",
+  "generatedFrom": "spec",
+  "data": {
+    "fixture": "src/data/soy/seed.ts",
+    "store": "src/lib/soy/store.ts",
+    "fields": {
+      "item": "project number + fund + account type (Expense) within one fiscal year’s SOY — the Gemini identity",
+      "amounts": "whole dollars, recorded per stage (ewb, pm, final), each with who, when and a rationale",
+      "transfers": "per item, tied to a Budget Decision (one per round); variance = final − transferred",
+      "today": "the demo date moves with the walkthrough (Jan 15 → Jun 15, 2027)"
+    },
+    "enums": {
+      "stage": [
+        "EWB proposed",
+        "PM proposed",
+        "Final budget",
+        "Complete"
+      ],
+      "cycleStatus": [
+        "Draft",
+        "Open",
+        "Closed"
+      ],
+      "transferStatus": [
+        "No final amount",
+        "Not transferred",
+        "Transferred",
+        "Changed after transfer",
+        "Partially transferred"
+      ],
+      "role": [
+        "Budget administrator (EWB)",
+        "Project manager"
+      ]
+    },
+    "notes": [
+      "Screens: /soy (overview), /soy/cycles, /soy/setup, /soy/items (+ item side panel on every screen), /soy/finals, /soy/transfers, /soy/close-out, /soy/activity.",
+      "State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped items.",
+      "Walkthrough presets (?step=1…7, plus 4.5 for the PM landing) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).",
+      "Every behavior change is tagged UI / BE / DEC in src/lib/soy/changes.ts and annotated in place by the “Show what’s changing” layer (cbf-soy-changes).",
+      "All people and comment text are invented; project numbers and titles are illustrative."
+    ]
+  },
+  "sections": [
+    {
+      "label": "How to use it",
+      "tag": "section",
+      "selector": ".cbf-soy-wt > section:first-child",
+      "html": "<section class=\"stack\" data-gap=\"sm\" aria-labelledby=\"wt-how\">\n  <p class=\"cbf-soy-wt__lede\">\n    This prototype shows the whole recommended future state of start-of-year (SOY) budgets — screens\n    and behavior together — played through one FY2028 cycle with mock data shaped like FY2027 (about\n    240 items and $327M baseline). Nothing here changes CBFish; it’s for review and sign-off before\n    anything is built.\n  </p>\n  <div class=\"esa-alert-box esa-alert-box--info typography-body-sm\">\n    <div class=\"esa-alert-box__icon\">\n      <svg\n        xmlns=\"http://www.w3.org/2000/svg\"\n        width=\"20\"\n        height=\"20\"\n        viewBox=\"0 0 24 24\"\n        fill=\"none\"\n        stroke=\"currentColor\"\n        stroke-width=\"2\"\n        stroke-linecap=\"round\"\n        stroke-linejoin=\"round\"\n        aria-hidden=\"true\"\n      >\n        <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n        <path d=\"M12 16v-4\"></path>\n        <path d=\"M12 8h.01\"></path>\n      </svg>\n    </div>\n    <div class=\"esa-alert-box__body\">\n      <strong class=\"esa-alert-box__title typography-label-sm-strong\">How to use it</strong>\n      <div class=\"esa-alert-box__message\">\n        <ul class=\"cbf-soy-wt__how\">\n          <li>\n            <strong>Start a step</strong> below: each link loads the demo data for that point in the\n            year, so you can begin anywhere.\n          </li>\n          <li>\n            <strong>Viewing as</strong> switches between the budget administrator and a project\n            manager (Casey Navarro).\n          </li>\n          <!-- …and 3 more like this (<li>) -->\n        </ul>\n      </div>\n    </div>\n  </div>\n  <!-- script type=\"module\" removed (455 bytes) -->\n</section>",
+      "css": ".typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.typography-label-sm-strong {\n  font-family: var(--typography-label-sm-strong-font-family);\n  font-size: var(--typography-label-sm-strong-font-size);\n  font-weight: var(--typography-label-sm-strong-font-weight);\n  line-height: var(--typography-label-sm-strong-line-height);\n  letter-spacing: var(--typography-label-sm-strong-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.typography-label-sm-strong {\n  font-family: var(--typography-label-sm-strong-font-family);\n  font-size: var(--typography-label-sm-strong-font-size);\n  font-weight: var(--typography-label-sm-strong-font-weight);\n  line-height: var(--typography-label-sm-strong-line-height);\n  letter-spacing: var(--typography-label-sm-strong-letter-spacing);\n}\n.esa-alert-box {\n  --_alert-bg: var(--color-background-utility-info-subtle, #fbfdff);\n  --_alert-border: var(--color-border-utility-info, #acd8fc);\n  --_alert-accent: var(--color-content-utility-info, #0d74ce);\n  --_alert-icon-color: var(--_alert-accent);\n  --_alert-title-color: var(--_alert-accent);\n  --_alert-text-color: var(--alert-box-text-color, var(--color-content-default-secondary, #646464));\n  display: flex;\n  align-items: flex-start;\n  gap: var(--spacing-300, 0.75rem);\n  padding: var(--spacing-300, 0.75rem) var(--spacing-400, 1rem);\n  border: var(--border-width-default, 1px) solid var(--_alert-border);\n  border-radius: var(--radius-md, 0.5rem);\n  background: var(--_alert-bg);\n}\n.esa-alert-box__icon {\n  flex-shrink: 0;\n  color: var(--_alert-icon-color);\n  padding-top: 1px;\n}\n.esa-alert-box__body {\n  flex: 1;\n  min-width: 0;\n}\n.esa-alert-box__title {\n  display: block;\n  color: var(--_alert-title-color);\n  margin-bottom: var(--spacing-050, 0.125rem);\n}\n.esa-alert-box__message {\n  color: var(--_alert-text-color);\n}\n.stack {\n  --gap: var(--spacing-400, 1rem);\n  display: flex;\n  flex-direction: column;\n  gap: var(--gap);\n}\n.stack[data-split] > [data-split] {\n  margin-block-end: auto;\n}\n.cbf-soy-wt__lede {\n  margin: 0;\n  max-inline-size: 75ch;\n  font-size: 18px;\n  line-height: 1.55;\n  color: var(--color-content-default);\n}\n.cbf-soy-wt__how {\n  margin: 0;\n  padding-inline-start: var(--spacing-500);\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-100);\n}",
+      "guide": {
+        "intent": "Orients a client reviewer: what the prototype is, that it changes nothing in CBFish, and the four prototype devices — step links, the role lens, the “Show what’s changing” layer and reset/jump.",
+        "decisions": [
+          "Prototype devices live in cbf-prototype-strip on every SOY screen so they never read as product."
+        ],
+        "acceptance": [
+          "Every device named here exists in the prototype strip on /soy."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--alert-box-text-color",
+          "value": "#525252",
+          "tier": "component"
+        },
+        {
+          "name": "--border-width-default",
+          "value": "1px",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-utility-info-subtle",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-utility-info",
+          "value": "#c6dcf1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-utility-info",
+          "value": "#0d74ce",
+          "tier": "semantic"
+        },
+        {
+          "name": "--gap",
+          "value": ".75rem",
+          "tier": "component"
+        },
+        {
+          "name": "--radius-md",
+          "value": ".5rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--spacing-050",
+          "value": ".125rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-500",
+          "value": "1.5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--typography-body-sm-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-sm-strong-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-sm-strong-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-sm-strong-font-weight",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-sm-strong-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-sm-strong-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-soy-wt",
+          "origin": "spoke",
+          "source": "src\\components\\soy\\cbf-soy-walkthrough.astro",
+          "target": null
+        },
+        {
+          "name": "esa-alert-box",
+          "origin": "hub",
+          "source": "packages\\ecology\\src\\components\\esa-alert-box.astro",
+          "target": null
+        }
+      ],
+      "data": {
+        "fixture": "src/data/soy/seed.ts",
+        "store": "src/lib/soy/store.ts",
+        "fields": {
+          "item": "project number + fund + account type (Expense) within one fiscal year’s SOY — the Gemini identity",
+          "amounts": "whole dollars, recorded per stage (ewb, pm, final), each with who, when and a rationale",
+          "transfers": "per item, tied to a Budget Decision (one per round); variance = final − transferred",
+          "today": "the demo date moves with the walkthrough (Jan 15 → Jun 15, 2027)"
+        },
+        "enums": {
+          "stage": [
+            "EWB proposed",
+            "PM proposed",
+            "Final budget",
+            "Complete"
+          ],
+          "cycleStatus": [
+            "Draft",
+            "Open",
+            "Closed"
+          ],
+          "transferStatus": [
+            "No final amount",
+            "Not transferred",
+            "Transferred",
+            "Changed after transfer",
+            "Partially transferred"
+          ],
+          "role": [
+            "Budget administrator (EWB)",
+            "Project manager"
+          ]
+        },
+        "notes": [
+          "Screens: /soy (overview), /soy/cycles, /soy/setup, /soy/items (+ item side panel on every screen), /soy/finals, /soy/transfers, /soy/close-out, /soy/activity.",
+          "State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped items.",
+          "Walkthrough presets (?step=1…7, plus 4.5 for the PM landing) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).",
+          "Every behavior change is tagged UI / BE / DEC in src/lib/soy/changes.ts and annotated in place by the “Show what’s changing” layer (cbf-soy-changes).",
+          "All people and comment text are invented; project numbers and titles are illustrative."
+        ]
+      },
+      "claudePath": "claude/how-to-use-it.md",
+      "repoPath": "public\\handoff\\soy-walkthrough\\claude\\how-to-use-it.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/how-to-use-it.desktop.png",
+        "phone": "claude/how-to-use-it.phone.png"
+      },
+      "bytes": 8597,
+      "specBytes": 8597,
+      "files": 1,
+      "collapsed": 3
+    },
+    {
+      "label": "Step cards",
+      "tag": "section",
+      "selector": "[aria-labelledby=\"wt-story\"]",
+      "html": "<section class=\"stack\" data-gap=\"sm\" aria-labelledby=\"wt-story\">\n  <h2 class=\"cbf-soy-wt__h2\" id=\"wt-story\">The FY2028 cycle, step by step</h2>\n  <ol class=\"cbf-soy-wt__steps\">\n    <li>\n      <div class=\"esa-card esa-card--outlined\">\n        <div class=\"esa-card__header\">\n          <div class=\"esa-card__header-content\">\n            <div class=\"esa-card__titles\">\n              <h3 class=\"esa-card__title typography-title-sm-strong\">\n                1. The FY2028 cycle drafts itself\n              </h3>\n              <dl class=\"esa-card__meta\">\n                <div class=\"esa-card__meta-pair\">\n                  <dt>Demo date</dt>\n                  <dd>Jan 15, 2027</dd>\n                </div>\n                <div class=\"esa-card__meta-pair\">\n                  <dt>Role</dt>\n                  <dd>Budget administrator</dd>\n                </div>\n              </dl>\n            </div>\n          </div>\n        </div>\n        <div class=\"esa-card__body typography-body-md\">\n          <ul class=\"cbf-soy-wt__points\">\n            <li>FY2028 appears in All cycles as Draft, with the standard dates.</li>\n            <li>FY2024–2027 are flagged as still open.</li>\n          </ul>\n        </div>\n        <div class=\"esa-card__footer typography-meta\">\n          <div class=\"cluster\" data-gap=\"xs\">\n            <span\n              class=\"esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--sm\"\n              ><a\n                class=\"esa-button__native typography-microcopy-xs\"\n                href=\"/cb-fish-design/soy/cycles?step=1&amp;role=admin\"\n                role=\"button\"\n                ><span class=\"esa-button__label\">Start at All cycles</span\n                ><span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n                  <svg\n                    width=\"16\"\n                    height=\"16\"\n                    viewBox=\"0 0 24 24\"\n                    fill=\"none\"\n                    stroke=\"currentColor\"\n                    stroke-width=\"2\"\n                    stroke-linecap=\"round\"\n                    stroke-linejoin=\"round\"\n                    focusable=\"false\"\n                  >\n                    <path d=\"M5 12h14\"></path>\n                    <path d=\"m12 5 7 7-7 7\"></path>\n                  </svg>\n                </span> </a\n            ></span>\n          </div>\n        </div>\n      </div>\n    </li>\n    <li>\n      <div class=\"esa-card esa-card--outlined\">\n        <div class=\"esa-card__header\">\n          <div class=\"esa-card__header-content\">\n            <div class=\"esa-card__titles\">\n              <h3 class=\"esa-card__title typography-title-sm-strong\">2. Set up the cycle</h3>\n              <dl class=\"esa-card__meta\">\n                <div class=\"esa-card__meta-pair\">\n                  <dt>Demo date</dt>\n                  <dd>Jan 15, 2027</dd>\n                </div>\n                <div class=\"esa-card__meta-pair\">\n                  <dt>Role</dt>\n                  <dd>Budget administrator</dd>\n                </div>\n              </dl>\n            </div>\n          </div>\n        </div>\n        <div class=\"esa-card__body typography-body-md\">\n          <ul class=\"cbf-soy-wt__points\">\n            <li>Confirm the pre-filled dates.</li>\n            <li>\n              Carry forward 230 items; 7 ended or ineligible items start unchecked, each with its\n              reason.\n            </li>\n            <!-- …and 2 more like this (<li>) -->\n          </ul>\n        </div>\n        <div class=\"esa-card__footer typography-meta\">\n          <div class=\"cluster\" data-gap=\"xs\">\n            <span\n              class=\"esa-button esa-button--variant-primary esa-button--appearance-fill esa-button--sm\"\n              ><a\n                class=\"esa-button__native typography-microcopy-xs\"\n                href=\"/cb-fish-design/soy/setup?step=2&amp;role=admin\"\n                role=\"button\"\n                ><span class=\"esa-button__label\">Open the setup wizard</span\n                ><span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n                  <svg\n                    width=\"16\"\n                    height=\"16\"\n                    viewBox=\"0 0 24 24\"\n                    fill=\"none\"\n                    stroke=\"currentColor\"\n                    stroke-width=\"2\"\n                    stroke-linecap=\"round\"\n                    stroke-linejoin=\"round\"\n                    focusable=\"false\"\n                  >\n                    <path d=\"M5 12h14\"></path>\n                    <path d=\"m12 5 7 7-7 7\"></path>\n                  </svg>\n                </span> </a\n            ></span>\n          </div>\n        </div>\n      </div>\n    </li>\n    <!-- …and 5 more like this (<li>) -->\n  </ol>\n</section>",
+      "css": ".typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.typography-microcopy-xs {\n  font-family: var(--typography-microcopy-xs-font-family);\n  font-size: var(--typography-microcopy-xs-font-size);\n  font-weight: var(--typography-microcopy-xs-font-weight);\n  line-height: var(--typography-microcopy-xs-line-height);\n  letter-spacing: var(--typography-microcopy-xs-letter-spacing);\n}\n.typography-title-sm-strong {\n  font-family: var(--typography-title-sm-strong-font-family);\n  font-size: var(--typography-title-sm-strong-font-size);\n  font-weight: var(--typography-title-sm-strong-font-weight);\n  line-height: var(--typography-title-sm-strong-line-height);\n  letter-spacing: var(--typography-title-sm-strong-letter-spacing);\n}\n.typography-meta {\n  font-family: var(--typography-meta-font-family);\n  font-size: var(--typography-meta-font-size);\n  font-weight: var(--typography-meta-font-weight);\n  line-height: var(--typography-meta-line-height);\n  letter-spacing: var(--typography-meta-letter-spacing);\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, 20px);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  color: inherit;\n}\n.esa-icon--sm {\n  --_icon-size: var(--icon-size-sm, 16px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-button {\n  --_btn-pad-y: var(--spacing-300, 0.75rem);\n  --_btn-padding-x: var(--spacing-300, 0.75rem);\n  --_btn-radius: var(--button-radius-md, 0.5rem);\n  --_accent: var(--color-background-brand, #46a758);\n  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);\n  --_on: var(--color-content-default-knockout, #fcfcfc);\n  --_accent-text: var(--_accent);\n  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);\n  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);\n  display: inline-block;\n}\n.esa-button--sm {\n  --_btn-pad-y: var(--spacing-250, 0.625rem);\n  --_btn-padding-x: var(--spacing-250, 0.625rem);\n  --_btn-radius: var(--button-radius-sm, 4px);\n}\n.esa-button--variant-primary {\n  --_accent-text: var(--color-content-brand);\n}\n.esa-button--variant-secondary {\n  --_accent: var(--color-background-brand-muted);\n  --_accent-hover: var(--color-background-brand-muted-hover);\n  --_on: var(--color-content-on-brand-muted, var(--color-content-default));\n  --_accent-text: var(--color-content-brand);\n  --_accent-border: var(--color-border-default-strong, #bbbbbb);\n}\n.esa-button--appearance-fill .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent-border, transparent);\n}\n.esa-button--appearance-fill .esa-button__native:hover:not(:disabled) {\n  background: var(--_accent-hover);\n}\n.esa-button--appearance-fill.esa-button--active .esa-button__native {\n  background: var(--_accent-hover);\n}\n.esa-button--appearance-outline .esa-button__native,\n.esa-button--appearance-dashed .esa-button__native {\n  background: transparent;\n  color: var(--_accent-text);\n  border-color: var(--_accent);\n}\n.esa-button--appearance-dashed .esa-button__native {\n  border-style: dashed;\n}\n.esa-button--appearance-outline .esa-button__native:hover:not(:disabled),\n.esa-button--appearance-dashed .esa-button__native:hover:not(:disabled) {\n  background: var(--_btn-tint-hover);\n}\n.esa-button--appearance-outline.esa-button--active .esa-button__native,\n.esa-button--appearance-dashed.esa-button--active .esa-button__native {\n  background: var(--_btn-tint-active);\n}\n.esa-button--appearance-soft .esa-button__native {\n  background: color-mix(\n    in srgb,\n    var(--color-background-elevation-sunken, #f0f0f0) 45%,\n    var(--color-background-elevation-raised, #fcfcfc)\n  );\n  color: var(--_accent-text);\n  border-color: var(--color-border-default-strong, #bbbbbb);\n}\n.esa-button--appearance-soft .esa-button__native:hover:not(:disabled),\n.esa-button--appearance-soft.esa-button--active .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent);\n}\n.esa-button--variant-ghost .esa-button__native {\n  background: transparent;\n  color: var(--color-content-default, #202020);\n  border-color: transparent;\n}\n.esa-button--variant-ghost.esa-button--appearance-outline .esa-button__native,\n.esa-button--variant-ghost.esa-button--appearance-dashed .esa-button__native {\n  border-color: var(--color-border-default, #cecece);\n}\n.esa-button--variant-ghost .esa-button__native:hover:not(:disabled),\n.esa-button--variant-ghost.esa-button--active .esa-button__native {\n  background: var(--color-background-elevation-sunken, #f0f0f0);\n}\n.esa-button--variant-chrome .esa-button__native {\n  background: transparent;\n  color: inherit;\n  border-color: transparent;\n}\n.esa-button--variant-chrome .esa-button__native:hover:not(:disabled),\n.esa-button--variant-chrome.esa-button--active .esa-button__native,\n.esa-button--variant-chrome.esa-button--current .esa-button__native {\n  background: var(--button-chrome-bg-hover, color-mix(in srgb, currentColor 14%, transparent));\n}\n.esa-button--variant-chrome .esa-button__native:focus-visible {\n  outline-color: currentColor;\n}\n.esa-button__native {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: var(--spacing-200, 8px);\n  width: 100%;\n  padding-block: var(--_btn-pad-y);\n  padding-inline: var(--_btn-padding-x);\n  border: var(--border-width-default, 1px) solid transparent;\n  border-radius: var(--_btn-radius);\n  text-decoration: none;\n  cursor: pointer;\n  transition:\n    background var(--transition-fast, 0.15s ease),\n    border-color var(--transition-fast, 0.15s ease);\n  -webkit-appearance: none;\n  appearance: none;\n}\n.esa-button__native:focus-visible {\n  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);\n  outline-offset: var(--focus-ring-offset, 2px);\n}\n.esa-button--icon-only .esa-button__native {\n  padding-inline: var(--_btn-pad-y);\n  aspect-ratio: 1;\n}\nsummary.esa-button {\n  list-style: none;\n  cursor: pointer;\n}\nsummary.esa-button::-webkit-details-marker {\n  display: none;\n}\nsummary.esa-button:focus-visible {\n  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);\n  outline-offset: var(--focus-ring-offset, 2px);\n  border-radius: var(--_btn-radius);\n}\n.esa-button__label {\n  white-space: nowrap;\n}\n.cbf-qa-icon .esa-button__native > .esa-icon:last-child {\n  display: none;\n}\n.cbf-qa-icon .esa-button__native:after {\n  content: \"\";\n  flex: none;\n  inline-size: 9px;\n  block-size: 5px;\n  background: currentColor;\n  mask: var(--qa-down) center / contain no-repeat;\n  transition: transform 0.15s ease;\n}\n.cbf-qa-icon details[open] > summary .esa-button__native:after {\n  transform: rotate(180deg);\n}\n.cbf-qa-icon .esa-button__native:before,\n.cbf-qa-icon__glyph {\n  content: \"\";\n  display: inline-block;\n  flex: none;\n  inline-size: var(--qa-w);\n  block-size: var(--qa-h);\n  background: currentColor;\n  mask: var(--qa-icon) center / contain no-repeat;\n}\n.typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.typography-microcopy-xs {\n  font-family: var(--typography-microcopy-xs-font-family);\n  font-size: var(--typography-microcopy-xs-font-size);\n  font-weight: var(--typography-microcopy-xs-font-weight);\n  line-height: var(--typography-microcopy-xs-line-height);\n  letter-spacing: var(--typography-microcopy-xs-letter-spacing);\n}\n.typography-title-sm-strong {\n  font-family: var(--typography-title-sm-strong-font-family);\n  font-size: var(--typography-title-sm-strong-font-size);\n  font-weight: var(--typography-title-sm-strong-font-weight);\n  line-height: var(--typography-title-sm-strong-line-height);\n  letter-spacing: var(--typography-title-sm-strong-letter-spacing);\n}\n.typography-meta {\n  font-family: var(--typography-meta-font-family);\n  font-size: var(--typography-meta-font-size);\n  font-weight: var(--typography-meta-font-weight);\n  line-height: var(--typography-meta-line-height);\n  letter-spacing: var(--typography-meta-letter-spacing);\n}\n.stack {\n  --gap: var(--spacing-400, 1rem);\n  display: flex;\n  flex-direction: column;\n  gap: var(--gap);\n}\n.stack[data-split] > [data-split] {\n  margin-block-end: auto;\n}\n.cluster {\n  --gap: var(--spacing-300, 0.75rem);\n  --align: center;\n  --justify: flex-start;\n  display: flex;\n  flex-wrap: wrap;\n  gap: var(--gap);\n  align-items: var(--align);\n  justify-content: var(--justify);\n}\n.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.esa-nav-dropdown[open] .esa-button__native > .esa-icon:last-child {\n  transform: rotate(180deg);\n}\n.esa-card {\n  --_card-bg: var(--card-bg, var(--color-background-elevation-raised, #fcfcfc));\n  --_card-border: var(--card-border-color, var(--color-border-default, #cecece));\n  --_card-radius: var(--radius-md, 0.5rem);\n  --_card-padding: var(--spacing-500, 1.5rem);\n  --_card-header-bg: var(--card-header-bg, transparent);\n  --_card-header-color: var(--color-content-default, #202020);\n  --_card-header-border: var(--color-border-default-subtle, #d9d9d9);\n  --_card-meta-label-color: var(--color-content-default-secondary, #646464);\n  --_card-meta-label-size: var(--typography-label-sm-font-size, 0.875rem);\n  --_card-meta-value-size: var(--typography-label-md-font-size, 0.9375rem);\n  display: block;\n  background: var(--_card-bg);\n  border: var(--border-width-default, 1px) solid var(--_card-border);\n  border-radius: var(--_card-radius);\n  overflow: hidden;\n}\n.esa-card--outlined {\n  --_card-border: var(--color-border-default, #cecece);\n}\n.esa-card--header-primary .esa-card__header {\n  --_card-header-bg: var(--color-background-brand, #46a758);\n  --_card-header-color: var(--color-content-default-knockout, #fcfcfc);\n}\n.esa-card--header-muted .esa-card__header {\n  --_card-header-bg: var(--color-background-elevation-sunken, #f0f0f0);\n}\n.esa-card__header {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  padding: var(--spacing-400, 1rem) var(--_card-padding);\n  background: var(--_card-header-bg);\n  color: var(--_card-header-color);\n  border-bottom: var(--border-width-default, 1px) solid var(--_card-header-border);\n  min-height: 56px;\n}\n.esa-card__header-content {\n  display: flex;\n  align-items: center;\n  gap: var(--spacing-300, 0.75rem);\n}\n.esa-card__titles {\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-050, 0.125rem);\n}\n.esa-card__title {\n  margin: 0;\n  color: inherit;\n}\n.esa-card__meta {\n  display: flex;\n  flex-wrap: wrap;\n  gap: var(--spacing-100, 0.25rem) var(--spacing-500, 1.5rem);\n  margin: var(--spacing-050, 0.125rem) 0 0;\n}\n.esa-card__meta-pair {\n  display: flex;\n  align-items: baseline;\n  gap: var(--spacing-100, 0.25rem);\n  min-width: 0;\n}\n.esa-card__meta dt {\n  font-size: var(--_card-meta-label-size);\n  font-weight: var(--font-weight-medium, 500);\n  color: var(--_card-meta-label-color);\n}\n.esa-card__meta dd {\n  margin: 0;\n  font-size: var(--_card-meta-value-size);\n  color: inherit;\n}\n.esa-card--header-primary .esa-card__meta dt {\n  color: #fffc;\n}\n.esa-card__body {\n  padding: var(--_card-padding);\n}\n.esa-card__footer {\n  padding: var(--spacing-300, 0.75rem) var(--_card-padding);\n  border-top: var(--border-width-default, 1px) solid var(--_card-header-border);\n  background: var(--color-background-elevation-sunken, #f0f0f0);\n}\n.cbf-soy-wt__h2 {\n  margin: 0;\n  font-family: var(--typography-font-family-display);\n  font-weight: var(--typography-font-weight-semibold);\n  font-size: var(--font-size-600, 24px);\n  color: var(--color-background-default-knockout);\n}\n.cbf-soy-wt__steps {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  display: grid;\n  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));\n  gap: var(--spacing-400);\n}\n.cbf-soy-wt__steps > li {\n  display: flex;\n}\n.cbf-soy-wt__steps > li > * {\n  flex: 1;\n}\n.cbf-soy-wt__points {\n  margin: 0;\n  padding-inline-start: var(--spacing-500);\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-100);\n  font-size: 14px;\n}",
+      "guide": {
+        "intent": "The FY2028 cycle as seven steps, each linking to the screen and loading the demo state for that moment (?step=N&role=…), so a reviewer can start anywhere.",
+        "decisions": [
+          "Presets are built by running the same actions a presenter would click, so jumping and clicking always agree.",
+          "Step 4 has a second link (?step=4.5&role=pm) to the PM’s landing just after PM proposed opens."
+        ],
+        "acceptance": [
+          "Step 2 → setup carries 230 of 237 items (7 unchecked with reasons) and adds 4 new projects.",
+          "Step 5 → the overview shows 4 PMs with 12 items outstanding and the automatic reminder sent.",
+          "Step 7 → the close-out checklist is all green with two transfer rounds."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--border-width-default",
+          "value": "1px",
+          "tier": "semantic"
+        },
+        {
+          "name": "--button-chrome-bg-hover",
+          "value": "color-mix(in srgb, currentColor 14%, transparent)",
+          "tier": "component"
+        },
+        {
+          "name": "--button-radius-md",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--button-radius-sm",
+          "value": ".25rem",
+          "tier": "component"
+        },
+        {
+          "name": "--card-bg",
+          "value": "#fcfcfc",
+          "tier": "component"
+        },
+        {
+          "name": "--card-border-color",
+          "value": "#dcdcdc",
+          "tier": "component"
+        },
+        {
+          "name": "--card-header-bg",
+          "value": "transparent",
+          "tier": "component"
+        },
+        {
+          "name": "--color-background-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-hover",
+          "value": "#1a4570",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-muted",
+          "value": "#2770b2",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-muted-hover",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-default-knockout",
+          "value": "#13273e",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-raised",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-sunken",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default",
+          "value": "#dcdcdc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default-strong",
+          "value": "#bdbdbd",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default-subtle",
+          "value": "#efefef",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-knockout",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-on-brand-muted",
+          "value": "#203c25",
+          "tier": "semantic"
+        },
+        {
+          "name": "--focus-ring-color",
+          "value": "#3e9b4f",
+          "tier": "component"
+        },
+        {
+          "name": "--focus-ring-offset",
+          "value": "2px",
+          "tier": "component"
+        },
+        {
+          "name": "--focus-ring-width",
+          "value": "2px",
+          "tier": "component"
+        },
+        {
+          "name": "--font-size-600",
+          "value": "clamp(1.375rem, 1.2rem + .88vw, 1.875rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-weight-medium",
+          "value": "500",
+          "tier": "component"
+        },
+        {
+          "name": "--gap",
+          "value": ".75rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-md",
+          "value": "20px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-sm",
+          "value": "16px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-md",
+          "value": ".5rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--spacing-050",
+          "value": ".125rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-250",
+          "value": ".625rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-500",
+          "value": "1.5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--transition-fast",
+          "value": ".15s ease",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-family-display",
+          "value": "\"IBM Plex Sans Condensed\", \"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-semibold",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-sm-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-meta-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-meta-font-size",
+          "value": "clamp(.625rem, .56rem + .32vw, .75rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-meta-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-meta-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-meta-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-font-size",
+          "value": "clamp(.625rem, .56rem + .32vw, .75rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-line-height",
+          "value": "1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-sm-strong-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-sm-strong-font-size",
+          "value": "clamp(.8125rem, .71rem + .5vw, 1.0625rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-sm-strong-font-weight",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-sm-strong-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-sm-strong-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-soy-wt",
+          "origin": "spoke",
+          "source": "src\\components\\soy\\cbf-soy-walkthrough.astro",
+          "target": null
+        },
+        {
+          "name": "esa-button",
+          "origin": "hub",
+          "source": "packages\\ecology\\src\\components\\esa-badge.astro",
+          "target": null
+        },
+        {
+          "name": "esa-card",
+          "origin": "hub",
+          "source": "packages\\ecology\\src\\components\\esa-card.astro",
+          "target": null
+        },
+        {
+          "name": "esa-icon",
+          "origin": "hub",
+          "source": "packages\\ecology\\src\\components\\esa-collapsible.astro",
+          "target": null
+        }
+      ],
+      "data": {
+        "fixture": "src/data/soy/seed.ts",
+        "store": "src/lib/soy/store.ts",
+        "fields": {
+          "item": "project number + fund + account type (Expense) within one fiscal year’s SOY — the Gemini identity",
+          "amounts": "whole dollars, recorded per stage (ewb, pm, final), each with who, when and a rationale",
+          "transfers": "per item, tied to a Budget Decision (one per round); variance = final − transferred",
+          "today": "the demo date moves with the walkthrough (Jan 15 → Jun 15, 2027)"
+        },
+        "enums": {
+          "stage": [
+            "EWB proposed",
+            "PM proposed",
+            "Final budget",
+            "Complete"
+          ],
+          "cycleStatus": [
+            "Draft",
+            "Open",
+            "Closed"
+          ],
+          "transferStatus": [
+            "No final amount",
+            "Not transferred",
+            "Transferred",
+            "Changed after transfer",
+            "Partially transferred"
+          ],
+          "role": [
+            "Budget administrator (EWB)",
+            "Project manager"
+          ]
+        },
+        "notes": [
+          "Screens: /soy (overview), /soy/cycles, /soy/setup, /soy/items (+ item side panel on every screen), /soy/finals, /soy/transfers, /soy/close-out, /soy/activity.",
+          "State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped items.",
+          "Walkthrough presets (?step=1…7, plus 4.5 for the PM landing) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).",
+          "Every behavior change is tagged UI / BE / DEC in src/lib/soy/changes.ts and annotated in place by the “Show what’s changing” layer (cbf-soy-changes).",
+          "All people and comment text are invented; project numbers and titles are illustrative."
+        ]
+      },
+      "js": [
+        "src/lib/soy/actions.ts",
+        "src/lib/soy/store.ts"
+      ],
+      "claudePath": "claude/step-cards.md",
+      "repoPath": "public\\handoff\\soy-walkthrough\\claude\\step-cards.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/step-cards.desktop.png",
+        "phone": "claude/step-cards.phone.png"
+      },
+      "bytes": 24123,
+      "specBytes": 24123,
+      "files": 1,
+      "collapsed": 7
+    },
+    {
+      "label": "Decisions table",
+      "tag": "section",
+      "selector": "[aria-labelledby=\"wt-dec\"]",
+      "html": "<section class=\"stack\" data-gap=\"sm\" aria-labelledby=\"wt-dec\">\n  <h2 class=\"cbf-soy-wt__h2\" id=\"wt-dec\">Decisions we need from you</h2>\n  <p class=\"cbf-soy-wt__p\">\n    The prototype shows our recommended option for each. Tell us if you prefer the alternative.\n  </p>\n  <div class=\"cbf-soy-wt__scroll\">\n    <table class=\"cbf-soy-wt__table\">\n      <thead>\n        <tr>\n          <th scope=\"col\">#</th>\n          <th scope=\"col\">Decision</th>\n          <!-- …and 3 more like this (<th>) -->\n        </tr>\n      </thead>\n      <tbody>\n        <tr>\n          <td>\n            <span class=\"esa-pill esa-pill--primary esa-pill--xs typography-microcopy-2xs\">\n              <span class=\"esa-pill__label\">DEC 1</span>\n            </span>\n            <!-- script type=\"module\" removed (233 bytes) -->\n          </td>\n          <td>Close FY2024–2027?</td>\n          <!-- …and 3 more like this (<td>) -->\n        </tr>\n        <tr>\n          <td>\n            <span class=\"esa-pill esa-pill--primary esa-pill--xs typography-microcopy-2xs\">\n              <span class=\"esa-pill__label\">DEC 2</span>\n            </span>\n          </td>\n          <td>Should Complete lock admins?</td>\n          <!-- …and 3 more like this (<td>) -->\n        </tr>\n        <!-- …and 6 more like this (<tr>) -->\n      </tbody>\n    </table>\n  </div>\n</section>",
+      "css": ".typography-microcopy-2xs {\n  font-family: var(--typography-microcopy-2xs-font-family);\n  font-size: var(--typography-microcopy-2xs-font-size);\n  font-weight: var(--typography-microcopy-2xs-font-weight);\n  line-height: var(--typography-microcopy-2xs-line-height);\n  letter-spacing: var(--typography-microcopy-2xs-letter-spacing);\n}\n.typography-microcopy-2xs {\n  font-family: var(--typography-microcopy-2xs-font-family);\n  font-size: var(--typography-microcopy-2xs-font-size);\n  font-weight: var(--typography-microcopy-2xs-font-weight);\n  line-height: var(--typography-microcopy-2xs-line-height);\n  letter-spacing: var(--typography-microcopy-2xs-letter-spacing);\n}\n.esa-pill {\n  --_pill-bg: var(--color-background-elevation-sunken, #f0f0f0);\n  --_pill-text: var(--color-content-default, #202020);\n  --_pill-border: var(--color-border-default-subtle, #d9d9d9);\n  --_pill-padding-y: var(--spacing-150, 0.375rem);\n  --_pill-padding-x: var(--spacing-200, 0.5rem);\n  --_pill-gap: var(--spacing-100, 0.25rem);\n  display: inline-flex;\n  align-items: center;\n  gap: var(--_pill-gap);\n  padding-block: var(--_pill-padding-y);\n  padding-inline: var(--_pill-padding-x);\n  border: var(--border-width-default, 1px) solid var(--_pill-border);\n  border-radius: var(--radius-chip, var(--radius-sm, 0.25rem));\n  background: var(--_pill-bg);\n  color: var(--_pill-text);\n  white-space: nowrap;\n  box-sizing: border-box;\n}\n.esa-pill--xs {\n  --_pill-padding-y: var(--spacing-100, 0.25rem);\n  --_pill-padding-x: var(--spacing-100, 0.25rem);\n}\n.esa-pill--primary {\n  --_pill-bg: var(--color-background-brand-subtle, var(--color-grass-2));\n  --_pill-text: var(--color-content-brand, var(--color-grass-11));\n  --_pill-border: var(--color-border-brand, var(--color-grass-6));\n}\n.esa-pill[data-category] {\n  --_pill-bg: var(--category-2, var(--color-background-elevation-sunken, #f0f0f0));\n  --_pill-border: var(--category-6, var(--color-border-default-subtle, #d9d9d9));\n  --_pill-text: var(--category-11, var(--color-content-default, #202020));\n}\n.stack {\n  --gap: var(--spacing-400, 1rem);\n  display: flex;\n  flex-direction: column;\n  gap: var(--gap);\n}\n.stack[data-split] > [data-split] {\n  margin-block-end: auto;\n}\n.cbf-soy-wt__p {\n  margin: 0;\n  max-inline-size: 75ch;\n  color: var(--color-content-default-secondary);\n}\n.cbf-soy-wt__h2 {\n  margin: 0;\n  font-family: var(--typography-font-family-display);\n  font-weight: var(--typography-font-weight-semibold);\n  font-size: var(--font-size-600, 24px);\n  color: var(--color-background-default-knockout);\n}\n.cbf-soy-wt__scroll {\n  overflow-x: auto;\n}\n.cbf-soy-wt__table {\n  inline-size: 100%;\n  min-inline-size: 720px;\n  border-collapse: collapse;\n  font-size: 14px;\n}\n.cbf-soy-wt__table th {\n  text-align: start;\n  padding: var(--spacing-200) var(--spacing-300);\n  border-block-end: 2px solid var(--color-border-default);\n  color: var(--color-content-default-secondary);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-soy-wt__table td {\n  padding: var(--spacing-200) var(--spacing-300);\n  border-block-end: 1px solid var(--color-border-default-subtle);\n  vertical-align: top;\n}",
+      "guide": {
+        "intent": "The eight decisions BPA needs to make, with the option the prototype shows and the alternative, each linked to where it can be seen.",
+        "decisions": [
+          "Built at build time from DECISIONS in src/lib/soy/changes.ts, the same registry the changes layer reads."
+        ],
+        "acceptance": [
+          "8 rows, DEC 1–8, each linking to a SOY screen."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--border-width-default",
+          "value": "1px",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-subtle",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-default-knockout",
+          "value": "#13273e",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-sunken",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-brand",
+          "value": "#c6dcf1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default",
+          "value": "#dcdcdc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default-subtle",
+          "value": "#efefef",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-grass-11",
+          "value": "#2a7e3b",
+          "tier": "primitive"
+        },
+        {
+          "name": "--color-grass-2",
+          "value": "#f5fbf5",
+          "tier": "primitive"
+        },
+        {
+          "name": "--color-grass-6",
+          "value": "#b2ddb5",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-size-600",
+          "value": "clamp(1.375rem, 1.2rem + .88vw, 1.875rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--gap",
+          "value": ".75rem",
+          "tier": "component"
+        },
+        {
+          "name": "--radius-chip",
+          "value": ".25rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--radius-sm",
+          "value": ".25rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-150",
+          "value": ".375rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--typography-font-family-display",
+          "value": "\"IBM Plex Sans Condensed\", \"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-semibold",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-2xs-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-2xs-font-size",
+          "value": "clamp(.5rem, .44rem + .3vw, .625rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-2xs-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-2xs-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-2xs-line-height",
+          "value": "1",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-soy-wt",
+          "origin": "spoke",
+          "source": "src\\components\\soy\\cbf-soy-walkthrough.astro",
+          "target": null
+        },
+        {
+          "name": "esa-pill",
+          "origin": "hub",
+          "source": "packages\\ecology\\src\\components\\esa-pill.astro",
+          "target": null
+        }
+      ],
+      "data": {
+        "fixture": "src/data/soy/seed.ts",
+        "store": "src/lib/soy/store.ts",
+        "fields": {
+          "item": "project number + fund + account type (Expense) within one fiscal year’s SOY — the Gemini identity",
+          "amounts": "whole dollars, recorded per stage (ewb, pm, final), each with who, when and a rationale",
+          "transfers": "per item, tied to a Budget Decision (one per round); variance = final − transferred",
+          "today": "the demo date moves with the walkthrough (Jan 15 → Jun 15, 2027)"
+        },
+        "enums": {
+          "stage": [
+            "EWB proposed",
+            "PM proposed",
+            "Final budget",
+            "Complete"
+          ],
+          "cycleStatus": [
+            "Draft",
+            "Open",
+            "Closed"
+          ],
+          "transferStatus": [
+            "No final amount",
+            "Not transferred",
+            "Transferred",
+            "Changed after transfer",
+            "Partially transferred"
+          ],
+          "role": [
+            "Budget administrator (EWB)",
+            "Project manager"
+          ]
+        },
+        "notes": [
+          "Screens: /soy (overview), /soy/cycles, /soy/setup, /soy/items (+ item side panel on every screen), /soy/finals, /soy/transfers, /soy/close-out, /soy/activity.",
+          "State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped items.",
+          "Walkthrough presets (?step=1…7, plus 4.5 for the PM landing) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).",
+          "Every behavior change is tagged UI / BE / DEC in src/lib/soy/changes.ts and annotated in place by the “Show what’s changing” layer (cbf-soy-changes).",
+          "All people and comment text are invented; project numbers and titles are illustrative."
+        ]
+      },
+      "claudePath": "claude/decisions-table.md",
+      "repoPath": "public\\handoff\\soy-walkthrough\\claude\\decisions-table.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/decisions-table.desktop.png",
+        "phone": "claude/decisions-table.phone.png"
+      },
+      "bytes": 8735,
+      "specBytes": 8735,
+      "files": 1,
+      "collapsed": 15
+    },
+    {
+      "label": "Problem map",
+      "tag": "section",
+      "selector": "[aria-labelledby=\"wt-prob\"]",
+      "html": "<section class=\"stack\" data-gap=\"sm\" aria-labelledby=\"wt-prob\">\n  <h2 class=\"cbf-soy-wt__h2\" id=\"wt-prob\">What each change solves</h2>\n  <p class=\"cbf-soy-wt__p\">\n    42 changes in all: 28 need front-end work only (UI), 15 need backend or data work (BE), and 13\n    show a recommended answer to a decision (DEC). Turn on “Show what’s changing” on any screen to\n    see them in place.\n  </p>\n  <div class=\"cbf-soy-wt__scroll\">\n    <table class=\"cbf-soy-wt__table\">\n      <thead>\n        <tr>\n          <th scope=\"col\">Problem today</th>\n          <th scope=\"col\">Answered on</th>\n          <th scope=\"col\">Changes</th>\n        </tr>\n      </thead>\n      <tbody>\n        <tr>\n          <td><strong>P1</strong> The cycle is assembled by hand every year</td>\n          <td>All cycles, Setup</td>\n          <td>The next cycle drafts itself · One setup wizard · Dates are pre-filled</td>\n        </tr>\n        <tr>\n          <td><strong>P2</strong> Due dates do nothing</td>\n          <td>Overview, Setup, Final decisions, Activity</td>\n          <td>\n            Stage tracker with due dates · Advance stage with an email preview · \"Needs input\"\n            replaces Remaining · Dates are pre-filled · Notify PMs of final amounts · Automatic\n            reminders\n          </td>\n        </tr>\n        <!-- …and 8 more like this (<tr>) -->\n      </tbody>\n    </table>\n  </div>\n</section>",
+      "css": ".stack {\n  --gap: var(--spacing-400, 1rem);\n  display: flex;\n  flex-direction: column;\n  gap: var(--gap);\n}\n.stack[data-split] > [data-split] {\n  margin-block-end: auto;\n}\n.cbf-soy-wt__p {\n  margin: 0;\n  max-inline-size: 75ch;\n  color: var(--color-content-default-secondary);\n}\n.cbf-soy-wt__h2 {\n  margin: 0;\n  font-family: var(--typography-font-family-display);\n  font-weight: var(--typography-font-weight-semibold);\n  font-size: var(--font-size-600, 24px);\n  color: var(--color-background-default-knockout);\n}\n.cbf-soy-wt__scroll {\n  overflow-x: auto;\n}\n.cbf-soy-wt__table {\n  inline-size: 100%;\n  min-inline-size: 720px;\n  border-collapse: collapse;\n  font-size: 14px;\n}\n.cbf-soy-wt__table th {\n  text-align: start;\n  padding: var(--spacing-200) var(--spacing-300);\n  border-block-end: 2px solid var(--color-border-default);\n  color: var(--color-content-default-secondary);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-soy-wt__table td {\n  padding: var(--spacing-200) var(--spacing-300);\n  border-block-end: 1px solid var(--color-border-default-subtle);\n  vertical-align: top;\n}",
+      "guide": {
+        "intent": "Each of today’s ten problems (P1–P10) with the screens and changes that answer it, plus counts of UI, BE and DEC changes so engineering can see the weight.",
+        "acceptance": [
+          "Every problem P1–P10 lists at least one change."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--color-background-default-knockout",
+          "value": "#13273e",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default",
+          "value": "#dcdcdc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default-subtle",
+          "value": "#efefef",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--font-size-600",
+          "value": "clamp(1.375rem, 1.2rem + .88vw, 1.875rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--gap",
+          "value": ".75rem",
+          "tier": "component"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--typography-font-family-display",
+          "value": "\"IBM Plex Sans Condensed\", \"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-semibold",
+          "value": "600",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-soy-wt",
+          "origin": "spoke",
+          "source": "src\\components\\soy\\cbf-soy-walkthrough.astro",
+          "target": null
+        }
+      ],
+      "data": {
+        "fixture": "src/data/soy/seed.ts",
+        "store": "src/lib/soy/store.ts",
+        "fields": {
+          "item": "project number + fund + account type (Expense) within one fiscal year’s SOY — the Gemini identity",
+          "amounts": "whole dollars, recorded per stage (ewb, pm, final), each with who, when and a rationale",
+          "transfers": "per item, tied to a Budget Decision (one per round); variance = final − transferred",
+          "today": "the demo date moves with the walkthrough (Jan 15 → Jun 15, 2027)"
+        },
+        "enums": {
+          "stage": [
+            "EWB proposed",
+            "PM proposed",
+            "Final budget",
+            "Complete"
+          ],
+          "cycleStatus": [
+            "Draft",
+            "Open",
+            "Closed"
+          ],
+          "transferStatus": [
+            "No final amount",
+            "Not transferred",
+            "Transferred",
+            "Changed after transfer",
+            "Partially transferred"
+          ],
+          "role": [
+            "Budget administrator (EWB)",
+            "Project manager"
+          ]
+        },
+        "notes": [
+          "Screens: /soy (overview), /soy/cycles, /soy/setup, /soy/items (+ item side panel on every screen), /soy/finals, /soy/transfers, /soy/close-out, /soy/activity.",
+          "State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped items.",
+          "Walkthrough presets (?step=1…7, plus 4.5 for the PM landing) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).",
+          "Every behavior change is tagged UI / BE / DEC in src/lib/soy/changes.ts and annotated in place by the “Show what’s changing” layer (cbf-soy-changes).",
+          "All people and comment text are invented; project numbers and titles are illustrative."
+        ]
+      },
+      "claudePath": "claude/problem-map.md",
+      "repoPath": "public\\handoff\\soy-walkthrough\\claude\\problem-map.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/problem-map.desktop.png",
+        "phone": "claude/problem-map.phone.png"
+      },
+      "bytes": 5579,
+      "specBytes": 5579,
+      "files": 1,
+      "collapsed": 8
+    }
+  ]
+}
