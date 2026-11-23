@@ -1,0 +1,238 @@
+---
+// cbf-soy-frame — the shared spine of every SOY future-state screen, so each
+// page stays a thin assembler: public nav → prototype strip (walkthrough link,
+// jump-to-step, PM-response fast-forward, reset, "Show what's changing", role
+// lens) → app panel (breadcrumbs) → title + cycle status → sub-nav
+// (cbf-report-tabs) → locked banner → the page's sections in the default slot.
+//
+// It also mounts what every SOY screen's client code needs: the pill/button
+// templates, the item side panel (opened from any screen with openItem()), the
+// changes layer and the snackbar container.
+//
+// adminOnly screens (setup, finals, transfers, close-out, all cycles) show an
+// empty state in the PM lens, and their tabs are hidden for PMs.
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CbfPublicNav from '../shared/cbf-public-nav.astro';
+import CbfAppPanel from '../shared/cbf-app-panel.astro';
+import CbfPageHeading from '../shared/cbf-page-heading.astro';
+import CbfReportTabs from '../shared/cbf-report-tabs.astro';
+import CbfPrototypeStrip from '../shared/cbf-prototype-strip.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import CbfSoyRoleSwitch from './cbf-soy-role-switch.astro';
+import CbfSoyTemplates from './cbf-soy-templates.astro';
+import CbfSoyChanges from './cbf-soy-changes.astro';
+import CbfSoyItemPanel from './cbf-soy-item-panel.astro';
+import { withBase } from '../../lib/base';
+
+export type SoyTab = 'overview' | 'items' | 'setup' | 'finals' | 'transfers' | 'close-out' | 'activity' | 'cycles';
+
+interface Props {
+  active: SoyTab;
+  /** The page's own name, after "FY2028 SOY: ". */
+  title: string;
+  adminOnly?: boolean;
+}
+const { active, title, adminOnly = false } = Astro.props;
+
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+
+const crumbs = [
+  { label: 'Home', href: withBase('/home'), icon: homeIcon },
+  { label: 'Funding' },
+  { label: 'Project budgets', href: withBase('/project-budgets') },
+  { label: 'Start-of-year (SOY)', href: active === 'overview' ? undefined : withBase('/soy') },
+  ...(active === 'overview' ? [] : [{ label: title }]),
+];
+
+const SOY_TABS: { key: SoyTab; label: string; href: string; admin?: boolean }[] = [
+  { key: 'overview', label: 'Overview', href: '/soy' },
+  { key: 'items', label: 'Items', href: '/soy/items' },
+  { key: 'setup', label: 'Setup', href: '/soy/setup', admin: true },
+  { key: 'finals', label: 'Final decisions', href: '/soy/finals', admin: true },
+  { key: 'transfers', label: 'Transfers', href: '/soy/transfers', admin: true },
+  { key: 'close-out', label: 'Close-out', href: '/soy/close-out', admin: true },
+  { key: 'activity', label: 'Activity', href: '/soy/activity' },
+  { key: 'cycles', label: 'All cycles', href: '/soy/cycles', admin: true },
+];
+const tabs = SOY_TABS.map((t) => ({ label: t.label, href: withBase(t.href), active: t.key === active }));
+const adminTabLabels = SOY_TABS.filter((t) => t.admin).map((t) => t.label);
+
+const stepOptions = [
+  { value: '1', label: '1 · Jan 15 — cycle drafts itself' },
+  { value: '2', label: '2 · Set up the cycle' },
+  { value: '3', label: '3 · EWB proposed' },
+  { value: '4', label: '4 · Open PM proposed' },
+  { value: '5', label: '5 · Final budget' },
+  { value: '6', label: '6 · Transfers' },
+  { value: '7', label: '7 · Close-out' },
+];
+---
+<BaseLayout title={`FY2028 SOY: ${title} — Columbia Basin Fish & Wildlife Program`}>
+  <CbfPublicNav />
+
+  <main class="cbf-page">
+    <EsaContainer maxWidth="1920px">
+      <CbfPrototypeStrip note="SOY future-state prototype — mock data, saved in this browser.">
+        <div class="cbf-soy-frame__controls">
+        <span class="cbf-soy-frame__today" data-soy-today></span>
+        <EsaButton size="sm" variant="secondary" appearance="outline" icon="file-text" href={withBase('/soy/walkthrough')}>Walkthrough</EsaButton>
+        <esa-select class="cbf-soy-frame__step" size="sm" label="Jump to step" placeholder="Choose a step" options={JSON.stringify(stepOptions)} data-soy-step></esa-select>
+        <span data-soy-simulate-wrap hidden>
+          <EsaButton size="sm" variant="secondary" appearance="outline" icon="arrow-right" data-soy-simulate>Simulate PM responses</EsaButton>
+        </span>
+        <EsaButton size="sm" variant="secondary" appearance="outline" icon="rotate-ccw" data-soy-reset>Reset</EsaButton>
+        <span class="cbf-soy-frame__changes cluster" data-gap="2xs">
+          <esa-switch-toggle size="sm" label="Show what's changing" data-soy-changes-toggle></esa-switch-toggle>
+          <EsaButton size="sm" variant="ghost" data-soy-changes-open>List</EsaButton>
+        </span>
+        <CbfSoyRoleSwitch />
+        </div>
+      </CbfPrototypeStrip>
+
+      <CbfAppPanel crumbs={crumbs}>
+        <div class="cbf-soy-frame__head repel">
+          <CbfPageHeading title={`FY2028 SOY: ${title}`} />
+          <div class="cluster" data-gap="xs" data-soy-cycle-pills></div>
+        </div>
+        <div data-change="gl-nav">
+          <CbfReportTabs tabs={tabs} ariaLabel="Start-of-year sections" />
+        </div>
+        <div data-soy-locked hidden data-change="gl-locked">
+          <EsaAlertBox variant="warning" title="Cycle closed">
+            <span data-soy-locked-text></span>
+          </EsaAlertBox>
+        </div>
+        {adminOnly ? (
+          <>
+            <div data-soy-admin-body class="stack" data-gap="md"><slot /></div>
+            <div data-soy-admin-empty hidden>
+              <EsaEmptyState title="For budget administrators" description="Switch the lens to Budget administrator." size="md" />
+            </div>
+          </>
+        ) : (
+          <div class="stack" data-gap="md"><slot /></div>
+        )}
+      </CbfAppPanel>
+    </EsaContainer>
+  </main>
+
+  <CbfSoyTemplates />
+  <CbfSoyItemPanel />
+  <CbfSoyChanges />
+  <esa-snackbar-container data-snackbar></esa-snackbar-container>
+
+  <script define:vars={{ adminTabLabels }}>
+    window.__soyAdminTabs = adminTabLabels;
+  </script>
+  <script>
+    import '@esa/ecology/esa-snackbar-container';
+    import '@esa/ecology/esa-select';
+    import '@esa/ecology/esa-switch-toggle';
+    import { getState, getUi, isAdmin, loadStep, resetDemo, setUi, subscribe, update } from '../../lib/soy/store';
+    import { simulatePmResponses } from '../../lib/soy/actions';
+    import { fmtDate } from '../../lib/soy/model';
+    import { stageLabel } from '../../lib/soy/types';
+    import { pill, snackbar, STAGE_VARIANT, type Field } from '../../lib/soy/ui';
+
+    const $ = <T extends Element = HTMLElement>(sel: string) => document.querySelector<T>(sel);
+    const step = $<Field>('[data-soy-step]');
+    const toggle = $<Field>('[data-soy-changes-toggle]');
+    const simulateWrap = $('[data-soy-simulate-wrap]')!;
+    const adminTabs: string[] = (window as unknown as { __soyAdminTabs: string[] }).__soyAdminTabs ?? [];
+
+    step?.addEventListener('change', () => {
+      const n = Number(step.value);
+      if (!n) return;
+      loadStep(n);
+      snackbar('info', `Jumped to step ${n}. The demo data now matches that point in the story.`);
+    });
+    $('[data-soy-reset]')?.addEventListener('click', () => {
+      resetDemo();
+      snackbar('info', 'Demo reset to Jan 15, 2027: the FY2028 cycle is a draft.');
+    });
+    $('[data-soy-simulate]')?.addEventListener('click', () => {
+      update((s) => simulatePmResponses(s));
+      snackbar('success', 'Fast-forwarded to May 4: most PMs have responded, and the automatic reminder went to the four who have not.');
+    });
+    toggle?.addEventListener('change', () => setUi({ changes: !!toggle.checked }));
+    $('[data-soy-changes-open]')?.addEventListener('click', () => document.dispatchEvent(new CustomEvent('cbf-soy:open-changes')));
+
+    subscribe(() => {
+      const s = getState();
+      const ui = getUi();
+      const c = s.cycle;
+      if (toggle && !!toggle.checked !== ui.changes) toggle.checked = ui.changes;
+      if (step) step.value = ui.step ? String(ui.step) : '';
+      $('[data-soy-today]')!.textContent = `Demo date: ${fmtDate(s.today)}`;
+      simulateWrap.hidden = !(c.status === 'Open' && c.stage === 'pm' && !s.pmResponsesSimulated);
+
+      const pills = [pill(c.status === 'Open' ? 'Open' : c.status, c.status === 'Closed' ? 'success' : c.status === 'Draft' ? 'default' : 'primary')];
+      if (c.stage && c.status !== 'Draft') pills.push(pill(stageLabel(c.stage), STAGE_VARIANT[c.stage]));
+      $('[data-soy-cycle-pills]')!.innerHTML = pills.join('');
+
+      const locked = $('[data-soy-locked]')!;
+      locked.hidden = c.status !== 'Closed';
+      if (c.status === 'Closed') $('[data-soy-locked-text]')!.textContent = `FY${c.fy} was closed on ${fmtDate(c.closedOn)}. Amounts are locked for everyone, budget administrators included. Reopen it from Close-out with a reason.`;
+
+      // PMs don't see admin-only tabs or screens.
+      document.querySelectorAll<HTMLElement>('.cbf-report-tabs > a, .cbf-report-tabs > span, .cbf-report-tabs > *').forEach((el) => {
+        const label = el.textContent?.trim() ?? '';
+        if (adminTabs.includes(label)) el.hidden = !isAdmin();
+      });
+      const body = $('[data-soy-admin-body]');
+      const empty = $('[data-soy-admin-empty]');
+      if (body && empty) {
+        body.hidden = !isAdmin();
+        empty.hidden = isAdmin();
+      }
+    });
+  </script>
+</BaseLayout>
+
+<style>
+  .cbf-page { padding-block: var(--spacing-600) var(--spacing-800); }
+  .cbf-soy-frame__head { align-items: center; }
+  /* The strip keeps its actions on one row; this wrapper lets ours wrap inside the viewport. */
+  .cbf-soy-frame__controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: var(--spacing-300) var(--spacing-400); max-inline-size: calc(100vw - 7rem); }
+  .cbf-soy-frame__today { font-size: 14px; font-weight: var(--typography-font-weight-semibold); color: var(--color-content-default); }
+  .cbf-soy-frame__step { min-inline-size: 16rem; }
+  .cbf-soy-frame__changes { align-items: center; }
+  .cbf-page :global(.cbf-app-panel) { overflow: visible; }
+</style>
+
+<style is:global>
+  /* Shared by every SOY renderer (classes are emitted from client JS, so they
+     can't carry Astro's scope hash). */
+  .cbf-page [hidden] { display: none !important; }
+  .cbf-soy-neg { color: var(--color-content-utility-danger, var(--color-background-utility-danger)); }
+  .cbf-soy-num { font-variant-numeric: tabular-nums; text-align: end; }
+  .cbf-soy-muted { color: var(--color-content-default-tertiary); }
+  .cbf-soy-section-title {
+    margin: 0;
+    font-family: var(--typography-font-family-display);
+    font-weight: var(--typography-font-weight-semibold);
+    font-size: var(--font-size-500, 20px);
+    color: var(--color-background-default-knockout);
+  }
+  .cbf-soy-lede { margin: 0; max-inline-size: 72ch; color: var(--color-content-default-secondary); }
+  /* Grid cells that hold cloned esa-buttons / pills keep them on one line. */
+  .cbf-soy-cell-actions { display: inline-flex; gap: var(--spacing-150); align-items: center; }
+  /* Numbers in the summary tables and previews. */
+  .cbf-soy-table { inline-size: 100%; border-collapse: collapse; font-size: 14px; }
+  .cbf-soy-table th { text-align: start; font-weight: var(--typography-font-weight-semibold); color: var(--color-content-default-secondary); padding: var(--spacing-150) var(--spacing-200); border-block-end: 1px solid var(--color-border-default); }
+  .cbf-soy-table td { padding: var(--spacing-150) var(--spacing-200); border-block-end: 1px solid var(--color-border-default-subtle); vertical-align: top; }
+  .cbf-soy-table .cbf-soy-num { text-align: end; }
+  .cbf-soy-table tfoot td { font-weight: var(--typography-font-weight-semibold); border-block-end: none; }
+  /* Email previews (src/lib/soy/email.ts) — a plain message mock, not a product card. */
+  .cbf-soy-email { border: 1px solid var(--color-border-default); border-radius: var(--radius-200); background: var(--color-background-elevation-raised); font-size: 14px; }
+  .cbf-soy-email__head { display: grid; grid-template-columns: max-content 1fr; gap: var(--spacing-100) var(--spacing-300); margin: 0; padding: var(--spacing-300); border-block-end: 1px solid var(--color-border-default-subtle); background: var(--color-background-elevation-sunken); }
+  .cbf-soy-email__head dt { color: var(--color-content-default-tertiary); }
+  .cbf-soy-email__head dd { margin: 0; }
+  .cbf-soy-email__body { padding: var(--spacing-300) var(--spacing-400); }
+  .cbf-soy-email__body p { margin: 0 0 var(--spacing-200); }
+  .cbf-soy-email__cta { color: var(--color-background-brand); font-weight: var(--typography-font-weight-semibold); }
+</style>

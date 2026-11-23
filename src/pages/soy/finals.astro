@@ -1,0 +1,19 @@
+---
+// /soy/finals — Final decisions: select items, choose the source
+// (baseline, EWB proposed or PM proposed), preview before/after with the total,
+// confirm a message that names the stage and count, optionally notify PMs.
+// Budget administrators only.
+//
+// Thin assembler — the frame is cbf-soy-frame; state lives in src/lib/soy/.
+import CbfSoyFrame from '../../components/soy/cbf-soy-frame.astro';
+import CbfSoyFinals from '../../components/soy/cbf-soy-finals.astro';
+---
+<!-- manifest:
+  layout: cbf-soy-frame (nav + prototype strip + app panel + tabs + locked banner + item side panel)
+  sections:
+    - final decisions -> cbf-soy-finals  (stage gate, chip filter, source radio, AG Grid with selection,
+                                          preview dialog with rationale, notify PMs + email preview)
+-->
+<CbfSoyFrame active="finals" title="Final decisions" adminOnly>
+  <CbfSoyFinals />
+</CbfSoyFrame>

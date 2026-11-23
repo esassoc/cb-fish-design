@@ -1,0 +1,433 @@
+---
+// cbf-soy-overview — the SOY home: where the cycle stands, what is
+// due, and what each role should do next. Replaces Maintenance as the admin
+// entry point, the Remaining tab and the stage/due-date header.
+//
+//   • Stage tracker — four stages with open and due dates, the active stage and
+//     days remaining; "Advance stage" opens a preview of the stage-open email.
+//   • Progress tiles (admin) / my-work tiles (PM).
+//   • Next actions by role, each with the button that does it.
+//   • Needs input — only in stages where it applies, naming the stage it
+//     checks, grouped by PM with a reminder action (replaces Remaining).
+//
+// bcn-lego-checked: tiles are esa-stat (server-rendered, values filled on the
+// client), cards esa-card, notices esa-alert-box, dialogs esa-dialog,
+// checkbox esa-checkbox, actions esa-button (row buttons cloned via
+// cbf-soy-templates). The stage tracker is an <ol> of four stage cells — no
+// esa stepper/timeline lego exists (checked the catalog). The needs-input list
+// is a small semantic table (≤14 PM rows), not a data grid. Beacon is not
+// cloned on this machine.
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import { withBase } from '../../lib/base';
+
+const adminTiles = [
+  { key: 'items', label: 'Items in cycle' },
+  { key: 'ewb', label: 'EWB proposed' },
+  { key: 'pm', label: 'PM input received' },
+  { key: 'final', label: 'Final amount set' },
+  { key: 'transferred', label: 'Transferred' },
+  { key: 'variance', label: 'Variance' },
+];
+const pmTiles = [
+  { key: 'mine', label: 'My items' },
+  { key: 'need', label: 'Need my input' },
+  { key: 'responded', label: 'Responded' },
+  { key: 'final', label: 'Final amount set' },
+];
+---
+<div class="cbf-soy-ov stack" data-gap="lg" data-soy-overview>
+  <!-- Draft banner -->
+  <div data-ov-draft hidden data-change="cy-draft">
+    <EsaAlertBox variant="info" title="Draft">
+      <span data-ov-draft-text></span>
+    </EsaAlertBox>
+  </div>
+
+  <!-- Stage tracker -->
+  <section class="stack" data-gap="sm" aria-labelledby="ov-stages">
+    <div class="repel">
+      <h2 class="cbf-soy-section-title" id="ov-stages">Stages</h2>
+      <span data-ov-advance-wrap hidden data-change="ov-advance">
+        <EsaButton size="sm" variant="primary" icon="arrow-right" data-ov-advance>Open next stage</EsaButton>
+      </span>
+    </div>
+    <ol class="cbf-soy-ov__tracker" data-ov-tracker data-change="ov-tracker"></ol>
+  </section>
+
+  <!-- PM landing -->
+  <section class="cbf-soy-ov__pm stack" data-gap="sm" data-ov-pm hidden aria-labelledby="ov-pm-h" data-change="ov-pm-home">
+    <h2 class="cbf-soy-section-title" id="ov-pm-h">Your projects</h2>
+    <div class="cbf-soy-ov__callout repel" data-ov-pm-callout>
+      <div class="stack" data-gap="2xs">
+        <p class="cbf-soy-ov__callout-big" data-ov-pm-big></p>
+        <p class="cbf-soy-ov__callout-sub" data-ov-pm-sub></p>
+      </div>
+      <EsaButton size="md" variant="primary" icon="arrow-right" href={withBase('/soy/items?view=needs')} data-ov-pm-cta>Review my projects</EsaButton>
+    </div>
+    <div class="cbf-soy-ov__tiles" data-ov-pm-tiles>
+      {pmTiles.map((t) => <div data-tile={t.key}><EsaStat value="—" label={t.label} sub="·" /></div>)}
+    </div>
+    <table class="cbf-soy-table" data-ov-pm-table>
+      <thead><tr><th scope="col">Project</th><th scope="col">Fund</th><th scope="col" class="cbf-soy-num">EWB proposed</th><th scope="col" class="cbf-soy-num">Your proposal</th><th scope="col" class="cbf-soy-num">Final</th><th scope="col">Status</th></tr></thead>
+      <tbody data-ov-pm-rows></tbody>
+    </table>
+  </section>
+
+  <!-- Admin progress + next actions -->
+  <div class="cbf-soy-ov__admin stack" data-gap="lg" data-ov-admin>
+    <section class="stack" data-gap="sm" aria-labelledby="ov-progress">
+      <h2 class="cbf-soy-section-title" id="ov-progress">Progress</h2>
+      <div class="cbf-soy-ov__tiles" data-change="ov-tiles">
+        {adminTiles.map((t) => <div data-tile={t.key}><EsaStat value="—" label={t.label} sub="·" /></div>)}
+      </div>
+    </section>
+
+    <section class="stack" data-gap="sm" aria-labelledby="ov-next" data-change="ov-actions">
+      <h2 class="cbf-soy-section-title" id="ov-next">Next actions</h2>
+      <ul class="cbf-soy-ov__actions" data-ov-actions></ul>
+    </section>
+  </div>
+
+  <!-- Needs input -->
+  <section class="stack" data-gap="sm" data-ov-needs hidden aria-labelledby="ov-needs-h" data-change="ov-needs">
+    <div class="repel">
+      <h2 class="cbf-soy-section-title" id="ov-needs-h" data-ov-needs-title>Needs input</h2>
+      <span data-ov-remind-all-wrap><EsaButton size="sm" variant="secondary" appearance="outline" icon="bell" data-ov-remind-all>Remind everyone listed</EsaButton></span>
+    </div>
+    <p class="cbf-soy-lede" data-ov-needs-lede></p>
+    <table class="cbf-soy-table" data-ov-needs-table>
+      <thead><tr><th scope="col">Project manager</th><th scope="col" class="cbf-soy-num">Items</th><th scope="col">Projects</th><th scope="col">Last reminder</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+      <tbody data-ov-needs-rows></tbody>
+    </table>
+    <div data-ov-needs-empty hidden><EsaEmptyState title="Everyone has responded" description="Open the next stage when you’re ready." size="sm" /></div>
+  </section>
+
+  <!-- Advance stage dialog -->
+  <esa-dialog size="lg" heading="Open the next stage" show-close-button data-ov-advance-dialog>
+    <div class="stack" data-gap="sm">
+      <p data-ov-advance-lede></p>
+      <div data-ov-advance-warn hidden>
+        <EsaAlertBox variant="warning" title="Input missing"><span data-ov-advance-warn-text></span></EsaAlertBox>
+      </div>
+      <esa-checkbox size="sm" label="Send the stage-open email to project managers" checked data-ov-advance-email></esa-checkbox>
+      <div data-ov-advance-preview></div>
+      <p class="typography-meta cbf-soy-muted">Stages never advance on their own. Due dates drive emails and reminders only.</p>
+    </div>
+    <div slot="footer" class="cluster" data-gap="xs">
+      <EsaButton size="sm" variant="secondary" appearance="outline" data-ov-advance-cancel>Cancel</EsaButton>
+      <EsaButton size="sm" variant="primary" data-ov-advance-confirm>Open stage</EsaButton>
+    </div>
+  </esa-dialog>
+
+  <!-- Reminder dialog -->
+  <esa-dialog size="lg" heading="Send a reminder" show-close-button data-ov-remind-dialog>
+    <div class="stack" data-gap="sm">
+      <p data-ov-remind-lede></p>
+      <div data-ov-remind-preview></div>
+    </div>
+    <div slot="footer" class="cluster" data-gap="xs">
+      <EsaButton size="sm" variant="secondary" appearance="outline" data-ov-remind-cancel>Cancel</EsaButton>
+      <EsaButton size="sm" variant="primary" icon="bell" data-ov-remind-confirm>Send reminder</EsaButton>
+    </div>
+  </esa-dialog>
+</div>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-checkbox';
+  import { getState, subscribe, update, isAdmin, isLocked, openItem } from '../../lib/soy/store';
+  import { advanceStage, sendReminders } from '../../lib/soy/actions';
+  import {
+    amount, daysBetween, fmtDate, fmtDay, fmtMoney, fmtShort, needsInput, nextStage, outstandingByPm, project,
+    stageDue, stageIndex, totals, transferStatus, closeChecks,
+  } from '../../lib/soy/model';
+  import { emailHtml, reminderEmail, stageOpenEmail } from '../../lib/soy/email';
+  import { DEMO_PM } from '../../data/soy/seed';
+  import { STAGES, stageLabel } from '../../lib/soy/types';
+  import { button, esc, pill, snackbar, statusPill, type Dialog, type Field } from '../../lib/soy/ui';
+  import { withBase } from '../../lib/base';
+
+  const root = document.querySelector<HTMLElement>('[data-soy-overview]')!;
+  const q = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+  const tile = (scope: string, key: string, value: string, sub: string) => {
+    const el = root.querySelector(`${scope} [data-tile="${key}"]`);
+    if (!el) return;
+    el.querySelector('.esa-stat__value')!.textContent = value;
+    const s = el.querySelector('.esa-stat__sub');
+    if (s) s.textContent = sub;
+  };
+  let remindTargets: string[] = [];
+
+  function lastReminder(pm: string): string {
+    const a = getState().cycle.activity.find((x) => x.kind === 'reminder' && x.text.includes(pm));
+    return a ? `${fmtDate(a.date)}${a.who === 'CBFish' ? ' (automatic)' : ''}` : '—';
+  }
+
+  function render() {
+    const s = getState();
+    const c = s.cycle;
+    const t = totals(c);
+    const admin = isAdmin();
+    const draft = c.status === 'Draft';
+
+    // Draft banner.
+    q('[data-ov-draft]').hidden = !draft;
+    if (draft) {
+      q('[data-ov-draft-text]').innerHTML = admin
+        ? `The FY${c.fy} SOY was drafted automatically on ${fmtDate('2027-01-15')} with the standard dates. Review the dates and run setup to carry items forward and open it. <a href="${withBase('/soy/setup')}">Start setup</a>`
+        : `The FY${c.fy} SOY hasn’t opened yet. EWB proposed opens ${fmtDate(c.dates.ewb)}; you’ll be asked for input from ${fmtDate(c.dates.pm)}.`;
+    }
+
+    // Tracker.
+    const active = stageIndex(c.stage);
+    q('[data-ov-tracker]').innerHTML = STAGES.map((st, i) => {
+      const state = draft ? 'todo' : i < active || c.status === 'Closed' ? 'done' : i === active ? 'active' : 'todo';
+      const due = stageDue(c.dates, st.key);
+      const left = daysBetween(s.today, due);
+      const status = state === 'done' ? pill('Done', 'success', { size: 'xs' }) : state === 'active'
+        ? pill(left >= 0 ? `${left === 0 ? "Due today" : left === 1 ? "1 day left" : left + " days left"}` : `${-left === 1 ? "1 day" : -left + " days"} overdue`, left >= 0 ? 'primary' : 'danger', { size: 'xs' })
+        : pill('Upcoming', 'default', { size: 'xs' });
+      return `<li class="cbf-soy-ov__stage is-${state}">
+        <span class="cbf-soy-ov__stage-n">${i + 1}</span>
+        <span class="cbf-soy-ov__stage-name">${esc(st.label)}</span>
+        <span class="cbf-soy-ov__stage-dates">${st.key === 'complete' ? `On ${fmtDay(c.dates.complete)}` : `Opens ${fmtDay(c.dates[st.key])} · due ${fmtDay(due)}`}</span>
+        ${status}
+      </li>`;
+    }).join('');
+    const nxt = nextStage(c.stage);
+    const canAdvance = admin && !draft && !isLocked() && !!nxt && c.stage !== 'final';
+    q('[data-ov-advance-wrap]').hidden = !canAdvance;
+    if (nxt) q('[data-ov-advance] .esa-button__label').textContent = `Open ${stageLabel(nxt)}`;
+
+    // Role sections.
+    q('[data-ov-admin]').hidden = !admin;
+    q('[data-ov-pm]').hidden = admin;
+
+    if (admin) {
+      tile('[data-ov-admin]', 'items', String(t.items), draft ? 'Run setup to add items' : `${fmtShort(t.baseline)} baseline`);
+      tile('[data-ov-admin]', 'ewb', `${t.ewbCount}`, `${fmtShort(t.ewb)} of ${t.items} items`);
+      tile('[data-ov-admin]', 'pm', c.stage && stageIndex(c.stage) >= 1 ? `${t.pmCount} of ${t.pmExpected}` : '—', c.stage === 'pm' ? `Due ${fmtDate(stageDue(c.dates, 'pm'))}` : stageIndex(c.stage) > 1 ? fmtShort(t.pm) : 'Opens ' + fmtDay(c.dates.pm));
+      tile('[data-ov-admin]', 'final', `${t.finalCount}`, `${fmtShort(t.final)}`);
+      tile('[data-ov-admin]', 'transferred', fmtShort(t.transferred), `${t.transferredCount} items · ${c.decisions.length} rounds`);
+      tile('[data-ov-admin]', 'variance', t.varianceItems ? fmtShort(t.variance) : '$0', t.varianceItems ? `${t.varianceItems} item${t.varianceItems === 1 ? "" : "s"} final ≠ transferred` : 'Final matches transferred');
+      renderActions();
+    } else {
+      renderPm();
+    }
+
+    // Needs input — only where it applies.
+    const applies = !draft && !isLocked() && (c.stage === 'ewb' || c.stage === 'pm' || c.stage === 'final');
+    const needs = q('[data-ov-needs]');
+    needs.hidden = !applies || !admin;
+    if (applies && admin) {
+      const out = outstandingByPm(c);
+      const n = out.reduce((k, o) => k + o.items.length, 0);
+      q('[data-ov-needs-title]').textContent = `Needs input — ${stageLabel(c.stage)}`;
+      q('[data-ov-needs-lede]').textContent = c.stage === 'pm'
+        ? `${n} items from ${out.length} PMs have no PM proposed amount. Due ${fmtDate(stageDue(c.dates, 'pm'))}.${c.reminders.on ? ` An automatic reminder goes to them on ${fmtDate(stageStart(stageDue(c.dates, 'pm'), -c.reminders.daysBefore))}.` : ''}`
+        : c.stage === 'ewb'
+          ? `${n} items have no EWB proposed amount. These are the budget team’s to enter; grouped by PM so you can see whose projects are waiting.`
+          : `${n} items have no final amount. Grouped by PM.`;
+      q('[data-ov-remind-all-wrap]').hidden = c.stage !== 'pm' || out.length === 0;
+      q('[data-ov-needs-table]').hidden = out.length === 0;
+      q('[data-ov-needs-empty]').hidden = out.length > 0;
+      q('[data-ov-needs-rows]').innerHTML = out.map((o) => `<tr>
+        <td>${esc(o.pm)}</td>
+        <td class="cbf-soy-num">${o.items.length}</td>
+        <td>${o.items.slice(0, 6).map((i) => `<a href="#" data-ov-item="${esc(i.id)}">${esc(i.projectNumber)}</a>`).join(', ')}${o.items.length > 6 ? ` and ${o.items.length - 6} more` : ''}</td>
+        <td>${esc(lastReminder(o.pm))}</td>
+        <td>${c.stage === 'pm' ? button('secondary', 'Send reminder', { 'ov-remind': o.pm }) : ''}</td>
+      </tr>`).join('');
+    }
+  }
+
+  const stageStart = (iso: string, d: number) => {
+    const x = new Date(`${iso}T12:00:00Z`);
+    x.setUTCDate(x.getUTCDate() + d);
+    return x.toISOString().slice(0, 10);
+  };
+
+  function renderActions() {
+    const s = getState();
+    const c = s.cycle;
+    const t = totals(c);
+    const acts: { text: string; sub?: string; btn?: string; href?: string; act?: string; tone?: 'primary' | 'secondary' }[] = [];
+    if (c.status === 'Draft') {
+      acts.push({ text: `Review the FY${c.fy} draft and run setup`, sub: 'Confirm the dates, carry last year’s items forward, add new projects and apply the COLA.', btn: 'Start setup', href: '/soy/setup', tone: 'primary' });
+    } else if (c.status === 'Closed') {
+      acts.push({ text: `FY${c.fy} is closed`, sub: `Closed ${fmtDate(c.closedOn)}. FY2024–2027 are still open — close them out too.`, btn: 'All cycles', href: '/soy/cycles' });
+    } else if (c.stage === 'ewb') {
+      const missing = t.items - t.ewbCount;
+      if (missing) acts.push({ text: `${missing} items have no EWB proposed amount`, sub: 'Set them from baseline in one step, then adjust any by hand with a rationale.', btn: 'Set EWB proposed', href: '/soy/items?view=needs', tone: 'primary' });
+      else acts.push({ text: 'EWB proposed is complete — open PM proposed', sub: `PMs get an email and have until ${fmtDate(stageDue(c.dates, 'pm'))} to respond.`, btn: 'Open PM proposed', act: 'advance', tone: 'primary' });
+    } else if (c.stage === 'pm') {
+      const out = outstandingByPm(c);
+      if (out.length) acts.push({ text: `${out.length} PMs haven’t responded (${out.reduce((k, o) => k + o.items.length, 0)} items)`, sub: c.reminders.on ? `An automatic reminder goes out ${c.reminders.daysBefore} days before the due date. You can send one now too.` : 'Automatic reminders are off.', btn: 'Send reminder', act: 'remind-all', tone: s.pmResponsesSimulated ? 'primary' : 'secondary' });
+      const changed = c.items.filter((i) => i.amounts.pm && i.amounts.ewb && i.amounts.pm.amount !== i.amounts.ewb.amount).length;
+      if (changed) acts.push({ text: `${changed} PM proposals differ from EWB`, sub: 'Review them before decision makers meet.', btn: 'Changed vs EWB', href: '/soy/items?view=changed' });
+      acts.push({ text: 'When decision makers are ready, open Final budget', sub: `PM proposed is due ${fmtDate(stageDue(c.dates, 'pm'))}. Items with no PM input will take EWB’s amount unless you change them.`, btn: 'Open Final budget', act: 'advance', tone: out.length ? 'secondary' : 'primary' });
+    } else if (c.stage === 'final' || c.stage === 'complete') {
+      const noFinal = t.items - t.finalCount;
+      if (noFinal) acts.push({ text: `${noFinal} items have no final amount`, sub: 'Set finals from PM proposed, EWB proposed or baseline, with a preview.', btn: 'Final decisions', href: '/soy/finals', tone: 'primary' });
+      const notTr = c.items.filter((i) => transferStatus(i) === 'Not transferred').length;
+      if (notTr) acts.push({ text: `${notTr} final amounts are not transferred`, sub: 'Transfer them to working budgets under a Budget Decision.', btn: 'Transfers', href: '/soy/transfers', tone: noFinal ? 'secondary' : 'primary' });
+      if (t.varianceItems) acts.push({ text: `${t.varianceItems} item${t.varianceItems === 1 ? " needs" : "s need"} reconciliation`, sub: `Final and transferred differ by ${fmtMoney(t.variance)}.`, btn: 'Variance', href: '/soy/transfers?status=variance', tone: 'primary' });
+      if (closeChecks(c).every((x) => x.ok)) acts.push({ text: 'Everything is reconciled — close the cycle', sub: 'Closing locks the cycle for everyone.', btn: 'Close-out', href: '/soy/close-out', tone: 'primary' });
+    }
+    q('[data-ov-actions]').innerHTML = acts.map((a) => `<li class="cbf-soy-ov__action">
+      <div class="stack" data-gap="3xs"><strong>${esc(a.text)}</strong>${a.sub ? `<span class="cbf-soy-ov__action-sub">${esc(a.sub)}</span>` : ''}</div>
+      ${a.btn ? (a.href ? `<a class="cbf-soy-ov__action-link" href="${withBase(a.href)}">${esc(a.btn)} →</a>` : button(a.tone === 'primary' ? 'primary' : 'secondary', a.btn, { 'ov-act': a.act! })) : ''}
+    </li>`).join('');
+  }
+
+  function renderPm() {
+    const s = getState();
+    const c = s.cycle;
+    const mine = c.items.filter((i) => project(i).pm === DEMO_PM);
+    const need = mine.filter((i) => c.stage === 'pm' && needsInput(i, 'pm'));
+    const responded = mine.filter((i) => i.amounts.pm);
+    const finals = mine.filter((i) => i.amounts.final);
+    const due = fmtDate(stageDue(c.dates, 'pm'));
+    const big = q('[data-ov-pm-big]');
+    const sub = q('[data-ov-pm-sub]');
+    const cta = q('[data-ov-pm-cta]');
+    if (c.status === 'Draft' || c.stage === 'ewb') {
+      big.textContent = `PM input opens ${fmtDate(c.dates.pm)}`;
+      sub.textContent = 'The budget team is preparing EWB proposals. You’ll get an email when it’s your turn.';
+      cta.hidden = true;
+    } else if (c.stage === 'pm' && need.length) {
+      big.textContent = `${need.length} of your projects need input by ${due}`;
+      sub.textContent = 'Agree with EWB’s proposed amount or propose a different one with a rationale.';
+      cta.hidden = false;
+    } else if (c.stage === 'pm') {
+      big.textContent = 'You’ve responded on all your projects';
+      sub.textContent = `You can change your proposals until ${due}.`;
+      cta.hidden = true;
+    } else {
+      big.textContent = finals.length ? 'Final budgets are set for your projects' : 'Decision makers are setting final budgets';
+      sub.textContent = finals.length ? 'Open a project to see the final amount and rationale.' : 'You’ll get a summary of your final amounts and rationale.';
+      cta.hidden = true;
+    }
+    tile('[data-ov-pm]', 'mine', String(mine.length), `${fmtShort(mine.reduce((k, i) => k + (i.baseline ?? 0), 0))} baseline`);
+    tile('[data-ov-pm]', 'need', String(need.length), c.stage === 'pm' ? `Due ${due}` : '—');
+    tile('[data-ov-pm]', 'responded', String(responded.length), `of ${mine.length}`);
+    tile('[data-ov-pm]', 'final', String(finals.length), fmtShort(finals.reduce((k, i) => k + (amount(i, 'final') ?? 0), 0)));
+    q('[data-ov-pm-rows]').innerHTML = mine.length
+      ? mine.map((i) => `<tr>
+          <td><a href="#" data-ov-item="${esc(i.id)}">${esc(i.projectNumber)}</a> ${esc(project(i).title)}</td>
+          <td>${esc(i.fund)}</td>
+          <td class="cbf-soy-num">${fmtMoney(amount(i, 'ewb'))}</td>
+          <td class="cbf-soy-num">${fmtMoney(amount(i, 'pm'))}</td>
+          <td class="cbf-soy-num">${fmtMoney(amount(i, 'final'))}</td>
+          <td>${needsInput(i, 'pm') && c.stage === 'pm' ? pill('Needs input', 'warning', { size: 'xs' }) : i.amounts.final ? statusPill(transferStatus(i)) : i.amounts.pm ? pill('Responded', 'success', { size: 'xs' }) : pill('Waiting for EWB', 'default', { size: 'xs' })}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="6" class="cbf-soy-muted">No items yet — the cycle hasn’t been set up.</td></tr>';
+  }
+
+  // --- Clicks -------------------------------------------------------------
+  root.addEventListener('click', (e) => {
+    const t = e.target as HTMLElement;
+    const itemLink = t.closest<HTMLElement>('[data-ov-item]');
+    if (itemLink) { e.preventDefault(); openItem(itemLink.dataset.ovItem!); return; }
+    const act = t.closest<HTMLElement>('[data-ov-act]')?.dataset.ovAct;
+    if (act === 'advance') openAdvance();
+    if (act === 'remind-all') openRemind(outstandingByPm(getState().cycle).map((o) => o.pm));
+    const one = t.closest<HTMLElement>('[data-ov-remind]')?.dataset.ovRemind;
+    if (one) openRemind([one]);
+  });
+
+  // --- Advance stage --------------------------------------------------------
+  const adv = q<Dialog>('[data-ov-advance-dialog]');
+  const advEmail = q<Field>('[data-ov-advance-email]');
+  function renderAdvancePreview() {
+    const s = getState();
+    const to = nextStage(s.cycle.stage)!;
+    q('[data-ov-advance-preview]').innerHTML = advEmail.checked ? emailHtml(stageOpenEmail(s, to)) : '<p class="cbf-soy-muted">No email will be sent. PMs will see the new stage when they sign in.</p>';
+  }
+  function openAdvance() {
+    const s = getState();
+    const c = s.cycle;
+    const to = nextStage(c.stage);
+    if (!to) return;
+    adv.heading = `Open ${stageLabel(to)}`;
+    q('[data-ov-advance-lede]').textContent = `This closes ${stageLabel(c.stage)} and opens ${stageLabel(to)}${to === 'pm' ? `. PMs can respond until ${fmtDate(stageDue(c.dates, 'pm'))} (4 weeks).` : '.'}`;
+    const missing = c.items.filter((i) => needsInput(i, c.stage)).length;
+    q('[data-ov-advance-warn]').hidden = missing === 0;
+    q('[data-ov-advance-warn-text]').textContent = `${missing} items have no ${stageLabel(c.stage)} amount yet. You can still open the next stage; they stay listed under Needs input.`;
+    q('[data-ov-advance-confirm] .esa-button__label').textContent = `Open ${stageLabel(to)}`;
+    advEmail.checked = true;
+    renderAdvancePreview();
+    adv.show();
+  }
+  advEmail.addEventListener('change', renderAdvancePreview);
+  q('[data-ov-advance]').addEventListener('click', openAdvance);
+  q('[data-ov-advance-cancel]').addEventListener('click', () => adv.close());
+  q('[data-ov-advance-confirm]').addEventListener('click', () => {
+    const email = !!advEmail.checked;
+    const to = update((s) => advanceStage(s, email));
+    adv.close();
+    snackbar('success', `${stageLabel(to)} is open.${email ? ' The stage-open email went to every PM with items in the cycle.' : ''}`);
+  });
+
+  // --- Reminders ------------------------------------------------------------
+  const rem = q<Dialog>('[data-ov-remind-dialog]');
+  function openRemind(pms: string[]) {
+    remindTargets = pms;
+    const s = getState();
+    q('[data-ov-remind-lede]').textContent = `Each PM gets one email listing only their own items that still need input. ${pms.length} PM${pms.length === 1 ? '' : 's'}.`;
+    q('[data-ov-remind-preview]').innerHTML = emailHtml(reminderEmail(s, pms));
+    rem.show();
+  }
+  q('[data-ov-remind-all]').addEventListener('click', () => openRemind(outstandingByPm(getState().cycle).map((o) => o.pm)));
+  q('[data-ov-remind-cancel]').addEventListener('click', () => rem.close());
+  q('[data-ov-remind-confirm]').addEventListener('click', () => {
+    update((s) => sendReminders(s, remindTargets, false));
+    rem.close();
+    snackbar('success', `Reminder sent to ${remindTargets.length} PM${remindTargets.length === 1 ? '' : 's'}.`);
+  });
+
+  subscribe(render);
+</script>
+
+<style is:global>
+  .cbf-soy-ov__tracker { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--spacing-300); }
+  @media (max-width: 760px) { .cbf-soy-ov__tracker { grid-template-columns: 1fr 1fr; } }
+  .cbf-soy-ov__stage {
+    position: relative;
+    display: flex; flex-direction: column; align-items: flex-start; gap: var(--spacing-150);
+    padding: var(--spacing-300) var(--spacing-400);
+    border: 1px solid var(--color-border-default);
+    border-block-start-width: 4px;
+    border-radius: var(--radius-200);
+    background: var(--color-background-elevation-raised);
+  }
+  .cbf-soy-ov__stage.is-done { border-block-start-color: var(--color-background-utility-success, var(--color-border-default)); }
+  .cbf-soy-ov__stage.is-active { border-color: var(--color-background-brand); border-block-start-color: var(--color-background-brand); background: var(--color-background-brand-subtle); }
+  .cbf-soy-ov__stage-n { font-size: 12px; font-weight: var(--typography-font-weight-bold); color: var(--color-content-default-tertiary); }
+  .cbf-soy-ov__stage-name { font-size: 16px; font-weight: var(--typography-font-weight-semibold); }
+  .cbf-soy-ov__stage-dates { font-size: 13px; color: var(--color-content-default-secondary); }
+  .cbf-soy-ov__tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--spacing-400); padding: var(--spacing-400); border: 1px solid var(--color-border-default-subtle); border-radius: var(--radius-200); }
+  .cbf-soy-ov__actions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--spacing-200); }
+  .cbf-soy-ov__action {
+    display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-400); flex-wrap: wrap;
+    padding: var(--spacing-300) var(--spacing-400);
+    border: 1px solid var(--color-border-default);
+    border-inline-start: 4px solid var(--color-background-brand);
+    border-radius: var(--radius-200);
+    background: var(--color-background-elevation-raised);
+  }
+  .cbf-soy-ov__action-sub { font-size: 14px; color: var(--color-content-default-secondary); }
+  .cbf-soy-ov__action-link { font-weight: var(--typography-font-weight-semibold); color: var(--color-background-brand); white-space: nowrap; }
+  .cbf-soy-ov__callout {
+    padding: var(--spacing-400) var(--spacing-500);
+    border-radius: var(--radius-200);
+    background: var(--color-background-brand-subtle);
+    border: 1px solid var(--color-background-brand);
+    align-items: center;
+  }
+  .cbf-soy-ov__callout-big { margin: 0; font-size: 22px; font-weight: var(--typography-font-weight-semibold); color: var(--color-content-default); }
+  .cbf-soy-ov__callout-sub { margin: 0; color: var(--color-content-default-secondary); }
+</style>

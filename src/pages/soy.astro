@@ -1,0 +1,20 @@
+---
+// /soy — the SOY cycle overview, the home of the start-of-year (SOY) future-state
+// prototype: stage tracker, progress tiles, next actions by role,
+// advance-stage email preview, and the Needs input list that replaces
+// Remaining.
+//
+// Thin assembler — the frame is cbf-soy-frame; state lives in src/lib/soy/ and
+// src/data/soy/seed.ts.
+import CbfSoyFrame from '../components/soy/cbf-soy-frame.astro';
+import CbfSoyOverview from '../components/soy/cbf-soy-overview.astro';
+---
+<!-- manifest:
+  layout: cbf-soy-frame (nav + prototype strip + app panel + tabs + locked banner)
+  sections:
+    - overview -> cbf-soy-overview  (stage tracker, progress tiles, next actions, needs input,
+                                     advance-stage and reminder dialogs with email previews)
+-->
+<CbfSoyFrame active="overview" title="Overview">
+  <CbfSoyOverview />
+</CbfSoyFrame>

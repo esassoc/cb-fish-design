@@ -1,0 +1,738 @@
+---
+// cbf-soy-setup — the cycle setup wizard. Replaces Gemini's
+// "Create new SOY" form, Bulk add, Add Project and Bulk COLA with five steps in
+// order, each following select → preview → confirm → report:
+//
+//   1. Dates — pre-filled from the standard pattern, all editable, with each
+//      stage's due date and the PM window length computed live.
+//   2. Carry forward — last year's items with checkboxes; ended or no-longer-
+//      eligible items start unchecked with the reason (DEC 4); live counts.
+//   3. New projects — eligible projects that weren't in last year's cycle.
+//   4. COLA — rate + table filters (fund, emphasis, PM); before/after baselines
+//      and a total; two-year off-year and no-baseline projects named; two-year
+//      on-year items flagged with a suggested amount (DEC 7).
+//   5. Review — tiles, dates, exclusions. Create runs with progress, saves only
+//      the new items, and ends with a results report.
+//
+// Re-entry: once the cycle is Open, the wizard only offers new projects that
+// aren't in it yet. Closed: read only.
+//
+// All the numbers come from planSetup() in src/lib/soy/actions.ts — the same
+// function runSetup() uses — so the preview can't disagree with the run.
+//
+// bcn-lego-checked: grids are AG Grid Community on the shared token theme
+// (shared/grid-chrome) because ecology has no data-grid lego — same call as the
+// capital program grids; row checkboxes are AG Grid's own row selection. Fields
+// are esa-date-picker / esa-text-field / esa-select, the eligibility filter is
+// esa-chip-group, notices esa-alert-box, tiles esa-stat (values filled on the
+// client), the run esa-progress-bar, actions esa-button, pills cloned esa-pill.
+// The step indicator is a semantic <ol> of five step buttons — no esa
+// stepper/wizard lego exists (checked the catalog; esa-tab-layout switches
+// panels freely and can't express "done / current / upcoming"). Beacon is not
+// cloned on this machine.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaProgressBar from '@esa/ecology/esa-progress-bar.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import '../shared/cbf-data-grid-chrome.css';
+import { withBase } from '../../lib/base';
+
+const steps = ['Dates', 'Carry forward', 'New projects', 'COLA', 'Review'];
+const eligibilityFilters = [
+  { value: 'all', label: 'All' },
+  { value: 'eligible', label: 'Eligible' },
+  { value: 'excluded', label: 'Not eligible' },
+];
+const reviewTiles = [
+  { key: 'items', label: 'Items in the cycle' },
+  { key: 'baseline', label: 'Total baseline' },
+  { key: 'cola', label: 'COLA applied' },
+  { key: 'excluded', label: 'Not carried forward' },
+];
+---
+<section class="cbf-soy-su stack" data-gap="md" data-soy-setup aria-labelledby="su-title">
+  <!-- Re-entry / closed notices -->
+  <div data-su-reentry hidden>
+    <EsaAlertBox variant="info" title="Cycle open">
+      <span data-su-reentry-text></span>
+    </EsaAlertBox>
+  </div>
+  <div data-su-closed hidden>
+    <EsaEmptyState title="This cycle is closed" description="Reopen it from Close-out to add projects." size="md" />
+  </div>
+
+  <div class="stack" data-gap="md" data-su-wizard data-change="su-wizard">
+    <div class="repel">
+      <h2 class="cbf-soy-section-title" id="su-title" data-su-heading>Set up FY2028</h2>
+      <p class="typography-meta cbf-soy-muted" data-su-summary></p>
+    </div>
+
+    <ol class="cbf-soy-su__steps" data-su-steps aria-label="Setup steps">
+      {steps.map((label, i) => (
+        <li class="cbf-soy-su__step" data-su-step={i}>
+          <button type="button" class="cbf-soy-su__step-btn" data-su-goto={i}>
+            <span class="cbf-soy-su__step-n" aria-hidden="true">{i + 1}</span>
+            <span class="cbf-soy-su__step-label">{label}</span>
+          </button>
+        </li>
+      ))}
+    </ol>
+
+    <!-- 1. Dates -->
+    <div class="cbf-soy-su__panel stack" data-gap="sm" data-su-panel="0" data-change="su-dates">
+      <h3 class="cbf-soy-su__h">Dates</h3>
+      <p class="cbf-soy-lede">Pre-filled from the standard pattern. Each stage is due the day before the next one opens; PM proposed defaults to 4 weeks.</p>
+      <div class="cbf-soy-su__dates">
+        <esa-date-picker size="sm" label="EWB proposed opens" required data-su-date="ewb"></esa-date-picker>
+        <esa-date-picker size="sm" label="PM proposed opens" required data-su-date="pm"></esa-date-picker>
+        <esa-date-picker size="sm" label="Final budget opens" required data-su-date="final"></esa-date-picker>
+        <esa-date-picker size="sm" label="Complete" required data-su-date="complete"></esa-date-picker>
+      </div>
+      <table class="cbf-soy-table cbf-soy-su__due">
+        <thead><tr><th scope="col">Stage</th><th scope="col">Opens</th><th scope="col">Due</th><th scope="col">Length</th></tr></thead>
+        <tbody data-su-due></tbody>
+      </table>
+      <p class="typography-meta cbf-soy-neg" data-su-date-error hidden></p>
+    </div>
+
+    <!-- 2. Carry forward -->
+    <div class="cbf-soy-su__panel stack" data-gap="sm" data-su-panel="1" hidden>
+      <h3 class="cbf-soy-su__h">Carry forward last year’s items</h3>
+      <p class="cbf-soy-lede">Every FY2027 item (project + fund + account type) is listed. Items whose project has ended or that are no longer non-Accord expense start unchecked, with the reason. You can re-check any of them.</p>
+      <div class="cbf-data-grid__controls repel">
+        <label class="cbf-data-grid__filter">
+          <span class="typography-meta">Show</span>
+          <esa-chip-group size="sm" label="Filter by eligibility" value="all" options={JSON.stringify(eligibilityFilters)} data-su-carry-filter></esa-chip-group>
+        </label>
+        <p class="cbf-soy-su__count" data-su-carry-count aria-live="polite"></p>
+      </div>
+      <div class="cbf-data-grid__grid cbf-soy-su__grid" data-su-carry-grid data-change="su-carry"></div>
+    </div>
+
+    <!-- 3. New projects -->
+    <div class="cbf-soy-su__panel stack" data-gap="sm" data-su-panel="2" hidden>
+      <h3 class="cbf-soy-su__h">Add new projects</h3>
+      <p class="cbf-soy-lede" data-su-new-lede>Eligible non-Accord expense projects that weren’t in last year’s cycle. Select the ones to add; they start with no baseline, so you’ll enter their EWB proposed amounts by hand.</p>
+      <p class="cbf-soy-su__count" data-su-new-count aria-live="polite"></p>
+      <div class="cbf-data-grid__grid cbf-soy-su__grid cbf-soy-su__grid--short" data-su-new-grid data-change="su-new"></div>
+      <div data-su-new-empty hidden><EsaEmptyState title="No new projects to add" description="Every eligible project is already in the cycle." size="sm" /></div>
+      <div class="cluster" data-gap="xs" data-su-add-wrap hidden>
+        <EsaButton size="sm" variant="primary" icon="plus" data-su-add>Add selected projects</EsaButton>
+      </div>
+    </div>
+
+    <!-- 4. COLA -->
+    <div class="cbf-soy-su__panel stack" data-gap="sm" data-su-panel="3" hidden>
+      <h3 class="cbf-soy-su__h">Cost-of-living adjustment (COLA)</h3>
+      <p class="cbf-soy-lede">Filter the table to the projects that get the COLA, enter the rate, and check each baseline before and after. COLA updates the FY2028 SOY baseline only — it no longer rewrites project baselines directly.</p>
+      <div class="cbf-soy-su__cola-controls" data-change="su-cola">
+        <esa-text-field size="sm" label="COLA rate" suffix="%" inputmode="decimal" value="2.5" data-su-rate></esa-text-field>
+        <esa-select size="sm" label="Fund" data-su-f="fund"></esa-select>
+        <esa-select size="sm" label="Emphasis" data-su-f="emphasis"></esa-select>
+        <esa-select size="sm" label="Project manager" data-su-f="pm"></esa-select>
+      </div>
+      <p class="cbf-soy-su__count" data-su-cola-count aria-live="polite"></p>
+      <div class="cbf-data-grid__grid cbf-soy-su__grid" data-su-cola-grid></div>
+      <div class="cbf-soy-su__skips" data-change="su-cola-skips">
+        <div data-su-skip-off>
+          <EsaAlertBox variant="info" title="Skipped: off year">
+            <span data-su-skip-off-text></span>
+            <ul class="cbf-soy-su__names" data-su-skip-off-list></ul>
+          </EsaAlertBox>
+        </div>
+        <div data-su-skip-none>
+          <EsaAlertBox variant="warning" title="Skipped: no baseline">
+            <span data-su-skip-none-text></span>
+            <ul class="cbf-soy-su__names" data-su-skip-none-list></ul>
+          </EsaAlertBox>
+        </div>
+      </div>
+      <div data-su-two-year data-change="su-two-year">
+        <EsaAlertBox variant="info" title="Two-year: confirm on-year amounts">
+          <span data-su-two-year-text></span>
+          <div class="cbf-soy-su__ty-wrap"><table class="cbf-soy-table cbf-soy-su__ty">
+            <thead><tr><th scope="col">Project</th><th scope="col" class="cbf-soy-num">Annual (FY2027)</th><th scope="col" class="cbf-soy-num">Suggested FY2028</th></tr></thead>
+            <tbody data-su-two-year-rows></tbody>
+          </table></div>
+        </EsaAlertBox>
+      </div>
+    </div>
+
+    <!-- 5. Review -->
+    <div class="cbf-soy-su__panel stack" data-gap="md" data-su-panel="4" hidden>
+      <h3 class="cbf-soy-su__h">Review and create</h3>
+      <div class="cbf-soy-su__tiles">
+        {reviewTiles.map((t) => <div data-su-tile={t.key}><EsaStat value="—" label={t.label} sub="·" /></div>)}
+      </div>
+      <div class="cbf-soy-su__review-cols">
+        <div class="stack" data-gap="xs">
+          <h4 class="cbf-soy-su__h4">Dates</h4>
+          <table class="cbf-soy-table"><tbody data-su-review-dates></tbody></table>
+        </div>
+        <div class="stack" data-gap="xs">
+          <h4 class="cbf-soy-su__h4">Not carried forward</h4>
+          <table class="cbf-soy-table">
+            <thead><tr><th scope="col">Project</th><th scope="col">Reason</th></tr></thead>
+            <tbody data-su-review-excluded></tbody>
+          </table>
+        </div>
+      </div>
+      <p class="cbf-soy-lede" data-su-review-note></p>
+    </div>
+
+    <div class="cbf-soy-su__nav repel" data-su-nav>
+      <EsaButton size="sm" variant="secondary" appearance="outline" icon="arrow-left" data-su-back>Back</EsaButton>
+      <div class="cluster" data-gap="xs">
+        <EsaButton size="sm" variant="primary" iconRight="arrow-right" data-su-next>Next</EsaButton>
+        <span data-su-create-wrap hidden data-change="su-run"><EsaButton size="sm" variant="primary" icon="check" data-su-create>Create FY2028 cycle</EsaButton></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Run + results report -->
+  <div class="cbf-soy-su__run stack" data-gap="md" data-su-run hidden data-change="su-run">
+    <h2 class="cbf-soy-section-title" data-su-run-title>Creating the FY2028 cycle</h2>
+    <div data-su-progress>
+      <EsaProgressBar value={0} size="md" label="Saving new items" />
+    </div>
+    <p class="cbf-soy-lede" data-su-run-note></p>
+    <div class="stack" data-gap="md" data-su-report hidden>
+      <EsaAlertBox variant="success" title="Cycle created"><span data-su-report-lede></span></EsaAlertBox>
+      <table class="cbf-soy-table cbf-soy-su__report">
+        <tbody data-su-report-rows></tbody>
+      </table>
+      <div class="cbf-soy-su__review-cols" data-su-report-lists></div>
+      <div class="cluster" data-gap="xs">
+        <EsaButton size="sm" variant="primary" iconRight="arrow-right" href={withBase('/soy/items')}>Go to items</EsaButton>
+        <EsaButton size="sm" variant="secondary" appearance="outline" href={withBase('/soy')}>Back to overview</EsaButton>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import '@esa/ecology/esa-date-picker';
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-chip-group';
+  import { createGrid, type ColDef, type GridApi, type IRowNode } from 'ag-grid-community';
+  import { cbfGridTheme } from '../shared/grid-chrome';
+  import { getState, subscribe, update, isAdmin } from '../../lib/soy/store';
+  import { planSetup, runSetup, type SetupInput } from '../../lib/soy/actions';
+  import { NEW_PROJECTS, PRIOR_ITEMS, PROJECTS } from '../../data/soy/seed';
+  import { addDays, daysBetween, fmtDate, fmtMoney, fmtShort, stageDue, twoYearSuggestion } from '../../lib/soy/model';
+  import { EMPHASES, FUNDS, STAGES, type SetupReport, type SoyItem, type StageDates, type StageKey } from '../../lib/soy/types';
+  import { esc, pill, setOptions, snackbar, type Field } from '../../lib/soy/ui';
+
+  const root = document.querySelector<HTMLElement>('[data-soy-setup]');
+  if (root) init(root);
+
+  interface CarryRow { id: string; number: string; title: string; emphasis: string; fund: string; pm: string; baseline: number | null; working: number | null; reason: string | null; twoYear: string }
+  interface NewRow { id: string; number: string; title: string; emphasis: string; fund: string; pm: string; note: string }
+  interface ColaRow { id: string; number: string; title: string; fund: string; emphasis: string; pm: string; before: number | null; after: number | null; note: string; total?: boolean }
+
+  function init(root: HTMLElement) {
+    const q = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+    const qa = <T extends Element = HTMLElement>(sel: string) => [...root.querySelectorAll<T>(sel)];
+    const label = (id: string) => {
+      const n = id.split('|')[0];
+      return `${n} ${PROJECTS[n]?.title ?? ''}`;
+    };
+
+    // ------------------------------------------------------------------
+    // Wizard state (local until Create)
+    // ------------------------------------------------------------------
+    let step = 0;
+    let phase: 'wizard' | 'running' | 'report' = 'wizard';
+    let dates: StageDates = { ...getState().cycle.dates };
+    const carry = new Set(PRIOR_ITEMS.filter((c) => !c.excludeReason).map((c) => c.id));
+    const added = new Set<string>();
+    let rate = 0.025;
+    const colaFilter = { fund: 'Program', emphasis: '', pm: '' };
+    let eligibility: 'all' | 'eligible' | 'excluded' = 'all';
+    let mode: 'draft' | 'reentry' | 'closed' = 'draft';
+
+    const colaIds = (): string[] => {
+      const ids: string[] = [];
+      const match = (num: string, fund: string) => {
+        const p = PROJECTS[num];
+        return (!colaFilter.fund || fund === colaFilter.fund) && (!colaFilter.emphasis || p.emphasis === colaFilter.emphasis) && (!colaFilter.pm || p.pm === colaFilter.pm);
+      };
+      for (const c of PRIOR_ITEMS) if (carry.has(c.id) && match(c.projectNumber, c.fund)) ids.push(c.id);
+      for (const n of NEW_PROJECTS) if (added.has(n.id) && match(n.projectNumber, n.fund)) ids.push(n.id);
+      return ids;
+    };
+    const input = (): SetupInput => ({ dates: { ...dates }, carryIds: [...carry], newIds: [...added], colaRate: rate, colaIds: colaIds() });
+
+    // ------------------------------------------------------------------
+    // Grids
+    // ------------------------------------------------------------------
+    const grid = <T,>(host: HTMLElement, cols: ColDef<T>[], extra: Record<string, unknown> = {}): GridApi<T> => createGrid(host, {
+      theme: cbfGridTheme,
+      rowData: [],
+      columnDefs: cols,
+      animateRows: false,
+      suppressCellFocus: true,
+      suppressColumnVirtualisation: true,
+      tooltipShowDelay: 300,
+      defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true },
+      getRowId: (p: { data: { id: string } }) => p.data.id,
+      ...extra,
+    } as never);
+    const money = (v: number | null | undefined) => (v == null ? '<span class="cbf-soy-muted">No baseline</span>' : fmtMoney(v));
+
+    let syncing = false;
+    const carryApi = grid<CarryRow>(q('[data-su-carry-grid]'), [
+      { field: 'number', headerName: 'Project', width: 130, pinned: 'left' },
+      { field: 'title', headerName: 'Title', flex: 2, minWidth: 260, tooltipField: 'title' },
+      { field: 'emphasis', headerName: 'Emphasis', width: 170 },
+      { field: 'fund', headerName: 'Fund', width: 150 },
+      { field: 'pm', headerName: 'PM', width: 150 },
+      { field: 'baseline', headerName: 'FY2027 baseline', width: 150, type: 'rightAligned', cellClass: 'cbf-soy-num', cellRenderer: (p: { value: number | null }) => money(p.value) },
+      { field: 'working', headerName: 'FY2027 working', width: 150, type: 'rightAligned', cellClass: 'cbf-soy-num', cellRenderer: (p: { value: number | null }) => fmtMoney(p.value) },
+      {
+        field: 'reason', headerName: 'Eligibility', flex: 2, minWidth: 280, tooltipField: 'reason',
+        cellRenderer: (p: { data: CarryRow }) => p.data.reason
+          ? `${pill('Not eligible', 'warning', { size: 'xs' })} <span class="cbf-soy-su__reason">${esc(p.data.reason)}</span>`
+          : `${pill('Eligible', 'success', { size: 'xs' })}${p.data.twoYear ? ` ${pill(p.data.twoYear, 'info', { size: 'xs' })}` : ''}`,
+      },
+    ], {
+      rowSelection: { mode: 'multiRow', checkboxes: true, headerCheckbox: true, selectAll: 'filtered' },
+      selectionColumnDef: { pinned: 'left', width: 48 },
+      isExternalFilterPresent: () => eligibility !== 'all',
+      doesExternalFilterPass: (n: IRowNode<CarryRow>) => (eligibility === 'eligible' ? !n.data?.reason : !!n.data?.reason),
+      onSelectionChanged: () => {
+        if (syncing) return;
+        carry.clear();
+        carryApi.getSelectedRows().forEach((r) => carry.add(r.id));
+        renderCounts();
+      },
+    });
+    carryApi.setGridOption('rowData', PRIOR_ITEMS.map((c) => {
+      const p = PROJECTS[c.projectNumber];
+      return {
+        id: c.id, number: c.projectNumber, title: p.title, emphasis: p.emphasis, fund: c.fund, pm: p.pm,
+        baseline: c.priorBaseline, working: c.priorWorking, reason: c.excludeReason,
+        twoYear: p.cycleType === 'Two-year' ? (p.offYear ? 'Two-year · off year' : 'Two-year · on year') : '',
+      };
+    }));
+    const syncCarrySelection = () => {
+      syncing = true;
+      const sel: IRowNode<CarryRow>[] = [];
+      const unsel: IRowNode<CarryRow>[] = [];
+      carryApi.forEachNode((n) => (carry.has(n.data!.id) ? sel : unsel).push(n));
+      carryApi.setNodesSelected({ nodes: sel, newValue: true });
+      carryApi.setNodesSelected({ nodes: unsel, newValue: false });
+      syncing = false;
+    };
+    syncCarrySelection();
+    q('[data-su-carry-filter]').addEventListener('change', () => {
+      eligibility = ((q<Field>('[data-su-carry-filter]').value || 'all') as typeof eligibility);
+      carryApi.onFilterChanged();
+    });
+
+    const newApi = grid<NewRow>(q('[data-su-new-grid]'), [
+      { field: 'number', headerName: 'Project', width: 130 },
+      { field: 'title', headerName: 'Title', flex: 2, minWidth: 260 },
+      { field: 'emphasis', headerName: 'Emphasis', width: 170 },
+      { field: 'fund', headerName: 'Fund', width: 120 },
+      { field: 'pm', headerName: 'PM', width: 150 },
+      { field: 'note', headerName: 'Start', flex: 1, minWidth: 200 },
+    ], {
+      rowSelection: { mode: 'multiRow', checkboxes: true, headerCheckbox: true },
+      onSelectionChanged: () => {
+        if (syncing) return;
+        added.clear();
+        newApi.getSelectedRows().forEach((r) => added.add(r.id));
+        renderCounts();
+      },
+    });
+
+    const colaApi = grid<ColaRow>(q('[data-su-cola-grid]'), [
+      { field: 'number', headerName: 'Project', width: 130, pinned: 'left', cellRenderer: (p: { data: ColaRow }) => (p.data.total ? '<strong>Total</strong>' : esc(p.data.number)) },
+      { field: 'title', headerName: 'Title', flex: 2, minWidth: 240, tooltipField: 'title' },
+      { field: 'fund', headerName: 'Fund', width: 140 },
+      { field: 'emphasis', headerName: 'Emphasis', width: 160 },
+      { field: 'pm', headerName: 'PM', width: 150 },
+      { field: 'before', headerName: 'FY2027 baseline', width: 150, type: 'rightAligned', cellClass: 'cbf-soy-num', cellRenderer: (p: { value: number | null; data: ColaRow }) => (p.data.total ? `<strong>${fmtMoney(p.value)}</strong>` : money(p.value)) },
+      { field: 'after', headerName: 'FY2028 baseline', width: 150, type: 'rightAligned', cellClass: 'cbf-soy-num', cellRenderer: (p: { value: number | null; data: ColaRow }) => (p.data.total ? `<strong>${fmtMoney(p.value)}</strong>` : p.value == null ? '<span class="cbf-soy-muted">—</span>' : fmtMoney(p.value)) },
+      {
+        colId: 'change', headerName: 'Change', width: 130, type: 'rightAligned', cellClass: 'cbf-soy-num',
+        valueGetter: (p) => (p.data && p.data.before != null && p.data.after != null ? p.data.after - p.data.before : null),
+        cellRenderer: (p: { value: number | null }) => (p.value == null || p.value === 0 ? '<span class="cbf-soy-muted">—</span>' : `${p.value > 0 ? '+' : ''}${fmtMoney(p.value)}`),
+      },
+      { field: 'note', headerName: 'Note', flex: 1, minWidth: 220, tooltipField: 'note', cellRenderer: (p: { data: ColaRow }) => (p.data.note ? pill(p.data.note, p.data.note.startsWith('Skipped') ? 'warning' : 'info', { size: 'xs' }) : '') },
+    ]);
+
+    // ------------------------------------------------------------------
+    // Filters and fields
+    // ------------------------------------------------------------------
+    const all = (lbl: string) => ({ label: lbl, value: '' });
+    const opts = (vals: readonly string[]) => vals.map((v) => ({ label: v, value: v }));
+    const pmsList = [...new Set(Object.values(PROJECTS).map((p) => p.pm))].sort();
+    setOptions(q('[data-su-f="fund"]'), [all('All funds'), ...opts(FUNDS)], colaFilter.fund);
+    setOptions(q('[data-su-f="emphasis"]'), [all('All emphases'), ...opts(EMPHASES)], '');
+    setOptions(q('[data-su-f="pm"]'), [all('All PMs'), ...opts(pmsList)], '');
+    qa<Field>('[data-su-f]').forEach((el) => el.addEventListener('change', () => {
+      colaFilter[el.dataset.suF as keyof typeof colaFilter] = el.value ?? '';
+      renderCola();
+    }));
+    const rateF = q<Field>('[data-su-rate]');
+    const readRate = () => {
+      const v = Number(String(rateF.value ?? '').replace('%', '').trim());
+      const ok = Number.isFinite(v) && v >= 0 && v <= 15;
+      rateF.errorText = ok ? '' : 'Enter a rate between 0 and 15 percent.';
+      if (ok) { rate = v / 100; renderCola(); }
+    };
+    rateF.addEventListener('input', readRate);
+    rateF.addEventListener('change', readRate);
+
+    qa<Field>('[data-su-date]').forEach((el) => {
+      el.value = dates[el.dataset.suDate as keyof StageDates];
+      el.addEventListener('change', () => {
+        if (el.value) dates = { ...dates, [el.dataset.suDate as keyof StageDates]: el.value };
+        renderDates();
+      });
+    });
+
+    // ------------------------------------------------------------------
+    // Rendering
+    // ------------------------------------------------------------------
+    function datesError(): string {
+      const order: (keyof StageDates)[] = ['ewb', 'pm', 'final', 'complete'];
+      for (let i = 1; i < order.length; i++) {
+        if (dates[order[i]] <= dates[order[i - 1]]) return `${STAGES[i].label} must open after ${STAGES[i - 1].label}.`;
+      }
+      return '';
+    }
+
+    function renderDates() {
+      const err = datesError();
+      q('[data-su-date-error]').hidden = !err;
+      q('[data-su-date-error]').textContent = err;
+      q('[data-su-due]').innerHTML = STAGES.map((st) => {
+        const opens = st.key === 'complete' ? dates.complete : dates[st.key as keyof StageDates];
+        const due = stageDue(dates, st.key as StageKey);
+        const days = st.key === 'complete' ? 0 : daysBetween(opens, due) + 1;
+        const weeks = days / 7;
+        const len = st.key === 'complete' ? '—' : `${days} days${Number.isInteger(weeks) || st.key === 'pm' ? ` (${weeks % 1 === 0 ? weeks : weeks.toFixed(1)} weeks)` : ''}`;
+        return `<tr><th scope="row">${esc(st.label)}</th><td>${fmtDate(opens)}</td><td>${st.key === 'complete' ? '—' : fmtDate(due)}</td><td>${len}${st.key === 'pm' ? ' — PMs get the stage-open email and reminders against this due date' : ''}</td></tr>`;
+      }).join('');
+    }
+
+    function renderCounts() {
+      const carried = PRIOR_ITEMS.filter((c) => carry.has(c.id));
+      const base = carried.reduce((s, c) => s + (c.priorBaseline ?? 0), 0);
+      const reChecked = carried.filter((c) => c.excludeReason).length;
+      q('[data-su-carry-count]').textContent = `${carried.length} of ${PRIOR_ITEMS.length} selected · ${fmtShort(base)} FY2027 baseline${reChecked ? ` · ${reChecked} re-checked despite a reason` : ''}`;
+      const newAvail = availableNew();
+      q('[data-su-new-count]').textContent = `${[...added].filter((id) => newAvail.some((n) => n.id === id)).length} of ${newAvail.length} selected`;
+      q('[data-su-add] .esa-button__label') && (q('[data-su-add] .esa-button__label').textContent = added.size ? `Add ${added.size} project${added.size === 1 ? '' : 's'}` : 'Add selected projects');
+      renderSummary();
+    }
+
+    function renderSummary() {
+      if (mode !== 'draft') { q('[data-su-summary]').textContent = ''; return; }
+      const { items, report } = planSetup(input());
+      q('[data-su-summary]').textContent = `${items.length} items · ${fmtShort(report.totalBaseline)} FY2028 baseline`;
+    }
+
+    function renderCola() {
+      const inp = input();
+      const ids = new Set(inp.colaIds);
+      const { items, report } = planSetup(inp);
+      const byId = new Map(items.map((i) => [i.id, i]));
+      const rows: ColaRow[] = [];
+      let before = 0;
+      let after = 0;
+      for (const id of inp.colaIds) {
+        const it = byId.get(id) as SoyItem | undefined;
+        if (!it) continue;
+        const p = PROJECTS[it.projectNumber];
+        const prior = it.priorBaseline;
+        let note = '';
+        if (p.cycleType === 'Two-year') note = p.offYear ? 'Skipped: two-year, off year' : 'Two-year: suggested on-year amount';
+        else if (prior == null) note = 'Skipped: no baseline';
+        rows.push({ id, number: it.projectNumber, title: p.title, fund: it.fund, emphasis: p.emphasis, pm: p.pm, before: prior, after: it.baseline, note });
+        before += prior ?? 0;
+        after += it.baseline ?? 0;
+      }
+      colaApi.setGridOption('rowData', rows);
+      colaApi.setGridOption('pinnedBottomRowData', [{ id: 'total', number: '', title: `${rows.length} items`, fund: '', emphasis: '', pm: '', before, after, note: '', total: true }]);
+      colaApi.refreshCells({ force: true });
+      q('[data-su-cola-count]').textContent = `COLA of ${(rate * 100).toFixed(rate * 1000 % 1 ? 2 : 1)}% applies to ${report.colaApplied} of the ${ids.size} items shown · baseline ${fmtShort(before)} → ${fmtShort(after)} (${after - before >= 0 ? '+' : ''}${fmtMoney(after - before)})`;
+
+      const names = (list: string[]) => list.map((id) => `<li>${esc(label(id))}</li>`).join('');
+      q('[data-su-skip-off]').hidden = report.colaSkippedOffYear.length === 0;
+      q('[data-su-skip-off-text]').textContent = `${report.colaSkippedOffYear.length} two-year projects are in their off year. They get $0 in FY2028 automatically, so no COLA applies:`;
+      q('[data-su-skip-off-list]').innerHTML = names(report.colaSkippedOffYear);
+      q('[data-su-skip-none]').hidden = report.colaSkippedNoBaseline.length === 0;
+      q('[data-su-skip-none-text]').textContent = `${report.colaSkippedNoBaseline.length} projects have no baseline, so there is nothing to adjust. Enter their EWB proposed amounts by hand:`;
+      q('[data-su-skip-none-list]').innerHTML = names(report.colaSkippedNoBaseline);
+
+      const ty = report.twoYearFlagged;
+      q('[data-su-two-year]').hidden = ty.length === 0;
+      q('[data-su-two-year-text]').textContent = `${ty.length} two-year projects are in their on year. Their FY2028 baseline is suggested as the annual amount × 2, plus ${(rate * 100).toFixed(1)}% inflation — confirm or change each in EWB proposed.`;
+      q('[data-su-two-year-rows]').innerHTML = ty.map((id) => {
+        const c = PRIOR_ITEMS.find((x) => x.id === id);
+        return `<tr><td>${esc(label(id))}</td><td class="cbf-soy-num">${fmtMoney(c?.priorBaseline)}</td><td class="cbf-soy-num">${fmtMoney(twoYearSuggestion(c?.priorBaseline ?? null, rate))}</td></tr>`;
+      }).join('');
+      renderSummary();
+    }
+
+    function tile(key: string, value: string, sub: string) {
+      const el = root.querySelector(`[data-su-tile="${key}"]`);
+      if (!el) return;
+      el.querySelector('.esa-stat__value')!.textContent = value;
+      const s = el.querySelector('.esa-stat__sub');
+      if (s) s.textContent = sub;
+    }
+
+    function renderReview() {
+      const { items, report } = planSetup(input());
+      tile('items', String(items.length), `${report.carried} carried forward · ${report.added.length} new`);
+      tile('baseline', fmtShort(report.totalBaseline), 'FY2028, after COLA');
+      tile('cola', `${report.colaApplied} items`, `at ${(rate * 100).toFixed(1)}%`);
+      tile('excluded', String(report.excluded.length), 'Each with its reason');
+      q('[data-su-review-dates]').innerHTML = STAGES.map((st) => `<tr><th scope="row">${esc(st.label)}</th><td>${st.key === 'complete' ? `On ${fmtDate(dates.complete)}` : `${fmtDate(dates[st.key as keyof StageDates])} – ${fmtDate(stageDue(dates, st.key as StageKey))}`}</td></tr>`).join('');
+      q('[data-su-review-excluded]').innerHTML = report.excluded.length
+        ? report.excluded.map((x) => `<tr><td>${esc(label(x.id))}</td><td>${esc(x.reason)}</td></tr>`).join('')
+        : '<tr><td colspan="2" class="cbf-soy-muted">Every FY2027 item is carried forward.</td></tr>';
+      q('[data-su-review-note]').textContent = `Creating the cycle opens EWB proposed. ${report.colaSkippedOffYear.length + report.colaSkippedNoBaseline.length} COLA skips and ${report.twoYearFlagged.length} two-year suggestions will be listed in the results report.`;
+    }
+
+    function availableNew() {
+      const inCycle = new Set(getState().cycle.items.map((i) => i.id));
+      return NEW_PROJECTS.filter((n) => !inCycle.has(n.id));
+    }
+
+    function renderNewGrid() {
+      const rows = availableNew().map((n) => {
+        const p = PROJECTS[n.projectNumber];
+        return { id: n.id, number: n.projectNumber, title: p.title, emphasis: p.emphasis, fund: n.fund, pm: p.pm, note: n.startNote };
+      });
+      newApi.setGridOption('rowData', rows);
+      syncing = true;
+      const sel: IRowNode<NewRow>[] = [];
+      const unsel: IRowNode<NewRow>[] = [];
+      newApi.forEachNode((n) => (added.has(n.data!.id) ? sel : unsel).push(n));
+      newApi.setNodesSelected({ nodes: sel, newValue: true });
+      newApi.setNodesSelected({ nodes: unsel, newValue: false });
+      syncing = false;
+      q('[data-su-new-grid]').hidden = rows.length === 0;
+      q('[data-su-new-empty]').hidden = rows.length > 0;
+    }
+
+    function showStep(n: number, scroll = true) {
+      step = n;
+      qa('[data-su-panel]').forEach((el) => { el.hidden = Number(el.dataset.suPanel) !== n; });
+      qa('[data-su-step]').forEach((el) => {
+        const i = Number(el.dataset.suStep);
+        el.classList.toggle('is-done', mode === 'draft' && i < n);
+        el.classList.toggle('is-current', i === n);
+        const b = el.querySelector('button')!;
+        if (i === n) b.setAttribute('aria-current', 'step');
+        else b.removeAttribute('aria-current');
+      });
+      q('[data-su-back]').closest<HTMLElement>('.esa-button')!.hidden = mode !== 'draft' || n === 0;
+      q('[data-su-next]').closest<HTMLElement>('.esa-button')!.hidden = mode !== 'draft' || n === 4;
+      q('[data-su-create-wrap]').hidden = mode !== 'draft' || n !== 4;
+      if (n === 3) renderCola();
+      if (n === 4) renderReview();
+      if (n === 2) renderNewGrid();
+      // Grids mounted in hidden panels need a nudge once visible.
+      requestAnimationFrame(() => {
+        [carryApi, newApi, colaApi].forEach((api) => api.refreshCells({ force: true }));
+      });
+      if (scroll) root.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+
+    q('[data-su-steps]').addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('[data-su-goto]');
+      if (!b || mode !== 'draft') return;
+      const n = Number(b.dataset.suGoto);
+      if (n > 0 && datesError()) { showStep(0); return; }
+      showStep(n);
+    });
+    q('[data-su-back]').addEventListener('click', () => showStep(Math.max(0, step - 1)));
+    q('[data-su-next]').addEventListener('click', () => {
+      if (step === 0 && datesError()) { renderDates(); return; }
+      showStep(Math.min(4, step + 1));
+    });
+
+    // ------------------------------------------------------------------
+    // Create (run + report)
+    // ------------------------------------------------------------------
+    function setProgress(pct: number, text: string) {
+      const bar = q('[data-su-progress] .esa-progress-bar');
+      bar.setAttribute('aria-valuenow', String(Math.round(pct)));
+      q<HTMLElement>('[data-su-progress] .esa-progress-bar__fill').style.width = `${pct}%`;
+      const v = root.querySelector('[data-su-progress] .esa-progress-bar__value');
+      if (v) v.textContent = `${Math.round(pct)}%`;
+      const l = root.querySelector('[data-su-progress] .esa-progress-bar__label');
+      if (l) l.textContent = text;
+    }
+
+    q('[data-su-create]').addEventListener('click', () => {
+      if (datesError()) { showStep(0); return; }
+      const inp = input();
+      const { items } = planSetup(inp);
+      phase = 'running';
+      q('[data-su-wizard]').hidden = true;
+      q('[data-su-run]').hidden = false;
+      q('[data-su-report]').hidden = true;
+      q('[data-su-progress]').hidden = false;
+      q('[data-su-run-title]').textContent = 'Creating the FY2028 cycle';
+      q('[data-su-run-note]').textContent = `Saving ${items.length} new items. Only the new items are saved — existing items are not re-saved one at a time.`;
+      // A timer, not requestAnimationFrame, so the run also finishes in a background tab.
+      const start = Date.now();
+      const total = items.length;
+      const timer = setInterval(() => {
+        const pct = Math.min(100, ((Date.now() - start) / 2000) * 100);
+        setProgress(pct, `Saving new items — ${Math.round((pct / 100) * total)} of ${total}`);
+        if (pct >= 100) { clearInterval(timer); finish(inp); }
+      }, 50);
+    });
+
+    function finish(inp: SetupInput) {
+      phase = 'report';
+      const report: SetupReport = update((s) => runSetup(s, inp));
+      q('[data-su-progress]').hidden = true;
+      q('[data-su-run-title]').textContent = 'FY2028 cycle created';
+      q('[data-su-run-note]').textContent = '';
+      q('[data-su-report]').hidden = false;
+      q('[data-su-report-lede]').textContent = `EWB proposed is open, with ${report.carried + report.added.length} items and a ${fmtShort(report.totalBaseline)} FY2028 baseline.`;
+      q('[data-su-report-rows]').innerHTML = [
+        ['Carried forward', `${report.carried} items`],
+        ['New projects added', `${report.added.length}`],
+        ['COLA applied', `${report.colaApplied} items at ${(report.colaRate * 100).toFixed(1)}%`],
+        ['Two-year on-year suggestions', `${report.twoYearFlagged.length} — confirm in EWB proposed`],
+        ['Not carried forward', `${report.excluded.length}`],
+        ['Total FY2028 baseline', fmtMoney(report.totalBaseline)],
+      ].map(([k, v]) => `<tr><th scope="row">${esc(k)}</th><td>${esc(v)}</td></tr>`).join('');
+      const list = (title: string, ids: string[], reason?: (id: string) => string) => ids.length
+        ? `<div class="stack" data-gap="xs"><h4 class="cbf-soy-su__h4">${esc(title)} (${ids.length})</h4><ul class="cbf-soy-su__names">${ids.map((id) => `<li>${esc(label(id))}${reason ? ` — <span class="cbf-soy-muted">${esc(reason(id))}</span>` : ''}</li>`).join('')}</ul></div>`
+        : '';
+      q('[data-su-report-lists]').innerHTML = [
+        list('COLA skipped: two-year off year', report.colaSkippedOffYear),
+        list('COLA skipped: no baseline', report.colaSkippedNoBaseline),
+        list('Not carried forward', report.excluded.map((x) => x.id), (id) => report.excluded.find((x) => x.id === id)?.reason ?? ''),
+        list('New projects added', report.added),
+      ].join('');
+      snackbar('success', `FY2028 cycle created: ${report.carried + report.added.length} items. EWB proposed is open.`);
+    }
+
+    // Re-entry: add projects to an open cycle.
+    q('[data-su-add]').addEventListener('click', () => {
+      const ids = [...added].filter((id) => availableNew().some((n) => n.id === id));
+      if (!ids.length) { snackbar('info', 'Select at least one project to add.'); return; }
+      update((s) => {
+        for (const id of ids) {
+          const n = NEW_PROJECTS.find((x) => x.id === id)!;
+          s.cycle.items.push({
+            id, projectNumber: n.projectNumber, fund: n.fund, accountType: 'Expense',
+            priorWorking: null, priorBaseline: null, baseline: null, isNew: true,
+            amounts: {}, transfers: [], followUp: false, notify: true,
+          });
+        }
+        s.cycle.items.sort((a, b) => a.projectNumber.localeCompare(b.projectNumber) || a.fund.localeCompare(b.fund));
+        s.cycle.activity.unshift({
+          id: `a-add-${Date.now().toString(36)}`, date: s.today, who: 'Morgan Ellery', kind: 'setup', stage: s.cycle.stage ?? undefined,
+          text: `Added ${ids.length} new project${ids.length === 1 ? '' : 's'} to the open cycle: ${ids.map((x) => x.split('|')[0]).join(', ')}.`,
+        });
+      });
+      added.clear();
+      snackbar('success', `Added ${ids.length} project${ids.length === 1 ? '' : 's'}. Enter their EWB proposed amounts on Items.`);
+    });
+
+    // ------------------------------------------------------------------
+    // Mode from the store
+    // ------------------------------------------------------------------
+    function render() {
+      if (!isAdmin()) return;
+      const c = getState().cycle;
+      // A jump back to a draft (Jump to step / Reset) leaves the results report.
+      if (phase === 'report' && c.status === 'Draft') {
+        phase = 'wizard';
+        q('[data-su-run]').hidden = true;
+        mode = 'reentry';
+      }
+      if (phase !== 'wizard') return;
+      const prevMode = mode;
+      mode = c.status === 'Draft' ? 'draft' : c.status === 'Open' ? 'reentry' : 'closed';
+      q('[data-su-closed]').hidden = mode !== 'closed';
+      q('[data-su-wizard]').hidden = mode === 'closed';
+      q('[data-su-reentry]').hidden = mode !== 'reentry';
+      q('[data-su-steps]').hidden = mode !== 'draft';
+      q('[data-su-add-wrap]').hidden = mode !== 'reentry';
+      q('[data-su-heading]').textContent = mode === 'draft' ? `Set up FY${c.fy}` : `Add projects to FY${c.fy}`;
+      if (mode === 'reentry') {
+        q('[data-su-reentry-text]').textContent = `FY${c.fy} is open (${c.items.length} items). You can add projects that weren’t included; dates, carry-forward and COLA were set when the cycle was created.`;
+        q('[data-su-new-lede]').textContent = 'Eligible projects not yet in this cycle. They start with no baseline — enter their amounts on Items.';
+      }
+      if (mode === 'draft' && prevMode !== 'draft') {
+        dates = { ...c.dates };
+        qa<Field>('[data-su-date]').forEach((el) => { el.value = dates[el.dataset.suDate as keyof StageDates]; });
+      }
+      renderDates();
+      renderCounts();
+      if (mode === 'reentry') showStep(2, false);
+      else if (mode === 'draft' && prevMode !== 'draft') showStep(0, false);
+      else if (mode === 'draft' && step === 2) renderNewGrid();
+    }
+
+    renderDates();
+    renderCounts();
+    showStep(0, false);
+    subscribe(render);
+    void addDays;
+  }
+</script>
+
+<style is:global>
+  .cbf-soy-su__steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--spacing-200); counter-reset: none; }
+  .cbf-soy-su__step-btn {
+    inline-size: 100%;
+    display: flex; align-items: center; gap: var(--spacing-200);
+    padding: var(--spacing-200) var(--spacing-300);
+    border: 1px solid var(--color-border-default);
+    border-block-end-width: 3px;
+    border-radius: var(--radius-200);
+    background: var(--color-background-elevation-raised);
+    color: var(--color-content-default-secondary);
+    font: inherit; font-size: 14px; text-align: start;
+    cursor: pointer;
+  }
+  .cbf-soy-su__step-btn:focus-visible { outline: 2px solid var(--color-background-brand); outline-offset: 2px; }
+  .cbf-soy-su__step-n {
+    display: grid; place-items: center; flex: none;
+    inline-size: 24px; block-size: 24px; border-radius: 999px;
+    border: 1px solid var(--color-border-default-strong);
+    font-size: 12px; font-weight: var(--typography-font-weight-bold);
+  }
+  .cbf-soy-su__step.is-done .cbf-soy-su__step-btn { border-block-end-color: var(--color-background-utility-success, var(--color-background-brand)); color: var(--color-content-default); }
+  .cbf-soy-su__step.is-done .cbf-soy-su__step-n { background: var(--color-background-utility-success, var(--color-background-brand)); border-color: transparent; color: var(--color-background-elevation-raised); }
+  .cbf-soy-su__step.is-current .cbf-soy-su__step-btn { border-color: var(--color-background-brand); background: var(--color-background-brand-subtle); color: var(--color-content-default); font-weight: var(--typography-font-weight-semibold); }
+  .cbf-soy-su__step.is-current .cbf-soy-su__step-n { background: var(--color-background-brand); border-color: transparent; color: var(--color-background-elevation-raised); }
+  @media (max-width: 760px) {
+    .cbf-soy-su__steps { grid-template-columns: 1fr; }
+  }
+  .cbf-soy-su__h { margin: 0; font-size: 18px; font-weight: var(--typography-font-weight-semibold); }
+  .cbf-soy-su__h4 { margin: 0; font-size: 15px; font-weight: var(--typography-font-weight-semibold); }
+  .cbf-soy-su__dates { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--spacing-300); }
+  .cbf-soy-su__due { max-inline-size: 960px; }
+  .cbf-soy-su__count { margin: 0; font-size: 14px; font-weight: var(--typography-font-weight-semibold); color: var(--color-content-default); }
+  .cbf-soy-su__grid { block-size: 440px; }
+  .cbf-soy-su__grid--short { block-size: 300px; }
+  .cbf-soy-su__reason { color: var(--color-content-default-secondary); }
+  .cbf-soy-su__cola-controls { display: grid; grid-template-columns: minmax(120px, 160px) repeat(3, minmax(160px, 1fr)); gap: var(--spacing-300); align-items: end; }
+  @media (max-width: 760px) { .cbf-soy-su__cola-controls { grid-template-columns: 1fr; } }
+  .cbf-soy-su__skips { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-300); }
+  .cbf-soy-su__names { margin: var(--spacing-200) 0 0; padding-inline-start: var(--spacing-500); font-size: 14px; }
+  .cbf-soy-su__ty-wrap { overflow-x: auto; margin-block-start: var(--spacing-200); }
+  .cbf-soy-su__tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--spacing-400); padding: var(--spacing-400); border: 1px solid var(--color-border-default-subtle); border-radius: var(--radius-200); }
+  .cbf-soy-su__review-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--spacing-500); align-items: start; }
+  .cbf-soy-su__nav { padding-block-start: var(--spacing-300); border-block-start: 1px solid var(--color-border-default-subtle); }
+  .cbf-soy-su__report { max-inline-size: 640px; }
+</style>

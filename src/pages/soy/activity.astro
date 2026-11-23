@@ -1,0 +1,18 @@
+---
+// /soy/activity — Activity and notifications: the activity feed
+// with filter chips and links into the item panel, notification preferences,
+// and automatic reminders with a preview. Replaces Gemini's Activity Log,
+// Notifications page and manual reminders.
+//
+// Thin assembler — the frame is cbf-soy-frame; state lives in src/lib/soy/.
+import CbfSoyFrame from '../../components/soy/cbf-soy-frame.astro';
+import CbfSoyActivity from '../../components/soy/cbf-soy-activity.astro';
+---
+<!-- manifest:
+  layout: cbf-soy-frame (nav + prototype strip + app panel + tabs + locked banner)
+  sections:
+    - activity -> cbf-soy-activity  (feed + chips/selects, notification preferences, automatic reminders)
+-->
+<CbfSoyFrame active="activity" title="Activity">
+  <CbfSoyActivity />
+</CbfSoyFrame>

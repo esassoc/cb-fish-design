@@ -1,0 +1,187 @@
+---
+// cbf-soy-changes — the "Show what's changing" layer of the SOY prototype, for
+// the client's sign-off review. Every changed element on a screen carries
+// data-change="<id>" (registry: src/lib/soy/changes.ts). With the toggle on:
+//
+//   • each changed element gets a dashed outline and a numbered marker;
+//   • the side panel lists this screen's changes in the same numbering — what it
+//     was before, what it does now, which problem it solves, and its tag
+//     (UI / BE / DEC n);
+//   • clicking a marker opens the panel at that note.
+//
+// It never touches the components it annotates: the outline is an attribute
+// selector, and the markers live in their own absolutely positioned layer,
+// re-placed whenever the page re-renders, scrolls its layout or resizes.
+//
+// bcn-lego-checked: the panel is esa-side-dialog and tags are esa-pill (cloned).
+// The outline and the numbered markers are prototype scaffolding, not product —
+// like cbf-prototype-strip's dashed frame they must NOT look like a CBFish
+// control, so no lego fits (esa-badge is a status count inside content, not a
+// pin floating over another component). Beacon is not cloned on this machine.
+---
+<div class="cbf-soy-changes__layer" data-soy-change-layer aria-hidden="false"></div>
+
+<esa-side-dialog size="md" heading="What's changing on this screen" show-close-button data-soy-change-panel>
+  <div class="stack" data-gap="sm">
+    <p class="cbf-soy-changes__lede">
+      Each numbered change below is outlined on the screen. Tags show its weight:
+      <strong>UI</strong> is front end only, <strong>BE</strong> needs backend or data work, and
+      <strong>DEC</strong> shows our recommended answer to a decision for you.
+    </p>
+    <ol class="cbf-soy-changes__list stack" data-gap="sm" data-soy-change-list></ol>
+  </div>
+</esa-side-dialog>
+
+<script>
+  import '@esa/ecology/esa-side-dialog';
+  import { CHANGES, PROBLEMS } from '../../lib/soy/changes';
+  import { getUi, subscribe } from '../../lib/soy/store';
+  import { esc, pill, type Dialog } from '../../lib/soy/ui';
+
+  const layer = document.querySelector<HTMLElement>('[data-soy-change-layer]')!;
+  const panel = document.querySelector<Dialog>('[data-soy-change-panel]')!;
+  const list = document.querySelector<HTMLElement>('[data-soy-change-list]')!;
+
+  /** Rendered (not hidden, not in a closed dialog) changed elements, in document order. */
+  const visibleChanged = () => [...document.querySelectorAll<HTMLElement>('[data-change]')].filter((el) => CHANGES[el.dataset.change!] && el.getClientRects().length > 0);
+
+  /** Unique change ids showing right now — the page plus any open dialog. */
+  function idsOnPage(): string[] {
+    const seen: string[] = [];
+    for (const el of visibleChanged()) if (!seen.includes(el.dataset.change!)) seen.push(el.dataset.change!);
+    return seen;
+  }
+
+  function renderList() {
+    const ids = idsOnPage();
+    list.innerHTML = ids.map((id, i) => {
+      const c = CHANGES[id];
+      const tags = c.tags.map((t) => pill(t === 'DEC' && c.dec ? `DEC ${c.dec}` : t, t === 'UI' ? 'info' : t === 'BE' ? 'warning' : 'primary', { size: 'xs' })).join(' ');
+      const solves = c.problems.map((p) => `<strong>${p}</strong> ${esc(PROBLEMS[p])}`).join('; ');
+      return `<li class="cbf-soy-changes__item" id="soy-change-${esc(id)}" data-change-item="${esc(id)}">
+        <div class="cbf-soy-changes__head"><span class="cbf-soy-changes__num">${i + 1}</span><h3>${esc(c.title)}</h3></div>
+        <div class="cluster" data-gap="2xs">${tags}</div>
+        <dl class="cbf-soy-changes__dl">
+          <dt>Before</dt><dd>${esc(c.before)}</dd>
+          <dt>Now</dt><dd>${esc(c.now)}</dd>
+          <dt>Solves</dt><dd>${solves}</dd>
+        </dl>
+      </li>`;
+    }).join('');
+    document.dispatchEvent(new CustomEvent('cbf-soy:changes-count', { detail: { count: ids.length } }));
+  }
+
+  let timer = 0;
+  function placeMarkers() {
+    clearTimeout(timer);
+    timer = window.setTimeout(() => {
+      layer.innerHTML = '';
+      if (!getUi().changes) return;
+      const ids = idsOnPage();
+      const placed = new Set<string>();
+      visibleChanged().forEach((el) => {
+        const id = el.dataset.change!;
+        if (placed.has(id)) return;
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 && r.height === 0) return;
+        if (el.closest('dialog, esa-dialog, esa-side-dialog')) return;
+        placed.add(id);
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'cbf-soy-changes__marker';
+        b.textContent = String(ids.indexOf(id) + 1);
+        b.title = CHANGES[id].title;
+        b.setAttribute('aria-label', `Change ${ids.indexOf(id) + 1}: ${CHANGES[id].title}`);
+        b.style.left = `${Math.max(4, r.left + window.scrollX - 12)}px`;
+        b.style.top = `${Math.max(4, r.top + window.scrollY - 12)}px`;
+        b.addEventListener('click', () => openAt(id));
+        layer.append(b);
+      });
+    }, 60);
+  }
+
+  function openAt(id?: string) {
+    renderList();
+    panel.show();
+    if (id) {
+      setTimeout(() => {
+        const el = list.querySelector<HTMLElement>(`[data-change-item="${CSS.escape(id)}"]`);
+        list.querySelectorAll('.is-target').forEach((x) => x.classList.remove('is-target'));
+        el?.classList.add('is-target');
+        el?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }, 50);
+    }
+  }
+
+  document.addEventListener('cbf-soy:open-changes', () => openAt());
+
+  const refresh = () => { renderList(); placeMarkers(); };
+  subscribe(refresh);
+  // Re-place on any re-render, but ignore the layer's own marker churn.
+  new MutationObserver((muts) => {
+    if (muts.every((m) => layer.contains(m.target) || list.contains(m.target))) return;
+    placeMarkers();
+  }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden', 'open'] });
+  window.addEventListener('resize', placeMarkers);
+  // Layout can shift after web components upgrade and fonts load.
+  window.addEventListener('load', refresh);
+  setTimeout(refresh, 600);
+</script>
+
+<style is:global>
+  /* Prototype scaffolding (see header): a dashed amber outline on every element
+     that changes, only while "Show what's changing" is on. */
+  html[data-cbf-soy-changes] [data-change] {
+    outline: 2px dashed var(--color-background-utility-warning);
+    outline-offset: 3px;
+  }
+  .cbf-soy-changes__layer {
+    position: absolute;
+    inset: 0 auto auto 0;
+    inline-size: 0;
+    block-size: 0;
+    z-index: 30;
+  }
+  .cbf-soy-changes__marker {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    min-inline-size: 24px;
+    block-size: 24px;
+    padding-inline: 6px;
+    border: 2px solid var(--color-background-elevation-raised);
+    border-radius: 999px;
+    background: var(--color-content-utility-warning);
+    color: var(--color-background-elevation-raised);
+    font: inherit;
+    font-size: 12px;
+    font-weight: var(--typography-font-weight-bold);
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+  }
+  .cbf-soy-changes__marker:focus-visible { outline: 2px solid var(--color-background-brand); outline-offset: 2px; }
+  .cbf-soy-changes__lede { margin: 0; font-size: 14px; color: var(--color-content-default-secondary); }
+  .cbf-soy-changes__list { margin: 0; padding: 0; list-style: none; }
+  .cbf-soy-changes__item {
+    padding: var(--spacing-300);
+    border: 1px solid var(--color-border-default-subtle);
+    border-radius: var(--radius-200);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-200);
+    scroll-margin-block-start: var(--spacing-300);
+  }
+  .cbf-soy-changes__item.is-target { border-color: var(--color-content-utility-warning); box-shadow: 0 0 0 1px var(--color-content-utility-warning); }
+  .cbf-soy-changes__head { display: flex; align-items: center; gap: var(--spacing-200); }
+  .cbf-soy-changes__head h3 { margin: 0; font-size: 16px; font-weight: var(--typography-font-weight-semibold); }
+  .cbf-soy-changes__num {
+    display: grid; place-items: center; flex: none;
+    inline-size: 24px; block-size: 24px; border-radius: 999px;
+    background: var(--color-content-utility-warning); color: var(--color-background-elevation-raised);
+    font-size: 12px; font-weight: var(--typography-font-weight-bold);
+  }
+  .cbf-soy-changes__dl { display: grid; grid-template-columns: max-content 1fr; gap: var(--spacing-100) var(--spacing-300); margin: 0; font-size: 14px; }
+  .cbf-soy-changes__dl dt { font-weight: var(--typography-font-weight-semibold); color: var(--color-content-default-secondary); }
+  .cbf-soy-changes__dl dd { margin: 0; }
+</style>

@@ -26,6 +26,15 @@ export interface Prototype {
 export const prototypes: Prototype[] = [
   // --- Active prototypes (in progress) ---
   {
+    slug: 'soy',
+    title: 'Start-of-year (SOY) budgets — future state',
+    description:
+      'The recommended future state of SOY for client sign-off: a cycle overview with next actions by role, a setup wizard, an items workspace with a side panel, final decisions, transfers with reconciliation, close-out, and activity — played through one FY2028 cycle, with a “Show what’s changing” layer on every screen.',
+    route: '/soy/walkthrough',
+    createdAt: '2026-11-23',
+    status: 'in-progress',
+  },
+  {
     slug: 'capital-program',
     title: 'Capital program',
     description:
