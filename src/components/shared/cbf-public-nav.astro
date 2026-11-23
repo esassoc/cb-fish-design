@@ -15,7 +15,7 @@
 //   cbf-omni-trigger  the tray search affordance  → opens cbf-omni-search
 //   cbf-logo / cbf-icon  spoke-local lockup + glyphs
 //
-// The end cluster (Recent · My Work · user) is authored as local cbf-nav-link
+// The end cluster (Dashboard · Recent · user) is authored as local cbf-nav-link
 // chrome rather than esa-icon-link: it needs the `history` glyph (absent from the
 // hub icon set) and the user menu's markup is rewritten live during impersonation.
 import EsaAppBar from '@esa/ecology/esa-app-bar.astro';
@@ -23,8 +23,8 @@ import EsaIconLink from '@esa/ecology/esa-button.astro';
 import EsaIconButton from '@esa/ecology/esa-button.astro';
 import EsaNavDropdown from '@esa/ecology/esa-nav-dropdown.astro';
 import EsaLinkColumn from '@esa/ecology/esa-link-column.astro';
+import EsaAvatar from '@esa/ecology/esa-avatar.astro';
 import CbfLogo from './cbf-logo.astro';
-import CbfIcon from '../search/cbf-icon.astro';
 import CbfOmniTrigger from '../search/cbf-omni-trigger.astro';
 import CbfOmniSearch from '../search/cbf-omni-search.astro';
 // Menu data is shared with the homepage footer (cbf-app-footer) via app-nav.ts so
@@ -33,20 +33,47 @@ import CbfOmniSearch from '../search/cbf-omni-search.astro';
 import { help, mitigation, reporting, funding, system, quick, type NavLink } from '../../data/app-nav';
 import { withBase } from '../../lib/base';
 // app-nav hrefs are root-relative and base-less — prefix internal ones here.
+// QA's own nav glyphs, copied one file at a time from esassoc/sitkatech-monorepo
+// (Gemini/Source/Taurus.WebCore/wwwroot/Content/img/GeminiNav/, as referenced by
+// Views/Shared/NavigationMenu.cshtml and NavigationMenuTreeMaker.cs) into
+// public/images/qa-nav/. Each is its own size, as QA draws them. They paint through a
+// CSS mask in currentColor, because the hub's button and dropdown take only a
+// registry icon name, not an SVG.
+const QA_ICONS = {
+  datamanagement: ['Nav-white-Datamanagement', 11, 12],
+  systemstatus: ['Nav-white-Systemstatus', 14, 14],
+  systemconfiguration: ['Nav-white-Systemconfiguration', 13, 12],
+  help: ['Nav-white-Help', 15, 14],
+  mitigation: ['Nav-Mitigationwork', 23, 16],
+  reporting: ['Nav-Reporting', 21, 10],
+  funding: ['Nav-Funding', 24, 14],
+  dashboard: ['Nav-Dashboard', 16, 14],
+  recent: ['Nav-Recent', 14, 14],
+  down: ['Nav-Down-arrow', 9, 5],
+} as const;
+const qa = (key: keyof typeof QA_ICONS): string => {
+  const [file, w, h] = QA_ICONS[key];
+  const down = withBase('/images/qa-nav/Nav-Down-arrow.svg');
+  return `--qa-icon: url(${withBase(`/images/qa-nav/${file}.svg`)}); --qa-w: ${w}px; --qa-h: ${h}px; --qa-down: url(${down})`;
+};
 const based = (links: NavLink[]): NavLink[] =>
   links.map((l) => (l.href?.startsWith('/') ? { ...l, href: withBase(l.href) } : l));
 ---
 <EsaAppBar tone="brand-strong" as="nav" class="cbf-app-bar--admin">
-  <div class="cbf-nav-collapsible" slot="start">
-    <EsaIconLink variant="chrome" size="sm" icon="database" iconRight="chevron-down">Data management</EsaIconLink>
-    <EsaIconLink variant="chrome" size="sm" icon="activity" iconRight="chevron-down">System status</EsaIconLink>
-    <EsaIconLink variant="chrome" size="sm" icon="settings" iconRight="chevron-down">System configuration</EsaIconLink>
+  {/* System menus are admin tools (assumed, not confirmed): the contract pages'
+      role lens hides them for COR and contractor via data-hide-for. */}
+  <div class="cbf-nav-collapsible" slot="start" data-hide-for="cor contractor">
+    <span class="cbf-qa-icon" style={qa('datamanagement')}><EsaIconLink variant="chrome" size="sm" iconRight="chevron-down">Data management</EsaIconLink></span>
+    <span class="cbf-qa-icon" style={qa('systemstatus')}><EsaIconLink variant="chrome" size="sm" iconRight="chevron-down">System status</EsaIconLink></span>
+    <span class="cbf-qa-icon" style={qa('systemconfiguration')}><EsaIconLink variant="chrome" size="sm" iconRight="chevron-down">System configuration</EsaIconLink></span>
   </div>
   <CbfOmniTrigger />
   <div class="cbf-nav-collapsible" slot="end">
-    <EsaNavDropdown size="sm" align="end" icon="circle-question-mark" label="Help">
-      <EsaLinkColumn heading="Help" links={based(help)} />
-    </EsaNavDropdown>
+    <span class="cbf-qa-icon" style={qa('help')}>
+      <EsaNavDropdown size="sm" align="end" label="Help">
+        <EsaLinkColumn heading="Help" links={based(help)} />
+      </EsaNavDropdown>
+    </span>
   </div>
 </EsaAppBar>
 
@@ -58,15 +85,21 @@ const based = (links: NavLink[]): NavLink[] =>
     <CbfLogo />
   </Fragment>
   <div class="cbf-nav-collapsible cbf-nav-collapsible--inline">
-    <EsaNavDropdown icon="trees" label="Mitigation work">
-      <EsaLinkColumn heading="Mitigation work" links={based(mitigation)} />
-    </EsaNavDropdown>
-    <EsaNavDropdown icon="trending-up" label="Reporting">
-      <EsaLinkColumn heading="Reporting" links={based(reporting)} />
-    </EsaNavDropdown>
-    <EsaNavDropdown icon="credit-card" label="Funding">
-      <EsaLinkColumn heading="Funding" links={based(funding)} />
-    </EsaNavDropdown>
+    <span class="cbf-qa-icon" style={qa('mitigation')}>
+      <EsaNavDropdown label="Mitigation work">
+        <EsaLinkColumn heading="Mitigation work" links={based(mitigation)} />
+      </EsaNavDropdown>
+    </span>
+    <span class="cbf-qa-icon" style={qa('reporting')}>
+      <EsaNavDropdown label="Reporting">
+        <EsaLinkColumn heading="Reporting" links={based(reporting)} />
+      </EsaNavDropdown>
+    </span>
+    <span class="cbf-qa-icon" style={qa('funding')}>
+      <EsaNavDropdown label="Funding">
+        <EsaLinkColumn heading="Funding" links={based(funding)} />
+      </EsaNavDropdown>
+    </span>
   </div>
 
   <div class="cbf-nav-actions" slot="end">
@@ -76,14 +109,17 @@ const based = (links: NavLink[]): NavLink[] =>
         because it needs the `history` glyph absent from the hub icon set and the user
         menu's markup is rewritten live during impersonation; --collapse hides Recent/
         My Work below the nav breakpoint, where they reappear in the esa-side-dialog drawer. */}
-    <button class="cbf-nav-link cbf-nav-link--collapse" type="button">
-      <CbfIcon name="history" size={16} /> Recent <CbfIcon name="chevron-down" size={14} />
-    </button>
+    {/* Order and glyphs follow QA (2026-11-10): Dashboard, Recent, then the user with
+        an initials avatar. */}
     <a class="cbf-nav-link cbf-nav-link--collapse" href={withBase('/my-work')}>
-      <CbfIcon name="layout-dashboard" size={16} /> Dashboard
+      <span class="cbf-qa-icon__glyph" style={qa('dashboard')}></span> Dashboard
     </a>
+    <button class="cbf-nav-link cbf-nav-link--collapse" type="button">
+      <span class="cbf-qa-icon__glyph" style={qa('recent')}></span> Recent <span class="cbf-qa-icon__glyph" style={qa('down')}></span>
+    </button>
     <button class="cbf-nav-link cbf-nav-link--user" type="button" data-omni-user>
-      <CbfIcon name="circle-user" size={16} /> Angela Zhao <CbfIcon name="chevron-down" size={14} />
+      <span class="cbf-nav-link__avatar" data-cbf-user-initials><EsaAvatar name="Angela Zhao" size="sm" /></span>
+      <span data-cbf-user-name>Angela Zhao</span> <span class="cbf-qa-icon__glyph" style={qa('down')}></span>
     </button>
   </div>
 </EsaAppBar>
@@ -153,6 +189,45 @@ const based = (links: NavLink[]): NavLink[] =>
     height: 1.1em;
     background: rgba(255, 255, 255, 0.25);
   }
+  /* QA's glyphs (see QA_ICONS): a mask over currentColor, ahead of the label in a
+     lego trigger, or as its own span in the local links. */
+  .cbf-qa-icon {
+    display: contents;
+  }
+  /* QA's down arrow in place of the hub chevron; it turns over when the menu opens. */
+  .cbf-qa-icon :global(.esa-button__native > .esa-icon:last-child) {
+    display: none;
+  }
+  .cbf-qa-icon :global(.esa-button__native)::after {
+    content: '';
+    flex: none;
+    inline-size: 9px;
+    block-size: 5px;
+    background: currentColor;
+    mask: var(--qa-down) center / contain no-repeat;
+    transition: transform 150ms ease;
+  }
+  .cbf-qa-icon :global(details[open] > summary .esa-button__native)::after {
+    transform: rotate(180deg);
+  }
+  .cbf-qa-icon :global(.esa-button__native)::before,
+  .cbf-qa-icon__glyph {
+    content: '';
+    display: inline-block;
+    flex: none;
+    inline-size: var(--qa-w);
+    block-size: var(--qa-h);
+    background: currentColor;
+    mask: var(--qa-icon) center / contain no-repeat;
+  }
+  /* QA's avatar: white initials disc on the brand bar. */
+  .cbf-nav-link__avatar {
+    display: inline-flex;
+  }
+  .cbf-nav-link__avatar :global(.esa-avatar) {
+    background: var(--color-background-default);
+    color: var(--color-background-brand);
+  }
   .cbf-nav-link--user.is-impersonating {
     color: var(--cbf-amber-attention);
   }
@@ -162,6 +237,20 @@ const based = (links: NavLink[]): NavLink[] =>
      chevron icons keep their explicit pixel size, and the impersonation badge
      keeps its own explicit font-size, so both survive. The separator is dropped
      since Recent/My Work no longer precede the user here. */
+  /* Mid widths: the avatar alone stands for the user, so the end cluster clears the
+     Funding menu (it ran into it from ~1340px down). */
+  @media (max-width: 1360px) {
+    .cbf-nav-actions { gap: var(--spacing-400); }
+    /* Hidden from sight only: the name still labels the button. */
+    .cbf-nav-link--user [data-cbf-user-name] {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
   @media (max-width: 680px) {
     .cbf-nav-link--user { font-size: 0; padding-left: 0; }
     .cbf-nav-link--user::before { display: none; }
@@ -175,7 +264,7 @@ const based = (links: NavLink[]): NavLink[] =>
   .cbf-nav-collapsible { display: contents; }
   .cbf-nav-burger { display: none; } /* hidden until the bar would overflow */
 
-  @media (max-width: 1024px) {
+  @media (max-width: 1200px) {
     .cbf-nav-collapsible,
     .cbf-nav-link--collapse { display: none; }
     .cbf-nav-burger {
@@ -202,7 +291,9 @@ const based = (links: NavLink[]): NavLink[] =>
   }
   .cbf-app-bar--admin .cbf-omni-trigger { min-width: 0; }
   .cbf-app-bar--admin .esa-app-bar__start { justify-self: start; }
-  .cbf-app-bar--admin .esa-app-bar__main { justify-content: center; }
+  /* Pinned to the middle column, so it stays centered when the role lens hides the
+     admin menus on its left. */
+  .cbf-app-bar--admin .esa-app-bar__main { justify-content: center; grid-column: 2; }
   .cbf-app-bar--admin .esa-app-bar__end { justify-self: end; }
 
   /* Phone: the header logo drops its wordmark, keeping just the compact mark, so

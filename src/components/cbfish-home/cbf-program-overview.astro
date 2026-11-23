@@ -1,64 +1,35 @@
 ---
 // cbf-program-overview — the homepage "Welcome to…" band: the page h1 + intro
-// prose, then the program-at-a-glance stat cards (Funds / Projects / Contracts /
-// Work sites). Mirrors the cbfish.org homepage overview.
+// prose beside the program-at-a-glance tiles (projects, contracts), side by
+// side on wide screens and stacked on narrow ones. Mirrors the cbfish.org
+// homepage overview.
 //
-// bcn-lego-checked: the metrics ARE esa-stat legos (value/label/sub), each sitting
-// in an esa-card surface for the card look — not a bespoke metric block. The
-// heading/intro use the .type-* roles and the cards sit on the .grid primitive;
-// only the band's spacing is component-internal layout (legal per CLAUDE.md).
-import EsaStat from '@esa/ecology/esa-stat.astro';
-import EsaCard from '@esa/ecology/esa-card.astro';
+// bcn-lego-checked: the side-by-side is the `switcher` layout primitive; the
+// tiles are cbf-stat-links (linked, like the "What the program has delivered"
+// totals — see its note). The heading/intro use the typography roles; only the
+// copy's measure and the intro colour are local.
+import CbfStatLinks, { type StatLink } from './cbf-stat-links.astro';
 
-interface Stat {
-  value: string;
-  label: string;
-  sub?: string;
-}
 interface Props {
   heading: string;
   intro: string;
-  stats: Stat[];
+  stats: StatLink[];
 }
 const { heading, intro, stats } = Astro.props;
 ---
-<section class="cbf-program-overview">
-  <div class="cbf-program-overview__copy">
+<section class="cbf-program-overview switcher" data-gap="2xl">
+  <div class="cbf-program-overview__copy stack" data-gap="sm">
     <h1 class="typography-heading-lg">{heading}</h1>
-    <p class="typography-body-md cbf-program-overview__intro">{intro}</p>
+    <p class="typography-body-lg cbf-program-overview__intro">{intro}</p>
   </div>
-  <ul class="cbf-program-overview__stats grid">
-    {stats.map((s) => (
-      <li>
-        <EsaCard padding="default">
-          <EsaStat value={s.value} label={s.label} sub={s.sub} />
-        </EsaCard>
-      </li>
-    ))}
-  </ul>
+  <div class="cbf-program-overview__stats">
+    <CbfStatLinks items={stats} minTile="8rem" />
+  </div>
 </section>
 
 <style>
-  .cbf-program-overview {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-600);
-  }
-  .cbf-program-overview__copy {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-300);
-    max-width: 70ch;
-  }
-  .cbf-program-overview__intro {
-    color: var(--color-content-default-secondary);
-    font-size: 18px;
-    line-height: 1.6;
-  }
-  .cbf-program-overview__stats {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    --grid-min: 12rem;
-  }
+  /* below ~56rem the copy and the tiles stack */
+  .cbf-program-overview { --switcher-threshold: 56rem; align-items: center; }
+  .cbf-program-overview__copy { max-width: 62ch; }
+  .cbf-program-overview__intro { color: var(--color-content-default-secondary); line-height: 1.6; }
 </style>

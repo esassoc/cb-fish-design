@@ -19,11 +19,14 @@ interface Crumb {
 }
 interface Props {
   crumbs: Crumb[];
+  /** Let menus that open inside the panel hang past its edge (record header nav).
+      The crumb strip then rounds its own top corners instead of being clipped. */
+  overflow?: 'clip' | 'visible';
 }
-const { crumbs } = Astro.props;
+const { crumbs, overflow = 'clip' } = Astro.props;
 const hasSidebar = Astro.slots.has('sidebar');
 ---
-<section class="cbf-app-panel">
+<section class:list={['cbf-app-panel', overflow === 'visible' && 'cbf-app-panel--overflow']}>
   <div class="cbf-app-panel__crumb">
     <EsaBreadcrumbs items={crumbs} />
   </div>
@@ -55,6 +58,12 @@ const hasSidebar = Astro.slots.has('sidebar');
     background: var(--color-background-elevation-raised);
     /* soft navy lift — tokenized off the deepest brand surface, no raw rgba */
     box-shadow: 0 1px 3px color-mix(in srgb, var(--color-background-default-knockout) 8%, transparent);
+  }
+  .cbf-app-panel--overflow {
+    overflow: visible;
+  }
+  .cbf-app-panel--overflow .cbf-app-panel__crumb {
+    border-radius: var(--radius-100) var(--radius-100) 0 0;
   }
   .cbf-app-panel__crumb {
     background: var(--cbf-surface-crumb); /* the app's breadcrumb strip */

@@ -1,0 +1,25 @@
+---
+/*
+ * cbf-initialize-sow — the Initialize SOW page body in round 4's "SOW hub" variation.
+ * The page is reached only from the SOW page's button (pick 2), so it ends in the next
+ * step: Create SOW lands on the SOW page with Rev 1 in review; Cancel goes back to it.
+ * The form itself is out of scope, so a placeholder stands for it.
+ */
+import EsaButton from '@esa/ecology/esa-button.astro';
+import CbfSkeletonBody from '../shared/cbf-skeleton-body.astro';
+
+interface Props {
+  createHref: string;
+  cancelHref: string;
+  seed?: number;
+}
+const { createHref, cancelHref, seed = 0 } = Astro.props;
+---
+
+<div class="stack" data-gap="md">
+  <CbfSkeletonBody seed={seed} />
+  <div class="cluster" data-gap="sm">
+    <EsaButton variant="primary" href={createHref}>Create SOW</EsaButton>
+    <EsaButton variant="secondary" href={cancelHref}>Cancel</EsaButton>
+  </div>
+</div>

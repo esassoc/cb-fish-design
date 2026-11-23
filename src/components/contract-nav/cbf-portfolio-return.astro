@@ -1,0 +1,104 @@
+---
+/*
+ * cbf-portfolio-return — the temporary way back to the portfolio a record was opened
+ * from, above the record header and outside its navigation. Andy, 2026-11-10: "some
+ * sort of like temporary alert style back button that goes above the headers, not
+ * introduce it into the navigation at all."
+ *
+ * Sits inside the record's card, under the breadcrumbs and above the eyebrow (Andy:
+ * "not above the breadcrumbs, but ... below the breadcrumbs in the white background,
+ * but above the contract eyebrow").
+ *
+ * Shown only when the arrival lens says the record was opened from a portfolio
+ * (cbf-role-gate's [data-only-arrival] rule); dismissable, since it is temporary.
+ */
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaIcon from '@esa/ecology/esa-icon.astro';
+
+interface Props {
+  /** The portfolio's name. */
+  name: string;
+  href: string;
+}
+const { name, href } = Astro.props;
+---
+
+<div class="cbf-portfolio-return" data-only-arrival="portfolio">
+  <EsaAlertBox variant="info" dismissable>
+    <a class="cbf-portfolio-return__link" href={href}>
+      <EsaIcon name="arrow-left" size="sm" />
+      <span>Back to {name}</span>
+    </a>
+  </EsaAlertBox>
+</div>
+
+<script>
+  // Dismissed stays dismissed for the visit (sessionStorage); switching the arrival
+  // lens shows it again, so the demo can be rerun.
+  const KEY = 'cbf-portfolio-return-dismissed';
+  const root = document.querySelector<HTMLElement>('.cbf-portfolio-return');
+  if (root) {
+    try {
+      if (sessionStorage.getItem(KEY)) root.hidden = true;
+    } catch {
+      /* no storage: it shows on every page */
+    }
+    // Hidden here, not left to esa-alert-box: its dismiss script throws
+    // (FOCUSABLE_SELECTOR is not defined, hub bug) and never hides the box.
+    root.addEventListener('click', (e) => {
+      if (!(e.target as Element).closest('[data-esa-alert-dismiss]')) return;
+      root.hidden = true;
+      try {
+        sessionStorage.setItem(KEY, '1');
+      } catch {
+        /* no storage */
+      }
+    });
+    // The lens fires this on load too (switched: false); only a real switch resets.
+    document.addEventListener('cbf-arrival:change', (e) => {
+      if (!(e as CustomEvent<{ switched?: boolean }>).detail?.switched) return;
+      try {
+        sessionStorage.removeItem(KEY);
+      } catch {
+        /* no storage */
+      }
+      root.hidden = false;
+    });
+  }
+</script>
+
+<style>
+  .cbf-portfolio-return {
+    padding-block-end: var(--spacing-400);
+  }
+  /* One centre line for the info icon, arrow, text and close. esa-alert-box tops its
+     items and wraps the 20px icon in a line box 27px tall, which left the bottom
+     padding deeper than the top; centre the row and let the icon box hug its glyph. */
+  .cbf-portfolio-return :global(.esa-alert-box) {
+    align-items: center;
+  }
+  .cbf-portfolio-return :global(.esa-alert-box__icon) {
+    display: flex;
+    padding: 0;
+  }
+  .cbf-portfolio-return :global(.esa-alert-box__icon svg) {
+    display: block;
+  }
+  /* No inline line box around the link: its own box is what gets centred. */
+  .cbf-portfolio-return :global(.esa-alert-box__message) {
+    display: flex;
+  }
+  /* The 16px arrow centred on the text's first line, so it stays beside it when a
+     long name wraps. */
+  .cbf-portfolio-return__link > :global(:first-child) {
+    margin-block-start: calc((1lh - 16px) / 2);
+    flex: none;
+  }
+  .cbf-portfolio-return__link {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: var(--spacing-100);
+    color: var(--color-content-brand);
+    font-weight: var(--typography-font-weight-medium);
+  }
+</style>

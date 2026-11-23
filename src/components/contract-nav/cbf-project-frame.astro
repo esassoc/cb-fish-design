@@ -1,0 +1,81 @@
+---
+/*
+ * cbf-project-frame — everything around a project page's body, on the contract
+ * header's round 5 "Areas" pattern: the site nav, the record card (breadcrumbs, the
+ * portfolio back link, the record header with its status badge and one row of area
+ * menus), the role gate, and the floating prototype controls. The page slots the page
+ * title and body. No lifecycle line: a project's pages don't move through phases.
+ * Under the title, cbf-project-year names the fiscal year and links that year's
+ * contract (project round 2).
+ */
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import CbfPublicNav from '../shared/cbf-public-nav.astro';
+import CbfAppPanel from '../shared/cbf-app-panel.astro';
+import CbfPrototypeStrip from '../shared/cbf-prototype-strip.astro';
+import CbfRoleSwitch from '../shared/cbf-role-switch.astro';
+import CbfLensSwitch from '../shared/cbf-lens-switch.astro';
+import CbfRecordHeader from './cbf-record-header.astro';
+import CbfRecordEnds from './cbf-record-ends.astro';
+import CbfProjectYear from './cbf-project-year.astro';
+import CbfRoleGate from './cbf-role-gate.astro';
+import CbfPortfolioReturn from './cbf-portfolio-return.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaContainer from '@esa/ecology/esa-container.astro';
+import { withBase } from '../../lib/base';
+import { ARRIVALS, NAV_ARRIVAL_KEY, NAV_ROLES, NAV_ROLE_KEY, PORTFOLIO } from '../../data/contract-nav.mjs';
+import { PROJECT_TABS, currentYear, project, projectTabHiddenFor } from '../../data/project-nav.mjs';
+
+interface Props {
+  /** The page slug that marks "you are here". */
+  current: string;
+  /** The page's label, for the last crumb and the browser tab. */
+  title: string;
+  pageHideFor?: string[];
+}
+const { current, title, pageHideFor } = Astro.props;
+const base = withBase('/project-nav');
+const homeIcon =
+  '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>';
+const crumbs = [
+  { label: 'Home', href: withBase('/home'), icon: homeIcon },
+  // Links above the project leave this prototype; they go to Home as stand-ins.
+  { label: 'Projects', href: withBase('/home') },
+  { label: project.number, href: `${base}/summary` },
+  { label: title },
+];
+---
+
+<BaseLayout title={`${project.number}: ${title} — Columbia Basin Fish & Wildlife Program`}>
+  <CbfPublicNav />
+
+  <main class="cbf-project-frame">
+    <EsaContainer maxWidth="1920px">
+      <CbfAppPanel crumbs={crumbs} overflow="visible">
+        <CbfPortfolioReturn name={PORTFOLIO.name} href={withBase('/home')} />
+        <CbfRecordHeader eyebrow={`Project ${project.number}`} title={project.title}>
+          <EsaBadge slot="status" value={project.status} variant="success" size="md" />
+          <CbfProjectYear {...currentYear} contractHref={withBase('/contract-nav/v3/summary')} />
+          <CbfRecordEnds tabs={PROJECT_TABS} current={current} base={base} label="Project" layout="row" hiddenFor={projectTabHiddenFor} />
+        </CbfRecordHeader>
+        <CbfRoleGate pageHideFor={pageHideFor} fallback={`${base}/summary`} />
+        <slot />
+      </CbfAppPanel>
+
+      <CbfPrototypeStrip placement="float" note="Project status and fiscal year are mock.">
+        <CbfRoleSwitch roles={NAV_ROLES} storageKey={NAV_ROLE_KEY} />
+        <CbfLensSwitch
+          options={ARRIVALS}
+          label="Arrived from"
+          attr="cbf-arrival"
+          param="from"
+          storageKey={NAV_ARRIVAL_KEY}
+          event="cbf-arrival:change"
+        />
+      </CbfPrototypeStrip>
+    </EsaContainer>
+  </main>
+</BaseLayout>
+
+<style>
+  .cbf-project-frame { padding-block: var(--spacing-600) var(--spacing-800); }
+</style>

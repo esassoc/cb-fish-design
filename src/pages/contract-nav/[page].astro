@@ -1,0 +1,47 @@
+---
+// /contract-nav/{page} — the contract header nav prototype, round 3 "Lifecycle" header
+// (brief: cbfish-nav-header). One route per contract page; the body is a placeholder,
+// because the pages themselves do not change. Round 4's "SOW hub" variation sits
+// beside it at /contract-nav/v2/{page}. The old /contract-nav/{a|b}/{page} URLs
+// redirect here.
+import CbfContractFrame from '../../components/contract-nav/cbf-contract-frame.astro';
+import CbfRecordPageTitle from '../../components/contract-nav/cbf-record-page-title.astro';
+import CbfSkeletonBody from '../../components/shared/cbf-skeleton-body.astro';
+import { withBase } from '../../lib/base';
+import { ALL_PAGES, CONTRACT_TABS, STAGES, findPage } from '../../data/contract-nav.mjs';
+import { headerViews } from '../../data/contract-nav-v2.mjs';
+
+export function getStaticPaths() {
+  return ALL_PAGES.map((p) => ({ params: { page: p.slug } }));
+}
+
+const { page: slug } = Astro.params as { page: string };
+const page = findPage(slug)!;
+const base = withBase('/contract-nav');
+const section = CONTRACT_TABS.find((t) => t.key === page.tab)!.label;
+const seed = ALL_PAGES.findIndex((p) => p.slug === slug);
+const views = headerViews(slug).map((v) => ({ ...v, href: withBase(v.path) }));
+---
+<!-- manifest:
+  layout: cbf-contract-frame > page title + body
+  sections:
+    - contract frame      -> cbf-contract-frame      (site nav, record card with header and lifecycle track, role gate, prototype controls)
+    - page title          -> cbf-record-page-title   (quiet phase line over the page name, an H2 in brand navy)
+    - page body           -> cbf-skeleton-body       (static gray placeholder; body not in scope)
+-->
+<CbfContractFrame
+  tabs={CONTRACT_TABS}
+  ends={['overview', 'files']}
+  stages={STAGES}
+  base={base}
+  current={slug}
+  crumbs={[{ label: page.label }]}
+  title={page.label}
+  pageHideFor={page.hideFor}
+  pageHideStages={page.hideStages}
+  views={views}
+  activeView="lifecycle"
+>
+  <CbfRecordPageTitle section={section} title={page.label} />
+  <CbfSkeletonBody seed={seed} />
+</CbfContractFrame>

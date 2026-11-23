@@ -7,7 +7,7 @@
 // third grid made the create/search/CSV/count-footer bootstrap (previously
 // copy-pasted into each grid's own client script) start drifting apart —
 // flagged by the /design-qa decomposition review.
-import { createGrid, ModuleRegistry, AllCommunityModule, themeQuartz, type ColDef, type GridApi, type GridOptions } from 'ag-grid-community';
+import { createGrid, ModuleRegistry, AllCommunityModule, themeQuartz, type ColDef, type ColGroupDef, type GridApi, type GridOptions } from 'ag-grid-community';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -53,7 +53,7 @@ export interface DataGridWiring<T> {
   gridSelector: string;
   /** Selector for the <script type="application/json"> element carrying serialized row data. */
   dataSelector: string;
-  columnDefs: ColDef[];
+  columnDefs: (ColDef | ColGroupDef)[];
   /** Plural noun for the count footer, e.g. "commitments" -> "Showing 3 of 16 commitments". */
   countNoun: string;
   csvFileName: string;

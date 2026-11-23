@@ -1,0 +1,29 @@
+---
+// /project-nav/{page} — the project header nav prototype on the contract header's
+// round 5 "Areas" pattern (brief: cbfish-nav-header). Every page from today's Go to
+// menu, each under its agreed tab; the bodies are placeholders.
+import CbfProjectFrame from '../../components/contract-nav/cbf-project-frame.astro';
+import CbfRecordPageTitle from '../../components/contract-nav/cbf-record-page-title.astro';
+import CbfSkeletonBody from '../../components/shared/cbf-skeleton-body.astro';
+import { ALL_PROJECT_PAGES, PROJECT_TABS } from '../../data/project-nav.mjs';
+
+export function getStaticPaths() {
+  return ALL_PROJECT_PAGES.map((p) => ({ params: { page: p.slug } }));
+}
+
+const { page: slug } = Astro.params as { page: string };
+const page = ALL_PROJECT_PAGES.find((p) => p.slug === slug)!;
+const section = PROJECT_TABS.find((t) => t.key === page.tab)!.label;
+const seed = ALL_PROJECT_PAGES.findIndex((p) => p.slug === slug);
+---
+<!-- manifest:
+  layout: cbf-project-frame > page title + body
+  sections:
+    - project frame -> cbf-project-frame     (site nav, record card with header and one row of area menus, role gate, prototype controls)
+    - page title    -> cbf-record-page-title (quiet area line over the page name, an H2 in brand navy)
+    - page body     -> cbf-skeleton-body     (static gray placeholder; inner pages are out of scope)
+-->
+<CbfProjectFrame current={slug} title={page.label} pageHideFor={page.hideFor}>
+  <CbfRecordPageTitle section={section} title={page.label} />
+  <CbfSkeletonBody seed={seed} />
+</CbfProjectFrame>

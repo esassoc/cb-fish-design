@@ -1,0 +1,80 @@
+---
+/*
+ * cbf-record-ends — the record's always-there menus (Overview, Files).
+ *
+ * They belong to the whole contract, not to a phase, so they sit on the title row
+ * beside the record's name instead of at the ends of the phase track, where, without
+ * a date or a meter, they read as leftovers (Andy, 2026-11-10: "they look like
+ * stepchildren there"). The menu holding the page you are on is filled brand blue,
+ * the header's one "you are here" mark (round 3).
+ */
+import EsaNavDropdown from '@esa/ecology/esa-nav-dropdown.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import CbfPageMenu from './cbf-page-menu.astro';
+
+interface Page {
+  slug: string;
+  label: string;
+  hideFor?: string[];
+}
+interface Tab {
+  key: string;
+  label: string;
+  pages: Page[];
+}
+interface Props {
+  tabs: Tab[];
+  current: string;
+  base: string;
+  /** "Contract overview and files" */
+  label: string;
+  layout?: 'title' | 'row';
+  hiddenFor?: (tab: Tab) => string[];
+  hiddenStages?: (tab: Tab) => string[];
+}
+const { tabs, current, base, label, layout = 'title', hiddenFor, hiddenStages } = Astro.props;
+---
+
+<nav class:list={['cbf-record-ends', 'cluster', `cbf-record-ends--${layout}`]} data-gap="2xs" aria-label={label} data-record-nav>
+  {tabs.map((t) => (
+    <div
+      class="cbf-record-ends__menu"
+      data-here={t.pages.some((p) => p.slug === current) ? '' : undefined}
+      data-hide-for={hiddenFor?.(t).join(' ') || undefined}
+      data-hide-stages={hiddenStages?.(t).join(' ') || undefined}
+    >
+      {t.pages.length === 1 ? (
+        <EsaButton variant="chrome" href={`${base}/${t.pages[0].slug}`} current={t.pages[0].slug === current}>{t.label}</EsaButton>
+      ) : (
+        <EsaNavDropdown label={t.label} align={layout === 'row' ? 'start' : 'end'}>
+          <CbfPageMenu pages={t.pages} current={current} base={base} />
+        </EsaNavDropdown>
+      )}
+    </div>
+  ))}
+  {/* Round 6: find page, at the row's end beside Files. */}
+  <slot name="end" />
+</nav>
+
+<style>
+  .cbf-record-ends__menu {
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-record-ends__menu[data-here] {
+    color: var(--color-content-default);
+  }
+  /* You are here: brand fill and white, the same mark the phase track uses. */
+  .cbf-record-ends__menu[data-here] :global(.esa-button.esa-button .esa-button__native) {
+    background: var(--color-background-brand);
+    color: var(--color-content-on-brand);
+    font-weight: var(--typography-font-weight-semibold);
+  }
+  /* Row: the record's navigation, ruled off from the page below. */
+  .cbf-record-ends--row {
+    padding-block-end: var(--spacing-300);
+    border-block-end: 1px solid var(--color-border-default);
+  }
+  .cbf-record-ends--row .cbf-record-ends__menu {
+    color: var(--color-content-default);
+  }
+</style>

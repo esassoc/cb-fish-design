@@ -1,0 +1,1060 @@
+{
+  "name": "project-nav",
+  "title": "Project header navigation",
+  "description": "A project record’s header: its status and one row of menus, Overview, Proposals and Reviews, Budget, Contracts and Work, Spending, Results and Files, holding every page of today’s Go to menu. Switch role and arrival in the prototype controls.",
+  "dir": "project-nav-summary",
+  "url": "https://esassoc.github.io/cb-fish-design/project-nav/summary/",
+  "baseUrl": "https://esassoc.github.io/cb-fish-design/handoff/project-nav-summary/",
+  "theme": "cb-fish",
+  "generatedFrom": "spec",
+  "sections": [
+    {
+      "label": "Portfolio return",
+      "tag": "div",
+      "selector": ".cbf-portfolio-return",
+      "html": "<div class=\"cbf-portfolio-return\" data-only-arrival=\"portfolio\">\n  <div class=\"esa-alert-box esa-alert-box--info typography-body-sm\">\n    <div class=\"esa-alert-box__icon\">\n      <svg\n        xmlns=\"http://www.w3.org/2000/svg\"\n        width=\"20\"\n        height=\"20\"\n        viewBox=\"0 0 24 24\"\n        fill=\"none\"\n        stroke=\"currentColor\"\n        stroke-width=\"2\"\n        stroke-linecap=\"round\"\n        stroke-linejoin=\"round\"\n        aria-hidden=\"true\"\n      >\n        <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n        <path d=\"M12 16v-4\"></path>\n        <path d=\"M12 8h.01\"></path>\n      </svg>\n    </div>\n    <div class=\"esa-alert-box__body\">\n      <div class=\"esa-alert-box__message\">\n        <a class=\"cbf-portfolio-return__link\" href=\"/cb-fish-design/home\">\n          <span class=\"esa-icon esa-icon--sm\" aria-hidden=\"true\">\n            <svg\n              width=\"16\"\n              height=\"16\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path d=\"m12 19-7-7 7-7\"></path>\n              <path d=\"M19 12H5\"></path>\n            </svg>\n          </span>\n          <span>Back to Grande Ronde subbasin habitat portfolio</span>\n        </a>\n      </div>\n    </div>\n    <button\n      class=\"esa-alert-box__dismiss\"\n      type=\"button\"\n      aria-label=\"Dismiss\"\n      data-esa-alert-dismiss=\"\"\n    >\n      <svg\n        xmlns=\"http://www.w3.org/2000/svg\"\n        width=\"16\"\n        height=\"16\"\n        viewBox=\"0 0 24 24\"\n        fill=\"none\"\n        stroke=\"currentColor\"\n        stroke-width=\"2\"\n        stroke-linecap=\"round\"\n        stroke-linejoin=\"round\"\n        aria-hidden=\"true\"\n      >\n        <path d=\"M18 6 6 18\"></path>\n        <path d=\"m6 6 12 12\"></path>\n      </svg>\n    </button>\n  </div>\n  <!-- script type=\"module\" removed (455 bytes) -->\n</div>",
+      "css": ".typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, 20px);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  color: inherit;\n}\n.esa-icon--sm {\n  --_icon-size: var(--icon-size-sm, 16px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.cbf-qa-icon .esa-button__native > .esa-icon:last-child {\n  display: none;\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.esa-nav-dropdown[open] .esa-button__native > .esa-icon:last-child {\n  transform: rotate(180deg);\n}\n.cbf-portfolio-return {\n  padding-block-end: var(--spacing-400);\n}\n.cbf-portfolio-return .esa-alert-box {\n  align-items: center;\n}\n.cbf-portfolio-return .esa-alert-box__icon {\n  display: flex;\n  padding: 0;\n}\n.cbf-portfolio-return .esa-alert-box__icon svg {\n  display: block;\n}\n.cbf-portfolio-return .esa-alert-box__message {\n  display: flex;\n}\n.cbf-portfolio-return__link > :first-child {\n  margin-block-start: calc((1lh - 16px) / 2);\n  flex: none;\n}\n.cbf-portfolio-return__link {\n  display: inline-flex;\n  align-items: flex-start;\n  gap: var(--spacing-100);\n  color: var(--color-content-brand);\n  font-weight: var(--typography-font-weight-medium);\n}\n.esa-collapsible__summary .esa-icon {\n  flex-shrink: 0;\n  color: var(--color-content-default-secondary, #646464);\n}\n.esa-alert-box {\n  --_alert-bg: var(--color-background-utility-info-subtle, #fbfdff);\n  --_alert-border: var(--color-border-utility-info, #acd8fc);\n  --_alert-accent: var(--color-content-utility-info, #0d74ce);\n  --_alert-icon-color: var(--_alert-accent);\n  --_alert-title-color: var(--_alert-accent);\n  --_alert-text-color: var(--alert-box-text-color, var(--color-content-default-secondary, #646464));\n  display: flex;\n  align-items: flex-start;\n  gap: var(--spacing-300, 0.75rem);\n  padding: var(--spacing-300, 0.75rem) var(--spacing-400, 1rem);\n  border: var(--border-width-default, 1px) solid var(--_alert-border);\n  border-radius: var(--radius-md, 0.5rem);\n  background: var(--_alert-bg);\n}\n.esa-alert-box__icon {\n  flex-shrink: 0;\n  color: var(--_alert-icon-color);\n  padding-top: 1px;\n}\n.esa-alert-box__body {\n  flex: 1;\n  min-width: 0;\n}\n.esa-alert-box__message {\n  color: var(--_alert-text-color);\n}\n.esa-alert-box__dismiss {\n  flex-shrink: 0;\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: 24px;\n  height: 24px;\n  padding: 0;\n  border: none;\n  border-radius: var(--radius-sm, 0.25rem);\n  background: transparent;\n  color: var(--color-content-default-secondary, #646464);\n  cursor: pointer;\n  transition:\n    color var(--transition-fast, 0.15s ease),\n    background var(--transition-fast, 0.15s ease);\n}\n.esa-alert-box__dismiss:hover {\n  color: var(--color-content-default, #202020);\n  background: var(--color-background-overlay-strong-hover, rgba(0, 0, 0, 0.06));\n}\n.esa-alert-box__dismiss:focus-visible {\n  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);\n  outline-offset: var(--focus-ring-offset, 2px);\n}",
+      "guide": {
+        "intent": "A temporary way back to the portfolio the project was opened from. It sits inside the record card, under the breadcrumbs and above the project eyebrow, outside the navigation itself. It replaces the Back To Portfolio(s) item of today's Go to menu.",
+        "decisions": [
+          "Shown only when the record was opened from a portfolio ([data-only-arrival=\"portfolio\"]); a direct arrival never sees it.",
+          "An info esa-alert-box, dismissable. Dismissal lasts for the browser session (sessionStorage).",
+          "The same component as the contract header; both records share it."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--alert-box-text-color",
+          "value": "#525252",
+          "tier": "component"
+        },
+        {
+          "name": "--border-width-default",
+          "value": "1px",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-overlay-strong-hover",
+          "value": "rgba(0, 0, 0, .05)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-utility-info-subtle",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-utility-info",
+          "value": "#c6dcf1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-utility-info",
+          "value": "#0d74ce",
+          "tier": "semantic"
+        },
+        {
+          "name": "--focus-ring-color",
+          "value": "#3e9b4f",
+          "tier": "component"
+        },
+        {
+          "name": "--focus-ring-offset",
+          "value": "2px",
+          "tier": "component"
+        },
+        {
+          "name": "--focus-ring-width",
+          "value": "2px",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-md",
+          "value": "20px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--icon-size-sm",
+          "value": "16px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-md",
+          "value": ".5rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--radius-sm",
+          "value": ".25rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--transition-fast",
+          "value": ".15s ease",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-medium",
+          "value": "500",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-portfolio-return",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-portfolio-return.astro",
+          "target": null
+        },
+        {
+          "name": "esa-alert-box",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-alert-box.astro",
+          "target": null
+        },
+        {
+          "name": "esa-icon",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-icon.astro",
+          "target": null
+        }
+      ],
+      "js": [
+        "src/components/contract-nav/cbf-portfolio-return.astro"
+      ],
+      "claudePath": "claude/portfolio-return.md",
+      "repoPath": "public/handoff/project-nav-summary/claude/portfolio-return.md",
+      "parts": [],
+      "shots": {},
+      "bytes": 8198,
+      "specBytes": 8198,
+      "files": 1,
+      "collapsed": 0
+    },
+    {
+      "label": "Record header",
+      "tag": "div",
+      "selector": ".cbf-record-header",
+      "html": "<div class=\"cbf-record-header stack\" data-gap=\"lg\">\n  <div class=\"repel\" data-gap=\"md\">\n    <div class=\"stack\" data-gap=\"2xs\">\n      <p class=\"cbf-record-header__eyebrow typography-label-md\">Project 2027-004-00</p>\n      <div class=\"cluster\" data-gap=\"sm\">\n        <h1 class=\"cbf-record-header__title typography-heading-lg\">\n          Upper Grande Ronde habitat restoration\n        </h1>\n        <span class=\"esa-badge esa-badge--success esa-badge--md typography-microcopy-sm-strong\">\n          <span class=\"esa-badge__text\">Ongoing</span>\n        </span>\n      </div>\n    </div>\n  </div>\n  <p class=\"cbf-project-year cluster typography-body-sm\" data-gap=\"xs\">\n    <span class=\"cbf-project-year__fy\">FY2027 contract</span>\n    <a class=\"cbf-project-year__link\" href=\"/cb-fish-design/contract-nav/v3/summary\">CR-387553</a>\n    <span class=\"esa-badge esa-badge--success esa-badge--sm typography-microcopy-xs-strong\">\n      <span class=\"esa-badge__text\">Issued</span>\n    </span>\n  </p>\n  <nav\n    class=\"cbf-record-ends cluster cbf-record-ends--row\"\n    data-gap=\"2xs\"\n    aria-label=\"Project\"\n    data-record-nav=\"\"\n  >\n    <div class=\"cbf-record-ends__menu\" data-here=\"\">\n      <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n        <summary\n          class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n        >\n          <span class=\"esa-button__native typography-microcopy-md\"\n            ><span class=\"esa-button__label\">Overview</span\n            ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n              <svg\n                width=\"20\"\n                height=\"20\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span>\n          </span>\n        </summary>\n        <div class=\"esa-nav-dropdown__panel typography-body-md\">\n          <ul class=\"cbf-page-menu typography-body-md cbf-page-menu--list\">\n            <li>\n              <a href=\"/cb-fish-design/project-nav/summary\" aria-current=\"page\">Project Summary</a>\n            </li>\n            <li><a href=\"/cb-fish-design/project-nav/edit\">Edit Project</a></li>\n            <!-- …and 9 more like this (<li>) -->\n          </ul>\n        </div>\n      </details>\n    </div>\n    <div class=\"cbf-record-ends__menu\">\n      <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n        <summary\n          class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n        >\n          <span class=\"esa-button__native typography-microcopy-md\"\n            ><span class=\"esa-button__label\">Proposals and Reviews</span\n            ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n              <svg\n                width=\"20\"\n                height=\"20\"\n                viewBox=\"0 0 24 24\"\n                fill=\"none\"\n                stroke=\"currentColor\"\n                stroke-width=\"2\"\n                stroke-linecap=\"round\"\n                stroke-linejoin=\"round\"\n                focusable=\"false\"\n              >\n                <path d=\"m6 9 6 6 6-6\"></path>\n              </svg>\n            </span>\n          </span>\n        </summary>\n        <div class=\"esa-nav-dropdown__panel typography-body-md\">\n          <ul class=\"cbf-page-menu typography-body-md cbf-page-menu--list\">\n            <li><a href=\"/cb-fish-design/project-nav/proposals\">Proposals</a></li>\n            <li><a href=\"/cb-fish-design/project-nav/isrp-assessments\">ISRP Assessments</a></li>\n            <!-- …and 5 more like this (<li>) -->\n          </ul>\n        </div>\n      </details>\n    </div>\n    <!-- …and 5 more like this (<div class=\"cbf-record-ends__menu\">) -->\n  </nav>\n</div>",
+      "css": ".typography-heading-lg {\n  font-family: var(--typography-heading-lg-font-family);\n  font-size: var(--typography-heading-lg-font-size);\n  font-weight: var(--typography-heading-lg-font-weight);\n  line-height: var(--typography-heading-lg-line-height);\n  letter-spacing: var(--typography-heading-lg-letter-spacing);\n}\n.typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-microcopy-md {\n  font-family: var(--typography-microcopy-md-font-family);\n  font-size: var(--typography-microcopy-md-font-size);\n  font-weight: var(--typography-microcopy-md-font-weight);\n  line-height: var(--typography-microcopy-md-line-height);\n  letter-spacing: var(--typography-microcopy-md-letter-spacing);\n}\n.typography-microcopy-xs-strong {\n  font-family: var(--typography-microcopy-xs-strong-font-family);\n  font-size: var(--typography-microcopy-xs-strong-font-size);\n  font-weight: var(--typography-microcopy-xs-strong-font-weight);\n  line-height: var(--typography-microcopy-xs-strong-line-height);\n  letter-spacing: var(--typography-microcopy-xs-strong-letter-spacing);\n}\n.typography-microcopy-sm-strong {\n  font-family: var(--typography-microcopy-sm-strong-font-family);\n  font-size: var(--typography-microcopy-sm-strong-font-size);\n  font-weight: var(--typography-microcopy-sm-strong-font-weight);\n  line-height: var(--typography-microcopy-sm-strong-line-height);\n  letter-spacing: var(--typography-microcopy-sm-strong-letter-spacing);\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, 20px);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  color: inherit;\n}\n.esa-icon--md {\n  --_icon-size: var(--icon-size-md, 20px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-button {\n  --_btn-pad-y: var(--spacing-300, 0.75rem);\n  --_btn-padding-x: var(--spacing-300, 0.75rem);\n  --_btn-radius: var(--button-radius-md, 0.5rem);\n  --_accent: var(--color-background-brand, #46a758);\n  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);\n  --_on: var(--color-content-default-knockout, #fcfcfc);\n  --_accent-text: var(--_accent);\n  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);\n  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);\n  display: inline-block;\n}\n.esa-button--appearance-fill .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent-border, transparent);\n}\n.esa-button--appearance-fill .esa-button__native:hover:not(:disabled) {\n  background: var(--_accent-hover);\n}\n.esa-button--appearance-fill.esa-button--active .esa-button__native {\n  background: var(--_accent-hover);\n}\n.esa-button--appearance-outline .esa-button__native,\n.esa-button--appearance-dashed .esa-button__native {\n  background: transparent;\n  color: var(--_accent-text);\n  border-color: var(--_accent);\n}\n.esa-button--appearance-dashed .esa-button__native {\n  border-style: dashed;\n}\n.esa-button--appearance-outline .esa-button__native:hover:not(:disabled),\n.esa-button--appearance-dashed .esa-button__native:hover:not(:disabled) {\n  background: var(--_btn-tint-hover);\n}\n.esa-button--appearance-outline.esa-button--active .esa-button__native,\n.esa-button--appearance-dashed.esa-button--active .esa-button__native {\n  background: var(--_btn-tint-active);\n}\n.esa-button--appearance-soft .esa-button__native {\n  background: color-mix(\n    in srgb,\n    var(--color-background-elevation-sunken, #f0f0f0) 45%,\n    var(--color-background-elevation-raised, #fcfcfc)\n  );\n  color: var(--_accent-text);\n  border-color: var(--color-border-default-strong, #bbbbbb);\n}\n.esa-button--appearance-soft .esa-button__native:hover:not(:disabled),\n.esa-button--appearance-soft.esa-button--active .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent);\n}\n.esa-button--variant-ghost .esa-button__native {\n  background: transparent;\n  color: var(--color-content-default, #202020);\n  border-color: transparent;\n}\n.esa-button--variant-ghost.esa-button--appearance-outline .esa-button__native,\n.esa-button--variant-ghost.esa-button--appearance-dashed .esa-button__native {\n  border-color: var(--color-border-default, #cecece);\n}\n.esa-button--variant-ghost .esa-button__native:hover:not(:disabled),\n.esa-button--variant-ghost.esa-button--active .esa-button__native {\n  background: var(--color-background-elevation-sunken, #f0f0f0);\n}\n.esa-button--variant-chrome .esa-button__native {\n  background: transparent;\n  color: inherit;\n  border-color: transparent;\n}\n.esa-button--variant-chrome .esa-button__native:hover:not(:disabled),\n.esa-button--variant-chrome.esa-button--active .esa-button__native,\n.esa-button--variant-chrome.esa-button--current .esa-button__native {\n  background: var(--button-chrome-bg-hover, color-mix(in srgb, currentColor 14%, transparent));\n}\n.esa-button--variant-chrome .esa-button__native:focus-visible {\n  outline-color: currentColor;\n}\n.esa-button__native {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: var(--spacing-200, 8px);\n  width: 100%;\n  padding-block: var(--_btn-pad-y);\n  padding-inline: var(--_btn-padding-x);\n  border: var(--border-width-default, 1px) solid transparent;\n  border-radius: var(--_btn-radius);\n  text-decoration: none;\n  cursor: pointer;\n  transition:\n    background var(--transition-fast, 0.15s ease),\n    border-color var(--transition-fast, 0.15s ease);\n  -webkit-appearance: none;\n  appearance: none;\n}\n.esa-button__native:focus-visible {\n  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);\n  outline-offset: var(--focus-ring-offset, 2px);\n}\n.esa-button--icon-only .esa-button__native {\n  padding-inline: var(--_btn-pad-y);\n  aspect-ratio: 1;\n}\nsummary.esa-button {\n  list-style: none;\n  cursor: pointer;\n}\nsummary.esa-button::-webkit-details-marker {\n  display: none;\n}\nsummary.esa-button:focus-visible {\n  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);\n  outline-offset: var(--focus-ring-offset, 2px);\n  border-radius: var(--_btn-radius);\n}\nsummary.esa-button--variant-chrome:focus-visible {\n  outline-color: currentColor;\n}\n.esa-button__label {\n  white-space: nowrap;\n}\n.cbf-qa-icon .esa-button__native > .esa-icon:last-child {\n  display: none;\n}\n.cbf-qa-icon .esa-button__native:after {\n  content: \"\";\n  flex: none;\n  inline-size: 9px;\n  block-size: 5px;\n  background: currentColor;\n  mask: var(--qa-down) center / contain no-repeat;\n  transition: transform 0.15s ease;\n}\n.cbf-qa-icon details[open] > summary .esa-button__native:after {\n  transform: rotate(180deg);\n}\n.cbf-qa-icon .esa-button__native:before,\n.cbf-qa-icon__glyph {\n  content: \"\";\n  display: inline-block;\n  flex: none;\n  inline-size: var(--qa-w);\n  block-size: var(--qa-h);\n  background: currentColor;\n  mask: var(--qa-icon) center / contain no-repeat;\n}\n.typography-heading-lg {\n  font-family: var(--typography-heading-lg-font-family);\n  font-size: var(--typography-heading-lg-font-size);\n  font-weight: var(--typography-heading-lg-font-weight);\n  line-height: var(--typography-heading-lg-line-height);\n  letter-spacing: var(--typography-heading-lg-letter-spacing);\n}\n.typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-microcopy-md {\n  font-family: var(--typography-microcopy-md-font-family);\n  font-size: var(--typography-microcopy-md-font-size);\n  font-weight: var(--typography-microcopy-md-font-weight);\n  line-height: var(--typography-microcopy-md-line-height);\n  letter-spacing: var(--typography-microcopy-md-letter-spacing);\n}\n.typography-microcopy-xs-strong {\n  font-family: var(--typography-microcopy-xs-strong-font-family);\n  font-size: var(--typography-microcopy-xs-strong-font-size);\n  font-weight: var(--typography-microcopy-xs-strong-font-weight);\n  line-height: var(--typography-microcopy-xs-strong-line-height);\n  letter-spacing: var(--typography-microcopy-xs-strong-letter-spacing);\n}\n.typography-microcopy-sm-strong {\n  font-family: var(--typography-microcopy-sm-strong-font-family);\n  font-size: var(--typography-microcopy-sm-strong-font-size);\n  font-weight: var(--typography-microcopy-sm-strong-font-weight);\n  line-height: var(--typography-microcopy-sm-strong-line-height);\n  letter-spacing: var(--typography-microcopy-sm-strong-letter-spacing);\n}\n.cbf-project-year {\n  margin: 0;\n  color: var(--color-content-default-secondary);\n}\n.cbf-project-year__fy {\n  color: var(--color-content-default);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-project-year__link {\n  color: var(--color-content-brand);\n  font-weight: var(--typography-font-weight-medium);\n}\n.esa-nav-dropdown {\n  position: relative;\n}\n.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.esa-nav-dropdown[open] .esa-button__native > .esa-icon:last-child {\n  transform: rotate(180deg);\n}\n.esa-nav-dropdown__panel {\n  position: absolute;\n  top: calc(100% + var(--spacing-200, 8px));\n  left: 0;\n  z-index: var(--z-dropdown, 50);\n  min-width: var(--nav-dropdown-panel-min-width, 240px);\n  padding: var(--spacing-300, 12px);\n  background: var(--color-background-elevation-raised, #fcfcfc);\n  color: var(--color-content-default, #202020);\n  border: var(--border-width-default, 1px) solid var(--color-border-default, #cecece);\n  border-radius: var(--radius-md, 0.5rem);\n  box-shadow: var(--elevation-4, 0 6px 24px -6px rgba(0, 0, 0, 0.07));\n}\n.esa-nav-dropdown--end .esa-nav-dropdown__panel {\n  left: auto;\n  right: 0;\n}\n.stack {\n  --gap: var(--spacing-400, 1rem);\n  display: flex;\n  flex-direction: column;\n  gap: var(--gap);\n}\n.stack[data-split] > [data-split] {\n  margin-block-end: auto;\n}\n.cluster {\n  --gap: var(--spacing-300, 0.75rem);\n  --align: center;\n  --justify: flex-start;\n  display: flex;\n  flex-wrap: wrap;\n  gap: var(--gap);\n  align-items: var(--align);\n  justify-content: var(--justify);\n}\n.repel {\n  --gap: var(--spacing-400, 1rem);\n  --align: center;\n  display: flex;\n  flex-wrap: wrap;\n  gap: var(--gap);\n  align-items: var(--align);\n  justify-content: space-between;\n}\n.cbf-record-header {\n  padding-block-end: var(--spacing-400);\n}\n.cbf-record-header__eyebrow {\n  margin: 0;\n  color: var(--color-content-default-secondary);\n}\n.cbf-record-header__title {\n  margin: 0;\n  color: var(--color-background-default-knockout);\n}\n.cbf-page-menu {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  min-width: 15rem;\n}\n.cbf-page-menu a {\n  display: block;\n  padding: var(--spacing-150, 6px) var(--spacing-300);\n  border-radius: var(--radius-100);\n  color: var(--color-content-default);\n  text-decoration: none;\n  white-space: nowrap;\n}\n.cbf-page-menu a:hover {\n  background: var(--color-background-elevation-sunken);\n}\n.cbf-page-menu a[aria-current=\"page\"] {\n  background: var(--color-background-elevation-sunken);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-record-ends__menu {\n  color: var(--color-content-default-secondary);\n}\n.cbf-record-ends__menu[data-here] {\n  color: var(--color-content-default);\n}\n.cbf-record-ends__menu[data-here] .esa-button.esa-button .esa-button__native {\n  background: var(--color-background-brand);\n  color: var(--color-content-on-brand);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-record-ends--row {\n  padding-block-end: var(--spacing-300);\n  border-block-end: 1px solid var(--color-border-default);\n}\n.cbf-record-ends--row .cbf-record-ends__menu {\n  color: var(--color-content-default);\n}\n.esa-collapsible__summary .esa-icon {\n  flex-shrink: 0;\n  color: var(--color-content-default-secondary, #646464);\n}\n.esa-badge {\n  --_badge-bg: var(--badge-bg, var(--color-background-elevation-raised, #fcfcfc));\n  --_badge-text: var(--badge-text-color, var(--color-content-default-secondary, #646464));\n  --_badge-border: var(--badge-border-color, var(--color-border-default, #cecece));\n  --_badge-padding-y: var(--spacing-150, 0.375rem);\n  --_badge-padding-x: var(--spacing-200, 0.5rem);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  min-width: calc(1lh + 2 * var(--_badge-padding-y));\n  padding-block: var(--_badge-padding-y);\n  padding-inline: var(--_badge-padding-x);\n  border-radius: var(--radius-chip, var(--radius-sm, 0.25rem));\n  background: var(--_badge-bg);\n  color: var(--_badge-text);\n  white-space: nowrap;\n  box-sizing: border-box;\n}\n.esa-badge--sm {\n  --_badge-padding-y: var(--spacing-100, 0.25rem);\n  --_badge-padding-x: var(--spacing-150, 0.375rem);\n}\n.esa-badge--success {\n  --_badge-bg: var(--color-background-utility-success-muted, #e6f6eb);\n  --_badge-text: var(--color-content-utility-success, #218358);\n  --_badge-border: var(--color-border-utility-success, #adddc0);\n}\n.esa-badge--neutral:not(.esa-badge--dot),\n.esa-badge--success:not(.esa-badge--dot),\n.esa-badge--warning:not(.esa-badge--dot),\n.esa-badge--danger:not(.esa-badge--dot),\n.esa-badge--info:not(.esa-badge--dot) {\n  border: 1px solid var(--_badge-border, transparent);\n}\n.esa-badge--dot.esa-badge--success {\n  --_badge-bg: var(--color-background-utility-success-hover, #2b9a66);\n}\n@media (forced-colors: active) {\n  .esa-badge {\n    border: 1px solid CanvasText;\n  }\n}",
+      "guide": {
+        "intent": "The project identity: number as eyebrow, title as the page H1 in brand navy, the project status badge inline after the title, a line naming the current fiscal year and linking that year's contract, and the row of area menus underneath.",
+        "decisions": [
+          "No lifecycle track. A project spans many years and runs a new contract each fiscal year, so its pages do not move through phases the way a contract's do.",
+          "The fiscal year is the project's date. The year line links that year's contract with the contract's own status badge, since the contract is the hop people make most from a project.",
+          "Labels are Title Case, matching prod and the contract header (Andy's call for this prototype; it overrides docs/copy-style.md here)."
+        ],
+        "gotchas": [
+          "Project status, fiscal year and the linked contract are mock."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--badge-bg",
+          "value": "#fcfcfc",
+          "tier": "component"
+        },
+        {
+          "name": "--badge-border-color",
+          "value": "#dcdcdc",
+          "tier": "component"
+        },
+        {
+          "name": "--badge-text-color",
+          "value": "#525252",
+          "tier": "component"
+        },
+        {
+          "name": "--border-width-default",
+          "value": "1px",
+          "tier": "semantic"
+        },
+        {
+          "name": "--button-chrome-bg-hover",
+          "value": "color-mix(in srgb, currentColor 14%, transparent)",
+          "tier": "component"
+        },
+        {
+          "name": "--button-radius-md",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--color-background-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-hover",
+          "value": "#1a4570",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-default-knockout",
+          "value": "#13273e",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-raised",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-sunken",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-utility-success-hover",
+          "value": "#193b2d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-utility-success-muted",
+          "value": "#e6f6eb",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default",
+          "value": "#dcdcdc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default-strong",
+          "value": "#bdbdbd",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-utility-success",
+          "value": "#adddc0",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-knockout",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-on-brand",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-utility-success",
+          "value": "#218358",
+          "tier": "semantic"
+        },
+        {
+          "name": "--elevation-4",
+          "value": "0 6px 24px -6px rgba(0, 0, 0, .07)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--focus-ring-color",
+          "value": "#3e9b4f",
+          "tier": "component"
+        },
+        {
+          "name": "--focus-ring-offset",
+          "value": "2px",
+          "tier": "component"
+        },
+        {
+          "name": "--focus-ring-width",
+          "value": "2px",
+          "tier": "component"
+        },
+        {
+          "name": "--gap",
+          "value": "1.5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-md",
+          "value": "20px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--nav-dropdown-panel-min-width",
+          "value": "240px",
+          "tier": "component"
+        },
+        {
+          "name": "--radius-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-chip",
+          "value": ".25rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--radius-md",
+          "value": ".5rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--radius-sm",
+          "value": ".25rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-150",
+          "value": ".375rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--transition-fast",
+          "value": ".15s ease",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-medium",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-semibold",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-heading-lg-font-family",
+          "value": "\"IBM Plex Sans Condensed\", \"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-heading-lg-font-size",
+          "value": "clamp(1.375rem, 1.2rem + .88vw, 1.875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-heading-lg-font-weight",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-heading-lg-letter-spacing",
+          "value": "-.01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-heading-lg-line-height",
+          "value": "1.3",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-line-height",
+          "value": "1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-sm-strong-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-sm-strong-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-sm-strong-font-weight",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-sm-strong-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-sm-strong-line-height",
+          "value": "1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-strong-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-strong-font-size",
+          "value": "clamp(.625rem, .56rem + .32vw, .75rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-strong-font-weight",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-strong-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-xs-strong-line-height",
+          "value": "1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--z-dropdown",
+          "value": "50",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-page-menu",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-page-menu.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-project-year",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-project-year.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-record-ends",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-record-ends.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-record-header",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-record-header.astro",
+          "target": null
+        },
+        {
+          "name": "esa-badge",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-badge.astro",
+          "target": null
+        },
+        {
+          "name": "esa-button",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-button.astro",
+          "target": null
+        },
+        {
+          "name": "esa-icon",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-icon.astro",
+          "target": null
+        },
+        {
+          "name": "esa-nav-dropdown",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-nav-dropdown.astro",
+          "target": null
+        }
+      ],
+      "js": [
+        "src/components/contract-nav/cbf-project-frame.astro",
+        "src/components/contract-nav/cbf-record-header.astro",
+        "src/components/contract-nav/cbf-project-year.astro",
+        "src/data/project-nav.mjs"
+      ],
+      "claudePath": "claude/record-header.md",
+      "repoPath": "public/handoff/project-nav-summary/claude/record-header.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/record-header.desktop.png",
+        "phone": "claude/record-header.phone.png"
+      },
+      "bytes": 25855,
+      "specBytes": 25855,
+      "files": 1,
+      "collapsed": 19
+    },
+    {
+      "label": "Area menus",
+      "tag": "nav",
+      "selector": "[data-record-nav]",
+      "html": "<nav\n  class=\"cbf-record-ends cluster cbf-record-ends--row\"\n  data-gap=\"2xs\"\n  aria-label=\"Project\"\n  data-record-nav=\"\"\n>\n  <div class=\"cbf-record-ends__menu\" data-here=\"\">\n    <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n      <summary\n        class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n      >\n        <span class=\"esa-button__native typography-microcopy-md\"\n          ><span class=\"esa-button__label\">Overview</span\n          ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n            <svg\n              width=\"20\"\n              height=\"20\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path>\n            </svg>\n          </span>\n        </span>\n      </summary>\n      <div class=\"esa-nav-dropdown__panel typography-body-md\">\n        <ul class=\"cbf-page-menu typography-body-md cbf-page-menu--list\">\n          <li>\n            <a href=\"/cb-fish-design/project-nav/summary\" aria-current=\"page\">Project Summary</a>\n          </li>\n          <li><a href=\"/cb-fish-design/project-nav/edit\">Edit Project</a></li>\n          <!-- …and 9 more like this (<li>) -->\n        </ul>\n      </div>\n    </details>\n  </div>\n  <div class=\"cbf-record-ends__menu\">\n    <details class=\"esa-nav-dropdown esa-nav-dropdown--start\">\n      <summary\n        class=\"esa-button esa-button--variant-chrome esa-button--appearance-fill esa-button--md\"\n      >\n        <span class=\"esa-button__native typography-microcopy-md\"\n          ><span class=\"esa-button__label\">Proposals and Reviews</span\n          ><span class=\"esa-icon esa-icon--md\" aria-hidden=\"true\">\n            <svg\n              width=\"20\"\n              height=\"20\"\n              viewBox=\"0 0 24 24\"\n              fill=\"none\"\n              stroke=\"currentColor\"\n              stroke-width=\"2\"\n              stroke-linecap=\"round\"\n              stroke-linejoin=\"round\"\n              focusable=\"false\"\n            >\n              <path d=\"m6 9 6 6 6-6\"></path>\n            </svg>\n          </span>\n        </span>\n      </summary>\n      <div class=\"esa-nav-dropdown__panel typography-body-md\">\n        <ul class=\"cbf-page-menu typography-body-md cbf-page-menu--list\">\n          <li><a href=\"/cb-fish-design/project-nav/proposals\">Proposals</a></li>\n          <li><a href=\"/cb-fish-design/project-nav/isrp-assessments\">ISRP Assessments</a></li>\n          <!-- …and 5 more like this (<li>) -->\n        </ul>\n      </div>\n    </details>\n  </div>\n  <!-- …and 5 more like this (<div class=\"cbf-record-ends__menu\">) -->\n</nav>",
+      "css": ".typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.typography-microcopy-md {\n  font-family: var(--typography-microcopy-md-font-family);\n  font-size: var(--typography-microcopy-md-font-size);\n  font-weight: var(--typography-microcopy-md-font-weight);\n  line-height: var(--typography-microcopy-md-line-height);\n  letter-spacing: var(--typography-microcopy-md-letter-spacing);\n}\n.esa-icon {\n  --_icon-size: var(--icon-size-md, 20px);\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n  color: inherit;\n}\n.esa-icon--md {\n  --_icon-size: var(--icon-size-md, 20px);\n}\n.esa-icon svg {\n  display: block;\n  width: var(--_icon-size);\n  height: var(--_icon-size);\n}\n.esa-button {\n  --_btn-pad-y: var(--spacing-300, 0.75rem);\n  --_btn-padding-x: var(--spacing-300, 0.75rem);\n  --_btn-radius: var(--button-radius-md, 0.5rem);\n  --_accent: var(--color-background-brand, #46a758);\n  --_accent-hover: var(--color-background-brand-hover, #3e9b4f);\n  --_on: var(--color-content-default-knockout, #fcfcfc);\n  --_accent-text: var(--_accent);\n  --_btn-tint-hover: color-mix(in srgb, var(--_accent) 8%, transparent);\n  --_btn-tint-active: color-mix(in srgb, var(--_accent) 14%, transparent);\n  display: inline-block;\n}\n.esa-button--appearance-fill .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent-border, transparent);\n}\n.esa-button--appearance-fill .esa-button__native:hover:not(:disabled) {\n  background: var(--_accent-hover);\n}\n.esa-button--appearance-fill.esa-button--active .esa-button__native {\n  background: var(--_accent-hover);\n}\n.esa-button--appearance-outline .esa-button__native,\n.esa-button--appearance-dashed .esa-button__native {\n  background: transparent;\n  color: var(--_accent-text);\n  border-color: var(--_accent);\n}\n.esa-button--appearance-dashed .esa-button__native {\n  border-style: dashed;\n}\n.esa-button--appearance-outline .esa-button__native:hover:not(:disabled),\n.esa-button--appearance-dashed .esa-button__native:hover:not(:disabled) {\n  background: var(--_btn-tint-hover);\n}\n.esa-button--appearance-outline.esa-button--active .esa-button__native,\n.esa-button--appearance-dashed.esa-button--active .esa-button__native {\n  background: var(--_btn-tint-active);\n}\n.esa-button--appearance-soft .esa-button__native {\n  background: color-mix(\n    in srgb,\n    var(--color-background-elevation-sunken, #f0f0f0) 45%,\n    var(--color-background-elevation-raised, #fcfcfc)\n  );\n  color: var(--_accent-text);\n  border-color: var(--color-border-default-strong, #bbbbbb);\n}\n.esa-button--appearance-soft .esa-button__native:hover:not(:disabled),\n.esa-button--appearance-soft.esa-button--active .esa-button__native {\n  background: var(--_accent);\n  color: var(--_on);\n  border-color: var(--_accent);\n}\n.esa-button--variant-ghost .esa-button__native {\n  background: transparent;\n  color: var(--color-content-default, #202020);\n  border-color: transparent;\n}\n.esa-button--variant-ghost.esa-button--appearance-outline .esa-button__native,\n.esa-button--variant-ghost.esa-button--appearance-dashed .esa-button__native {\n  border-color: var(--color-border-default, #cecece);\n}\n.esa-button--variant-ghost .esa-button__native:hover:not(:disabled),\n.esa-button--variant-ghost.esa-button--active .esa-button__native {\n  background: var(--color-background-elevation-sunken, #f0f0f0);\n}\n.esa-button--variant-chrome .esa-button__native {\n  background: transparent;\n  color: inherit;\n  border-color: transparent;\n}\n.esa-button--variant-chrome .esa-button__native:hover:not(:disabled),\n.esa-button--variant-chrome.esa-button--active .esa-button__native,\n.esa-button--variant-chrome.esa-button--current .esa-button__native {\n  background: var(--button-chrome-bg-hover, color-mix(in srgb, currentColor 14%, transparent));\n}\n.esa-button--variant-chrome .esa-button__native:focus-visible {\n  outline-color: currentColor;\n}\n.esa-button__native {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  gap: var(--spacing-200, 8px);\n  width: 100%;\n  padding-block: var(--_btn-pad-y);\n  padding-inline: var(--_btn-padding-x);\n  border: var(--border-width-default, 1px) solid transparent;\n  border-radius: var(--_btn-radius);\n  text-decoration: none;\n  cursor: pointer;\n  transition:\n    background var(--transition-fast, 0.15s ease),\n    border-color var(--transition-fast, 0.15s ease);\n  -webkit-appearance: none;\n  appearance: none;\n}\n.esa-button__native:focus-visible {\n  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);\n  outline-offset: var(--focus-ring-offset, 2px);\n}\n.esa-button--icon-only .esa-button__native {\n  padding-inline: var(--_btn-pad-y);\n  aspect-ratio: 1;\n}\nsummary.esa-button {\n  list-style: none;\n  cursor: pointer;\n}\nsummary.esa-button::-webkit-details-marker {\n  display: none;\n}\nsummary.esa-button:focus-visible {\n  outline: var(--focus-ring-width, 2px) solid var(--focus-ring-color, #3e9b4f);\n  outline-offset: var(--focus-ring-offset, 2px);\n  border-radius: var(--_btn-radius);\n}\nsummary.esa-button--variant-chrome:focus-visible {\n  outline-color: currentColor;\n}\n.esa-button__label {\n  white-space: nowrap;\n}\n.cbf-qa-icon .esa-button__native > .esa-icon:last-child {\n  display: none;\n}\n.cbf-qa-icon .esa-button__native:after {\n  content: \"\";\n  flex: none;\n  inline-size: 9px;\n  block-size: 5px;\n  background: currentColor;\n  mask: var(--qa-down) center / contain no-repeat;\n  transition: transform 0.15s ease;\n}\n.cbf-qa-icon details[open] > summary .esa-button__native:after {\n  transform: rotate(180deg);\n}\n.cbf-qa-icon .esa-button__native:before,\n.cbf-qa-icon__glyph {\n  content: \"\";\n  display: inline-block;\n  flex: none;\n  inline-size: var(--qa-w);\n  block-size: var(--qa-h);\n  background: currentColor;\n  mask: var(--qa-icon) center / contain no-repeat;\n}\n.typography-body-md {\n  font-family: var(--typography-body-md-font-family);\n  font-size: var(--typography-body-md-font-size);\n  font-weight: var(--typography-body-md-font-weight);\n  line-height: var(--typography-body-md-line-height);\n  letter-spacing: var(--typography-body-md-letter-spacing);\n}\n.typography-microcopy-md {\n  font-family: var(--typography-microcopy-md-font-family);\n  font-size: var(--typography-microcopy-md-font-size);\n  font-weight: var(--typography-microcopy-md-font-weight);\n  line-height: var(--typography-microcopy-md-line-height);\n  letter-spacing: var(--typography-microcopy-md-letter-spacing);\n}\n.esa-nav-dropdown {\n  position: relative;\n}\n.esa-nav-dropdown .esa-button__native > .esa-icon:last-child {\n  transition: transform 0.15s ease;\n}\n.esa-nav-dropdown[open] .esa-button__native > .esa-icon:last-child {\n  transform: rotate(180deg);\n}\n.esa-nav-dropdown__panel {\n  position: absolute;\n  top: calc(100% + var(--spacing-200, 8px));\n  left: 0;\n  z-index: var(--z-dropdown, 50);\n  min-width: var(--nav-dropdown-panel-min-width, 240px);\n  padding: var(--spacing-300, 12px);\n  background: var(--color-background-elevation-raised, #fcfcfc);\n  color: var(--color-content-default, #202020);\n  border: var(--border-width-default, 1px) solid var(--color-border-default, #cecece);\n  border-radius: var(--radius-md, 0.5rem);\n  box-shadow: var(--elevation-4, 0 6px 24px -6px rgba(0, 0, 0, 0.07));\n}\n.esa-nav-dropdown--end .esa-nav-dropdown__panel {\n  left: auto;\n  right: 0;\n}\n.cluster {\n  --gap: var(--spacing-300, 0.75rem);\n  --align: center;\n  --justify: flex-start;\n  display: flex;\n  flex-wrap: wrap;\n  gap: var(--gap);\n  align-items: var(--align);\n  justify-content: var(--justify);\n}\n.cbf-page-menu {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  min-width: 15rem;\n}\n.cbf-page-menu a {\n  display: block;\n  padding: var(--spacing-150, 6px) var(--spacing-300);\n  border-radius: var(--radius-100);\n  color: var(--color-content-default);\n  text-decoration: none;\n  white-space: nowrap;\n}\n.cbf-page-menu a:hover {\n  background: var(--color-background-elevation-sunken);\n}\n.cbf-page-menu a[aria-current=\"page\"] {\n  background: var(--color-background-elevation-sunken);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-record-ends__menu {\n  color: var(--color-content-default-secondary);\n}\n.cbf-record-ends__menu[data-here] {\n  color: var(--color-content-default);\n}\n.cbf-record-ends__menu[data-here] .esa-button.esa-button .esa-button__native {\n  background: var(--color-background-brand);\n  color: var(--color-content-on-brand);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-record-ends--row {\n  padding-block-end: var(--spacing-300);\n  border-block-end: 1px solid var(--color-border-default);\n}\n.cbf-record-ends--row .cbf-record-ends__menu {\n  color: var(--color-content-default);\n}\n.esa-collapsible__summary .esa-icon {\n  flex-shrink: 0;\n  color: var(--color-content-default-secondary, #646464);\n}",
+      "guide": {
+        "intent": "Every page of today's project Go to menu, grouped into the areas agreed on 2026-11-10 at equal weight in one row: Overview, Proposals and Reviews, Budget, Contracts and Work, Spending, Results and Files. Each area opens a menu of its pages.",
+        "decisions": [
+          "Today's page labels, with no merges, renames or removals. The nav holds 44 of the 45 Go to links; Back To Portfolio(s) moved to the portfolio return above the header.",
+          "The menu holding the page you are on gets a filled brand trigger, the header's one \"you are here\" mark.",
+          "Pages a role cannot see are hidden (data-hide-for). Admin sees everything; the COR loses system-admin and budgeter pages; a contractor also loses BPA-only and editor-only pages. An area with no pages for a role is hidden for that role.",
+          "One menu open at a time; menus close on outside click, focus leaving and Esc, and stay inside the viewport. The row is ruled off from the page below."
+        ],
+        "gotchas": [
+          "Every role state is server-rendered; the role and arrival lenses only toggle attributes on <html> and the CSS in cbf-role-gate hides what they rule out. Switching to a role that cannot see the current page redirects to Project Summary.",
+          "Page visibility per role is reduced from every-link-and-tab.md to the contract nav's three roles (Admin, COR, Contractor)."
+        ],
+        "acceptance": [
+          "Every page of today's Go to menu, except Back To Portfolio(s), is reachable from the row in two clicks.",
+          "You can tell which area you are in without opening a menu."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--align",
+          "value": "center",
+          "tier": "component"
+        },
+        {
+          "name": "--border-width-default",
+          "value": "1px",
+          "tier": "semantic"
+        },
+        {
+          "name": "--button-chrome-bg-hover",
+          "value": "color-mix(in srgb, currentColor 14%, transparent)",
+          "tier": "component"
+        },
+        {
+          "name": "--button-radius-md",
+          "value": ".5rem",
+          "tier": "component"
+        },
+        {
+          "name": "--color-background-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-hover",
+          "value": "#1a4570",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-raised",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-sunken",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default",
+          "value": "#dcdcdc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default-strong",
+          "value": "#bdbdbd",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-knockout",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-on-brand",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--elevation-4",
+          "value": "0 6px 24px -6px rgba(0, 0, 0, .07)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--focus-ring-color",
+          "value": "#3e9b4f",
+          "tier": "component"
+        },
+        {
+          "name": "--focus-ring-offset",
+          "value": "2px",
+          "tier": "component"
+        },
+        {
+          "name": "--focus-ring-width",
+          "value": "2px",
+          "tier": "component"
+        },
+        {
+          "name": "--gap",
+          "value": ".25rem",
+          "tier": "component"
+        },
+        {
+          "name": "--icon-size-md",
+          "value": "20px",
+          "tier": "primitive"
+        },
+        {
+          "name": "--justify",
+          "value": "flex-start",
+          "tier": "component"
+        },
+        {
+          "name": "--nav-dropdown-panel-min-width",
+          "value": "240px",
+          "tier": "component"
+        },
+        {
+          "name": "--radius-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-md",
+          "value": ".5rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--spacing-150",
+          "value": ".375rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--transition-fast",
+          "value": ".15s ease",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-semibold",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-md-line-height",
+          "value": "1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--z-dropdown",
+          "value": "50",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-page-menu",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-page-menu.astro",
+          "target": null
+        },
+        {
+          "name": "cbf-record-ends",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-record-ends.astro",
+          "target": null
+        },
+        {
+          "name": "esa-button",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-button.astro",
+          "target": null
+        },
+        {
+          "name": "esa-icon",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-icon.astro",
+          "target": null
+        },
+        {
+          "name": "esa-nav-dropdown",
+          "origin": "hub",
+          "source": "packages/ecology/src/components/esa-nav-dropdown.astro",
+          "target": null
+        }
+      ],
+      "js": [
+        "src/components/contract-nav/cbf-record-ends.astro",
+        "src/components/contract-nav/cbf-page-menu.astro",
+        "src/components/contract-nav/cbf-role-gate.astro",
+        "src/data/project-nav.mjs"
+      ],
+      "claudePath": "claude/area-menus.md",
+      "repoPath": "public/handoff/project-nav-summary/claude/area-menus.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/area-menus.desktop.png",
+        "phone": "claude/area-menus.phone.png"
+      },
+      "bytes": 16735,
+      "specBytes": 16735,
+      "files": 1,
+      "collapsed": 19
+    },
+    {
+      "label": "Page title",
+      "tag": "div",
+      "selector": ".cbf-record-page-title",
+      "html": "<div class=\"cbf-record-page-title stack\" data-gap=\"3xs\">\n  <p class=\"cbf-record-page-title__section typography-body-sm\">Overview</p>\n  <h2 class=\"cbf-record-page-title__name typography-title\">Project Summary</h2>\n</div>",
+      "css": ".typography-title {\n  font-family: var(--typography-title-font-family);\n  font-size: var(--typography-title-font-size);\n  font-weight: var(--typography-title-font-weight);\n  line-height: var(--typography-title-line-height);\n  letter-spacing: var(--typography-title-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.typography-title {\n  font-family: var(--typography-title-font-family);\n  font-size: var(--typography-title-font-size);\n  font-weight: var(--typography-title-font-weight);\n  line-height: var(--typography-title-line-height);\n  letter-spacing: var(--typography-title-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.cbf-record-page-title__section,\n.cbf-record-page-title__name {\n  margin: 0;\n  line-height: var(--line-height-tight);\n}\n.cbf-record-page-title__section {\n  color: var(--color-content-default-secondary);\n  font-weight: var(--typography-font-weight-medium);\n}\n.cbf-record-page-title__name {\n  color: var(--color-background-default-knockout);\n  font-weight: var(--typography-font-weight-semibold);\n}\n.stack {\n  --gap: var(--spacing-400, 1rem);\n  display: flex;\n  flex-direction: column;\n  gap: var(--gap);\n}\n.stack[data-split] > [data-split] {\n  margin-block-end: auto;\n}",
+      "guide": {
+        "intent": "The page being viewed: its area on a quiet line (\"Overview\"), directly over the page name as an H2 in brand navy (\"Project Summary\").",
+        "decisions": [
+          "No slash, no page count. Tight line height with a 2px gap so the two lines read as one unit.",
+          "The same component as the contract header."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--color-background-default-knockout",
+          "value": "#13273e",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--gap",
+          "value": ".125rem",
+          "tier": "component"
+        },
+        {
+          "name": "--line-height-tight",
+          "value": "1.3",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--typography-body-sm-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-medium",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-semibold",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-font-size",
+          "value": "clamp(1rem, .88rem + .6vw, 1.25rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-title-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-record-page-title",
+          "origin": "spoke",
+          "source": "src/components/contract-nav/cbf-record-page-title.astro",
+          "target": null
+        }
+      ],
+      "js": [
+        "src/components/contract-nav/cbf-record-page-title.astro"
+      ],
+      "claudePath": "claude/page-title.md",
+      "repoPath": "public/handoff/project-nav-summary/claude/page-title.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/page-title.desktop.png",
+        "phone": "claude/page-title.phone.png"
+      },
+      "bytes": 3944,
+      "specBytes": 3944,
+      "files": 1,
+      "collapsed": 0
+    }
+  ]
+}

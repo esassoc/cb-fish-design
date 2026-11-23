@@ -17,11 +17,14 @@ interface Props {
   placeholder?: string;
   icon?: string;
   iconSize?: number;
+  /** Opt-in control size. 'md' (40px, microcopy-md type) matches md esa-*
+      controls sharing a row with it; omitted keeps the original roomier field. */
+  size?: 'md';
   [key: string]: unknown;
 }
-const { icon = 'search', iconSize = 20, ...rest } = Astro.props;
+const { icon = 'search', iconSize = 20, size, ...rest } = Astro.props;
 ---
-<label class="cbf-search-field">
+<label class:list={['cbf-search-field', size && `cbf-search-field--${size}`]}>
   <CbfIcon name={icon} size={iconSize} />
   <input type="text" autocomplete="off" {...rest} />
 </label>
@@ -54,6 +57,14 @@ const { icon = 'search', iconSize = 20, ...rest } = Astro.props;
     font-family: var(--typography-font-family-sans);
     font-size: 18px;
     color: var(--color-content-default);
+  }
+  .cbf-search-field--md {
+    box-sizing: border-box;
+    height: 40px;
+    padding-block: 0;
+  }
+  .cbf-search-field--md input {
+    font-size: var(--typography-microcopy-md-subtle-font-size);
   }
   .cbf-search-field input::placeholder {
     color: var(--cbf-text-placeholder);

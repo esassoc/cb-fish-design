@@ -2,6 +2,24 @@
 
 Links are relative to https://esassoc.github.io/cb-fish-design/handoff/
 
+## Project header navigation
+
+[README](project-nav-summary/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/project-nav/summary/) · 4 sections
+
+- [Portfolio return](project-nav-summary/claude/portfolio-return.md): A temporary way back to the portfolio the project was opened from. (8.0 KB)
+- [Record header](project-nav-summary/claude/record-header.md): The project identity: number as eyebrow, title as the page H1 in brand navy, the project status badge inline after the title, a line naming the current fiscal… (25 KB)
+- [Area menus](project-nav-summary/claude/area-menus.md): Every page of today's project Go to menu, grouped into the areas agreed on 2026-11-10 at equal weight in one row: Overview, Proposals and Reviews, Budget, Cont… (16 KB)
+- [Page title](project-nav-summary/claude/page-title.md): The page being viewed: its area on a quiet line ("Overview"), directly over the page name as an H2 in brand navy ("Project Summary"). (3.9 KB)
+
+## Contract header navigation
+
+[README](contract-nav-summary/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/contract-nav/summary/) · 4 sections
+
+- [Portfolio return](contract-nav-summary/claude/portfolio-return.md): A temporary way back to the portfolio the contract was opened from. (8.0 KB)
+- [Record header](contract-nav-summary/claude/record-header.md): The contract identity: number as eyebrow, title as the page H1 in brand navy, the status badge inline after the title, and Overview and Files menus at the end… (39 KB)
+- [Lifecycle track](contract-nav-summary/claude/lifecycle-track.md): The contract's phases in order (Setup, Review and Approve, Report and Invoice, Closeout), each with its date range, a meter for how far its period has run, and… (17 KB)
+- [Page title](contract-nav-summary/claude/page-title.md): The page being viewed: its phase or menu on a quiet line ("Setup"), directly over the page name as an H2 in brand navy ("Work Element Budgets"). (4.0 KB)
+
 ## Capital program
 
 [README](capital-program/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/capital-program/) · 3 sections

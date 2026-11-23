@@ -1,0 +1,140 @@
+---
+// cbf-crs-document-due-dates-dialog — "Documents due in <year>": the pop-up the
+// 2020 CRS Commitments Dashboard opens when a per-year document marker is
+// clicked. Ports prod's "Document Due Dates For <commitment>" modal (same
+// columns: due date, title, description, type, category, file) and adds a
+// Status column carrying the marker's own three states — received / not due
+// yet / overdue (CBF-8590) — so the reader can see which document turned the
+// marker red or blue.
+//
+// One instance per page, re-targeted per click. Open it by dispatching
+//   document.dispatchEvent(new CustomEvent('crs-doc-due-dates:open', {
+//     detail: { number, title, year } }))
+// — the dialog filters `documents` to that commitment's due dates in that
+// year itself, so callers pass only identifiers, never rows.
+//
+// Files can't be opened (this spoke has no backend or file store — see
+// cbf-password-gate.astro's note), so the File column shows the filename as
+// text rather than a link that goes nowhere.
+//
+// bcn-lego-checked: esa-dialog (modal chrome), esa-pill (status, server-rendered
+// once per state and cloned into grid cells — the same template trick
+// cbf-crs-commitments-grid uses), esa-button (footer). The table is AG Grid via
+// the shared grid-chrome wireDataGrid, because ecology has no table lego (see
+// cbf-crs-commitments-grid's note) — no hand-rolled <table>.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaPill from '@esa/ecology/esa-pill.astro';
+import '../shared/cbf-data-grid-chrome.css';
+
+const docStates = [
+  { state: 'received', label: 'Received', variant: 'success' },
+  { state: 'upcoming', label: 'Not due yet', variant: 'info' },
+  { state: 'overdue', label: 'Overdue', variant: 'danger' },
+] as const;
+---
+<esa-dialog
+  class="cbf-crs-doc-due-dates"
+  size="lg"
+  show-close-button
+  heading="Documents due"
+  data-crs-doc-due-dates
+>
+  <div class="stack" data-gap="md">
+    <p class="typography-body-md" data-crs-doc-due-dates-commitment></p>
+    <div class="cbf-data-grid__grid" data-crs-doc-due-dates-grid></div>
+  </div>
+
+  <!-- No footer Close: the header's close button is the one close affordance
+       (design-principles: no duplicate closes), unlike prod's modal. -->
+  <div slot="footer">
+    <span data-crs-doc-due-dates-all>
+      <EsaButton variant="ghost" appearance="outline" href="#">All documents for this commitment</EsaButton>
+    </span>
+  </div>
+
+  <div data-crs-doc-due-dates-pills hidden aria-hidden="true">
+    {docStates.map((s) => (
+      <span data-state={s.state}>
+        <EsaPill label={s.label} variant={s.variant} size="sm" removable={false} />
+      </span>
+    ))}
+  </div>
+
+  <script type="application/json" data-crs-doc-due-dates-data set:html="[]"></script>
+</esa-dialog>
+
+<style>
+  /* Prod's modal is table-wide; esa-dialog's lg (640px) would squeeze seven
+     columns, so widen it through the dialog's public width token. */
+  .cbf-crs-doc-due-dates {
+    --dialog-width-lg: min(1040px, 92vw);
+  }
+</style>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import { withBase } from '../../lib/base';
+  import { documentsFor, TODAY } from '../../data/crs-commitments.mjs';
+  import { gridDateFormatter as dateFmt, asGridDate as asDate, escGridHtml as esc, wireDataGrid } from '../shared/grid-chrome';
+
+  type DocRow = {
+    dueDate?: string; title: string; description: string; type: string;
+    category: string; filename?: string; state: 'received' | 'upcoming' | 'overdue';
+  };
+  type OpenDetail = { number: string; title: string; year: number };
+
+  const root = document.querySelector<HTMLElement & { show: () => void; close: () => void; heading: string }>(
+    '[data-crs-doc-due-dates]',
+  );
+  if (root) {
+    const pillHTML = new Map<string, string>();
+    root.querySelectorAll<HTMLElement>('[data-crs-doc-due-dates-pills] [data-state]').forEach((el) => {
+      pillHTML.set(el.dataset.state ?? '', el.innerHTML);
+    });
+    const commitmentLine = root.querySelector<HTMLElement>('[data-crs-doc-due-dates-commitment]');
+    const allLink = root.querySelector<HTMLAnchorElement>('[data-crs-doc-due-dates-all] a');
+
+    const handle = wireDataGrid<DocRow>({
+      root,
+      gridSelector: '[data-crs-doc-due-dates-grid]',
+      dataSelector: '[data-crs-doc-due-dates-data]',
+      countNoun: 'documents',
+      csvFileName: 'crs-document-due-dates.csv',
+      suppressCellFocus: true,
+      columnDefs: [
+        {
+          headerName: 'Due date', field: 'dueDate', colId: 'dueDate', minWidth: 125, flex: 0, width: 125,
+          valueGetter: (p) => asDate(p.data?.dueDate),
+          valueFormatter: (p) => (p.value instanceof Date ? dateFmt.format(p.value) : 'N/A'),
+        },
+        { headerName: 'Title', field: 'title', colId: 'title', flex: 2, minWidth: 160, wrapText: true, autoHeight: true },
+        { headerName: 'Description', field: 'description', colId: 'description', flex: 2, minWidth: 160, wrapText: true, autoHeight: true },
+        { headerName: 'Type', field: 'type', colId: 'type', minWidth: 110, flex: 1, wrapText: true, autoHeight: true },
+        { headerName: 'Category', field: 'category', colId: 'category', minWidth: 140, flex: 1, wrapText: true, autoHeight: true },
+        {
+          headerName: 'File', field: 'filename', colId: 'filename', minWidth: 130, flex: 1, wrapText: true, autoHeight: true,
+          valueFormatter: (p) => p.value || 'Not submitted',
+        },
+        {
+          headerName: 'Status', field: 'state', colId: 'state', minWidth: 120, flex: 0, width: 120,
+          cellRenderer: (p: { value: string }) => pillHTML.get(p.value) ?? esc(p.value ?? ''),
+        },
+      ],
+    });
+
+    document.addEventListener('crs-doc-due-dates:open', (e) => {
+      const { number, title, year } = (e as CustomEvent<OpenDetail>).detail;
+      const rows: DocRow[] = documentsFor(number)
+        .filter((d) => d.dueDate && new Date(d.dueDate).getFullYear() === year)
+        .map((d) => ({
+          ...d,
+          state: d.uploadDate ? 'received' : new Date(d.dueDate!) < TODAY ? 'overdue' : 'upcoming',
+        }));
+      handle?.gridApi.setGridOption('rowData', rows);
+      root.heading = `Documents due in ${year}`;
+      if (commitmentLine) commitmentLine.textContent = `${title} (${number})`;
+      if (allLink) allLink.href = withBase(`/crs-commitments/${number}`);
+      root.show();
+    });
+  }
+</script>

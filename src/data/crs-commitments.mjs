@@ -37,6 +37,13 @@ export const YEARS = Array.from({ length: 15 }, (_, i) => 2021 + i);
 /** The year the dashboard treats as "current" — years after this default to Future until reached. */
 export const CURRENT_YEAR = 2026;
 
+/**
+ * The prototype's fixed "today" (local midnight, 10/26/2026). Pinned rather than
+ * read from the clock so whether a missing document is overdue or not yet due
+ * (CBF-8590) stays the same every time the page is shown.
+ */
+export const TODAY = new Date(CURRENT_YEAR, 9, 26);
+
 const STATUS_CODES = {
   N: 'Not Started',
   I: 'In Progress',
@@ -115,7 +122,7 @@ export const commitments = [
     partnerPOC: 'Renee Ashford',
     policyLead: 'Marcus Feld',
     biopSME: 'Priya Nair',
-    cor: 'N/A',
+    cor: 'Lena Moravec',
     nmfsPOC: 'Alan Cho',
     associatedProjects: 'PRJ-2016-041, PRJ-2019-018',
     timeline: 'N I I I I I F F F F F F F F F',
@@ -232,7 +239,7 @@ export const commitments = [
     partnerPOC: 'Renee Ashford',
     policyLead: 'Marcus Feld',
     biopSME: 'Priya Nair',
-    cor: 'N/A',
+    cor: 'Owen Petrakis',
     nmfsPOC: 'Alan Cho',
     associatedProjects: 'PRJ-2016-041',
     timeline: 'I I I I I I F F F F F F F F F',
@@ -386,7 +393,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-52',
     title: 'Fund O&M of the Alder Creek Hatchery safety-net program',
-    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
+    source: 'Upper Basin Hatchery Programs Biological Opinion',
     sectionNumber: '2.6.2.1',
     pageNumber: '2-104',
     category: 'Hatchery',
@@ -415,7 +422,7 @@ export const commitments = [
   commitment({
     number: 'CRS-Com-58',
     title: 'Discuss basin-wide hatchery monitoring needs',
-    source: 'Basin Fish Passage Biological Assessment - Proposed Action',
+    source: 'Upper Basin Hatchery Programs Biological Opinion',
     sectionNumber: '2.6.2.3',
     pageNumber: '2-107',
     category: 'Hatchery',
@@ -523,7 +530,7 @@ export const commitments = [
     partnerPOC: 'N/A',
     policyLead: 'Marcus Feld',
     biopSME: 'N/A',
-    cor: 'N/A',
+    cor: 'Dana Iverson',
     nmfsPOC: 'N/A',
     associatedProjects: 'PRJ-2013-064',
     timeline: 'I I I I I I F F F F F F F F F',
@@ -569,7 +576,13 @@ export function findCommitment(number) {
  *   commitmentNumber: string; dueDate?: string;
  *   category: 'Commitment Deliverable' | 'BiOp Reporting Requirement' | 'Commitment Supporting Document';
  *   type: string; title: string; description: string; filename?: string; uploadDate?: string; uploadUser?: string;
+ *   isRecurring?: true;
  * }} CrsDocument
+ *
+ * @typedef {{
+ *   commitmentNumber: string; title: string; firstDueDate: string; repeatYears: number;
+ *   description: string; type: string; category: CrsDocument['category'];
+ * }} CrsRecurringRule
  */
 
 // Documents reference their parent commitment by number rather than duplicating
@@ -580,16 +593,22 @@ export function findCommitment(number) {
 // tracked due date nothing has been submitted against yet (mirrors the live
 // CBFish model, where a due date and an uploaded document are related but
 // distinct records) — used by the dashboard's per-year document indicator.
+// A dated document on a "Recurring - …" commitment carries `isRecurring: true`:
+// it's an occurrence of that commitment's one recurring due date (see
+// `recurringRules` below), so the summary page manages it as part of the series
+// rather than as a discrete due date. Undated standalone uploads never are.
 /** @type {CrsDocument[]} */
 export const documents = [
   {
     commitmentNumber: 'CRS-Com-4', dueDate: '3/1/2025', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Adult Count Summary — 2024 Migration Season',
     description: 'Ladder count totals and methodology notes for the 2024 spring and fall runs.',
     filename: 'adult-count-summary-2024.pdf', uploadDate: '2/26/2025', uploadUser: 'Renee Ashford',
   },
   {
     commitmentNumber: 'CRS-Com-4', dueDate: '3/1/2026', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Adult Count Summary — 2025 Migration Season',
     description: 'Ladder count totals and methodology notes for the 2025 spring and fall runs.',
     filename: 'adult-count-summary-2025.pdf', uploadDate: '2/24/2026', uploadUser: 'Renee Ashford',
@@ -602,9 +621,17 @@ export const documents = [
   },
   {
     commitmentNumber: 'CRS-Com-12', dueDate: '11/15/2025', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Talus Ridge Temperature Monitoring — 2025',
     description: 'Summer index-station temperature records and exceedance summary.',
     filename: 'talus-ridge-temp-2025.pdf', uploadDate: '11/10/2025', uploadUser: 'Priya Nair',
+  },
+  {
+    // Due later this year, nothing uploaded yet — missing but not overdue.
+    commitmentNumber: 'CRS-Com-12', dueDate: '11/15/2026', category: 'Commitment Deliverable',
+    isRecurring: true,
+    type: 'Annual Report', title: 'Talus Ridge Temperature Monitoring — 2026',
+    description: 'Summer index-station temperature records and exceedance summary.',
   },
   {
     commitmentNumber: 'CRS-Com-18', category: 'Commitment Supporting Document',
@@ -613,7 +640,15 @@ export const documents = [
     filename: 'bypass-screening-study-plan-rev2.pdf', uploadDate: '1/15/2025', uploadUser: 'Dana Iverson',
   },
   {
+    // Overdue in the current year: due earlier in 2026, nothing uploaded yet.
+    commitmentNumber: 'CRS-Com-18', dueDate: '2/1/2026', category: 'Commitment Deliverable',
+    isRecurring: true,
+    type: 'Annual Report', title: 'Screening Efficiency Report — 2025',
+    description: 'Juvenile bypass screening efficiency estimates from the 2025 acoustic tag releases.',
+  },
+  {
     commitmentNumber: 'CRS-Com-31', dueDate: '2/15/2026', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Tributary Habitat Implementation — 2025',
     description: 'Project-by-project status for the Wolverine River and upper Cascade Basin habitat pipeline.',
     filename: 'tributary-habitat-2025.pdf', uploadDate: '2/10/2026', uploadUser: 'Sean Ostrander',
@@ -623,11 +658,13 @@ export const documents = [
     // yet. No filename/uploadDate/uploadUser: this due date has no document
     // attached to it yet.
     commitmentNumber: 'CRS-Com-31', dueDate: '2/15/2027', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Tributary Habitat Implementation — 2026',
     description: 'Project-by-project status for the Wolverine River and upper Cascade Basin habitat pipeline.',
   },
   {
     commitmentNumber: 'CRS-Com-33', dueDate: '2/15/2025', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Tributary Habitat Implementation Progress Report — 2024',
     description: 'Annual summary of completed and underway tributary projects.',
     filename: 'tributary-implementation-progress-2024.pdf', uploadDate: '2/12/2025', uploadUser: 'Sean Ostrander',
@@ -640,6 +677,7 @@ export const documents = [
   },
   {
     commitmentNumber: 'CRS-Com-41', dueDate: '2/1/2026', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'EHRP Implementation Plan — 2026',
     description: 'Construction and monitoring plan for the coming water year.',
     filename: 'ehrp-implementation-plan-2026.pdf', uploadDate: '1/28/2026', uploadUser: 'Dana Iverson',
@@ -659,6 +697,7 @@ export const documents = [
   {
     // Overdue: due date has passed with nothing uploaded against it.
     commitmentNumber: 'CRS-Com-52', dueDate: '9/30/2025', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Alder Creek Hatchery O&M Summary — FY2025',
     description: 'Fiscal-year O&M summary and production totals for the Alder Creek safety-net program.',
   },
@@ -670,6 +709,7 @@ export const documents = [
   },
   {
     commitmentNumber: 'CRS-Com-67', dueDate: '3/31/2026', category: 'Commitment Deliverable',
+    isRecurring: true,
     type: 'Annual Report', title: 'Avian Predation Monitoring Report — 2025',
     description: 'Colony deterrence outcomes and tagged-fish loss estimates for 2025.',
     filename: 'avian-predation-report-2025.pdf', uploadDate: '4/21/2026', uploadUser: 'Dana Iverson',
@@ -686,21 +726,101 @@ export function documentsFor(commitmentNumber) {
   return documents.filter((d) => d.commitmentNumber === commitmentNumber);
 }
 
+// The one recurring due date behind each commitment's `isRecurring` documents —
+// stored explicitly rather than reverse-engineered from the occurrences, since
+// seed titles don't share one pattern ("— 2024 Migration Season", "— FY2025")
+// and a single occurrence can't reveal a multi-year step. `firstDueDate` is the
+// earliest seeded occurrence (M/D/YYYY, like every other date here).
+/** @type {CrsRecurringRule[]} */
+export const recurringRules = [
+  {
+    commitmentNumber: 'CRS-Com-4', title: 'Adult Count Summary', firstDueDate: '3/1/2025', repeatYears: 1,
+    description: 'Ladder count totals and methodology notes for the spring and fall runs.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+  {
+    commitmentNumber: 'CRS-Com-12', title: 'Talus Ridge Temperature Monitoring', firstDueDate: '11/15/2025', repeatYears: 1,
+    description: 'Summer index-station temperature records and exceedance summary.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+  {
+    commitmentNumber: 'CRS-Com-18', title: 'Screening Efficiency Report', firstDueDate: '2/1/2026', repeatYears: 3,
+    description: 'Juvenile bypass screening efficiency estimates from the acoustic tag releases.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+  {
+    commitmentNumber: 'CRS-Com-31', title: 'Tributary Habitat Implementation', firstDueDate: '2/15/2026', repeatYears: 1,
+    description: 'Project-by-project status for the Wolverine River and upper Cascade Basin habitat pipeline.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+  {
+    commitmentNumber: 'CRS-Com-33', title: 'Tributary Habitat Implementation Progress Report', firstDueDate: '2/15/2025', repeatYears: 1,
+    description: 'Annual summary of completed and underway tributary projects.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+  {
+    commitmentNumber: 'CRS-Com-41', title: 'EHRP Implementation Plan', firstDueDate: '2/1/2026', repeatYears: 1,
+    description: 'Construction and monitoring plan for the coming water year.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+  {
+    commitmentNumber: 'CRS-Com-52', title: 'Alder Creek Hatchery O&M Summary', firstDueDate: '9/30/2025', repeatYears: 1,
+    description: 'Fiscal-year O&M summary and production totals for the Alder Creek safety-net program.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+  {
+    commitmentNumber: 'CRS-Com-67', title: 'Avian Predation Monitoring Report', firstDueDate: '3/31/2026', repeatYears: 1,
+    description: 'Colony deterrence outcomes and tagged-fish loss estimates.',
+    type: 'Annual Report', category: 'Commitment Deliverable',
+  },
+];
+
+export function recurringRuleFor(commitmentNumber) {
+  return recurringRules.find((r) => r.commitmentNumber === commitmentNumber) ?? null;
+}
+
 /**
- * Per-year document tracking for one commitment, derived from `documents`:
- * every entry with a `dueDate` marks that year 'received' (an uploadDate is on
- * file) or 'pending' (the due date has no document attached yet). Years with
- * no tracked due date are absent from the returned map. Powers the dashboard's
- * small per-year document indicator, which sits alongside the status dot.
- * @returns {Record<number, 'received' | 'pending'>}
+ * Per-year document tracking for one commitment, derived from `documents`. Each
+ * year with at least one tracked due date gets one marker:
+ *   - 'overdue'  — a due date in that year has passed with no document on file
+ *   - 'upcoming' — a due date in that year has no document yet, but isn't due
+ *                  until after TODAY (CBF-8590: shown blue, not red, so red
+ *                  marks only what is late)
+ *   - 'received' — every due date in that year has a document
+ * Overdue outranks upcoming, which outranks received. Years with no tracked due
+ * date are absent from the returned map.
+ * @returns {Record<number, 'received' | 'upcoming' | 'overdue'>}
  */
 export function documentYearMarkers(commitmentNumber) {
+  const rank = { received: 0, upcoming: 1, overdue: 2 };
   const markers = {};
   for (const doc of documentsFor(commitmentNumber)) {
     if (!doc.dueDate) continue;
-    const year = new Date(doc.dueDate).getFullYear();
+    const due = new Date(doc.dueDate);
+    const year = due.getFullYear();
     if (Number.isNaN(year)) continue;
-    markers[year] = doc.uploadDate ? 'received' : 'pending';
+    const state = doc.uploadDate ? 'received' : due < TODAY ? 'overdue' : 'upcoming';
+    if (!markers[year] || rank[state] > rank[markers[year]]) markers[year] = state;
   }
   return markers;
 }
+
+/**
+ * CORs per project, from the AgreementContact rows on each project's contracts
+ * (contact type COR is BES-assigned; Backup COR is user-assigned). Fictional
+ * people, keyed by the same invented project numbers the commitments use.
+ * Powers the BPA COR picker (CBF-8593), which offers only the CORs on a
+ * commitment's associated projects.
+ * @type {Record<string, { name: string; role: 'COR' | 'Backup COR' }[]>}
+ */
+export const projectCors = {
+  'PRJ-2013-064': [{ name: 'Lena Moravec', role: 'COR' }],
+  'PRJ-2014-115': [{ name: 'Todd Whitfield', role: 'COR' }, { name: 'Gwen Halvorsen', role: 'Backup COR' }],
+  'PRJ-2015-014': [{ name: 'Rafael Quintero', role: 'COR' }],
+  'PRJ-2015-077': [{ name: 'Gwen Halvorsen', role: 'COR' }],
+  'PRJ-2016-041': [{ name: 'Lena Moravec', role: 'COR' }, { name: 'Owen Petrakis', role: 'Backup COR' }],
+  'PRJ-2017-040': [{ name: 'Rafael Quintero', role: 'COR' }],
+  'PRJ-2019-018': [{ name: 'Todd Whitfield', role: 'COR' }],
+  'PRJ-2020-224': [{ name: 'Owen Petrakis', role: 'COR' }, { name: 'Rafael Quintero', role: 'Backup COR' }],
+  'PRJ-2021-011': [{ name: 'Sasha Lindqvist', role: 'COR' }],
+};

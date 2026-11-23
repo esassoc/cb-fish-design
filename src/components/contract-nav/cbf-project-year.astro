@@ -1,0 +1,47 @@
+---
+/*
+ * cbf-project-year — the project's place in time, as one line under its title (project
+ * round 2). A project has no single phase: it spans many years, runs a review cycle
+ * every few years and a new contract each fiscal year, so at any moment it is in
+ * several phases at once. Its date is the fiscal year, and the hop people make most
+ * from a project is to that year's contract, so the line names the year and links the
+ * contract, with the contract's status. Status, not navigation: the project's pages
+ * live in the area menus below.
+ *
+ * Composes esa-badge; layout is the cluster primitive, typography the body-sm composite.
+ */
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+
+interface Props {
+  /** "FY2027" */
+  fy: string;
+  /** "CR-387553" */
+  contract: string;
+  contractHref: string;
+  /** The contract's status: "Issued" */
+  status: string;
+}
+const { fy, contract, contractHref, status } = Astro.props;
+const variant = (status === 'Issued' ? 'success' : status === 'In review' ? 'info' : 'neutral') as 'success' | 'info' | 'neutral';
+---
+
+<p class="cbf-project-year cluster typography-body-sm" data-gap="xs">
+  <span class="cbf-project-year__fy">{fy} contract</span>
+  <a class="cbf-project-year__link" href={contractHref}>{contract}</a>
+  <EsaBadge value={status} variant={variant} size="sm" />
+</p>
+
+<style>
+  .cbf-project-year {
+    margin: 0;
+    color: var(--color-content-default-secondary);
+  }
+  .cbf-project-year__fy {
+    color: var(--color-content-default);
+    font-weight: var(--typography-font-weight-semibold);
+  }
+  .cbf-project-year__link {
+    color: var(--color-content-brand);
+    font-weight: var(--typography-font-weight-medium);
+  }
+</style>

@@ -21,7 +21,9 @@
 // end date (capped at the tracked YEARS horizon) up front, as ordinary rows
 // tagged `isRecurring`. Modifying the rule regenerates every not-yet-
 // satisfied occurrence from the (possibly changed) rule; any occurrence that
-// already has a document attached is left alone. Deleting the rule (also
+// already has a document attached is left alone, unless the new schedule no
+// longer hits its year: then (after a warning) its document stays but loses
+// its due date. Deleting the rule (also
 // from the banner) removes every not-yet-satisfied occurrence and leaves any
 // satisfied one in place, untagged.
 //

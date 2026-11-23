@@ -1,0 +1,73 @@
+---
+/*
+ * cbf-route-switch — a prototype device that jumps between competing versions of
+ * the same screen (the LIB entry models, the contract header directions).
+ *
+ * Each version is its own ROUTE, so choosing one navigates. The role lens survives
+ * the jump because it lives in sessionStorage, not on the page.
+ *
+ * bcn-lego-checked: the control IS esa-button-toggle, the segmented one-of-N lego the
+ * role lens uses — the alternatives must stay ON SCREEN, because advertising that
+ * other versions exist is half of what this device is for (esa-select and
+ * esa-dropdown-menu hide them behind a click; esa-tab-layout switches panels within
+ * one screen, not routes). Generalized from cbf-lib-view-switch, which now wraps it.
+ */
+interface View {
+  key: string;
+  label: string;
+  href: string;
+}
+interface Props {
+  views: View[];
+  /** Which view this page IS. */
+  active: string;
+  /** The control's label. */
+  label: string;
+  /** Optional quiet fact under the control, naming what the versions share: "Three versions of the same budget". */
+  note?: string;
+}
+const { views, active, label, note } = Astro.props;
+---
+
+<div class="cbf-route-switch stack" data-gap="3xs" data-route-switch data-views={JSON.stringify(views)} data-active={active}>
+  <esa-button-toggle class="cbf-route-switch__control" size="sm" label={label} data-route-control></esa-button-toggle>
+  {note && <p class="cbf-route-switch__note">{note}</p>}
+</div>
+
+<script>
+  import '@esa/ecology/esa-button-toggle';
+
+  document.querySelectorAll<HTMLElement>('[data-route-switch]').forEach((root) => {
+    const views: { key: string; label: string; href: string }[] = JSON.parse(root.dataset.views || '[]');
+    const active = root.dataset.active ?? '';
+    const control = root.querySelector<HTMLElement & { options: any[]; value: string }>('[data-route-control]');
+    if (!control) return;
+
+    control.options = views.map((v) => ({ label: v.label, value: v.key }));
+    control.value = active;
+
+    /* Put the control back to the page it is actually on first: if the destination
+       never arrives, the segment must not claim a screen nobody is looking at. */
+    root.addEventListener('change', (e: Event) => {
+      const el = e.target as HTMLElement & { value?: string };
+      if (!el?.dataset || !('routeControl' in el.dataset)) return;
+      const next = views.find((v) => v.key === el.value);
+      control.value = active;
+      if (!next || next.key === active) return;
+      window.location.assign(next.href);
+    });
+  });
+</script>
+
+<style>
+  .cbf-route-switch {
+    --align: flex-end;
+    flex: none;
+  }
+  .cbf-route-switch__note {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-content-default-secondary);
+    text-align: end;
+  }
+</style>

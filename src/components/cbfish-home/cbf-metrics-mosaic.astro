@@ -22,7 +22,7 @@
 // text is its accessible name; the tiling geometry is component-internal.
 import { METRICS, STATES, filterToken, formatCompact, type StateCode } from '../../data/cbfish-home-metrics';
 import { stateSymbolPath } from '../../data/basin-geo';
-import { withBase } from '../../lib/base';
+import { contractLink } from '../../lib/contract-links';
 
 type Part = { label: string; value: number; pct: number; description?: string; token: string; symbol: string };
 
@@ -126,21 +126,29 @@ const views = METRICS.flatMap((m) => [
       token: filterToken('state', s.code), symbol: stateSymbol(s.code),
     }))),
   },
-]).map((v) => {
-  const top = v.parts[0]?.pct ?? 1;
-  return { ...v, top, wide: layout(v.parts, GEOM.wide), tall: layout(v.parts, GEOM.tall) };
-});
+]).map((v) => ({ ...v, unknown: false }));
 
-const first = views[0];
-const measures = METRICS.map((m) => ({ label: m.short, value: m.id }));
+// RM&E has no spending split yet: four equal blocks that show "?" instead of a
+// share, with no link, amount or description, until the figures are known
+const RME = { id: 'rme', short: 'RM&E', unit: '', label: 'RM&E' };
+const unknownParts = (labels: string[]): Part[] =>
+  labels.map((label) => ({ label, value: 1, pct: 100 / labels.length, token: '', symbol: '' }));
+views.push(
+  { m: RME as (typeof views)[number]['m'], split: 'program', parts: unknownParts(['', '', '', '']), unknown: true },
+  { m: RME as (typeof views)[number]['m'], split: 'state', parts: unknownParts(STATES.map((st) => st.name)), unknown: true },
+);
+const laidOut = views.map((v) => ({ ...v, wide: layout(v.parts, GEOM.wide), tall: layout(v.parts, GEOM.tall) }));
+
+const first = laidOut[0];
+const measures = [...METRICS.map((m) => ({ label: m.short, value: m.id })), { label: RME.short, value: RME.id }];
 const splits = [{ label: 'By program area', value: 'program' }, { label: 'By state', value: 'state' }];
 ---
 <section class="cbf-metrics-mosaic" aria-labelledby="cbf-metrics-mosaic-h" data-mosaic
   data-measures={JSON.stringify(measures)} data-splits={JSON.stringify(splits)}>
   <div class="cbf-metrics-mosaic__head">
     <div class="cbf-metrics-mosaic__intro">
-      <h2 id="cbf-metrics-mosaic-h" class="typography-heading-md">Where the results come from</h2>
-      <p class="typography-body-md cbf-metrics-mosaic__lede">Each block is sized by its share of the total since 2005. Select a block to see the contracts behind it.</p>
+      <h2 id="cbf-metrics-mosaic-h" class="typography-heading-md">Spending</h2>
+      <p class="typography-body-md cbf-metrics-mosaic__lede">Each block is sized by its percentage of spending by accrual category. Select a block to see the data behind it.</p>
     </div>
     <div class="cbf-metrics-mosaic__pickers">
       <esa-button-toggle size="sm" label="Measure" data-pick-measure></esa-button-toggle>
@@ -148,25 +156,35 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
     </div>
   </div>
 
-  {views.map((v) => (
+  {laidOut.map((v) => (
     <div class="cbf-metrics-mosaic__view" data-view={`${v.m.id}:${v.split}`} hidden={v !== first}>
       {(['wide', 'tall'] as const).map((shape) => (
         <ul class={`cbf-metrics-mosaic__map is-${shape}`} style={`aspect-ratio: ${GEOM[shape].w} / ${v[shape].h}`}
-          aria-label={`${v.m.short} ${v.split === 'state' ? 'by state' : 'by program area'}`}>
+          role={v.unknown ? 'img' : undefined}
+          aria-label={v.unknown
+            ? `${v.m.short} ${v.split === 'state' ? 'by state' : 'by program area'}: shares not known yet`
+            : `${v.m.short} ${v.split === 'state' ? 'by state' : 'by program area'}`}>
           {v[shape].blocks.map((b, i) => {
             return (
-              <li class="cbf-metrics-mosaic__cell" style={`${b.style}; --i: ${i}`}>
+              <li class="cbf-metrics-mosaic__cell" style={`${b.style}; --i: ${i}`} aria-hidden={v.unknown ? 'true' : undefined}>
+                {v.unknown ? (
+                  <div class="cbf-metrics-mosaic__block is-unknown" aria-hidden="true">
+                    <span class="cbf-metrics-mosaic__pct">?</span>
+                    {b.label && <span class="cbf-metrics-mosaic__name">{b.label}</span>}
+                  </div>
+                ) : (
                 <a class="cbf-metrics-mosaic__block"
-                  href={`${withBase(`/program-results/${v.m.id}`)}#${b.token}`}>
+                  {...contractLink(v.m.id, b.token)}>
                   <svg class:list={['cbf-metrics-mosaic__symbol', v.split === 'state' && 'is-outline']} viewBox="0 0 100 100" aria-hidden="true" focusable="false" set:html={b.symbol} />
                   <span class="cbf-metrics-mosaic__pct">{Math.round(b.pct)}%</span>
                   <span class="cbf-metrics-mosaic__name">{b.label}</span>
                   {b.description && <span class="cbf-metrics-mosaic__desc">{b.description}</span>}
                   <span class="cbf-metrics-mosaic__foot">
                     {v.split === 'program' && <span class="cbf-metrics-mosaic__value">{formatCompact(b.value)} {v.m.unit}</span>}
-                    <span class="cbf-metrics-mosaic__cta" aria-hidden="true">View contracts →</span>
+                    <span class="cbf-metrics-mosaic__cta" aria-hidden="true">View data →</span>
                   </span>
                 </a>
+                )}
               </li>
             );
           })}
@@ -258,6 +276,9 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
     --_sym-cut: color-mix(in srgb, var(--cbf-blue-200) 55%, var(--cbf-blue-50));
   }
   .cbf-metrics-mosaic__block:focus-visible { outline: 3px solid var(--cbf-gold-300); outline-offset: 2px; }
+  /* RM&E: not known yet. A dashed, static block (no link, no hover). */
+  .cbf-metrics-mosaic__block.is-unknown { border-style: dashed; cursor: default; }
+  .cbf-metrics-mosaic__block.is-unknown:hover { background: var(--color-background-elevation-raised); border-color: var(--color-border-default); box-shadow: none; }
 
   .cbf-metrics-mosaic__pct {
     font-family: var(--typography-font-family-display, var(--typography-font-family-sans));
@@ -304,18 +325,52 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
     .cbf-metrics-mosaic__pct { font-size: var(--typography-heading-md-font-size); }
     .cbf-metrics-mosaic__name { font-size: var(--typography-body-md-font-size); margin-top: 0; }
   }
-  @container (max-height: 4.5rem) { .cbf-metrics-mosaic__name { display: none; } }
   @container (max-width: 9rem) {
     .cbf-metrics-mosaic__block { padding: var(--spacing-300); }
     .cbf-metrics-mosaic__name { font-size: var(--typography-body-md-font-size); }
     .cbf-metrics-mosaic__cta { display: none; }
   }
 
+  /* phones get the tall geometry. Placed after the shed-detail rules (so its
+     padding wins over them, as before) and before the compact rules below
+     (so the smallest blocks keep their tighter padding) */
   @media (max-width: 640px) {
     .cbf-metrics-mosaic__map.is-wide { display: none; }
     .cbf-metrics-mosaic__map.is-tall { display: block; }
     .cbf-metrics-mosaic__block { padding: var(--spacing-400); }
   }
+
+  /* compact blocks never drop the name: it becomes a small label that wraps
+     to two lines, then truncates (a script adds the full name as a tooltip
+     only where it is cut short) */
+  @container (max-height: 4.5rem) or (max-width: 6.5rem) {
+    .cbf-metrics-mosaic__pct { flex: none; font-size: var(--typography-heading-md-font-size); }
+    .cbf-metrics-mosaic__name {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      min-width: 0;
+      max-width: 100%;
+      overflow: hidden;
+      margin-top: 0;
+      font-family: var(--typography-font-family-sans);
+      font-size: var(--typography-label-sm-font-size);
+      font-weight: var(--typography-font-weight-semibold);
+      line-height: 1.2;
+    }
+  }
+  /* short: the label sits beside the share, one line, no amount line */
+  @container (max-height: 4.5rem) {
+    .cbf-metrics-mosaic__block { flex-direction: row; align-items: center; gap: var(--spacing-200); padding-block: var(--spacing-200); }
+    .cbf-metrics-mosaic__name { -webkit-line-clamp: 1; }
+    .cbf-metrics-mosaic__foot { display: none; }
+  }
+  /* narrow: the label sits under the share; the amount line goes first when
+     the block is also short */
+  @container (max-width: 6.5rem) {
+    .cbf-metrics-mosaic__block { flex-direction: column; align-items: flex-start; gap: 2px; padding: var(--spacing-200); }
+  }
+  @container (max-width: 6.5rem) and (max-height: 8rem) { .cbf-metrics-mosaic__foot { display: none; } }
   @media (prefers-reduced-motion: reduce) {
     .cbf-metrics-mosaic__cell { animation: none; }
     .cbf-metrics-mosaic__block, .cbf-metrics-mosaic__symbol { transition: none; }
@@ -340,5 +395,20 @@ const splits = [{ label: 'By program area', value: 'program' }, { label: 'By sta
       root.querySelectorAll<HTMLElement>('[data-view]').forEach((v) => (v.hidden = v.dataset.view !== `${measure}:${split}`));
     pickM.addEventListener('change', (e) => { measure = (e as CustomEvent).detail.value; show(); });
     pickS.addEventListener('change', (e) => { split = (e as CustomEvent).detail.value; show(); });
+
+    // full name as a tooltip, only on blocks where the compact label is cut
+    // short (elsewhere the visible name already says it; a title there would
+    // just repeat the link's accessible name)
+    const names = [...root.querySelectorAll<HTMLElement>('.cbf-metrics-mosaic__name')];
+    const markTruncated = () => names.forEach((n) => {
+      const cut = n.offsetParent !== null && (n.scrollWidth > n.clientWidth + 1 || n.scrollHeight > n.clientHeight + 1);
+      const block = n.closest('a, [role="button"]');
+      if (block) cut ? block.setAttribute('title', n.textContent ?? '') : block.removeAttribute('title');
+    });
+    new ResizeObserver(markTruncated).observe(root);
+    // the web font changes text widths once it loads
+    document.fonts?.ready.then(markTruncated);
+    pickM.addEventListener('change', markTruncated);
+    pickS.addEventListener('change', markTruncated);
   }
 </script>

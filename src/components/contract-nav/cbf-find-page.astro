@@ -1,0 +1,125 @@
+---
+/*
+ * cbf-find-page — find one of this contract's pages by name (round 6). Sits at the
+ * end of the area row beside Files (Andy, 2026-11-12: "next to the files there ... a
+ * little like local search for the subpages"; Gloria: "Yes, find page").
+ *
+ * The trigger opens esa-entity-search with the contract's pages as entities and their
+ * menus as scopes, only those the current role and stage can open (read from the
+ * lenses on <html> each time it opens). Ctrl/Cmd+K also opens it. (esa-command-palette
+ * was the first pick; it throws a Lit class-field error on open in this build.)
+ */
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaKbd from '@esa/ecology/esa-kbd.astro';
+import CbfIcon from '../search/cbf-icon.astro';
+
+interface FindPage {
+  slug: string;
+  label: string;
+  group: string;
+  prod?: string;
+  hideFor?: string[];
+  hideStages?: string[];
+  keywords?: string[];
+}
+interface Props {
+  pages: FindPage[];
+  base: string;
+}
+const { pages, base } = Astro.props;
+---
+
+<span class="cbf-find-page">
+  <EsaButton variant="chrome" size="sm" data-find-page-open aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K">
+    <span class="cbf-find-page__inner">
+      <CbfIcon name="search" />
+      Find page
+      <EsaKbd>⌘K</EsaKbd>
+    </span>
+  </EsaButton>
+</span>
+<esa-entity-search
+  data-find-page
+  data-pages={JSON.stringify(pages)}
+  data-base={base}
+  hotkey="mod+k"
+  placeholder="Find a page in this contract"
+  all-label="All pages"
+></esa-entity-search>
+
+<script>
+  import '@esa/ecology/esa-entity-search';
+  import type { EsaSearchEntity, EsaSearchScope } from '@esa/ecology/esa-entity-search';
+
+  interface FindPage {
+    slug: string;
+    label: string;
+    group: string;
+    prod?: string;
+    hideFor?: string[];
+    hideStages?: string[];
+    keywords?: string[];
+  }
+  type Search = HTMLElement & { entities: EsaSearchEntity[]; scopes: EsaSearchScope[]; open: boolean };
+  const search = document.querySelector<Search>('[data-find-page]');
+  if (search) {
+    const pages: FindPage[] = JSON.parse(search.dataset.pages || '[]');
+    const base = search.dataset.base || '';
+    const groups = [...new Set(pages.map((p) => p.group))];
+    search.scopes = groups.map((g) => ({ id: g, label: g }));
+    // Only the pages this role and stage can open. The entity search matches the name
+    // and subtitle, so a page found by an alias or today's Go to name ("payment
+    // authorizations", "LIB") shows that word as its subtitle, only while it matches.
+    let query = '';
+    const load = () => {
+      const { cbfRole = '', cbfStage = '' } = document.documentElement.dataset;
+      const q = query.trim().toLowerCase();
+      search.entities = pages
+        .filter((p) => !(p.hideFor ?? []).includes(cbfRole) && !(p.hideStages ?? []).includes(cbfStage))
+        .map((p) => {
+          const aliases = [...(p.keywords ?? []), ...(p.prod && p.prod !== p.label ? [p.prod] : [])];
+          const hit = q && !p.label.toLowerCase().includes(q) ? aliases.find((a) => a.toLowerCase().includes(q)) : undefined;
+          return { id: p.slug, title: p.label, scope: p.group, url: `${base}/${p.slug}`, ...(hit ? { subtitle: hit } : {}) };
+        });
+    };
+    search.addEventListener('input', (e) => {
+      const field = e.composedPath()[0] as HTMLInputElement;
+      query = field?.value ?? '';
+      load();
+    });
+    load();
+    document.addEventListener('cbf-role:change', load);
+    document.addEventListener('cbf-stage:change', load);
+    document.querySelectorAll('[data-find-page-open]').forEach((b) =>
+      b.addEventListener('click', () => {
+        query = '';
+        load();
+        search.open = true;
+      }),
+    );
+    // Keep the lenses (?role, ?stage, ?from) when going to the page.
+    search.addEventListener('select', (e) => {
+      const entity = (e as CustomEvent<{ entity: EsaSearchEntity }>).detail.entity;
+      if (!entity.url) return;
+      const here = new URL(window.location.href);
+      const url = new URL(entity.url, here);
+      here.searchParams.forEach((v, k) => url.searchParams.set(k, v));
+      window.location.assign(url);
+    });
+  }
+</script>
+
+<style>
+  .cbf-find-page {
+    margin-inline-start: auto;
+  }
+  .cbf-find-page__inner {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-100);
+  }
+  .cbf-find-page :global(.cbf-icon) {
+    display: inline-flex;
+    color: var(--color-content-default-secondary);
+  }
+</style>

@@ -1,0 +1,29 @@
+---
+// /contract-nav/{a|b}/{page} — retired. The prototype dropped its A/B header directions
+// (Andy, round 3: "Let's just do lifecycle"); links shared before that land on the same
+// page at /contract-nav/{page}, with the lens query (?role, ?stage, ?from) kept.
+import { withBase } from '../../../lib/base';
+import { ALL_PAGES, contract, findPage } from '../../../data/contract-nav.mjs';
+
+export function getStaticPaths() {
+  return ['a', 'b'].flatMap((direction) => ALL_PAGES.map((p) => ({ params: { direction, page: p.slug } })));
+}
+
+const { page } = Astro.params as { page: string };
+const to = withBase(`/contract-nav/${page}`);
+const label = findPage(page)!.label;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>{`${contract.number}: ${label}`}</title>
+    <meta name="robots" content="noindex" />
+    <meta http-equiv="refresh" content={`0;url=${to}`} />
+    <link rel="canonical" href={to} />
+    <script is:inline define:vars={{ to }}>location.replace(to + location.search + location.hash);</script>
+  </head>
+  <body>
+    <a href={to}>{label}</a>
+  </body>
+</html>
