@@ -1,0 +1,335 @@
+---
+// cbf-soy-items — the SOY items workspace. Replaces My Projects,
+// All Projects, Remaining, the Customize dialog and the "Bulk set" dialog with
+// one table:
+//
+//   • Saved views (?view=mine|needs|all|changed|variance|two-year). PMs land on
+//     "Needs my input" when the PM stage has work for them, else "My projects";
+//     budget administrators land on "All items", and for them "Needs input"
+//     means items with no amount in the ACTIVE stage (they have no "my projects").
+//   • The columns the work needs, filters in the column headers, search, CSV.
+//   • Row click opens the shared item side panel (openItem → cbf-soy-item-panel).
+//   • Admin bulk bar: select rows → "Set <active stage> from <source>" →
+//     preview (before/after, total, skipped by name) → confirm naming the stage
+//     and count → results. The fix for P5 ("bulk set" writing to whatever stage
+//     happened to be active, labelled only by echo).
+//
+// bcn-lego-checked: the table is AG Grid Community in the spoke's token theme
+// (shared/grid-chrome) because ecology has no data-grid lego — same call as the
+// capital program grids; its column vocabulary is src/lib/soy/item-grid.ts.
+// Views are esa-chip-group, search esa-text-field, source esa-select, preview
+// esa-dialog + esa-textarea + esa-alert-box, actions esa-button, empty states
+// esa-empty-state, pills cloned esa-pill. The preview list is a semantic table
+// (≤50 rows shown), not a second grid. Beacon is not cloned on this machine.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import '../shared/cbf-data-grid-chrome.css';
+import { withBase } from '../../lib/base';
+---
+<section class="cbf-soy-items stack" data-gap="sm" data-soy-items aria-labelledby="soy-items-title">
+  <div class="repel">
+    <h2 class="cbf-soy-section-title" id="soy-items-title">Items</h2>
+    <EsaButton size="sm" variant="secondary" appearance="outline" icon="download" data-items-csv>Export CSV</EsaButton>
+  </div>
+
+  <div data-items-draft hidden>
+    <EsaEmptyState title="No items yet" description="Run setup to carry last year’s items forward." size="md" />
+    <p class="cbf-soy-items__draft-link"><a href={withBase('/soy/setup')}>Go to setup →</a></p>
+  </div>
+
+  <div class="stack" data-gap="sm" data-items-body>
+    <div class="cbf-data-grid__controls repel">
+      <label class="cbf-data-grid__filter" data-change="it-views">
+        <span class="typography-meta">View</span>
+        <esa-chip-group size="sm" label="Saved views" data-items-views></esa-chip-group>
+      </label>
+      <esa-text-field class="cbf-data-grid__search" size="sm" label="Search" placeholder="Project, title, PM…" data-items-search></esa-text-field>
+    </div>
+
+    <p class="cbf-soy-lede" data-items-view-note></p>
+
+    <!-- Admin bulk bar: only with a selection -->
+    <div class="cbf-soy-items__bulk repel" data-items-bulk hidden>
+      <span class="cbf-soy-items__bulk-count" data-items-bulk-count></span>
+      <div class="cluster" data-gap="xs" style="--align: flex-end">
+        <esa-select size="sm" label="Set from" data-items-source></esa-select>
+        <EsaButton size="sm" variant="primary" data-items-bulk-go>Preview</EsaButton>
+        <EsaButton size="sm" variant="ghost" data-items-bulk-clear>Clear selection</EsaButton>
+      </div>
+    </div>
+
+    <div class="cbf-data-grid__grid" data-items-grid data-change="it-columns"></div>
+    <div data-items-empty hidden>
+      <EsaEmptyState title="No items in this view" description="Choose All items to see every item." size="sm" />
+    </div>
+
+    <footer class="cbf-data-grid__footer repel">
+      <span class="typography-meta" data-items-count></span>
+      <span class="typography-meta cbf-soy-muted">Select a row to open its side panel. Filters live in the column headers.</span>
+    </footer>
+  </div>
+
+  <!-- Bulk preview -->
+  <esa-dialog size="lg" heading="Preview" show-close-button data-items-preview data-change="it-bulk-ewb">
+    <div class="stack" data-gap="sm">
+      <p data-items-preview-lede></p>
+      <div class="cbf-soy-items__preview-scroll">
+        <table class="cbf-soy-table">
+          <thead><tr><th scope="col">Project</th><th scope="col">Title</th><th scope="col" class="cbf-soy-num" data-items-preview-before>Now</th><th scope="col" class="cbf-soy-num">New</th><th scope="col" class="cbf-soy-num">Change</th></tr></thead>
+          <tbody data-items-preview-rows></tbody>
+          <tfoot data-items-preview-foot></tfoot>
+        </table>
+      </div>
+      <div data-items-preview-skips hidden>
+        <EsaAlertBox variant="warning" title="Skipped">
+          <div data-items-preview-skips-body></div>
+        </EsaAlertBox>
+      </div>
+      <esa-textarea size="sm" label="Rationale" rows="2" required help-text="Saved with every amount this writes. PMs see it above their input." data-items-rationale></esa-textarea>
+    </div>
+    <div slot="footer" class="cluster" data-gap="xs">
+      <EsaButton size="sm" variant="secondary" appearance="outline" data-items-preview-cancel>Cancel</EsaButton>
+      <EsaButton size="sm" variant="primary" data-items-preview-confirm>Confirm</EsaButton>
+    </div>
+  </esa-dialog>
+</section>
+
+<script>
+  import '@esa/ecology/esa-chip-group';
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-textarea';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-dialog';
+  import type { GridApi } from 'ag-grid-community';
+  import { getState, subscribe, update, isAdmin, isLocked, openItem } from '../../lib/soy/store';
+  import { bulkSet, sourceValue, SOURCE_LABEL, type AmountSource } from '../../lib/soy/actions';
+  import { amount, fmtDate, fmtMoney, isTwoYear, needsInput, pmDelta, project, stageDue, stageIndex, transferStatus, variance } from '../../lib/soy/model';
+  import { DEMO_PM } from '../../data/soy/seed';
+  import { stageLabel, type AmountStage, type SoyItem } from '../../lib/soy/types';
+  import { columns, createItemGrid, exportCsv, selectedItems, SELECTION, totalRow, type ColKey, type GridRow } from '../../lib/soy/item-grid';
+  import { deltaHtml, esc, moneyHtml, setOptions, snackbar, type Dialog, type Field } from '../../lib/soy/ui';
+
+  const srcText = (k: AmountSource) => (k === 'baseline' ? 'baseline' : SOURCE_LABEL[k] ?? '…');
+  type View = 'mine' | 'needs' | 'all' | 'changed' | 'variance' | 'two-year';
+  const VIEWS: View[] = ['mine', 'needs', 'all', 'changed', 'variance', 'two-year'];
+
+  const root = document.querySelector<HTMLElement>('[data-soy-items]')!;
+  const q = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+  const viewsEl = q<Field>('[data-items-views]');
+  const search = q<Field>('[data-items-search]');
+  const sourceEl = q<Field>('[data-items-source]');
+  const api: GridApi<GridRow> = createItemGrid(q('[data-items-grid]'));
+
+  const KEYS: ColKey[] = ['number', 'title', 'emphasis', 'fund', 'pm', 'priorWorking', 'priorBaseline', 'baseline', 'ewb', 'pmAmt', 'diff', 'final', 'transferred', 'status', 'flags'];
+
+  // The view: ?view= wins, else a role default chosen on first render.
+  let view: View | null = (() => {
+    const v = new URL(location.href).searchParams.get('view') as View | null;
+    return v && VIEWS.includes(v) ? v : null;
+  })();
+  let lastRole: string | null = null;
+
+  const activeAmountStage = (): AmountStage | null => {
+    const st = getState().cycle.stage;
+    return st === 'ewb' || st === 'pm' || st === 'final' ? st : null;
+  };
+
+  function matches(v: View, i: SoyItem): boolean {
+    const s = getState();
+    const mine = project(i).pm === DEMO_PM;
+    switch (v) {
+      case 'mine': return mine;
+      case 'needs': return isAdmin() ? needsInput(i, s.cycle.stage) : mine && s.cycle.stage === 'pm' && needsInput(i, 'pm');
+      case 'all': return true;
+      case 'changed': return (pmDelta(i) ?? 0) !== 0;
+      case 'variance': return Math.round(variance(i)) !== 0 || ['Changed after transfer', 'Partially transferred'].includes(transferStatus(i));
+      case 'two-year': return isTwoYear(i);
+    }
+  }
+
+  function defaultView(): View {
+    if (isAdmin()) return 'all';
+    const items = getState().cycle.items;
+    return items.some((i) => matches('needs', i)) ? 'needs' : 'mine';
+  }
+
+  const VIEW_LABEL: Record<View, string> = {
+    mine: 'My projects', needs: 'Needs my input', all: 'All items', changed: 'Changed vs EWB', variance: 'Variance', 'two-year': 'Two-year',
+  };
+
+  function viewNote(v: View): string {
+    const c = getState().cycle;
+    if (v === 'needs') {
+      if (isAdmin()) return c.stage && c.stage !== 'complete' ? `Items with no ${stageLabel(c.stage)} amount yet — the active stage.` : 'No stage is collecting input right now.';
+      return c.stage === 'pm' ? `Your items with no PM proposal yet. Due ${fmtDate(stageDue(c.dates, 'pm'))}.` : `PM input opens ${fmtDate(c.dates.pm)}.`;
+    }
+    if (v === 'mine') return `Projects where you are the BPA PM (${DEMO_PM}).`;
+    if (v === 'changed') return 'Items where the PM proposed a different amount from EWB.';
+    if (v === 'variance') return 'Items whose final amount differs from what was transferred. Reconcile them on Transfers.';
+    if (v === 'two-year') return 'Two-year projects. On-year items show the suggested amount (annual × 2, plus inflation); off-year items are $0 automatically.';
+    return isAdmin() ? '' : 'Every item in the cycle, read only except your own.';
+  }
+
+  function render() {
+    const s = getState();
+    const c = s.cycle;
+    const admin = isAdmin();
+    const role = admin ? 'admin' : 'pm';
+    if (lastRole !== role) {
+      // A role switch resets to that role's landing view (unless the URL chose one first).
+      if (lastRole !== null || !view || (admin && view === 'mine')) view = defaultView();
+      lastRole = role;
+    }
+    if (admin && view === 'mine') view = 'all';
+
+    const draft = c.status === 'Draft';
+    q('[data-items-draft]').hidden = !draft;
+    q('[data-items-body]').hidden = draft;
+    if (draft) return;
+
+    // Views with counts. Admins have no "my projects"; their "needs" is the active stage's.
+    const shown: View[] = admin ? ['needs', 'all', 'changed', 'variance', 'two-year'] : VIEWS;
+    const label = (v: View) => (v === 'needs' && admin ? 'Needs input' : VIEW_LABEL[v]);
+    setOptions(viewsEl, shown.map((v) => ({ value: v, label: `${label(v)} (${c.items.filter((i) => matches(v, i)).length})` })), view!);
+    q('[data-items-view-note]').textContent = viewNote(view!);
+
+    const rows = c.items.filter((i) => matches(view!, i));
+    const canBulk = admin && !isLocked() && !!activeAmountStage();
+    api.setGridOption('rowSelection', canBulk ? SELECTION : undefined);
+    api.setGridOption('columnDefs', columns(KEYS, c.fy));
+    api.setGridOption('rowData', rows.map((i) => ({ id: i.id, item: i })));
+    api.setGridOption('pinnedBottomRowData', [totalRow(rows, KEYS, `Total · ${rows.length} items`)]);
+    api.refreshCells({ force: true });
+
+    q('[data-items-grid]').hidden = rows.length === 0;
+    q('[data-items-empty]').hidden = rows.length > 0;
+    updateCount();
+
+    // Bulk sources: anything earlier than the active stage.
+    const st = activeAmountStage();
+    if (st) {
+      const srcs: AmountSource[] = (['baseline', 'ewb', 'pm'] as AmountSource[]).filter((k) => k === 'baseline' || stageIndex(k) < stageIndex(st));
+      const cur = srcs.includes(sourceEl.value as AmountSource) ? sourceEl.value : srcs[srcs.length - 1];
+      setOptions(sourceEl, srcs.map((k) => ({ value: k, label: SOURCE_LABEL[k] })), cur);
+    }
+    updateBulk();
+  }
+
+  function updateCount() {
+    let n = 0;
+    api.forEachNodeAfterFilter(() => { n++; });
+    q('[data-items-count]').textContent = `Showing ${n} of ${getState().cycle.items.length} items`;
+  }
+
+  function updateBulk() {
+    const st = activeAmountStage();
+    const sel = isAdmin() && !isLocked() && st ? selectedItems(api) : [];
+    q('[data-items-bulk]').hidden = sel.length === 0;
+    if (!sel.length || !st) return;
+    q('[data-items-bulk-count]').innerHTML = `<strong>${sel.length}</strong> selected · set <strong>${esc(stageLabel(st))}</strong> (the active stage)`;
+    q('[data-items-bulk-go] .esa-button__label').textContent = `Set ${stageLabel(st)} from ${srcText(sourceEl.value as AmountSource)}`;
+  }
+
+  api.addEventListener('selectionChanged', updateBulk);
+  api.addEventListener('filterChanged', updateCount);
+  sourceEl.addEventListener('change', updateBulk);
+  viewsEl.addEventListener('change', () => {
+    const v = viewsEl.value as View;
+    if (!v || v === view) return;
+    view = v;
+    const url = new URL(location.href);
+    url.searchParams.set('view', v);
+    history.replaceState(null, '', url);
+    api.deselectAll();
+    render();
+  });
+  search.addEventListener('input', () => { api.setGridOption('quickFilterText', (search.value ?? '').trim()); updateCount(); });
+  q('[data-items-csv]').addEventListener('click', () => exportCsv(api, `fy${getState().cycle.fy}-soy-items-${view}.csv`));
+  q('[data-items-bulk-clear]').addEventListener('click', () => api.deselectAll());
+  q('[data-items-grid]').addEventListener('click', (e) => {
+    const a = (e.target as HTMLElement).closest<HTMLElement>('[data-soy-open]');
+    if (a) { e.preventDefault(); e.stopPropagation(); openItem(a.dataset.soyOpen!); }
+  });
+
+  // --- Preview → confirm → report ---------------------------------------
+  const dlg = q<Dialog>('[data-items-preview]');
+  const rationale = q<Field>('[data-items-rationale]');
+  let pending: { ids: string[]; stage: AmountStage; source: AmountSource } | null = null;
+
+  q('[data-items-bulk-go]').addEventListener('click', () => {
+    const st = activeAmountStage();
+    if (!st) return;
+    const source = sourceEl.value as AmountSource;
+    const sel = selectedItems(api);
+    const writes: { i: SoyItem; v: number }[] = [];
+    const skips: { i: SoyItem; reason: string }[] = [];
+    for (const i of sel) {
+      if (st === 'final' && i.transfers.length) { skips.push({ i, reason: 'Already transferred — change it from the item' }); continue; }
+      const r = sourceValue(i, source);
+      if (r.value == null) skips.push({ i, reason: r.reason ?? 'No amount' });
+      else writes.push({ i, v: r.value });
+    }
+    pending = { ids: sel.map((i) => i.id), stage: st, source };
+    const total = writes.reduce((k, w) => k + w.v, 0);
+    const before = writes.reduce((k, w) => k + (amount(w.i, st) ?? 0), 0);
+    dlg.heading = `Set ${stageLabel(st)} from ${SOURCE_LABEL[source].toLowerCase()}`;
+    q('[data-items-preview-lede]').innerHTML = `This writes to <strong>${esc(stageLabel(st))}</strong>, the active stage, for <strong>${writes.length}</strong> of the ${sel.length} selected items. Nothing is saved until you confirm.`;
+    q('[data-items-preview-before]').textContent = `Current ${stageLabel(st)}`;
+    const shown = writes.slice(0, 50);
+    q('[data-items-preview-rows]').innerHTML = shown.map(({ i, v }) => {
+      const now = amount(i, st);
+      return `<tr><td>${esc(i.projectNumber)}</td><td>${esc(project(i).title)}</td><td class="cbf-soy-num">${moneyHtml(now)}</td><td class="cbf-soy-num">${moneyHtml(v)}</td><td class="cbf-soy-num">${deltaHtml(now == null ? v : v - now)}</td></tr>`;
+    }).join('') + (writes.length > shown.length ? `<tr><td colspan="5" class="cbf-soy-muted">…and ${writes.length - shown.length} more items</td></tr>` : '');
+    q('[data-items-preview-foot]').innerHTML = `<tr><td colspan="2">Total · ${writes.length} items</td><td class="cbf-soy-num">${moneyHtml(before)}</td><td class="cbf-soy-num">${moneyHtml(total)}</td><td class="cbf-soy-num">${deltaHtml(total - before)}</td></tr>`;
+    const sk = q('[data-items-preview-skips]');
+    sk.hidden = skips.length === 0;
+    q('[data-items-preview-skips-body]').innerHTML = `<p class="cbf-soy-items__skip-lede">${skips.length} selected items will be skipped. Enter their amounts by hand from the item panel.</p><ul class="cbf-soy-items__skips">${skips.slice(0, 20).map(({ i, reason }) => `<li><strong>${esc(i.projectNumber)}</strong> ${esc(project(i).title)} — ${esc(reason)}</li>`).join('')}${skips.length > 20 ? `<li>…and ${skips.length - 20} more</li>` : ''}</ul>`;
+    rationale.value = source === 'baseline' ? `FY${getState().cycle.fy} baseline, including COLA.` : `Set from ${SOURCE_LABEL[source]}.`;
+    rationale.errorText = '';
+    const confirm = q<HTMLElement & { disabled: boolean }>('[data-items-preview-confirm]');
+    q('[data-items-preview-confirm] .esa-button__label').textContent = `Set ${stageLabel(st)} for ${writes.length} items`;
+    confirm.toggleAttribute('disabled', writes.length === 0);
+    dlg.show();
+  });
+  q('[data-items-preview-cancel]').addEventListener('click', () => dlg.close());
+  q('[data-items-preview-confirm]').addEventListener('click', () => {
+    if (!pending) return;
+    const text = (rationale.value ?? '').trim();
+    if (!text) { rationale.errorText = 'A rationale is required.'; return; }
+    const p = pending;
+    const report = update((s) => bulkSet(s, p.ids, p.stage, p.source, text));
+    dlg.close();
+    api.deselectAll();
+    pending = null;
+    const skipped = report.skipped.length;
+    snackbar(skipped ? 'warning' : 'success', `Set ${stageLabel(report.stage)} for ${report.written.length} items (${fmtMoney(report.total)}).${skipped ? ` Skipped ${skipped}: ${report.skipped.slice(0, 6).map((x) => x.id.split('|')[0]).join(', ')}${skipped > 6 ? '…' : ''}. They’re listed under Needs input.` : ''}`);
+    if (skipped && isAdmin()) {
+      view = 'needs';
+      const url = new URL(location.href);
+      url.searchParams.set('view', 'needs');
+      history.replaceState(null, '', url);
+      render();
+    }
+  });
+
+  subscribe(render);
+</script>
+
+<style>
+  .cbf-soy-items__bulk {
+    align-items: flex-end;
+    padding: var(--spacing-300) var(--spacing-400);
+    border: 1px solid var(--color-background-brand);
+    border-radius: var(--radius-200);
+    background: var(--color-background-brand-subtle);
+  }
+  .cbf-soy-items__bulk-count { font-size: 14px; }
+  .cbf-soy-items__draft-link { margin: 0; text-align: center; }
+  .cbf-soy-items__preview-scroll { max-block-size: 50vh; overflow: auto; }
+</style>
+
+<style is:global>
+  .cbf-soy-items__skip-lede { margin: 0 0 var(--spacing-150); }
+  .cbf-soy-items__skips { margin: 0; padding-inline-start: var(--spacing-500); display: flex; flex-direction: column; gap: var(--spacing-100); }
+</style>

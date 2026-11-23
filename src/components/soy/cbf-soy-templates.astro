@@ -1,0 +1,27 @@
+---
+// cbf-soy-templates — one hidden, server-rendered copy of every esa-pill variant
+// (xs + sm), every esa-badge dot variant and the four row-button styles, for the
+// SOY screens' client renderers to clone (src/lib/soy/ui.ts → pill() / dot() /
+// button()). The screens draw from live, editable state in localStorage, so
+// their pills and row buttons can't be rendered at build time; cloning the real
+// lego keeps them byte-identical to esa-pill / esa-badge / esa-button.
+import EsaPill from '@esa/ecology/esa-pill.astro';
+import EsaBadge from '@esa/ecology/esa-badge.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+
+const pillVariants = ['default', 'primary', 'success', 'warning', 'danger', 'info'] as const;
+const sizes = ['xs', 'sm'] as const;
+const dotVariants = ['primary', 'secondary', 'success', 'warning', 'danger', 'info'] as const;
+---
+<div data-soy-templates hidden aria-hidden="true">
+  {pillVariants.map((v) => sizes.map((size) => (
+    <span data-tpl={`pill-${v}-${size}`}><EsaPill label="·" variant={v} size={size} removable={false} /></span>
+  )))}
+  {dotVariants.map((v) => (
+    <span data-tpl={`dot-${v}`}><EsaBadge dot variant={v} size="sm" label="·" /></span>
+  ))}
+  <span data-tpl="btn-primary"><EsaButton size="xs" variant="primary">·</EsaButton></span>
+  <span data-tpl="btn-secondary"><EsaButton size="xs" variant="secondary" appearance="outline">·</EsaButton></span>
+  <span data-tpl="btn-ghost"><EsaButton size="xs" variant="ghost">·</EsaButton></span>
+  <span data-tpl="btn-soft"><EsaButton size="xs" variant="primary" appearance="soft">·</EsaButton></span>
+</div>

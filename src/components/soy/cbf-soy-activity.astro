@@ -1,0 +1,293 @@
+---
+// cbf-soy-activity — Activity and notifications. Replaces Gemini's
+// Activity Log (four dropdowns + a Filter button over a long history list), the
+// Notifications page, and manual reminders.
+//
+//   • Activity feed, newest first, filtered with chips (stage, kind) and two
+//     selects (person, PM); every item entry links into the item side panel.
+//   • Notification preferences — none / immediately / daily digest — for the
+//     signed-in user. In CBFish this moves to user settings; the per-project
+//     toggle stays on each item.
+//   • Automatic reminders (admin): on/off, days before the due date, when the
+//     next one goes, who it would go to now, and a preview of the email.
+//
+// bcn-lego-checked: filters are esa-chip-group and esa-select, preferences
+// esa-radio-group, the reminder switch esa-switch-toggle, buttons esa-button
+// (row links cloned via cbf-soy-templates), pills cloned esa-pill, empty
+// states esa-empty-state. The feed is a semantic <ol> of entries — no esa
+// feed/timeline lego exists (checked the catalog). Beacon is not cloned on
+// this machine.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+
+const stageFilters = [
+  { value: '', label: 'All' },
+  { value: 'ewb', label: 'EWB proposed' },
+  { value: 'pm', label: 'PM proposed' },
+  { value: 'final', label: 'Final budget' },
+  { value: 'complete', label: 'Complete' },
+];
+const kindFilters = [
+  { value: '', label: 'All' },
+  { value: 'amounts', label: 'Amounts' },
+  { value: 'comments', label: 'Comments' },
+  { value: 'emails', label: 'Reminders and emails' },
+  { value: 'transfers', label: 'Transfers' },
+  { value: 'setup', label: 'Stages, setup and close' },
+];
+const prefOptions = [
+  { value: 'none', label: 'None' },
+  { value: 'immediately', label: 'Immediately' },
+  { value: 'digest', label: 'Daily digest' },
+];
+const dayOptions = [3, 5, 7, 10].map((d) => ({ value: String(d), label: `${d} days before the due date` }));
+---
+<div class="cbf-soy-ac" data-soy-activity>
+  <section class="cbf-soy-ac__feed stack" data-gap="sm" aria-labelledby="ac-title" data-change="ac-feed">
+    <div class="stack" data-gap="2xs">
+      <h2 class="cbf-soy-section-title" id="ac-title">Activity</h2>
+      <p class="cbf-soy-lede">Everything that happened in this cycle — amounts, comments, emails, transfers and stage changes.</p>
+    </div>
+
+    <div class="cbf-soy-ac__filters stack" data-gap="xs">
+      <label class="cbf-data-grid__filter">
+        <span class="typography-meta">Stage</span>
+        <esa-chip-group size="sm" label="Filter by stage" value="" options={JSON.stringify(stageFilters)} data-ac-stage></esa-chip-group>
+      </label>
+      <label class="cbf-data-grid__filter">
+        <span class="typography-meta">Kind</span>
+        <esa-chip-group size="sm" label="Filter by kind" value="" options={JSON.stringify(kindFilters)} data-ac-kind></esa-chip-group>
+      </label>
+      <div class="cbf-soy-ac__selects">
+        <esa-select size="sm" label="Person" data-ac-person></esa-select>
+        <esa-select size="sm" label="Project manager" data-ac-pm></esa-select>
+      </div>
+    </div>
+
+    <p class="typography-meta cbf-soy-muted" data-ac-count></p>
+    <ol class="cbf-soy-ac__list" data-ac-list></ol>
+    <div data-ac-empty hidden><EsaEmptyState title="No activity matches" description="Choose All in each filter." size="sm" /></div>
+    <div data-ac-more-wrap hidden><EsaButton size="sm" variant="secondary" appearance="outline" data-ac-more>Show more</EsaButton></div>
+  </section>
+
+  <aside class="cbf-soy-ac__side stack" data-gap="lg">
+    <section class="cbf-soy-ac__box stack" data-gap="sm" aria-labelledby="ac-prefs-h" data-change="ac-prefs">
+      <h2 class="cbf-soy-ac__h" id="ac-prefs-h">Your SOY notifications</h2>
+      <esa-radio-group size="sm" label="Email me about changes to my items" options={JSON.stringify(prefOptions)} data-ac-pref></esa-radio-group>
+      <p class="typography-meta cbf-soy-muted">In CBFish this setting lives in your user settings. Turn emails off for a single project from that item’s panel.</p>
+    </section>
+
+    <section class="cbf-soy-ac__box stack" data-gap="sm" aria-labelledby="ac-rem-h" data-ac-reminders data-change="ac-reminders">
+      <h2 class="cbf-soy-ac__h" id="ac-rem-h">Automatic reminders</h2>
+      <p class="typography-meta cbf-soy-muted">Sent only to PMs with missing input. Stages still advance only when a budget administrator opens them.</p>
+      <esa-switch-toggle size="sm" label="Send automatic reminders" data-ac-rem-on></esa-switch-toggle>
+      <esa-select size="sm" label="When" options={JSON.stringify(dayOptions)} data-ac-rem-days></esa-select>
+      <p class="cbf-soy-ac__next" data-ac-rem-next></p>
+      <div class="stack" data-gap="xs" data-ac-rem-who-wrap>
+        <h3 class="cbf-soy-ac__h3">Would go to now</h3>
+        <ul class="cbf-soy-ac__recipients" data-ac-rem-who></ul>
+      </div>
+      <div class="stack" data-gap="xs" data-ac-rem-preview-wrap>
+        <h3 class="cbf-soy-ac__h3">Preview</h3>
+        <div data-ac-rem-preview></div>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<script>
+  import '@esa/ecology/esa-chip-group';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-radio-group';
+  import '@esa/ecology/esa-switch-toggle';
+  import { getState, subscribe, update, isAdmin, isLocked, openItem, userName } from '../../lib/soy/store';
+  import { addDays, fmtDate, outstandingByPm, project, stageDue } from '../../lib/soy/model';
+  import { emailHtml, reminderEmail } from '../../lib/soy/email';
+  import { stageLabel, type Activity, type ActivityKind, type NotifyPref } from '../../lib/soy/types';
+  import { PROJECTS } from '../../data/soy/seed';
+  import { button, esc, pill, setOptions, snackbar, STAGE_VARIANT, type Field, type Variant } from '../../lib/soy/ui';
+
+  const KIND_GROUP: Record<string, ActivityKind[]> = {
+    amounts: ['amount', 'change-after-transfer'],
+    comments: ['comment'],
+    emails: ['reminder', 'notify'],
+    transfers: ['transfer'],
+    setup: ['setup', 'stage', 'close'],
+  };
+  const KIND_PILL: Record<ActivityKind, [string, Variant]> = {
+    amount: ['Amount', 'info'],
+    'change-after-transfer': ['Changed after transfer', 'danger'],
+    comment: ['Comment', 'default'],
+    reminder: ['Reminder', 'warning'],
+    notify: ['Email', 'warning'],
+    transfer: ['Transfer', 'success'],
+    setup: ['Setup', 'primary'],
+    stage: ['Stage', 'primary'],
+    close: ['Close-out', 'success'],
+  };
+  const PAGE = 50;
+
+  const root = document.querySelector<HTMLElement>('[data-soy-activity]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const q = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+    const stageEl = q<Field>('[data-ac-stage]');
+    const kindEl = q<Field>('[data-ac-kind]');
+    const personEl = q<Field>('[data-ac-person]');
+    const pmEl = q<Field>('[data-ac-pm]');
+    const prefEl = q<Field>('[data-ac-pref]');
+    const remOn = q<Field>('[data-ac-rem-on]');
+    const remDays = q<Field>('[data-ac-rem-days]');
+    let shown = PAGE;
+    const f = { stage: '', kind: '', person: '', pm: '' };
+
+    const onFilter = (key: keyof typeof f, el: Field) => el.addEventListener('change', () => { f[key] = el.value ?? ''; shown = PAGE; render(); });
+    onFilter('stage', stageEl);
+    onFilter('kind', kindEl);
+    onFilter('person', personEl);
+    onFilter('pm', pmEl);
+
+    function matches(a: Activity): boolean {
+      if (f.stage && a.stage !== f.stage) return false;
+      if (f.kind && !KIND_GROUP[f.kind].includes(a.kind)) return false;
+      if (f.person && a.who !== f.person) return false;
+      if (f.pm) {
+        if (a.itemId) {
+          if (PROJECTS[a.itemId.split('|')[0]]?.pm !== f.pm) return false;
+        } else if (!a.text.includes(f.pm)) return false;
+      }
+      return true;
+    }
+
+    let optionsKey = '';
+    function syncFilterOptions() {
+      const s = getState();
+      const people = [...new Set(s.cycle.activity.map((a) => a.who))].sort();
+      const pms = [...new Set(s.cycle.items.map((i) => project(i).pm))].sort();
+      const key = `${people.join()}|${pms.join()}`;
+      if (key === optionsKey) return;
+      optionsKey = key;
+      if (f.person && !people.includes(f.person)) f.person = '';
+      if (f.pm && !pms.includes(f.pm)) f.pm = '';
+      setOptions(personEl, [{ label: 'Anyone', value: '' }, ...people.map((p) => ({ label: p, value: p }))], f.person);
+      setOptions(pmEl, [{ label: 'Any PM', value: '' }, ...pms.map((p) => ({ label: p, value: p }))], f.pm);
+    }
+
+    function render() {
+      const s = getState();
+      const c = s.cycle;
+      syncFilterOptions();
+
+      // Feed (state.activity is newest first).
+      const all = c.activity;
+      const list = all.filter(matches);
+      q('[data-ac-count]').textContent = `Showing ${Math.min(shown, list.length)} of ${list.length} ${list.length === 1 ? 'entry' : 'entries'}${list.length !== all.length ? ` (${all.length} in total)` : ''}`;
+      q('[data-ac-list]').innerHTML = list.slice(0, shown).map((a) => {
+        const [label, variant] = KIND_PILL[a.kind] ?? [a.kind, 'default'];
+        const stage = a.stage ? pill(stageLabel(a.stage), STAGE_VARIANT[a.stage], { size: 'xs' }) : '';
+        const num = a.itemId?.split('|')[0];
+        const proj = num ? PROJECTS[num] : undefined;
+        return `<li class="cbf-soy-ac__entry">
+          <div class="cbf-soy-ac__entry-head">
+            <span class="cbf-soy-ac__date">${fmtDate(a.date)}</span>
+            <span class="cbf-soy-ac__who">${esc(a.who)}</span>
+            ${pill(label, variant, { size: 'xs' })} ${stage}
+          </div>
+          ${proj ? `<p class="cbf-soy-ac__item">${esc(num)} · ${esc(proj.title)}</p>` : ''}
+          <p class="cbf-soy-ac__text">${esc(a.text)}</p>
+          ${a.itemId ? `<div>${button('ghost', 'Open item', { 'ac-open': a.itemId })}</div>` : ''}
+        </li>`;
+      }).join('');
+      q('[data-ac-empty]').hidden = list.length > 0;
+      q('[data-ac-list]').hidden = list.length === 0;
+      q('[data-ac-more-wrap]').hidden = list.length <= shown;
+
+      // Preferences.
+      const pref = s.notifyPrefs[userName()] ?? 'digest';
+      if (prefEl.value !== pref) prefEl.value = pref;
+      prefEl.disabled = isLocked();
+
+      // Reminders (admin only).
+      const rem = q('[data-ac-reminders]');
+      rem.hidden = !isAdmin();
+      if (!isAdmin()) return;
+      remOn.checked = c.reminders.on;
+      remOn.disabled = isLocked();
+      if (remDays.value !== String(c.reminders.daysBefore)) remDays.value = String(c.reminders.daysBefore);
+      remDays.disabled = isLocked() || !c.reminders.on;
+
+      const next = q('[data-ac-rem-next]');
+      const whoWrap = q('[data-ac-rem-who-wrap]');
+      const prevWrap = q('[data-ac-rem-preview-wrap]');
+      const pmStageOpen = c.status === 'Open' && c.stage === 'pm';
+      const beforePm = c.status === 'Draft' || c.stage === 'ewb';
+      const sendDay = addDays(stageDue(c.dates, 'pm'), -c.reminders.daysBefore);
+      const sentAuto = c.activity.find((a) => a.kind === 'reminder' && a.who === 'CBFish');
+      if (!c.reminders.on) next.innerHTML = '<strong>Off.</strong> PMs get no automatic reminders this cycle. You can still send one from the overview.';
+      else if (beforePm) next.innerHTML = `Next: <strong>${fmtDate(sendDay)}</strong>, ${c.reminders.daysBefore} days before PM proposed is due (${fmtDate(stageDue(c.dates, 'pm'))}).`;
+      else if (pmStageOpen && sentAuto) next.innerHTML = `Sent <strong>${fmtDate(sentAuto.date)}</strong>. PM proposed is due ${fmtDate(stageDue(c.dates, 'pm'))}.`;
+      else if (pmStageOpen) next.innerHTML = `Next: <strong>${fmtDate(sendDay)}</strong>, ${c.reminders.daysBefore} days before PM proposed is due (${fmtDate(stageDue(c.dates, 'pm'))}).`;
+      else next.textContent = 'PM proposed has closed — no more reminders this cycle.';
+
+      const out = pmStageOpen ? outstandingByPm(c) : [];
+      whoWrap.hidden = !pmStageOpen;
+      prevWrap.hidden = !pmStageOpen || out.length === 0 || !c.reminders.on;
+      q('[data-ac-rem-who]').innerHTML = out.length
+        ? out.map((o) => `<li>${esc(o.pm)} — ${o.items.length} ${o.items.length === 1 ? 'item' : 'items'}</li>`).join('')
+        : '<li class="cbf-soy-muted">No one — every PM has responded.</li>';
+      if (!prevWrap.hidden) q('[data-ac-rem-preview]').innerHTML = emailHtml(reminderEmail(s));
+    }
+
+    // --- Events -------------------------------------------------------------
+    q('[data-ac-list]').addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('[data-ac-open]');
+      if (b) openItem(b.dataset.acOpen!);
+    });
+    q('[data-ac-more]').addEventListener('click', () => { shown += PAGE; render(); });
+
+    prefEl.addEventListener('change', () => {
+      const v = prefEl.value as NotifyPref;
+      const who = userName();
+      update((s) => { s.notifyPrefs[who] = v; });
+      snackbar('success', v === 'none' ? 'You won’t get SOY emails.' : v === 'immediately' ? 'You’ll get an email for each change.' : 'You’ll get one daily digest.');
+    });
+    remOn.addEventListener('change', () => {
+      const on = !!remOn.checked;
+      update((s) => { s.cycle.reminders.on = on; });
+      snackbar('info', on ? 'Automatic reminders are on.' : 'Automatic reminders are off for this cycle.');
+    });
+    remDays.addEventListener('change', () => {
+      const d = Number(remDays.value);
+      if (!d || d === getState().cycle.reminders.daysBefore) return;
+      update((s) => { s.cycle.reminders.daysBefore = d; });
+      snackbar('info', `Reminders will go ${d} days before the due date.`);
+    });
+
+    subscribe(render);
+  }
+</script>
+
+<style>
+  .cbf-soy-ac { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: var(--spacing-600); align-items: start; }
+  @media (max-width: 960px) { .cbf-soy-ac { grid-template-columns: 1fr; } }
+  .cbf-soy-ac__selects { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-300); max-inline-size: 40rem; }
+  .cbf-soy-ac__box { padding: var(--spacing-400); border: 1px solid var(--color-border-default); border-radius: var(--radius-200); background: var(--color-background-elevation-raised); }
+  .cbf-soy-ac__h { margin: 0; font-size: 18px; font-weight: var(--typography-font-weight-semibold); }
+  .cbf-soy-ac__h3 { margin: 0; font-size: 14px; font-weight: var(--typography-font-weight-semibold); }
+  .cbf-soy-ac__next { margin: 0; font-size: 14px; }
+  .cbf-soy-ac__recipients { margin: 0; padding-inline-start: var(--spacing-400); font-size: 14px; }
+  .cbf-soy-ac > * { min-inline-size: 0; }
+  .cbf-soy-ac__filters .cbf-data-grid__filter { display: flex; max-inline-size: 100%; }
+  .cbf-soy-ac__filters :global(esa-chip-group) { display: block; max-inline-size: 100%; }
+</style>
+
+<style is:global>
+  .cbf-soy-ac__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--spacing-200); }
+  .cbf-soy-ac__entry { display: flex; flex-direction: column; gap: var(--spacing-100); padding: var(--spacing-300) var(--spacing-400); border: 1px solid var(--color-border-default-subtle); border-radius: var(--radius-200); background: var(--color-background-elevation-raised); }
+  .cbf-soy-ac__entry-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--spacing-200); font-size: 13px; }
+  .cbf-soy-ac__date { font-weight: var(--typography-font-weight-semibold); }
+  .cbf-soy-ac__who { color: var(--color-content-default-secondary); }
+  .cbf-soy-ac__item { margin: 0; font-size: 13px; color: var(--color-content-default-secondary); }
+  .cbf-soy-ac__text { margin: 0; font-size: 14px; }
+</style>

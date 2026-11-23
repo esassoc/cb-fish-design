@@ -1,0 +1,17 @@
+---
+// /soy/close-out — Close-out: the checklist, Close cycle
+// (locks everyone, DEC 2), Reopen with a logged reason, and the past open
+// cycles FY2024–2027 with what blocks them (DEC 1).
+//
+// Thin assembler — the frame is cbf-soy-frame; state lives in src/lib/soy/.
+import CbfSoyFrame from '../../components/soy/cbf-soy-frame.astro';
+import CbfSoyCloseout from '../../components/soy/cbf-soy-closeout.astro';
+---
+<!-- manifest:
+  layout: cbf-soy-frame (nav + prototype strip + app panel + tabs + locked banner)
+  sections:
+    - close-out -> cbf-soy-closeout  (checklist, close/reopen dialogs, reopen log, past open cycles)
+-->
+<CbfSoyFrame active="close-out" title="Close-out" adminOnly>
+  <CbfSoyCloseout />
+</CbfSoyFrame>

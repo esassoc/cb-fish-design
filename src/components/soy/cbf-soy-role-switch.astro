@@ -1,0 +1,49 @@
+---
+// cbf-soy-role-switch — the SOY prototype's role lens: Budget administrator
+// (the EWB budget team) or Project manager (a BPA PM). Lives in
+// cbf-prototype-strip, because nobody signs in to a prototype.
+//
+// Like cbf-cap-role-switch, the lens changes PERMISSIONS and landing views, not
+// layout: the store's canPropose()/isAdmin() read the role and every screen
+// re-renders on `cbf-soy:change`.
+//
+// bcn-lego-checked: the control is esa-button-toggle (the segmented one-of-N
+// lego) for the same reason cbf-role-switch gives — the lens has to advertise
+// that the other role exists; esa-select would hide it behind a click. Beacon
+// is not cloned on this machine.
+---
+<div class="cbf-soy-role stack" data-gap="3xs" data-soy-role>
+  <esa-button-toggle size="sm" label="Viewing as" data-soy-role-control></esa-button-toggle>
+  <p class="cbf-soy-role__who" data-soy-role-who></p>
+</div>
+
+<script>
+  import '@esa/ecology/esa-button-toggle';
+  import { ROLES, getUi, setUi, subscribe, currentRole } from '../../lib/soy/store';
+  import type { Role } from '../../lib/soy/types';
+
+  const root = document.querySelector<HTMLElement>('[data-soy-role]');
+  const control = root?.querySelector<HTMLElement & { options: unknown; value: string }>('[data-soy-role-control]');
+  const who = root?.querySelector<HTMLElement>('[data-soy-role-who]');
+  if (control) {
+    control.options = ROLES.map((r) => ({ label: r.label, value: r.key }));
+    control.value = getUi().role;
+    control.addEventListener('change', () => setUi({ role: control.value as Role }));
+  }
+  subscribe(() => {
+    if (control && control.value !== getUi().role) control.value = getUi().role;
+    if (who) who.textContent = `${currentRole().who} — ${currentRole().can}`;
+  });
+</script>
+
+<style>
+  .cbf-soy-role { --align: flex-end; flex: none; }
+  .cbf-soy-role__who {
+    margin: 0;
+    max-inline-size: 34rem;
+    font-size: 14px;
+    font-weight: var(--typography-font-weight-medium);
+    color: var(--color-content-default);
+    text-align: end;
+  }
+</style>

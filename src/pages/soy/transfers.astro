@@ -1,0 +1,20 @@
+---
+// /soy/transfers — Transfers and reconciliation: transfer status
+// and variance per item, bulk transfer under a suggested Budget Decision name
+// with a review of totals, and the change-after-transfer path (via the item
+// side panel). Replaces Gemini's Transfer Budgets tab.
+//
+// Thin assembler — the frame is cbf-soy-frame; state lives in src/lib/soy/.
+import CbfSoyFrame from '../../components/soy/cbf-soy-frame.astro';
+import CbfSoyTransfers from '../../components/soy/cbf-soy-transfers.astro';
+---
+<!-- manifest:
+  layout: cbf-soy-frame (nav + prototype strip + app panel + tabs + locked banner)
+  sections:
+    - transfers -> cbf-soy-transfers  (status tiles, status chip filter, AG Grid with selection and
+                                       pinned total, bulk-transfer dialog with Budget Decision + review,
+                                       transfer rounds)
+-->
+<CbfSoyFrame active="transfers" title="Transfers" adminOnly>
+  <CbfSoyTransfers />
+</CbfSoyFrame>

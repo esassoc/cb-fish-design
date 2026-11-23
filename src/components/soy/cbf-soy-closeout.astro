@@ -1,0 +1,267 @@
+---
+// cbf-soy-closeout — Close-out. Today cycles never close:
+// FY2024–2027 all sit at Final Budget, and even Complete doesn't lock admins.
+//
+//   • Checklist from closeChecks(): every item has a final (or $0), every final
+//     is transferred, final matches transferred — each failing check links to
+//     the screen that fixes it.
+//   • Close cycle — enabled only when every check passes; locks everyone,
+//     admins included (DEC 2). Once closed: Reopen with a required reason,
+//     logged with who and when.
+//   • Past open cycles (FY2024–2027) list what blocks closing them, with
+//     "Reconcile and close" (DEC 1).
+//
+// bcn-lego-checked: notices are esa-alert-box, confirms esa-dialog +
+// esa-textarea, actions esa-button (row buttons cloned via cbf-soy-templates),
+// status pills cloned esa-pill, empty states esa-empty-state. The checklist is a
+// semantic <ul> of three check rows and the past-cycles list a small semantic
+// table (≤4 rows) — no checklist lego exists and a data grid would be overkill.
+// Beacon is not cloned on this machine.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+---
+<div class="cbf-soy-co stack" data-gap="lg" data-soy-closeout>
+  <div data-co-draft hidden>
+    <EsaEmptyState title="Nothing to close yet" description="Run setup to open the cycle first." size="md" />
+  </div>
+
+  <section class="stack" data-gap="sm" data-co-current aria-labelledby="co-title">
+    <div class="stack" data-gap="2xs">
+      <h2 class="cbf-soy-section-title" id="co-title" data-co-title>Close the cycle</h2>
+      <p class="cbf-soy-lede" data-co-lede></p>
+    </div>
+
+    <ul class="cbf-soy-co__checks" data-co-checks data-change="co-checklist"></ul>
+
+    <!-- Open: close action -->
+    <div class="cbf-soy-co__close repel" data-co-close-wrap data-change="co-lock">
+      <p class="cbf-soy-co__close-text" data-co-close-text></p>
+      <EsaButton size="md" variant="primary" icon="circle-check" data-co-close>Close cycle</EsaButton>
+    </div>
+
+    <!-- Closed: summary + reopen -->
+    <div class="stack" data-gap="sm" data-co-closed hidden>
+      <EsaAlertBox variant="success" title="Closed"><span data-co-closed-text></span></EsaAlertBox>
+      <div class="cbf-soy-co__close repel" data-change="co-reopen">
+        <p class="cbf-soy-co__close-text">Reopening needs a reason. It is logged with who reopened the cycle and when.</p>
+        <EsaButton size="md" variant="secondary" appearance="outline" icon="rotate-ccw" data-co-reopen>Reopen cycle</EsaButton>
+      </div>
+    </div>
+
+    <div class="stack" data-gap="xs" data-co-log-wrap hidden>
+      <h3 class="cbf-soy-co__h">Reopen log</h3>
+      <ul class="cbf-soy-co__log" data-co-log></ul>
+    </div>
+  </section>
+
+  <section class="stack" data-gap="sm" aria-labelledby="co-past-title" data-change="co-past">
+    <div class="stack" data-gap="2xs">
+      <h2 class="cbf-soy-section-title" id="co-past-title">Past cycles still open</h2>
+      <p class="cbf-soy-lede">These cycles never closed. Each lists what blocks closing it.</p>
+      <p class="typography-meta cbf-soy-muted"><strong>Recommended (DEC 1):</strong> close FY2024–2027 after reconciling the FY2027 variances. <strong>Alternative:</strong> leave them open and hide them from the overview.</p>
+    </div>
+    <div class="cbf-soy-co__scroll"><table class="cbf-soy-table" data-co-past-table>
+      <thead><tr><th scope="col">Fiscal year</th><th scope="col">Stage</th><th scope="col" class="cbf-soy-num">Items</th><th scope="col" class="cbf-soy-num">Final</th><th scope="col" class="cbf-soy-num">Transferred</th><th scope="col">What blocks closing it</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+      <tbody data-co-past></tbody>
+    </table></div>
+    <div data-co-past-empty hidden><EsaEmptyState title="Every past cycle is closed" description="Check All cycles for the full history." size="sm" /></div>
+  </section>
+
+  <!-- Close confirm -->
+  <esa-dialog size="md" heading="Close the cycle" show-close-button data-co-close-dialog>
+    <div class="stack" data-gap="sm">
+      <p data-co-close-lede></p>
+      <EsaAlertBox variant="warning" title="Locks everyone">
+        Once closed, nobody can change amounts, comments or transfers — budget administrators included. To change anything later, reopen the cycle with a reason.
+      </EsaAlertBox>
+    </div>
+    <div slot="footer" class="cluster" data-gap="xs">
+      <EsaButton size="sm" variant="secondary" appearance="outline" data-co-close-cancel>Cancel</EsaButton>
+      <EsaButton size="sm" variant="primary" data-co-close-confirm>Close cycle</EsaButton>
+    </div>
+  </esa-dialog>
+
+  <!-- Reopen -->
+  <esa-dialog size="md" heading="Reopen the cycle" show-close-button data-co-reopen-dialog>
+    <div class="stack" data-gap="sm">
+      <p>Reopening unlocks amounts for budget administrators and PMs. The reason is logged and shown on this screen.</p>
+      <esa-textarea size="sm" label="Reason for reopening" rows="3" required data-co-reopen-reason></esa-textarea>
+    </div>
+    <div slot="footer" class="cluster" data-gap="xs">
+      <EsaButton size="sm" variant="secondary" appearance="outline" data-co-reopen-cancel>Cancel</EsaButton>
+      <EsaButton size="sm" variant="primary" data-co-reopen-confirm>Reopen cycle</EsaButton>
+    </div>
+  </esa-dialog>
+
+  <!-- Past cycle confirm -->
+  <esa-dialog size="md" heading="Reconcile and close" show-close-button data-co-past-dialog>
+    <div class="stack" data-gap="sm">
+      <p data-co-past-lede></p>
+      <ul class="cbf-soy-co__blockers" data-co-past-blockers></ul>
+      <p class="typography-meta cbf-soy-muted">In this prototype, confirming marks these as reconciled and closes the cycle. In CBFish, each blocker is resolved first — the same checklist as above.</p>
+    </div>
+    <div slot="footer" class="cluster" data-gap="xs">
+      <EsaButton size="sm" variant="secondary" appearance="outline" data-co-past-cancel>Cancel</EsaButton>
+      <EsaButton size="sm" variant="primary" data-co-past-confirm>Reconcile and close</EsaButton>
+    </div>
+  </esa-dialog>
+</div>
+
+<script>
+  import '@esa/ecology/esa-dialog';
+  import '@esa/ecology/esa-textarea';
+  import { getState, subscribe, update, userName } from '../../lib/soy/store';
+  import { closeCycle, closePastCycle, reopenCycle } from '../../lib/soy/actions';
+  import { closeChecks, fmtDate, fmtMoney, fmtShort, totals } from '../../lib/soy/model';
+  import { stageLabel } from '../../lib/soy/types';
+  import { button, esc, pill, snackbar, type Dialog, type Field } from '../../lib/soy/ui';
+  import { withBase } from '../../lib/base';
+
+  const root = document.querySelector<HTMLElement>('[data-soy-closeout]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const q = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+    const FIX: Record<string, { label: string; href: string }> = {
+      finals: { label: 'Final decisions', href: '/soy/finals' },
+      transfers: { label: 'Transfers', href: '/soy/transfers?status=not' },
+      variance: { label: 'Variance', href: '/soy/transfers?status=variance' },
+    };
+    let pastFy: number | null = null;
+
+    function render() {
+      const s = getState();
+      const c = s.cycle;
+      const draft = c.status === 'Draft';
+      const closed = c.status === 'Closed';
+      q('[data-co-draft]').hidden = !draft;
+      q('[data-co-current]').hidden = draft;
+
+      if (!draft) {
+        const checks = closeChecks(c);
+        const ok = checks.every((x) => x.ok);
+        const t = totals(c);
+        q('[data-co-title]').textContent = closed ? `FY${c.fy} is closed` : `Close FY${c.fy}`;
+        q('[data-co-lede]').textContent = closed
+          ? `${t.items} items · final ${fmtShort(t.final)} · transferred ${fmtShort(t.transferred)}.`
+          : `The cycle can close when all three checks pass. ${t.items} items · final ${fmtShort(t.final)} · transferred ${fmtShort(t.transferred)}.`;
+        q('[data-co-checks]').innerHTML = checks.map((x) => `<li class="cbf-soy-co__check is-${x.ok ? 'ok' : 'blocked'}">
+          ${pill(x.ok ? 'Done' : 'Blocked', x.ok ? 'success' : 'danger', { size: 'xs' })}
+          <div class="cbf-soy-co__check-body"><strong>${esc(x.label)}</strong><span>${esc(x.detail)}</span></div>
+          ${x.ok || closed ? '' : `<a class="cbf-soy-co__fix" href="${withBase(FIX[x.key].href)}">${esc(FIX[x.key].label)} →</a>`}
+        </li>`).join('');
+
+        q('[data-co-close-wrap]').hidden = closed;
+        q('[data-co-closed]').hidden = !closed;
+        const closeBtn = root.querySelector<HTMLButtonElement>('button[data-co-close]');
+        if (closeBtn) closeBtn.disabled = !ok;
+        q('[data-co-close-text]').textContent = ok
+          ? `Everything is reconciled. Closing locks FY${c.fy} for everyone, budget administrators included.`
+          : `Resolve the blocked ${checks.filter((x) => !x.ok).length === 1 ? 'check' : 'checks'} above to close FY${c.fy}.`;
+        if (closed) q('[data-co-closed-text]').textContent = `FY${c.fy} was closed on ${fmtDate(c.closedOn)}. Amounts are locked for everyone, budget administrators included.`;
+
+        q('[data-co-log-wrap]').hidden = c.reopenLog.length === 0;
+        q('[data-co-log]').innerHTML = c.reopenLog.map((r) => `<li><strong>${fmtDate(r.date)}</strong> · ${esc(r.who)} reopened the cycle. Reason: ${esc(r.reason)}</li>`).join('');
+      }
+
+      // Past open cycles.
+      const past = s.pastCycles.filter((p) => p.status === 'Open').sort((a, b) => b.fy - a.fy);
+      q('[data-co-past-table]').hidden = past.length === 0;
+      q('[data-co-past-empty]').hidden = past.length > 0;
+      q('[data-co-past]').innerHTML = past.map((p) => `<tr>
+        <td><strong>FY${p.fy}</strong></td>
+        <td>${pill(stageLabel(p.stage), 'warning', { size: 'xs' })}</td>
+        <td class="cbf-soy-num">${p.items}</td>
+        <td class="cbf-soy-num">${fmtShort(p.final)}</td>
+        <td class="cbf-soy-num">${fmtShort(p.transferred)}</td>
+        <td><ul class="cbf-soy-co__blockers">${(p.blockers ?? []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul></td>
+        <td>${button('secondary', 'Reconcile and close', { 'co-past-fy': String(p.fy) })}</td>
+      </tr>`).join('');
+    }
+
+    // --- Close ----------------------------------------------------------------
+    const closeDlg = q<Dialog>('[data-co-close-dialog]');
+    q('[data-co-close]').addEventListener('click', () => {
+      const c = getState().cycle;
+      const t = totals(c);
+      closeDlg.heading = `Close FY${c.fy}`;
+      q('[data-co-close-lede]').textContent = `All ${t.items} items have a final amount (${fmtMoney(t.final)}), all of it is transferred, and there is no variance.`;
+      closeDlg.show();
+    });
+    q('[data-co-close-cancel]').addEventListener('click', () => closeDlg.close());
+    q('[data-co-close-confirm]').addEventListener('click', () => {
+      update((s) => closeCycle(s, userName()));
+      closeDlg.close();
+      snackbar('success', `FY${getState().cycle.fy} is closed and locked for everyone.`);
+    });
+
+    // --- Reopen ---------------------------------------------------------------
+    const reDlg = q<Dialog>('[data-co-reopen-dialog]');
+    const reason = q<Field>('[data-co-reopen-reason]');
+    q('[data-co-reopen]').addEventListener('click', () => {
+      reason.value = '';
+      reason.errorText = '';
+      reDlg.show();
+    });
+    q('[data-co-reopen-cancel]').addEventListener('click', () => reDlg.close());
+    q('[data-co-reopen-confirm]').addEventListener('click', () => {
+      const r = (reason.value ?? '').trim();
+      reason.errorText = r ? '' : 'A reason is required to reopen the cycle.';
+      if (!r) return;
+      update((s) => reopenCycle(s, r, userName()));
+      reDlg.close();
+      snackbar('warning', `FY${getState().cycle.fy} is reopened. The reason is logged.`);
+    });
+
+    // --- Past cycles ----------------------------------------------------------
+    const pastDlg = q<Dialog>('[data-co-past-dialog]');
+    root.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLElement>('[data-co-past-fy]');
+      if (!b) return;
+      const p = getState().pastCycles.find((x) => x.fy === Number(b.dataset.coPastFy));
+      if (!p) return;
+      pastFy = p.fy;
+      pastDlg.heading = `Reconcile and close FY${p.fy}`;
+      q('[data-co-past-lede]').textContent = `FY${p.fy} has sat at ${stageLabel(p.stage)} since it ran. To close it:`;
+      q('[data-co-past-blockers]').innerHTML = (p.blockers ?? []).map((x) => `<li>${esc(x)}</li>`).join('');
+      pastDlg.show();
+    });
+    q('[data-co-past-cancel]').addEventListener('click', () => pastDlg.close());
+    q('[data-co-past-confirm]').addEventListener('click', () => {
+      if (pastFy == null) return;
+      const fy = pastFy;
+      update((s) => closePastCycle(s, fy));
+      pastDlg.close();
+      snackbar('success', `FY${fy} is reconciled and closed.`);
+    });
+
+    subscribe(render);
+  }
+</script>
+
+<style>
+  .cbf-soy-co__scroll { position: relative; overflow-x: auto; }
+  .cbf-soy-co__h { margin: 0; font-size: 16px; font-weight: var(--typography-font-weight-semibold); }
+  .cbf-soy-co__close { align-items: center; gap: var(--spacing-400); padding: var(--spacing-300) var(--spacing-400); border: 1px solid var(--color-border-default); border-radius: var(--radius-200); background: var(--color-background-elevation-sunken); }
+  .cbf-soy-co__close-text { margin: 0; flex: 1 1 20rem; }
+  .cbf-soy-co__log { margin: 0; padding-inline-start: var(--spacing-500); font-size: 14px; display: flex; flex-direction: column; gap: var(--spacing-100); }
+</style>
+
+<style is:global>
+  .cbf-soy-co__checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--spacing-200); }
+  .cbf-soy-co__check {
+    display: flex; align-items: center; gap: var(--spacing-300); flex-wrap: wrap;
+    padding: var(--spacing-300) var(--spacing-400);
+    border: 1px solid var(--color-border-default);
+    border-inline-start-width: 4px;
+    border-radius: var(--radius-200);
+    background: var(--color-background-elevation-raised);
+  }
+  .cbf-soy-co__check.is-ok { border-inline-start-color: var(--color-background-utility-success, var(--color-border-default)); }
+  .cbf-soy-co__check.is-blocked { border-inline-start-color: var(--color-background-utility-danger); }
+  .cbf-soy-co__check-body { display: flex; flex-direction: column; gap: var(--spacing-50); flex: 1 1 16rem; font-size: 14px; }
+  .cbf-soy-co__check-body span { color: var(--color-content-default-secondary); }
+  .cbf-soy-co__fix { font-weight: var(--typography-font-weight-semibold); color: var(--color-background-brand); white-space: nowrap; }
+  .cbf-soy-co__blockers { margin: 0; padding-inline-start: var(--spacing-400); font-size: 14px; }
+</style>

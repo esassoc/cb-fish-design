@@ -1,0 +1,19 @@
+---
+// /soy/items — the SOY items workspace: one table with saved views,
+// header filters, CSV export, the admin bulk "set the active stage" flow with
+// preview, and the shared item side panel for proposals and comments.
+//
+// Thin assembler — the frame is cbf-soy-frame (which also mounts the item side
+// panel); state lives in src/lib/soy/ and src/data/soy/seed.ts.
+import CbfSoyFrame from '../../components/soy/cbf-soy-frame.astro';
+import CbfSoyItems from '../../components/soy/cbf-soy-items.astro';
+---
+<!-- manifest:
+  layout: cbf-soy-frame (nav + prototype strip + app panel + tabs + locked banner + item side panel)
+  sections:
+    - items -> cbf-soy-items  (saved views, AG Grid with header filters and total row, CSV,
+                               admin bulk bar with preview → confirm → report)
+-->
+<CbfSoyFrame active="items" title="Items">
+  <CbfSoyItems />
+</CbfSoyFrame>

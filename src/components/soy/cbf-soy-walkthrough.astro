@@ -1,0 +1,192 @@
+---
+// cbf-soy-walkthrough — the client-facing index of the SOY future-state
+// prototype: how to use it, the seven-step FY2028 story as links that load the
+// demo data for that point in the year, the decisions we need from BPA with our
+// recommendation, and which screens answer each of today's problems.
+//
+// Every table here is built at build time from src/lib/soy/changes.ts — the
+// same registry the "Show what's changing" layer reads — so the decisions and
+// problem mapping can never disagree with the screens.
+//
+// bcn-lego-checked: step cards are esa-card with esa-button links; tags are
+// esa-pill; the intro notice is esa-alert-box. The decisions and problem
+// tables are small static semantic <table>s (8 and 10 rows, read-only, no
+// sorting) — a data grid would add nothing. Beacon is not cloned on this machine.
+import EsaCard from '@esa/ecology/esa-card.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaPill from '@esa/ecology/esa-pill.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import { CHANGES, DECISIONS, PROBLEMS, type ProblemKey } from '../../lib/soy/changes';
+import { withBase } from '../../lib/base';
+
+const steps = [
+  {
+    n: 1, date: 'Jan 15, 2027', title: 'The FY2028 cycle drafts itself', role: 'Budget administrator',
+    points: ['FY2028 appears in All cycles as Draft, with the standard dates.', 'FY2024–2027 are flagged as still open.'],
+    links: [{ label: 'Start at All cycles', href: '/soy/cycles?step=1&role=admin' }],
+  },
+  {
+    n: 2, date: 'Jan 15, 2027', title: 'Set up the cycle', role: 'Budget administrator',
+    points: ['Confirm the pre-filled dates.', 'Carry forward 230 items; 7 ended or ineligible items start unchecked, each with its reason.', 'Add 4 new projects.', 'Apply a 2.5% COLA to a filtered subset; the report names the two-year off-year projects and the projects with no baseline.'],
+    links: [{ label: 'Open the setup wizard', href: '/soy/setup?step=2&role=admin' }],
+  },
+  {
+    n: 3, date: 'Mar 1, 2027', title: 'EWB proposed', role: 'Budget administrator',
+    points: ['Select all items and set EWB proposed from baseline — the preview names the stage and the count.', 'The 6 items with no baseline are listed by name; enter them by hand with a rationale in the item panel.'],
+    links: [{ label: 'Open items', href: '/soy/items?step=3&role=admin' }],
+  },
+  {
+    n: 4, date: 'Apr 12, 2027', title: 'Open PM proposed', role: 'Budget administrator, then project manager',
+    points: ['Open PM proposed from the overview and preview the email PMs receive.', 'As Casey Navarro (PM), land on “5 of your projects need input”, propose an increase with a rationale on one, and agree with EWB on the rest.', 'Fast-forward with “Simulate PM responses”: the automatic reminder goes to the 4 PMs who haven’t responded.'],
+    links: [
+      { label: 'Open the overview (admin)', href: '/soy?step=4&role=admin' },
+      { label: 'See it as the PM', href: '/soy?step=4.5&role=pm' },
+    ],
+  },
+  {
+    n: 5, date: 'May 10, 2027', title: 'Final budget', role: 'Budget administrator',
+    points: ['Open Final budget. Decision makers meet outside CBFish.', 'Set finals from PM proposed for agreed items and from EWB where there was no PM input; enter the rest by hand.', 'Notify PMs with a summary of their final amounts and rationale.'],
+    links: [{ label: 'Open the overview', href: '/soy?step=5&role=admin' }, { label: 'Final decisions', href: '/soy/finals?step=6&role=admin' }],
+  },
+  {
+    n: 6, date: 'Jun 1, 2027', title: 'Transfers', role: 'Budget administrator',
+    points: ['Transfer everything under “FY28 SOY – Round 1 – 2027-06-01”.', 'Change one final amount afterwards: a warning appears, a reason is required, and the item shows in the Variance view.', 'A Round 2 transfer reconciles it.'],
+    links: [{ label: 'Open transfers', href: '/soy/transfers?step=6&role=admin' }],
+  },
+  {
+    n: 7, date: 'Jun 15, 2027', title: 'Close-out', role: 'Budget administrator',
+    points: ['The checklist is all green; close the cycle. It locks for everyone.', 'All cycles now shows FY2028 Closed, with FY2024–2027 flagged for close-out.'],
+    links: [{ label: 'Open close-out', href: '/soy/close-out?step=7&role=admin' }],
+  },
+];
+
+// Problem → the changes (and their screens) that answer it.
+const screenOf: Record<string, string> = {
+  gl: 'Every screen', ov: 'Overview', cy: 'All cycles', su: 'Setup', it: 'Items', fi: 'Final decisions', tr: 'Transfers', co: 'Close-out', ac: 'Activity',
+};
+const problemRows = (Object.keys(PROBLEMS) as ProblemKey[]).map((p) => {
+  const changes = Object.entries(CHANGES).filter(([, c]) => c.problems.includes(p));
+  const screens = [...new Set(changes.map(([id]) => screenOf[id.split('-')[0]]))];
+  return { p, title: PROBLEMS[p], screens, changes: changes.map(([, c]) => c.title) };
+});
+const tagCount = { UI: 0, BE: 0, DEC: 0 };
+for (const c of Object.values(CHANGES)) for (const t of c.tags) tagCount[t]++;
+---
+<div class="cbf-soy-wt stack" data-gap="xl">
+  <section class="stack" data-gap="sm" aria-labelledby="wt-how">
+    <p class="cbf-soy-wt__lede">
+      This prototype shows the whole recommended future state of start-of-year (SOY) budgets — screens and behavior together —
+      played through one FY2028 cycle with mock data shaped like FY2027 (about 240 items and $327M baseline). Nothing here
+      changes CBFish; it’s for review and sign-off before anything is built.
+    </p>
+    <EsaAlertBox variant="info" title="How to use it">
+      <ul class="cbf-soy-wt__how">
+        <li><strong>Start a step</strong> below: each link loads the demo data for that point in the year, so you can begin anywhere.</li>
+        <li><strong>Viewing as</strong> switches between the budget administrator and a project manager (Casey Navarro).</li>
+        <li><strong>Show what’s changing</strong> outlines and numbers every change on a screen; <strong>List</strong> explains each one — what it was before, what it does now, the problem it solves, and its tag.</li>
+        <li>Your clicks are saved in this browser. <strong>Reset</strong> or <strong>Jump to step</strong> in the prototype controls at the top of every screen.</li>
+        <li>All names, comments and amounts are invented.</li>
+      </ul>
+    </EsaAlertBox>
+  </section>
+
+  <section class="stack" data-gap="sm" aria-labelledby="wt-story">
+    <h2 class="cbf-soy-wt__h2" id="wt-story">The FY2028 cycle, step by step</h2>
+    <ol class="cbf-soy-wt__steps">
+      {steps.map((s) => (
+        <li>
+          <EsaCard title={`${s.n}. ${s.title}`} meta={[{ label: 'Demo date', value: s.date }, { label: 'Role', value: s.role }]} variant="outlined">
+            <ul class="cbf-soy-wt__points">{s.points.map((p) => <li>{p}</li>)}</ul>
+            <div class="cluster" data-gap="xs" slot="footer">
+              {s.links.map((l, i) => (
+                <EsaButton size="sm" variant={i === 0 ? 'primary' : 'secondary'} appearance={i === 0 ? 'fill' : 'outline'} href={withBase(l.href)} iconRight={i === 0 ? 'arrow-right' : undefined}>{l.label}</EsaButton>
+              ))}
+            </div>
+          </EsaCard>
+        </li>
+      ))}
+    </ol>
+  </section>
+
+  <section class="stack" data-gap="sm" aria-labelledby="wt-dec">
+    <h2 class="cbf-soy-wt__h2" id="wt-dec">Decisions we need from you</h2>
+    <p class="cbf-soy-wt__p">The prototype shows our recommended option for each. Tell us if you prefer the alternative.</p>
+    <div class="cbf-soy-wt__scroll">
+      <table class="cbf-soy-wt__table">
+        <thead><tr><th scope="col">#</th><th scope="col">Decision</th><th scope="col">Recommendation (shown)</th><th scope="col">Alternative</th><th scope="col">Where to see it</th></tr></thead>
+        <tbody>
+          {DECISIONS.map((d) => (
+            <tr>
+              <td><EsaPill label={`DEC ${d.n}`} variant="primary" size="xs" removable={false} /></td>
+              <td>{d.question}</td>
+              <td><strong>{d.recommendation}</strong></td>
+              <td>{d.alternative}</td>
+              <td><a href={withBase(d.where.href)}>{d.where.label}</a></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="stack" data-gap="sm" aria-labelledby="wt-prob">
+    <h2 class="cbf-soy-wt__h2" id="wt-prob">What each change solves</h2>
+    <p class="cbf-soy-wt__p">
+      {Object.keys(CHANGES).length} changes in all: {tagCount.UI} need front-end work only (UI), {tagCount.BE} need backend or data work (BE),
+      and {tagCount.DEC} show a recommended answer to a decision (DEC). Turn on “Show what’s changing” on any screen to see them in place.
+    </p>
+    <div class="cbf-soy-wt__scroll">
+      <table class="cbf-soy-wt__table">
+        <thead><tr><th scope="col">Problem today</th><th scope="col">Answered on</th><th scope="col">Changes</th></tr></thead>
+        <tbody>
+          {problemRows.map((r) => (
+            <tr>
+              <td><strong>{r.p}</strong> {r.title}</td>
+              <td>{r.screens.join(', ')}</td>
+              <td>{r.changes.join(' · ')}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="stack" data-gap="sm" aria-labelledby="wt-scope">
+    <h2 class="cbf-soy-wt__h2" id="wt-scope">Scope</h2>
+    <div class="cbf-soy-wt__scope">
+      <EsaCard title="In scope for sign-off" variant="outlined">
+        <p class="cbf-soy-wt__p">Every SOY screen and flow in this prototype, for the budget administrator and project manager roles, with the behavior changes they include.</p>
+      </EsaCard>
+      <EsaCard title="Out of scope" variant="outlined">
+        <ul class="cbf-soy-wt__points">
+          <li>Changes to Funds, working budgets or Budget Decision screens beyond what SOY transfers need</li>
+          <li>Moving the decision makers’ process into CBFish (possible later)</li>
+          <li>Sponsor-facing views</li>
+          <li>Data migration beyond closing FY2024–2027</li>
+        </ul>
+      </EsaCard>
+    </div>
+  </section>
+</div>
+
+<style>
+  .cbf-soy-wt__lede { margin: 0; max-inline-size: 75ch; font-size: 18px; line-height: 1.55; color: var(--color-content-default); }
+  .cbf-soy-wt__p { margin: 0; max-inline-size: 75ch; color: var(--color-content-default-secondary); }
+  .cbf-soy-wt__h2 {
+    margin: 0;
+    font-family: var(--typography-font-family-display);
+    font-weight: var(--typography-font-weight-semibold);
+    font-size: var(--font-size-600, 24px);
+    color: var(--color-background-default-knockout);
+  }
+  .cbf-soy-wt__how { margin: 0; padding-inline-start: var(--spacing-500); display: flex; flex-direction: column; gap: var(--spacing-100); }
+  .cbf-soy-wt__steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--spacing-400); }
+  .cbf-soy-wt__steps > li { display: flex; }
+  .cbf-soy-wt__steps > li > :global(*) { flex: 1; }
+  .cbf-soy-wt__points { margin: 0; padding-inline-start: var(--spacing-500); display: flex; flex-direction: column; gap: var(--spacing-100); font-size: 14px; }
+  .cbf-soy-wt__scroll { overflow-x: auto; }
+  .cbf-soy-wt__table { inline-size: 100%; min-inline-size: 720px; border-collapse: collapse; font-size: 14px; }
+  .cbf-soy-wt__table th { text-align: start; padding: var(--spacing-200) var(--spacing-300); border-block-end: 2px solid var(--color-border-default); color: var(--color-content-default-secondary); font-weight: var(--typography-font-weight-semibold); }
+  .cbf-soy-wt__table td { padding: var(--spacing-200) var(--spacing-300); border-block-end: 1px solid var(--color-border-default-subtle); vertical-align: top; }
+  .cbf-soy-wt__scope { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-400); }
+</style>

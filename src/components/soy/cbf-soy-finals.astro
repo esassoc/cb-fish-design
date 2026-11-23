@@ -1,0 +1,317 @@
+---
+// cbf-soy-finals — Final decisions, for budget administrators.
+// Replaces "Bulk set Final Budget amounts" (which copied the baseline into
+// whatever stage was active — P5) and one-by-one final entry:
+//
+//   • Filter (All / No final yet / No PM input / PM differs from EWB / Agreed),
+//     select items, choose the source: baseline, EWB proposed or PM proposed.
+//   • Preview: each item's current and new final, the change, the total, and
+//     items skipped with the reason (already transferred, no source amount).
+//   • Rationale applied to all, or keep each item's rationale from the source.
+//   • The confirm names the target: "Set Final budget for 204 items".
+//   • Optional "Notify PMs" with a preview of the summary email.
+//
+// Writes only in Final budget (or Complete); earlier, the screen says when
+// Final budget opens. Decision makers meet outside CBFish (out of scope).
+//
+// bcn-lego-checked: the table is AG Grid Community via src/lib/soy/item-grid.ts
+// (no esa data-grid lego — same call as the items workspace). Filters are
+// esa-chip-group, the source esa-radio-group, the preview esa-dialog with
+// esa-textarea / esa-checkbox / esa-alert-box, actions esa-button. The preview
+// list is a semantic table (≤50 rows shown). Beacon is not cloned on this
+// machine.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import '../shared/cbf-data-grid-chrome.css';
+
+const sources = [
+  { value: 'pm', label: 'PM proposed' },
+  { value: 'ewb', label: 'EWB proposed' },
+  { value: 'baseline', label: 'Baseline' },
+];
+---
+<section class="cbf-soy-fi stack" data-gap="sm" data-soy-finals aria-labelledby="soy-fi-title">
+  <div class="repel">
+    <h2 class="cbf-soy-section-title" id="soy-fi-title">Set final budgets</h2>
+    <EsaButton size="sm" variant="secondary" appearance="outline" icon="download" data-fi-csv>Export CSV</EsaButton>
+  </div>
+  <p class="cbf-soy-lede">
+    Decision makers agree final amounts outside CBFish. Record them here: select items, choose where each final
+    comes from, preview the result, then confirm. Enter one-off amounts from the item panel.
+  </p>
+
+  <div data-fi-gate hidden>
+    <EsaAlertBox variant="info" title="Not open yet"><span data-fi-gate-text></span></EsaAlertBox>
+  </div>
+  <div data-fi-draft hidden>
+    <EsaEmptyState title="No items yet" description="Run setup to carry last year’s items forward." size="md" />
+  </div>
+
+  <div class="stack" data-gap="sm" data-fi-body>
+    <div class="cbf-data-grid__controls repel">
+      <label class="cbf-data-grid__filter">
+        <span class="typography-meta">Show</span>
+        <esa-chip-group size="sm" label="Filter items" data-fi-filter></esa-chip-group>
+      </label>
+      <esa-text-field class="cbf-data-grid__search" size="sm" label="Search" placeholder="Project, title, PM…" data-fi-search></esa-text-field>
+    </div>
+
+    <div class="cbf-soy-fi__bar" data-fi-bar>
+      <div data-change="fi-source">
+        <esa-radio-group size="sm" label="Set final from" orientation="horizontal" options={JSON.stringify(sources)} value="pm" data-fi-source></esa-radio-group>
+      </div>
+      <div class="cluster" data-gap="xs" style="--align: center">
+        <span class="cbf-soy-fi__sel" data-fi-sel></span>
+        <EsaButton size="sm" variant="primary" data-fi-go>Preview</EsaButton>
+        <EsaButton size="sm" variant="ghost" data-fi-clear>Clear selection</EsaButton>
+      </div>
+    </div>
+
+    <div class="cbf-data-grid__grid" data-fi-grid></div>
+    <div data-fi-empty hidden>
+      <EsaEmptyState title="No items match" description="Choose All to see every item." size="sm" />
+    </div>
+    <footer class="cbf-data-grid__footer repel">
+      <span class="typography-meta" data-fi-count></span>
+      <span class="typography-meta cbf-soy-muted" data-fi-summary></span>
+    </footer>
+  </div>
+
+  <!-- Preview -->
+  <esa-dialog size="lg" heading="Preview final amounts" show-close-button data-fi-preview>
+    <div class="stack" data-gap="sm" data-change="fi-preview">
+      <p data-fi-preview-lede></p>
+      <div class="cbf-soy-fi__scroll">
+        <table class="cbf-soy-table">
+          <thead><tr><th scope="col">Project</th><th scope="col">Title</th><th scope="col" class="cbf-soy-num">Current final</th><th scope="col" class="cbf-soy-num">New final</th><th scope="col" class="cbf-soy-num">Change</th></tr></thead>
+          <tbody data-fi-preview-rows></tbody>
+          <tfoot data-fi-preview-foot></tfoot>
+        </table>
+      </div>
+      <div data-fi-skips hidden>
+        <EsaAlertBox variant="warning" title="Skipped"><div data-fi-skips-body></div></EsaAlertBox>
+      </div>
+      <esa-checkbox size="sm" label="Keep each item’s rationale from the source" data-fi-keep></esa-checkbox>
+      <esa-textarea size="sm" label="Rationale for all" rows="2" required help-text="Saved with every final amount. PMs see it in their summary." data-fi-rationale></esa-textarea>
+      <div class="stack" data-gap="xs" data-change="fi-notify">
+        <esa-checkbox size="sm" label="Notify PMs with a summary of their final amounts and rationale" checked data-fi-notify></esa-checkbox>
+        <div data-fi-email></div>
+      </div>
+    </div>
+    <div slot="footer" class="cluster" data-gap="xs">
+      <EsaButton size="sm" variant="secondary" appearance="outline" data-fi-cancel>Cancel</EsaButton>
+      <span data-change="fi-confirm"><EsaButton size="sm" variant="primary" data-fi-confirm>Confirm</EsaButton></span>
+    </div>
+  </esa-dialog>
+</section>
+
+<script>
+  import '@esa/ecology/esa-chip-group';
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-textarea';
+  import '@esa/ecology/esa-radio-group';
+  import '@esa/ecology/esa-checkbox';
+  import '@esa/ecology/esa-dialog';
+  import { getState, subscribe, update, isLocked, openItem } from '../../lib/soy/store';
+  import { bulkSet, notifyFinals, sourceValue, SOURCE_LABEL, type AmountSource } from '../../lib/soy/actions';
+  import { amount, fmtDate, fmtMoney, fmtShort, isOffYear, pmDelta, project, totals } from '../../lib/soy/model';
+  import { emailHtml, finalsEmail } from '../../lib/soy/email';
+  import { stageLabel, type SoyItem } from '../../lib/soy/types';
+  import { columns, createItemGrid, exportCsv, selectedItems, SELECTION, totalRow, type ColKey } from '../../lib/soy/item-grid';
+  import { deltaHtml, esc, moneyHtml, setOptions, snackbar, type Dialog, type Field } from '../../lib/soy/ui';
+  import { withBase } from '../../lib/base';
+
+  type Filter = 'all' | 'none' | 'nopm' | 'differs' | 'agreed';
+  const root = document.querySelector<HTMLElement>('[data-soy-finals]')!;
+  const q = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+  const api = createItemGrid(q('[data-fi-grid]'));
+  const filterEl = q<Field>('[data-fi-filter]');
+  const sourceEl = q<Field>('[data-fi-source]');
+  const search = q<Field>('[data-fi-search]');
+  const KEYS: ColKey[] = ['number', 'title', 'pm', 'fund', 'baseline', 'ewb', 'pmAmt', 'diff', 'final', 'finalSet', 'status', 'flags'];
+  let filter: Filter = 'all';
+
+  const agreed = (i: SoyItem) => !!i.amounts.pm && pmDelta(i) === 0;
+  const MATCH: Record<Filter, (i: SoyItem) => boolean> = {
+    all: () => true,
+    none: (i) => !i.amounts.final,
+    nopm: (i) => !i.amounts.pm && !isOffYear(i),
+    differs: (i) => (pmDelta(i) ?? 0) !== 0,
+    agreed,
+  };
+  const LABEL: Record<Filter, string> = { all: 'All', none: 'No final yet', nopm: 'No PM input', differs: 'PM differs from EWB', agreed: 'Agreed' };
+
+  const open = () => {
+    const st = getState().cycle.stage;
+    return !isLocked() && (st === 'final' || st === 'complete');
+  };
+
+  function render() {
+    const c = getState().cycle;
+    const draft = c.status === 'Draft';
+    q('[data-fi-draft]').hidden = !draft;
+    q('[data-fi-body]').hidden = draft;
+    const gate = q('[data-fi-gate]');
+    gate.hidden = draft || open() || isLocked();
+    if (!gate.hidden) q('[data-fi-gate-text]').innerHTML = `Final budget opens ${fmtDate(c.dates.final)}, after PM proposed closes. Until then this table is read only. <a href="${withBase('/soy')}">Go to the overview</a>`;
+    if (draft) return;
+
+    setOptions(filterEl, (Object.keys(LABEL) as Filter[]).map((f) => ({ value: f, label: `${LABEL[f]} (${c.items.filter(MATCH[f]).length})` })), filter);
+    const rows = c.items.filter(MATCH[filter]);
+    api.setGridOption('rowSelection', open() ? SELECTION : undefined);
+    api.setGridOption('columnDefs', columns(KEYS, c.fy));
+    api.setGridOption('rowData', rows.map((i) => ({ id: i.id, item: i })));
+    api.setGridOption('pinnedBottomRowData', [totalRow(rows, KEYS, `Total · ${rows.length} items`)]);
+    api.refreshCells({ force: true });
+    q('[data-fi-grid]').hidden = rows.length === 0;
+    q('[data-fi-empty]').hidden = rows.length > 0;
+    q('[data-fi-bar]').hidden = !open();
+    const t = totals(c);
+    q('[data-fi-summary]').textContent = `Final set on ${t.finalCount} of ${t.items} items · ${fmtShort(t.final)} · ${stageLabel(c.stage)} stage`;
+    updateCount();
+    updateSel();
+  }
+
+  function updateCount() {
+    let n = 0;
+    api.forEachNodeAfterFilter(() => { n++; });
+    q('[data-fi-count]').textContent = `Showing ${n} of ${getState().cycle.items.length} items`;
+  }
+  function updateSel() {
+    const n = open() ? selectedItems(api).length : 0;
+    q('[data-fi-sel]').textContent = n ? `${n} selected` : 'Select items with the checkboxes';
+    q<HTMLElement>('[data-fi-go]').toggleAttribute('disabled', n === 0);
+    q('[data-fi-go] .esa-button__label').textContent = `Preview from ${sourceEl.value === 'baseline' ? 'baseline' : SOURCE_LABEL[sourceEl.value as AmountSource] ?? 'PM proposed'}`;
+  }
+
+  api.addEventListener('selectionChanged', updateSel);
+  api.addEventListener('filterChanged', updateCount);
+  sourceEl.addEventListener('change', updateSel);
+  filterEl.addEventListener('change', () => {
+    const f = filterEl.value as Filter;
+    if (!f || f === filter) return;
+    filter = f;
+    api.deselectAll();
+    render();
+  });
+  search.addEventListener('input', () => { api.setGridOption('quickFilterText', (search.value ?? '').trim()); updateCount(); });
+  q('[data-fi-clear]').addEventListener('click', () => api.deselectAll());
+  q('[data-fi-csv]').addEventListener('click', () => exportCsv(api, `fy${getState().cycle.fy}-soy-finals.csv`));
+  q('[data-fi-grid]').addEventListener('click', (e) => {
+    const a = (e.target as HTMLElement).closest<HTMLElement>('[data-soy-open]');
+    if (a) { e.preventDefault(); e.stopPropagation(); openItem(a.dataset.soyOpen!); }
+  });
+
+  // --- Preview → confirm → report -------------------------------------
+  const dlg = q<Dialog>('[data-fi-preview]');
+  const keep = q<Field>('[data-fi-keep]');
+  const rationale = q<Field>('[data-fi-rationale]');
+  const notify = q<Field>('[data-fi-notify]');
+  let pending: { ids: string[]; writeIds: string[]; source: AmountSource } | null = null;
+
+  function renderEmail() {
+    q('[data-fi-email]').innerHTML = notify.checked && pending ? emailHtml(finalsEmail(previewState(), pending.writeIds)) : '';
+  }
+  /** The email previews the amounts as they WILL be, so clone the items with the new finals applied. */
+  function previewState() {
+    const s = getState();
+    if (!pending) return s;
+    const src = pending.source;
+    const ids = new Set(pending.writeIds);
+    const items = s.cycle.items.map((i) => {
+      if (!ids.has(i.id)) return i;
+      const v = sourceValue(i, src).value ?? 0;
+      return { ...i, amounts: { ...i.amounts, final: { amount: v, by: '', date: s.today, rationale: keep.checked ? (src === 'baseline' ? 'Set from baseline.' : i.amounts[src]?.rationale ?? '') : (rationale.value ?? '') } } };
+    });
+    return { ...s, cycle: { ...s.cycle, items } };
+  }
+  function syncKeep() {
+    rationale.hidden = !!keep.checked;
+    renderEmail();
+  }
+  keep.addEventListener('change', syncKeep);
+  notify.addEventListener('change', renderEmail);
+  rationale.addEventListener('input', renderEmail);
+
+  q('[data-fi-go]').addEventListener('click', () => {
+    if (!open()) return;
+    const source = sourceEl.value as AmountSource;
+    const sel = selectedItems(api);
+    const writes: { i: SoyItem; v: number }[] = [];
+    const skips: { i: SoyItem; reason: string }[] = [];
+    for (const i of sel) {
+      if (i.transfers.length) { skips.push({ i, reason: 'Already transferred — change it from the item, with a reason' }); continue; }
+      const r = sourceValue(i, source);
+      if (r.value == null) skips.push({ i, reason: r.reason ?? 'No amount' });
+      else writes.push({ i, v: r.value });
+    }
+    pending = { ids: sel.map((i) => i.id), writeIds: writes.map((w) => w.i.id), source };
+    const before = writes.reduce((k, w) => k + (amount(w.i, 'final') ?? 0), 0);
+    const after = writes.reduce((k, w) => k + w.v, 0);
+    q('[data-fi-preview-lede]').innerHTML = `Set <strong>${esc(stageLabel('final'))}</strong> from <strong>${esc(SOURCE_LABEL[source])}</strong> for <strong>${writes.length}</strong> of the ${sel.length} selected items. Nothing is saved until you confirm.`;
+    const shown = writes.slice(0, 50);
+    q('[data-fi-preview-rows]').innerHTML = shown.map(({ i, v }) => {
+      const now = amount(i, 'final');
+      return `<tr><td>${esc(i.projectNumber)}</td><td>${esc(project(i).title)}</td><td class="cbf-soy-num">${moneyHtml(now)}</td><td class="cbf-soy-num">${moneyHtml(v)}</td><td class="cbf-soy-num">${deltaHtml(now == null ? v : v - now)}</td></tr>`;
+    }).join('') + (writes.length > shown.length ? `<tr><td colspan="5" class="cbf-soy-muted">…and ${writes.length - shown.length} more items</td></tr>` : '');
+    q('[data-fi-preview-foot]').innerHTML = `<tr><td colspan="2">Total · ${writes.length} items</td><td class="cbf-soy-num">${moneyHtml(before)}</td><td class="cbf-soy-num">${moneyHtml(after)}</td><td class="cbf-soy-num">${deltaHtml(after - before)}</td></tr>`;
+    q('[data-fi-skips]').hidden = skips.length === 0;
+    q('[data-fi-skips-body]').innerHTML = `<p class="cbf-soy-fi__skip-lede">${skips.length} selected items will be skipped:</p><ul class="cbf-soy-fi__skips">${skips.slice(0, 20).map(({ i, reason }) => `<li><strong>${esc(i.projectNumber)}</strong> ${esc(project(i).title)} — ${esc(reason)}</li>`).join('')}${skips.length > 20 ? `<li>…and ${skips.length - 20} more</li>` : ''}</ul>`;
+    // Agreed items share one rationale; where PMs asked for something different, keep each PM's own.
+    const allAgreed = writes.every((w) => agreed(w.i));
+    keep.checked = source === 'pm' && !allAgreed;
+    rationale.value = source === 'pm' ? (allAgreed ? 'Agreed amount — PM proposed matches EWB proposed.' : 'Decision makers approved the PM request.') : source === 'ewb' ? (writes.every((w) => !w.i.amounts.pm) ? 'No PM input — final set from EWB proposed.' : 'Decision makers held the EWB amount.') : 'Final set from baseline.';
+    rationale.errorText = '';
+    notify.checked = true;
+    syncKeep();
+    q('[data-fi-confirm] .esa-button__label').textContent = `Set ${stageLabel('final')} for ${writes.length} items`;
+    q<HTMLElement>('[data-fi-confirm]').toggleAttribute('disabled', writes.length === 0);
+    dlg.show();
+  });
+  q('[data-fi-cancel]').addEventListener('click', () => dlg.close());
+  q('[data-fi-confirm]').addEventListener('click', () => {
+    if (!pending) return;
+    const text = (rationale.value ?? '').trim();
+    if (!keep.checked && !text) { rationale.errorText = 'A rationale is required, or keep each item’s rationale from the source.'; return; }
+    const p = pending;
+    const keepPer = !!keep.checked;
+    const doNotify = !!notify.checked;
+    const report = update((s) => {
+      const r = bulkSet(s, p.ids, 'final', p.source, keepPer ? `Set from ${SOURCE_LABEL[p.source]}.` : text);
+      if (keepPer) {
+        for (const id of r.written) {
+          const it = s.cycle.items.find((x) => x.id === id);
+          const srcEntry = p.source === 'baseline' ? null : it?.amounts[p.source];
+          if (it?.amounts.final && srcEntry?.rationale && !isOffYear(it)) it.amounts.final.rationale = srcEntry.rationale;
+        }
+      }
+      if (doNotify && r.written.length) notifyFinals(s, r.written);
+      return r;
+    });
+    dlg.close();
+    api.deselectAll();
+    pending = null;
+    const sk = report.skipped.length;
+    snackbar(sk ? 'warning' : 'success', `Set ${stageLabel('final')} for ${report.written.length} items (${fmtMoney(report.total)}).${sk ? ` Skipped ${sk}.` : ''}${doNotify ? ' PMs were sent their summaries.' : ''}`);
+  });
+
+  subscribe(render);
+</script>
+
+<style>
+  .cbf-soy-fi__bar {
+    display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--spacing-400);
+    padding: var(--spacing-300) var(--spacing-400);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-200);
+    background: var(--color-background-elevation-sunken);
+  }
+  .cbf-soy-fi__sel { font-size: 14px; color: var(--color-content-default-secondary); }
+  .cbf-soy-fi__scroll { max-block-size: 40vh; overflow: auto; }
+</style>
+
+<style is:global>
+  .cbf-soy-fi__skip-lede { margin: 0 0 var(--spacing-150); }
+  .cbf-soy-fi__skips { margin: 0; padding-inline-start: var(--spacing-500); display: flex; flex-direction: column; gap: var(--spacing-100); }
+</style>

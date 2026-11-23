@@ -1,0 +1,17 @@
+---
+// /soy/cycles — All cycles: every fiscal year's SOY with status and
+// money columns, open past years flagged, and the next cycle as an automatic
+// Draft. Replaces the Maintenance grid.
+//
+// Thin assembler — the frame is cbf-soy-frame; state lives in src/lib/soy/.
+import CbfSoyFrame from '../../components/soy/cbf-soy-frame.astro';
+import CbfSoyCycles from '../../components/soy/cbf-soy-cycles.astro';
+---
+<!-- manifest:
+  layout: cbf-soy-frame (nav + prototype strip + app panel + tabs + locked banner)
+  sections:
+    - all cycles -> cbf-soy-cycles  (auto-draft notice, open-past-years flag, AG Grid by fiscal year)
+-->
+<CbfSoyFrame active="cycles" title="All cycles" adminOnly>
+  <CbfSoyCycles />
+</CbfSoyFrame>

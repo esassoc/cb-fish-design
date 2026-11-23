@@ -1,0 +1,409 @@
+---
+// cbf-soy-transfers — Transfers and reconciliation. Replaces
+// Gemini's "Transfer Budgets" tab ("Projects Ready for Budget Transfers"), where
+// final budgets and transfers drifted apart unseen (FY2027: final $311.3M vs
+// transferred $307.6M, 9 items differing, 2 never transferred).
+//
+//   • Status per item — Not transferred / Transferred / Changed after transfer /
+//     Partially transferred — with its variance and a status filter (?status=).
+//   • Bulk transfer: select items, then name the Budget Decision (suggested
+//     "FY28 SOY – Round N – date", DEC 8), add description, rationale and BPA
+//     comments, and review the count and total before confirming.
+//   • Changing a final after a transfer happens in the item side panel, which
+//     warns and requires a reason (DEC 3); the item shows "Changed after
+//     transfer" until another round reconciles it.
+//
+// All state is the shared SOY store (src/lib/soy/store.ts); transfers go
+// through makeTransfers() in actions.ts.
+//
+// bcn-lego-checked: the list is AG Grid Community in the spoke's token theme
+// (shared/grid-chrome) because ecology has no data-grid lego — same call as the
+// capital program grids. Everything else is a lego: esa-stat (tiles, values
+// filled on the client), esa-chip-group (status filter), esa-alert-box
+// (notices), esa-dialog + esa-text-field + esa-textarea (transfer dialog),
+// esa-button (actions; row buttons cloned via cbf-soy-templates),
+// esa-empty-state. Pills are cloned esa-pill. The rounds list is a small
+// semantic table (one row per Budget Decision), not a data grid. Beacon is not
+// cloned on this machine.
+import EsaStat from '@esa/ecology/esa-stat.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
+import '../shared/cbf-data-grid-chrome.css';
+
+const statusFilters = [
+  { value: '', label: 'All' },
+  { value: 'not', label: 'Not transferred' },
+  { value: 'transferred', label: 'Transferred' },
+  { value: 'changed', label: 'Changed after transfer' },
+  { value: 'partial', label: 'Partially transferred' },
+  { value: 'variance', label: 'Variance' },
+];
+const tiles = [
+  { key: 'final', label: 'Final budget' },
+  { key: 'transferred', label: 'Transferred' },
+  { key: 'variance', label: 'Variance' },
+  { key: 'not', label: 'Not transferred' },
+];
+---
+<section class="cbf-soy-tr stack" data-gap="md" data-soy-transfers aria-labelledby="tr-title">
+  <div data-tr-empty hidden>
+    <EsaEmptyState title="No final amounts yet" description="Set final amounts in Final decisions first." size="md" />
+  </div>
+
+  <div class="stack" data-gap="md" data-tr-body>
+    <div class="stack" data-gap="2xs">
+      <h2 class="cbf-soy-section-title" id="tr-title">Transfers to working budgets</h2>
+      <p class="cbf-soy-lede">Move final amounts into working budgets under a Budget Decision. Final and transferred amounts stay side by side, so any difference shows here until it is reconciled.</p>
+    </div>
+
+    <div class="cbf-soy-tr__tiles" data-change="tr-status">
+      {tiles.map((t) => <div data-tile={t.key}><EsaStat value="—" label={t.label} sub="·" /></div>)}
+    </div>
+
+    <div data-change="tr-after">
+      <EsaAlertBox variant="info" title="Changing a final after a transfer">
+        Change it from the item with <strong>Change final</strong>. You’ll see a warning and need to give a reason. The item then shows as “Changed after transfer” with its variance until another round reconciles it.
+      </EsaAlertBox>
+    </div>
+
+    <div class="cbf-data-grid__controls repel">
+      <label class="cbf-data-grid__filter">
+        <span class="typography-meta">Status</span>
+        <esa-chip-group size="sm" label="Filter by transfer status" value="" options={JSON.stringify(statusFilters)} data-tr-filter></esa-chip-group>
+      </label>
+      <div class="cluster" data-gap="xs">
+        <EsaButton size="sm" variant="secondary" appearance="outline" icon="download" data-tr-csv>Export CSV</EsaButton>
+        <EsaButton size="sm" variant="secondary" appearance="outline" data-tr-all>Transfer all not transferred</EsaButton>
+        <EsaButton size="sm" variant="primary" icon="arrow-right" data-tr-selected>Transfer selected</EsaButton>
+      </div>
+    </div>
+
+    <div class="cbf-data-grid__grid cbf-soy-tr__grid" data-tr-grid></div>
+    <div data-tr-none hidden>
+      <EsaEmptyState title="No items match" description="Choose All to see every item." size="sm" />
+    </div>
+    <footer class="cbf-data-grid__footer repel">
+      <span class="typography-meta" data-tr-count></span>
+      <span class="typography-meta cbf-soy-muted">Variance = final − transferred</span>
+    </footer>
+
+    <section class="stack" data-gap="xs" aria-labelledby="tr-rounds-h">
+      <h3 class="cbf-soy-tr__h" id="tr-rounds-h">Transfer rounds</h3>
+      <div class="cbf-soy-tr__scroll"><table class="cbf-soy-table" data-tr-rounds-table>
+        <thead><tr><th scope="col">Budget Decision</th><th scope="col">Date</th><th scope="col" class="cbf-soy-num">Items</th><th scope="col" class="cbf-soy-num">Amount</th><th scope="col">Description</th></tr></thead>
+        <tbody data-tr-rounds></tbody>
+      </table></div>
+      <p class="typography-meta cbf-soy-muted" data-tr-rounds-empty hidden>No transfers yet this cycle.</p>
+    </section>
+  </div>
+
+  <!-- Bulk transfer dialog -->
+  <esa-dialog size="lg" heading="Transfer to working budgets" show-close-button data-tr-dialog>
+    <div class="stack" data-gap="sm">
+      <div data-change="tr-decision" class="stack" data-gap="sm">
+        <esa-text-field size="sm" label="Budget Decision name" required help-text="Suggested from the fiscal year, round and date. You can edit it." data-tr-name></esa-text-field>
+        <esa-text-field size="sm" label="Short description" data-tr-desc></esa-text-field>
+        <esa-textarea size="sm" label="Rationale" rows="2" data-tr-rationale></esa-textarea>
+        <esa-textarea size="sm" label="BPA comments" rows="2" data-tr-bpa></esa-textarea>
+      </div>
+      <div class="cbf-soy-tr__review stack" data-gap="xs" data-change="tr-review">
+        <h3 class="cbf-soy-tr__h">Review</h3>
+        <p class="cbf-soy-tr__review-big" data-tr-review-big></p>
+        <p class="typography-meta cbf-soy-muted" data-tr-review-sub></p>
+        <div data-tr-review-skipped hidden>
+          <EsaAlertBox variant="info" title="Skipped"><span data-tr-review-skipped-text></span></EsaAlertBox>
+        </div>
+      </div>
+    </div>
+    <div slot="footer" class="cluster" data-gap="xs">
+      <EsaButton size="sm" variant="secondary" appearance="outline" data-tr-cancel>Cancel</EsaButton>
+      <EsaButton size="sm" variant="primary" data-tr-confirm>Transfer</EsaButton>
+    </div>
+  </esa-dialog>
+</section>
+
+<script>
+  import '@esa/ecology/esa-chip-group';
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-textarea';
+  import '@esa/ecology/esa-dialog';
+  import { createGrid, type ColDef, type GridApi } from 'ag-grid-community';
+  import { cbfGridTheme } from '../shared/grid-chrome';
+  import { getState, subscribe, update, isLocked, openItem } from '../../lib/soy/store';
+  import { makeTransfers, transferable } from '../../lib/soy/actions';
+  import { amount, fmtDate, fmtMoney, fmtShort, project, suggestDecisionName, totals, transferStatus, transferred, variance, hasTransfers, type TransferStatus } from '../../lib/soy/model';
+  import type { SoyItem } from '../../lib/soy/types';
+  import { button, esc, moneyHtml, deltaHtml, snackbar, statusPill, type Dialog, type Field } from '../../lib/soy/ui';
+
+  interface Row {
+    id: string;
+    kind: 'item' | 'total';
+    item?: SoyItem;
+    number: string;
+    title: string;
+    fund: string;
+    pm: string;
+    final: number | null;
+    transferred: number | null;
+    variance: number | null;
+    status: TransferStatus | '';
+    decisions: string;
+  }
+
+  const FILTER_STATUS: Record<string, TransferStatus> = {
+    not: 'Not transferred',
+    transferred: 'Transferred',
+    changed: 'Changed after transfer',
+    partial: 'Partially transferred',
+  };
+
+  const root = document.querySelector<HTMLElement>('[data-soy-transfers]');
+  if (root) init(root);
+
+  function init(root: HTMLElement) {
+    const q = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+    const host = q('[data-tr-grid]');
+    const filterEl = q<Field>('[data-tr-filter]');
+    const tile = (key: string, value: string, sub: string) => {
+      const el = root.querySelector(`[data-tile="${key}"]`);
+      if (!el) return;
+      el.querySelector('.esa-stat__value')!.textContent = value;
+      const s = el.querySelector('.esa-stat__sub');
+      if (s) s.textContent = sub;
+    };
+
+    // ?status=variance (from the overview's "needs reconciliation" action).
+    let statusFilter = new URL(location.href).searchParams.get('status') ?? '';
+    if (!['', 'not', 'transferred', 'changed', 'partial', 'variance'].includes(statusFilter)) statusFilter = '';
+    filterEl.value = statusFilter;
+    filterEl.addEventListener('change', () => { statusFilter = filterEl.value ?? ''; render(); });
+
+    const decisionNames = (it: SoyItem) => {
+      const ds = getState().cycle.decisions;
+      return [...new Set(it.transfers.map((t) => ds.find((d) => d.id === t.decisionId)?.name ?? ''))].filter(Boolean).join('; ');
+    };
+
+    const api: GridApi<Row> = createGrid(host, {
+      theme: cbfGridTheme,
+      rowData: [],
+      columnDefs: columns(),
+      domLayout: 'autoHeight',
+      animateRows: false,
+      suppressCellFocus: true,
+      tooltipShowDelay: 300,
+      pagination: true,
+      paginationPageSize: 50,
+      paginationPageSizeSelector: [25, 50, 100, 250],
+      defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true },
+      rowSelection: { mode: 'multiRow', checkboxes: true, headerCheckbox: true, selectAll: 'filtered' },
+      getRowId: (p) => p.data.id,
+      onSelectionChanged: () => syncButtons(),
+    });
+
+    function columns(): ColDef<Row>[] {
+      return [
+        {
+          colId: 'number', field: 'number', headerName: 'Project', pinned: 'left', width: 140,
+          cellRenderer: (p: { data: Row }) => p.data.item
+            ? `<a href="#" class="cbf-grid-link" data-tr-open="${esc(p.data.id)}">${esc(p.data.number)}</a>`
+            : `<strong>${esc(p.data.number)}</strong>`,
+        },
+        { colId: 'title', field: 'title', headerName: 'Title', flex: 1, minWidth: 260, tooltipField: 'title' },
+        { colId: 'fund', field: 'fund', headerName: 'Fund', width: 150 },
+        { colId: 'pm', field: 'pm', headerName: 'PM', width: 160 },
+        {
+          colId: 'final', field: 'final', headerName: 'Final', type: 'rightAligned', width: 140, cellClass: 'cbf-soy-num',
+          cellRenderer: (p: { value: number | null }) => moneyHtml(p.value),
+        },
+        {
+          colId: 'transferred', field: 'transferred', headerName: 'Transferred', type: 'rightAligned', width: 140, cellClass: 'cbf-soy-num',
+          cellRenderer: (p: { value: number | null; data: Row }) => (p.data.item && !hasTransfers(p.data.item) ? '<span class="cbf-soy-muted">—</span>' : moneyHtml(p.value)),
+        },
+        {
+          colId: 'variance', field: 'variance', headerName: 'Variance', type: 'rightAligned', width: 130, cellClass: 'cbf-soy-num',
+          cellRenderer: (p: { value: number | null }) => deltaHtml(p.value),
+        },
+        {
+          colId: 'status', field: 'status', headerName: 'Status', width: 200,
+          tooltipValueGetter: (p) => {
+            const c = p.data?.item?.changedAfterTransfer;
+            return c ? `Changed ${fmtDate(c.date)} by ${c.by}: ${fmtMoney(c.from)} → ${fmtMoney(c.to)}. Reason: ${c.reason}` : '';
+          },
+          cellRenderer: (p: { data: Row }) => (p.data.item && p.data.status ? statusPill(p.data.status) : ''),
+        },
+        { colId: 'decisions', field: 'decisions', headerName: 'Budget Decisions', width: 290, tooltipField: 'decisions' },
+        {
+          colId: 'actions', headerName: 'Actions', pinned: 'right', width: 140, sortable: false,
+          cellRenderer: (p: { data: Row }) => (p.data.item && !isLocked() && p.data.item.amounts.final ? button('ghost', 'Change final', { 'tr-change': p.data.id }) : ''),
+        },
+      ];
+    }
+
+    function matches(it: SoyItem): boolean {
+      if (!statusFilter) return true;
+      if (statusFilter === 'variance') return Math.round(variance(it)) !== 0;
+      return transferStatus(it) === FILTER_STATUS[statusFilter];
+    }
+
+    function render() {
+      const s = getState();
+      const c = s.cycle;
+      const t = totals(c);
+      const hasFinals = t.finalCount > 0 || c.decisions.length > 0;
+      q('[data-tr-empty]').hidden = hasFinals;
+      q('[data-tr-body]').hidden = !hasFinals;
+      if (!hasFinals) return;
+
+      const notTr = c.items.filter((i) => transferStatus(i) === 'Not transferred');
+      tile('final', fmtShort(t.final), `${t.finalCount} items`);
+      tile('transferred', fmtShort(t.transferred), `${t.transferredCount} items · ${c.decisions.length} ${c.decisions.length === 1 ? 'round' : 'rounds'}`);
+      tile('variance', t.varianceItems ? fmtMoney(t.variance) : '$0', t.varianceItems ? `${t.varianceItems} ${t.varianceItems === 1 ? 'item' : 'items'} final ≠ transferred` : 'Final matches transferred');
+      tile('not', String(notTr.length), notTr.length ? fmtShort(notTr.reduce((k, i) => k + (amount(i, 'final') ?? 0), 0)) : 'Nothing waiting');
+
+      const visible = c.items.filter(matches);
+      const rows: Row[] = visible.map((it) => {
+        const p = project(it);
+        return {
+          id: it.id, kind: 'item', item: it, number: it.projectNumber, title: p.title, fund: it.fund, pm: p.pm,
+          final: amount(it, 'final'), transferred: transferred(it), variance: variance(it), status: transferStatus(it),
+          decisions: decisionNames(it),
+        };
+      });
+      const sum = (k: 'final' | 'transferred' | 'variance') => rows.reduce((n, r) => n + (r[k] ?? 0), 0);
+
+      api.setGridOption('columnDefs', columns());
+      api.setGridOption('rowData', rows);
+      api.setGridOption('pinnedBottomRowData', [{
+        id: 'total', kind: 'total', number: 'Total', title: `${rows.length} items`, fund: '', pm: '',
+        final: sum('final'), transferred: sum('transferred'), variance: sum('variance'), status: '', decisions: '',
+      }]);
+      api.refreshCells({ force: true });
+
+      host.hidden = rows.length === 0;
+      q('[data-tr-none]').hidden = rows.length > 0;
+      q('[data-tr-count]').textContent = `Showing ${rows.length} of ${c.items.length} items`;
+
+      // Rounds.
+      const rounds = c.decisions.map((d) => {
+        let n = 0;
+        let amt = 0;
+        for (const it of c.items) for (const tr of it.transfers) if (tr.decisionId === d.id) { n++; amt += tr.amount; }
+        return `<tr><td>${esc(d.name)}</td><td>${fmtDate(d.date)}</td><td class="cbf-soy-num">${n}</td><td class="cbf-soy-num">${fmtMoney(amt)}</td><td>${esc(d.description)}</td></tr>`;
+      });
+      q('[data-tr-rounds]').innerHTML = rounds.join('');
+      q('[data-tr-rounds-table]').hidden = rounds.length === 0;
+      q('[data-tr-rounds-empty]').hidden = rounds.length > 0;
+
+      syncButtons();
+    }
+
+    function syncButtons() {
+      const locked = isLocked();
+      const sel = api.getSelectedRows().filter((r) => r.item);
+      // EsaButton puts data-* on its inner native <button>.
+      const nativeSel = root.querySelector<HTMLButtonElement>('button[data-tr-selected]');
+      if (nativeSel) nativeSel.disabled = locked || sel.length === 0;
+      const label = root.querySelector('button[data-tr-selected] .esa-button__label');
+      if (label) label.textContent = sel.length ? `Transfer selected (${sel.length})` : 'Transfer selected';
+      const allBtn = root.querySelector<HTMLButtonElement>('button[data-tr-all]');
+      if (allBtn) allBtn.disabled = locked || !getState().cycle.items.some((i) => transferStatus(i) === 'Not transferred');
+    }
+
+    // --- Grid clicks --------------------------------------------------------
+    host.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      const open = t.closest<HTMLElement>('[data-tr-open]');
+      if (open) { e.preventDefault(); openItem(open.dataset.trOpen!); return; }
+      const change = t.closest<HTMLElement>('[data-tr-change]');
+      if (change) openItem(change.dataset.trChange!);
+    });
+
+    q('[data-tr-csv]').addEventListener('click', () => {
+      api.exportDataAsCsv({
+        fileName: `soy-fy${getState().cycle.fy}-transfers.csv`,
+        columnKeys: ['number', 'title', 'fund', 'pm', 'final', 'transferred', 'variance', 'status', 'decisions'],
+        processCellCallback: (p) => (typeof p.value === 'number' ? String(Math.round(p.value)) : p.value ?? ''),
+      });
+    });
+
+    // --- Transfer dialog ------------------------------------------------------
+    const dlg = q<Dialog>('[data-tr-dialog]');
+    const nameF = q<Field>('[data-tr-name]');
+    const descF = q<Field>('[data-tr-desc]');
+    const ratF = q<Field>('[data-tr-rationale]');
+    const bpaF = q<Field>('[data-tr-bpa]');
+    let pending: string[] = [];
+
+    function openDialog(ids: string[]) {
+      const s = getState();
+      const c = s.cycle;
+      pending = ids;
+      const round = c.decisions.length + 1;
+      nameF.value = suggestDecisionName(c.fy, round, s.today);
+      nameF.errorText = '';
+      descF.value = round === 1 ? `FY${c.fy} SOY final budgets to working budgets.` : `FY${c.fy} SOY changes after Round ${round - 1}.`;
+      ratF.value = round === 1 ? `Final budgets agreed in the FY${c.fy} SOY.` : 'Reconciles final amounts changed after an earlier round.';
+      bpaF.value = '';
+      dlg.heading = `Transfer to working budgets — Round ${round}`;
+
+      const items = c.items.filter((i) => ids.includes(i.id));
+      const moving = items.filter((i) => Math.round(transferable(i)) !== 0);
+      const skipped = items.filter((i) => Math.round(transferable(i)) === 0);
+      const total = moving.reduce((n, i) => n + transferable(i), 0);
+      q('[data-tr-review-big]').textContent = `${moving.length} ${moving.length === 1 ? 'item' : 'items'} · ${fmtMoney(total)}`;
+      const negatives = moving.filter((i) => transferable(i) < 0).length;
+      q('[data-tr-review-sub]').textContent = `Each item transfers its final amount less anything already transferred.${negatives ? ` ${negatives} ${negatives === 1 ? 'item returns' : 'items return'} money because the final went down after a transfer.` : ''}`;
+      const sk = q('[data-tr-review-skipped]');
+      sk.hidden = skipped.length === 0;
+      if (skipped.length) {
+        const noFinal = skipped.filter((i) => amount(i, 'final') == null);
+        const done = skipped.filter((i) => amount(i, 'final') != null);
+        const list = (arr: SoyItem[]) => arr.slice(0, 6).map((i) => i.projectNumber).join(', ') + (arr.length > 6 ? ` and ${arr.length - 6} more` : '');
+        const parts: string[] = [];
+        if (done.length) parts.push(`${done.length} already fully transferred or $0: ${list(done)}`);
+        if (noFinal.length) parts.push(`${noFinal.length} with no final amount: ${list(noFinal)}`);
+        q('[data-tr-review-skipped-text]').textContent = `${parts.join('. ')}.`;
+      }
+      const confirm = root.querySelector<HTMLButtonElement>('button[data-tr-confirm]');
+      if (confirm) confirm.disabled = moving.length === 0;
+      const cl = root.querySelector('button[data-tr-confirm] .esa-button__label');
+      if (cl) cl.textContent = moving.length ? `Transfer ${fmtMoney(total)}` : 'Nothing to transfer';
+      dlg.show();
+    }
+
+    q('[data-tr-selected]').addEventListener('click', () => {
+      const ids = api.getSelectedRows().filter((r) => r.item).map((r) => r.id);
+      if (ids.length) openDialog(ids);
+    });
+    q('[data-tr-all]').addEventListener('click', () => {
+      openDialog(getState().cycle.items.filter((i) => transferStatus(i) === 'Not transferred').map((i) => i.id));
+    });
+    q('[data-tr-cancel]').addEventListener('click', () => dlg.close());
+    q('[data-tr-confirm]').addEventListener('click', () => {
+      const name = (nameF.value ?? '').trim();
+      nameF.errorText = name ? '' : 'Name the Budget Decision.';
+      if (!name) return;
+      // Never record an empty Budget Decision.
+      const moving = getState().cycle.items.filter((i) => pending.includes(i.id) && Math.round(transferable(i)) !== 0);
+      if (!moving.length) { dlg.close(); return; }
+      const res = update((s) => makeTransfers(s, moving.map((i) => i.id), {
+        name, description: (descF.value ?? '').trim(), rationale: (ratF.value ?? '').trim(), bpaComments: (bpaF.value ?? '').trim(),
+      }));
+      dlg.close();
+      api.deselectAll();
+      snackbar('success', `Transferred ${fmtMoney(res.total)} on ${res.count} items under “${name}”.`);
+    });
+
+    subscribe(render);
+  }
+</script>
+
+<style>
+  .cbf-soy-tr__tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--spacing-400); padding: var(--spacing-400); border: 1px solid var(--color-border-default-subtle); border-radius: var(--radius-200); }
+  .cbf-soy-tr__scroll { position: relative; overflow-x: auto; }
+  .cbf-soy-tr__h { margin: 0; font-size: 16px; font-weight: var(--typography-font-weight-semibold); }
+  .cbf-soy-tr__review { padding: var(--spacing-300) var(--spacing-400); border: 1px solid var(--color-border-default); border-radius: var(--radius-200); background: var(--color-background-elevation-sunken); }
+  .cbf-soy-tr__review-big { margin: 0; font-size: 20px; font-weight: var(--typography-font-weight-semibold); }
+  .cbf-soy-tr__review :global(p) { margin: 0; }
+</style>

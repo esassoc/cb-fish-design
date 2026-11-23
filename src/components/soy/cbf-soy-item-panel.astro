@@ -1,0 +1,384 @@
+---
+// cbf-soy-item-panel — the item side panel. Replaces Gemini's
+// magnifier detail panel, the bottom-of-page history and the $ "Add
+// Amount/Comment" dialog with one drawer, opened from any SOY screen with
+// openItem(id) (event cbf-soy:open-item). Mounted once by cbf-soy-frame.
+//
+//   • Amounts across stages: prior-year working, baseline (with COLA), EWB
+//     proposed, PM proposed, final, transferred — each with who/when/rationale.
+//   • EWB's rationale is shown above the PM's input.
+//   • PM lens: propose in the PM stage on own projects. The amount starts at
+//     EWB's figure; a comment is required, and a rationale is required when the
+//     amount differs.
+//   • Admin lens: enter an amount in any open stage; the panel always states the
+//     stage the entry goes to. Changing a final after a transfer warns and
+//     requires a reason (DEC 3).
+//   • Comment thread, follow-up flag (admin) and a per-project notify toggle.
+//
+// bcn-lego-checked: the drawer is esa-side-dialog; fields are esa-text-field /
+// esa-textarea / esa-select / esa-checkbox / esa-switch-toggle; notices are
+// esa-alert-box; actions esa-button; pills are cloned esa-pill. The amount
+// timeline is a semantic <ol> of stage rows — no esa timeline lego exists
+// (checked the catalog; esa-progress-bar is a single meter). Beacon is not
+// cloned on this machine.
+import EsaButton from '@esa/ecology/esa-button.astro';
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+---
+<esa-side-dialog size="lg" heading="Item" show-close-button data-soy-item-panel>
+  <div class="cbf-soy-ip stack" data-gap="md">
+    <header class="stack" data-gap="2xs">
+      <p class="cbf-soy-ip__title" data-ip-title></p>
+      <p class="cbf-soy-ip__meta" data-ip-meta></p>
+      <div class="cluster" data-gap="2xs" data-ip-pills></div>
+    </header>
+
+    <div data-ip-two-year hidden data-change="it-two-year">
+      <EsaAlertBox variant="info" title="Two-year project"><span data-ip-two-year-text></span></EsaAlertBox>
+    </div>
+
+    <section class="stack" data-gap="xs" aria-labelledby="ip-amounts" data-change="it-panel">
+      <h3 class="cbf-soy-ip__h" id="ip-amounts">Amounts by stage</h3>
+      <ol class="cbf-soy-ip__timeline" data-ip-timeline></ol>
+    </section>
+
+    <!-- PM proposal -->
+    <section class="cbf-soy-ip__box stack" data-gap="sm" data-ip-pm hidden aria-labelledby="ip-pm-h" data-change="it-propose">
+      <h3 class="cbf-soy-ip__h" id="ip-pm-h">Your PM proposal</h3>
+      <div class="cbf-soy-ip__ewb" data-ip-ewb-quote></div>
+      <div class="cluster" data-gap="sm" style="--align: flex-end">
+        <esa-text-field size="sm" label="Proposed amount" prefix="$" inputmode="numeric" required data-ip-pm-amount></esa-text-field>
+        <EsaButton size="sm" variant="secondary" appearance="outline" data-ip-agree>Agree with EWB</EsaButton>
+      </div>
+      <esa-textarea size="sm" label="Comment" rows="3" required data-ip-pm-comment></esa-textarea>
+      <p class="typography-meta cbf-soy-ip__goes">Goes to: <strong>PM proposed</strong></p>
+      <div class="cluster" data-gap="xs"><EsaButton size="sm" variant="primary" data-ip-pm-save>Submit proposal</EsaButton></div>
+    </section>
+
+    <!-- Admin entry -->
+    <section class="cbf-soy-ip__box stack" data-gap="sm" data-ip-admin hidden aria-labelledby="ip-admin-h">
+      <h3 class="cbf-soy-ip__h" id="ip-admin-h">Enter an amount</h3>
+      <div class="cbf-soy-ip__pair">
+        <esa-select size="sm" label="Stage" data-ip-admin-stage></esa-select>
+        <esa-text-field size="sm" label="Amount" prefix="$" inputmode="numeric" required data-ip-admin-amount></esa-text-field>
+      </div>
+      <p class="cbf-soy-ip__goes-strong" data-ip-admin-goes data-change="it-stage-named"></p>
+      <div data-ip-after hidden data-change="tr-after">
+        <EsaAlertBox variant="warning" title="Already transferred"><span data-ip-after-text></span></EsaAlertBox>
+      </div>
+      <div data-ip-after-reason-wrap hidden>
+        <esa-textarea size="sm" label="Reason for changing after the transfer" rows="2" required data-ip-after-reason></esa-textarea>
+      </div>
+      <esa-textarea size="sm" label="Rationale" rows="2" required data-ip-admin-rationale></esa-textarea>
+      <div class="cluster" data-gap="xs"><EsaButton size="sm" variant="primary" data-ip-admin-save>Save amount</EsaButton></div>
+    </section>
+
+    <div data-ip-readonly hidden>
+      <EsaAlertBox variant="info" title="Read only"><span data-ip-readonly-text></span></EsaAlertBox>
+    </div>
+
+    <section class="stack" data-gap="xs" aria-labelledby="ip-thread">
+      <h3 class="cbf-soy-ip__h" id="ip-thread">Comments and history</h3>
+      <ol class="cbf-soy-ip__thread stack" data-gap="xs" data-ip-thread></ol>
+      <div class="stack" data-gap="xs" data-ip-comment-wrap>
+        <esa-textarea size="sm" label="Add a comment" rows="2" data-ip-comment></esa-textarea>
+        <div class="cluster" data-gap="xs"><EsaButton size="sm" variant="secondary" appearance="outline" data-ip-comment-save>Add comment</EsaButton></div>
+      </div>
+    </section>
+
+    <section class="stack" data-gap="xs" aria-labelledby="ip-flags" data-change="it-notify">
+      <h3 class="cbf-soy-ip__h" id="ip-flags">Follow-up and notifications</h3>
+      <esa-checkbox size="sm" label="Flag for follow-up" data-ip-follow></esa-checkbox>
+      <esa-switch-toggle size="sm" label="Email me about changes to this item" data-ip-notify></esa-switch-toggle>
+    </section>
+  </div>
+</esa-side-dialog>
+
+<script>
+  import '@esa/ecology/esa-side-dialog';
+  import '@esa/ecology/esa-text-field';
+  import '@esa/ecology/esa-textarea';
+  import '@esa/ecology/esa-select';
+  import '@esa/ecology/esa-checkbox';
+  import '@esa/ecology/esa-switch-toggle';
+  import { getState, subscribe, update, isAdmin, isLocked, canPropose, canComment, userName, OPEN_ITEM_EVENT } from '../../lib/soy/store';
+  import { setAmount, addComment, setItemFlag } from '../../lib/soy/actions';
+  import { amount, fmtDate, fmtMoney, isOffYear, isTwoYear, project, stageIndex, transferred, transferStatus, twoYearSuggestion } from '../../lib/soy/model';
+  import { STAGES, stageLabel, type AmountStage, type SoyItem } from '../../lib/soy/types';
+  import { esc, pill, statusPill, setOptions, snackbar, parseMoney, type Dialog, type Field } from '../../lib/soy/ui';
+
+  const panel = document.querySelector<Dialog>('[data-soy-item-panel]')!;
+  const q = <T extends Element = HTMLElement>(sel: string) => panel.querySelector<T>(sel)!;
+  let currentId: string | null = null;
+  let isOpen = false;
+
+  document.addEventListener(OPEN_ITEM_EVENT, (e) => {
+    currentId = (e as CustomEvent<{ id: string }>).detail.id;
+    resetForms();
+    render();
+    panel.show();
+    isOpen = true;
+  });
+  panel.addEventListener('close', () => { isOpen = false; });
+  subscribe(() => { if (isOpen) render(); });
+
+  const item = (): SoyItem | undefined => getState().cycle.items.find((i) => i.id === currentId);
+
+  function resetForms() {
+    const it = item();
+    const ewb = it ? amount(it, 'ewb') : null;
+    q<Field>('[data-ip-pm-amount]').value = ewb != null ? String(ewb) : '';
+    q<Field>('[data-ip-pm-comment]').value = '';
+    q<Field>('[data-ip-admin-rationale]').value = '';
+    q<Field>('[data-ip-after-reason]').value = '';
+    q<Field>('[data-ip-comment]').value = '';
+    const stage = getState().cycle.stage;
+    const admStage: AmountStage = stage === 'pm' || stage === 'final' || stage === 'ewb' ? stage : 'final';
+    const adm = q<Field>('[data-ip-admin-stage]');
+    setOptions(adm, openStages().map((k) => ({ label: stageLabel(k), value: k })), admStage);
+    q<Field>('[data-ip-admin-amount]').value = it ? String(amount(it, admStage) ?? '') : '';
+    [q<Field>('[data-ip-pm-comment]'), q<Field>('[data-ip-pm-amount]'), q<Field>('[data-ip-admin-amount]'), q<Field>('[data-ip-admin-rationale]'), q<Field>('[data-ip-after-reason]')].forEach((f) => { f.errorText = ''; });
+  }
+
+  /** Stages an admin may enter in: every amount stage up to the active one. */
+  function openStages(): AmountStage[] {
+    const active = stageIndex(getState().cycle.stage);
+    return (['ewb', 'pm', 'final'] as AmountStage[]).filter((k) => stageIndex(k) <= Math.max(active, 0));
+  }
+
+  function render() {
+    const it = item();
+    if (!it) return;
+    const s = getState();
+    const p = project(it);
+    panel.heading = `${it.projectNumber} · ${it.fund}`;
+    q('[data-ip-title]').textContent = p.title;
+    q('[data-ip-meta]').textContent = `${p.emphasis} · PM ${p.pm} · ${it.accountType}`;
+    const pills = [statusPill(transferStatus(it), 'xs')];
+    if (isTwoYear(it)) pills.push(pill(isOffYear(it) ? 'Two-year · off year' : 'Two-year · on year', 'info', { size: 'xs' }));
+    if (it.isNew) pills.push(pill('New this year', 'primary', { size: 'xs' }));
+    if (it.followUp) pills.push(pill('Follow-up', 'warning', { size: 'xs' }));
+    q('[data-ip-pills]').innerHTML = pills.join('');
+
+    // Two-year note.
+    const ty = q('[data-ip-two-year]');
+    ty.hidden = !isTwoYear(it);
+    if (isTwoYear(it)) {
+      q('[data-ip-two-year-text]').textContent = isOffYear(it)
+        ? `FY${s.cycle.fy} is this project’s off year, so its amounts are $0 automatically. No PM input is needed.`
+        : `FY${s.cycle.fy} is this project’s on year. Suggested amount: ${fmtMoney(twoYearSuggestion(it.priorBaseline, s.cycle.setupReport?.colaRate ?? 0.025))} (annual ${fmtMoney(it.priorBaseline)} × 2, plus ${((s.cycle.setupReport?.colaRate ?? 0.025) * 100).toFixed(1)}% inflation). Confirm or change it in EWB proposed.`;
+    }
+
+    // Timeline.
+    const row = (label: string, value: string, who = '', why = '', state: 'done' | 'active' | 'todo' = 'done') =>
+      `<li class="cbf-soy-ip__step is-${state}"><span class="cbf-soy-ip__step-label">${esc(label)}</span><span class="cbf-soy-ip__step-amt cbf-soy-num">${value}</span>${who ? `<span class="cbf-soy-ip__step-who">${esc(who)}</span>` : ''}${why ? `<span class="cbf-soy-ip__step-why">${esc(why)}</span>` : ''}</li>`;
+    const activeIdx = stageIndex(s.cycle.stage);
+    const stageRows = (['ewb', 'pm', 'final'] as AmountStage[]).map((k) => {
+      const e = it.amounts[k];
+      const st = e ? 'done' : stageIndex(k) === activeIdx ? 'active' : 'todo';
+      return row(stageLabel(k), e ? fmtMoney(e.amount) : st === 'active' ? 'Waiting for input' : '—', e ? `${e.by} · ${fmtDate(e.date)}` : '', e?.rationale ?? '', st);
+    });
+    const tr = it.transfers.map((t) => {
+      const d = s.cycle.decisions.find((x) => x.id === t.decisionId);
+      return `${fmtMoney(t.amount)} · ${d?.name ?? 'Budget Decision'}`;
+    });
+    q('[data-ip-timeline]').innerHTML = [
+      row(`FY${s.cycle.fy - 1} working budget`, fmtMoney(it.priorWorking)),
+      row(`FY${s.cycle.fy} baseline`, it.baseline == null ? 'No baseline' : fmtMoney(it.baseline), '', it.cola ? `Includes a ${(it.cola * 100).toFixed(1)}% COLA` : isOffYear(it) ? 'Off year — $0' : ''),
+      ...stageRows,
+      row('Transferred', it.transfers.length ? fmtMoney(transferred(it)) : '—', tr.join(' · '), it.changedAfterTransfer ? `Final changed after transfer on ${fmtDate(it.changedAfterTransfer.date)}: ${it.changedAfterTransfer.reason}` : '', it.transfers.length ? 'done' : 'todo'),
+    ].join('');
+
+    // Who can do what.
+    const admin = isAdmin();
+    const locked = isLocked();
+    const pmBox = q('[data-ip-pm]');
+    const admBox = q('[data-ip-admin]');
+    const ro = q('[data-ip-readonly]');
+    pmBox.hidden = admin || !canPropose(it) || isOffYear(it);
+    admBox.hidden = !admin || locked || s.cycle.status === 'Draft';
+    let roText = '';
+    if (locked) roText = `The FY${s.cycle.fy} SOY is closed. Nothing can be changed until it is reopened.`;
+    else if (!admin && isOffYear(it)) roText = 'Off-year two-year item — no input needed.';
+    else if (!admin && s.cycle.stage !== 'pm') roText = s.cycle.stage === 'ewb' ? `PM input opens ${fmtDate(s.cycle.dates.pm)}. You’ll get an email when it does.` : 'PM proposed is closed. You can still comment.';
+    else if (!admin && !canPropose(it)) roText = 'This is not one of your projects. You can read it but not propose.';
+    ro.hidden = !roText;
+    q('[data-ip-readonly-text]').textContent = roText;
+
+    // PM box: EWB rationale above the input.
+    const ewb = it.amounts.ewb;
+    q('[data-ip-ewb-quote]').innerHTML = ewb
+      ? `<p class="cbf-soy-ip__ewb-label">EWB proposed <strong>${fmtMoney(ewb.amount)}</strong></p><p class="cbf-soy-ip__ewb-why">“${esc(ewb.rationale)}” — ${esc(ewb.by)}, ${fmtDate(ewb.date)}</p>`
+      : '<p class="cbf-soy-ip__ewb-why">No EWB amount yet.</p>';
+    syncPmLabels();
+    if (it.amounts.pm && !pmBox.hidden) q('[data-ip-pm-save] .esa-button__label').textContent = 'Update proposal';
+
+    syncAdmin();
+
+    // Thread: stage entries + item activity, oldest first.
+    const entries: { date: string; who: string; html: string }[] = [];
+    for (const k of ['ewb', 'pm', 'final'] as AmountStage[]) {
+      const e = it.amounts[k];
+      if (e) entries.push({ date: e.date, who: e.by, html: `${pill(stageLabel(k), 'default', { size: 'xs' })} <strong>${fmtMoney(e.amount)}</strong> — ${esc(e.rationale)}` });
+    }
+    for (const a of s.cycle.activity) {
+      if (a.itemId !== it.id || a.kind === 'amount') continue;
+      entries.push({ date: a.date, who: a.who, html: a.kind === 'change-after-transfer' ? `${pill('Changed after transfer', 'danger', { size: 'xs' })} ${esc(a.text)}` : esc(a.text) });
+    }
+    for (const t of it.transfers) {
+      const d = s.cycle.decisions.find((x) => x.id === t.decisionId);
+      entries.push({ date: t.date, who: 'Budget administrator', html: `${pill('Transfer', 'success', { size: 'xs' })} ${fmtMoney(t.amount)} to the working budget under “${esc(d?.name ?? '')}”` });
+    }
+    entries.sort((a, b) => a.date.localeCompare(b.date));
+    q('[data-ip-thread]').innerHTML = entries.length
+      ? entries.map((e) => `<li class="cbf-soy-ip__msg"><span class="cbf-soy-ip__msg-head">${esc(e.who)} · ${fmtDate(e.date)}</span><span>${e.html}</span></li>`).join('')
+      : '<li class="cbf-soy-muted">No comments or amounts yet.</li>';
+    q('[data-ip-comment-wrap]').hidden = !canComment(it);
+
+    const follow = q<Field>('[data-ip-follow]');
+    follow.checked = it.followUp;
+    follow.disabled = !admin || locked;
+    follow.hidden = !admin;
+    const notify = q<Field>('[data-ip-notify]');
+    notify.checked = it.notify;
+  }
+
+  // --- PM proposal --------------------------------------------------------
+  function syncPmLabels() {
+    const it = item();
+    if (!it) return;
+    const v = parseMoney(q<Field>('[data-ip-pm-amount]').value);
+    const ewb = amount(it, 'ewb');
+    const differs = v != null && ewb != null && v !== ewb;
+    const c = q<Field>('[data-ip-pm-comment]');
+    c.label = differs ? 'Rationale for a different amount' : 'Comment';
+    c.helpText = differs ? `Your amount differs from EWB’s by ${fmtMoney(v! - ewb!)}. Explain why — decision makers read this.` : 'Required. Say whether you agree, or add context for decision makers.';
+  }
+  q('[data-ip-pm-amount]').addEventListener('input', syncPmLabels);
+  q('[data-ip-pm-amount]').addEventListener('change', syncPmLabels);
+  q('[data-ip-agree]').addEventListener('click', () => {
+    const it = item();
+    if (!it) return;
+    q<Field>('[data-ip-pm-amount]').value = String(amount(it, 'ewb') ?? '');
+    q<Field>('[data-ip-pm-comment]').value = 'Agree with EWB proposed.';
+    syncPmLabels();
+  });
+  q('[data-ip-pm-save]').addEventListener('click', () => {
+    const it = item();
+    if (!it) return;
+    const amtF = q<Field>('[data-ip-pm-amount]');
+    const cF = q<Field>('[data-ip-pm-comment]');
+    const v = parseMoney(amtF.value);
+    const text = (cF.value ?? '').trim();
+    amtF.errorText = v == null || v < 0 ? 'Enter an amount in dollars.' : '';
+    const ewb = amount(it, 'ewb');
+    const differs = v != null && ewb != null && v !== ewb;
+    cF.errorText = !text ? (differs ? 'A rationale is required when your amount differs from EWB’s.' : 'A comment is required.') : differs && /^agree/i.test(text) ? 'Your amount differs from EWB’s — explain the difference.' : '';
+    if (amtF.errorText || cF.errorText) return;
+    update((s) => setAmount(s, it.id, 'pm', v!, text, userName()));
+    snackbar('success', `PM proposed ${fmtMoney(v)} saved for ${it.projectNumber}.`);
+    cF.value = '';
+  });
+
+  // --- Admin entry --------------------------------------------------------
+  function syncAdmin() {
+    const it = item();
+    if (!it) return;
+    const stage = (q<Field>('[data-ip-admin-stage]').value || 'final') as AmountStage;
+    q('[data-ip-admin-goes]').innerHTML = `This entry goes to <strong>${esc(stageLabel(stage))}</strong>${stage === getState().cycle.stage ? ' (the active stage)' : ' — not the active stage'}.`;
+    const v = parseMoney(q<Field>('[data-ip-admin-amount]').value);
+    const after = stage === 'final' && it.transfers.length > 0 && (v == null || v !== Math.round(transferred(it)));
+    q('[data-ip-after]').hidden = !(stage === 'final' && it.transfers.length > 0);
+    q('[data-ip-after-text]').textContent = `This item was transferred (${fmtMoney(transferred(it))}). Changing its final amount creates a variance that shows on Transfers until another round reconciles it. A reason is required.`;
+    q('[data-ip-after-reason-wrap]').hidden = !after;
+  }
+  q('[data-ip-admin-stage]').addEventListener('change', () => {
+    const it = item();
+    const stage = q<Field>('[data-ip-admin-stage]').value as AmountStage;
+    if (it) q<Field>('[data-ip-admin-amount]').value = String(amount(it, stage) ?? '');
+    syncAdmin();
+  });
+  q('[data-ip-admin-amount]').addEventListener('input', syncAdmin);
+  q('[data-ip-admin-amount]').addEventListener('change', syncAdmin);
+  q('[data-ip-admin-save]').addEventListener('click', () => {
+    const it = item();
+    if (!it) return;
+    const stage = q<Field>('[data-ip-admin-stage]').value as AmountStage;
+    const amtF = q<Field>('[data-ip-admin-amount]');
+    const rF = q<Field>('[data-ip-admin-rationale]');
+    const aF = q<Field>('[data-ip-after-reason]');
+    const v = parseMoney(amtF.value);
+    amtF.errorText = v == null || v < 0 ? 'Enter an amount in dollars.' : '';
+    rF.errorText = (rF.value ?? '').trim() ? '' : 'A rationale is required.';
+    const needsReason = !q('[data-ip-after-reason-wrap]').hidden;
+    aF.errorText = needsReason && !(aF.value ?? '').trim() ? 'A reason is required to change a final amount after a transfer.' : '';
+    if (amtF.errorText || rF.errorText || aF.errorText) return;
+    const res = update((s) => setAmount(s, it.id, stage, v!, rF.value.trim(), userName(), needsReason ? aF.value.trim() : undefined));
+    if (!res.ok) { snackbar('danger', res.error ?? 'Could not save.'); return; }
+    snackbar(res.changedAfterTransfer ? 'warning' : 'success', res.changedAfterTransfer
+      ? `Final changed after transfer for ${it.projectNumber}. It shows as “Changed after transfer” on Transfers until the next round.`
+      : `${stageLabel(stage)} set to ${fmtMoney(v)} for ${it.projectNumber}.`);
+    rF.value = '';
+    aF.value = '';
+  });
+
+  // --- Comments and flags -------------------------------------------------
+  q('[data-ip-comment-save]').addEventListener('click', () => {
+    const it = item();
+    const f = q<Field>('[data-ip-comment]');
+    const text = (f.value ?? '').trim();
+    if (!it || !text) { f.errorText = 'Write a comment first.'; return; }
+    f.errorText = '';
+    update((s) => addComment(s, it.id, text, userName()));
+    f.value = '';
+  });
+  q('[data-ip-follow]').addEventListener('change', (e) => {
+    const it = item();
+    if (it) update((s) => setItemFlag(s, it.id, { followUp: !!(e.currentTarget as Field).checked }));
+  });
+  q('[data-ip-notify]').addEventListener('change', (e) => {
+    const it = item();
+    if (!it) return;
+    const on = !!(e.currentTarget as Field).checked;
+    update((s) => setItemFlag(s, it.id, { notify: on }));
+    snackbar('info', on ? `You’ll get emails about ${it.projectNumber}.` : `No more emails about ${it.projectNumber}.`);
+  });
+  void STAGES;
+</script>
+
+<style>
+  .cbf-soy-ip__title { margin: 0; font-size: 18px; font-weight: var(--typography-font-weight-semibold); color: var(--color-content-default); }
+  .cbf-soy-ip__meta { margin: 0; font-size: 14px; color: var(--color-content-default-secondary); }
+  .cbf-soy-ip__h { margin: 0; font-size: 16px; font-weight: var(--typography-font-weight-semibold); }
+  .cbf-soy-ip__box {
+    padding: var(--spacing-400);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-200);
+    background: var(--color-background-elevation-sunken);
+  }
+  .cbf-soy-ip__pair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-300); }
+  .cbf-soy-ip__goes { margin: 0; color: var(--color-content-default-secondary); }
+  .cbf-soy-ip__goes-strong { margin: 0; font-size: 14px; }
+  .cbf-soy-ip__ewb { padding: var(--spacing-300); border-inline-start: 3px solid var(--color-background-brand); background: var(--color-background-elevation-raised); }
+  .cbf-soy-ip__ewb :global(p) { margin: 0; font-size: 14px; }
+  .cbf-soy-ip__ewb :global(.cbf-soy-ip__ewb-why) { color: var(--color-content-default-secondary); margin-block-start: var(--spacing-100); }
+</style>
+
+<style is:global>
+  .cbf-soy-ip__timeline { list-style: none; margin: 0; padding: 0; border: 1px solid var(--color-border-default-subtle); border-radius: var(--radius-200); }
+  .cbf-soy-ip__step {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--spacing-50) var(--spacing-300);
+    padding: var(--spacing-200) var(--spacing-300);
+    border-block-end: 1px solid var(--color-border-default-subtle);
+    font-size: 14px;
+  }
+  .cbf-soy-ip__step:last-child { border-block-end: none; }
+  .cbf-soy-ip__step.is-active { background: var(--color-background-brand-subtle); }
+  .cbf-soy-ip__step.is-todo .cbf-soy-ip__step-amt { color: var(--color-content-default-tertiary); }
+  .cbf-soy-ip__step-label { font-weight: var(--typography-font-weight-semibold); }
+  .cbf-soy-ip__step-who, .cbf-soy-ip__step-why { grid-column: 1 / -1; color: var(--color-content-default-secondary); font-size: 13px; }
+  .cbf-soy-ip__thread { list-style: none; margin: 0; padding: 0; }
+  .cbf-soy-ip__msg { display: flex; flex-direction: column; gap: var(--spacing-50); padding: var(--spacing-200) var(--spacing-300); border-radius: var(--radius-200); background: var(--color-background-elevation-sunken); font-size: 14px; }
+  .cbf-soy-ip__msg-head { font-size: 12px; color: var(--color-content-default-tertiary); }
+</style>

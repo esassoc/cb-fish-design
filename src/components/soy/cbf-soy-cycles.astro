@@ -1,0 +1,162 @@
+---
+// cbf-soy-cycles — All cycles, replacing the Maintenance grid. One
+// row per fiscal year, FY2014–FY2028, with status (Draft, Open with its stage,
+// Closed), item count and the money columns that show whether a cycle is
+// finished: baseline, final, transferred and variance. Open past years
+// (FY2024–2027 today) are flagged with what blocks closing them, and the next
+// cycle appears as Draft on January 15 with the standard dates (DEC 6).
+//
+// bcn-lego-checked: the list is AG Grid Community in the spoke's token theme
+// (shared/grid-chrome) because ecology has no data-grid lego — same call as the
+// capital program grids. Notices are esa-alert-box; pills and row buttons are
+// cloned esa-pill / esa-button (cbf-soy-templates). Beacon is not cloned on
+// this machine.
+import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
+import EsaButton from '@esa/ecology/esa-button.astro';
+import '../shared/cbf-data-grid-chrome.css';
+---
+<section class="cbf-soy-cycles stack" data-gap="md" data-soy-cycles aria-labelledby="cy-title">
+  <div data-change="cy-draft">
+    <EsaAlertBox variant="info" title="Automatic drafts">
+      <span data-cy-draft-text></span>
+    </EsaAlertBox>
+  </div>
+
+  <div data-cy-flag-wrap data-change="cy-flag">
+    <EsaAlertBox variant="warning" title="Open past years">
+      <span data-cy-flag-text></span>
+    </EsaAlertBox>
+  </div>
+
+  <div class="repel">
+    <h2 class="cbf-soy-section-title" id="cy-title">Cycles by fiscal year</h2>
+    <EsaButton size="sm" variant="secondary" appearance="outline" icon="download" data-cy-csv>Export CSV</EsaButton>
+  </div>
+  <div class="cbf-data-grid__grid" data-cy-grid data-change="cy-list"></div>
+  <footer class="cbf-data-grid__footer repel">
+    <span class="typography-meta cbf-soy-muted">Variance = final − transferred. A cycle can close when every final is transferred and the variance is zero or explained.</span>
+  </footer>
+</section>
+
+<script>
+  import { createGrid, type ColDef, type GridApi } from 'ag-grid-community';
+  import { cbfGridTheme } from '../shared/grid-chrome';
+  import { getState, subscribe } from '../../lib/soy/store';
+  import { fmtDate, fmtShort, totals } from '../../lib/soy/model';
+  import { stageLabel, type CycleStatus, type StageKey } from '../../lib/soy/types';
+  import { button, esc, pill } from '../../lib/soy/ui';
+  import { withBase } from '../../lib/base';
+
+  interface Row {
+    fy: number;
+    status: CycleStatus;
+    stage: StageKey | null;
+    items: number;
+    baseline: number;
+    final: number;
+    transferred: number;
+    variance: number;
+    varianceItems: number;
+    current: boolean;
+    blockers?: string[];
+  }
+
+  const root = document.querySelector<HTMLElement>('[data-soy-cycles]')!;
+  const q = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
+
+  const money = (field: keyof Row, headerName: string): ColDef<Row> => ({
+    field, headerName, type: 'rightAligned', width: 160, cellClass: 'cbf-soy-num',
+    valueFormatter: (p) => (p.data?.status === 'Draft' && p.value === 0 ? '—' : fmtShort(p.value as number)),
+  });
+
+  const api: GridApi<Row> = createGrid(q('[data-cy-grid]'), {
+    theme: cbfGridTheme,
+    rowData: [],
+    domLayout: 'autoHeight',
+    suppressCellFocus: true,
+    animateRows: false,
+    defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true },
+    getRowId: (p) => String(p.data.fy),
+    getRowClass: (p) => (p.data?.current ? 'cbf-soy-cy-current' : ''),
+    columnDefs: [
+      { field: 'fy', headerName: 'Fiscal year', width: 140, sort: 'desc', valueFormatter: (p) => `FY${p.value}` },
+      {
+        colId: 'status', headerName: 'Status', width: 210,
+        valueGetter: (p) => (p.data!.status === 'Open' ? `Open · ${stageLabel(p.data!.stage)}` : p.data!.status),
+        cellRenderer: (p: { data: Row }) => {
+          const r = p.data;
+          if (r.status === 'Draft') return pill('Draft', 'default', { size: 'xs' });
+          if (r.status === 'Closed') return pill('Closed', 'success', { size: 'xs' });
+          return `${pill('Open', 'primary', { size: 'xs' })} <span class="cbf-soy-muted">${esc(stageLabel(r.stage))}</span>`;
+        },
+      },
+      { field: 'items', headerName: 'Items', type: 'rightAligned', width: 90, cellClass: 'cbf-soy-num' },
+      money('baseline', 'Total baseline'),
+      money('final', 'Total final'),
+      money('transferred', 'Total transferred'),
+      {
+        field: 'variance', headerName: 'Variance', type: 'rightAligned', width: 160, cellClass: 'cbf-soy-num',
+        cellRenderer: (p: { data: Row }) => {
+          const r = p.data;
+          if (!r.varianceItems) return '<span class="cbf-soy-muted">$0</span>';
+          return `<span class="cbf-soy-neg">${fmtShort(r.variance)}</span> <span class="cbf-soy-muted">· ${r.varianceItems} items</span>`;
+        },
+      },
+      {
+        colId: 'flag', headerName: 'Flags', flex: 1, minWidth: 260, sortable: false,
+        tooltipValueGetter: (p) => p.data?.blockers?.join(' · ') ?? '',
+        cellRenderer: (p: { data: Row }) => {
+          const r = p.data;
+          if (!r.current && r.status === 'Open') return `${pill('Not closed', 'warning', { size: 'xs' })} <span class="cbf-soy-muted">${esc(r.blockers?.[0] ?? '')}</span>`;
+          if (r.current && r.status === 'Draft') return `<span class="cbf-soy-muted">Drafted ${fmtDate('2027-01-15')} with the standard dates</span>`;
+          return '';
+        },
+      },
+      {
+        colId: 'actions', headerName: 'Actions', width: 150, sortable: false, pinned: 'right',
+        cellRenderer: (p: { data: Row }) => {
+          const r = p.data;
+          if (r.current && r.status === 'Draft') return button('primary', 'Run setup', { 'cy-go': '/soy/setup' });
+          if (r.current) return button('secondary', 'Overview', { 'cy-go': '/soy' });
+          if (r.status === 'Open') return button('secondary', 'Close out', { 'cy-go': '/soy/close-out' });
+          return '';
+        },
+      },
+    ],
+  });
+
+  root.addEventListener('click', (e) => {
+    const go = (e.target as HTMLElement).closest<HTMLElement>('[data-cy-go]')?.dataset.cyGo;
+    if (go) location.href = withBase(go);
+  });
+  q('[data-cy-csv]').addEventListener('click', () => api.exportDataAsCsv({ fileName: 'soy-cycles.csv', columnKeys: ['fy', 'status', 'items', 'baseline', 'final', 'transferred', 'variance'] }));
+
+  subscribe(() => {
+    const s = getState();
+    const c = s.cycle;
+    const t = totals(c);
+    const rows: Row[] = [
+      ...s.pastCycles.map((p) => ({
+        fy: p.fy, status: p.status, stage: p.stage, items: p.items, baseline: p.baseline, final: p.final,
+        transferred: p.transferred, variance: p.final - p.transferred, varianceItems: p.varianceItems, current: false, blockers: p.blockers,
+      })),
+      {
+        fy: c.fy, status: c.status, stage: c.stage, items: t.items, baseline: t.baseline, final: t.final,
+        transferred: t.transferred, variance: t.variance, varianceItems: t.varianceItems, current: true,
+      },
+    ];
+    api.setGridOption('rowData', rows);
+    api.refreshCells({ force: true });
+
+    q('[data-cy-draft-text]').textContent = c.status === 'Draft'
+      ? `FY${c.fy} drafted itself on Jan 15, 2027 with the standard dates (EWB proposed opens ${fmtDate(c.dates.ewb)}). Review it and run setup to open it.`
+      : `The next cycle, FY${c.fy + 1}, will draft itself on Jan 15, ${c.fy} with the standard dates.`;
+    const open = s.pastCycles.filter((p) => p.status === 'Open');
+    q('[data-cy-flag-wrap]').hidden = open.length === 0;
+    q('[data-cy-flag-text]').innerHTML = `${open.map((p) => `FY${p.fy}`).join(', ')} ${open.length === 1 ? 'is' : 'are'} still open at Final budget. <a href="${withBase('/soy/close-out')}">See what blocks closing them</a>.`;
+  });
+</script>
+
+<style is:global>
+  .cbf-soy-cy-current { font-weight: var(--typography-font-weight-semibold); background: var(--color-background-brand-subtle); }
+</style>

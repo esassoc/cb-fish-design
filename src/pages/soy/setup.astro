@@ -1,0 +1,21 @@
+---
+// /soy/setup — the SOY cycle setup wizard: dates, carry forward,
+// new projects, COLA, review — then a progress run and a results report.
+// Replaces Create new SOY, Bulk add, Add Project and Bulk COLA. Re-enterable
+// once the cycle is open, to add projects later.
+//
+// Thin assembler — the frame is cbf-soy-frame; the wizard is cbf-soy-setup;
+// state lives in src/lib/soy/ and src/data/soy/seed.ts.
+import CbfSoyFrame from '../../components/soy/cbf-soy-frame.astro';
+import CbfSoySetup from '../../components/soy/cbf-soy-setup.astro';
+---
+<!-- manifest:
+  layout: cbf-soy-frame (nav + prototype strip + app panel + tabs + locked banner)
+  sections:
+    - setup wizard -> cbf-soy-setup  (5-step indicator, dates, carry-forward grid, new-projects grid,
+                                      COLA filters + preview grid + named skips + two-year suggestions,
+                                      review tiles, progress run, results report; re-entry adds projects)
+-->
+<CbfSoyFrame active="setup" title="Setup" adminOnly>
+  <CbfSoySetup />
+</CbfSoyFrame>
