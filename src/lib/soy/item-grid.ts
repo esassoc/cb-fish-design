@@ -6,7 +6,7 @@
 import { createGrid, type ColDef, type GridApi, type RowSelectionOptions } from 'ag-grid-community';
 import { cbfGridTheme } from '../../components/shared/grid-chrome';
 import { openItem } from './store';
-import { amount, isOffYear, isTwoYear, pmDelta, project, transferStatus, transferred, hasTransfers } from './model';
+import { amount, isOffYear, isTwoYear, negotiation, negotiationLabel, pmDelta, project, transferStatus, transferred, hasTransfers } from './model';
 import { deltaHtml, esc, moneyHtml, pill, statusPill } from './ui';
 import type { SoyItem } from './types';
 
@@ -21,7 +21,8 @@ export interface GridRow {
 export type ColKey =
   | 'number' | 'title' | 'emphasis' | 'fund' | 'pm'
   | 'priorWorking' | 'priorBaseline' | 'baseline'
-  | 'ewb' | 'pmAmt' | 'diff' | 'final' | 'transferred' | 'finalSet' | 'status' | 'flags';
+  | 'ewb' | 'pmAmt' | 'diff' | 'final' | 'transferred' | 'finalSet' | 'status' | 'flags'
+  | 'negotiation' | 'assignee';
 
 const MONEY: ColKey[] = ['priorWorking', 'priorBaseline', 'baseline', 'ewb', 'pmAmt', 'diff', 'final', 'transferred'];
 
@@ -48,6 +49,18 @@ export function flagsHtml(item: SoyItem): string {
   if (item.changedAfterTransfer && transferStatus(item) !== 'Transferred') out.push(pill('Changed after transfer', 'danger', { size: 'xs' }));
   return `<span class="cbf-soy-cell-actions">${out.join('')}</span>`;
 }
+
+/** "Round 2 · with PM" while open; "Settled" once a final closed it. */
+export function negotiationHtml(item: SoyItem): string {
+  const n = negotiation(item);
+  if (!n) return '';
+  if (!n.active) return pill(`Settled · ${n.round} ${n.round === 1 ? 'round' : 'rounds'}`, 'default', { size: 'xs' });
+  return pill(negotiationLabel(n), n.assigneeRole === 'leader' ? 'warning' : n.assigneeRole === 'pm' ? 'info' : 'primary', { size: 'xs' });
+}
+const negotiationText = (item: SoyItem) => {
+  const n = negotiation(item);
+  return !n ? '' : n.active ? negotiationLabel(n) : 'Settled';
+};
 
 const flagText = (item: SoyItem) => [
   isTwoYear(item) ? (isOffYear(item) ? 'Two-year off' : 'Two-year on') : '',
@@ -93,6 +106,10 @@ export function columns(keys: ColKey[], fy: number): ColDef<GridRow>[] {
     status: text('status', 'Transfer status', 180, (i) => transferStatus(i), {
       cellRenderer: (p: { data: GridRow }) => (p.data.item ? statusPill(transferStatus(p.data.item)) : ''),
     }),
+    negotiation: text('negotiation', 'Negotiation', 200, negotiationText, {
+      cellRenderer: (p: { data: GridRow }) => (p.data.item ? `<span data-change="it-negotiation">${negotiationHtml(p.data.item)}</span>` : ''),
+    }),
+    assignee: text('assignee', 'Assigned to', 170, (i) => { const n = negotiation(i); return n?.active ? n.assignee : ''; }),
     flags: text('flags', 'Flags', 220, flagText, {
       sortable: false,
       cellRenderer: (p: { data: GridRow }) => (p.data.item ? flagsHtml(p.data.item) : ''),

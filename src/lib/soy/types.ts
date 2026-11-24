@@ -8,7 +8,10 @@
 // state, reminder settings) is still modelled here, and the changes registry
 // (changes.ts) tags it BE.
 
-export type Role = 'admin' | 'pm';
+export type Role = 'admin' | 'pm' | 'leader';
+
+/** Who can hold the ball on a project in negotiation. */
+export type PartyRole = Role;
 
 /** The stages an amount can be entered in. `complete` has no amount. */
 export type AmountStage = 'ewb' | 'pm' | 'final';
@@ -91,6 +94,10 @@ export interface SoyItem {
   baseline: number | null;
   /** COLA rate applied in setup, as a fraction (0.025). */
   cola?: number;
+  /** The comment the administrator entered with the COLA in setup. */
+  colaComment?: string;
+  /** Two-year projects: off year in THIS cycle's fiscal year (past years; FY2028 uses the project's flag). */
+  offYear?: boolean;
   /** Added in setup as a new project (not carried forward). */
   isNew?: boolean;
   amounts: Partial<Record<AmountStage, StageEntry>>;
@@ -98,6 +105,34 @@ export interface SoyItem {
   changedAfterTransfer?: ChangeAfterTransfer;
   followUp: boolean;
   notify: boolean;
+  /** Back and forth between EWB, the PM and decision makers before the final amount is set. */
+  negotiation?: Negotiation;
+}
+
+/** One entry in a project's negotiation thread. */
+export interface NegotiationEntry {
+  id: string;
+  date: string;
+  who: string;
+  whoRole: PartyRole;
+  /** proposal = a revised EWB or PM amount; assign = hands the ball to someone, with a comment; comment = a note only; resolved = final set. */
+  kind: 'proposal' | 'assign' | 'comment' | 'resolved';
+  stage?: AmountStage;
+  amount?: number;
+  /** For assign: who holds the ball next. */
+  to?: string;
+  toRole?: PartyRole;
+  text: string;
+}
+
+export interface Negotiation {
+  /** Who holds the ball right now. */
+  assignee: string;
+  assigneeRole: PartyRole;
+  /** Proposal rounds so far (EWB → PM is round 1; each revised proposal adds one). */
+  round: number;
+  status: 'open' | 'resolved';
+  thread: NegotiationEntry[];
 }
 
 /** A prior-year item offered for carry-forward, with its eligibility. */
@@ -171,6 +206,8 @@ export interface SetupReport {
   added: string[];
   colaRate: number;
   colaApplied: number;
+  /** The administrator's comment on the COLA (why this rate, which guidance). */
+  colaComment?: string;
   colaSkippedOffYear: string[];
   colaSkippedNoBaseline: string[];
   twoYearFlagged: string[];
@@ -189,14 +226,18 @@ export interface PastCycle {
   varianceItems: number;
   /** What blocks closing it (open past years only). */
   blockers?: string[];
+  closedOn?: string;
 }
 
 export interface SoyState {
   version: number;
   /** The demo's "today", which moves as the walkthrough moves. */
   today: string;
+  /** The current cycle (FY2028). */
   cycle: SoyCycle;
   pastCycles: PastCycle[];
+  /** Past cycles changed while someone viewed them; the rest are generated from the seed on demand. */
+  history?: Record<number, SoyCycle>;
   /** Per-person notification preference (user settings). */
   notifyPrefs: Record<string, NotifyPref>;
   /** The PM-response simulation has run for this PM stage. */

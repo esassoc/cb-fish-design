@@ -1,7 +1,7 @@
 // Pure reads, money math and formatting for the SOY prototype. No DOM, no
 // store — every screen derives what it shows from the state through these.
-import { PROJECTS } from '../../data/soy/seed';
-import type { AmountStage, Project, SoyCycle, SoyItem, StageDates, StageKey } from './types';
+import { ADMIN, PROJECTS } from '../../data/soy/seed';
+import type { AmountStage, PartyRole, Project, SoyCycle, SoyItem, StageDates, StageKey } from './types';
 import { STAGES } from './types';
 
 // ---------------------------------------------------------------------------
@@ -73,7 +73,7 @@ export const project = (item: { projectNumber: string }): Project => PROJECTS[it
 export const amount = (item: SoyItem, k: AmountStage): number | null => item.amounts[k]?.amount ?? null;
 export const transferred = (item: SoyItem): number => item.transfers.reduce((s, t) => s + t.amount, 0);
 export const hasTransfers = (item: SoyItem) => item.transfers.length > 0;
-export const isOffYear = (item: SoyItem) => project(item).cycleType === 'Two-year' && !!project(item).offYear;
+export const isOffYear = (item: SoyItem) => project(item).cycleType === 'Two-year' && !!(item.offYear ?? project(item).offYear);
 export const isTwoYear = (item: SoyItem) => project(item).cycleType === 'Two-year';
 
 export type TransferStatus = 'No final amount' | 'Not transferred' | 'Transferred' | 'Changed after transfer' | 'Partially transferred';
@@ -197,3 +197,51 @@ export function closeChecks(cycle: SoyCycle): CloseCheck[] {
 
 /** "FY28 SOY – Round 1 – 2027-06-01" (DEC 8). */
 export const suggestDecisionName = (fy: number, round: number, date: string) => `${fyShort(fy)} SOY – Round ${round} – ${date}`;
+
+// ---------------------------------------------------------------------------
+// Negotiation — back and forth between EWB, the PM and decision makers
+// ---------------------------------------------------------------------------
+
+export const PARTY_LABEL: Record<PartyRole, string> = { admin: 'Budget administrator', pm: 'Project manager', leader: 'Decision maker' };
+/** Short "with …" form for pills: "Round 2 · with PM". */
+export const PARTY_SHORT: Record<PartyRole, string> = { admin: 'EWB', pm: 'PM', leader: 'decision maker' };
+
+export interface NegotiationState {
+  /** In negotiation right now (open thread, or PM ≠ EWB with no final yet). */
+  active: boolean;
+  /** Had a negotiation that a final amount settled. */
+  resolved: boolean;
+  assignee: string;
+  assigneeRole: PartyRole;
+  round: number;
+  /** PM proposed − EWB proposed. */
+  gap: number | null;
+  /** When the ball last moved (or the PM proposal, if nobody has assigned it yet). */
+  since: string | null;
+}
+
+/**
+ * Where a project's negotiation stands. A project is in negotiation when its
+ * thread is open, or when the PM proposed a different amount from EWB and no
+ * final is set yet — until someone assigns it, the ball sits with the budget
+ * administrator.
+ */
+export function negotiation(item: SoyItem): NegotiationState | null {
+  const n = item.negotiation;
+  const gap = pmDelta(item);
+  const hasFinal = item.amounts.final != null;
+  if (n) {
+    const last = n.thread[n.thread.length - 1];
+    return {
+      active: n.status === 'open' && !hasFinal, resolved: n.status === 'resolved' || hasFinal,
+      assignee: n.assignee, assigneeRole: n.assigneeRole, round: n.round, gap, since: last?.date ?? null,
+    };
+  }
+  if (gap == null || Math.round(gap) === 0 || hasFinal) return null;
+  return { active: true, resolved: false, assignee: ADMIN, assigneeRole: 'admin', round: 1, gap, since: item.amounts.pm?.date ?? null };
+}
+
+export const inNegotiation = (item: SoyItem): boolean => !!negotiation(item)?.active;
+
+/** "Round 2 · with PM". */
+export const negotiationLabel = (n: NegotiationState): string => `Round ${n.round} · with ${PARTY_SHORT[n.assigneeRole]}`;

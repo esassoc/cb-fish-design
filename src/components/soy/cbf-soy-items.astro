@@ -3,7 +3,8 @@
 // All Projects, Remaining, the Customize dialog and the "Bulk set" dialog with
 // one table:
 //
-//   • Saved views (?view=mine|needs|all|changed|variance|two-year). PMs land on
+//   • Saved views (?view=mine|needs|assigned|negotiation|all|changed|variance|
+//     two-year). Decision makers land on "Assigned to me". PMs land on
 //     "Needs my input" when the PM stage has work for them, else "My projects";
 //     budget administrators land on "All items", and for them "Needs input"
 //     means items with no amount in the ACTIVE stage (they have no "my projects").
@@ -102,17 +103,17 @@ import { withBase } from '../../lib/base';
   import '@esa/ecology/esa-select';
   import '@esa/ecology/esa-dialog';
   import type { GridApi } from 'ag-grid-community';
-  import { getState, subscribe, update, isAdmin, isLocked, openItem } from '../../lib/soy/store';
+  import { getState, getUi, subscribe, update, isAdmin, isLeader, isLocked, openItem, userName } from '../../lib/soy/store';
   import { bulkSet, sourceValue, SOURCE_LABEL, type AmountSource } from '../../lib/soy/actions';
-  import { amount, fmtDate, fmtMoney, isTwoYear, needsInput, pmDelta, project, stageDue, stageIndex, transferStatus, variance } from '../../lib/soy/model';
+  import { amount, fmtDate, fmtMoney, isTwoYear, negotiation, needsInput, pmDelta, project, stageDue, stageIndex, transferStatus, variance } from '../../lib/soy/model';
   import { DEMO_PM } from '../../data/soy/seed';
   import { stageLabel, type AmountStage, type SoyItem } from '../../lib/soy/types';
   import { columns, createItemGrid, exportCsv, selectedItems, SELECTION, totalRow, type ColKey, type GridRow } from '../../lib/soy/item-grid';
   import { deltaHtml, esc, moneyHtml, setOptions, snackbar, type Dialog, type Field } from '../../lib/soy/ui';
 
   const srcText = (k: AmountSource) => (k === 'baseline' ? 'baseline' : SOURCE_LABEL[k] ?? '…');
-  type View = 'mine' | 'needs' | 'all' | 'changed' | 'variance' | 'two-year';
-  const VIEWS: View[] = ['mine', 'needs', 'all', 'changed', 'variance', 'two-year'];
+  type View = 'mine' | 'needs' | 'assigned' | 'negotiation' | 'all' | 'changed' | 'variance' | 'two-year';
+  const VIEWS: View[] = ['mine', 'needs', 'assigned', 'negotiation', 'all', 'changed', 'variance', 'two-year'];
 
   const root = document.querySelector<HTMLElement>('[data-soy-items]')!;
   const q = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
@@ -121,7 +122,7 @@ import { withBase } from '../../lib/base';
   const sourceEl = q<Field>('[data-items-source]');
   const api: GridApi<GridRow> = createItemGrid(q('[data-items-grid]'));
 
-  const KEYS: ColKey[] = ['number', 'title', 'emphasis', 'fund', 'pm', 'priorWorking', 'priorBaseline', 'baseline', 'ewb', 'pmAmt', 'diff', 'final', 'transferred', 'status', 'flags'];
+  const KEYS: ColKey[] = ['number', 'title', 'emphasis', 'fund', 'pm', 'priorWorking', 'priorBaseline', 'baseline', 'ewb', 'pmAmt', 'diff', 'negotiation', 'assignee', 'final', 'transferred', 'status', 'flags'];
 
   // The view: ?view= wins, else a role default chosen on first render.
   let view: View | null = (() => {
@@ -141,6 +142,8 @@ import { withBase } from '../../lib/base';
     switch (v) {
       case 'mine': return mine;
       case 'needs': return isAdmin() ? needsInput(i, s.cycle.stage) : mine && s.cycle.stage === 'pm' && needsInput(i, 'pm');
+      case 'assigned': { const n = negotiation(i); return !!n?.active && n.assignee === userName(); }
+      case 'negotiation': return !!negotiation(i)?.active;
       case 'all': return true;
       case 'changed': return (pmDelta(i) ?? 0) !== 0;
       case 'variance': return Math.round(variance(i)) !== 0 || ['Changed after transfer', 'Partially transferred'].includes(transferStatus(i));
@@ -150,12 +153,13 @@ import { withBase } from '../../lib/base';
 
   function defaultView(): View {
     if (isAdmin()) return 'all';
+    if (isLeader()) return 'assigned';
     const items = getState().cycle.items;
     return items.some((i) => matches('needs', i)) ? 'needs' : 'mine';
   }
 
   const VIEW_LABEL: Record<View, string> = {
-    mine: 'My projects', needs: 'Needs my input', all: 'All projects', changed: 'Changed vs EWB', variance: 'Variance', 'two-year': 'Two-year',
+    mine: 'My projects', needs: 'Needs my input', assigned: 'Assigned to me', negotiation: 'In negotiation', all: 'All projects', changed: 'Changed vs EWB', variance: 'Variance', 'two-year': 'Two-year',
   };
 
   function viewNote(v: View): string {
@@ -165,6 +169,8 @@ import { withBase } from '../../lib/base';
       return c.stage === 'pm' ? `Your projects with no PM proposal yet. Due ${fmtDate(stageDue(c.dates, 'pm'))}.` : `PM input opens ${fmtDate(c.dates.pm)}.`;
     }
     if (v === 'mine') return `Projects where you are the BPA PM (${DEMO_PM}).`;
+    if (v === 'assigned') return 'Projects in negotiation where you have the next step. Open one to see the back and forth, make your call, comment and assign it on.';
+    if (v === 'negotiation') return 'Projects where EWB and the PM haven’t agreed yet: the round, who has the next step, and the gap (PM − EWB). Setting the final amount settles one.';
     if (v === 'changed') return 'Projects where the PM proposed a different amount from EWB.';
     if (v === 'variance') return 'Projects whose final amount differs from what was transferred. Reconcile them on Transfers.';
     if (v === 'two-year') return 'Two-year projects. On-year projects show the suggested amount (annual × 2, plus inflation); off-year projects are $0 automatically.';
@@ -175,7 +181,7 @@ import { withBase } from '../../lib/base';
     const s = getState();
     const c = s.cycle;
     const admin = isAdmin();
-    const role = admin ? 'admin' : 'pm';
+    const role = getUi().role;
     if (lastRole !== role) {
       // A role switch resets to that role's landing view (unless the URL chose one first).
       if (lastRole !== null || !view || (admin && view === 'mine')) view = defaultView();
@@ -189,7 +195,9 @@ import { withBase } from '../../lib/base';
     if (draft) return;
 
     // Views with counts. Admins have no "my projects"; their "needs" is the active stage's.
-    const shown: View[] = admin ? ['needs', 'all', 'changed', 'variance', 'two-year'] : VIEWS;
+    const shown: View[] = admin ? ['needs', 'assigned', 'negotiation', 'all', 'changed', 'variance', 'two-year']
+      : isLeader() ? ['assigned', 'negotiation', 'all', 'changed', 'variance', 'two-year'] : VIEWS;
+    if (!shown.includes(view!)) view = defaultView();
     const label = (v: View) => (v === 'needs' && admin ? 'Needs input' : VIEW_LABEL[v]);
     setOptions(viewsEl, shown.map((v) => ({ value: v, label: `${label(v)} (${c.items.filter((i) => matches(v, i)).length})` })), view!);
     q('[data-items-view-note]').textContent = viewNote(view!);
@@ -266,6 +274,8 @@ import { withBase } from '../../lib/base';
     const skips: { i: SoyItem; reason: string }[] = [];
     for (const i of sel) {
       if (st === 'final' && i.transfers.length) { skips.push({ i, reason: 'Already transferred — change it from the project' }); continue; }
+      const neg = st === 'final' ? negotiation(i) : null;
+      if (neg?.active) { skips.push({ i, reason: `In negotiation — with ${neg.assignee}` }); continue; }
       const r = sourceValue(i, source);
       if (r.value == null) skips.push({ i, reason: r.reason ?? 'No amount' });
       else writes.push({ i, v: r.value });

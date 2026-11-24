@@ -8,12 +8,18 @@
 import {
   ADMIN, DEMO_PM, LATE_PMS, NEW_PROJECTS, PRIOR_ITEMS, PROJECTS, STORY_DATES, WALKTHROUGH_NEW, seedState,
 } from '../../data/soy/seed';
+import { PAST_CYCLES } from '../../data/soy/seed';
+import { generatedCycle, summarize } from '../../data/soy/history';
 import {
   addDays, amount, fmtMoney, hasTransfers, isOffYear, isTwoYear, nextStage, project, stageDue,
   suggestDecisionName, transferred, twoYearSuggestion,
 } from './model';
 import type { AmountStage, SetupReport, SoyItem, SoyState, StageDates, StageKey } from './types';
 import { stageLabel } from './types';
+
+import { ADMIN_TEAM, LEADERS } from '../../data/soy/seed';
+import { negotiation } from './model';
+import type { Negotiation, NegotiationEntry, PartyRole } from './types';
 
 let seq = 0;
 const uid = (p: string) => `${p}-${Date.now().toString(36)}-${(seq++).toString(36)}`;
@@ -40,6 +46,8 @@ export interface SetupInput {
   colaRate: number;
   /** Items the COLA is applied to (from the filtered table). */
   colaIds: string[];
+  /** The administrator's comment on the COLA — kept on the setup report and on each project it applies to. */
+  colaComment: string;
 }
 
 /** What the setup run will do — used by the COLA preview and the review step, then by runSetup. */
@@ -47,7 +55,7 @@ export function planSetup(input: SetupInput): { items: SoyItem[]; report: SetupR
   const cola = new Set(input.colaIds);
   const items: SoyItem[] = [];
   const report: SetupReport = {
-    carried: 0, excluded: [], added: [], colaRate: input.colaRate, colaApplied: 0,
+    carried: 0, excluded: [], added: [], colaRate: input.colaRate, colaApplied: 0, colaComment: input.colaComment.trim() || undefined,
     colaSkippedOffYear: [], colaSkippedNoBaseline: [], twoYearFlagged: [], totalBaseline: 0,
   };
   const carry = new Set(input.carryIds);
@@ -79,6 +87,7 @@ export function planSetup(input: SetupInput): { items: SoyItem[]; report: SetupR
     items.push({
       id: c.id, projectNumber: c.projectNumber, fund: c.fund, accountType: 'Expense',
       priorWorking: c.priorWorking, priorBaseline: c.priorBaseline, baseline, cola: applied,
+      colaComment: applied != null ? input.colaComment.trim() || undefined : undefined,
       amounts: {}, transfers: [], followUp: false, notify: true,
     });
     report.carried++;
@@ -108,7 +117,7 @@ export function runSetup(s: SoyState, input: SetupInput): SetupReport {
   s.cycle.stage = 'ewb';
   log(s, {
     who: ADMIN, kind: 'setup', stage: 'ewb',
-    text: `Ran setup: carried forward ${report.carried} projects, added ${report.added.length} new projects, applied a ${(report.colaRate * 100).toFixed(1)}% COLA to ${report.colaApplied} projects. EWB proposed is open.`,
+    text: `Ran setup: carried forward ${report.carried} projects, added ${report.added.length} new projects, applied a ${(report.colaRate * 100).toFixed(1)}% COLA to ${report.colaApplied} projects${report.colaComment ? ` (“${report.colaComment}”)` : ''}. EWB proposed is open.`,
   });
   return report;
 }
@@ -122,6 +131,7 @@ export function defaultSetupInput(s: SoyState): SetupInput {
     newIds: [],
     colaRate: 0.025,
     colaIds: PRIOR_ITEMS.filter((c) => !c.excludeReason && c.fund === 'Program').map((c) => c.id),
+    colaComment: '',
   };
 }
 
@@ -153,6 +163,9 @@ export function bulkSet(s: SoyState, ids: string[], stage: AmountStage, source: 
   for (const item of s.cycle.items) {
     if (!set.has(item.id)) continue;
     if (stage === 'final' && hasTransfers(item)) { report.skipped.push({ id: item.id, reason: 'Already transferred — change it from the project' }); continue; }
+    // A bulk set never settles a negotiation behind its participants' backs.
+    const neg = stage === 'final' ? negotiation(item) : null;
+    if (neg?.active) { report.skipped.push({ id: item.id, reason: `In negotiation — with ${neg.assignee}` }); continue; }
     const { value, reason } = sourceValue(item, source);
     if (value == null) { report.skipped.push({ id: item.id, reason: reason! }); continue; }
     item.amounts[stage] = { amount: value, by: who, date: s.today, rationale: isOffYear(item) ? 'Two-year project in its off year — $0 set automatically.' : rationale };
@@ -180,6 +193,7 @@ export function setAmount(s: SoyState, id: string, stage: AmountStage, value: nu
     cat = true;
   }
   item.amounts[stage] = { amount: value, by: who, date: s.today, rationale };
+  if (stage === 'final') resolveNegotiation(s, item, value, rationale, who);
   log(s, {
     who, kind: cat ? 'change-after-transfer' : 'amount', stage, itemId: id, amount: value,
     text: cat
@@ -196,6 +210,94 @@ export function addComment(s: SoyState, id: string, text: string, who: string) {
 export function setItemFlag(s: SoyState, id: string, patch: Partial<Pick<SoyItem, 'followUp' | 'notify'>>) {
   const item = s.cycle.items.find((i) => i.id === id);
   if (item) Object.assign(item, patch);
+}
+
+// ---------------------------------------------------------------------------
+// Negotiation — revised proposals, comments and assignments
+// ---------------------------------------------------------------------------
+
+/** Who can be handed the ball on a project: its PM, the budget team, decision makers. */
+export function assignees(item: SoyItem): { name: string; role: PartyRole }[] {
+  return [
+    { name: project(item).pm, role: 'pm' as PartyRole },
+    ...ADMIN_TEAM.map((name) => ({ name, role: 'admin' as PartyRole })),
+    ...LEADERS.map((name) => ({ name, role: 'leader' as PartyRole })),
+  ];
+}
+
+/** The open thread for a project, started from its EWB and PM proposals if it has none yet. */
+function openThread(s: SoyState, item: SoyItem): Negotiation {
+  if (item.negotiation && item.negotiation.status === 'open') return item.negotiation;
+  const thread: NegotiationEntry[] = item.negotiation?.thread ?? [];
+  if (!thread.length) {
+    const e = item.amounts.ewb;
+    const p = item.amounts.pm;
+    if (e) thread.push({ id: uid('n'), date: e.date, who: e.by, whoRole: 'admin', kind: 'proposal', stage: 'ewb', amount: e.amount, text: e.rationale });
+    if (p) thread.push({ id: uid('n'), date: p.date, who: p.by, whoRole: 'pm', kind: 'proposal', stage: 'pm', amount: p.amount, text: p.rationale });
+  }
+  item.negotiation = { assignee: ADMIN, assigneeRole: 'admin', round: Math.max(1, item.negotiation?.round ?? 1), status: 'open', thread };
+  void s;
+  return item.negotiation;
+}
+
+export interface NegotiationResult { ok: boolean; error?: string }
+
+/** A revised EWB (budget team) or PM proposal: updates the stage amount and adds a round. */
+export function reviseProposal(
+  s: SoyState, id: string, stage: 'ewb' | 'pm', value: number, text: string, who: string, whoRole: PartyRole,
+  assignTo?: { name: string; role: PartyRole },
+): NegotiationResult {
+  const item = s.cycle.items.find((i) => i.id === id);
+  if (!item) return { ok: false, error: 'Project not found' };
+  if (s.cycle.status === 'Closed') return { ok: false, error: 'This cycle is closed.' };
+  if (!text.trim()) return { ok: false, error: 'Add a comment that explains the revised amount.' };
+  const n = openThread(s, item);
+  const prior = amount(item, stage);
+  item.amounts[stage] = { amount: value, by: who, date: s.today, rationale: text.trim() };
+  n.round++;
+  n.thread.push({ id: uid('n'), date: s.today, who, whoRole, kind: 'proposal', stage, amount: value, text: text.trim() });
+  log(s, {
+    who, kind: 'amount', stage, itemId: id, amount: value,
+    text: `Revised ${stageLabel(stage)}: ${fmtMoney(prior)} → ${fmtMoney(value)} (round ${n.round}). ${text.trim()}`,
+  });
+  if (assignTo) handOff(s, item, n, assignTo, '', who, whoRole);
+  return { ok: true };
+}
+
+function handOff(s: SoyState, item: SoyItem, n: Negotiation, to: { name: string; role: PartyRole }, text: string, who: string, whoRole: PartyRole) {
+  n.assignee = to.name;
+  n.assigneeRole = to.role;
+  n.thread.push({ id: uid('n'), date: s.today, who, whoRole, kind: 'assign', to: to.name, toRole: to.role, text });
+  log(s, { who, kind: 'comment', stage: s.cycle.stage ?? undefined, itemId: item.id, text: `Assigned to ${to.name}.${text ? ` ${text}` : ''}` });
+}
+
+/** Comment and hand the ball to the next person. The comment is required — it says what they need to do. */
+export function assignNegotiation(s: SoyState, id: string, to: { name: string; role: PartyRole }, text: string, who: string, whoRole: PartyRole): NegotiationResult {
+  const item = s.cycle.items.find((i) => i.id === id);
+  if (!item) return { ok: false, error: 'Project not found' };
+  if (s.cycle.status === 'Closed') return { ok: false, error: 'This cycle is closed.' };
+  if (!text.trim()) return { ok: false, error: 'Add a comment that tells them what you need.' };
+  handOff(s, item, openThread(s, item), to, text.trim(), who, whoRole);
+  return { ok: true };
+}
+
+/** A note on the thread that leaves the ball where it is. */
+export function commentNegotiation(s: SoyState, id: string, text: string, who: string, whoRole: PartyRole): NegotiationResult {
+  const item = s.cycle.items.find((i) => i.id === id);
+  if (!item) return { ok: false, error: 'Project not found' };
+  if (!text.trim()) return { ok: false, error: 'Write a comment.' };
+  const n = openThread(s, item);
+  n.thread.push({ id: uid('n'), date: s.today, who, whoRole, kind: 'comment', text: text.trim() });
+  log(s, { who, kind: 'comment', stage: s.cycle.stage ?? undefined, itemId: id, text: text.trim() });
+  return { ok: true };
+}
+
+/** Setting a final amount settles an open negotiation. */
+function resolveNegotiation(s: SoyState, item: SoyItem, value: number, rationale: string, who: string) {
+  const n = item.negotiation;
+  if (!n || n.status !== 'open') return;
+  n.status = 'resolved';
+  n.thread.push({ id: uid('n'), date: s.today, who, whoRole: 'admin', kind: 'resolved', stage: 'final', amount: value, text: rationale });
 }
 
 // ---------------------------------------------------------------------------
@@ -326,14 +428,32 @@ export function reopenCycle(s: SoyState, reason: string, who = ADMIN) {
   log(s, { who, kind: 'close', stage: s.cycle.stage ?? undefined, text: `Reopened the FY${s.cycle.fy} SOY. Reason: ${reason}` });
 }
 
-export function closePastCycle(s: SoyState, fy: number) {
-  const c = s.pastCycles.find((x) => x.fy === fy);
-  if (!c) return;
-  c.status = 'Closed';
-  c.stage = 'complete';
-  c.transferred = c.final;
-  c.varianceItems = 0;
-  c.blockers = [];
+/**
+ * Close a past open year from All cycles / Close-out: confirm $0 for projects
+ * with no final amount, reconcile every variance and untransferred final in
+ * one closing round, then lock it. Works on the year's project-level data so
+ * the year itself (fiscal-year picker) shows the same result.
+ */
+export function closePastCycle(s: SoyState, fy: number, who = ADMIN) {
+  // Viewing that year already? Then s.cycle is the working copy (the store keeps it).
+  const src = s.cycle.fy === fy ? s.cycle : s.history?.[fy] ?? generatedCycle(fy);
+  if (!src) return;
+  const c = src === s.cycle ? s.cycle : structuredClone(src);
+  const view: SoyState = { ...s, cycle: c };
+  for (const i of c.items) {
+    if (!i.amounts.final) i.amounts.final = { amount: 0, by: who, date: s.today, rationale: 'Confirmed $0 at close-out.' };
+  }
+  const ids = c.items.filter((i) => Math.round(transferable(i)) !== 0).map((i) => i.id);
+  if (ids.length) {
+    const round = c.decisions.length + 1;
+    makeTransfers(view, ids, {
+      name: suggestDecisionName(fy, round, s.today), description: `FY${fy} SOY close-out reconciliation.`,
+      rationale: 'Reconciles final and transferred amounts so the year can close.', bpaComments: '',
+    }, who);
+  }
+  closeCycle(view, who);
+  s.history = { ...(s.history ?? {}), [fy]: c };
+  s.pastCycles = s.pastCycles.map((p) => (p.fy === fy ? summarize(c) : p));
 }
 
 // ---------------------------------------------------------------------------
@@ -347,13 +467,101 @@ const HAND_EWB: Record<number, [number, string]> = {
   3: [410_000, 'New project — first-year amount from the approved proposal.'],
 };
 
+const k1 = (n: number) => Math.round(n / 1000) * 1000;
+
+/**
+ * Step 5's negotiations: projects at different points of the back and forth,
+ * each with a thread and someone holding the ball. Returns the final amount
+ * each one settles at in step 6.
+ */
+function seedNegotiations(s: SoyState): Map<string, [number, string]> {
+  const at = (date: string, fn: () => void) => { const t = s.today; s.today = date; fn(); s.today = t; };
+  const late = new Set(LATE_PMS);
+  const used = new Set<string>();
+  const pool = s.cycle.items.filter((i) => {
+    const p = project(i);
+    const e = amount(i, 'ewb') ?? 0;
+    return i.amounts.pm && p.pm !== DEMO_PM && !late.has(p.pm) && !isTwoYear(i) && !i.isNew && e > 350_000 && e < 2_000_000;
+  });
+  const next = () => {
+    const i = pool.find((x) => !used.has(project(x).pm))!;
+    used.add(project(i).pm);
+    return i;
+  };
+  const setPm = (i: SoyItem, value: number, why: string, date: string) => { i.amounts.pm = { amount: value, by: project(i).pm, date, rationale: why }; };
+  const [morgan, reese] = ADMIN_TEAM;
+  const [dana, lee] = LEADERS;
+  const finals = new Map<string, [number, string]>();
+
+  // A — EWB $461K vs PM $500K: EWB sends it to the PM to get leadership approval; the PM comes back agreed.
+  const a = next();
+  const aPm = project(a).pm;
+  a.amounts.ewb = { amount: 461_000, by: morgan, date: s.cycle.dates.ewb, rationale: 'FY2028 baseline, including COLA.' };
+  setPm(a, 500_000, 'Adds the second smolt trap season the co-managers asked for.', '2027-04-20');
+  at('2027-04-28', () => assignNegotiation(s, a.id, { name: aPm, role: 'pm' }, 'The extra $39K is more than we can cover in the base. Please take it to Dana Whitcomb for approval and let us know.', morgan, 'admin'));
+  at('2027-05-06', () => assignNegotiation(s, a.id, { name: morgan, role: 'admin' }, 'Discussed with Dana Whitcomb — approved at the May 5 leadership meeting. Agreed: $500K is the final budget.', aPm, 'pm'));
+  finals.set(a.id, [500_000, 'Approved by Dana Whitcomb at the May 5 leadership meeting.']);
+
+  // B — with a decision maker.
+  const b = next();
+  const bE = amount(b, 'ewb')!;
+  setPm(b, k1(bE * 1.11), 'Adds a rotary screw trap so we can count juveniles above the new weir.', '2027-04-22');
+  at('2027-04-30', () => assignNegotiation(s, b.id, { name: dana, role: 'leader' }, `Fits the RM and E priority, but there is no room in the base for the ${fmtMoney(k1(bE * 1.11) - bE)}. Needs a leadership call.`, morgan, 'admin'));
+  finals.set(b.id, [k1(bE * 1.055), 'Decision makers approved half of the requested increase.']);
+
+  // C — round 3: EWB revised, the PM revised, back with EWB.
+  const c = next();
+  const cE = amount(c, 'ewb')!;
+  setPm(c, k1(cE * 1.12), 'Covers the screen maintenance and a new seasonal crew.', '2027-04-16');
+  at('2027-04-24', () => reviseProposal(s, c.id, 'ewb', k1(cE * 1.04), 'We can cover the screen maintenance, not the new crew.', reese, 'admin', { name: project(c).pm, role: 'pm' }));
+  at('2027-05-02', () => reviseProposal(s, c.id, 'pm', k1(cE * 1.07), 'We can live with this if the crew starts in July instead of April.', project(c).pm, 'pm', { name: reese, role: 'admin' }));
+  finals.set(c.id, [k1(cE * 1.07), 'Agreed in round 3 — the crew starts in July.']);
+
+  // D — Casey's +$85K PIT array: EWB asks Casey to phase it.
+  const d = caseyMonitoring(s);
+  const dE = amount(d, 'ewb')!;
+  at('2027-05-01', () => assignNegotiation(s, d.id, { name: DEMO_PM, role: 'pm' }, 'Can the second PIT array be phased? We can fund phase 1 this year if you can split it.', morgan, 'admin'));
+  finals.set(d.id, [dE + 40_000, 'Phase 1 of the second PIT array funded; phase 2 next year.']);
+
+  // E — with the other decision maker.
+  const e = next();
+  const eE = amount(e, 'ewb')!;
+  setPm(e, k1(eE * 1.08), 'The landowner raised the lease rate for the acclimation site.', '2027-04-25');
+  at('2027-05-03', () => assignNegotiation(s, e.id, { name: lee, role: 'leader' }, 'The sponsor needs the lease increase. Your call — it sets a precedent for the other leases.', reese, 'admin'));
+  finals.set(e.id, [k1(eE * 1.08), 'Decision makers approved the lease increase.']);
+
+  // F — a decision maker declined and handed it back to EWB.
+  const f = next();
+  const fE = amount(f, 'ewb')!;
+  setPm(f, k1(fE * 1.15), 'Expands the riparian planting to the second reach.', '2027-04-18');
+  at('2027-04-29', () => assignNegotiation(s, f.id, { name: dana, role: 'leader' }, 'Second-reach planting is new scope. Can we fund it this year?', morgan, 'admin'));
+  at('2027-05-05', () => assignNegotiation(s, f.id, { name: morgan, role: 'admin' }, 'Not this year — hold at EWB proposed and revisit at mid-year review.', dana, 'leader'));
+  finals.set(f.id, [fE, 'Held at EWB proposed per the May 5 leadership decision; revisit at mid-year review.']);
+
+  // G — EWB met the PM halfway; the PM holds the ball (round 2).
+  const g = next();
+  const gE = amount(g, 'ewb')!;
+  const gHalf = k1(gE * 1.05);
+  setPm(g, k1(gE * 1.1), 'Replaces two failing PIT antennas before the spring run.', '2027-04-21');
+  at('2027-05-04', () => reviseProposal(s, g.id, 'ewb', gHalf, 'We can meet you halfway. Does this work?', reese, 'admin', { name: project(g).pm, role: 'pm' }));
+  finals.set(g.id, [gHalf, 'Agreed at the revised EWB proposed amount.']);
+
+  return finals;
+}
+
+/** Casey's monitoring project — the one whose PM proposal asks for a second PIT tag array. */
+const caseyMonitoring = (s: SoyState) => s.cycle.items.find((i) => project(i).pm === DEMO_PM && project(i).emphasis === 'RM and E')!;
+
 export function buildPreset(step: number): SoyState {
   const s = seedState();
+  // All cycles rows come from each past year's project-level data.
+  s.pastCycles = PAST_CYCLES.map((p) => summarize(generatedCycle(p.fy)!));
   if (step <= 2) return s;
 
   // Step 2 done: setup with the walkthrough's choices.
   const input = defaultSetupInput(s);
   input.newIds = [...WALKTHROUGH_NEW];
+  input.colaComment = '2.5% per BPA’s FY2028 planning guidance. Program-fund projects only; two-year projects get the on-year suggestion instead.';
   runSetup(s, input);
   s.today = STORY_DATES.ewb;
   if (step === 3) return s;
@@ -377,16 +585,18 @@ export function buildPreset(step: number): SoyState {
   const casey = s.cycle.items.filter((i) => project(i).pm === DEMO_PM);
   casey.forEach((i, k) => {
     const ewb = amount(i, 'ewb') ?? 0;
-    if (k === 1) setAmount(s, i.id, 'pm', ewb + 85_000, 'Adds a second PIT tag array on the lower mainstem so we can separate the two populations.', DEMO_PM);
+    if (i === caseyMonitoring(s)) setAmount(s, i.id, 'pm', ewb + 85_000, 'Adds a second PIT tag array on the lower mainstem so we can separate the two populations.', DEMO_PM);
     else setAmount(s, i.id, 'pm', ewb, 'Agree with EWB proposed.', DEMO_PM);
   });
   simulatePmResponses(s);
+  const negotiated = seedNegotiations(s);
   // Two days before PM proposed is due: the admin is about to open Final budget.
   s.today = '2027-05-07';
   if (step === 5) return s;
 
-  // Step 5 done: Final budget — from PM proposed where agreed, by hand where decision makers differed.
+  // Step 5 done: Final budget — the negotiations settle first, then PM proposed where agreed, by hand where decision makers differed.
   advanceStage(s, true);
+  for (const [id, [value, why]] of negotiated) setAmount(s, id, 'final', value, why, ADMIN);
   const agreed = s.cycle.items.filter((i) => i.amounts.pm && i.amounts.pm.amount === i.amounts.ewb?.amount).map((i) => i.id);
   bulkSet(s, agreed, 'final', 'pm', 'Agreed amount — PM proposed matches EWB proposed.');
   const noPm = s.cycle.items.filter((i) => !i.amounts.pm).map((i) => i.id);

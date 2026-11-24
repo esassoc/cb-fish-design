@@ -9,7 +9,7 @@
 // invented — none is copied from QA or Gemini.
 import type { CarryCandidate, Emphasis, Fund, PastCycle, Project, SoyState } from '../../lib/soy/types';
 
-export const SEED_VERSION = 3;
+export const SEED_VERSION = 4;
 
 // ---------------------------------------------------------------------------
 // People (invented)
@@ -39,6 +39,11 @@ export const PMS = [
 
 /** PMs who are still outstanding when the PM-response simulation runs. */
 export const LATE_PMS = ['Theo Barrington', 'Nadia Petrova', 'Sam Whitaker', 'Kai Holloway'];
+
+/** Decision makers (BPA F&W leadership) who can be assigned a call on a project in negotiation. */
+export const LEADERS = ['Dana Whitcomb', 'Lee Castellano'];
+/** The decision maker the "Decision maker" lens signs in as. */
+export const DEMO_LEADER = 'Dana Whitcomb';
 
 // ---------------------------------------------------------------------------
 // PRNG
@@ -142,7 +147,7 @@ function projectTitle(emphasis: Emphasis): string {
 
 export const PROJECTS: Record<string, Project> = {};
 
-function makeProject(pm: string, opts: Partial<Project> = {}, years?: [number, number]): Project {
+export function makeProject(pm: string, opts: Partial<Project> = {}, years?: [number, number]): Project {
   const emphasis = opts.emphasis ?? pickEmphasis();
   const p: Project = {
     number: projectNumber(...(years ?? [1982, 2021])),

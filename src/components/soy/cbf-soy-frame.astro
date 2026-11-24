@@ -4,6 +4,10 @@
 // lens) → app panel (breadcrumbs) → title + cycle status → sub-nav
 // (cbf-report-tabs) → locked banner → the page's sections in the default slot.
 //
+// The fiscal-year picker beside the title switches every SOY screen to a past
+// year (FY2014–2027), the way CBFish does today. The choice sticks across tabs
+// until changed; a banner says a past year is on screen with a way back.
+//
 // It also mounts what every SOY screen's client code needs: the pill/button
 // templates, the item side panel (opened from any screen with openItem()), the
 // changes layer and the snackbar container.
@@ -93,11 +97,20 @@ const stepOptions = [
 
       <CbfAppPanel crumbs={crumbs}>
         <div class="cbf-soy-frame__head repel">
-          <CbfPageHeading title={`FY2028 SOY: ${title}`} />
-          <div class="cluster" data-gap="xs" data-soy-cycle-pills></div>
+          <CbfPageHeading title={`FY2028 SOY: ${title}`} data-soy-heading data-soy-title={title} />
+          <div class="cbf-soy-frame__fy-wrap cluster" data-gap="sm" data-change="gl-fy">
+            <esa-select class="cbf-soy-frame__fy" size="sm" label="Fiscal year" data-soy-fy></esa-select>
+            <div class="cluster" data-gap="xs" data-soy-cycle-pills></div>
+          </div>
         </div>
         <div data-change="gl-nav">
           <CbfReportTabs tabs={tabs} ariaLabel="Start-of-year sections" />
+        </div>
+        <div data-soy-past hidden>
+          <EsaAlertBox variant="info" title="Viewing a past year">
+            <span data-soy-past-text></span>
+            <span class="cbf-soy-frame__past-back"><EsaButton size="sm" variant="secondary" appearance="outline" icon="arrow-left" data-soy-fy-back>Back to FY2028</EsaButton></span>
+          </EsaAlertBox>
         </div>
         <div data-soy-locked hidden data-change="gl-locked">
           <EsaAlertBox variant="warning" title="Cycle closed">
@@ -130,11 +143,11 @@ const stepOptions = [
     import '@esa/ecology/esa-snackbar-container';
     import '@esa/ecology/esa-select';
     import '@esa/ecology/esa-switch-toggle';
-    import { getState, getUi, isAdmin, loadStep, resetDemo, setUi, subscribe, update } from '../../lib/soy/store';
+    import { currentFy, getCurrentState, getState, getUi, isAdmin, isPastYear, loadStep, resetDemo, setFy, setUi, subscribe, update } from '../../lib/soy/store';
     import { simulatePmResponses } from '../../lib/soy/actions';
     import { fmtDate } from '../../lib/soy/model';
     import { stageLabel } from '../../lib/soy/types';
-    import { pill, snackbar, STAGE_VARIANT, type Field } from '../../lib/soy/ui';
+    import { pill, setOptions, snackbar, STAGE_VARIANT, type Field } from '../../lib/soy/ui';
 
     const $ = <T extends Element = HTMLElement>(sel: string) => document.querySelector<T>(sel);
     const step = $<Field>('[data-soy-step]');
@@ -157,6 +170,14 @@ const stepOptions = [
       snackbar('success', 'Fast-forwarded to May 4: most PMs have responded, and the automatic reminder went to the four who have not.');
     });
     toggle?.addEventListener('change', () => setUi({ changes: !!toggle.checked }));
+    const fyPick = $<Field>('[data-soy-fy]');
+    fyPick?.addEventListener('change', () => {
+      const fy = Number(fyPick.value);
+      if (fy && fy !== getState().cycle.fy) setFy(fy);
+    });
+    $('[data-soy-fy-back]')?.addEventListener('click', () => setFy(null));
+    const heading = $('[data-soy-heading]');
+    const pageTitle = heading?.dataset.soyTitle ?? '';
     $('[data-soy-changes-open]')?.addEventListener('click', () => document.dispatchEvent(new CustomEvent('cbf-soy:open-changes')));
 
     subscribe(() => {
@@ -166,14 +187,34 @@ const stepOptions = [
       if (toggle && !!toggle.checked !== ui.changes) toggle.checked = ui.changes;
       if (step) step.value = ui.step ? String(ui.step) : '';
       $('[data-soy-today]')!.textContent = `Demo date: ${fmtDate(s.today)}`;
-      simulateWrap.hidden = !(c.status === 'Open' && c.stage === 'pm' && !s.pmResponsesSimulated);
+      simulateWrap.hidden = isPastYear() || !(c.status === 'Open' && c.stage === 'pm' && !s.pmResponsesSimulated);
+
+      // Fiscal-year picker: the current cycle first, then every past year with its status.
+      const cur = getCurrentState().cycle;
+      const yearOptions = [
+        { value: String(cur.fy), label: `FY${cur.fy} · ${cur.status === 'Open' ? stageLabel(cur.stage) : cur.status} (current)` },
+        ...[...s.pastCycles].sort((a, b) => b.fy - a.fy).map((p) => ({ value: String(p.fy), label: `FY${p.fy} · ${p.status === 'Open' ? `Open, ${stageLabel(p.stage).toLowerCase()}` : p.status}` })),
+      ];
+      setOptions(fyPick, yearOptions, String(c.fy));
+      if (heading) heading.textContent = `FY${c.fy} SOY: ${pageTitle}`;
+      document.title = document.title.replace(/^FY\d{4} SOY/, `FY${c.fy} SOY`);
+      document.documentElement.toggleAttribute('data-cbf-soy-past', isPastYear());
+      const past = $('[data-soy-past]')!;
+      past.hidden = !isPastYear();
+      if (isPastYear()) {
+        $('[data-soy-past-text]')!.textContent = c.status === 'Closed'
+          ? `You're looking at FY${c.fy}, closed on ${fmtDate(c.closedOn)}. Every tab shows FY${c.fy} until you change the fiscal year.`
+          : `You're looking at FY${c.fy}. It is still open at ${stageLabel(c.stage)}, so budget administrators can still reconcile and close it. Every tab shows FY${c.fy} until you change the fiscal year.`;
+        const back = $('[data-soy-fy-back] .esa-button__label') ?? $('[data-soy-fy-back]');
+        if (back) back.textContent = `Back to FY${currentFy()}`;
+      }
 
       const pills = [pill(c.status === 'Open' ? 'Open' : c.status, c.status === 'Closed' ? 'success' : c.status === 'Draft' ? 'default' : 'primary')];
       if (c.stage && c.status !== 'Draft') pills.push(pill(stageLabel(c.stage), STAGE_VARIANT[c.stage]));
       $('[data-soy-cycle-pills]')!.innerHTML = pills.join('');
 
       const locked = $('[data-soy-locked]')!;
-      locked.hidden = c.status !== 'Closed';
+      locked.hidden = c.status !== 'Closed' || isPastYear();
       if (c.status === 'Closed') $('[data-soy-locked-text]')!.textContent = `FY${c.fy} was closed on ${fmtDate(c.closedOn)}. Amounts are locked for everyone, budget administrators included. Reopen it from Close-out with a reason.`;
 
       // PMs don't see admin-only tabs or screens.
@@ -199,6 +240,9 @@ const stepOptions = [
   .cbf-soy-frame__today { font-size: 14px; font-weight: var(--typography-font-weight-semibold); color: var(--color-content-default); }
   .cbf-soy-frame__step { min-inline-size: 16rem; }
   .cbf-soy-frame__changes { align-items: center; }
+  .cbf-soy-frame__fy-wrap { align-items: end; }
+  .cbf-soy-frame__fy { min-inline-size: 15rem; }
+  .cbf-soy-frame__past-back { display: block; margin-block-start: var(--spacing-200); }
   .cbf-page :global(.cbf-app-panel) { overflow: visible; }
 </style>
 

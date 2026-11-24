@@ -85,6 +85,9 @@
         const r = el.getBoundingClientRect();
         if (r.width === 0 && r.height === 0) return;
         if (el.closest('dialog, esa-dialog, esa-side-dialog')) return;
+        // Grid cells scrolled out of view sideways: mark the next one that's on screen instead.
+        const maxLeft = document.documentElement.clientWidth - 28;
+        if (r.left > maxLeft) return;
         placed.add(id);
         const b = document.createElement('button');
         b.type = 'button';
@@ -92,7 +95,7 @@
         b.textContent = String(ids.indexOf(id) + 1);
         b.title = CHANGES[id].title;
         b.setAttribute('aria-label', `Change ${ids.indexOf(id) + 1}: ${CHANGES[id].title}`);
-        b.style.left = `${Math.max(4, r.left + window.scrollX - 12)}px`;
+        b.style.left = `${Math.min(maxLeft + window.scrollX, Math.max(4, r.left + window.scrollX - 12))}px`;
         b.style.top = `${Math.max(4, r.top + window.scrollY - 12)}px`;
         b.addEventListener('click', () => openAt(id));
         layer.append(b);

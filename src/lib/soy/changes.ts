@@ -48,6 +48,12 @@ export const CHANGES: Record<string, Change> = {
     now: 'A closed cycle shows a locked banner everywhere and every edit control is disabled, for admins too.',
     problems: ['P7'], tags: ['BE', 'DEC'], dec: 2,
   },
+  'gl-fy': {
+    title: 'Fiscal-year picker on every tab',
+    before: 'Each SOY page has its own fiscal-year selector for reviewing past years.',
+    now: 'One picker beside the title, listing every year with its status. The choice carries across tabs, a banner says when a past year is on screen, and open past years can still be reconciled and closed from their own tabs. Closed years are read only.',
+    problems: ['P7', 'P8'], tags: ['UI'],
+  },
 
   // --- 4.1 Cycle overview ------------------------------------------------------
   'ov-tracker': {
@@ -85,6 +91,19 @@ export const CHANGES: Record<string, Change> = {
     before: '"My Projects" was empty for non-PMs and showed every stage’s columns to PMs.',
     now: 'A PM lands on how many of their projects need input, by when, with a link to exactly those projects.',
     problems: ['P8'], tags: ['UI'],
+  },
+
+  'ov-leader-home': {
+    title: 'A decision-maker home',
+    before: 'Decision makers had no place in CBFish. Calls on contested amounts happened in email and meetings, out of sight of the record.',
+    now: 'A Decision maker lens lands on the projects waiting for their call, with the total the PMs are asking for above EWB.',
+    problems: ['P8', 'P10'], tags: ['UI', 'BE'],
+  },
+  'ov-assigned': {
+    title: 'Assigned to you',
+    before: 'Nothing showed who owned the next step on a contested project.',
+    now: 'Every lens sees the projects where they have the next step: the gap, the round, how long it has waited and the latest comment.',
+    problems: ['P8', 'P10'], tags: ['UI'],
   },
 
   // --- 4.2 All cycles -----------------------------------------------------------
@@ -131,6 +150,12 @@ export const CHANGES: Record<string, Change> = {
     before: 'Add Project was one project at a time: pick a project, a fund and an account type.',
     now: 'Eligible projects that were not in last year’s cycle are listed; select several and add them at once.',
     problems: ['P3'], tags: ['BE'],
+  },
+  'su-cola-comment': {
+    title: 'A comment goes with the COLA',
+    before: 'Bulk COLA took a rate. Why that rate, and which guidance it came from, was not recorded with it.',
+    now: 'The COLA step has a comment. It shows on the review step and the results report, in activity, and on every project the COLA applies to.',
+    problems: ['P4', 'P10'], tags: ['UI', 'BE'],
   },
   'su-cola': {
     title: 'COLA with filters and a before/after preview',
@@ -207,6 +232,19 @@ export const CHANGES: Record<string, Change> = {
     problems: ['P8'], tags: ['UI'],
   },
 
+  'it-negotiation': {
+    title: 'Negotiation status',
+    before: 'A PM proposal that differed from EWB showed only as two numbers. The back and forth happened in comments and email, and only the latest amounts were kept.',
+    now: 'Projects where EWB and the PM disagree show “In negotiation” with the round, who has the next step and the gap. Every revised proposal stays in the thread. Saved views: In negotiation, Assigned to me.',
+    problems: ['P8'], tags: ['UI', 'BE'],
+  },
+  'it-assign': {
+    title: 'Comment and assign the next step',
+    before: 'No assignment. Whose move it was lived in people’s inboxes.',
+    now: 'The budget team, the PM or a decision maker makes a call, adds a required comment and assigns the next step to the PM, the budget team or a decision maker. Setting the final amount settles it.',
+    problems: ['P8', 'P10'], tags: ['UI', 'BE'],
+  },
+
   // --- 4.5 Final decisions ------------------------------------------------------
   'fi-source': {
     title: 'Choose where finals come from',
@@ -224,6 +262,12 @@ export const CHANGES: Record<string, Change> = {
     title: 'The confirm names the target',
     before: 'The confirm repeated whatever stage happened to be active.',
     now: '“Set Final budget for 204 projects” — the stage and the count, every time. A rationale applies to all, or per project.',
+    problems: ['P5'], tags: ['UI'],
+  },
+  'fi-negotiation': {
+    title: 'Bulk set skips open negotiations',
+    before: 'A bulk set wrote over contested amounts along with everything else.',
+    now: 'Projects still in negotiation are skipped by name — “In negotiation — with Dana Whitcomb” — and settled one at a time from the project panel.',
     problems: ['P5'], tags: ['UI'],
   },
   'fi-notify': {
