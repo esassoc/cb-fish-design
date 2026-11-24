@@ -1,0 +1,813 @@
+{
+  "name": "soy",
+  "title": "Start-of-year (SOY) budgets",
+  "description": "The recommended future state of SOY: a cycle overview with next actions by role, a setup wizard, an items workspace with a side panel, final decisions, transfers with reconciliation, close-out, and activity.",
+  "dir": "soy",
+  "url": "https://esassoc.github.io/cb-fish-design/soy/",
+  "baseUrl": "https://esassoc.github.io/cb-fish-design/handoff/soy/",
+  "theme": "cb-fish",
+  "generatedFrom": "spec",
+  "data": {
+    "fixture": "src/data/soy/seed.ts",
+    "store": "src/lib/soy/store.ts",
+    "fields": {
+      "item": "project number + fund + account type (Expense) within one fiscal year’s SOY — the Gemini identity",
+      "amounts": "whole dollars, recorded per stage (ewb, pm, final), each with who, when and a rationale",
+      "transfers": "per item, tied to a Budget Decision (one per round); variance = final − transferred",
+      "today": "the demo date moves with the walkthrough (Jan 15 → Jun 15, 2027)"
+    },
+    "enums": {
+      "stage": [
+        "EWB proposed",
+        "PM proposed",
+        "Final budget",
+        "Complete"
+      ],
+      "cycleStatus": [
+        "Draft",
+        "Open",
+        "Closed"
+      ],
+      "transferStatus": [
+        "No final amount",
+        "Not transferred",
+        "Transferred",
+        "Changed after transfer",
+        "Partially transferred"
+      ],
+      "role": [
+        "Budget administrator (EWB)",
+        "Project manager"
+      ]
+    },
+    "notes": [
+      "Screens: /soy (overview), /soy/cycles, /soy/setup, /soy/items (+ item side panel on every screen), /soy/finals, /soy/transfers, /soy/close-out, /soy/activity.",
+      "State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped items.",
+      "Demo presets (?step=1…7, plus 4.5 for the PM landing; linked from the separate walkthrough guide, not from the prototype) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).",
+      "Every behavior change is tagged UI / BE / DEC in src/lib/soy/changes.ts and annotated in place by the “Show what’s changing” layer (cbf-soy-changes).",
+      "All people and comment text are invented; project numbers and titles are illustrative."
+    ]
+  },
+  "sections": [
+    {
+      "label": "Draft notice",
+      "tag": "div",
+      "selector": "[data-ov-draft]",
+      "html": "<div data-ov-draft=\"\" data-change=\"cy-draft\">\n  <div class=\"esa-alert-box esa-alert-box--info typography-body-sm\">\n    <div class=\"esa-alert-box__icon\">\n      <svg\n        xmlns=\"http://www.w3.org/2000/svg\"\n        width=\"20\"\n        height=\"20\"\n        viewBox=\"0 0 24 24\"\n        fill=\"none\"\n        stroke=\"currentColor\"\n        stroke-width=\"2\"\n        stroke-linecap=\"round\"\n        stroke-linejoin=\"round\"\n        aria-hidden=\"true\"\n      >\n        <circle cx=\"12\" cy=\"12\" r=\"10\"></circle>\n        <path d=\"M12 16v-4\"></path>\n        <path d=\"M12 8h.01\"></path>\n      </svg>\n    </div>\n    <div class=\"esa-alert-box__body\">\n      <strong class=\"esa-alert-box__title typography-label-sm-strong\">Draft</strong>\n      <div class=\"esa-alert-box__message\">\n        <span data-ov-draft-text=\"\"\n          >The FY2028 SOY was drafted automatically on Jan 15, 2027 with the standard dates. Review\n          the dates and run setup to carry items forward and open it.\n          <a href=\"/cb-fish-design/soy/setup\">Start setup</a></span\n        >\n      </div>\n    </div>\n  </div>\n</div>",
+      "css": ".typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.typography-label-sm-strong {\n  font-family: var(--typography-label-sm-strong-font-family);\n  font-size: var(--typography-label-sm-strong-font-size);\n  font-weight: var(--typography-label-sm-strong-font-weight);\n  line-height: var(--typography-label-sm-strong-line-height);\n  letter-spacing: var(--typography-label-sm-strong-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.typography-label-sm-strong {\n  font-family: var(--typography-label-sm-strong-font-family);\n  font-size: var(--typography-label-sm-strong-font-size);\n  font-weight: var(--typography-label-sm-strong-font-weight);\n  line-height: var(--typography-label-sm-strong-line-height);\n  letter-spacing: var(--typography-label-sm-strong-letter-spacing);\n}\n.esa-alert-box {\n  --_alert-bg: var(--color-background-utility-info-subtle, #fbfdff);\n  --_alert-border: var(--color-border-utility-info, #acd8fc);\n  --_alert-accent: var(--color-content-utility-info, #0d74ce);\n  --_alert-icon-color: var(--_alert-accent);\n  --_alert-title-color: var(--_alert-accent);\n  --_alert-text-color: var(--alert-box-text-color, var(--color-content-default-secondary, #646464));\n  display: flex;\n  align-items: flex-start;\n  gap: var(--spacing-300, 0.75rem);\n  padding: var(--spacing-300, 0.75rem) var(--spacing-400, 1rem);\n  border: var(--border-width-default, 1px) solid var(--_alert-border);\n  border-radius: var(--radius-md, 0.5rem);\n  background: var(--_alert-bg);\n}\n.esa-alert-box__icon {\n  flex-shrink: 0;\n  color: var(--_alert-icon-color);\n  padding-top: 1px;\n}\n.esa-alert-box__body {\n  flex: 1;\n  min-width: 0;\n}\n.esa-alert-box__title {\n  display: block;\n  color: var(--_alert-title-color);\n  margin-bottom: var(--spacing-050, 0.125rem);\n}\n.esa-alert-box__message {\n  color: var(--_alert-text-color);\n}",
+      "guide": {
+        "intent": "On Jan 15 the next cycle drafts itself with the standard dates; the overview says so and points the budget administrator to setup. PMs see when their input opens.",
+        "decisions": [
+          "DEC 6: auto-draft each year on January 15; the admin reviews and opens it."
+        ],
+        "acceptance": [
+          "With fresh storage the overview shows FY2028 as Draft with a Start setup link (admin)."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--alert-box-text-color",
+          "value": "#525252",
+          "tier": "component"
+        },
+        {
+          "name": "--border-width-default",
+          "value": "1px",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-utility-info-subtle",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-utility-info",
+          "value": "#c6dcf1",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-utility-info",
+          "value": "#0d74ce",
+          "tier": "semantic"
+        },
+        {
+          "name": "--radius-md",
+          "value": ".5rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--spacing-050",
+          "value": ".125rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--typography-body-sm-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-sm-strong-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-sm-strong-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-sm-strong-font-weight",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-sm-strong-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-sm-strong-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "esa-alert-box",
+          "origin": "hub",
+          "source": "packages\\ecology\\src\\components\\esa-alert-box.astro",
+          "target": null
+        }
+      ],
+      "data": {
+        "fixture": "src/data/soy/seed.ts",
+        "store": "src/lib/soy/store.ts",
+        "fields": {
+          "item": "project number + fund + account type (Expense) within one fiscal year’s SOY — the Gemini identity",
+          "amounts": "whole dollars, recorded per stage (ewb, pm, final), each with who, when and a rationale",
+          "transfers": "per item, tied to a Budget Decision (one per round); variance = final − transferred",
+          "today": "the demo date moves with the walkthrough (Jan 15 → Jun 15, 2027)"
+        },
+        "enums": {
+          "stage": [
+            "EWB proposed",
+            "PM proposed",
+            "Final budget",
+            "Complete"
+          ],
+          "cycleStatus": [
+            "Draft",
+            "Open",
+            "Closed"
+          ],
+          "transferStatus": [
+            "No final amount",
+            "Not transferred",
+            "Transferred",
+            "Changed after transfer",
+            "Partially transferred"
+          ],
+          "role": [
+            "Budget administrator (EWB)",
+            "Project manager"
+          ]
+        },
+        "notes": [
+          "Screens: /soy (overview), /soy/cycles, /soy/setup, /soy/items (+ item side panel on every screen), /soy/finals, /soy/transfers, /soy/close-out, /soy/activity.",
+          "State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped items.",
+          "Demo presets (?step=1…7, plus 4.5 for the PM landing; linked from the separate walkthrough guide, not from the prototype) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).",
+          "Every behavior change is tagged UI / BE / DEC in src/lib/soy/changes.ts and annotated in place by the “Show what’s changing” layer (cbf-soy-changes).",
+          "All people and comment text are invented; project numbers and titles are illustrative."
+        ]
+      },
+      "claudePath": "claude/draft-notice.md",
+      "repoPath": "public\\handoff\\soy\\claude\\draft-notice.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/draft-notice.desktop.png",
+        "phone": "claude/draft-notice.phone.png"
+      },
+      "bytes": 7168,
+      "specBytes": 7168,
+      "files": 1,
+      "collapsed": 0
+    },
+    {
+      "label": "Stage tracker",
+      "tag": "ol",
+      "selector": "[data-ov-tracker]",
+      "html": "<ol class=\"cbf-soy-ov__tracker\" data-ov-tracker=\"\" data-change=\"ov-tracker\">\n  <li class=\"cbf-soy-ov__stage is-todo\">\n    <span class=\"cbf-soy-ov__stage-n\">1</span>\n    <span class=\"cbf-soy-ov__stage-name\">EWB proposed</span>\n    <span class=\"cbf-soy-ov__stage-dates\">Opens Mar 1 · due Apr 11</span>\n    <span class=\"esa-pill esa-pill--default esa-pill--xs typography-microcopy-2xs\">\n      <span class=\"esa-pill__label\">Upcoming</span>\n    </span>\n  </li>\n  <li class=\"cbf-soy-ov__stage is-todo\">\n    <span class=\"cbf-soy-ov__stage-n\">2</span>\n    <span class=\"cbf-soy-ov__stage-name\">PM proposed</span>\n    <span class=\"cbf-soy-ov__stage-dates\">Opens Apr 12 · due May 9</span>\n    <span class=\"esa-pill esa-pill--default esa-pill--xs typography-microcopy-2xs\">\n      <span class=\"esa-pill__label\">Upcoming</span>\n    </span>\n  </li>\n  <!-- …and 2 more like this (<li class=\"cbf-soy-ov__stage is-todo\">) -->\n</ol>",
+      "css": ".typography-microcopy-2xs {\n  font-family: var(--typography-microcopy-2xs-font-family);\n  font-size: var(--typography-microcopy-2xs-font-size);\n  font-weight: var(--typography-microcopy-2xs-font-weight);\n  line-height: var(--typography-microcopy-2xs-line-height);\n  letter-spacing: var(--typography-microcopy-2xs-letter-spacing);\n}\n.typography-microcopy-2xs {\n  font-family: var(--typography-microcopy-2xs-font-family);\n  font-size: var(--typography-microcopy-2xs-font-size);\n  font-weight: var(--typography-microcopy-2xs-font-weight);\n  line-height: var(--typography-microcopy-2xs-line-height);\n  letter-spacing: var(--typography-microcopy-2xs-letter-spacing);\n}\n.cbf-soy-ip__step.is-todo .cbf-soy-ip__step-amt {\n  color: var(--color-content-default-tertiary);\n}\n.esa-pill {\n  --_pill-bg: var(--color-background-elevation-sunken, #f0f0f0);\n  --_pill-text: var(--color-content-default, #202020);\n  --_pill-border: var(--color-border-default-subtle, #d9d9d9);\n  --_pill-padding-y: var(--spacing-150, 0.375rem);\n  --_pill-padding-x: var(--spacing-200, 0.5rem);\n  --_pill-gap: var(--spacing-100, 0.25rem);\n  display: inline-flex;\n  align-items: center;\n  gap: var(--_pill-gap);\n  padding-block: var(--_pill-padding-y);\n  padding-inline: var(--_pill-padding-x);\n  border: var(--border-width-default, 1px) solid var(--_pill-border);\n  border-radius: var(--radius-chip, var(--radius-sm, 0.25rem));\n  background: var(--_pill-bg);\n  color: var(--_pill-text);\n  white-space: nowrap;\n  box-sizing: border-box;\n}\n.esa-pill--xs {\n  --_pill-padding-y: var(--spacing-100, 0.25rem);\n  --_pill-padding-x: var(--spacing-100, 0.25rem);\n}\n.esa-pill[data-category] {\n  --_pill-bg: var(--category-2, var(--color-background-elevation-sunken, #f0f0f0));\n  --_pill-border: var(--category-6, var(--color-border-default-subtle, #d9d9d9));\n  --_pill-text: var(--category-11, var(--color-content-default, #202020));\n}\n.cbf-soy-ov__tracker {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  display: grid;\n  grid-template-columns: repeat(4, minmax(0, 1fr));\n  gap: var(--spacing-300);\n}\n@media (max-width: 760px) {\n  .cbf-soy-ov__tracker {\n    grid-template-columns: 1fr 1fr;\n  }\n}\n.cbf-soy-ov__stage {\n  position: relative;\n  display: flex;\n  flex-direction: column;\n  align-items: flex-start;\n  gap: var(--spacing-150);\n  padding: var(--spacing-300) var(--spacing-400);\n  border: 1px solid var(--color-border-default);\n  border-block-start-width: 4px;\n  border-radius: var(--radius-200);\n  background: var(--color-background-elevation-raised);\n}\n.cbf-soy-ov__stage.is-done {\n  border-block-start-color: var(--color-background-utility-success, var(--color-border-default));\n}\n.cbf-soy-ov__stage.is-active {\n  border-color: var(--color-background-brand);\n  border-block-start-color: var(--color-background-brand);\n  background: var(--color-background-brand-subtle);\n}\n.cbf-soy-ov__stage-n {\n  font-size: 12px;\n  font-weight: var(--typography-font-weight-bold);\n  color: var(--color-content-default-tertiary);\n}\n.cbf-soy-ov__stage-name {\n  font-size: 16px;\n  font-weight: var(--typography-font-weight-semibold);\n}\n.cbf-soy-ov__stage-dates {\n  font-size: 13px;\n  color: var(--color-content-default-secondary);\n}",
+      "guide": {
+        "intent": "The four stages with open and due dates, the active stage and days left. A stage is due the day before the next one opens. \"Open <next stage>\" (admin) previews the stage-open email before it advances; stages never advance on their own.",
+        "decisions": [
+          "DEC 5: due dates drive stage-open emails and automatic reminders; the admin still advances stages; PM proposed defaults to 4 weeks.",
+          "Final budget → Complete has no advance button here; the cycle completes through Close-out."
+        ],
+        "acceptance": [
+          "Default dates: EWB proposed opens Mar 1, PM proposed Apr 12 (due May 9), Final budget May 10, Complete Jun 1."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--border-width-default",
+          "value": "1px",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-brand-subtle",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-raised",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-sunken",
+          "value": "#f3f7fc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-utility-success",
+          "value": "#218358",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default",
+          "value": "#dcdcdc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default-subtle",
+          "value": "#efefef",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-tertiary",
+          "value": "#656565",
+          "tier": "semantic"
+        },
+        {
+          "name": "--radius-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-chip",
+          "value": ".25rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--radius-sm",
+          "value": ".25rem",
+          "tier": "semantic"
+        },
+        {
+          "name": "--spacing-100",
+          "value": ".25rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-150",
+          "value": ".375rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--typography-font-weight-bold",
+          "value": "700",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-semibold",
+          "value": "600",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-2xs-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-2xs-font-size",
+          "value": "clamp(.5rem, .44rem + .3vw, .625rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-2xs-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-2xs-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-microcopy-2xs-line-height",
+          "value": "1",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-soy-ov",
+          "origin": "spoke",
+          "source": "src\\components\\soy\\cbf-soy-overview.astro",
+          "target": null
+        },
+        {
+          "name": "esa-pill",
+          "origin": "hub",
+          "source": "packages\\ecology\\src\\components\\esa-pill.astro",
+          "target": null
+        }
+      ],
+      "data": {
+        "fixture": "src/data/soy/seed.ts",
+        "store": "src/lib/soy/store.ts",
+        "fields": {
+          "item": "project number + fund + account type (Expense) within one fiscal year’s SOY — the Gemini identity",
+          "amounts": "whole dollars, recorded per stage (ewb, pm, final), each with who, when and a rationale",
+          "transfers": "per item, tied to a Budget Decision (one per round); variance = final − transferred",
+          "today": "the demo date moves with the walkthrough (Jan 15 → Jun 15, 2027)"
+        },
+        "enums": {
+          "stage": [
+            "EWB proposed",
+            "PM proposed",
+            "Final budget",
+            "Complete"
+          ],
+          "cycleStatus": [
+            "Draft",
+            "Open",
+            "Closed"
+          ],
+          "transferStatus": [
+            "No final amount",
+            "Not transferred",
+            "Transferred",
+            "Changed after transfer",
+            "Partially transferred"
+          ],
+          "role": [
+            "Budget administrator (EWB)",
+            "Project manager"
+          ]
+        },
+        "notes": [
+          "Screens: /soy (overview), /soy/cycles, /soy/setup, /soy/items (+ item side panel on every screen), /soy/finals, /soy/transfers, /soy/close-out, /soy/activity.",
+          "State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped items.",
+          "Demo presets (?step=1…7, plus 4.5 for the PM landing; linked from the separate walkthrough guide, not from the prototype) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).",
+          "Every behavior change is tagged UI / BE / DEC in src/lib/soy/changes.ts and annotated in place by the “Show what’s changing” layer (cbf-soy-changes).",
+          "All people and comment text are invented; project numbers and titles are illustrative."
+        ]
+      },
+      "js": [
+        "src/lib/soy/model.ts"
+      ],
+      "claudePath": "claude/stage-tracker.md",
+      "repoPath": "public\\handoff\\soy\\claude\\stage-tracker.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/stage-tracker.desktop.png",
+        "phone": "claude/stage-tracker.phone.png"
+      },
+      "bytes": 8514,
+      "specBytes": 8514,
+      "files": 1,
+      "collapsed": 2
+    },
+    {
+      "label": "Progress tiles",
+      "tag": "div",
+      "selector": "[data-ov-admin] .cbf-soy-ov__tiles",
+      "html": "<div class=\"cbf-soy-ov__tiles\" data-change=\"ov-tiles\">\n  <div data-tile=\"items\">\n    <div class=\"esa-stat\">\n      <div class=\"esa-stat__value typography-display-sm\">0</div>\n      <div class=\"esa-stat__label typography-label-md\">Items in cycle</div>\n      <div class=\"esa-stat__sub typography-body-sm\">Run setup to add items</div>\n    </div>\n  </div>\n  <div data-tile=\"ewb\">\n    <div class=\"esa-stat\">\n      <div class=\"esa-stat__value typography-display-sm\">0</div>\n      <div class=\"esa-stat__label typography-label-md\">EWB proposed</div>\n      <div class=\"esa-stat__sub typography-body-sm\">$0 of 0 items</div>\n    </div>\n  </div>\n  <!-- …and 4 more like this (<div>) -->\n</div>",
+      "css": ".typography-display-sm {\n  font-family: var(--typography-display-sm-font-family);\n  font-size: var(--typography-display-sm-font-size);\n  font-weight: var(--typography-display-sm-font-weight);\n  line-height: var(--typography-display-sm-line-height);\n  letter-spacing: var(--typography-display-sm-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.typography-display-sm {\n  font-family: var(--typography-display-sm-font-family);\n  font-size: var(--typography-display-sm-font-size);\n  font-weight: var(--typography-display-sm-font-weight);\n  line-height: var(--typography-display-sm-line-height);\n  letter-spacing: var(--typography-display-sm-letter-spacing);\n}\n.typography-body-sm {\n  font-family: var(--typography-body-sm-font-family);\n  font-size: var(--typography-body-sm-font-size);\n  font-weight: var(--typography-body-sm-font-weight);\n  line-height: var(--typography-body-sm-line-height);\n  letter-spacing: var(--typography-body-sm-letter-spacing);\n}\n.typography-label-md {\n  font-family: var(--typography-label-md-font-family);\n  font-size: var(--typography-label-md-font-size);\n  font-weight: var(--typography-label-md-font-weight);\n  line-height: var(--typography-label-md-line-height);\n  letter-spacing: var(--typography-label-md-letter-spacing);\n}\n.esa-stat {\n  --_stat-value-color: var(--stat-value-color, var(--color-content-default, #202020));\n  --_stat-value-font: var(\n    --typography-font-family-display,\n    var(\n      --typography-display-sm-font-family,\n      var(--typography-font-family-display, \"DM Sans\", sans-serif)\n    )\n  );\n  --_stat-value-size: var(\n    --stat-value-size,\n    var(--typography-display-sm-font-size, var(--font-size-700, 2.25rem))\n  );\n  --_stat-value-weight: var(\n    --typography-font-weight-bold,\n    var(--typography-display-sm-font-weight, var(--typography-font-weight-bold, 650))\n  );\n  --_stat-label-color: var(--color-content-default-secondary, #646464);\n  --_stat-label-size: var(\n    --font-size-200,\n    var(--typography-label-md-font-size, var(--font-size-200, 0.9375rem))\n  );\n  --_stat-label-weight: var(\n    --typography-font-weight-medium,\n    var(--typography-label-md-font-weight, var(--typography-font-weight-medium, 500))\n  );\n  --_stat-sub-color: var(--color-content-default-secondary, #646464);\n  --_stat-sub-size: var(\n    --font-size-150,\n    var(--typography-body-sm-font-size, var(--font-size-150, 0.875rem))\n  );\n  --_stat-accent-color: var(--stat-accent-color, var(--color-content-brand, #2a7e3b));\n  --_stat-gap: var(--spacing-050, 0.125rem);\n  display: flex;\n  flex-direction: column;\n  gap: var(--_stat-gap);\n  background: transparent;\n}\n.esa-stat__value {\n  font-family: var(--_stat-value-font);\n  font-size: var(--_stat-value-size);\n  font-weight: var(--_stat-value-weight);\n  color: var(--_stat-value-color);\n}\n.esa-stat--accent .esa-stat__value {\n  color: var(--_stat-accent-color);\n}\n.esa-stat__label {\n  font-size: var(--_stat-label-size);\n  font-weight: var(--_stat-label-weight);\n  color: var(--_stat-label-color);\n}\n.esa-stat__sub {\n  font-size: var(--_stat-sub-size);\n  color: var(--_stat-sub-color);\n}\n.cbf-soy-ov__tiles {\n  display: grid;\n  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));\n  gap: var(--spacing-400);\n  padding: var(--spacing-400);\n  border: 1px solid var(--color-border-default-subtle);\n  border-radius: var(--radius-200);\n}",
+      "guide": {
+        "intent": "Items in cycle, EWB proposed, PM input received vs needed, final amount set, transferred and variance (final − transferred), always current. PMs see their own tiles instead.",
+        "gotchas": [
+          "PM input needed excludes two-year items in their off year (their $0 is automatic)."
+        ],
+        "acceptance": [
+          "At ?step=5 (May 7): 219 of 231 PM inputs received, 4 PMs with 12 items outstanding."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--color-border-default-subtle",
+          "value": "#efefef",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default",
+          "value": "#3d3d3d",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--font-size-150",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-size-200",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--font-size-700",
+          "value": "clamp(1.625rem, 1.41rem + 1.08vw, 2.25rem)",
+          "tier": "primitive"
+        },
+        {
+          "name": "--radius-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-050",
+          "value": ".125rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--stat-accent-color",
+          "value": "#1e5386",
+          "tier": "component"
+        },
+        {
+          "name": "--stat-value-color",
+          "value": "#3d3d3d",
+          "tier": "component"
+        },
+        {
+          "name": "--stat-value-size",
+          "value": "clamp(1.625rem, 1.41rem + 1.08vw, 2.25rem)",
+          "tier": "component"
+        },
+        {
+          "name": "--typography-body-sm-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-size",
+          "value": "clamp(.6875rem, .61rem + .38vw, .875rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-font-weight",
+          "value": "400",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-body-sm-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-display-sm-font-family",
+          "value": "\"IBM Plex Sans Condensed\", \"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-display-sm-font-size",
+          "value": "clamp(1.625rem, 1.41rem + 1.08vw, 2.25rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-display-sm-font-weight",
+          "value": "700",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-display-sm-letter-spacing",
+          "value": "-.01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-display-sm-line-height",
+          "value": "1.3",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-family-display",
+          "value": "\"IBM Plex Sans Condensed\", \"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-bold",
+          "value": "700",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-font-weight-medium",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-family",
+          "value": "\"IBM Plex Sans\", sans-serif",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-size",
+          "value": "clamp(.75rem, .66rem + .44vw, .9375rem)",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-font-weight",
+          "value": "500",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-letter-spacing",
+          "value": ".01em",
+          "tier": "semantic"
+        },
+        {
+          "name": "--typography-label-md-line-height",
+          "value": "1.6",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-soy-ov",
+          "origin": "spoke",
+          "source": "src\\components\\soy\\cbf-soy-overview.astro",
+          "target": null
+        },
+        {
+          "name": "esa-stat",
+          "origin": "hub",
+          "source": "packages\\ecology\\src\\components\\esa-stat.astro",
+          "target": null
+        }
+      ],
+      "data": {
+        "fixture": "src/data/soy/seed.ts",
+        "store": "src/lib/soy/store.ts",
+        "fields": {
+          "item": "project number + fund + account type (Expense) within one fiscal year’s SOY — the Gemini identity",
+          "amounts": "whole dollars, recorded per stage (ewb, pm, final), each with who, when and a rationale",
+          "transfers": "per item, tied to a Budget Decision (one per round); variance = final − transferred",
+          "today": "the demo date moves with the walkthrough (Jan 15 → Jun 15, 2027)"
+        },
+        "enums": {
+          "stage": [
+            "EWB proposed",
+            "PM proposed",
+            "Final budget",
+            "Complete"
+          ],
+          "cycleStatus": [
+            "Draft",
+            "Open",
+            "Closed"
+          ],
+          "transferStatus": [
+            "No final amount",
+            "Not transferred",
+            "Transferred",
+            "Changed after transfer",
+            "Partially transferred"
+          ],
+          "role": [
+            "Budget administrator (EWB)",
+            "Project manager"
+          ]
+        },
+        "notes": [
+          "Screens: /soy (overview), /soy/cycles, /soy/setup, /soy/items (+ item side panel on every screen), /soy/finals, /soy/transfers, /soy/close-out, /soy/activity.",
+          "State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped items.",
+          "Demo presets (?step=1…7, plus 4.5 for the PM landing; linked from the separate walkthrough guide, not from the prototype) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).",
+          "Every behavior change is tagged UI / BE / DEC in src/lib/soy/changes.ts and annotated in place by the “Show what’s changing” layer (cbf-soy-changes).",
+          "All people and comment text are invented; project numbers and titles are illustrative."
+        ]
+      },
+      "claudePath": "claude/progress-tiles.md",
+      "repoPath": "public\\handoff\\soy\\claude\\progress-tiles.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/progress-tiles.desktop.png",
+        "phone": "claude/progress-tiles.phone.png"
+      },
+      "bytes": 9364,
+      "specBytes": 9364,
+      "files": 1,
+      "collapsed": 4
+    },
+    {
+      "label": "Next actions",
+      "tag": "ul",
+      "selector": "[data-ov-actions]",
+      "html": "<ul class=\"cbf-soy-ov__actions\" data-ov-actions=\"\">\n  <li class=\"cbf-soy-ov__action\">\n    <div class=\"stack\" data-gap=\"3xs\">\n      <strong>Review the FY2028 draft and run setup</strong\n      ><span class=\"cbf-soy-ov__action-sub\"\n        >Confirm the dates, carry last year’s items forward, add new projects and apply the\n        COLA.</span\n      >\n    </div>\n    <a class=\"cbf-soy-ov__action-link\" href=\"/cb-fish-design/soy/setup\">Start setup →</a>\n  </li>\n</ul>",
+      "css": ".stack {\n  --gap: var(--spacing-400, 1rem);\n  display: flex;\n  flex-direction: column;\n  gap: var(--gap);\n}\n.stack[data-split] > [data-split] {\n  margin-block-end: auto;\n}\n.cbf-soy-ov__actions {\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  display: flex;\n  flex-direction: column;\n  gap: var(--spacing-200);\n}\n.cbf-soy-ov__action {\n  display: flex;\n  align-items: center;\n  justify-content: space-between;\n  gap: var(--spacing-400);\n  flex-wrap: wrap;\n  padding: var(--spacing-300) var(--spacing-400);\n  border: 1px solid var(--color-border-default);\n  border-inline-start: 4px solid var(--color-background-brand);\n  border-radius: var(--radius-200);\n  background: var(--color-background-elevation-raised);\n}\n.cbf-soy-ov__action-sub {\n  font-size: 14px;\n  color: var(--color-content-default-secondary);\n}\n.cbf-soy-ov__action-link {\n  font-weight: var(--typography-font-weight-semibold);\n  color: var(--color-background-brand);\n  white-space: nowrap;\n}",
+      "guide": {
+        "intent": "What the budget administrator should do next for the current stage, each with the button that does it: run setup, set EWB proposed, open the next stage, send a reminder, set finals, transfer, reconcile, close.",
+        "acceptance": [
+          "Every action links to the screen or opens the dialog that completes it."
+        ]
+      },
+      "tokens": [
+        {
+          "name": "--color-background-brand",
+          "value": "#1e5386",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-background-elevation-raised",
+          "value": "#fcfcfc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-border-default",
+          "value": "#dcdcdc",
+          "tier": "semantic"
+        },
+        {
+          "name": "--color-content-default-secondary",
+          "value": "#525252",
+          "tier": "semantic"
+        },
+        {
+          "name": "--gap",
+          "value": ".75rem",
+          "tier": "component"
+        },
+        {
+          "name": "--radius-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-200",
+          "value": ".5rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-300",
+          "value": ".75rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--spacing-400",
+          "value": "1rem",
+          "tier": "primitive"
+        },
+        {
+          "name": "--typography-font-weight-semibold",
+          "value": "600",
+          "tier": "semantic"
+        }
+      ],
+      "components": [
+        {
+          "name": "cbf-soy-ov",
+          "origin": "spoke",
+          "source": "src\\components\\soy\\cbf-soy-overview.astro",
+          "target": null
+        }
+      ],
+      "data": {
+        "fixture": "src/data/soy/seed.ts",
+        "store": "src/lib/soy/store.ts",
+        "fields": {
+          "item": "project number + fund + account type (Expense) within one fiscal year’s SOY — the Gemini identity",
+          "amounts": "whole dollars, recorded per stage (ewb, pm, final), each with who, when and a rationale",
+          "transfers": "per item, tied to a Budget Decision (one per round); variance = final − transferred",
+          "today": "the demo date moves with the walkthrough (Jan 15 → Jun 15, 2027)"
+        },
+        "enums": {
+          "stage": [
+            "EWB proposed",
+            "PM proposed",
+            "Final budget",
+            "Complete"
+          ],
+          "cycleStatus": [
+            "Draft",
+            "Open",
+            "Closed"
+          ],
+          "transferStatus": [
+            "No final amount",
+            "Not transferred",
+            "Transferred",
+            "Changed after transfer",
+            "Partially transferred"
+          ],
+          "role": [
+            "Budget administrator (EWB)",
+            "Project manager"
+          ]
+        },
+        "notes": [
+          "Screens: /soy (overview), /soy/cycles, /soy/setup, /soy/items (+ item side panel on every screen), /soy/finals, /soy/transfers, /soy/close-out, /soy/activity.",
+          "State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped items.",
+          "Demo presets (?step=1…7, plus 4.5 for the PM landing; linked from the separate walkthrough guide, not from the prototype) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).",
+          "Every behavior change is tagged UI / BE / DEC in src/lib/soy/changes.ts and annotated in place by the “Show what’s changing” layer (cbf-soy-changes).",
+          "All people and comment text are invented; project numbers and titles are illustrative."
+        ]
+      },
+      "claudePath": "claude/next-actions.md",
+      "repoPath": "public\\handoff\\soy\\claude\\next-actions.md",
+      "parts": [],
+      "shots": {
+        "desktop": "claude/next-actions.desktop.png",
+        "phone": "claude/next-actions.phone.png"
+      },
+      "bytes": 4352,
+      "specBytes": 4352,
+      "files": 1,
+      "collapsed": 0
+    }
+  ]
+}
