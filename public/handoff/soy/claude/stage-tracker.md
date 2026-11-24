@@ -1,24 +1,25 @@
-# Decisions table
+# Stage tracker
 
-Start-of-year (SOY) budgets — future state · source prototype: https://esassoc.github.io/cb-fish-design/soy/walkthrough/
+Start-of-year (SOY) budgets · source prototype: https://esassoc.github.io/cb-fish-design/soy/
 
-![Decisions table, desktop](https://esassoc.github.io/cb-fish-design/handoff/soy-walkthrough/claude/decisions-table.desktop.png)
+![Stage tracker, desktop](https://esassoc.github.io/cb-fish-design/handoff/soy/claude/stage-tracker.desktop.png)
 
-Phone width: https://esassoc.github.io/cb-fish-design/handoff/soy-walkthrough/claude/decisions-table.phone.png
+Phone width: https://esassoc.github.io/cb-fish-design/handoff/soy/claude/stage-tracker.phone.png
 
-The eight decisions BPA needs to make, with the option the prototype shows and the alternative, each linked to where it can be seen.
+The four stages with open and due dates, the active stage and days left. A stage is due the day before the next one opens. "Open <next stage>" (admin) previews the stage-open email before it advances; stages never advance on their own.
 
 ## Key decisions
 
-- Built at build time from DECISIONS in src/lib/soy/changes.ts, the same registry the changes layer reads.
+- DEC 5: due dates drive stage-open emails and automatic reminders; the admin still advances stages; PM proposed defaults to 4 weeks.
+- Final budget → Complete has no advance button here; the cycle completes through Close-out.
 
 ## Done when
 
-- 8 rows, DEC 1–8, each linking to a SOY screen.
+- Default dates: EWB proposed opens Mar 1, PM proposed Apr 12 (due May 9), Final budget May 10, Complete Jun 1.
 
 ## Components
 
-- `cbf-soy-wt` (spoke) · `src\components\soy\cbf-soy-walkthrough.astro`
+- `cbf-soy-ov` (spoke) · `src\components\soy\cbf-soy-overview.astro`
 - `esa-pill` (hub) · `packages\ecology\src\components\esa-pill.astro`
 
 ## Data
@@ -27,7 +28,7 @@ The eight decisions BPA needs to make, with the option the prototype shows and t
 - Client store: `src/lib/soy/store.ts`
 - Screens: /soy (overview), /soy/cycles, /soy/setup, /soy/items (+ item side panel on every screen), /soy/finals, /soy/transfers, /soy/close-out, /soy/activity.
 - State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped items.
-- Walkthrough presets (?step=1…7, plus 4.5 for the PM landing) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).
+- Demo presets (?step=1…7, plus 4.5 for the PM landing; linked from the separate walkthrough guide, not from the prototype) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).
 - Every behavior change is tagged UI / BE / DEC in src/lib/soy/changes.ts and annotated in place by the “Show what’s changing” layer (cbf-soy-changes).
 - All people and comment text are invented; project numbers and titles are illustrative.
 
@@ -46,50 +47,34 @@ The eight decisions BPA needs to make, with the option the prototype shows and t
 
 `role`: `Budget administrator (EWB)` · `Project manager`
 
+## Behavior
+
+- `src/lib/soy/model.ts`
+
 ## Markup
 
-_15 repeated elements are collapsed in the markup below; the comments say where._
+_2 repeated elements are collapsed in the markup below; the comments say where._
 
 ```html
-<section class="stack" data-gap="sm" aria-labelledby="wt-dec">
-  <h2 class="cbf-soy-wt__h2" id="wt-dec">Decisions we need from you</h2>
-  <p class="cbf-soy-wt__p">
-    The prototype shows our recommended option for each. Tell us if you prefer the alternative.
-  </p>
-  <div class="cbf-soy-wt__scroll">
-    <table class="cbf-soy-wt__table">
-      <thead>
-        <tr>
-          <th scope="col">#</th>
-          <th scope="col">Decision</th>
-          <!-- …and 3 more like this (<th>) -->
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>
-            <span class="esa-pill esa-pill--primary esa-pill--xs typography-microcopy-2xs">
-              <span class="esa-pill__label">DEC 1</span>
-            </span>
-            <!-- script type="module" removed (233 bytes) -->
-          </td>
-          <td>Close FY2024–2027?</td>
-          <!-- …and 3 more like this (<td>) -->
-        </tr>
-        <tr>
-          <td>
-            <span class="esa-pill esa-pill--primary esa-pill--xs typography-microcopy-2xs">
-              <span class="esa-pill__label">DEC 2</span>
-            </span>
-          </td>
-          <td>Should Complete lock admins?</td>
-          <!-- …and 3 more like this (<td>) -->
-        </tr>
-        <!-- …and 6 more like this (<tr>) -->
-      </tbody>
-    </table>
-  </div>
-</section>
+<ol class="cbf-soy-ov__tracker" data-ov-tracker="" data-change="ov-tracker">
+  <li class="cbf-soy-ov__stage is-todo">
+    <span class="cbf-soy-ov__stage-n">1</span>
+    <span class="cbf-soy-ov__stage-name">EWB proposed</span>
+    <span class="cbf-soy-ov__stage-dates">Opens Mar 1 · due Apr 11</span>
+    <span class="esa-pill esa-pill--default esa-pill--xs typography-microcopy-2xs">
+      <span class="esa-pill__label">Upcoming</span>
+    </span>
+  </li>
+  <li class="cbf-soy-ov__stage is-todo">
+    <span class="cbf-soy-ov__stage-n">2</span>
+    <span class="cbf-soy-ov__stage-name">PM proposed</span>
+    <span class="cbf-soy-ov__stage-dates">Opens Apr 12 · due May 9</span>
+    <span class="esa-pill esa-pill--default esa-pill--xs typography-microcopy-2xs">
+      <span class="esa-pill__label">Upcoming</span>
+    </span>
+  </li>
+  <!-- …and 2 more like this (<li class="cbf-soy-ov__stage is-todo">) -->
+</ol>
 ```
 
 ## Styles
@@ -108,6 +93,9 @@ _15 repeated elements are collapsed in the markup below; the comments say where.
   font-weight: var(--typography-microcopy-2xs-font-weight);
   line-height: var(--typography-microcopy-2xs-line-height);
   letter-spacing: var(--typography-microcopy-2xs-letter-spacing);
+}
+.cbf-soy-ip__step.is-todo .cbf-soy-ip__step-amt {
+  color: var(--color-content-default-tertiary);
 }
 .esa-pill {
   --_pill-bg: var(--color-background-elevation-sunken, #f0f0f0);
@@ -132,57 +120,56 @@ _15 repeated elements are collapsed in the markup below; the comments say where.
   --_pill-padding-y: var(--spacing-100, 0.25rem);
   --_pill-padding-x: var(--spacing-100, 0.25rem);
 }
-.esa-pill--primary {
-  --_pill-bg: var(--color-background-brand-subtle, var(--color-grass-2));
-  --_pill-text: var(--color-content-brand, var(--color-grass-11));
-  --_pill-border: var(--color-border-brand, var(--color-grass-6));
-}
 .esa-pill[data-category] {
   --_pill-bg: var(--category-2, var(--color-background-elevation-sunken, #f0f0f0));
   --_pill-border: var(--category-6, var(--color-border-default-subtle, #d9d9d9));
   --_pill-text: var(--category-11, var(--color-content-default, #202020));
 }
-.stack {
-  --gap: var(--spacing-400, 1rem);
+.cbf-soy-ov__tracker {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--spacing-300);
+}
+@media (max-width: 760px) {
+  .cbf-soy-ov__tracker {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.cbf-soy-ov__stage {
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--gap);
+  align-items: flex-start;
+  gap: var(--spacing-150);
+  padding: var(--spacing-300) var(--spacing-400);
+  border: 1px solid var(--color-border-default);
+  border-block-start-width: 4px;
+  border-radius: var(--radius-200);
+  background: var(--color-background-elevation-raised);
 }
-.stack[data-split] > [data-split] {
-  margin-block-end: auto;
+.cbf-soy-ov__stage.is-done {
+  border-block-start-color: var(--color-background-utility-success, var(--color-border-default));
 }
-.cbf-soy-wt__p {
-  margin: 0;
-  max-inline-size: 75ch;
-  color: var(--color-content-default-secondary);
+.cbf-soy-ov__stage.is-active {
+  border-color: var(--color-background-brand);
+  border-block-start-color: var(--color-background-brand);
+  background: var(--color-background-brand-subtle);
 }
-.cbf-soy-wt__h2 {
-  margin: 0;
-  font-family: var(--typography-font-family-display);
-  font-weight: var(--typography-font-weight-semibold);
-  font-size: var(--font-size-600, 24px);
-  color: var(--color-background-default-knockout);
+.cbf-soy-ov__stage-n {
+  font-size: 12px;
+  font-weight: var(--typography-font-weight-bold);
+  color: var(--color-content-default-tertiary);
 }
-.cbf-soy-wt__scroll {
-  overflow-x: auto;
-}
-.cbf-soy-wt__table {
-  inline-size: 100%;
-  min-inline-size: 720px;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-.cbf-soy-wt__table th {
-  text-align: start;
-  padding: var(--spacing-200) var(--spacing-300);
-  border-block-end: 2px solid var(--color-border-default);
-  color: var(--color-content-default-secondary);
+.cbf-soy-ov__stage-name {
+  font-size: 16px;
   font-weight: var(--typography-font-weight-semibold);
 }
-.cbf-soy-wt__table td {
-  padding: var(--spacing-200) var(--spacing-300);
-  border-block-end: 1px solid var(--color-border-default-subtle);
-  vertical-align: top;
+.cbf-soy-ov__stage-dates {
+  font-size: 13px;
+  color: var(--color-content-default-secondary);
 }
 ```
 
@@ -191,20 +178,17 @@ _15 repeated elements are collapsed in the markup below; the comments say where.
 | Token | Value | Tier |
 |---|---|---|
 | `--border-width-default` | `1px` | semantic |
+| `--color-background-brand` | `#1e5386` | semantic |
 | `--color-background-brand-subtle` | `#f3f7fc` | semantic |
-| `--color-background-default-knockout` | `#13273e` | semantic |
+| `--color-background-elevation-raised` | `#fcfcfc` | semantic |
 | `--color-background-elevation-sunken` | `#f3f7fc` | semantic |
-| `--color-border-brand` | `#c6dcf1` | semantic |
+| `--color-background-utility-success` | `#218358` | semantic |
 | `--color-border-default` | `#dcdcdc` | semantic |
 | `--color-border-default-subtle` | `#efefef` | semantic |
-| `--color-content-brand` | `#1e5386` | semantic |
 | `--color-content-default` | `#3d3d3d` | semantic |
 | `--color-content-default-secondary` | `#525252` | semantic |
-| `--color-grass-11` | `#2a7e3b` | primitive |
-| `--color-grass-2` | `#f5fbf5` | primitive |
-| `--color-grass-6` | `#b2ddb5` | primitive |
-| `--font-size-600` | `clamp(1.375rem, 1.2rem + .88vw, 1.875rem)` | primitive |
-| `--gap` | `.75rem` | component |
+| `--color-content-default-tertiary` | `#656565` | semantic |
+| `--radius-200` | `.5rem` | primitive |
 | `--radius-chip` | `.25rem` | semantic |
 | `--radius-sm` | `.25rem` | semantic |
 | `--spacing-100` | `.25rem` | primitive |
@@ -212,7 +196,7 @@ _15 repeated elements are collapsed in the markup below; the comments say where.
 | `--spacing-200` | `.5rem` | primitive |
 | `--spacing-300` | `.75rem` | primitive |
 | `--spacing-400` | `1rem` | primitive |
-| `--typography-font-family-display` | `"IBM Plex Sans Condensed", "IBM Plex Sans", sans-serif` | semantic |
+| `--typography-font-weight-bold` | `700` | semantic |
 | `--typography-font-weight-semibold` | `600` | semantic |
 | `--typography-microcopy-2xs-font-family` | `"IBM Plex Sans", sans-serif` | semantic |
 | `--typography-microcopy-2xs-font-size` | `clamp(.5rem, .44rem + .3vw, .625rem)` | semantic |

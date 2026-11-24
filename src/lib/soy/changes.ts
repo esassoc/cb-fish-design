@@ -5,8 +5,7 @@
 // and its weight tag (UI = front end only, BE = needs backend or data work,
 // DEC = shows the recommended answer to a client decision).
 //
-// Plain data with no DOM, so the walkthrough page can render the problem and
-// decision tables from the same source at build time.
+// Plain data with no DOM.
 
 export type ChangeTag = 'UI' | 'BE' | 'DEC';
 
@@ -34,26 +33,6 @@ export const PROBLEMS: Record<ProblemKey, string> = {
   P9: 'Two-year budgets are handled in comments',
   P10: 'The admin process is undocumented',
 };
-
-export interface Decision {
-  n: number;
-  question: string;
-  recommendation: string;
-  alternative: string;
-  /** Where the prototype shows it. */
-  where: { label: string; href: string };
-}
-
-export const DECISIONS: Decision[] = [
-  { n: 1, question: 'Close FY2024–2027?', recommendation: 'Yes, after reconciling the FY2027 variances', alternative: 'Leave them open and hide them from the overview', where: { label: 'Close-out', href: '/soy/close-out' } },
-  { n: 2, question: 'Should Complete lock admins?', recommendation: 'Yes, with a logged Reopen that requires a reason', alternative: "Lock PMs only (today's behavior)", where: { label: 'Close-out', href: '/soy/close-out' } },
-  { n: 3, question: 'Changes to final amounts after a transfer', recommendation: 'Allow with a warning and a required reason; show the variance', alternative: 'Block until the transfer is deleted', where: { label: 'Transfers', href: '/soy/transfers' } },
-  { n: 4, question: 'Bulk carry-forward exclusions', recommendation: 'Uncheck by default: ended projects and items no longer non-Accord expense; the admin can re-check', alternative: 'Carry everything forward (today)', where: { label: 'Setup, step 2', href: '/soy/setup' } },
-  { n: 5, question: 'Due dates and the PM window', recommendation: 'Automatic stage-open emails and reminders; the admin still advances stages; PM proposed defaults to 4 weeks', alternative: 'Auto-advance stages on the due date', where: { label: 'Overview', href: '/soy' } },
-  { n: 6, question: 'Cycle creation', recommendation: 'Auto-draft each year on January 15; the admin reviews and opens it', alternative: 'Draft when the prior cycle closes', where: { label: 'All cycles', href: '/soy/cycles' } },
-  { n: 7, question: 'Two-year budgets', recommendation: 'Flag two-year items; suggest the on-year amount (annual × 2, plus inflation) for admin confirmation; off-year shows $0 automatically', alternative: 'Keep manual, but list affected items', where: { label: 'Setup, step 4', href: '/soy/setup' } },
-  { n: 8, question: 'Budget Decision names', recommendation: 'Suggested "FY## SOY – Round N – date", editable', alternative: 'Free text (today)', where: { label: 'Transfers', href: '/soy/transfers' } },
-];
 
 export const CHANGES: Record<string, Change> = {
   // --- Shared ---------------------------------------------------------------
