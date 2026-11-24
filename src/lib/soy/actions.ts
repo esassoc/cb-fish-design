@@ -108,7 +108,7 @@ export function runSetup(s: SoyState, input: SetupInput): SetupReport {
   s.cycle.stage = 'ewb';
   log(s, {
     who: ADMIN, kind: 'setup', stage: 'ewb',
-    text: `Ran setup: carried forward ${report.carried} items, added ${report.added.length} new projects, applied a ${(report.colaRate * 100).toFixed(1)}% COLA to ${report.colaApplied} items. EWB proposed is open.`,
+    text: `Ran setup: carried forward ${report.carried} projects, added ${report.added.length} new projects, applied a ${(report.colaRate * 100).toFixed(1)}% COLA to ${report.colaApplied} projects. EWB proposed is open.`,
   });
   return report;
 }
@@ -152,7 +152,7 @@ export function bulkSet(s: SoyState, ids: string[], stage: AmountStage, source: 
   const set = new Set(ids);
   for (const item of s.cycle.items) {
     if (!set.has(item.id)) continue;
-    if (stage === 'final' && hasTransfers(item)) { report.skipped.push({ id: item.id, reason: 'Already transferred — change it from the item' }); continue; }
+    if (stage === 'final' && hasTransfers(item)) { report.skipped.push({ id: item.id, reason: 'Already transferred — change it from the project' }); continue; }
     const { value, reason } = sourceValue(item, source);
     if (value == null) { report.skipped.push({ id: item.id, reason: reason! }); continue; }
     item.amounts[stage] = { amount: value, by: who, date: s.today, rationale: isOffYear(item) ? 'Two-year project in its off year — $0 set automatically.' : rationale };
@@ -161,7 +161,7 @@ export function bulkSet(s: SoyState, ids: string[], stage: AmountStage, source: 
   }
   log(s, {
     who, kind: 'amount', stage,
-    text: `Set ${stageLabel(stage)} from ${source === 'baseline' ? 'baseline' : SOURCE_LABEL[source]} for ${report.written.length} items (${fmtMoney(report.total)}).${report.skipped.length ? ` Skipped ${report.skipped.length}.` : ''}`,
+    text: `Set ${stageLabel(stage)} from ${source === 'baseline' ? 'baseline' : SOURCE_LABEL[source]} for ${report.written.length} projects (${fmtMoney(report.total)}).${report.skipped.length ? ` Skipped ${report.skipped.length}.` : ''}`,
   });
   return report;
 }
@@ -170,7 +170,7 @@ export interface SetAmountResult { ok: boolean; error?: string; changedAfterTran
 
 export function setAmount(s: SoyState, id: string, stage: AmountStage, value: number, rationale: string, who: string, afterTransferReason?: string): SetAmountResult {
   const item = s.cycle.items.find((i) => i.id === id);
-  if (!item) return { ok: false, error: 'Item not found' };
+  if (!item) return { ok: false, error: 'Project not found' };
   if (s.cycle.status === 'Closed') return { ok: false, error: 'This cycle is closed.' };
   const prior = amount(item, stage);
   let cat = false;
@@ -267,14 +267,14 @@ export function simulatePmResponses(s: SoyState) {
   const due = stageDue(s.cycle.dates, 'pm');
   const reminderDay = addDays(due, -s.cycle.reminders.daysBefore);
   s.today = later(s.today, reminderDay);
-  log(s, { who: 'CBFish', kind: 'comment', stage: 'pm', date: addDays(reminderDay, -1), text: `PM input received on ${s.cycle.items.filter((i) => i.amounts.pm).length} items.` });
+  log(s, { who: 'CBFish', kind: 'comment', stage: 'pm', date: addDays(reminderDay, -1), text: `PM input received on ${s.cycle.items.filter((i) => i.amounts.pm).length} projects.` });
   if (s.cycle.reminders.on) sendReminders(s, LATE_PMS, true);
   s.pmResponsesSimulated = true;
 }
 
 export function notifyFinals(s: SoyState, ids: string[], who = ADMIN) {
   const pms = new Set(s.cycle.items.filter((i) => ids.includes(i.id)).map((i) => project(i).pm));
-  log(s, { who, kind: 'notify', stage: 'final', text: `Sent ${pms.size} PMs a summary of final amounts and rationale for ${ids.length} items.` });
+  log(s, { who, kind: 'notify', stage: 'final', text: `Sent ${pms.size} PMs a summary of final amounts and rationale for ${ids.length} projects.` });
 }
 
 // ---------------------------------------------------------------------------
@@ -305,7 +305,7 @@ export function makeTransfers(s: SoyState, ids: string[], input: TransferInput, 
     count++;
     total += amt;
   }
-  log(s, { who, kind: 'transfer', stage: s.cycle.stage ?? undefined, text: `Transferred ${fmtMoney(total)} on ${count} items to working budgets under “${input.name}”.` });
+  log(s, { who, kind: 'transfer', stage: s.cycle.stage ?? undefined, text: `Transferred ${fmtMoney(total)} on ${count} projects to working budgets under “${input.name}”.` });
   return { count, total, decisionId };
 }
 

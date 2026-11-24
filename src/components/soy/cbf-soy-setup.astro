@@ -45,7 +45,7 @@ const eligibilityFilters = [
   { value: 'excluded', label: 'Not eligible' },
 ];
 const reviewTiles = [
-  { key: 'items', label: 'Items in the cycle' },
+  { key: 'items', label: 'Projects in the cycle' },
   { key: 'baseline', label: 'Total baseline' },
   { key: 'cola', label: 'COLA applied' },
   { key: 'excluded', label: 'Not carried forward' },
@@ -98,8 +98,8 @@ const reviewTiles = [
 
     <!-- 2. Carry forward -->
     <div class="cbf-soy-su__panel stack" data-gap="sm" data-su-panel="1" hidden>
-      <h3 class="cbf-soy-su__h">Carry forward last year’s items</h3>
-      <p class="cbf-soy-lede">Every FY2027 item (project + fund + account type) is listed. Items whose project has ended or that are no longer non-Accord expense start unchecked, with the reason. You can re-check any of them.</p>
+      <h3 class="cbf-soy-su__h">Carry forward last year’s projects</h3>
+      <p class="cbf-soy-lede">Every FY2027 project is listed by project number, fund and account type. Projects that have ended or that are no longer non-Accord expense start unchecked, with the reason. You can re-check any of them.</p>
       <div class="cbf-data-grid__controls repel">
         <label class="cbf-data-grid__filter">
           <span class="typography-meta">Show</span>
@@ -194,7 +194,7 @@ const reviewTiles = [
   <div class="cbf-soy-su__run stack" data-gap="md" data-su-run hidden data-change="su-run">
     <h2 class="cbf-soy-section-title" data-su-run-title>Creating the FY2028 cycle</h2>
     <div data-su-progress>
-      <EsaProgressBar value={0} size="md" label="Saving new items" />
+      <EsaProgressBar value={0} size="md" label="Saving new projects" />
     </div>
     <p class="cbf-soy-lede" data-su-run-note></p>
     <div class="stack" data-gap="md" data-su-report hidden>
@@ -204,7 +204,7 @@ const reviewTiles = [
       </table>
       <div class="cbf-soy-su__review-cols" data-su-report-lists></div>
       <div class="cluster" data-gap="xs">
-        <EsaButton size="sm" variant="primary" iconRight="arrow-right" href={withBase('/soy/items')}>Go to items</EsaButton>
+        <EsaButton size="sm" variant="primary" iconRight="arrow-right" href={withBase('/soy/items')}>Go to projects</EsaButton>
         <EsaButton size="sm" variant="secondary" appearance="outline" href={withBase('/soy')}>Back to overview</EsaButton>
       </div>
     </div>
@@ -435,7 +435,7 @@ const reviewTiles = [
     function renderSummary() {
       if (mode !== 'draft') { q('[data-su-summary]').textContent = ''; return; }
       const { items, report } = planSetup(input());
-      q('[data-su-summary]').textContent = `${items.length} items · ${fmtShort(report.totalBaseline)} FY2028 baseline`;
+      q('[data-su-summary]').textContent = `${items.length} projects · ${fmtShort(report.totalBaseline)} FY2028 baseline`;
     }
 
     function renderCola() {
@@ -459,9 +459,9 @@ const reviewTiles = [
         after += it.baseline ?? 0;
       }
       colaApi.setGridOption('rowData', rows);
-      colaApi.setGridOption('pinnedBottomRowData', [{ id: 'total', number: '', title: `${rows.length} items`, fund: '', emphasis: '', pm: '', before, after, note: '', total: true }]);
+      colaApi.setGridOption('pinnedBottomRowData', [{ id: 'total', number: '', title: `${rows.length} projects`, fund: '', emphasis: '', pm: '', before, after, note: '', total: true }]);
       colaApi.refreshCells({ force: true });
-      q('[data-su-cola-count]').textContent = `COLA of ${(rate * 100).toFixed(rate * 1000 % 1 ? 2 : 1)}% applies to ${report.colaApplied} of the ${ids.size} items shown · baseline ${fmtShort(before)} → ${fmtShort(after)} (${after - before >= 0 ? '+' : ''}${fmtMoney(after - before)})`;
+      q('[data-su-cola-count]').textContent = `COLA of ${(rate * 100).toFixed(rate * 1000 % 1 ? 2 : 1)}% applies to ${report.colaApplied} of the ${ids.size} projects shown · baseline ${fmtShort(before)} → ${fmtShort(after)} (${after - before >= 0 ? '+' : ''}${fmtMoney(after - before)})`;
 
       const names = (list: string[]) => list.map((id) => `<li>${esc(label(id))}</li>`).join('');
       q('[data-su-skip-off]').hidden = report.colaSkippedOffYear.length === 0;
@@ -493,12 +493,12 @@ const reviewTiles = [
       const { items, report } = planSetup(input());
       tile('items', String(items.length), `${report.carried} carried forward · ${report.added.length} new`);
       tile('baseline', fmtShort(report.totalBaseline), 'FY2028, after COLA');
-      tile('cola', `${report.colaApplied} items`, `at ${(rate * 100).toFixed(1)}%`);
+      tile('cola', `${report.colaApplied} projects`, `at ${(rate * 100).toFixed(1)}%`);
       tile('excluded', String(report.excluded.length), 'Each with its reason');
       q('[data-su-review-dates]').innerHTML = STAGES.map((st) => `<tr><th scope="row">${esc(st.label)}</th><td>${st.key === 'complete' ? `On ${fmtDate(dates.complete)}` : `${fmtDate(dates[st.key as keyof StageDates])} – ${fmtDate(stageDue(dates, st.key as StageKey))}`}</td></tr>`).join('');
       q('[data-su-review-excluded]').innerHTML = report.excluded.length
         ? report.excluded.map((x) => `<tr><td>${esc(label(x.id))}</td><td>${esc(x.reason)}</td></tr>`).join('')
-        : '<tr><td colspan="2" class="cbf-soy-muted">Every FY2027 item is carried forward.</td></tr>';
+        : '<tr><td colspan="2" class="cbf-soy-muted">Every FY2027 project is carried forward.</td></tr>';
       q('[data-su-review-note]').textContent = `Creating the cycle opens EWB proposed. ${report.colaSkippedOffYear.length + report.colaSkippedNoBaseline.length} COLA skips and ${report.twoYearFlagged.length} two-year suggestions will be listed in the results report.`;
     }
 
@@ -584,13 +584,13 @@ const reviewTiles = [
       q('[data-su-report]').hidden = true;
       q('[data-su-progress]').hidden = false;
       q('[data-su-run-title]').textContent = 'Creating the FY2028 cycle';
-      q('[data-su-run-note]').textContent = `Saving ${items.length} new items. Only the new items are saved — existing items are not re-saved one at a time.`;
+      q('[data-su-run-note]').textContent = `Saving ${items.length} new projects. Only the new projects are saved — existing projects are not re-saved one at a time.`;
       // A timer, not requestAnimationFrame, so the run also finishes in a background tab.
       const start = Date.now();
       const total = items.length;
       const timer = setInterval(() => {
         const pct = Math.min(100, ((Date.now() - start) / 2000) * 100);
-        setProgress(pct, `Saving new items — ${Math.round((pct / 100) * total)} of ${total}`);
+        setProgress(pct, `Saving new projects — ${Math.round((pct / 100) * total)} of ${total}`);
         if (pct >= 100) { clearInterval(timer); finish(inp); }
       }, 50);
     });
@@ -602,11 +602,11 @@ const reviewTiles = [
       q('[data-su-run-title]').textContent = 'FY2028 cycle created';
       q('[data-su-run-note]').textContent = '';
       q('[data-su-report]').hidden = false;
-      q('[data-su-report-lede]').textContent = `EWB proposed is open, with ${report.carried + report.added.length} items and a ${fmtShort(report.totalBaseline)} FY2028 baseline.`;
+      q('[data-su-report-lede]').textContent = `EWB proposed is open, with ${report.carried + report.added.length} projects and a ${fmtShort(report.totalBaseline)} FY2028 baseline.`;
       q('[data-su-report-rows]').innerHTML = [
-        ['Carried forward', `${report.carried} items`],
+        ['Carried forward', `${report.carried} projects`],
         ['New projects added', `${report.added.length}`],
-        ['COLA applied', `${report.colaApplied} items at ${(report.colaRate * 100).toFixed(1)}%`],
+        ['COLA applied', `${report.colaApplied} projects at ${(report.colaRate * 100).toFixed(1)}%`],
         ['Two-year on-year suggestions', `${report.twoYearFlagged.length} — confirm in EWB proposed`],
         ['Not carried forward', `${report.excluded.length}`],
         ['Total FY2028 baseline', fmtMoney(report.totalBaseline)],
@@ -620,7 +620,7 @@ const reviewTiles = [
         list('Not carried forward', report.excluded.map((x) => x.id), (id) => report.excluded.find((x) => x.id === id)?.reason ?? ''),
         list('New projects added', report.added),
       ].join('');
-      snackbar('success', `FY2028 cycle created: ${report.carried + report.added.length} items. EWB proposed is open.`);
+      snackbar('success', `FY2028 cycle created: ${report.carried + report.added.length} projects. EWB proposed is open.`);
     }
 
     // Re-entry: add projects to an open cycle.
@@ -643,7 +643,7 @@ const reviewTiles = [
         });
       });
       added.clear();
-      snackbar('success', `Added ${ids.length} project${ids.length === 1 ? '' : 's'}. Enter their EWB proposed amounts on Items.`);
+      snackbar('success', `Added ${ids.length} project${ids.length === 1 ? '' : 's'}. Enter their EWB proposed amounts on Projects.`);
     });
 
     // ------------------------------------------------------------------
@@ -668,8 +668,8 @@ const reviewTiles = [
       q('[data-su-add-wrap]').hidden = mode !== 'reentry';
       q('[data-su-heading]').textContent = mode === 'draft' ? `Set up FY${c.fy}` : `Add projects to FY${c.fy}`;
       if (mode === 'reentry') {
-        q('[data-su-reentry-text]').textContent = `FY${c.fy} is open (${c.items.length} items). You can add projects that weren’t included; dates, carry-forward and COLA were set when the cycle was created.`;
-        q('[data-su-new-lede]').textContent = 'Eligible projects not yet in this cycle. They start with no baseline — enter their amounts on Items.';
+        q('[data-su-reentry-text]').textContent = `FY${c.fy} is open (${c.items.length} projects). You can add projects that weren’t included; dates, carry-forward and COLA were set when the cycle was created.`;
+        q('[data-su-new-lede]').textContent = 'Eligible projects not yet in this cycle. They start with no baseline — enter their amounts on Projects.';
       }
       if (mode === 'draft' && prevMode !== 'draft') {
         dates = { ...c.dates };

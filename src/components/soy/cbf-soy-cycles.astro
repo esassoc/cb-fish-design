@@ -90,7 +90,7 @@ import '../shared/cbf-data-grid-chrome.css';
           return `${pill('Open', 'primary', { size: 'xs' })} <span class="cbf-soy-muted">${esc(stageLabel(r.stage))}</span>`;
         },
       },
-      { field: 'items', headerName: 'Items', type: 'rightAligned', width: 90, cellClass: 'cbf-soy-num' },
+      { field: 'items', headerName: 'Projects', type: 'rightAligned', width: 90, cellClass: 'cbf-soy-num' },
       money('baseline', 'Total baseline'),
       money('final', 'Total final'),
       money('transferred', 'Total transferred'),
@@ -99,7 +99,7 @@ import '../shared/cbf-data-grid-chrome.css';
         cellRenderer: (p: { data: Row }) => {
           const r = p.data;
           if (!r.varianceItems) return '<span class="cbf-soy-muted">$0</span>';
-          return `<span class="cbf-soy-neg">${fmtShort(r.variance)}</span> <span class="cbf-soy-muted">· ${r.varianceItems} items</span>`;
+          return `<span class="cbf-soy-neg">${fmtShort(r.variance)}</span> <span class="cbf-soy-muted">· ${r.varianceItems} projects</span>`;
         },
       },
       {

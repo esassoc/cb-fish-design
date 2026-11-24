@@ -63,7 +63,7 @@ const tiles = [
 
     <div data-change="tr-after">
       <EsaAlertBox variant="info" title="Changing a final after a transfer">
-        Change it from the item with <strong>Change final</strong>. You’ll see a warning and need to give a reason. The item then shows as “Changed after transfer” with its variance until another round reconciles it.
+        Change it from the project with <strong>Change final</strong>. You’ll see a warning and need to give a reason. The project then shows as “Changed after transfer” with its variance until another round reconciles it.
       </EsaAlertBox>
     </div>
 
@@ -81,7 +81,7 @@ const tiles = [
 
     <div class="cbf-data-grid__grid cbf-soy-tr__grid" data-tr-grid></div>
     <div data-tr-none hidden>
-      <EsaEmptyState title="No items match" description="Choose All to see every item." size="sm" />
+      <EsaEmptyState title="No projects match" description="Choose All to see every project." size="sm" />
     </div>
     <footer class="cbf-data-grid__footer repel">
       <span class="typography-meta" data-tr-count></span>
@@ -91,7 +91,7 @@ const tiles = [
     <section class="stack" data-gap="xs" aria-labelledby="tr-rounds-h">
       <h3 class="cbf-soy-tr__h" id="tr-rounds-h">Transfer rounds</h3>
       <div class="cbf-soy-tr__scroll"><table class="cbf-soy-table" data-tr-rounds-table>
-        <thead><tr><th scope="col">Budget Decision</th><th scope="col">Date</th><th scope="col" class="cbf-soy-num">Items</th><th scope="col" class="cbf-soy-num">Amount</th><th scope="col">Description</th></tr></thead>
+        <thead><tr><th scope="col">Budget Decision</th><th scope="col">Date</th><th scope="col" class="cbf-soy-num">Projects</th><th scope="col" class="cbf-soy-num">Amount</th><th scope="col">Description</th></tr></thead>
         <tbody data-tr-rounds></tbody>
       </table></div>
       <p class="typography-meta cbf-soy-muted" data-tr-rounds-empty hidden>No transfers yet this cycle.</p>
@@ -256,9 +256,9 @@ const tiles = [
       if (!hasFinals) return;
 
       const notTr = c.items.filter((i) => transferStatus(i) === 'Not transferred');
-      tile('final', fmtShort(t.final), `${t.finalCount} items`);
-      tile('transferred', fmtShort(t.transferred), `${t.transferredCount} items · ${c.decisions.length} ${c.decisions.length === 1 ? 'round' : 'rounds'}`);
-      tile('variance', t.varianceItems ? fmtMoney(t.variance) : '$0', t.varianceItems ? `${t.varianceItems} ${t.varianceItems === 1 ? 'item' : 'items'} final ≠ transferred` : 'Final matches transferred');
+      tile('final', fmtShort(t.final), `${t.finalCount} projects`);
+      tile('transferred', fmtShort(t.transferred), `${t.transferredCount} projects · ${c.decisions.length} ${c.decisions.length === 1 ? 'round' : 'rounds'}`);
+      tile('variance', t.varianceItems ? fmtMoney(t.variance) : '$0', t.varianceItems ? `${t.varianceItems} ${t.varianceItems === 1 ? 'project' : 'projects'} final ≠ transferred` : 'Final matches transferred');
       tile('not', String(notTr.length), notTr.length ? fmtShort(notTr.reduce((k, i) => k + (amount(i, 'final') ?? 0), 0)) : 'Nothing waiting');
 
       const visible = c.items.filter(matches);
@@ -275,14 +275,14 @@ const tiles = [
       api.setGridOption('columnDefs', columns());
       api.setGridOption('rowData', rows);
       api.setGridOption('pinnedBottomRowData', [{
-        id: 'total', kind: 'total', number: 'Total', title: `${rows.length} items`, fund: '', pm: '',
+        id: 'total', kind: 'total', number: 'Total', title: `${rows.length} projects`, fund: '', pm: '',
         final: sum('final'), transferred: sum('transferred'), variance: sum('variance'), status: '', decisions: '',
       }]);
       api.refreshCells({ force: true });
 
       host.hidden = rows.length === 0;
       q('[data-tr-none]').hidden = rows.length > 0;
-      q('[data-tr-count]').textContent = `Showing ${rows.length} of ${c.items.length} items`;
+      q('[data-tr-count]').textContent = `Showing ${rows.length} of ${c.items.length} projects`;
 
       // Rounds.
       const rounds = c.decisions.map((d) => {
@@ -351,9 +351,9 @@ const tiles = [
       const moving = items.filter((i) => Math.round(transferable(i)) !== 0);
       const skipped = items.filter((i) => Math.round(transferable(i)) === 0);
       const total = moving.reduce((n, i) => n + transferable(i), 0);
-      q('[data-tr-review-big]').textContent = `${moving.length} ${moving.length === 1 ? 'item' : 'items'} · ${fmtMoney(total)}`;
+      q('[data-tr-review-big]').textContent = `${moving.length} ${moving.length === 1 ? 'project' : 'projects'} · ${fmtMoney(total)}`;
       const negatives = moving.filter((i) => transferable(i) < 0).length;
-      q('[data-tr-review-sub]').textContent = `Each item transfers its final amount less anything already transferred.${negatives ? ` ${negatives} ${negatives === 1 ? 'item returns' : 'items return'} money because the final went down after a transfer.` : ''}`;
+      q('[data-tr-review-sub]').textContent = `Each project transfers its final amount less anything already transferred.${negatives ? ` ${negatives} ${negatives === 1 ? 'item returns' : 'items return'} money because the final went down after a transfer.` : ''}`;
       const sk = q('[data-tr-review-skipped]');
       sk.hidden = skipped.length === 0;
       if (skipped.length) {
@@ -392,7 +392,7 @@ const tiles = [
       }));
       dlg.close();
       api.deselectAll();
-      snackbar('success', `Transferred ${fmtMoney(res.total)} on ${res.count} items under “${name}”.`);
+      snackbar('success', `Transferred ${fmtMoney(res.total)} on ${res.count} projects under “${name}”.`);
     });
 
     subscribe(render);

@@ -29,12 +29,12 @@ import { withBase } from '../../lib/base';
 ---
 <section class="cbf-soy-items stack" data-gap="sm" data-soy-items aria-labelledby="soy-items-title">
   <div class="repel">
-    <h2 class="cbf-soy-section-title" id="soy-items-title">Items</h2>
+    <h2 class="cbf-soy-section-title" id="soy-items-title">Projects</h2>
     <EsaButton size="sm" variant="secondary" appearance="outline" icon="download" data-items-csv>Export CSV</EsaButton>
   </div>
 
   <div data-items-draft hidden>
-    <EsaEmptyState title="No items yet" description="Run setup to carry last year’s items forward." size="md" />
+    <EsaEmptyState title="No projects yet" description="Run setup to carry last year’s projects forward." size="md" />
     <p class="cbf-soy-items__draft-link"><a href={withBase('/soy/setup')}>Go to setup →</a></p>
   </div>
 
@@ -61,7 +61,7 @@ import { withBase } from '../../lib/base';
 
     <div class="cbf-data-grid__grid" data-items-grid data-change="it-columns"></div>
     <div data-items-empty hidden>
-      <EsaEmptyState title="No items in this view" description="Choose All items to see every item." size="sm" />
+      <EsaEmptyState title="No projects in this view" description="Choose All projects to see every project." size="sm" />
     </div>
 
     <footer class="cbf-data-grid__footer repel">
@@ -155,20 +155,20 @@ import { withBase } from '../../lib/base';
   }
 
   const VIEW_LABEL: Record<View, string> = {
-    mine: 'My projects', needs: 'Needs my input', all: 'All items', changed: 'Changed vs EWB', variance: 'Variance', 'two-year': 'Two-year',
+    mine: 'My projects', needs: 'Needs my input', all: 'All projects', changed: 'Changed vs EWB', variance: 'Variance', 'two-year': 'Two-year',
   };
 
   function viewNote(v: View): string {
     const c = getState().cycle;
     if (v === 'needs') {
-      if (isAdmin()) return c.stage && c.stage !== 'complete' ? `Items with no ${stageLabel(c.stage)} amount yet — the active stage.` : 'No stage is collecting input right now.';
-      return c.stage === 'pm' ? `Your items with no PM proposal yet. Due ${fmtDate(stageDue(c.dates, 'pm'))}.` : `PM input opens ${fmtDate(c.dates.pm)}.`;
+      if (isAdmin()) return c.stage && c.stage !== 'complete' ? `Projects with no ${stageLabel(c.stage)} amount yet — the active stage.` : 'No stage is collecting input right now.';
+      return c.stage === 'pm' ? `Your projects with no PM proposal yet. Due ${fmtDate(stageDue(c.dates, 'pm'))}.` : `PM input opens ${fmtDate(c.dates.pm)}.`;
     }
     if (v === 'mine') return `Projects where you are the BPA PM (${DEMO_PM}).`;
-    if (v === 'changed') return 'Items where the PM proposed a different amount from EWB.';
-    if (v === 'variance') return 'Items whose final amount differs from what was transferred. Reconcile them on Transfers.';
-    if (v === 'two-year') return 'Two-year projects. On-year items show the suggested amount (annual × 2, plus inflation); off-year items are $0 automatically.';
-    return isAdmin() ? '' : 'Every item in the cycle, read only except your own.';
+    if (v === 'changed') return 'Projects where the PM proposed a different amount from EWB.';
+    if (v === 'variance') return 'Projects whose final amount differs from what was transferred. Reconcile them on Transfers.';
+    if (v === 'two-year') return 'Two-year projects. On-year projects show the suggested amount (annual × 2, plus inflation); off-year projects are $0 automatically.';
+    return isAdmin() ? '' : 'Every project in the cycle, read only except your own.';
   }
 
   function render() {
@@ -199,7 +199,7 @@ import { withBase } from '../../lib/base';
     api.setGridOption('rowSelection', canBulk ? SELECTION : undefined);
     api.setGridOption('columnDefs', columns(KEYS, c.fy));
     api.setGridOption('rowData', rows.map((i) => ({ id: i.id, item: i })));
-    api.setGridOption('pinnedBottomRowData', [totalRow(rows, KEYS, `Total · ${rows.length} items`)]);
+    api.setGridOption('pinnedBottomRowData', [totalRow(rows, KEYS, `Total · ${rows.length} projects`)]);
     api.refreshCells({ force: true });
 
     q('[data-items-grid]').hidden = rows.length === 0;
@@ -219,7 +219,7 @@ import { withBase } from '../../lib/base';
   function updateCount() {
     let n = 0;
     api.forEachNodeAfterFilter(() => { n++; });
-    q('[data-items-count]').textContent = `Showing ${n} of ${getState().cycle.items.length} items`;
+    q('[data-items-count]').textContent = `Showing ${n} of ${getState().cycle.items.length} projects`;
   }
 
   function updateBulk() {
@@ -265,7 +265,7 @@ import { withBase } from '../../lib/base';
     const writes: { i: SoyItem; v: number }[] = [];
     const skips: { i: SoyItem; reason: string }[] = [];
     for (const i of sel) {
-      if (st === 'final' && i.transfers.length) { skips.push({ i, reason: 'Already transferred — change it from the item' }); continue; }
+      if (st === 'final' && i.transfers.length) { skips.push({ i, reason: 'Already transferred — change it from the project' }); continue; }
       const r = sourceValue(i, source);
       if (r.value == null) skips.push({ i, reason: r.reason ?? 'No amount' });
       else writes.push({ i, v: r.value });
@@ -274,21 +274,21 @@ import { withBase } from '../../lib/base';
     const total = writes.reduce((k, w) => k + w.v, 0);
     const before = writes.reduce((k, w) => k + (amount(w.i, st) ?? 0), 0);
     dlg.heading = `Set ${stageLabel(st)} from ${SOURCE_LABEL[source].toLowerCase()}`;
-    q('[data-items-preview-lede]').innerHTML = `This writes to <strong>${esc(stageLabel(st))}</strong>, the active stage, for <strong>${writes.length}</strong> of the ${sel.length} selected items. Nothing is saved until you confirm.`;
+    q('[data-items-preview-lede]').innerHTML = `This writes to <strong>${esc(stageLabel(st))}</strong>, the active stage, for <strong>${writes.length}</strong> of the ${sel.length} selected projects. Nothing is saved until you confirm.`;
     q('[data-items-preview-before]').textContent = `Current ${stageLabel(st)}`;
     const shown = writes.slice(0, 50);
     q('[data-items-preview-rows]').innerHTML = shown.map(({ i, v }) => {
       const now = amount(i, st);
       return `<tr><td>${esc(i.projectNumber)}</td><td>${esc(project(i).title)}</td><td class="cbf-soy-num">${moneyHtml(now)}</td><td class="cbf-soy-num">${moneyHtml(v)}</td><td class="cbf-soy-num">${deltaHtml(now == null ? v : v - now)}</td></tr>`;
-    }).join('') + (writes.length > shown.length ? `<tr><td colspan="5" class="cbf-soy-muted">…and ${writes.length - shown.length} more items</td></tr>` : '');
-    q('[data-items-preview-foot]').innerHTML = `<tr><td colspan="2">Total · ${writes.length} items</td><td class="cbf-soy-num">${moneyHtml(before)}</td><td class="cbf-soy-num">${moneyHtml(total)}</td><td class="cbf-soy-num">${deltaHtml(total - before)}</td></tr>`;
+    }).join('') + (writes.length > shown.length ? `<tr><td colspan="5" class="cbf-soy-muted">…and ${writes.length - shown.length} more projects</td></tr>` : '');
+    q('[data-items-preview-foot]').innerHTML = `<tr><td colspan="2">Total · ${writes.length} projects</td><td class="cbf-soy-num">${moneyHtml(before)}</td><td class="cbf-soy-num">${moneyHtml(total)}</td><td class="cbf-soy-num">${deltaHtml(total - before)}</td></tr>`;
     const sk = q('[data-items-preview-skips]');
     sk.hidden = skips.length === 0;
-    q('[data-items-preview-skips-body]').innerHTML = `<p class="cbf-soy-items__skip-lede">${skips.length} selected items will be skipped. Enter their amounts by hand from the item panel.</p><ul class="cbf-soy-items__skips">${skips.slice(0, 20).map(({ i, reason }) => `<li><strong>${esc(i.projectNumber)}</strong> ${esc(project(i).title)} — ${esc(reason)}</li>`).join('')}${skips.length > 20 ? `<li>…and ${skips.length - 20} more</li>` : ''}</ul>`;
+    q('[data-items-preview-skips-body]').innerHTML = `<p class="cbf-soy-items__skip-lede">${skips.length} selected projects will be skipped. Enter their amounts by hand from the project panel.</p><ul class="cbf-soy-items__skips">${skips.slice(0, 20).map(({ i, reason }) => `<li><strong>${esc(i.projectNumber)}</strong> ${esc(project(i).title)} — ${esc(reason)}</li>`).join('')}${skips.length > 20 ? `<li>…and ${skips.length - 20} more</li>` : ''}</ul>`;
     rationale.value = source === 'baseline' ? `FY${getState().cycle.fy} baseline, including COLA.` : `Set from ${SOURCE_LABEL[source]}.`;
     rationale.errorText = '';
     const confirm = q<HTMLElement & { disabled: boolean }>('[data-items-preview-confirm]');
-    q('[data-items-preview-confirm] .esa-button__label').textContent = `Set ${stageLabel(st)} for ${writes.length} items`;
+    q('[data-items-preview-confirm] .esa-button__label').textContent = `Set ${stageLabel(st)} for ${writes.length} projects`;
     confirm.toggleAttribute('disabled', writes.length === 0);
     dlg.show();
   });
@@ -303,7 +303,7 @@ import { withBase } from '../../lib/base';
     api.deselectAll();
     pending = null;
     const skipped = report.skipped.length;
-    snackbar(skipped ? 'warning' : 'success', `Set ${stageLabel(report.stage)} for ${report.written.length} items (${fmtMoney(report.total)}).${skipped ? ` Skipped ${skipped}: ${report.skipped.slice(0, 6).map((x) => x.id.split('|')[0]).join(', ')}${skipped > 6 ? '…' : ''}. They’re listed under Needs input.` : ''}`);
+    snackbar(skipped ? 'warning' : 'success', `Set ${stageLabel(report.stage)} for ${report.written.length} projects (${fmtMoney(report.total)}).${skipped ? ` Skipped ${skipped}: ${report.skipped.slice(0, 6).map((x) => x.id.split('|')[0]).join(', ')}${skipped > 6 ? '…' : ''}. They’re listed under Needs input.` : ''}`);
     if (skipped && isAdmin()) {
       view = 'needs';
       const url = new URL(location.href);

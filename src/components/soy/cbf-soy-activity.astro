@@ -73,8 +73,8 @@ const dayOptions = [3, 5, 7, 10].map((d) => ({ value: String(d), label: `${d} da
   <aside class="cbf-soy-ac__side stack" data-gap="lg">
     <section class="cbf-soy-ac__box stack" data-gap="sm" aria-labelledby="ac-prefs-h" data-change="ac-prefs">
       <h2 class="cbf-soy-ac__h" id="ac-prefs-h">Your SOY notifications</h2>
-      <esa-radio-group size="sm" label="Email me about changes to my items" options={JSON.stringify(prefOptions)} data-ac-pref></esa-radio-group>
-      <p class="typography-meta cbf-soy-muted">In CBFish this setting lives in your user settings. Turn emails off for a single project from that item’s panel.</p>
+      <esa-radio-group size="sm" label="Email me about changes to my projects" options={JSON.stringify(prefOptions)} data-ac-pref></esa-radio-group>
+      <p class="typography-meta cbf-soy-muted">In CBFish this setting lives in your user settings. Turn emails off for a single project from that project’s panel.</p>
     </section>
 
     <section class="cbf-soy-ac__box stack" data-gap="sm" aria-labelledby="ac-rem-h" data-ac-reminders data-change="ac-reminders">
@@ -196,7 +196,7 @@ const dayOptions = [3, 5, 7, 10].map((d) => ({ value: String(d), label: `${d} da
           </div>
           ${proj ? `<p class="cbf-soy-ac__item">${esc(num)} · ${esc(proj.title)}</p>` : ''}
           <p class="cbf-soy-ac__text">${esc(a.text)}</p>
-          ${a.itemId ? `<div>${button('ghost', 'Open item', { 'ac-open': a.itemId })}</div>` : ''}
+          ${a.itemId ? `<div>${button('ghost', 'Open project', { 'ac-open': a.itemId })}</div>` : ''}
         </li>`;
       }).join('');
       q('[data-ac-empty]').hidden = list.length > 0;
@@ -234,7 +234,7 @@ const dayOptions = [3, 5, 7, 10].map((d) => ({ value: String(d), label: `${d} da
       whoWrap.hidden = !pmStageOpen;
       prevWrap.hidden = !pmStageOpen || out.length === 0 || !c.reminders.on;
       q('[data-ac-rem-who]').innerHTML = out.length
-        ? out.map((o) => `<li>${esc(o.pm)} — ${o.items.length} ${o.items.length === 1 ? 'item' : 'items'}</li>`).join('')
+        ? out.map((o) => `<li>${esc(o.pm)} — ${o.items.length} ${o.items.length === 1 ? 'project' : 'projects'}</li>`).join('')
         : '<li class="cbf-soy-muted">No one — every PM has responded.</li>';
       if (!prevWrap.hidden) q('[data-ac-rem-preview]').innerHTML = emailHtml(reminderEmail(s));
     }

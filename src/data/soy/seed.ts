@@ -269,19 +269,19 @@ export const PAST_CYCLES: PastCycle[] = [
 PAST_CYCLES.push(
   {
     fy: 2024, status: 'Open', stage: 'final', items: 239, baseline: 311.9 * M, final: 298.4 * M, transferred: 297.9 * M, varianceItems: 3,
-    blockers: ['3 items differ between final and transferred ($0.5M)', '1 item has no final amount'],
+    blockers: ['3 projects differ between final and transferred ($0.5M)', '1 project has no final amount'],
   },
   {
     fy: 2025, status: 'Open', stage: 'final', items: 238, baseline: 316.2 * M, final: 303.0 * M, transferred: 301.8 * M, varianceItems: 5,
-    blockers: ['5 items differ between final and transferred ($1.2M)'],
+    blockers: ['5 projects differ between final and transferred ($1.2M)'],
   },
   {
     fy: 2026, status: 'Open', stage: 'final', items: 236, baseline: 321.4 * M, final: 306.7 * M, transferred: 305.9 * M, varianceItems: 4,
-    blockers: ['4 items differ between final and transferred ($0.8M)', '2 items have no final amount'],
+    blockers: ['4 projects differ between final and transferred ($0.8M)', '2 projects have no final amount'],
   },
   {
     fy: 2027, status: 'Open', stage: 'final', items: 237, baseline: 326.6 * M, final: 311.3 * M, transferred: 307.6 * M, varianceItems: 9,
-    blockers: ['9 items differ between final and transferred ($3.7M)', '2 items with a final amount were never transferred', '33 items have no final amount — confirm they are $0'],
+    blockers: ['9 projects differ between final and transferred ($3.7M)', '2 projects with a final amount were never transferred', '33 projects have no final amount — confirm they are $0'],
   },
 );
 

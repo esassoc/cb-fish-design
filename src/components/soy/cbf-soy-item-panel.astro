@@ -24,7 +24,7 @@
 import EsaButton from '@esa/ecology/esa-button.astro';
 import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
 ---
-<esa-side-dialog size="lg" heading="Item" show-close-button data-soy-item-panel>
+<esa-side-dialog size="lg" heading="Project" show-close-button data-soy-item-panel>
   <div class="cbf-soy-ip stack" data-gap="md">
     <header class="stack" data-gap="2xs">
       <p class="cbf-soy-ip__title" data-ip-title></p>
@@ -88,7 +88,7 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     <section class="stack" data-gap="xs" aria-labelledby="ip-flags" data-change="it-notify">
       <h3 class="cbf-soy-ip__h" id="ip-flags">Follow-up and notifications</h3>
       <esa-checkbox size="sm" label="Flag for follow-up" data-ip-follow></esa-checkbox>
-      <esa-switch-toggle size="sm" label="Email me about changes to this item" data-ip-notify></esa-switch-toggle>
+      <esa-switch-toggle size="sm" label="Email me about changes to this project" data-ip-notify></esa-switch-toggle>
     </section>
   </div>
 </esa-side-dialog>
@@ -198,7 +198,7 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     admBox.hidden = !admin || locked || s.cycle.status === 'Draft';
     let roText = '';
     if (locked) roText = `The FY${s.cycle.fy} SOY is closed. Nothing can be changed until it is reopened.`;
-    else if (!admin && isOffYear(it)) roText = 'Off-year two-year item — no input needed.';
+    else if (!admin && isOffYear(it)) roText = 'Off-year two-year project — no input needed.';
     else if (!admin && s.cycle.stage !== 'pm') roText = s.cycle.stage === 'ewb' ? `PM input opens ${fmtDate(s.cycle.dates.pm)}. You’ll get an email when it does.` : 'PM proposed is closed. You can still comment.';
     else if (!admin && !canPropose(it)) roText = 'This is not one of your projects. You can read it but not propose.';
     ro.hidden = !roText;
@@ -288,7 +288,7 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     const v = parseMoney(q<Field>('[data-ip-admin-amount]').value);
     const after = stage === 'final' && it.transfers.length > 0 && (v == null || v !== Math.round(transferred(it)));
     q('[data-ip-after]').hidden = !(stage === 'final' && it.transfers.length > 0);
-    q('[data-ip-after-text]').textContent = `This item was transferred (${fmtMoney(transferred(it))}). Changing its final amount creates a variance that shows on Transfers until another round reconciles it. A reason is required.`;
+    q('[data-ip-after-text]').textContent = `This project was transferred (${fmtMoney(transferred(it))}). Changing its final amount creates a variance that shows on Transfers until another round reconciles it. A reason is required.`;
     q('[data-ip-after-reason-wrap]').hidden = !after;
   }
   q('[data-ip-admin-stage]').addEventListener('change', () => {
