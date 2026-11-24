@@ -6,15 +6,15 @@ Start-of-year (SOY) budgets · source prototype: https://esassoc.github.io/cb-fi
 
 Phone width: https://esassoc.github.io/cb-fish-design/handoff/soy/claude/progress-tiles.phone.png
 
-Items in cycle, EWB proposed, PM input received vs needed, final amount set, transferred and variance (final − transferred), always current. PMs see their own tiles instead.
+Projects in cycle, EWB proposed, PM input received vs needed, final amount set, transferred and variance (final − transferred), always current. PMs see their own tiles instead.
 
 ## Gotchas
 
-- PM input needed excludes two-year items in their off year (their $0 is automatic).
+- PM input needed excludes two-year projects in their off year (their $0 is automatic).
 
 ## Done when
 
-- At ?step=5 (May 7): 219 of 231 PM inputs received, 4 PMs with 12 items outstanding.
+- At ?step=5 (May 7): 219 of 231 PM inputs received, 4 PMs with 12 projects outstanding.
 
 ## Components
 
@@ -26,7 +26,7 @@ Items in cycle, EWB proposed, PM input received vs needed, final amount set, tra
 - Fixture: `src/data/soy/seed.ts`
 - Client store: `src/lib/soy/store.ts`
 - Screens: /soy (overview), /soy/cycles, /soy/setup, /soy/items (+ item side panel on every screen), /soy/finals, /soy/transfers, /soy/close-out, /soy/activity.
-- State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped items.
+- State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped projects.
 - Demo presets (?step=1…7, plus 4.5 for the PM landing; linked from the separate walkthrough guide, not from the prototype) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).
 - Every behavior change is tagged UI / BE / DEC in src/lib/soy/changes.ts and annotated in place by the “Show what’s changing” layer (cbf-soy-changes).
 - All people and comment text are invented; project numbers and titles are illustrative.
@@ -35,7 +35,7 @@ Items in cycle, EWB proposed, PM input received vs needed, final amount set, tra
 |---|---|
 | `item` | project number + fund + account type (Expense) within one fiscal year’s SOY — the Gemini identity |
 | `amounts` | whole dollars, recorded per stage (ewb, pm, final), each with who, when and a rationale |
-| `transfers` | per item, tied to a Budget Decision (one per round); variance = final − transferred |
+| `transfers` | per project, tied to a Budget Decision (one per round); variance = final − transferred |
 | `today` | the demo date moves with the walkthrough (Jan 15 → Jun 15, 2027) |
 
 `stage`: `EWB proposed` · `PM proposed` · `Final budget` · `Complete`
@@ -55,15 +55,15 @@ _4 repeated elements are collapsed in the markup below; the comments say where._
   <div data-tile="items">
     <div class="esa-stat">
       <div class="esa-stat__value typography-display-sm">0</div>
-      <div class="esa-stat__label typography-label-md">Items in cycle</div>
-      <div class="esa-stat__sub typography-body-sm">Run setup to add items</div>
+      <div class="esa-stat__label typography-label-md">Projects in cycle</div>
+      <div class="esa-stat__sub typography-body-sm">Run setup to add projects</div>
     </div>
   </div>
   <div data-tile="ewb">
     <div class="esa-stat">
       <div class="esa-stat__value typography-display-sm">0</div>
       <div class="esa-stat__label typography-label-md">EWB proposed</div>
-      <div class="esa-stat__sub typography-body-sm">$0 of 0 items</div>
+      <div class="esa-stat__sub typography-body-sm">$0 of 0 projects</div>
     </div>
   </div>
   <!-- …and 4 more like this (<div>) -->
