@@ -15,7 +15,7 @@ export default {
     fields: {
       item: 'project number + fund + account type (Expense) within one fiscal year’s SOY — the Gemini identity',
       amounts: 'whole dollars, recorded per stage (ewb, pm, final), each with who, when and a rationale',
-      transfers: 'per item, tied to a Budget Decision (one per round); variance = final − transferred',
+      transfers: 'per project, tied to a Budget Decision (one per round); variance = final − transferred',
       today: 'the demo date moves with the walkthrough (Jan 15 → Jun 15, 2027)',
     },
     enums: {
@@ -26,7 +26,7 @@ export default {
     },
     notes: [
       'Screens: /soy (overview), /soy/cycles, /soy/setup, /soy/items (+ item side panel on every screen), /soy/finals, /soy/transfers, /soy/close-out, /soy/activity.',
-      'State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped items.',
+      'State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped projects.',
       'Demo presets (?step=1…7, plus 4.5 for the PM landing; linked from the separate walkthrough guide, not from the prototype) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).',
       'Every behavior change is tagged UI / BE / DEC in src/lib/soy/changes.ts and annotated in place by the “Show what’s changing” layer (cbf-soy-changes).',
       'All people and comment text are invented; project numbers and titles are illustrative.',
@@ -54,9 +54,9 @@ export default {
     {
       label: 'Progress tiles',
       selector: '[data-ov-admin] .cbf-soy-ov__tiles',
-      intent: 'Items in cycle, EWB proposed, PM input received vs needed, final amount set, transferred and variance (final − transferred), always current. PMs see their own tiles instead.',
-      gotchas: ['PM input needed excludes two-year items in their off year (their $0 is automatic).'],
-      acceptance: ['At ?step=5 (May 7): 219 of 231 PM inputs received, 4 PMs with 12 items outstanding.'],
+      intent: 'Projects in cycle, EWB proposed, PM input received vs needed, final amount set, transferred and variance (final − transferred), always current. PMs see their own tiles instead.',
+      gotchas: ['PM input needed excludes two-year projects in their off year (their $0 is automatic).'],
+      acceptance: ['At ?step=5 (May 7): 219 of 231 PM inputs received, 4 PMs with 12 projects outstanding.'],
     },
     {
       label: 'Next actions',

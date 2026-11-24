@@ -8,7 +8,7 @@ Links are relative to https://esassoc.github.io/cb-fish-design/handoff/
 
 - [Draft notice](soy/claude/draft-notice.md): On Jan 15 the next cycle drafts itself with the standard dates; the overview says so and points the budget administrator to setup. (7.0 KB)
 - [Stage tracker](soy/claude/stage-tracker.md): The four stages with open and due dates, the active stage and days left. (8.3 KB)
-- [Progress tiles](soy/claude/progress-tiles.md): Items in cycle, EWB proposed, PM input received vs needed, final amount set, transferred and variance (final − transferred), always current. (9.1 KB)
+- [Progress tiles](soy/claude/progress-tiles.md): Projects in cycle, EWB proposed, PM input received vs needed, final amount set, transferred and variance (final − transferred), always current. (9.2 KB)
 - [Next actions](soy/claude/next-actions.md): What the budget administrator should do next for the current stage, each with the button that does it: run setup, set EWB proposed, open the next stage, send a… (4.3 KB)
 
 ## Project header navigation

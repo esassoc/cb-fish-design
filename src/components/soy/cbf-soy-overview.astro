@@ -24,7 +24,7 @@ import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 import { withBase } from '../../lib/base';
 
 const adminTiles = [
-  { key: 'items', label: 'Items in cycle' },
+  { key: 'items', label: 'Projects in cycle' },
   { key: 'ewb', label: 'EWB proposed' },
   { key: 'pm', label: 'PM input received' },
   { key: 'final', label: 'Final amount set' },
@@ -32,7 +32,7 @@ const adminTiles = [
   { key: 'variance', label: 'Variance' },
 ];
 const pmTiles = [
-  { key: 'mine', label: 'My items' },
+  { key: 'mine', label: 'My projects' },
   { key: 'need', label: 'Need my input' },
   { key: 'responded', label: 'Responded' },
   { key: 'final', label: 'Final amount set' },
@@ -99,7 +99,7 @@ const pmTiles = [
     </div>
     <p class="cbf-soy-lede" data-ov-needs-lede></p>
     <table class="cbf-soy-table" data-ov-needs-table>
-      <thead><tr><th scope="col">Project manager</th><th scope="col" class="cbf-soy-num">Items</th><th scope="col">Projects</th><th scope="col">Last reminder</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+      <thead><tr><th scope="col">Project manager</th><th scope="col" class="cbf-soy-num">Outstanding</th><th scope="col">Projects</th><th scope="col">Last reminder</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
       <tbody data-ov-needs-rows></tbody>
     </table>
     <div data-ov-needs-empty hidden><EsaEmptyState title="Everyone has responded" description="Open the next stage when you’re ready." size="sm" /></div>
@@ -177,7 +177,7 @@ const pmTiles = [
     q('[data-ov-draft]').hidden = !draft;
     if (draft) {
       q('[data-ov-draft-text]').innerHTML = admin
-        ? `The FY${c.fy} SOY was drafted automatically on ${fmtDate('2027-01-15')} with the standard dates. Review the dates and run setup to carry items forward and open it. <a href="${withBase('/soy/setup')}">Start setup</a>`
+        ? `The FY${c.fy} SOY was drafted automatically on ${fmtDate('2027-01-15')} with the standard dates. Review the dates and run setup to carry projects forward and open it. <a href="${withBase('/soy/setup')}">Start setup</a>`
         : `The FY${c.fy} SOY hasn’t opened yet. EWB proposed opens ${fmtDate(c.dates.ewb)}; you’ll be asked for input from ${fmtDate(c.dates.pm)}.`;
     }
 
@@ -207,11 +207,11 @@ const pmTiles = [
     q('[data-ov-pm]').hidden = admin;
 
     if (admin) {
-      tile('[data-ov-admin]', 'items', String(t.items), draft ? 'Run setup to add items' : `${fmtShort(t.baseline)} baseline`);
-      tile('[data-ov-admin]', 'ewb', `${t.ewbCount}`, `${fmtShort(t.ewb)} of ${t.items} items`);
+      tile('[data-ov-admin]', 'items', String(t.items), draft ? 'Run setup to add projects' : `${fmtShort(t.baseline)} baseline`);
+      tile('[data-ov-admin]', 'ewb', `${t.ewbCount}`, `${fmtShort(t.ewb)} of ${t.items} projects`);
       tile('[data-ov-admin]', 'pm', c.stage && stageIndex(c.stage) >= 1 ? `${t.pmCount} of ${t.pmExpected}` : '—', c.stage === 'pm' ? `Due ${fmtDate(stageDue(c.dates, 'pm'))}` : stageIndex(c.stage) > 1 ? fmtShort(t.pm) : 'Opens ' + fmtDay(c.dates.pm));
       tile('[data-ov-admin]', 'final', `${t.finalCount}`, `${fmtShort(t.final)}`);
-      tile('[data-ov-admin]', 'transferred', fmtShort(t.transferred), `${t.transferredCount} items · ${c.decisions.length} rounds`);
+      tile('[data-ov-admin]', 'transferred', fmtShort(t.transferred), `${t.transferredCount} projects · ${c.decisions.length} rounds`);
       tile('[data-ov-admin]', 'variance', t.varianceItems ? fmtShort(t.variance) : '$0', t.varianceItems ? `${t.varianceItems} item${t.varianceItems === 1 ? "" : "s"} final ≠ transferred` : 'Final matches transferred');
       renderActions();
     } else {
@@ -227,10 +227,10 @@ const pmTiles = [
       const n = out.reduce((k, o) => k + o.items.length, 0);
       q('[data-ov-needs-title]').textContent = `Needs input — ${stageLabel(c.stage)}`;
       q('[data-ov-needs-lede]').textContent = c.stage === 'pm'
-        ? `${n} items from ${out.length} PMs have no PM proposed amount. Due ${fmtDate(stageDue(c.dates, 'pm'))}.${c.reminders.on ? ` An automatic reminder goes to them on ${fmtDate(stageStart(stageDue(c.dates, 'pm'), -c.reminders.daysBefore))}.` : ''}`
+        ? `${n} projects from ${out.length} PMs have no PM proposed amount. Due ${fmtDate(stageDue(c.dates, 'pm'))}.${c.reminders.on ? ` An automatic reminder goes to them on ${fmtDate(stageStart(stageDue(c.dates, 'pm'), -c.reminders.daysBefore))}.` : ''}`
         : c.stage === 'ewb'
-          ? `${n} items have no EWB proposed amount. These are the budget team’s to enter; grouped by PM so you can see whose projects are waiting.`
-          : `${n} items have no final amount. Grouped by PM.`;
+          ? `${n} projects have no EWB proposed amount. These are the budget team’s to enter; grouped by PM so you can see whose projects are waiting.`
+          : `${n} projects have no final amount. Grouped by PM.`;
       q('[data-ov-remind-all-wrap]').hidden = c.stage !== 'pm' || out.length === 0;
       q('[data-ov-needs-table]').hidden = out.length === 0;
       q('[data-ov-needs-empty]').hidden = out.length > 0;
@@ -256,22 +256,22 @@ const pmTiles = [
     const t = totals(c);
     const acts: { text: string; sub?: string; btn?: string; href?: string; act?: string; tone?: 'primary' | 'secondary' }[] = [];
     if (c.status === 'Draft') {
-      acts.push({ text: `Review the FY${c.fy} draft and run setup`, sub: 'Confirm the dates, carry last year’s items forward, add new projects and apply the COLA.', btn: 'Start setup', href: '/soy/setup', tone: 'primary' });
+      acts.push({ text: `Review the FY${c.fy} draft and run setup`, sub: 'Confirm the dates, carry last year’s projects forward, add new projects and apply the COLA.', btn: 'Start setup', href: '/soy/setup', tone: 'primary' });
     } else if (c.status === 'Closed') {
       acts.push({ text: `FY${c.fy} is closed`, sub: `Closed ${fmtDate(c.closedOn)}. FY2024–2027 are still open — close them out too.`, btn: 'All cycles', href: '/soy/cycles' });
     } else if (c.stage === 'ewb') {
       const missing = t.items - t.ewbCount;
-      if (missing) acts.push({ text: `${missing} items have no EWB proposed amount`, sub: 'Set them from baseline in one step, then adjust any by hand with a rationale.', btn: 'Set EWB proposed', href: '/soy/items?view=needs', tone: 'primary' });
+      if (missing) acts.push({ text: `${missing} projects have no EWB proposed amount`, sub: 'Set them from baseline in one step, then adjust any by hand with a rationale.', btn: 'Set EWB proposed', href: '/soy/items?view=needs', tone: 'primary' });
       else acts.push({ text: 'EWB proposed is complete — open PM proposed', sub: `PMs get an email and have until ${fmtDate(stageDue(c.dates, 'pm'))} to respond.`, btn: 'Open PM proposed', act: 'advance', tone: 'primary' });
     } else if (c.stage === 'pm') {
       const out = outstandingByPm(c);
-      if (out.length) acts.push({ text: `${out.length} PMs haven’t responded (${out.reduce((k, o) => k + o.items.length, 0)} items)`, sub: c.reminders.on ? `An automatic reminder goes out ${c.reminders.daysBefore} days before the due date. You can send one now too.` : 'Automatic reminders are off.', btn: 'Send reminder', act: 'remind-all', tone: s.pmResponsesSimulated ? 'primary' : 'secondary' });
+      if (out.length) acts.push({ text: `${out.length} PMs haven’t responded (${out.reduce((k, o) => k + o.items.length, 0)} projects)`, sub: c.reminders.on ? `An automatic reminder goes out ${c.reminders.daysBefore} days before the due date. You can send one now too.` : 'Automatic reminders are off.', btn: 'Send reminder', act: 'remind-all', tone: s.pmResponsesSimulated ? 'primary' : 'secondary' });
       const changed = c.items.filter((i) => i.amounts.pm && i.amounts.ewb && i.amounts.pm.amount !== i.amounts.ewb.amount).length;
       if (changed) acts.push({ text: `${changed} PM proposals differ from EWB`, sub: 'Review them before decision makers meet.', btn: 'Changed vs EWB', href: '/soy/items?view=changed' });
-      acts.push({ text: 'When decision makers are ready, open Final budget', sub: `PM proposed is due ${fmtDate(stageDue(c.dates, 'pm'))}. Items with no PM input will take EWB’s amount unless you change them.`, btn: 'Open Final budget', act: 'advance', tone: out.length ? 'secondary' : 'primary' });
+      acts.push({ text: 'When decision makers are ready, open Final budget', sub: `PM proposed is due ${fmtDate(stageDue(c.dates, 'pm'))}. Projects with no PM input will take EWB’s amount unless you change them.`, btn: 'Open Final budget', act: 'advance', tone: out.length ? 'secondary' : 'primary' });
     } else if (c.stage === 'final' || c.stage === 'complete') {
       const noFinal = t.items - t.finalCount;
-      if (noFinal) acts.push({ text: `${noFinal} items have no final amount`, sub: 'Set finals from PM proposed, EWB proposed or baseline, with a preview.', btn: 'Final decisions', href: '/soy/finals', tone: 'primary' });
+      if (noFinal) acts.push({ text: `${noFinal} projects have no final amount`, sub: 'Set finals from PM proposed, EWB proposed or baseline, with a preview.', btn: 'Final decisions', href: '/soy/finals', tone: 'primary' });
       const notTr = c.items.filter((i) => transferStatus(i) === 'Not transferred').length;
       if (notTr) acts.push({ text: `${notTr} final amounts are not transferred`, sub: 'Transfer them to working budgets under a Budget Decision.', btn: 'Transfers', href: '/soy/transfers', tone: noFinal ? 'secondary' : 'primary' });
       if (t.varianceItems) acts.push({ text: `${t.varianceItems} item${t.varianceItems === 1 ? " needs" : "s need"} reconciliation`, sub: `Final and transferred differ by ${fmtMoney(t.variance)}.`, btn: 'Variance', href: '/soy/transfers?status=variance', tone: 'primary' });
@@ -324,7 +324,7 @@ const pmTiles = [
           <td class="cbf-soy-num">${fmtMoney(amount(i, 'final'))}</td>
           <td>${needsInput(i, 'pm') && c.stage === 'pm' ? pill('Needs input', 'warning', { size: 'xs' }) : i.amounts.final ? statusPill(transferStatus(i)) : i.amounts.pm ? pill('Responded', 'success', { size: 'xs' }) : pill('Waiting for EWB', 'default', { size: 'xs' })}</td>
         </tr>`).join('')
-      : '<tr><td colspan="6" class="cbf-soy-muted">No items yet — the cycle hasn’t been set up.</td></tr>';
+      : '<tr><td colspan="6" class="cbf-soy-muted">No projects yet — the cycle hasn’t been set up.</td></tr>';
   }
 
   // --- Clicks -------------------------------------------------------------
@@ -356,7 +356,7 @@ const pmTiles = [
     q('[data-ov-advance-lede]').textContent = `This closes ${stageLabel(c.stage)} and opens ${stageLabel(to)}${to === 'pm' ? `. PMs can respond until ${fmtDate(stageDue(c.dates, 'pm'))} (4 weeks).` : '.'}`;
     const missing = c.items.filter((i) => needsInput(i, c.stage)).length;
     q('[data-ov-advance-warn]').hidden = missing === 0;
-    q('[data-ov-advance-warn-text]').textContent = `${missing} items have no ${stageLabel(c.stage)} amount yet. You can still open the next stage; they stay listed under Needs input.`;
+    q('[data-ov-advance-warn-text]').textContent = `${missing} projects have no ${stageLabel(c.stage)} amount yet. You can still open the next stage; they stay listed under Needs input.`;
     q('[data-ov-advance-confirm] .esa-button__label').textContent = `Open ${stageLabel(to)}`;
     advEmail.checked = true;
     renderAdvancePreview();
@@ -369,7 +369,7 @@ const pmTiles = [
     const email = !!advEmail.checked;
     const to = update((s) => advanceStage(s, email));
     adv.close();
-    snackbar('success', `${stageLabel(to)} is open.${email ? ' The stage-open email went to every PM with items in the cycle.' : ''}`);
+    snackbar('success', `${stageLabel(to)} is open.${email ? ' The stage-open email went to every PM with projects in the cycle.' : ''}`);
   });
 
   // --- Reminders ------------------------------------------------------------
@@ -377,7 +377,7 @@ const pmTiles = [
   function openRemind(pms: string[]) {
     remindTargets = pms;
     const s = getState();
-    q('[data-ov-remind-lede]').textContent = `Each PM gets one email listing only their own items that still need input. ${pms.length} PM${pms.length === 1 ? '' : 's'}.`;
+    q('[data-ov-remind-lede]').textContent = `Each PM gets one email listing only their own projects that still need input. ${pms.length} PM${pms.length === 1 ? '' : 's'}.`;
     q('[data-ov-remind-preview]').innerHTML = emailHtml(reminderEmail(s, pms));
     rem.show();
   }

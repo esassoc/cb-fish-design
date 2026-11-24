@@ -39,7 +39,7 @@ export const CHANGES: Record<string, Change> = {
   'gl-nav': {
     title: 'SOY is one area with one set of tabs',
     before: 'Eight tabs mixed reports, admin screens and a live counter ("Remaining: N Projects"); admin tools sat under Maintenance and Project Assignment.',
-    now: 'Tabs follow the work: Overview, Items, Setup, Final decisions, Transfers, Close-out, Activity, All cycles. PMs only see the tabs they use.',
+    now: 'Tabs follow the work: Overview, Projects, Setup, Final decisions, Transfers, Close-out, Activity, All cycles. PMs only see the tabs they use.',
     problems: ['P8'], tags: ['UI'],
   },
   'gl-locked': {
@@ -59,7 +59,7 @@ export const CHANGES: Record<string, Change> = {
   'ov-tiles': {
     title: 'Progress tiles',
     before: 'Progress meant exporting the grid or counting by hand. Final vs transferred was never compared.',
-    now: 'Items, EWB proposed, PM input received vs needed, final set, transferred and variance, always current.',
+    now: 'Projects, EWB proposed, PM input received vs needed, final set, transferred and variance, always current.',
     problems: ['P6', 'P8'], tags: ['UI'],
   },
   'ov-actions': {
@@ -77,13 +77,13 @@ export const CHANGES: Record<string, Change> = {
   'ov-needs': {
     title: '"Needs input" replaces Remaining',
     before: '"Remaining" said "no projects" outside PM Proposed, and reminders were emailed by hand.',
-    now: 'The list appears only in stages where it applies, names the stage it checks, and groups items by PM with a reminder action.',
+    now: 'The list appears only in stages where it applies, names the stage it checks, and groups projects by PM with a reminder action.',
     problems: ['P8', 'P2'], tags: ['UI'],
   },
   'ov-pm-home': {
     title: 'PMs land on their own work',
     before: '"My Projects" was empty for non-PMs and showed every stage’s columns to PMs.',
-    now: 'A PM lands on how many of their projects need input, by when, with a link to exactly those items.',
+    now: 'A PM lands on how many of their projects need input, by when, with a link to exactly those projects.',
     problems: ['P8'], tags: ['UI'],
   },
 
@@ -91,7 +91,7 @@ export const CHANGES: Record<string, Change> = {
   'cy-list': {
     title: 'All cycles with status and money',
     before: 'The Maintenance grid listed fiscal year, project count, active stage and four due dates.',
-    now: 'Each cycle shows Draft, Open (stage) or Closed, with item count, baseline, final, transferred and variance.',
+    now: 'Each cycle shows Draft, Open (stage) or Closed, with project count, baseline, final, transferred and variance.',
     problems: ['P7'], tags: ['UI'],
   },
   'cy-flag': {
@@ -122,13 +122,13 @@ export const CHANGES: Record<string, Change> = {
   },
   'su-carry': {
     title: 'Carry forward with a preview',
-    before: 'One confirm copied every prior-year item — ended projects included — with no preview.',
-    now: 'Last year’s items are listed with checkboxes. Ended or no-longer-eligible items start unchecked with the reason; counts update live.',
+    before: 'One confirm copied every prior-year project — ended projects included — with no preview.',
+    now: 'Last year’s projects are listed with checkboxes. Ended or no-longer-eligible projects start unchecked with the reason; counts update live.',
     problems: ['P3'], tags: ['BE', 'DEC'], dec: 4,
   },
   'su-new': {
     title: 'Add new projects from a list',
-    before: 'Add Project was one item at a time: pick a project, a fund and an account type.',
+    before: 'Add Project was one project at a time: pick a project, a fund and an account type.',
     now: 'Eligible projects that were not in last year’s cycle are listed; select several and add them at once.',
     problems: ['P3'], tags: ['BE'],
   },
@@ -147,13 +147,13 @@ export const CHANGES: Record<string, Change> = {
   'su-two-year': {
     title: 'Two-year amounts are suggested',
     before: 'EWB doubled and inflated two-year budgets by hand ("doubled and then inflated at 2.21%") and entered $0 in off years.',
-    now: 'Two-year items are flagged. The on-year amount is suggested (annual × 2, plus inflation) for the admin to confirm; the off year is $0 automatically.',
+    now: 'Two-year projects are flagged. The on-year amount is suggested (annual × 2, plus inflation) for the admin to confirm; the off year is $0 automatically.',
     problems: ['P9'], tags: ['BE', 'DEC'], dec: 7,
   },
   'su-run': {
     title: 'Progress and a results report',
-    before: 'Bulk add ran with no progress, then re-saved every item one at a time.',
-    now: 'The run shows progress, saves only the new items, and ends with a report that names what was excluded or skipped.',
+    before: 'Bulk add ran with no progress, then re-saved every project one at a time.',
+    now: 'The run shows progress, saves only the new projects, and ends with a report that names what was excluded or skipped.',
     problems: ['P3'], tags: ['BE'],
   },
 
@@ -161,7 +161,7 @@ export const CHANGES: Record<string, Change> = {
   'it-views': {
     title: 'Saved views',
     before: 'My Projects, All Projects and Remaining were separate tabs; My Projects was empty for non-PMs.',
-    now: 'One table with saved views: My projects, Needs my input, All items, Changed vs EWB, Variance, Two-year. Non-PMs start on All items.',
+    now: 'One table with saved views: My projects, Needs my input, All projects, Changed vs EWB, Variance, Two-year. Non-PMs start on All projects.',
     problems: ['P8'], tags: ['UI'],
   },
   'it-columns': {
@@ -173,11 +173,11 @@ export const CHANGES: Record<string, Change> = {
   'it-bulk-ewb': {
     title: 'Bulk set names the stage',
     before: '"Bulk set" wrote to whatever stage was active; the label only echoed the stage name.',
-    now: 'Select items, preview before and after, and confirm a message that names the stage and the count.',
+    now: 'Select projects, preview before and after, and confirm a message that names the stage and the count.',
     problems: ['P5'], tags: ['UI'],
   },
   'it-panel': {
-    title: 'Item side panel',
+    title: 'Project side panel',
     before: 'Details opened a magnifier panel; history rendered at the bottom of the page; amounts went through a separate $ dialog.',
     now: 'One panel: amounts across stages, EWB’s rationale above the PM’s input, the comment thread, a follow-up flag and a notification toggle.',
     problems: ['P8'], tags: ['UI'],
@@ -197,13 +197,13 @@ export const CHANGES: Record<string, Change> = {
   'it-two-year': {
     title: 'Two-year flag',
     before: 'Two-year handling lived in comments.',
-    now: 'Two-year items carry a flag; on-year items show the suggested amount and off-year items show $0 automatically.',
+    now: 'Two-year projects carry a flag; on-year projects show the suggested amount and off-year projects show $0 automatically.',
     problems: ['P9'], tags: ['BE', 'DEC'], dec: 7,
   },
   'it-notify': {
     title: 'Per-project notifications',
-    before: 'A notification triangle column toggled per item; delivery preference was on its own page.',
-    now: 'The toggle sits in the item panel; delivery preference (none, immediately, daily digest) moves to user settings.',
+    before: 'A notification triangle column toggled per project; delivery preference was on its own page.',
+    now: 'The toggle sits in the project panel; delivery preference (none, immediately, daily digest) moves to user settings.',
     problems: ['P8'], tags: ['UI'],
   },
 
@@ -211,19 +211,19 @@ export const CHANGES: Record<string, Change> = {
   'fi-source': {
     title: 'Choose where finals come from',
     before: '"Bulk set Final Budget amounts" copied the baseline into whatever stage was active.',
-    now: 'Select items and choose the source: baseline, EWB proposed or PM proposed.',
+    now: 'Select projects and choose the source: baseline, EWB proposed or PM proposed.',
     problems: ['P5'], tags: ['UI', 'BE'],
   },
   'fi-preview': {
     title: 'Preview before and after',
     before: 'No preview.',
-    now: 'Each item’s current and new final amount, the change, and the total — before anything is written.',
+    now: 'Each project’s current and new final amount, the change, and the total — before anything is written.',
     problems: ['P5'], tags: ['UI'],
   },
   'fi-confirm': {
     title: 'The confirm names the target',
     before: 'The confirm repeated whatever stage happened to be active.',
-    now: '“Set Final budget for 204 items” — the stage and the count, every time. A rationale applies to all, or per item.',
+    now: '“Set Final budget for 204 projects” — the stage and the count, every time. A rationale applies to all, or per project.',
     problems: ['P5'], tags: ['UI'],
   },
   'fi-notify': {
@@ -236,8 +236,8 @@ export const CHANGES: Record<string, Change> = {
   // --- 4.6 Transfers ------------------------------------------------------------
   'tr-status': {
     title: 'Transfer status and variance',
-    before: 'Final and transferred drifted apart unseen: FY2027 final $311.3M vs transferred $307.6M, 9 items differing, 2 never transferred.',
-    now: 'Every item shows Not transferred, Transferred, Changed after transfer or Partially transferred, with its variance and a filter.',
+    before: 'Final and transferred drifted apart unseen: FY2027 final $311.3M vs transferred $307.6M, 9 projects differing, 2 never transferred.',
+    now: 'Every project shows Not transferred, Transferred, Changed after transfer or Partially transferred, with its variance and a filter.',
     problems: ['P6'], tags: ['UI'],
   },
   'tr-decision': {
@@ -249,13 +249,13 @@ export const CHANGES: Record<string, Change> = {
   'tr-review': {
     title: 'Review totals before transferring',
     before: 'Bulk transfer went straight through.',
-    now: 'The dialog shows the item count and the total to transfer before you confirm.',
+    now: 'The dialog shows the project count and the total to transfer before you confirm.',
     problems: ['P6'], tags: ['UI'],
   },
   'tr-after': {
     title: 'Changing a final after a transfer',
     before: 'Admins could edit amounts after a transfer, silently.',
-    now: 'A warning appears and a reason is required. The item shows "Changed after transfer" until another round reconciles it.',
+    now: 'A warning appears and a reason is required. The project shows "Changed after transfer" until another round reconciles it.',
     problems: ['P6'], tags: ['BE', 'DEC'], dec: 3,
   },
 
@@ -263,7 +263,7 @@ export const CHANGES: Record<string, Change> = {
   'co-checklist': {
     title: 'Close-out checklist',
     before: 'There was no definition of done; cycles stayed at Final Budget for years.',
-    now: 'Every item has a final (or $0), every final is transferred, and the variance is zero or explained.',
+    now: 'Every project has a final (or $0), every final is transferred, and the variance is zero or explained.',
     problems: ['P7'], tags: ['UI'],
   },
   'co-lock': {
@@ -289,13 +289,13 @@ export const CHANGES: Record<string, Change> = {
   'ac-feed': {
     title: 'Activity feed with filter chips',
     before: 'The Activity Log had four dropdowns and a Filter button over a long history list.',
-    now: 'Filter by stage, kind and person with chips; every entry links into the item panel.',
+    now: 'Filter by stage, kind and person with chips; every entry links into the project panel.',
     problems: ['P8'], tags: ['UI'],
   },
   'ac-prefs': {
     title: 'Notification preferences in user settings',
     before: 'A separate Notifications page inside SOY.',
-    now: 'None, immediately or daily digest — set once in user settings; per-project toggles stay on each item.',
+    now: 'None, immediately or daily digest — set once in user settings; per-project toggles stay on each project.',
     problems: ['P8'], tags: ['UI'],
   },
   'ac-reminders': {

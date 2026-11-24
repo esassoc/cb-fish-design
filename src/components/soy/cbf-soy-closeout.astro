@@ -62,7 +62,7 @@ import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
       <p class="typography-meta cbf-soy-muted"><strong>Recommended (DEC 1):</strong> close FY2024–2027 after reconciling the FY2027 variances. <strong>Alternative:</strong> leave them open and hide them from the overview.</p>
     </div>
     <div class="cbf-soy-co__scroll"><table class="cbf-soy-table" data-co-past-table>
-      <thead><tr><th scope="col">Fiscal year</th><th scope="col">Stage</th><th scope="col" class="cbf-soy-num">Items</th><th scope="col" class="cbf-soy-num">Final</th><th scope="col" class="cbf-soy-num">Transferred</th><th scope="col">What blocks closing it</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
+      <thead><tr><th scope="col">Fiscal year</th><th scope="col">Stage</th><th scope="col" class="cbf-soy-num">Projects</th><th scope="col" class="cbf-soy-num">Final</th><th scope="col" class="cbf-soy-num">Transferred</th><th scope="col">What blocks closing it</th><th scope="col"><span class="visually-hidden">Actions</span></th></tr></thead>
       <tbody data-co-past></tbody>
     </table></div>
     <div data-co-past-empty hidden><EsaEmptyState title="Every past cycle is closed" description="Check All cycles for the full history." size="sm" /></div>
@@ -144,8 +144,8 @@ import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
         const t = totals(c);
         q('[data-co-title]').textContent = closed ? `FY${c.fy} is closed` : `Close FY${c.fy}`;
         q('[data-co-lede]').textContent = closed
-          ? `${t.items} items · final ${fmtShort(t.final)} · transferred ${fmtShort(t.transferred)}.`
-          : `The cycle can close when all three checks pass. ${t.items} items · final ${fmtShort(t.final)} · transferred ${fmtShort(t.transferred)}.`;
+          ? `${t.items} projects · final ${fmtShort(t.final)} · transferred ${fmtShort(t.transferred)}.`
+          : `The cycle can close when all three checks pass. ${t.items} projects · final ${fmtShort(t.final)} · transferred ${fmtShort(t.transferred)}.`;
         q('[data-co-checks]').innerHTML = checks.map((x) => `<li class="cbf-soy-co__check is-${x.ok ? 'ok' : 'blocked'}">
           ${pill(x.ok ? 'Done' : 'Blocked', x.ok ? 'success' : 'danger', { size: 'xs' })}
           <div class="cbf-soy-co__check-body"><strong>${esc(x.label)}</strong><span>${esc(x.detail)}</span></div>
@@ -186,7 +186,7 @@ import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
       const c = getState().cycle;
       const t = totals(c);
       closeDlg.heading = `Close FY${c.fy}`;
-      q('[data-co-close-lede]').textContent = `All ${t.items} items have a final amount (${fmtMoney(t.final)}), all of it is transferred, and there is no variance.`;
+      q('[data-co-close-lede]').textContent = `All ${t.items} projects have a final amount (${fmtMoney(t.final)}), all of it is transferred, and there is no variance.`;
       closeDlg.show();
     });
     q('[data-co-close-cancel]').addEventListener('click', () => closeDlg.close());

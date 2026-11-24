@@ -179,17 +179,17 @@ export function closeChecks(cycle: SoyCycle): CloseCheck[] {
   const varianceItems = cycle.items.filter((i) => Math.round(variance(i)) !== 0);
   return [
     {
-      key: 'finals', label: 'Every item has a final amount or is explicitly $0', ok: noFinal.length === 0,
-      detail: noFinal.length ? `${noFinal.length} items have no final amount` : `All ${cycle.items.length} items have a final amount`,
+      key: 'finals', label: 'Every project has a final amount or is explicitly $0', ok: noFinal.length === 0,
+      detail: noFinal.length ? `${noFinal.length} projects have no final amount` : `All ${cycle.items.length} projects have a final amount`,
     },
     {
       key: 'transfers', label: 'Every final amount is transferred', ok: notTransferred.length === 0,
-      detail: notTransferred.length ? `${notTransferred.length} items are not transferred yet` : 'All final amounts are transferred',
+      detail: notTransferred.length ? `${notTransferred.length} projects are not transferred yet` : 'All final amounts are transferred',
     },
     {
       key: 'variance', label: 'Final and transferred amounts match', ok: varianceItems.length === 0,
       detail: varianceItems.length
-        ? `${varianceItems.length} items differ by ${fmtMoney(varianceItems.reduce((s, i) => s + variance(i), 0))}`
+        ? `${varianceItems.length} projects differ by ${fmtMoney(varianceItems.reduce((s, i) => s + variance(i), 0))}`
         : 'No variance',
     },
   ];

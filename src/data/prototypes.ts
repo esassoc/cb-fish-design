@@ -29,7 +29,7 @@ export const prototypes: Prototype[] = [
     slug: 'soy',
     title: 'Start-of-year (SOY) budgets',
     description:
-      'The recommended future state of SOY: a cycle overview with next actions by role, a setup wizard, an items workspace with a side panel, final decisions, transfers with reconciliation, close-out, and activity.',
+      'The recommended future state of SOY: a cycle overview with next actions by role, a setup wizard, a projects workspace with a side panel, final decisions, transfers with reconciliation, close-out, and activity.',
     route: '/soy',
     createdAt: '2026-11-23',
     status: 'in-progress',

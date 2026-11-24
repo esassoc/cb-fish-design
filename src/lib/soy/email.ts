@@ -16,12 +16,12 @@ export function stageOpenEmail(s: SoyState, to: StageKey): Email {
   const due = fmtDate(stageDue(c.dates, to));
   if (to === 'pm') {
     return {
-      to: `${pms.size} project managers with items in the FY${c.fy} SOY`,
+      to: `${pms.size} project managers with projects in the FY${c.fy} SOY`,
       subject: `FY${c.fy} SOY: PM proposed is open — respond by ${due}`,
       paragraphs: [
         `Hi ${DEMO_PM.split(' ')[0]},`,
         `EWB has proposed FY${c.fy} budgets for your projects. Please review each one and either agree or propose a different amount with a rationale by ${due}.`,
-        `You have 5 items to review. Each shows EWB’s proposed amount and rationale.`,
+        `You have 5 projects to review. Each shows EWB’s proposed amount and rationale.`,
         `Reminders go out ${c.reminders.daysBefore} days before the due date to anyone with missing input.`,
       ],
       cta: 'Review my projects',
@@ -29,7 +29,7 @@ export function stageOpenEmail(s: SoyState, to: StageKey): Email {
   }
   if (to === 'final') {
     return {
-      to: `${pms.size} project managers with items in the FY${c.fy} SOY`,
+      to: `${pms.size} project managers with projects in the FY${c.fy} SOY`,
       subject: `FY${c.fy} SOY: PM proposed has closed`,
       paragraphs: [
         'Hi,',
@@ -66,7 +66,7 @@ export function finalsEmail(s: SoyState, ids: string[]): Email {
   const items = c.items.filter((i) => ids.includes(i.id) && project(i).pm === DEMO_PM);
   const pms = new Set(c.items.filter((i) => ids.includes(i.id)).map((i) => project(i).pm));
   return {
-    to: `${pms.size} project managers (each gets only their own items)`,
+    to: `${pms.size} project managers (each gets only their own projects)`,
     subject: `FY${c.fy} SOY: final budgets for your projects`,
     paragraphs: [
       `Hi ${DEMO_PM.split(' ')[0]},`,
