@@ -27,10 +27,10 @@ export const prototypes: Prototype[] = [
   // --- Active prototypes (in progress) ---
   {
     slug: 'soy',
-    title: 'Start-of-year (SOY) budgets — future state',
+    title: 'Start-of-year (SOY) budgets',
     description:
-      'The recommended future state of SOY for client sign-off: a cycle overview with next actions by role, a setup wizard, an items workspace with a side panel, final decisions, transfers with reconciliation, close-out, and activity — played through one FY2028 cycle, with a “Show what’s changing” layer on every screen.',
-    route: '/soy/walkthrough',
+      'The recommended future state of SOY: a cycle overview with next actions by role, a setup wizard, an items workspace with a side panel, final decisions, transfers with reconciliation, close-out, and activity.',
+    route: '/soy',
     createdAt: '2026-11-23',
     status: 'in-progress',
   },

@@ -1,4 +1,4 @@
-// Handoff spec for /soy/walkthrough (registry slug soy): the entry point of the
+// Handoff spec for /soy (registry slug soy): the cycle overview, home of the
 // start-of-year (SOY) future-state prototype — eight screens under /soy built
 // for client sign-off before any change to CBFish (Gemini). Consumed only by
 // the hub handoff CLI at build time.
@@ -27,46 +27,42 @@ export default {
     notes: [
       'Screens: /soy (overview), /soy/cycles, /soy/setup, /soy/items (+ item side panel on every screen), /soy/finals, /soy/transfers, /soy/close-out, /soy/activity.',
       'State changes are plain functions in src/lib/soy/actions.ts; the store wraps each in persist + notify (event cbf-soy:change). Bulk actions return a report of written and skipped items.',
-      'Walkthrough presets (?step=1…7, plus 4.5 for the PM landing) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).',
+      'Demo presets (?step=1…7, plus 4.5 for the PM landing; linked from the separate walkthrough guide, not from the prototype) compose the same actions; src/lib/soy/soy.test.ts pins their numbers (npm test).',
       'Every behavior change is tagged UI / BE / DEC in src/lib/soy/changes.ts and annotated in place by the “Show what’s changing” layer (cbf-soy-changes).',
       'All people and comment text are invented; project numbers and titles are illustrative.',
     ],
   },
   sections: [
     {
-      label: 'How to use it',
-      selector: '.cbf-soy-wt > section:first-child',
-      intent: 'Orients a client reviewer: what the prototype is, that it changes nothing in CBFish, and the four prototype devices — step links, the role lens, the “Show what’s changing” layer and reset/jump.',
-      decisions: ['Prototype devices live in cbf-prototype-strip on every SOY screen so they never read as product.'],
-      acceptance: ['Every device named here exists in the prototype strip on /soy.'],
+      label: 'Draft notice',
+      selector: '[data-ov-draft]',
+      intent: 'On Jan 15 the next cycle drafts itself with the standard dates; the overview says so and points the budget administrator to setup. PMs see when their input opens.',
+      decisions: ['DEC 6: auto-draft each year on January 15; the admin reviews and opens it.'],
+      acceptance: ['With fresh storage the overview shows FY2028 as Draft with a Start setup link (admin).'],
     },
     {
-      label: 'Step cards',
-      selector: '[aria-labelledby="wt-story"]',
-      intent: 'The FY2028 cycle as seven steps, each linking to the screen and loading the demo state for that moment (?step=N&role=…), so a reviewer can start anywhere.',
+      label: 'Stage tracker',
+      selector: '[data-ov-tracker]',
+      intent: 'The four stages with open and due dates, the active stage and days left. A stage is due the day before the next one opens. "Open <next stage>" (admin) previews the stage-open email before it advances; stages never advance on their own.',
       decisions: [
-        'Presets are built by running the same actions a presenter would click, so jumping and clicking always agree.',
-        'Step 4 has a second link (?step=4.5&role=pm) to the PM’s landing just after PM proposed opens.',
+        'DEC 5: due dates drive stage-open emails and automatic reminders; the admin still advances stages; PM proposed defaults to 4 weeks.',
+        'Final budget → Complete has no advance button here; the cycle completes through Close-out.',
       ],
-      acceptance: [
-        'Step 2 → setup carries 230 of 237 items (7 unchecked with reasons) and adds 4 new projects.',
-        'Step 5 → the overview shows 4 PMs with 12 items outstanding and the automatic reminder sent.',
-        'Step 7 → the close-out checklist is all green with two transfer rounds.',
-      ],
-      js: ['src/lib/soy/actions.ts', 'src/lib/soy/store.ts'],
+      acceptance: ['Default dates: EWB proposed opens Mar 1, PM proposed Apr 12 (due May 9), Final budget May 10, Complete Jun 1.'],
+      js: ['src/lib/soy/model.ts'],
     },
     {
-      label: 'Decisions table',
-      selector: '[aria-labelledby="wt-dec"]',
-      intent: 'The eight decisions BPA needs to make, with the option the prototype shows and the alternative, each linked to where it can be seen.',
-      decisions: ['Built at build time from DECISIONS in src/lib/soy/changes.ts, the same registry the changes layer reads.'],
-      acceptance: ['8 rows, DEC 1–8, each linking to a SOY screen.'],
+      label: 'Progress tiles',
+      selector: '[data-ov-admin] .cbf-soy-ov__tiles',
+      intent: 'Items in cycle, EWB proposed, PM input received vs needed, final amount set, transferred and variance (final − transferred), always current. PMs see their own tiles instead.',
+      gotchas: ['PM input needed excludes two-year items in their off year (their $0 is automatic).'],
+      acceptance: ['At ?step=5 (May 7): 219 of 231 PM inputs received, 4 PMs with 12 items outstanding.'],
     },
     {
-      label: 'Problem map',
-      selector: '[aria-labelledby="wt-prob"]',
-      intent: 'Each of today’s ten problems (P1–P10) with the screens and changes that answer it, plus counts of UI, BE and DEC changes so engineering can see the weight.',
-      acceptance: ['Every problem P1–P10 lists at least one change.'],
+      label: 'Next actions',
+      selector: '[data-ov-actions]',
+      intent: 'What the budget administrator should do next for the current stage, each with the button that does it: run setup, set EWB proposed, open the next stage, send a reminder, set finals, transfer, reconcile, close.',
+      acceptance: ['Every action links to the screen or opens the dialog that completes it.'],
     },
   ],
 };

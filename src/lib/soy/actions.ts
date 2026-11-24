@@ -340,16 +340,6 @@ export function closePastCycle(s: SoyState, fy: number) {
 // Walkthrough presets — the state at the START of each walkthrough step
 // ---------------------------------------------------------------------------
 
-export const WALKTHROUGH = [
-  { n: 1, title: 'The FY2028 cycle drafts itself', date: STORY_DATES.draft, role: 'admin', href: '/soy/cycles' },
-  { n: 2, title: 'Set up the cycle', date: STORY_DATES.draft, role: 'admin', href: '/soy/setup' },
-  { n: 3, title: 'EWB proposed', date: STORY_DATES.ewb, role: 'admin', href: '/soy/items' },
-  { n: 4, title: 'Open PM proposed', date: STORY_DATES.pm, role: 'admin', href: '/soy' },
-  { n: 5, title: 'Final budget', date: STORY_DATES.final, role: 'admin', href: '/soy/finals' },
-  { n: 6, title: 'Transfers', date: STORY_DATES.transfer, role: 'admin', href: '/soy/transfers' },
-  { n: 7, title: 'Close-out', date: STORY_DATES.close, role: 'admin', href: '/soy/close-out' },
-] as const;
-
 const HAND_EWB: Record<number, [number, string]> = {
   0: [1_250_000, 'New project — first-year amount from the approved proposal.'],
   1: [640_000, 'New project — first-year amount from the approved proposal.'],

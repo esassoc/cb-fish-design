@@ -1,7 +1,6 @@
 ---
 // cbf-soy-frame — the shared spine of every SOY future-state screen, so each
-// page stays a thin assembler: public nav → prototype strip (walkthrough link,
-// jump-to-step, PM-response fast-forward, reset, "Show what's changing", role
+// page stays a thin assembler: public nav → prototype strip (jump-to-step, PM-response fast-forward, reset, "Show what's changing", role
 // lens) → app panel (breadcrumbs) → title + cycle status → sub-nav
 // (cbf-report-tabs) → locked banner → the page's sections in the default slot.
 //
@@ -79,7 +78,6 @@ const stepOptions = [
       <CbfPrototypeStrip note="SOY future-state prototype — mock data, saved in this browser.">
         <div class="cbf-soy-frame__controls">
         <span class="cbf-soy-frame__today" data-soy-today></span>
-        <EsaButton size="sm" variant="secondary" appearance="outline" icon="file-text" href={withBase('/soy/walkthrough')}>Walkthrough</EsaButton>
         <esa-select class="cbf-soy-frame__step" size="sm" label="Jump to step" placeholder="Choose a step" options={JSON.stringify(stepOptions)} data-soy-step></esa-select>
         <span data-soy-simulate-wrap hidden>
           <EsaButton size="sm" variant="secondary" appearance="outline" icon="arrow-right" data-soy-simulate>Simulate PM responses</EsaButton>

@@ -2,14 +2,14 @@
 
 Links are relative to https://esassoc.github.io/cb-fish-design/handoff/
 
-## Start-of-year (SOY) budgets — future state
+## Start-of-year (SOY) budgets
 
-[README](soy-walkthrough/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/soy/walkthrough/) · 4 sections
+[README](soy/README.md) · [prototype](https://esassoc.github.io/cb-fish-design/soy/) · 4 sections
 
-- [How to use it](soy-walkthrough/claude/how-to-use-it.md): Orients a client reviewer: what the prototype is, that it changes nothing in CBFish, and the four prototype devices — step links, the role lens, the “Show what… (8.4 KB)
-- [Step cards](soy-walkthrough/claude/step-cards.md): The FY2028 cycle as seven steps, each linking to the screen and loading the demo state for that moment (?step=N&role=…), so a reviewer can start anywhere. (24 KB)
-- [Decisions table](soy-walkthrough/claude/decisions-table.md): The eight decisions BPA needs to make, with the option the prototype shows and the alternative, each linked to where it can be seen. (8.5 KB)
-- [Problem map](soy-walkthrough/claude/problem-map.md): Each of today’s ten problems (P1–P10) with the screens and changes that answer it, plus counts of UI, BE and DEC changes so engineering can see the weight. (5.4 KB)
+- [Draft notice](soy/claude/draft-notice.md): On Jan 15 the next cycle drafts itself with the standard dates; the overview says so and points the budget administrator to setup. (7.0 KB)
+- [Stage tracker](soy/claude/stage-tracker.md): The four stages with open and due dates, the active stage and days left. (8.3 KB)
+- [Progress tiles](soy/claude/progress-tiles.md): Items in cycle, EWB proposed, PM input received vs needed, final amount set, transferred and variance (final − transferred), always current. (9.1 KB)
+- [Next actions](soy/claude/next-actions.md): What the budget administrator should do next for the current stage, each with the button that does it: run setup, set EWB proposed, open the next stage, send a… (4.3 KB)
 
 ## Project header navigation
 
