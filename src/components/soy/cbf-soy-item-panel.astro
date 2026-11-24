@@ -13,6 +13,10 @@
 //   • Admin lens: enter an amount in any open stage; the panel always states the
 //     stage the entry goes to. Changing a final after a transfer warns and
 //     requires a reason (DEC 3).
+//   • Negotiation (PM ≠ EWB, or an open thread): round, who holds the ball and
+//     since when, EWB vs PM and the gap, the back-and-forth as a thread, and
+//     the next step the lens may take — comment and assign (everyone involved),
+//     revise EWB (admin) or the PM proposal (own PM). Setting the final settles it.
 //   • Comment thread, follow-up flag (admin) and a per-project notify toggle.
 //
 // bcn-lego-checked: the drawer is esa-side-dialog; fields are esa-text-field /
@@ -39,6 +43,32 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     <section class="stack" data-gap="xs" aria-labelledby="ip-amounts" data-change="it-panel">
       <h3 class="cbf-soy-ip__h" id="ip-amounts">Amounts by stage</h3>
       <ol class="cbf-soy-ip__timeline" data-ip-timeline></ol>
+    </section>
+
+    <!-- Negotiation: who holds the ball, the gap, the back and forth -->
+    <section class="cbf-soy-ip__box stack" data-gap="sm" data-ip-neg hidden aria-labelledby="ip-neg-h" data-change="it-negotiation">
+      <div class="repel">
+        <h3 class="cbf-soy-ip__h" id="ip-neg-h">Negotiation</h3>
+        <div class="cluster" data-gap="2xs" data-ip-neg-pills></div>
+      </div>
+      <p class="cbf-soy-ip__neg-where" data-ip-neg-where></p>
+      <table class="cbf-soy-table cbf-soy-ip__neg-gap">
+        <thead><tr><th scope="col" class="cbf-soy-num">EWB proposed</th><th scope="col" class="cbf-soy-num">PM proposed</th><th scope="col" class="cbf-soy-num">Gap</th></tr></thead>
+        <tbody data-ip-neg-gap></tbody>
+      </table>
+      <ol class="cbf-soy-ip__thread stack" data-gap="xs" data-ip-neg-thread data-change="it-assign"></ol>
+      <div class="stack" data-gap="sm" data-ip-neg-form>
+        <div class="cbf-soy-ip__pair">
+          <esa-select size="sm" label="Next step" data-ip-neg-action></esa-select>
+          <esa-select size="sm" label="Assign to" data-ip-neg-to></esa-select>
+        </div>
+        <div data-ip-neg-amount-wrap hidden>
+          <esa-text-field size="sm" label="Revised amount" prefix="$" inputmode="numeric" required data-ip-neg-amount></esa-text-field>
+        </div>
+        <esa-textarea size="sm" label="Comment" rows="3" required data-ip-neg-text></esa-textarea>
+        <div class="cluster" data-gap="xs"><EsaButton size="sm" variant="primary" data-ip-neg-save>Assign</EsaButton></div>
+      </div>
+      <p class="typography-meta cbf-soy-muted" data-ip-neg-hint></p>
     </section>
 
     <!-- PM proposal -->
@@ -100,10 +130,11 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
   import '@esa/ecology/esa-select';
   import '@esa/ecology/esa-checkbox';
   import '@esa/ecology/esa-switch-toggle';
-  import { getState, subscribe, update, isAdmin, isLocked, canPropose, canComment, userName, OPEN_ITEM_EVENT } from '../../lib/soy/store';
-  import { setAmount, addComment, setItemFlag } from '../../lib/soy/actions';
-  import { amount, fmtDate, fmtMoney, isOffYear, isTwoYear, project, stageIndex, transferred, transferStatus, twoYearSuggestion } from '../../lib/soy/model';
-  import { STAGES, stageLabel, type AmountStage, type SoyItem } from '../../lib/soy/types';
+  import { getState, getUi, subscribe, update, isAdmin, isLeader, isLocked, canPropose, canComment, userName, OPEN_ITEM_EVENT } from '../../lib/soy/store';
+  import { setAmount, addComment, setItemFlag, assignees, assignNegotiation, commentNegotiation, reviseProposal } from '../../lib/soy/actions';
+  import { amount, fmtDate, fmtMoney, isOffYear, isTwoYear, negotiation, negotiationLabel, PARTY_LABEL, project, stageIndex, transferred, transferStatus, twoYearSuggestion } from '../../lib/soy/model';
+  import { STAGES, stageLabel, type AmountStage, type NegotiationEntry, type PartyRole, type SoyItem } from '../../lib/soy/types';
+  import { ADMIN } from '../../data/soy/seed';
   import { esc, pill, statusPill, setOptions, snackbar, parseMoney, type Dialog, type Field } from '../../lib/soy/ui';
 
   const panel = document.querySelector<Dialog>('[data-soy-item-panel]')!;
@@ -131,6 +162,10 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     q<Field>('[data-ip-admin-rationale]').value = '';
     q<Field>('[data-ip-after-reason]').value = '';
     q<Field>('[data-ip-comment]').value = '';
+    q<Field>('[data-ip-neg-text]').value = '';
+    q<Field>('[data-ip-neg-amount]').value = '';
+    q<Field>('[data-ip-neg-action]').value = '';
+    q<Field>('[data-ip-neg-to]').value = '';
     const stage = getState().cycle.stage;
     const admStage: AmountStage = stage === 'pm' || stage === 'final' || stage === 'ewb' ? stage : 'final';
     const adm = q<Field>('[data-ip-admin-stage]');
@@ -183,7 +218,7 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     });
     q('[data-ip-timeline]').innerHTML = [
       row(`FY${s.cycle.fy - 1} working budget`, fmtMoney(it.priorWorking)),
-      row(`FY${s.cycle.fy} baseline`, it.baseline == null ? 'No baseline' : fmtMoney(it.baseline), '', it.cola ? `Includes a ${(it.cola * 100).toFixed(1)}% COLA` : isOffYear(it) ? 'Off year — $0' : ''),
+      row(`FY${s.cycle.fy} baseline`, it.baseline == null ? 'No baseline' : fmtMoney(it.baseline), '', it.cola ? `Includes a ${(it.cola * 100).toFixed(1)}% COLA${it.colaComment ? ` — ${it.colaComment}` : ''}` : isOffYear(it) ? 'Off year — $0' : ''),
       ...stageRows,
       row('Transferred', it.transfers.length ? fmtMoney(transferred(it)) : '—', tr.join(' · '), it.changedAfterTransfer ? `Final changed after transfer on ${fmtDate(it.changedAfterTransfer.date)}: ${it.changedAfterTransfer.reason}` : '', it.transfers.length ? 'done' : 'todo'),
     ].join('');
@@ -194,10 +229,15 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     const pmBox = q('[data-ip-pm]');
     const admBox = q('[data-ip-admin]');
     const ro = q('[data-ip-readonly]');
-    pmBox.hidden = admin || !canPropose(it) || isOffYear(it);
+    const neg = negotiation(it);
+    // In negotiation, the PM revises through the Negotiation box so every round is recorded.
+    pmBox.hidden = admin || !canPropose(it) || isOffYear(it) || !!neg?.active;
     admBox.hidden = !admin || locked || s.cycle.status === 'Draft';
+    renderNegotiation(it);
     let roText = '';
     if (locked) roText = `The FY${s.cycle.fy} SOY is closed. Nothing can be changed until it is reopened.`;
+    else if (isLeader()) roText = neg?.active ? '' : 'Decision makers don’t enter amounts. When a project is assigned to you, make the call in Negotiation with a comment and assign the next step.';
+    else if (!admin && neg?.active && project(it).pm === userName()) roText = '';
     else if (!admin && isOffYear(it)) roText = 'Off-year two-year project — no input needed.';
     else if (!admin && s.cycle.stage !== 'pm') roText = s.cycle.stage === 'ewb' ? `PM input opens ${fmtDate(s.cycle.dates.pm)}. You’ll get an email when it does.` : 'PM proposed is closed. You can still comment.';
     else if (!admin && !canPropose(it)) roText = 'This is not one of your projects. You can read it but not propose.';
@@ -220,8 +260,11 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
       const e = it.amounts[k];
       if (e) entries.push({ date: e.date, who: e.by, html: `${pill(stageLabel(k), 'default', { size: 'xs' })} <strong>${fmtMoney(e.amount)}</strong> — ${esc(e.rationale)}` });
     }
+    const negTexts = new Set((it.negotiation?.thread ?? []).map((e) => e.text));
     for (const a of s.cycle.activity) {
       if (a.itemId !== it.id || a.kind === 'amount') continue;
+      // Negotiation comments and assignments show in the Negotiation box.
+      if (a.kind === 'comment' && (a.text.startsWith('Assigned to ') || negTexts.has(a.text))) continue;
       entries.push({ date: a.date, who: a.who, html: a.kind === 'change-after-transfer' ? `${pill('Changed after transfer', 'danger', { size: 'xs' })} ${esc(a.text)}` : esc(a.text) });
     }
     for (const t of it.transfers) {
@@ -241,6 +284,132 @@ import EsaAlertBox from '@esa/ecology/esa-alert-box.astro';
     const notify = q<Field>('[data-ip-notify]');
     notify.checked = it.notify;
   }
+
+  // --- Negotiation --------------------------------------------------------
+  type NegAction = 'assign' | 'comment' | 'revise-ewb' | 'revise-pm';
+  const myRole = (): PartyRole => getUi().role;
+
+  /** What the signed-in lens may do on this project's negotiation. */
+  function negActions(it: SoyItem): NegAction[] {
+    const neg = negotiation(it);
+    if (!neg?.active || isLocked() || getState().cycle.status !== 'Open') return [];
+    if (isAdmin()) return ['assign', 'revise-ewb', 'comment'];
+    if (isLeader()) return ['assign', 'comment'];
+    return project(it).pm === userName() ? ['assign', 'revise-pm', 'comment'] : [];
+  }
+  const ACTION_LABEL: Record<NegAction, string> = {
+    assign: 'Comment and assign', comment: 'Comment only', 'revise-ewb': 'Revise EWB proposed and assign', 'revise-pm': 'Revise my proposal and assign',
+  };
+
+  /** The thread to show: the stored one, or the two proposals that started it. */
+  function threadOf(it: SoyItem): NegotiationEntry[] {
+    if (it.negotiation?.thread.length) return it.negotiation.thread;
+    const out: NegotiationEntry[] = [];
+    const e = it.amounts.ewb;
+    const p = it.amounts.pm;
+    if (e) out.push({ id: 'e', date: e.date, who: e.by, whoRole: 'admin', kind: 'proposal', stage: 'ewb', amount: e.amount, text: e.rationale });
+    if (p) out.push({ id: 'p', date: p.date, who: p.by, whoRole: 'pm', kind: 'proposal', stage: 'pm', amount: p.amount, text: p.rationale });
+    return out;
+  }
+
+  function entryHtml(e: NegotiationEntry): string {
+    if (e.kind === 'proposal') return `${pill(stageLabel(e.stage), e.stage === 'pm' ? 'warning' : 'default', { size: 'xs' })} <strong>${fmtMoney(e.amount)}</strong> — ${esc(e.text)}`;
+    if (e.kind === 'assign') return `${pill('Assigned', 'info', { size: 'xs' })} to <strong>${esc(e.to ?? '')}</strong> (${esc(PARTY_LABEL[e.toRole ?? 'admin'].toLowerCase())})${e.text ? ` — ${esc(e.text)}` : ''}`;
+    if (e.kind === 'resolved') return `${pill('Final set', 'success', { size: 'xs' })} <strong>${fmtMoney(e.amount)}</strong> — ${esc(e.text)}`;
+    return esc(e.text);
+  }
+
+  function renderNegotiation(it: SoyItem) {
+    const box = q('[data-ip-neg]');
+    const neg = negotiation(it);
+    box.hidden = !neg;
+    if (!neg) return;
+    const ewb = amount(it, 'ewb');
+    const pm = amount(it, 'pm');
+    q('[data-ip-neg-pills]').innerHTML = neg.active
+      ? pill(negotiationLabel(neg), neg.assigneeRole === 'leader' ? 'warning' : neg.assigneeRole === 'pm' ? 'info' : 'primary', { size: 'xs' })
+      : pill('Settled', 'success', { size: 'xs' });
+    const mine = neg.assignee === userName();
+    q('[data-ip-neg-where]').innerHTML = neg.active
+      ? `<strong>${esc(mine ? 'You have' : `${neg.assignee} (${PARTY_LABEL[neg.assigneeRole].toLowerCase()}) has`)}</strong> the next step${neg.since ? ` · since ${fmtDate(neg.since)}` : ''} · round ${neg.round}.${it.negotiation ? '' : ' Nobody has assigned it yet, so it sits with the budget administrator.'}`
+      : `Settled at ${fmtMoney(amount(it, 'final'))} after ${neg.round} ${neg.round === 1 ? 'round' : 'rounds'}.`;
+    const gap = neg.gap;
+    q('[data-ip-neg-gap]').innerHTML = `<tr><td class="cbf-soy-num">${fmtMoney(ewb)}</td><td class="cbf-soy-num">${fmtMoney(pm)}</td><td class="cbf-soy-num">${gap == null ? '—' : `<strong>${gap > 0 ? '+' : ''}${fmtMoney(gap)}</strong>`}</td></tr>`;
+    q('[data-ip-neg-thread]').innerHTML = threadOf(it)
+      .map((e) => `<li class="cbf-soy-ip__msg"><span class="cbf-soy-ip__msg-head">${esc(e.who)} · ${esc(PARTY_LABEL[e.whoRole])} · ${fmtDate(e.date)}</span><span>${entryHtml(e)}</span></li>`)
+      .join('');
+
+    const acts = negActions(it);
+    q('[data-ip-neg-form]').hidden = acts.length === 0;
+    const hint = q('[data-ip-neg-hint]');
+    hint.textContent = '';
+    if (neg.active && isAdmin() && neg.assigneeRole === 'admin') {
+      hint.textContent = getState().cycle.stage === 'final'
+        ? 'Agreed? Set the final amount in Enter an amount below — that settles the negotiation.'
+        : 'Agreed? Set the final amount once Final budget opens — that settles the negotiation.';
+    } else if (neg.active && !acts.length && !isLocked()) {
+      hint.textContent = `Only ${neg.assignee}, the budget administrator and decision makers can move this one.`;
+    }
+    if (!acts.length) return;
+    const actF = q<Field>('[data-ip-neg-action]');
+    const prevAct = actF.value as NegAction;
+    setOptions(actF, acts.map((a) => ({ label: ACTION_LABEL[a], value: a })), acts.includes(prevAct) ? prevAct : acts[0]);
+    const toF = q<Field>('[data-ip-neg-to]');
+    const people = assignees(it).filter((p) => p.name !== userName());
+    const prevTo = toF.value;
+    setOptions(toF, people.map((p) => ({ label: `${p.name} — ${PARTY_LABEL[p.role].toLowerCase()}`, value: `${p.role}|${p.name}` })),
+      people.some((p) => `${p.role}|${p.name}` === prevTo) ? prevTo : defaultAssignee(it, people));
+    syncNegForm();
+  }
+
+  /** Who the ball usually goes to next from the signed-in lens. */
+  function defaultAssignee(it: SoyItem, people: { name: string; role: PartyRole }[]): string {
+    const key = (p?: { name: string; role: PartyRole }) => (p ? `${p.role}|${p.name}` : '');
+    if (isAdmin()) return key(people.find((p) => p.role === 'pm'));
+    if (myRole() === 'pm') return key(people.find((p) => p.name === ADMIN) ?? people.find((p) => p.role === 'admin'));
+    // A decision maker usually hands it back to whoever asked.
+    const asked = [...(it.negotiation?.thread ?? [])].reverse().find((e) => e.kind === 'assign' && e.to === userName());
+    return key(people.find((p) => p.name === asked?.who) ?? people.find((p) => p.name === ADMIN));
+  }
+
+  function syncNegForm() {
+    const it = item();
+    if (!it) return;
+    const act = q<Field>('[data-ip-neg-action]').value as NegAction;
+    const revise = act === 'revise-ewb' || act === 'revise-pm';
+    q('[data-ip-neg-amount-wrap]').hidden = !revise;
+    q<Field>('[data-ip-neg-to]').hidden = act === 'comment';
+    const amtF = q<Field>('[data-ip-neg-amount]');
+    if (revise && !amtF.value) amtF.value = String(amount(it, act === 'revise-ewb' ? 'ewb' : 'pm') ?? '');
+    const text = q<Field>('[data-ip-neg-text]');
+    text.helpText = act === 'comment' ? 'The ball stays where it is.' : act === 'assign' ? 'Say what you decided or what you need from them.' : 'Explain the revised amount.';
+    q('[data-ip-neg-save] .esa-button__label').textContent = act === 'comment' ? 'Add comment' : revise ? 'Revise and assign' : 'Assign';
+  }
+  q('[data-ip-neg-action]').addEventListener('change', () => { q<Field>('[data-ip-neg-amount]').value = ''; syncNegForm(); });
+
+  q('[data-ip-neg-save]').addEventListener('click', () => {
+    const it = item();
+    if (!it) return;
+    const act = q<Field>('[data-ip-neg-action]').value as NegAction;
+    const textF = q<Field>('[data-ip-neg-text]');
+    const amtF = q<Field>('[data-ip-neg-amount]');
+    const text = (textF.value ?? '').trim();
+    const [role, ...rest] = (q<Field>('[data-ip-neg-to]').value ?? '').split('|');
+    const to = { name: rest.join('|'), role: role as PartyRole };
+    textF.errorText = text ? '' : act === 'comment' ? 'Write a comment.' : 'A comment is required — it tells the next person what to do.';
+    const revise = act === 'revise-ewb' || act === 'revise-pm';
+    const v = parseMoney(amtF.value);
+    amtF.errorText = revise && (v == null || v < 0) ? 'Enter an amount in dollars.' : '';
+    if (textF.errorText || amtF.errorText) return;
+    const res = update((s) =>
+      act === 'comment' ? commentNegotiation(s, it.id, text, userName(), myRole())
+        : act === 'assign' ? assignNegotiation(s, it.id, to, text, userName(), myRole())
+          : reviseProposal(s, it.id, act === 'revise-ewb' ? 'ewb' : 'pm', v!, text, userName(), myRole(), to));
+    if (!res.ok) { snackbar('danger', res.error ?? 'Could not save.'); return; }
+    snackbar('success', act === 'comment' ? `Comment added to ${it.projectNumber}.` : `${it.projectNumber} assigned to ${to.name}.`);
+    textF.value = '';
+    amtF.value = '';
+  });
 
   // --- PM proposal --------------------------------------------------------
   function syncPmLabels() {

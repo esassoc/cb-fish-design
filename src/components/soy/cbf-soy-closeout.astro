@@ -9,7 +9,9 @@
 //     admins included (DEC 2). Once closed: Reopen with a required reason,
 //     logged with who and when.
 //   • Past open cycles (FY2024–2027) list what blocks closing them, with
-//     "Reconcile and close" (DEC 1).
+//     "View" (opens that year on every tab, to reconcile it by hand) and
+//     "Reconcile and close" (DEC 1). Viewing a past year, the checklist above is
+//     that year's.
 //
 // bcn-lego-checked: notices are esa-alert-box, confirms esa-dialog +
 // esa-textarea, actions esa-button (row buttons cloned via cbf-soy-templates),
@@ -99,7 +101,7 @@ import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
     <div class="stack" data-gap="sm">
       <p data-co-past-lede></p>
       <ul class="cbf-soy-co__blockers" data-co-past-blockers></ul>
-      <p class="typography-meta cbf-soy-muted">In this prototype, confirming marks these as reconciled and closes the cycle. In CBFish, each blocker is resolved first — the same checklist as above.</p>
+      <p class="typography-meta cbf-soy-muted">Confirming sets $0 on projects with no final amount, transfers every remaining difference in one closing round, and closes the cycle. To resolve projects one by one instead, view the year and work through its checklist.</p>
     </div>
     <div slot="footer" class="cluster" data-gap="xs">
       <EsaButton size="sm" variant="secondary" appearance="outline" data-co-past-cancel>Cancel</EsaButton>
@@ -111,7 +113,7 @@ import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
 <script>
   import '@esa/ecology/esa-dialog';
   import '@esa/ecology/esa-textarea';
-  import { getState, subscribe, update, userName } from '../../lib/soy/store';
+  import { getState, setFy, subscribe, update, userName } from '../../lib/soy/store';
   import { closeCycle, closePastCycle, reopenCycle } from '../../lib/soy/actions';
   import { closeChecks, fmtDate, fmtMoney, fmtShort, totals } from '../../lib/soy/model';
   import { stageLabel } from '../../lib/soy/types';
@@ -166,7 +168,7 @@ import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
       }
 
       // Past open cycles.
-      const past = s.pastCycles.filter((p) => p.status === 'Open').sort((a, b) => b.fy - a.fy);
+      const past = s.pastCycles.filter((p) => p.status === 'Open' && p.fy !== c.fy).sort((a, b) => b.fy - a.fy);
       q('[data-co-past-table]').hidden = past.length === 0;
       q('[data-co-past-empty]').hidden = past.length > 0;
       q('[data-co-past]').innerHTML = past.map((p) => `<tr>
@@ -176,7 +178,7 @@ import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
         <td class="cbf-soy-num">${fmtShort(p.final)}</td>
         <td class="cbf-soy-num">${fmtShort(p.transferred)}</td>
         <td><ul class="cbf-soy-co__blockers">${(p.blockers ?? []).map((b) => `<li>${esc(b)}</li>`).join('')}</ul></td>
-        <td>${button('secondary', 'Reconcile and close', { 'co-past-fy': String(p.fy) })}</td>
+        <td><span class="cbf-soy-cell-actions">${button('secondary', 'View', { 'co-view-fy': String(p.fy) })}${button('secondary', 'Reconcile and close', { 'co-past-fy': String(p.fy) })}</span></td>
       </tr>`).join('');
     }
 
@@ -217,6 +219,8 @@ import EsaEmptyState from '@esa/ecology/esa-empty-state.astro';
     // --- Past cycles ----------------------------------------------------------
     const pastDlg = q<Dialog>('[data-co-past-dialog]');
     root.addEventListener('click', (e) => {
+      const v = (e.target as HTMLElement).closest<HTMLElement>('[data-co-view-fy]');
+      if (v) { setFy(Number(v.dataset.coViewFy)); window.scrollTo({ top: 0 }); return; }
       const b = (e.target as HTMLElement).closest<HTMLElement>('[data-co-past-fy]');
       if (!b) return;
       const p = getState().pastCycles.find((x) => x.fy === Number(b.dataset.coPastFy));

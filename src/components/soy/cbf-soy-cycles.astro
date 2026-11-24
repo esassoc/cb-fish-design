@@ -5,6 +5,8 @@
 // finished: baseline, final, transferred and variance. Open past years
 // (FY2024–2027 today) are flagged with what blocks closing them, and the next
 // cycle appears as Draft on January 15 with the standard dates (DEC 6).
+// Every row opens that year on every SOY tab (the same as the fiscal-year
+// picker beside the title).
 //
 // bcn-lego-checked: the list is AG Grid Community in the spoke's token theme
 // (shared/grid-chrome) because ecology has no data-grid lego — same call as the
@@ -41,7 +43,7 @@ import '../shared/cbf-data-grid-chrome.css';
 <script>
   import { createGrid, type ColDef, type GridApi } from 'ag-grid-community';
   import { cbfGridTheme } from '../shared/grid-chrome';
-  import { getState, subscribe } from '../../lib/soy/store';
+  import { getCurrentState, setFy, subscribe, viewFy } from '../../lib/soy/store';
   import { fmtDate, fmtShort, totals } from '../../lib/soy/model';
   import { stageLabel, type CycleStatus, type StageKey } from '../../lib/soy/types';
   import { button, esc, pill } from '../../lib/soy/ui';
@@ -77,7 +79,7 @@ import '../shared/cbf-data-grid-chrome.css';
     animateRows: false,
     defaultColDef: { sortable: true, resizable: true, suppressHeaderMenuButton: true },
     getRowId: (p) => String(p.data.fy),
-    getRowClass: (p) => (p.data?.current ? 'cbf-soy-cy-current' : ''),
+    getRowClass: (p) => (p.data?.fy === viewFy() ? 'cbf-soy-cy-current' : ''),
     columnDefs: [
       { field: 'fy', headerName: 'Fiscal year', width: 140, sort: 'desc', valueFormatter: (p) => `FY${p.value}` },
       {
@@ -113,26 +115,30 @@ import '../shared/cbf-data-grid-chrome.css';
         },
       },
       {
-        colId: 'actions', headerName: 'Actions', width: 150, sortable: false, pinned: 'right',
+        colId: 'actions', headerName: 'Actions', width: 220, sortable: false, pinned: 'right',
         cellRenderer: (p: { data: Row }) => {
           const r = p.data;
-          if (r.current && r.status === 'Draft') return button('primary', 'Run setup', { 'cy-go': '/soy/setup' });
-          if (r.current) return button('secondary', 'Overview', { 'cy-go': '/soy' });
-          if (r.status === 'Open') return button('secondary', 'Close out', { 'cy-go': '/soy/close-out' });
-          return '';
+          const view = button('secondary', 'View', { 'cy-go': '/soy', 'cy-fy': String(r.fy) });
+          if (r.current && r.status === 'Draft') return `<span class="cbf-soy-cell-actions">${button('primary', 'Run setup', { 'cy-go': '/soy/setup', 'cy-fy': String(r.fy) })}</span>`;
+          if (r.status === 'Open' && !r.current) return `<span class="cbf-soy-cell-actions">${view}${button('secondary', 'Close out', { 'cy-go': '/soy/close-out', 'cy-fy': String(r.fy) })}</span>`;
+          return `<span class="cbf-soy-cell-actions">${view}</span>`;
         },
       },
     ],
   });
 
   root.addEventListener('click', (e) => {
-    const go = (e.target as HTMLElement).closest<HTMLElement>('[data-cy-go]')?.dataset.cyGo;
-    if (go) location.href = withBase(go);
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-cy-go]');
+    if (!el) return;
+    // Open that fiscal year on the target tab.
+    setFy(Number(el.dataset.cyFy) || null);
+    location.href = withBase(el.dataset.cyGo!);
   });
   q('[data-cy-csv]').addEventListener('click', () => api.exportDataAsCsv({ fileName: 'soy-cycles.csv', columnKeys: ['fy', 'status', 'items', 'baseline', 'final', 'transferred', 'variance'] }));
 
   subscribe(() => {
-    const s = getState();
+    // Always the real current cycle, whatever year is on screen.
+    const s = getCurrentState();
     const c = s.cycle;
     const t = totals(c);
     const rows: Row[] = [

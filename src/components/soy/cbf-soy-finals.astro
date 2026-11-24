@@ -3,8 +3,12 @@
 // Replaces "Bulk set Final Budget amounts" (which copied the baseline into
 // whatever stage was active — P5) and one-by-one final entry:
 //
-//   • Filter (All / No final yet / No PM input / PM differs from EWB / Agreed),
-//     select items, choose the source: baseline, EWB proposed or PM proposed.
+//   • Filter (All / No final yet / In negotiation / No PM input / PM differs
+//     from EWB / Agreed), with the negotiation round, who has the next step and
+//     the gap as columns. Bulk set never settles an open negotiation: those are
+//     skipped by name ("In negotiation — with …") and settled one at a time
+//     from the project panel, which closes the thread.
+//   • Select items, choose the source: baseline, EWB proposed or PM proposed.
 //   • Preview: each item's current and new final, the change, the total, and
 //     items skipped with the reason (already transferred, no source amount).
 //   • Rationale applied to all, or keep each item's rationale from the source.
@@ -39,6 +43,7 @@ const sources = [
   <p class="cbf-soy-lede">
     Decision makers agree final amounts outside CBFish. Record them here: select projects, choose where each final
     comes from, preview the result, then confirm. Enter one-off amounts from the project panel.
+    Projects still in negotiation are skipped by bulk set — settle each one from its panel once the person with the next step hands it back.
   </p>
 
   <div data-fi-gate hidden>
@@ -50,7 +55,7 @@ const sources = [
 
   <div class="stack" data-gap="sm" data-fi-body>
     <div class="cbf-data-grid__controls repel">
-      <label class="cbf-data-grid__filter">
+      <label class="cbf-data-grid__filter" data-change="fi-negotiation">
         <span class="typography-meta">Show</span>
         <esa-chip-group size="sm" label="Filter projects" data-fi-filter></esa-chip-group>
       </label>
@@ -115,32 +120,33 @@ const sources = [
   import '@esa/ecology/esa-dialog';
   import { getState, subscribe, update, isLocked, openItem } from '../../lib/soy/store';
   import { bulkSet, notifyFinals, sourceValue, SOURCE_LABEL, type AmountSource } from '../../lib/soy/actions';
-  import { amount, fmtDate, fmtMoney, fmtShort, isOffYear, pmDelta, project, totals } from '../../lib/soy/model';
+  import { amount, fmtDate, fmtMoney, fmtShort, isOffYear, negotiation, pmDelta, project, totals } from '../../lib/soy/model';
   import { emailHtml, finalsEmail } from '../../lib/soy/email';
   import { stageLabel, type SoyItem } from '../../lib/soy/types';
   import { columns, createItemGrid, exportCsv, selectedItems, SELECTION, totalRow, type ColKey } from '../../lib/soy/item-grid';
   import { deltaHtml, esc, moneyHtml, setOptions, snackbar, type Dialog, type Field } from '../../lib/soy/ui';
   import { withBase } from '../../lib/base';
 
-  type Filter = 'all' | 'none' | 'nopm' | 'differs' | 'agreed';
+  type Filter = 'all' | 'none' | 'negotiation' | 'nopm' | 'differs' | 'agreed';
   const root = document.querySelector<HTMLElement>('[data-soy-finals]')!;
   const q = <T extends Element = HTMLElement>(sel: string) => root.querySelector<T>(sel)!;
   const api = createItemGrid(q('[data-fi-grid]'));
   const filterEl = q<Field>('[data-fi-filter]');
   const sourceEl = q<Field>('[data-fi-source]');
   const search = q<Field>('[data-fi-search]');
-  const KEYS: ColKey[] = ['number', 'title', 'pm', 'fund', 'baseline', 'ewb', 'pmAmt', 'diff', 'final', 'finalSet', 'status', 'flags'];
+  const KEYS: ColKey[] = ['number', 'title', 'pm', 'fund', 'baseline', 'ewb', 'pmAmt', 'diff', 'negotiation', 'assignee', 'final', 'finalSet', 'status', 'flags'];
   let filter: Filter = 'all';
 
   const agreed = (i: SoyItem) => !!i.amounts.pm && pmDelta(i) === 0;
   const MATCH: Record<Filter, (i: SoyItem) => boolean> = {
     all: () => true,
     none: (i) => !i.amounts.final,
+    negotiation: (i) => !!negotiation(i)?.active,
     nopm: (i) => !i.amounts.pm && !isOffYear(i),
     differs: (i) => (pmDelta(i) ?? 0) !== 0,
     agreed,
   };
-  const LABEL: Record<Filter, string> = { all: 'All', none: 'No final yet', nopm: 'No PM input', differs: 'PM differs from EWB', agreed: 'Agreed' };
+  const LABEL: Record<Filter, string> = { all: 'All', none: 'No final yet', negotiation: 'In negotiation', nopm: 'No PM input', differs: 'PM differs from EWB', agreed: 'Agreed' };
 
   const open = () => {
     const st = getState().cycle.stage;
@@ -242,6 +248,8 @@ const sources = [
     const skips: { i: SoyItem; reason: string }[] = [];
     for (const i of sel) {
       if (i.transfers.length) { skips.push({ i, reason: 'Already transferred — change it from the project, with a reason' }); continue; }
+      const neg = negotiation(i);
+      if (neg?.active) { skips.push({ i, reason: `In negotiation — with ${neg.assignee}` }); continue; }
       const r = sourceValue(i, source);
       if (r.value == null) skips.push({ i, reason: r.reason ?? 'No amount' });
       else writes.push({ i, v: r.value });

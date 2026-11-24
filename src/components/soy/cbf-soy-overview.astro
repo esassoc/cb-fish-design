@@ -9,6 +9,10 @@
 //   • Next actions by role, each with the button that does it.
 //   • Needs input — only in stages where it applies, naming the stage it
 //     checks, grouped by PM with a reminder action (replaces Remaining).
+//   • Assigned to you — every lens: projects in negotiation where the signed-in
+//     person has the next step, with the gap and the latest comment. Decision
+//     makers land on "Calls waiting for you"; admins get a next action counting
+//     negotiations by who holds them.
 //
 // bcn-lego-checked: tiles are esa-stat (server-rendered, values filled on the
 // client), cards esa-card, notices esa-alert-box, dialogs esa-dialog,
@@ -76,6 +80,32 @@ const pmTiles = [
     </table>
   </section>
 
+  <!-- Decision-maker landing -->
+  <section class="cbf-soy-ov__pm stack" data-gap="sm" data-ov-leader hidden aria-labelledby="ov-leader-h" data-change="ov-leader-home">
+    <h2 class="cbf-soy-section-title" id="ov-leader-h">Calls waiting for you</h2>
+    <div class="cbf-soy-ov__callout repel">
+      <div class="stack" data-gap="2xs">
+        <p class="cbf-soy-ov__callout-big" data-ov-leader-big></p>
+        <p class="cbf-soy-ov__callout-sub" data-ov-leader-sub></p>
+      </div>
+      <span data-ov-leader-cta><EsaButton size="md" variant="primary" icon="arrow-right" href={withBase('/soy/items?view=assigned')}>Open my assignments</EsaButton></span>
+    </div>
+  </section>
+
+  <!-- Assigned to you (every lens) -->
+  <section class="stack" data-gap="sm" data-ov-assigned hidden aria-labelledby="ov-assigned-h" data-change="ov-assigned">
+    <div class="repel">
+      <h2 class="cbf-soy-section-title" id="ov-assigned-h">Assigned to you</h2>
+      <a class="cbf-soy-ov__action-link" href={withBase('/soy/items?view=assigned')}>All assigned to me →</a>
+    </div>
+    <p class="cbf-soy-lede" data-ov-assigned-lede></p>
+    <table class="cbf-soy-table" data-ov-assigned-table>
+      <thead><tr><th scope="col">Project</th><th scope="col">PM</th><th scope="col" class="cbf-soy-num">EWB proposed</th><th scope="col" class="cbf-soy-num">PM proposed</th><th scope="col" class="cbf-soy-num">Gap</th><th scope="col">Where it is</th><th scope="col">Latest</th></tr></thead>
+      <tbody data-ov-assigned-rows></tbody>
+    </table>
+    <div data-ov-assigned-empty hidden><EsaEmptyState title="Nothing assigned to you" description="When someone hands you a project in negotiation, it shows here." size="sm" /></div>
+  </section>
+
   <!-- Admin progress + next actions -->
   <div class="cbf-soy-ov__admin stack" data-gap="lg" data-ov-admin>
     <section class="stack" data-gap="sm" aria-labelledby="ov-progress">
@@ -138,12 +168,13 @@ const pmTiles = [
 <script>
   import '@esa/ecology/esa-dialog';
   import '@esa/ecology/esa-checkbox';
-  import { getState, subscribe, update, isAdmin, isLocked, openItem } from '../../lib/soy/store';
+  import { getState, subscribe, update, isAdmin, isLeader, isLocked, openItem, userName } from '../../lib/soy/store';
   import { advanceStage, sendReminders } from '../../lib/soy/actions';
   import {
     amount, daysBetween, fmtDate, fmtDay, fmtMoney, fmtShort, needsInput, nextStage, outstandingByPm, project,
-    stageDue, stageIndex, totals, transferStatus, closeChecks,
+    stageDue, stageIndex, totals, transferStatus, closeChecks, negotiation, negotiationLabel, PARTY_LABEL,
   } from '../../lib/soy/model';
+  import type { SoyItem } from '../../lib/soy/types';
   import { emailHtml, reminderEmail, stageOpenEmail } from '../../lib/soy/email';
   import { DEMO_PM } from '../../data/soy/seed';
   import { STAGES, stageLabel } from '../../lib/soy/types';
@@ -203,16 +234,21 @@ const pmTiles = [
     if (nxt) q('[data-ov-advance] .esa-button__label').textContent = `Open ${stageLabel(nxt)}`;
 
     // Role sections.
+    const leader = isLeader();
     q('[data-ov-admin]').hidden = !admin;
-    q('[data-ov-pm]').hidden = admin;
+    q('[data-ov-pm]').hidden = admin || leader;
+    q('[data-ov-leader]').hidden = !leader;
+    renderAssigned();
 
-    if (admin) {
+    if (leader) {
+      renderLeader();
+    } else if (admin) {
       tile('[data-ov-admin]', 'items', String(t.items), draft ? 'Run setup to add projects' : `${fmtShort(t.baseline)} baseline`);
       tile('[data-ov-admin]', 'ewb', `${t.ewbCount}`, `${fmtShort(t.ewb)} of ${t.items} projects`);
       tile('[data-ov-admin]', 'pm', c.stage && stageIndex(c.stage) >= 1 ? `${t.pmCount} of ${t.pmExpected}` : '—', c.stage === 'pm' ? `Due ${fmtDate(stageDue(c.dates, 'pm'))}` : stageIndex(c.stage) > 1 ? fmtShort(t.pm) : 'Opens ' + fmtDay(c.dates.pm));
       tile('[data-ov-admin]', 'final', `${t.finalCount}`, `${fmtShort(t.final)}`);
       tile('[data-ov-admin]', 'transferred', fmtShort(t.transferred), `${t.transferredCount} projects · ${c.decisions.length} rounds`);
-      tile('[data-ov-admin]', 'variance', t.varianceItems ? fmtShort(t.variance) : '$0', t.varianceItems ? `${t.varianceItems} item${t.varianceItems === 1 ? "" : "s"} final ≠ transferred` : 'Final matches transferred');
+      tile('[data-ov-admin]', 'variance', t.varianceItems ? fmtShort(t.variance) : '$0', t.varianceItems ? `${t.varianceItems} project${t.varianceItems === 1 ? "" : "s"} final ≠ transferred` : 'Final matches transferred');
       renderActions();
     } else {
       renderPm();
@@ -258,7 +294,11 @@ const pmTiles = [
     if (c.status === 'Draft') {
       acts.push({ text: `Review the FY${c.fy} draft and run setup`, sub: 'Confirm the dates, carry last year’s projects forward, add new projects and apply the COLA.', btn: 'Start setup', href: '/soy/setup', tone: 'primary' });
     } else if (c.status === 'Closed') {
-      acts.push({ text: `FY${c.fy} is closed`, sub: `Closed ${fmtDate(c.closedOn)}. FY2024–2027 are still open — close them out too.`, btn: 'All cycles', href: '/soy/cycles' });
+      const stillOpen = s.pastCycles.filter((p) => p.status === 'Open' && p.fy !== c.fy).map((p) => p.fy).sort();
+      const openText = stillOpen.length
+        ? `${fyList(stillOpen)} ${stillOpen.length === 1 ? 'is' : 'are'} still open — close ${stillOpen.length === 1 ? 'it' : 'them'} out too.`
+        : 'Every past year is closed.';
+      acts.push({ text: `FY${c.fy} is closed`, sub: `Closed ${fmtDate(c.closedOn)}. ${openText}`, btn: 'All cycles', href: '/soy/cycles' });
     } else if (c.stage === 'ewb') {
       const missing = t.items - t.ewbCount;
       if (missing) acts.push({ text: `${missing} projects have no EWB proposed amount`, sub: 'Set them from baseline in one step, then adjust any by hand with a rationale.', btn: 'Set EWB proposed', href: '/soy/items?view=needs', tone: 'primary' });
@@ -266,21 +306,95 @@ const pmTiles = [
     } else if (c.stage === 'pm') {
       const out = outstandingByPm(c);
       if (out.length) acts.push({ text: `${out.length} PMs haven’t responded (${out.reduce((k, o) => k + o.items.length, 0)} projects)`, sub: c.reminders.on ? `An automatic reminder goes out ${c.reminders.daysBefore} days before the due date. You can send one now too.` : 'Automatic reminders are off.', btn: 'Send reminder', act: 'remind-all', tone: s.pmResponsesSimulated ? 'primary' : 'secondary' });
-      const changed = c.items.filter((i) => i.amounts.pm && i.amounts.ewb && i.amounts.pm.amount !== i.amounts.ewb.amount).length;
-      if (changed) acts.push({ text: `${changed} PM proposals differ from EWB`, sub: 'Review them before decision makers meet.', btn: 'Changed vs EWB', href: '/soy/items?view=changed' });
+      negotiationAction(acts);
       acts.push({ text: 'When decision makers are ready, open Final budget', sub: `PM proposed is due ${fmtDate(stageDue(c.dates, 'pm'))}. Projects with no PM input will take EWB’s amount unless you change them.`, btn: 'Open Final budget', act: 'advance', tone: out.length ? 'secondary' : 'primary' });
     } else if (c.stage === 'final' || c.stage === 'complete') {
       const noFinal = t.items - t.finalCount;
-      if (noFinal) acts.push({ text: `${noFinal} projects have no final amount`, sub: 'Set finals from PM proposed, EWB proposed or baseline, with a preview.', btn: 'Final decisions', href: '/soy/finals', tone: 'primary' });
+      negotiationAction(acts);
+      if (noFinal) acts.push({ text: `${noFinal} projects have no final amount`, sub: 'Set finals from PM proposed, EWB proposed or baseline, with a preview. Projects in negotiation are settled one at a time.', btn: 'Final decisions', href: '/soy/finals', tone: 'primary' });
       const notTr = c.items.filter((i) => transferStatus(i) === 'Not transferred').length;
       if (notTr) acts.push({ text: `${notTr} final amounts are not transferred`, sub: 'Transfer them to working budgets under a Budget Decision.', btn: 'Transfers', href: '/soy/transfers', tone: noFinal ? 'secondary' : 'primary' });
-      if (t.varianceItems) acts.push({ text: `${t.varianceItems} item${t.varianceItems === 1 ? " needs" : "s need"} reconciliation`, sub: `Final and transferred differ by ${fmtMoney(t.variance)}.`, btn: 'Variance', href: '/soy/transfers?status=variance', tone: 'primary' });
+      if (t.varianceItems) acts.push({ text: `${t.varianceItems} project${t.varianceItems === 1 ? " needs" : "s need"} reconciliation`, sub: `Final and transferred differ by ${fmtMoney(t.variance)}.`, btn: 'Variance', href: '/soy/transfers?status=variance', tone: 'primary' });
       if (closeChecks(c).every((x) => x.ok)) acts.push({ text: 'Everything is reconciled — close the cycle', sub: 'Closing locks the cycle for everyone.', btn: 'Close-out', href: '/soy/close-out', tone: 'primary' });
     }
     q('[data-ov-actions]').innerHTML = acts.map((a) => `<li class="cbf-soy-ov__action">
       <div class="stack" data-gap="3xs"><strong>${esc(a.text)}</strong>${a.sub ? `<span class="cbf-soy-ov__action-sub">${esc(a.sub)}</span>` : ''}</div>
       ${a.btn ? (a.href ? `<a class="cbf-soy-ov__action-link" href="${withBase(a.href)}">${esc(a.btn)} →</a>` : button(a.tone === 'primary' ? 'primary' : 'secondary', a.btn, { 'ov-act': a.act! })) : ''}
     </li>`).join('');
+  }
+
+  type Act = { text: string; sub?: string; btn?: string; href?: string; act?: string; tone?: 'primary' | 'secondary' };
+
+  /** "FY2024–2027" for a run of three or more years, else "FY2024, FY2026". */
+  function fyList(fys: number[]): string {
+    const run = fys.every((y, i) => i === 0 || y === fys[i - 1] + 1);
+    return run && fys.length > 2 ? `FY${fys[0]}–${fys[fys.length - 1]}` : fys.map((y) => `FY${y}`).join(', ');
+  }
+
+  /** Admin next action: how many projects are in negotiation and who holds them. */
+  function negotiationAction(acts: Act[]) {
+    const c = getState().cycle;
+    const open = c.items.map(negotiation).filter((n) => n?.active);
+    if (!open.length) return;
+    const by = (r: string) => open.filter((n) => n!.assigneeRole === r).length;
+    const mine = open.filter((n) => n!.assignee === userName()).length;
+    acts.push({
+      text: `${open.length} projects are in negotiation — ${mine} with you`,
+      sub: `${by('pm')} with PMs, ${by('leader')} with decision makers, ${by('admin')} with the budget team. Each shows its round, the gap and who has the next step.`,
+      btn: 'In negotiation', href: '/soy/items?view=negotiation', tone: mine ? 'primary' : 'secondary',
+    });
+  }
+
+  /** Projects where the signed-in person has the next step: handed over explicitly first, newest first. */
+  const assignedToMe = (): SoyItem[] => getState().cycle.items
+    .filter((i) => { const n = negotiation(i); return !!n?.active && n.assignee === userName(); })
+    .sort((a, b) => Number(!!b.negotiation) - Number(!!a.negotiation) || (negotiation(b)!.since ?? '').localeCompare(negotiation(a)!.since ?? ''));
+  const ASSIGNED_ROWS = 8;
+
+  function renderAssigned() {
+    const c = getState().cycle;
+    const mine = assignedToMe();
+    const box = q('[data-ov-assigned]');
+    box.hidden = c.status !== 'Open' || (!mine.length && !isLeader());
+    if (box.hidden) return;
+    q('[data-ov-assigned-lede]').textContent = mine.length
+      ? `${mine.length} ${mine.length === 1 ? 'project is' : 'projects are'} waiting on you. Open one to read the back and forth, make your call, comment, and assign the next step.`
+      : '';
+    q('[data-ov-assigned-table]').hidden = mine.length === 0;
+    q('[data-ov-assigned-empty]').hidden = mine.length > 0;
+    const more = mine.length - ASSIGNED_ROWS;
+    q('[data-ov-assigned-rows]').innerHTML = mine.slice(0, ASSIGNED_ROWS).map((i) => {
+      const n = negotiation(i)!;
+      const last = [...(i.negotiation?.thread ?? [])].reverse().find((e) => e.kind !== 'resolved');
+      const gap = n.gap;
+      const latest = last
+        ? `<span class="cbf-soy-muted">${esc(last.who)} (${esc(PARTY_LABEL[last.whoRole].toLowerCase())}):</span> ${esc(last.text || 'Revised the amount.')}`
+        : '<span class="cbf-soy-muted">The PM proposed a different amount. Nobody has assigned it yet.</span>';
+      return `<tr>
+        <td><a href="#" data-ov-item="${esc(i.id)}">${esc(i.projectNumber)}</a> ${esc(project(i).title)}</td>
+        <td>${esc(project(i).pm)}</td>
+        <td class="cbf-soy-num">${fmtMoney(amount(i, 'ewb'))}</td>
+        <td class="cbf-soy-num">${fmtMoney(amount(i, 'pm'))}</td>
+        <td class="cbf-soy-num">${gap == null ? '—' : `${gap > 0 ? '+' : ''}${fmtMoney(gap)}`}</td>
+        <td>${pill(negotiationLabel(n), 'primary', { size: 'xs' })}${n.since ? ` <span class="cbf-soy-muted">since ${fmtDay(n.since)}</span>` : ''}</td>
+        <td>${latest}</td>
+      </tr>`;
+    }).join('') + (more > 0 ? `<tr><td colspan="7" class="cbf-soy-muted">…and ${more} more. <a href="${withBase('/soy/items?view=assigned')}">See all assigned to me</a></td></tr>` : '');
+  }
+
+  function renderLeader() {
+    const c = getState().cycle;
+    const mine = assignedToMe();
+    const gap = mine.reduce((k, i) => k + (negotiation(i)?.gap ?? 0), 0);
+    q('[data-ov-leader-big]').textContent = c.status !== 'Open'
+      ? `The FY${c.fy} SOY is ${c.status === 'Draft' ? 'not open yet' : 'closed'}`
+      : mine.length ? `${mine.length} ${mine.length === 1 ? 'project needs' : 'projects need'} your call` : 'Nothing is waiting for your call';
+    q('[data-ov-leader-sub]').textContent = mine.length
+      ? mine.length === 1
+        ? `The PM is asking for ${fmtMoney(gap)} more than EWB proposed. Decide, add a comment, and assign it to whoever takes the next step.`
+        : `Together the PMs are asking for ${fmtMoney(gap)} more than EWB proposed. Decide, add a comment, and assign each one to whoever takes the next step.`
+      : 'When the budget team or a PM needs a leadership decision on a project, they assign it to you and it shows here.';
+    q('[data-ov-leader-cta]').hidden = mine.length === 0;
   }
 
   function renderPm() {
@@ -302,6 +416,11 @@ const pmTiles = [
       big.textContent = `${need.length} of your projects need input by ${due}`;
       sub.textContent = 'Agree with EWB’s proposed amount or propose a different one with a rationale.';
       cta.hidden = false;
+    } else if (c.status === 'Open' && assignedToMe().length) {
+      const n = assignedToMe().length;
+      big.textContent = `${n} ${n === 1 ? 'project is' : 'projects are'} assigned to you`;
+      sub.textContent = 'In negotiation: someone needs your next step. Read their comment, then revise your proposal or comment and assign it on.';
+      cta.hidden = true;
     } else if (c.stage === 'pm') {
       big.textContent = 'You’ve responded on all your projects';
       sub.textContent = `You can change your proposals until ${due}.`;
@@ -322,7 +441,7 @@ const pmTiles = [
           <td class="cbf-soy-num">${fmtMoney(amount(i, 'ewb'))}</td>
           <td class="cbf-soy-num">${fmtMoney(amount(i, 'pm'))}</td>
           <td class="cbf-soy-num">${fmtMoney(amount(i, 'final'))}</td>
-          <td>${needsInput(i, 'pm') && c.stage === 'pm' ? pill('Needs input', 'warning', { size: 'xs' }) : i.amounts.final ? statusPill(transferStatus(i)) : i.amounts.pm ? pill('Responded', 'success', { size: 'xs' }) : pill('Waiting for EWB', 'default', { size: 'xs' })}</td>
+          <td>${negotiation(i)?.active ? pill(negotiationLabel(negotiation(i)!), negotiation(i)!.assignee === DEMO_PM ? 'warning' : 'info', { size: 'xs' }) : needsInput(i, 'pm') && c.stage === 'pm' ? pill('Needs input', 'warning', { size: 'xs' }) : i.amounts.final ? statusPill(transferStatus(i)) : i.amounts.pm ? pill('Responded', 'success', { size: 'xs' }) : pill('Waiting for EWB', 'default', { size: 'xs' })}</td>
         </tr>`).join('')
       : '<tr><td colspan="6" class="cbf-soy-muted">No projects yet — the cycle hasn’t been set up.</td></tr>';
   }

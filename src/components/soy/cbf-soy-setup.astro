@@ -10,12 +10,15 @@
 //   3. New projects — eligible projects that weren't in last year's cycle.
 //   4. COLA — rate + table filters (fund, emphasis, PM); before/after baselines
 //      and a total; two-year off-year and no-baseline projects named; two-year
-//      on-year items flagged with a suggested amount (DEC 7).
+//      on-year items flagged with a suggested amount (DEC 7). A comment goes
+//      with the COLA (why this rate, which guidance); it's kept on the setup
+//      report, in the activity log and on every project the COLA applies to.
 //   5. Review — tiles, dates, exclusions. Create runs with progress, saves only
 //      the new items, and ends with a results report.
 //
 // Re-entry: once the cycle is Open, the wizard only offers new projects that
-// aren't in it yet. Closed: read only.
+// aren't in it yet. Closed: read only. A past year (fiscal-year picker) shows
+// how that year was set up, read only.
 //
 // All the numbers come from planSetup() in src/lib/soy/actions.ts — the same
 // function runSetup() uses — so the preview can't disagree with the run.
@@ -58,6 +61,11 @@ const reviewTiles = [
       <span data-su-reentry-text></span>
     </EsaAlertBox>
   </div>
+  <section class="stack" data-gap="sm" data-su-past hidden aria-labelledby="su-past-title">
+    <h2 class="cbf-soy-section-title" id="su-past-title" data-su-past-title>How the cycle was set up</h2>
+    <p class="cbf-soy-lede" data-su-past-lede></p>
+    <table class="cbf-soy-table cbf-soy-su__report"><tbody data-su-past-rows></tbody></table>
+  </section>
   <div data-su-closed hidden>
     <EsaEmptyState title="This cycle is closed" description="Reopen it from Close-out to add projects." size="md" />
   </div>
@@ -132,6 +140,7 @@ const reviewTiles = [
         <esa-select size="sm" label="Emphasis" data-su-f="emphasis"></esa-select>
         <esa-select size="sm" label="Project manager" data-su-f="pm"></esa-select>
       </div>
+      <esa-textarea class="cbf-soy-su__cola-comment" size="sm" label="COLA comment" rows="2" help-text="Why this rate and which guidance. Saved on the setup report, in activity and on every project the COLA applies to." placeholder="For example: 2.5% per BPA's FY2028 planning guidance, Program-fund projects only." data-su-cola-comment data-change="su-cola-comment"></esa-textarea>
       <p class="cbf-soy-su__count" data-su-cola-count aria-live="polite"></p>
       <div class="cbf-data-grid__grid cbf-soy-su__grid" data-su-cola-grid></div>
       <div class="cbf-soy-su__skips" data-change="su-cola-skips">
@@ -216,9 +225,10 @@ const reviewTiles = [
   import '@esa/ecology/esa-text-field';
   import '@esa/ecology/esa-select';
   import '@esa/ecology/esa-chip-group';
+  import '@esa/ecology/esa-textarea';
   import { createGrid, type ColDef, type GridApi, type IRowNode } from 'ag-grid-community';
   import { cbfGridTheme } from '../shared/grid-chrome';
-  import { getState, subscribe, update, isAdmin } from '../../lib/soy/store';
+  import { getState, subscribe, update, isAdmin, isPastYear } from '../../lib/soy/store';
   import { planSetup, runSetup, type SetupInput } from '../../lib/soy/actions';
   import { NEW_PROJECTS, PRIOR_ITEMS, PROJECTS } from '../../data/soy/seed';
   import { addDays, daysBetween, fmtDate, fmtMoney, fmtShort, stageDue, twoYearSuggestion } from '../../lib/soy/model';
@@ -263,7 +273,8 @@ const reviewTiles = [
       for (const n of NEW_PROJECTS) if (added.has(n.id) && match(n.projectNumber, n.fund)) ids.push(n.id);
       return ids;
     };
-    const input = (): SetupInput => ({ dates: { ...dates }, carryIds: [...carry], newIds: [...added], colaRate: rate, colaIds: colaIds() });
+    const colaCommentF = () => root.querySelector<Field>('[data-su-cola-comment]');
+    const input = (): SetupInput => ({ dates: { ...dates }, carryIds: [...carry], newIds: [...added], colaRate: rate, colaIds: colaIds(), colaComment: colaCommentF()?.value ?? '' });
 
     // ------------------------------------------------------------------
     // Grids
@@ -499,7 +510,7 @@ const reviewTiles = [
       q('[data-su-review-excluded]').innerHTML = report.excluded.length
         ? report.excluded.map((x) => `<tr><td>${esc(label(x.id))}</td><td>${esc(x.reason)}</td></tr>`).join('')
         : '<tr><td colspan="2" class="cbf-soy-muted">Every FY2027 project is carried forward.</td></tr>';
-      q('[data-su-review-note]').textContent = `Creating the cycle opens EWB proposed. ${report.colaSkippedOffYear.length + report.colaSkippedNoBaseline.length} COLA skips and ${report.twoYearFlagged.length} two-year suggestions will be listed in the results report.`;
+      q('[data-su-review-note]').textContent = `Creating the cycle opens EWB proposed. ${report.colaSkippedOffYear.length + report.colaSkippedNoBaseline.length} COLA skips and ${report.twoYearFlagged.length} two-year suggestions will be listed in the results report.${report.colaComment ? ` COLA comment: “${report.colaComment}”` : ` No COLA comment yet — add one on the COLA step.`}`;
     }
 
     function availableNew() {
@@ -607,6 +618,7 @@ const reviewTiles = [
         ['Carried forward', `${report.carried} projects`],
         ['New projects added', `${report.added.length}`],
         ['COLA applied', `${report.colaApplied} projects at ${(report.colaRate * 100).toFixed(1)}%`],
+        ['COLA comment', report.colaComment ?? '—'],
         ['Two-year on-year suggestions', `${report.twoYearFlagged.length} — confirm in EWB proposed`],
         ['Not carried forward', `${report.excluded.length}`],
         ['Total FY2028 baseline', fmtMoney(report.totalBaseline)],
@@ -649,9 +661,41 @@ const reviewTiles = [
     // ------------------------------------------------------------------
     // Mode from the store
     // ------------------------------------------------------------------
+    // A past year: how it was set up, read only.
+    function renderPast() {
+      const c = getState().cycle;
+      const r = c.setupReport;
+      q('[data-su-past-title]').textContent = `How FY${c.fy} was set up`;
+      q('[data-su-past-lede]').textContent = `Setup ran on ${fmtDate(c.dates.ewb)}. Past years are shown read only here; amounts, transfers and close-out still work on their own tabs while the year is open.`;
+      const rows: [string, string][] = [
+        ['EWB proposed opened', fmtDate(c.dates.ewb)],
+        ['PM proposed opened', fmtDate(c.dates.pm)],
+        ['Final budget opened', fmtDate(c.dates.final)],
+        ['Complete', fmtDate(c.dates.complete)],
+        ['Projects in the cycle', `${c.items.length}`],
+        ...(r ? [
+          ['Carried forward', `${r.carried} projects`],
+          ['New projects added', `${r.added.length}`],
+          ['COLA applied', `${r.colaApplied} projects at ${(r.colaRate * 100).toFixed(1)}%`],
+          ['COLA comment', r.colaComment ?? '—'],
+          ['Total baseline', fmtMoney(r.totalBaseline)],
+        ] as [string, string][] : []),
+      ];
+      q('[data-su-past-rows]').innerHTML = rows.map(([k, v]) => `<tr><th scope="row">${esc(k)}</th><td>${esc(v)}</td></tr>`).join('');
+    }
+
     function render() {
       if (!isAdmin()) return;
       const c = getState().cycle;
+      const past = isPastYear();
+      q('[data-su-past]').hidden = !past;
+      if (past) {
+        for (const sel of ['[data-su-wizard]', '[data-su-reentry]', '[data-su-closed]', '[data-su-run]']) q(sel).hidden = true;
+        phase = 'wizard';
+        mode = 'closed';
+        renderPast();
+        return;
+      }
       // A jump back to a draft (Jump to step / Reset) leaves the results report.
       if (phase === 'report' && c.status === 'Draft') {
         phase = 'wizard';
